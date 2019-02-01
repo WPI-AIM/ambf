@@ -1,0 +1,199 @@
+bodies: [BODY calib_kuka_arm_base_link, BODY kuka_arm_1_link, BODY kuka_arm_2_link,
+  BODY kuka_arm_3_link, BODY kuka_arm_4_link, BODY kuka_arm_5_link, BODY kuka_arm_6_link,
+  BODY kuka_arm_7_link]
+joints: [JOINT kuka_arm_0_joint, JOINT kuka_arm_1_joint, JOINT kuka_arm_2_joint, JOINT
+    kuka_arm_3_joint, JOINT kuka_arm_4_joint, JOINT kuka_arm_5_joint, JOINT kuka_arm_6_joint]
+high resolution path: /home/adnan/bullet3/data/kuka_lwr/meshes_arm/
+low resolution path: /home/adnan/bullet3/data/kuka_lwr/meshes_arm/convex/
+ignore inter-collision: 'True'
+BODY calib_kuka_arm_base_link:
+  name: calib_kuka_arm_base_link
+  mesh: arm_base.stl
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_base_convex.stl
+BODY kuka_arm_1_link:
+  name: kuka_arm_1_link
+  mesh: arm_segment_a.stl
+  mass: 2.02
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_segment_a_convex.stl
+BODY kuka_arm_2_link:
+  name: kuka_arm_2_link
+  mesh: arm_segment_b.stl
+  mass: 1.98
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_segment_b_convex.stl
+BODY kuka_arm_3_link:
+  name: kuka_arm_3_link
+  mesh: arm_segment_a.stl
+  mass: 2.02
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_segment_a_convex.stl
+BODY kuka_arm_4_link:
+  name: kuka_arm_4_link
+  mesh: arm_segment_b.stl
+  mass: 1.98
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_segment_b_convex.stl
+BODY kuka_arm_5_link:
+  name: kuka_arm_5_link
+  mesh: arm_segment_last.stl
+  mass: 2.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_segment_last_convex.stl
+BODY kuka_arm_6_link:
+  name: kuka_arm_6_link
+  mesh: arm_wrist.stl
+  mass: 2.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_wrist_convex.stl
+BODY kuka_arm_7_link:
+  name: kuka_arm_7_link
+  mesh: arm_flanche.stl
+  mass: 2.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: arm_flanche_convex.stl
+JOINT kuka_arm_0_joint:
+  name: kuka_arm_0_joint
+  parent: BODY calib_kuka_arm_base_link
+  child: BODY kuka_arm_1_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.11}
+  child axis: {x: -0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 2.967, low: -2.967}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 3.142
+JOINT kuka_arm_1_joint:
+  name: kuka_arm_1_joint
+  parent: BODY kuka_arm_1_link
+  child: BODY kuka_arm_2_link
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.2}
+  child axis: {x: 0.0, y: -1.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.2}
+  joint limits: {high: 1.571, low: -1.571}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -3.142
+JOINT kuka_arm_2_joint:
+  name: kuka_arm_2_joint
+  parent: BODY kuka_arm_2_link
+  child: BODY kuka_arm_3_link
+  parent axis: {x: -0.0, y: -0.0, z: -1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 2.967, low: -2.967}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT kuka_arm_3_joint:
+  name: kuka_arm_3_joint
+  parent: BODY kuka_arm_3_link
+  child: BODY kuka_arm_4_link
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.2}
+  child axis: {x: 0.0, y: -1.0, z: 0.0}
+  child pivot: {x: -0.0, y: -0.0, z: 0.2}
+  joint limits: {high: 2.094, low: -2.094}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 3.142
+JOINT kuka_arm_4_joint:
+  name: kuka_arm_4_joint
+  parent: BODY kuka_arm_4_link
+  child: BODY kuka_arm_5_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: -0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 2.967, low: -2.967}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT kuka_arm_5_joint:
+  name: kuka_arm_5_joint
+  parent: BODY kuka_arm_5_link
+  child: BODY kuka_arm_6_link
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.19}
+  child axis: {x: 0.0, y: 1.0, z: 0.0}
+  child pivot: {x: 0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 2.094, low: -2.094}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT kuka_arm_6_joint:
+  name: kuka_arm_6_joint
+  parent: BODY kuka_arm_6_link
+  child: BODY kuka_arm_7_link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.078}
+  child axis: {x: -0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 2.967, low: -2.967}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute

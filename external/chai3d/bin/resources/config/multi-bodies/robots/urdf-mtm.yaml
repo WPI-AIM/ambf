@@ -1,0 +1,265 @@
+bodies: [BODY world, BODY mtm_top_panel, BODY mtm_outer_yaw_link, BODY mtm_back_parallel_link,
+  BODY mtm_top_parallel_link, BODY mtm_wrist_platform_link, BODY mtm_bottom_parallel_link,
+  BODY mtm_wrist_pitch_link, BODY mtm_wrist_yaw_link, BODY mtm_wrist_roll_link, BODY
+    mtm_base, BODY mtm_ee_link]
+joints: [JOINT mtm_outer_yaw_joint, JOINT mtm_shoulder_pitch_joint, JOINT mtm_shoulder_pitch_parallel_joint,
+  JOINT mtm_elbow_pitch_joint, JOINT mtm_wrist_platform_joint, JOINT mtm_wrist_pitch_joint,
+  JOINT mtm_wrist_yaw_joint, JOINT mtm_wrist_roll_joint]
+high resolution path: ../../../models/dvrk/mtm/high_res/
+low resolution path: ../../../models/dvrk/mtm/low_res/
+ignore inter-collision: 'True'
+BODY world:
+  name: world
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+BODY mtm_top_panel:
+  name: mtm_top_panel
+  mesh: Top Panel.STL
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: Top Panel.STL
+BODY mtm_outer_yaw_link:
+  name: mtm_outer_yaw_link
+  mesh: OutPitch Shoulder.STL
+  mass: 1.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: OutPitch Shoulder.STL
+BODY mtm_back_parallel_link:
+  name: mtm_back_parallel_link
+  mesh: ArmParallel.STL
+  mass: 0.9
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: ArmParallel.STL
+BODY mtm_top_parallel_link:
+  name: mtm_top_parallel_link
+  mesh: ArmParallel1.STL
+  mass: 0.5
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: ArmParallel1.STL
+BODY mtm_wrist_platform_link:
+  name: mtm_wrist_platform_link
+  mesh: WristPlatform.STL
+  mass: 0.4
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: WristPlatform.STL
+BODY mtm_bottom_parallel_link:
+  name: mtm_bottom_parallel_link
+  mesh: BottomArm.STL
+  mass: 0.8
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: BottomArm.STL
+BODY mtm_wrist_pitch_link:
+  name: mtm_wrist_pitch_link
+  mesh: WristPitch.STL
+  mass: 0.2
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: WristPitch.STL
+BODY mtm_wrist_yaw_link:
+  name: mtm_wrist_yaw_link
+  mesh: WristYaw.STL
+  mass: 0.2
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: WristYaw.STL
+BODY mtm_wrist_roll_link:
+  name: mtm_wrist_roll_link
+  mesh: WristRoll.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+  collision mesh: WristRoll.STL
+BODY mtm_base:
+  name: mtm_base
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+BODY mtm_ee_link:
+  name: mtm_ee_link
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+JOINT mtm_outer_yaw_joint:
+  name: mtm_outer_yaw_joint
+  parent: BODY mtm_top_panel
+  child: BODY mtm_outer_yaw_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.785, low: -1.309}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT mtm_shoulder_pitch_joint:
+  name: mtm_shoulder_pitch_joint
+  parent: BODY mtm_outer_yaw_link
+  child: BODY mtm_back_parallel_link
+  parent axis: {x: -0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: -0.19}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT mtm_shoulder_pitch_parallel_joint:
+  name: mtm_shoulder_pitch_parallel_joint
+  parent: BODY mtm_back_parallel_link
+  child: BODY mtm_top_parallel_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.065}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.571, low: -1.571}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT mtm_elbow_pitch_joint:
+  name: mtm_elbow_pitch_joint
+  parent: BODY mtm_back_parallel_link
+  child: BODY mtm_bottom_parallel_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.279, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT mtm_wrist_platform_joint:
+  name: mtm_wrist_platform_joint
+  parent: BODY mtm_bottom_parallel_link
+  child: BODY mtm_wrist_platform_link
+  parent axis: {x: 0.0, y: -1.0, z: 0.0}
+  parent pivot: {x: -0.364, y: -0.156, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 4.276, low: -1.047}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT mtm_wrist_pitch_joint:
+  name: mtm_wrist_pitch_joint
+  parent: BODY mtm_wrist_platform_link
+  child: BODY mtm_wrist_pitch_link
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 3.142, low: -1.571}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT mtm_wrist_yaw_joint:
+  name: mtm_wrist_yaw_joint
+  parent: BODY mtm_wrist_pitch_link
+  child: BODY mtm_wrist_yaw_link
+  parent axis: {x: -0.0, y: -1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT mtm_wrist_roll_joint:
+  name: mtm_wrist_roll_joint
+  parent: BODY mtm_wrist_yaw_link
+  child: BODY mtm_wrist_roll_link
+  parent axis: {x: -0.0, y: -1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.039, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: -1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 4.712, low: -4.712}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571

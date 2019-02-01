@@ -1,0 +1,304 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		96BBED6B15008370004DCE30 /* CGELLinearSpring.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED5C15008370004DCE30 /* CGELLinearSpring.cpp */; };
+		96BBED6C15008370004DCE30 /* CGELLinearSpring.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED5D15008370004DCE30 /* CGELLinearSpring.h */; };
+		96BBED6D15008370004DCE30 /* CGELMassParticle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED5E15008370004DCE30 /* CGELMassParticle.cpp */; };
+		96BBED6E15008370004DCE30 /* CGELMassParticle.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED5F15008370004DCE30 /* CGELMassParticle.h */; };
+		96BBED6F15008370004DCE30 /* CGELMesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED6015008370004DCE30 /* CGELMesh.cpp */; };
+		96BBED7015008370004DCE30 /* CGELMesh.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6115008370004DCE30 /* CGELMesh.h */; };
+		96BBED7115008370004DCE30 /* CGELSkeletonLink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED6215008370004DCE30 /* CGELSkeletonLink.cpp */; };
+		96BBED7215008370004DCE30 /* CGELSkeletonLink.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6315008370004DCE30 /* CGELSkeletonLink.h */; };
+		96BBED7315008370004DCE30 /* CGELSkeletonNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED6415008370004DCE30 /* CGELSkeletonNode.cpp */; };
+		96BBED7415008370004DCE30 /* CGELSkeletonNode.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6515008370004DCE30 /* CGELSkeletonNode.h */; };
+		96BBED7515008370004DCE30 /* CGELVertex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED6615008370004DCE30 /* CGELVertex.cpp */; };
+		96BBED7615008370004DCE30 /* CGELVertex.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6715008370004DCE30 /* CGELVertex.h */; };
+		96BBED7715008370004DCE30 /* CGELWorld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 96BBED6815008370004DCE30 /* CGELWorld.cpp */; };
+		96BBED7815008370004DCE30 /* CGELWorld.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6915008370004DCE30 /* CGELWorld.h */; };
+		96BBED7915008370004DCE30 /* GEL3D.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BBED6A15008370004DCE30 /* GEL3D.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		96BBED5C15008370004DCE30 /* CGELLinearSpring.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELLinearSpring.cpp; path = src/CGELLinearSpring.cpp; sourceTree = "<group>"; };
+		96BBED5D15008370004DCE30 /* CGELLinearSpring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELLinearSpring.h; path = src/CGELLinearSpring.h; sourceTree = "<group>"; };
+		96BBED5E15008370004DCE30 /* CGELMassParticle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELMassParticle.cpp; path = src/CGELMassParticle.cpp; sourceTree = "<group>"; };
+		96BBED5F15008370004DCE30 /* CGELMassParticle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELMassParticle.h; path = src/CGELMassParticle.h; sourceTree = "<group>"; };
+		96BBED6015008370004DCE30 /* CGELMesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELMesh.cpp; path = src/CGELMesh.cpp; sourceTree = "<group>"; };
+		96BBED6115008370004DCE30 /* CGELMesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELMesh.h; path = src/CGELMesh.h; sourceTree = "<group>"; };
+		96BBED6215008370004DCE30 /* CGELSkeletonLink.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELSkeletonLink.cpp; path = src/CGELSkeletonLink.cpp; sourceTree = "<group>"; };
+		96BBED6315008370004DCE30 /* CGELSkeletonLink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELSkeletonLink.h; path = src/CGELSkeletonLink.h; sourceTree = "<group>"; };
+		96BBED6415008370004DCE30 /* CGELSkeletonNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELSkeletonNode.cpp; path = src/CGELSkeletonNode.cpp; sourceTree = "<group>"; };
+		96BBED6515008370004DCE30 /* CGELSkeletonNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELSkeletonNode.h; path = src/CGELSkeletonNode.h; sourceTree = "<group>"; };
+		96BBED6615008370004DCE30 /* CGELVertex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELVertex.cpp; path = src/CGELVertex.cpp; sourceTree = "<group>"; };
+		96BBED6715008370004DCE30 /* CGELVertex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELVertex.h; path = src/CGELVertex.h; sourceTree = "<group>"; };
+		96BBED6815008370004DCE30 /* CGELWorld.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CGELWorld.cpp; path = src/CGELWorld.cpp; sourceTree = "<group>"; };
+		96BBED6915008370004DCE30 /* CGELWorld.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CGELWorld.h; path = src/CGELWorld.h; sourceTree = "<group>"; };
+		96BBED6A15008370004DCE30 /* GEL3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GEL3D.h; path = src/GEL3D.h; sourceTree = "<group>"; };
+		D2AAC046055464E500DB518D /* libchai3d-GEL.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libchai3d-GEL.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D289987405E68DCB004EDB86 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* GEL */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = GEL;
+			sourceTree = "<group>";
+			wrapsLines = 0;
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				96BBED5C15008370004DCE30 /* CGELLinearSpring.cpp */,
+				96BBED5D15008370004DCE30 /* CGELLinearSpring.h */,
+				96BBED5E15008370004DCE30 /* CGELMassParticle.cpp */,
+				96BBED5F15008370004DCE30 /* CGELMassParticle.h */,
+				96BBED6015008370004DCE30 /* CGELMesh.cpp */,
+				96BBED6115008370004DCE30 /* CGELMesh.h */,
+				96BBED6215008370004DCE30 /* CGELSkeletonLink.cpp */,
+				96BBED6315008370004DCE30 /* CGELSkeletonLink.h */,
+				96BBED6415008370004DCE30 /* CGELSkeletonNode.cpp */,
+				96BBED6515008370004DCE30 /* CGELSkeletonNode.h */,
+				96BBED6615008370004DCE30 /* CGELVertex.cpp */,
+				96BBED6715008370004DCE30 /* CGELVertex.h */,
+				96BBED6815008370004DCE30 /* CGELWorld.cpp */,
+				96BBED6915008370004DCE30 /* CGELWorld.h */,
+				96BBED6A15008370004DCE30 /* GEL3D.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D2AAC046055464E500DB518D /* libchai3d-GEL.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D2AAC043055464E500DB518D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96BBED6C15008370004DCE30 /* CGELLinearSpring.h in Headers */,
+				96BBED6E15008370004DCE30 /* CGELMassParticle.h in Headers */,
+				96BBED7015008370004DCE30 /* CGELMesh.h in Headers */,
+				96BBED7215008370004DCE30 /* CGELSkeletonLink.h in Headers */,
+				96BBED7415008370004DCE30 /* CGELSkeletonNode.h in Headers */,
+				96BBED7615008370004DCE30 /* CGELVertex.h in Headers */,
+				96BBED7815008370004DCE30 /* CGELWorld.h in Headers */,
+				96BBED7915008370004DCE30 /* GEL3D.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D2AAC045055464E500DB518D /* chai3d-GEL */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB91EB08733DB70010E9CD /* Build configuration list for PBXNativeTarget "chai3d-GEL" */;
+			buildPhases = (
+				D2AAC043055464E500DB518D /* Headers */,
+				D2AAC044055464E500DB518D /* Sources */,
+				D289987405E68DCB004EDB86 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "chai3d-GEL";
+			productName = GEL;
+			productReference = D2AAC046055464E500DB518D /* libchai3d-GEL.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0800;
+			};
+			buildConfigurationList = 1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "libchai3d-GEL" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07 /* GEL */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D2AAC045055464E500DB518D /* chai3d-GEL */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2AAC044055464E500DB518D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96BBED6B15008370004DCE30 /* CGELLinearSpring.cpp in Sources */,
+				96BBED6D15008370004DCE30 /* CGELMassParticle.cpp in Sources */,
+				96BBED6F15008370004DCE30 /* CGELMesh.cpp in Sources */,
+				96BBED7115008370004DCE30 /* CGELSkeletonLink.cpp in Sources */,
+				96BBED7315008370004DCE30 /* CGELSkeletonNode.cpp in Sources */,
+				96BBED7515008370004DCE30 /* CGELVertex.cpp in Sources */,
+				96BBED7715008370004DCE30 /* CGELWorld.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB91EC08733DB70010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				EXCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "*.nib *.lproj *.framework *.gch (*) .DS_Store CVS .svn .git .hg *.xcodeproj *.xcode *.pbproj *.pbxproj";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				STRIP_INSTALLED_PRODUCT = YES;
+				USER_HEADER_SEARCH_PATHS = "./src ../../src ../../external/Eigen ../../external/glew/include";
+			};
+			name = Debug;
+		};
+		1DEB91ED08733DB70010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				EXCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "*.nib *.lproj *.framework *.gch (*) .DS_Store CVS .svn .git .hg *.xcodeproj *.xcode *.pbproj *.pbxproj";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				STRIP_INSTALLED_PRODUCT = YES;
+				USER_HEADER_SEARCH_PATHS = "./src ../../src ../../external/Eigen ../../external/glew/include";
+			};
+			name = Release;
+		};
+		1DEB91F008733DB70010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Debug;
+		};
+		1DEB91F108733DB70010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB91EB08733DB70010E9CD /* Build configuration list for PBXNativeTarget "chai3d-GEL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB91EC08733DB70010E9CD /* Debug */,
+				1DEB91ED08733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "libchai3d-GEL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB91F008733DB70010E9CD /* Debug */,
+				1DEB91F108733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

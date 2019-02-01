@@ -1,0 +1,371 @@
+bodies: [BODY world, BODY psm_base_link, BODY psm_yaw_link, BODY psm_pitch_back_link,
+  BODY psm_pitch_bottom_link, BODY psm_pitch_end_link, BODY psm_main_insertion_link,
+  BODY psm_tool_roll_link, BODY psm_tool_pitch_link, BODY psm_tool_yaw_link, BODY
+    psm_tool_gripper1_link, BODY psm_tool_gripper2_link, BODY psm_pitch_top_link,
+  BODY psm_pitch_front_link, BODY psm_remote_center_link]
+joints: [JOINT psm_rev_joint, JOINT psm_yaw_joint, JOINT psm_pitch_back_joint, JOINT
+    psm_pitch_bottom_joint, JOINT psm_pitch_end_joint, JOINT psm_main_insertion_joint,
+  JOINT psm_tool_roll_joint, JOINT psm_tool_pitch_joint, JOINT psm_tool_yaw_joint,
+  JOINT psm_tool_gripper1_joint, JOINT psm_tool_gripper2_joint, JOINT psm_pitch_top_joint,
+  JOINT psm_pitch_front_joint]
+high resolution path: ../../../meshes/dvrk/psm/high_res/
+low resolution path: ../../../meshes/dvrk/psm/low_res/
+ignore inter-collision: 'True'
+BODY world:
+  name: world
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+BODY psm_base_link:
+  name: psm_base_link
+  mesh: base_link.STL
+  mass: 2.016
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: base_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_yaw_link:
+  name: psm_yaw_link
+  mesh: yaw_link.STL
+  mass: 1.47
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: yaw_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_pitch_back_link:
+  name: psm_pitch_back_link
+  mesh: pitch_back_link.STL
+  mass: 0.985
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_back_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_pitch_bottom_link:
+  name: psm_pitch_bottom_link
+  mesh: pitch_bottom_link.STL
+  mass: 0.446
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_bottom_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_pitch_end_link:
+  name: psm_pitch_end_link
+  mesh: pitch_end_link.STL
+  mass: 2.091
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_end_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_main_insertion_link:
+  name: psm_main_insertion_link
+  mesh: main_insertion_link.STL
+  mass: 0.225
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: main_insertion_link.STL
+  color rgba: {a: 0.4, b: 0.0588, g: 0.5569, r: 1.0}
+BODY psm_tool_roll_link:
+  name: psm_tool_roll_link
+  mesh: tool_roll_link.STL
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_roll_link.STL
+  color rgba: {a: 1.0, b: 0.9373, g: 0.8235, r: 0.7961}
+BODY psm_tool_pitch_link:
+  name: psm_tool_pitch_link
+  mesh: tool_pitch_link.STL
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_pitch_link.STL
+  color rgba: {a: 1.0, b: 0.9373, g: 0.8235, r: 0.7961}
+BODY psm_tool_yaw_link:
+  name: psm_tool_yaw_link
+  mesh: tool_yaw_link.STL
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_yaw_link.STL
+  color rgba: {a: 1.0, b: 0.9373, g: 0.8235, r: 0.7961}
+BODY psm_tool_gripper1_link:
+  name: psm_tool_gripper1_link
+  mesh: tool_gripper1_link.STL
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_gripper1_link.STL
+  color rgba: {a: 1.0, b: 0.9373, g: 0.8235, r: 0.7961}
+BODY psm_tool_gripper2_link:
+  name: psm_tool_gripper2_link
+  mesh: tool_gripper2_link.STL
+  mass: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_gripper2_link.STL
+  color rgba: {a: 1.0, b: 0.9373, g: 0.8235, r: 0.7961}
+BODY psm_pitch_top_link:
+  name: psm_pitch_top_link
+  mesh: pitch_top_link.STL
+  mass: 0.178
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_top_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_pitch_front_link:
+  name: psm_pitch_front_link
+  mesh: pitch_front_link.STL
+  mass: 0.074
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_front_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY psm_remote_center_link:
+  name: psm_remote_center_link
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+JOINT psm_rev_joint:
+  name: psm_rev_joint
+  parent: BODY world
+  child: BODY psm_base_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.152}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 3.142, low: -3.142}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT psm_yaw_joint:
+  name: psm_yaw_joint
+  parent: BODY psm_base_link
+  child: BODY psm_yaw_link
+  parent axis: {x: 0.0, y: -1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.599, low: -1.605}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT psm_pitch_back_joint:
+  name: psm_pitch_back_joint
+  parent: BODY psm_yaw_link
+  child: BODY psm_pitch_back_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.03}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.942, low: -0.936}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -0.291
+JOINT psm_pitch_bottom_joint:
+  name: psm_pitch_bottom_joint
+  parent: BODY psm_pitch_back_link
+  child: BODY psm_pitch_bottom_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.15, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.936, low: -0.942}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.861
+JOINT psm_pitch_end_joint:
+  name: psm_pitch_end_joint
+  parent: BODY psm_pitch_bottom_link
+  child: BODY psm_pitch_end_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.516, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.942, low: -0.936}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT psm_main_insertion_joint:
+  name: psm_main_insertion_joint
+  parent: BODY psm_pitch_end_link
+  child: BODY psm_main_insertion_link
+  parent axis: {x: -0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.043, y: -0.288, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.24, low: 0.0}
+  enable motor: 1
+  max motor impulse: 0
+  type: prismatic
+  offset: -3.142
+JOINT psm_tool_roll_joint:
+  name: psm_tool_roll_joint
+  parent: BODY psm_main_insertion_link
+  child: BODY psm_tool_roll_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.416}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 3.142, low: -3.142}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 3.142
+JOINT psm_tool_pitch_joint:
+  name: psm_tool_pitch_joint
+  parent: BODY psm_tool_roll_link
+  child: BODY psm_tool_pitch_link
+  parent axis: {x: -0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.571, low: -1.571}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT psm_tool_yaw_joint:
+  name: psm_tool_yaw_joint
+  parent: BODY psm_tool_pitch_link
+  child: BODY psm_tool_yaw_link
+  parent axis: {x: -0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.009, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.571, low: -1.571}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT psm_tool_gripper1_joint:
+  name: psm_tool_gripper1_joint
+  parent: BODY psm_tool_yaw_link
+  child: BODY psm_tool_gripper1_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.0, low: 0.0}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT psm_tool_gripper2_joint:
+  name: psm_tool_gripper2_joint
+  parent: BODY psm_tool_yaw_link
+  child: BODY psm_tool_gripper2_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.0, low: 0.0}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT psm_pitch_top_joint:
+  name: psm_pitch_top_joint
+  parent: BODY psm_pitch_back_link
+  child: BODY psm_pitch_top_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.184, y: 0.014, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.936, low: -0.942}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.861
+JOINT psm_pitch_front_joint:
+  name: psm_pitch_front_joint
+  parent: BODY psm_yaw_link
+  child: BODY psm_pitch_front_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: -0.066}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.942, low: -0.936}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: -0.291

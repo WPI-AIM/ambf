@@ -1,0 +1,263 @@
+bodies: [BODY world, BODY ecm_base_link, BODY ecm_yaw_link, BODY ecm_pitch_front_link,
+  BODY ecm_pitch_bottom_link, BODY ecm_pitch_end_link, BODY ecm_main_insertion_link,
+  BODY ecm_tool_link, BODY ecm_pitch_top_link, BODY ecm_pitch_back_link, BODY ecm_remote_center_link,
+  BODY ecm_end_link]
+joints: [JOINT ecm_yaw_joint, JOINT ecm_pitch_front_joint, JOINT ecm_pitch_bottom_joint,
+  JOINT ecm_pitch_end_joint, JOINT ecm_main_insertion_joint, JOINT ecm_tool_joint,
+  JOINT ecm_pitch_top_joint, JOINT ecm_pitch_back_joint]
+high resolution path: /home/adnan/wpi_ws/src/dvrk_env/dvrk_description/ecm/meshes/
+low resolution path: /home/adnan/wpi_ws/src/dvrk_env/dvrk_description/ecm/meshes/
+ignore inter-collision: 'True'
+BODY world:
+  name: world
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+BODY ecm_base_link:
+  name: ecm_base_link
+  mesh: base_link.STL
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: base_link.STL
+  color rgba: {a: 1.0, b: 0.5882, g: 0.6196, r: 0.6471}
+BODY ecm_yaw_link:
+  name: ecm_yaw_link
+  mesh: yaw_link.STL
+  mass: 6.417
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: yaw_link.STL
+  color rgba: {a: 1.0, b: 0.5882, g: 0.6196, r: 0.6471}
+BODY ecm_pitch_front_link:
+  name: ecm_pitch_front_link
+  mesh: pitch_front_link.STL
+  mass: 1.607
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_front_link.STL
+  color rgba: {a: 1.0, b: 0.5882, g: 0.6196, r: 0.6471}
+BODY ecm_pitch_bottom_link:
+  name: ecm_pitch_bottom_link
+  mesh: pitch_bottom_link.STL
+  mass: 0.359
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_bottom_link.STL
+  color rgba: {a: 1.0, b: 0.251, g: 0.251, r: 0.251}
+BODY ecm_pitch_end_link:
+  name: ecm_pitch_end_link
+  mesh: pitch_end_link.STL
+  mass: 2.032
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_end_link.STL
+  color rgba: {a: 1.0, b: 0.9294, g: 0.9176, r: 0.898}
+BODY ecm_main_insertion_link:
+  name: ecm_main_insertion_link
+  mesh: main_insertion_link.STL
+  mass: 0.231
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: main_insertion_link.STL
+  color rgba: {a: 1.0, b: 0.251, g: 0.251, r: 0.251}
+BODY ecm_tool_link:
+  name: ecm_tool_link
+  mesh: tool_link.STL
+  mass: 1.907
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: tool_link.STL
+  color rgba: {a: 1.0, b: 0.7529, g: 0.7529, r: 0.7529}
+BODY ecm_pitch_top_link:
+  name: ecm_pitch_top_link
+  mesh: pitch_top_link.STL
+  mass: 0.439
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_top_link.STL
+  color rgba: {a: 1.0, b: 0.0, g: 0.5177, r: 0.6471}
+BODY ecm_pitch_back_link:
+  name: ecm_pitch_back_link
+  mesh: pitch_back_link.STL
+  mass: 0.421
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: pitch_back_link.STL
+  color rgba: {a: 1.0, b: 0.0, g: 0.5177, r: 0.6471}
+BODY ecm_remote_center_link:
+  name: ecm_remote_center_link
+  mesh: remote_center_link.STL
+  mass: 0.004
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  collision mesh: remote_center_link.STL
+  color rgba: {a: 1.0, b: 1.0, g: 1.0, r: 1.0}
+BODY ecm_end_link:
+  name: ecm_end_link
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0, y: 0, z: 0}
+  color: random
+JOINT ecm_yaw_joint:
+  name: ecm_yaw_joint
+  parent: BODY ecm_base_link
+  child: BODY ecm_yaw_link
+  parent axis: {x: 1.0, y: 0.0, z: -0.0}
+  parent pivot: {x: 0.073, y: 0.0, z: 0.101}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.582, low: -1.595}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT ecm_pitch_front_joint:
+  name: ecm_pitch_front_joint
+  parent: BODY ecm_yaw_link
+  child: BODY ecm_pitch_front_link
+  parent axis: {x: 1.0, y: -0.002, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.199}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 3.14
+JOINT ecm_pitch_bottom_joint:
+  name: ecm_pitch_bottom_joint
+  parent: BODY ecm_pitch_front_link
+  child: BODY ecm_pitch_bottom_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.103, y: -0.287, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.784, low: -1.158}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT ecm_pitch_end_joint:
+  name: ecm_pitch_end_joint
+  parent: BODY ecm_pitch_bottom_link
+  child: BODY ecm_pitch_end_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.34, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT ecm_main_insertion_joint:
+  name: ecm_main_insertion_joint
+  parent: BODY ecm_pitch_end_link
+  child: BODY ecm_main_insertion_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.042, y: -0.086, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.254, low: 0.0}
+  enable motor: 1
+  max motor impulse: 0
+  type: prismatic
+JOINT ecm_tool_joint:
+  name: ecm_tool_joint
+  parent: BODY ecm_main_insertion_link
+  child: BODY ecm_tool_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.061, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: -1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.567, low: -1.553}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT ecm_pitch_top_joint:
+  name: ecm_pitch_top_joint
+  parent: BODY ecm_pitch_front_link
+  child: BODY ecm_pitch_top_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.108, y: -0.324, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 0.784, low: -1.158}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+JOINT ecm_pitch_back_joint:
+  name: ecm_pitch_back_joint
+  parent: BODY ecm_yaw_link
+  child: BODY ecm_pitch_back_link
+  parent axis: {x: 1.0, y: -0.002, z: 0.0}
+  parent pivot: {x: 0.0, y: -0.01, z: 0.162}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: -0.0, y: -0.0, z: -0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 1
+  max motor impulse: 0
+  type: revolute
+  offset: 3.14

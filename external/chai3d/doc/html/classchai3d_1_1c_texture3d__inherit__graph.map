@@ -1,0 +1,5 @@
+<map id="chai3d::cTexture3d" name="chai3d::cTexture3d">
+<area shape="rect" id="node2" href="$classchai3d_1_1c_texture2d.html" title="This class implements a 2D texture map. " alt="" coords="21,155,154,181"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_texture1d.html" title="This class implements a 1D texture map. " alt="" coords="21,80,154,107"/>
+<area shape="rect" id="node4" href="$classchai3d_1_1c_generic_texture.html" title="This class implements a base class for textures. " alt="" coords="5,5,169,32"/>
+</map>

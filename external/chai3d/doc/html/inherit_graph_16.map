@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classchai3d_1_1c_generic_array.html" title="This class implements an abstract class for describing geometrical elements composed of vertices..." alt="" coords="5,56,156,83"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_point_array.html" title="This class implements an array of 3D points. " alt="" coords="215,5,351,32"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_segment_array.html" title="This class implements an array of 3D segments. " alt="" coords="204,56,363,83"/>
+<area shape="rect" id="node4" href="$classchai3d_1_1c_triangle_array.html" title="This class implements an array of 3D triangles. " alt="" coords="207,107,359,133"/>
+</map>

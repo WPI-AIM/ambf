@@ -1,0 +1,230 @@
+bodies: [BODY base link, BODY main insertion link, BODY pitch back link, BODY pitch
+    bottom link, BODY pitch end link, BODY pitch front link, BODY pitch top link,
+  BODY remote center link, BODY tool link, BODY yaw link]
+joints: [JOINT pitch end link-main insertion link, JOINT yaw link-pitch back link,
+  JOINT pitch front link-pitch bottom link, JOINT pitch bottom link-pitch end link,
+  JOINT yaw link-pitch front link, JOINT pitch front link-pitch top link, JOINT main
+    insertion link-tool link, JOINT base link-yaw link]
+high resolution path: ../../../models/blender_afmb/ecm/high_res/
+low resolution path: ../../../models/blender_afmb/ecm/low_res/
+ignore inter-collision: 'True'
+BODY base link:
+  name: base link
+  mesh: base link.STL
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.005, y: -0.0, z: 0.08}
+  color rgba: {a: 1.0, b: 0.0112, g: 0.0122, r: 0.0106}
+BODY main insertion link:
+  name: main insertion link
+  mesh: main insertion link.STL
+  mass: 0.231
+  scale: 1.0
+  location:
+    orientation: {p: 1.573, r: -0.223, y: 1.348}
+    position: {x: 0.551, y: 0.001, z: 0.474}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.059, y: -0.017, z: 0.001}
+  color rgba: {a: 1.0, b: 0.0871, g: 0.0871, r: 0.0871}
+BODY pitch back link:
+  name: pitch back link
+  mesh: pitch back link.STL
+  mass: 0.421
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.573, y: -0.0}
+    position: {x: 0.235, y: 0.0, z: 0.091}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.051, y: -0.143, z: -0.009}
+  color rgba: {a: 1.0, b: 0.0, g: 0.5177, r: 0.6471}
+BODY pitch bottom link:
+  name: pitch bottom link
+  mesh: pitch bottom link.STL
+  mass: 0.359
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.573, y: -0.0}
+    position: {x: 0.169, y: 0.001, z: 0.388}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.149, y: -0.018, z: -0.0}
+  color rgba: {a: 1.0, b: 0.4672, g: 0.2051, r: 0.0938}
+BODY pitch end link:
+  name: pitch end link
+  mesh: pitch end link.STL
+  mass: 2.032
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.573, y: -0.0}
+    position: {x: 0.509, y: 0.001, z: 0.388}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.051, y: 0.005, z: 0.001}
+  color rgba: {a: 1.0, b: 0.4109, g: 0.4109, r: 0.3754}
+BODY pitch front link:
+  name: pitch front link
+  mesh: pitch front link.STL
+  mass: 1.607
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.573, y: -0.0}
+    position: {x: 0.272, y: 0.0, z: 0.101}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.036, y: -0.153, z: -0.0}
+  color rgba: {a: 1.0, b: 0.3672, g: 0.0886, r: 0.1344}
+BODY pitch top link:
+  name: pitch top link
+  mesh: pitch top link.STL
+  mass: 0.439
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.573, y: -0.0}
+    position: {x: 0.164, y: 0.001, z: 0.425}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.17, y: -0.0, z: 0.001}
+  color rgba: {a: 1.0, b: 0.0, g: 0.7623, r: 0.955}
+BODY remote center link:
+  name: remote center link
+  mesh: remote center link.STL
+  mass: 0.004
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  color rgba: {a: 1.0, b: 1.0, g: 1.0, r: 1.0}
+BODY tool link:
+  name: tool link
+  mesh: tool link.STL
+  mass: 1.907
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.002, y: -3.141}
+    position: {x: 0.612, y: 0.001, z: 0.474}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: -0.001, z: -0.072}
+  color rgba: {a: 1.0, b: 0.6266, g: 0.3733, r: 0.273}
+BODY yaw link:
+  name: yaw link
+  mesh: yaw link.STL
+  mass: 6.417
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 1.571, y: 1.571}
+    position: {x: 0.073, y: 0.0, z: 0.101}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.016, z: 0.134}
+  color rgba: {a: 1.0, b: 0.955, g: 0.4814, r: 0.3072}
+JOINT pitch end link-main insertion link:
+  name: pitch end link-main insertion link
+  parent: BODY pitch end link
+  child: BODY main insertion link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.042, y: -0.086, z: 0.0}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.254, low: 0.0}
+  enable motor: 0
+  max motor impulse: 0
+  type: prismatic
+JOINT yaw link-pitch back link:
+  name: yaw link-pitch back link
+  parent: BODY yaw link
+  child: BODY pitch back link
+  parent axis: {x: 1.0, y: -0.002, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.01, z: 0.162}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 3.14
+JOINT pitch front link-pitch bottom link:
+  name: pitch front link-pitch bottom link
+  parent: BODY pitch front link
+  child: BODY pitch bottom link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.103, y: -0.287, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.784, low: -1.158}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT pitch bottom link-pitch end link:
+  name: pitch bottom link-pitch end link
+  parent: BODY pitch bottom link
+  child: BODY pitch end link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.34, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT yaw link-pitch front link:
+  name: yaw link-pitch front link
+  parent: BODY yaw link
+  child: BODY pitch front link
+  parent axis: {x: 1.0, y: -0.002, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.199}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.158, low: -0.784}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 3.14
+JOINT pitch front link-pitch top link:
+  name: pitch front link-pitch top link
+  parent: BODY pitch front link
+  child: BODY pitch top link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.108, y: -0.324, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.784, low: -1.158}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT main insertion link-tool link:
+  name: main insertion link-tool link
+  parent: BODY main insertion link
+  child: BODY tool link
+  parent axis: {x: -1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: 0.0, y: -0.061, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.567, low: -1.553}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT base link-yaw link:
+  name: base link-yaw link
+  parent: BODY base link
+  child: BODY yaw link
+  parent axis: {x: 1.0, y: 0.0, z: -0.0}
+  parent pivot: {x: 0.073, y: 0.0, z: 0.101}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.582, low: -1.595}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571

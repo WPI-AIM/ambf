@@ -1,0 +1,480 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		96BA07D717B9E7F600E0E3DA /* ALc.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079417B9E7F600E0E3DA /* ALc.c */; };
+		96BA07D817B9E7F600E0E3DA /* alcConfig.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079517B9E7F600E0E3DA /* alcConfig.c */; };
+		96BA07D917B9E7F600E0E3DA /* alcDedicated.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079617B9E7F600E0E3DA /* alcDedicated.c */; };
+		96BA07DA17B9E7F600E0E3DA /* alcEcho.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079717B9E7F600E0E3DA /* alcEcho.c */; };
+		96BA07DB17B9E7F600E0E3DA /* alcModulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079817B9E7F600E0E3DA /* alcModulator.c */; };
+		96BA07DC17B9E7F600E0E3DA /* alcReverb.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079917B9E7F600E0E3DA /* alcReverb.c */; };
+		96BA07DD17B9E7F600E0E3DA /* alcRing.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079A17B9E7F600E0E3DA /* alcRing.c */; };
+		96BA07DE17B9E7F600E0E3DA /* alcThread.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079B17B9E7F600E0E3DA /* alcThread.c */; };
+		96BA07DF17B9E7F600E0E3DA /* ALu.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079C17B9E7F600E0E3DA /* ALu.c */; };
+		96BA07E117B9E7F600E0E3DA /* coreaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA079F17B9E7F600E0E3DA /* coreaudio.c */; };
+		96BA07E317B9E7F600E0E3DA /* loopback.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07A117B9E7F600E0E3DA /* loopback.c */; };
+		96BA07E517B9E7F600E0E3DA /* null.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07A317B9E7F600E0E3DA /* null.c */; };
+		96BA07EC17B9E7F600E0E3DA /* wave.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07AA17B9E7F600E0E3DA /* wave.c */; };
+		96BA07EE17B9E7F600E0E3DA /* bs2b.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07AC17B9E7F600E0E3DA /* bs2b.c */; };
+		96BA07EF17B9E7F600E0E3DA /* helpers.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07AD17B9E7F600E0E3DA /* helpers.c */; };
+		96BA07F017B9E7F600E0E3DA /* hrtf.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07AE17B9E7F600E0E3DA /* hrtf.c */; };
+		96BA07F217B9E7F600E0E3DA /* mixer.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07B017B9E7F600E0E3DA /* mixer.c */; };
+		96BA07F317B9E7F600E0E3DA /* mixer_c.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07B117B9E7F600E0E3DA /* mixer_c.c */; };
+		96BA07F417B9E7F600E0E3DA /* mixer_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07B217B9E7F600E0E3DA /* mixer_defs.h */; };
+		96BA07F617B9E7F600E0E3DA /* mixer_neon.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07B417B9E7F600E0E3DA /* mixer_neon.c */; };
+		96BA07F717B9E7F600E0E3DA /* mixer_sse.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07B517B9E7F600E0E3DA /* mixer_sse.c */; };
+		96BA07F817B9E7F600E0E3DA /* panning.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07B617B9E7F600E0E3DA /* panning.c */; };
+		96BA07F917B9E7F600E0E3DA /* al.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07B917B9E7F600E0E3DA /* al.h */; };
+		96BA07FA17B9E7F600E0E3DA /* alc.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BA17B9E7F600E0E3DA /* alc.h */; };
+		96BA07FB17B9E7F600E0E3DA /* alext.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BB17B9E7F600E0E3DA /* alext.h */; };
+		96BA07FC17B9E7F600E0E3DA /* efx-creative.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BC17B9E7F600E0E3DA /* efx-creative.h */; };
+		96BA07FD17B9E7F600E0E3DA /* efx-presets.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BD17B9E7F600E0E3DA /* efx-presets.h */; };
+		96BA07FE17B9E7F600E0E3DA /* efx.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BE17B9E7F600E0E3DA /* efx.h */; };
+		96BA07FF17B9E7F600E0E3DA /* alConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07BF17B9E7F600E0E3DA /* alConfig.h */; };
+		96BA080017B9E7F600E0E3DA /* alAuxEffectSlot.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C117B9E7F600E0E3DA /* alAuxEffectSlot.c */; };
+		96BA080117B9E7F600E0E3DA /* alBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C217B9E7F600E0E3DA /* alBuffer.c */; };
+		96BA080217B9E7F600E0E3DA /* alEffect.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C317B9E7F600E0E3DA /* alEffect.c */; };
+		96BA080317B9E7F600E0E3DA /* alError.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C417B9E7F600E0E3DA /* alError.c */; };
+		96BA080417B9E7F600E0E3DA /* alExtension.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C517B9E7F600E0E3DA /* alExtension.c */; };
+		96BA080517B9E7F600E0E3DA /* alFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C617B9E7F600E0E3DA /* alFilter.c */; };
+		96BA080617B9E7F600E0E3DA /* alListener.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C717B9E7F600E0E3DA /* alListener.c */; };
+		96BA080717B9E7F600E0E3DA /* alSource.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C817B9E7F600E0E3DA /* alSource.c */; };
+		96BA080817B9E7F600E0E3DA /* alState.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07C917B9E7F600E0E3DA /* alState.c */; };
+		96BA080917B9E7F600E0E3DA /* alThunk.c in Sources */ = {isa = PBXBuildFile; fileRef = 96BA07CA17B9E7F600E0E3DA /* alThunk.c */; };
+		96BA080A17B9E7F600E0E3DA /* alAuxEffectSlot.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07CC17B9E7F600E0E3DA /* alAuxEffectSlot.h */; };
+		96BA080B17B9E7F600E0E3DA /* alBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07CD17B9E7F600E0E3DA /* alBuffer.h */; };
+		96BA080C17B9E7F600E0E3DA /* alEffect.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07CE17B9E7F600E0E3DA /* alEffect.h */; };
+		96BA080D17B9E7F600E0E3DA /* alError.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07CF17B9E7F600E0E3DA /* alError.h */; };
+		96BA080E17B9E7F600E0E3DA /* alFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D017B9E7F600E0E3DA /* alFilter.h */; };
+		96BA080F17B9E7F600E0E3DA /* alListener.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D117B9E7F600E0E3DA /* alListener.h */; };
+		96BA081017B9E7F600E0E3DA /* alMain.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D217B9E7F600E0E3DA /* alMain.h */; };
+		96BA081117B9E7F600E0E3DA /* alSource.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D317B9E7F600E0E3DA /* alSource.h */; };
+		96BA081217B9E7F600E0E3DA /* alThunk.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D417B9E7F600E0E3DA /* alThunk.h */; };
+		96BA081317B9E7F600E0E3DA /* alu.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D517B9E7F600E0E3DA /* alu.h */; };
+		96BA081417B9E7F600E0E3DA /* bs2b.h in Headers */ = {isa = PBXBuildFile; fileRef = 96BA07D617B9E7F600E0E3DA /* bs2b.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		96BA079417B9E7F600E0E3DA /* ALc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ALc.c; sourceTree = "<group>"; };
+		96BA079517B9E7F600E0E3DA /* alcConfig.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcConfig.c; sourceTree = "<group>"; };
+		96BA079617B9E7F600E0E3DA /* alcDedicated.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcDedicated.c; sourceTree = "<group>"; };
+		96BA079717B9E7F600E0E3DA /* alcEcho.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcEcho.c; sourceTree = "<group>"; };
+		96BA079817B9E7F600E0E3DA /* alcModulator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcModulator.c; sourceTree = "<group>"; };
+		96BA079917B9E7F600E0E3DA /* alcReverb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcReverb.c; sourceTree = "<group>"; };
+		96BA079A17B9E7F600E0E3DA /* alcRing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcRing.c; sourceTree = "<group>"; };
+		96BA079B17B9E7F600E0E3DA /* alcThread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alcThread.c; sourceTree = "<group>"; };
+		96BA079C17B9E7F600E0E3DA /* ALu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ALu.c; sourceTree = "<group>"; };
+		96BA079F17B9E7F600E0E3DA /* coreaudio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = coreaudio.c; sourceTree = "<group>"; };
+		96BA07A117B9E7F600E0E3DA /* loopback.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = loopback.c; sourceTree = "<group>"; };
+		96BA07A317B9E7F600E0E3DA /* null.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = null.c; sourceTree = "<group>"; };
+		96BA07AA17B9E7F600E0E3DA /* wave.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wave.c; sourceTree = "<group>"; };
+		96BA07AC17B9E7F600E0E3DA /* bs2b.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bs2b.c; sourceTree = "<group>"; };
+		96BA07AD17B9E7F600E0E3DA /* helpers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = helpers.c; sourceTree = "<group>"; };
+		96BA07AE17B9E7F600E0E3DA /* hrtf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hrtf.c; sourceTree = "<group>"; };
+		96BA07B017B9E7F600E0E3DA /* mixer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mixer.c; sourceTree = "<group>"; };
+		96BA07B117B9E7F600E0E3DA /* mixer_c.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mixer_c.c; sourceTree = "<group>"; };
+		96BA07B217B9E7F600E0E3DA /* mixer_defs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mixer_defs.h; sourceTree = "<group>"; };
+		96BA07B417B9E7F600E0E3DA /* mixer_neon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mixer_neon.c; sourceTree = "<group>"; };
+		96BA07B517B9E7F600E0E3DA /* mixer_sse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mixer_sse.c; sourceTree = "<group>"; };
+		96BA07B617B9E7F600E0E3DA /* panning.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = panning.c; sourceTree = "<group>"; };
+		96BA07B917B9E7F600E0E3DA /* al.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = al.h; sourceTree = "<group>"; };
+		96BA07BA17B9E7F600E0E3DA /* alc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alc.h; sourceTree = "<group>"; };
+		96BA07BB17B9E7F600E0E3DA /* alext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alext.h; sourceTree = "<group>"; };
+		96BA07BC17B9E7F600E0E3DA /* efx-creative.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "efx-creative.h"; sourceTree = "<group>"; };
+		96BA07BD17B9E7F600E0E3DA /* efx-presets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "efx-presets.h"; sourceTree = "<group>"; };
+		96BA07BE17B9E7F600E0E3DA /* efx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = efx.h; sourceTree = "<group>"; };
+		96BA07BF17B9E7F600E0E3DA /* alConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alConfig.h; sourceTree = "<group>"; };
+		96BA07C117B9E7F600E0E3DA /* alAuxEffectSlot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alAuxEffectSlot.c; sourceTree = "<group>"; };
+		96BA07C217B9E7F600E0E3DA /* alBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alBuffer.c; sourceTree = "<group>"; };
+		96BA07C317B9E7F600E0E3DA /* alEffect.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alEffect.c; sourceTree = "<group>"; };
+		96BA07C417B9E7F600E0E3DA /* alError.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alError.c; sourceTree = "<group>"; };
+		96BA07C517B9E7F600E0E3DA /* alExtension.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alExtension.c; sourceTree = "<group>"; };
+		96BA07C617B9E7F600E0E3DA /* alFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alFilter.c; sourceTree = "<group>"; };
+		96BA07C717B9E7F600E0E3DA /* alListener.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alListener.c; sourceTree = "<group>"; };
+		96BA07C817B9E7F600E0E3DA /* alSource.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alSource.c; sourceTree = "<group>"; };
+		96BA07C917B9E7F600E0E3DA /* alState.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alState.c; sourceTree = "<group>"; };
+		96BA07CA17B9E7F600E0E3DA /* alThunk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = alThunk.c; sourceTree = "<group>"; };
+		96BA07CC17B9E7F600E0E3DA /* alAuxEffectSlot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alAuxEffectSlot.h; sourceTree = "<group>"; };
+		96BA07CD17B9E7F600E0E3DA /* alBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alBuffer.h; sourceTree = "<group>"; };
+		96BA07CE17B9E7F600E0E3DA /* alEffect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alEffect.h; sourceTree = "<group>"; };
+		96BA07CF17B9E7F600E0E3DA /* alError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alError.h; sourceTree = "<group>"; };
+		96BA07D017B9E7F600E0E3DA /* alFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alFilter.h; sourceTree = "<group>"; };
+		96BA07D117B9E7F600E0E3DA /* alListener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alListener.h; sourceTree = "<group>"; };
+		96BA07D217B9E7F600E0E3DA /* alMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alMain.h; sourceTree = "<group>"; };
+		96BA07D317B9E7F600E0E3DA /* alSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alSource.h; sourceTree = "<group>"; };
+		96BA07D417B9E7F600E0E3DA /* alThunk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alThunk.h; sourceTree = "<group>"; };
+		96BA07D517B9E7F600E0E3DA /* alu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alu.h; sourceTree = "<group>"; };
+		96BA07D617B9E7F600E0E3DA /* bs2b.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bs2b.h; sourceTree = "<group>"; };
+		96FF33040FBD2C2800F259B8 /* libopenal.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libopenal.a; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		96FF33020FBD2C2800F259B8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		96BA079317B9E7F600E0E3DA /* Alc */ = {
+			isa = PBXGroup;
+			children = (
+				96BA079417B9E7F600E0E3DA /* ALc.c */,
+				96BA079517B9E7F600E0E3DA /* alcConfig.c */,
+				96BA079617B9E7F600E0E3DA /* alcDedicated.c */,
+				96BA079717B9E7F600E0E3DA /* alcEcho.c */,
+				96BA079817B9E7F600E0E3DA /* alcModulator.c */,
+				96BA079917B9E7F600E0E3DA /* alcReverb.c */,
+				96BA079A17B9E7F600E0E3DA /* alcRing.c */,
+				96BA079B17B9E7F600E0E3DA /* alcThread.c */,
+				96BA079C17B9E7F600E0E3DA /* ALu.c */,
+				96BA079D17B9E7F600E0E3DA /* backends */,
+				96BA07AC17B9E7F600E0E3DA /* bs2b.c */,
+				96BA07AD17B9E7F600E0E3DA /* helpers.c */,
+				96BA07AE17B9E7F600E0E3DA /* hrtf.c */,
+				96BA07B017B9E7F600E0E3DA /* mixer.c */,
+				96BA07B117B9E7F600E0E3DA /* mixer_c.c */,
+				96BA07B217B9E7F600E0E3DA /* mixer_defs.h */,
+				96BA07B417B9E7F600E0E3DA /* mixer_neon.c */,
+				96BA07B517B9E7F600E0E3DA /* mixer_sse.c */,
+				96BA07B617B9E7F600E0E3DA /* panning.c */,
+			);
+			path = Alc;
+			sourceTree = "<group>";
+		};
+		96BA079D17B9E7F600E0E3DA /* backends */ = {
+			isa = PBXGroup;
+			children = (
+				96BA079F17B9E7F600E0E3DA /* coreaudio.c */,
+				96BA07A117B9E7F600E0E3DA /* loopback.c */,
+				96BA07A317B9E7F600E0E3DA /* null.c */,
+				96BA07AA17B9E7F600E0E3DA /* wave.c */,
+			);
+			path = backends;
+			sourceTree = "<group>";
+		};
+		96BA07B717B9E7F600E0E3DA /* include */ = {
+			isa = PBXGroup;
+			children = (
+				96BA07B817B9E7F600E0E3DA /* AL */,
+				96BA07BF17B9E7F600E0E3DA /* alConfig.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		96BA07B817B9E7F600E0E3DA /* AL */ = {
+			isa = PBXGroup;
+			children = (
+				96BA07B917B9E7F600E0E3DA /* al.h */,
+				96BA07BA17B9E7F600E0E3DA /* alc.h */,
+				96BA07BB17B9E7F600E0E3DA /* alext.h */,
+				96BA07BC17B9E7F600E0E3DA /* efx-creative.h */,
+				96BA07BD17B9E7F600E0E3DA /* efx-presets.h */,
+				96BA07BE17B9E7F600E0E3DA /* efx.h */,
+			);
+			path = AL;
+			sourceTree = "<group>";
+		};
+		96BA07C017B9E7F600E0E3DA /* OpenAL32 */ = {
+			isa = PBXGroup;
+			children = (
+				96BA07C117B9E7F600E0E3DA /* alAuxEffectSlot.c */,
+				96BA07C217B9E7F600E0E3DA /* alBuffer.c */,
+				96BA07C317B9E7F600E0E3DA /* alEffect.c */,
+				96BA07C417B9E7F600E0E3DA /* alError.c */,
+				96BA07C517B9E7F600E0E3DA /* alExtension.c */,
+				96BA07C617B9E7F600E0E3DA /* alFilter.c */,
+				96BA07C717B9E7F600E0E3DA /* alListener.c */,
+				96BA07C817B9E7F600E0E3DA /* alSource.c */,
+				96BA07C917B9E7F600E0E3DA /* alState.c */,
+				96BA07CA17B9E7F600E0E3DA /* alThunk.c */,
+				96BA07CB17B9E7F600E0E3DA /* Include */,
+			);
+			path = OpenAL32;
+			sourceTree = "<group>";
+		};
+		96BA07CB17B9E7F600E0E3DA /* Include */ = {
+			isa = PBXGroup;
+			children = (
+				96BA07CC17B9E7F600E0E3DA /* alAuxEffectSlot.h */,
+				96BA07CD17B9E7F600E0E3DA /* alBuffer.h */,
+				96BA07CE17B9E7F600E0E3DA /* alEffect.h */,
+				96BA07CF17B9E7F600E0E3DA /* alError.h */,
+				96BA07D017B9E7F600E0E3DA /* alFilter.h */,
+				96BA07D117B9E7F600E0E3DA /* alListener.h */,
+				96BA07D217B9E7F600E0E3DA /* alMain.h */,
+				96BA07D317B9E7F600E0E3DA /* alSource.h */,
+				96BA07D417B9E7F600E0E3DA /* alThunk.h */,
+				96BA07D517B9E7F600E0E3DA /* alu.h */,
+				96BA07D617B9E7F600E0E3DA /* bs2b.h */,
+			);
+			path = Include;
+			sourceTree = "<group>";
+		};
+		96FF32ED0FBD2BDF00F259B8 = {
+			isa = PBXGroup;
+			children = (
+				96FF33E10FBD2D5D00F259B8 /* Sources */,
+				96FF33050FBD2C2800F259B8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		96FF33050FBD2C2800F259B8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96FF33040FBD2C2800F259B8 /* libopenal.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96FF33E10FBD2D5D00F259B8 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				96BA079317B9E7F600E0E3DA /* Alc */,
+				96BA07B717B9E7F600E0E3DA /* include */,
+				96BA07C017B9E7F600E0E3DA /* OpenAL32 */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		96FF33000FBD2C2800F259B8 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96BA07F417B9E7F600E0E3DA /* mixer_defs.h in Headers */,
+				96BA07F917B9E7F600E0E3DA /* al.h in Headers */,
+				96BA07FA17B9E7F600E0E3DA /* alc.h in Headers */,
+				96BA07FB17B9E7F600E0E3DA /* alext.h in Headers */,
+				96BA07FC17B9E7F600E0E3DA /* efx-creative.h in Headers */,
+				96BA07FD17B9E7F600E0E3DA /* efx-presets.h in Headers */,
+				96BA07FE17B9E7F600E0E3DA /* efx.h in Headers */,
+				96BA07FF17B9E7F600E0E3DA /* alConfig.h in Headers */,
+				96BA080A17B9E7F600E0E3DA /* alAuxEffectSlot.h in Headers */,
+				96BA080B17B9E7F600E0E3DA /* alBuffer.h in Headers */,
+				96BA080C17B9E7F600E0E3DA /* alEffect.h in Headers */,
+				96BA080D17B9E7F600E0E3DA /* alError.h in Headers */,
+				96BA080E17B9E7F600E0E3DA /* alFilter.h in Headers */,
+				96BA080F17B9E7F600E0E3DA /* alListener.h in Headers */,
+				96BA081017B9E7F600E0E3DA /* alMain.h in Headers */,
+				96BA081117B9E7F600E0E3DA /* alSource.h in Headers */,
+				96BA081217B9E7F600E0E3DA /* alThunk.h in Headers */,
+				96BA081317B9E7F600E0E3DA /* alu.h in Headers */,
+				96BA081417B9E7F600E0E3DA /* bs2b.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		96FF33030FBD2C2800F259B8 /* openal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96FF33080FBD2C2900F259B8 /* Build configuration list for PBXNativeTarget "openal" */;
+			buildPhases = (
+				96FF33000FBD2C2800F259B8 /* Headers */,
+				96FF33010FBD2C2800F259B8 /* Sources */,
+				96FF33020FBD2C2800F259B8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = openal;
+			productName = ode;
+			productReference = 96FF33040FBD2C2800F259B8 /* libopenal.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		96FF32EF0FBD2BDF00F259B8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0800;
+			};
+			buildConfigurationList = 96FF32F20FBD2BDF00F259B8 /* Build configuration list for PBXProject "openal" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 96FF32ED0FBD2BDF00F259B8;
+			productRefGroup = 96FF33050FBD2C2800F259B8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				96FF33030FBD2C2800F259B8 /* openal */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		96FF33010FBD2C2800F259B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96BA07D717B9E7F600E0E3DA /* ALc.c in Sources */,
+				96BA07D817B9E7F600E0E3DA /* alcConfig.c in Sources */,
+				96BA07D917B9E7F600E0E3DA /* alcDedicated.c in Sources */,
+				96BA07DA17B9E7F600E0E3DA /* alcEcho.c in Sources */,
+				96BA07DB17B9E7F600E0E3DA /* alcModulator.c in Sources */,
+				96BA07DC17B9E7F600E0E3DA /* alcReverb.c in Sources */,
+				96BA07DD17B9E7F600E0E3DA /* alcRing.c in Sources */,
+				96BA07DE17B9E7F600E0E3DA /* alcThread.c in Sources */,
+				96BA07DF17B9E7F600E0E3DA /* ALu.c in Sources */,
+				96BA07E117B9E7F600E0E3DA /* coreaudio.c in Sources */,
+				96BA07E317B9E7F600E0E3DA /* loopback.c in Sources */,
+				96BA07E517B9E7F600E0E3DA /* null.c in Sources */,
+				96BA07EC17B9E7F600E0E3DA /* wave.c in Sources */,
+				96BA07EE17B9E7F600E0E3DA /* bs2b.c in Sources */,
+				96BA07EF17B9E7F600E0E3DA /* helpers.c in Sources */,
+				96BA07F017B9E7F600E0E3DA /* hrtf.c in Sources */,
+				96BA07F217B9E7F600E0E3DA /* mixer.c in Sources */,
+				96BA07F317B9E7F600E0E3DA /* mixer_c.c in Sources */,
+				96BA07F617B9E7F600E0E3DA /* mixer_neon.c in Sources */,
+				96BA07F717B9E7F600E0E3DA /* mixer_sse.c in Sources */,
+				96BA07F817B9E7F600E0E3DA /* panning.c in Sources */,
+				96BA080017B9E7F600E0E3DA /* alAuxEffectSlot.c in Sources */,
+				96BA080117B9E7F600E0E3DA /* alBuffer.c in Sources */,
+				96BA080217B9E7F600E0E3DA /* alEffect.c in Sources */,
+				96BA080317B9E7F600E0E3DA /* alError.c in Sources */,
+				96BA080417B9E7F600E0E3DA /* alExtension.c in Sources */,
+				96BA080517B9E7F600E0E3DA /* alFilter.c in Sources */,
+				96BA080617B9E7F600E0E3DA /* alListener.c in Sources */,
+				96BA080717B9E7F600E0E3DA /* alSource.c in Sources */,
+				96BA080817B9E7F600E0E3DA /* alState.c in Sources */,
+				96BA080917B9E7F600E0E3DA /* alThunk.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		96FF32F00FBD2BDF00F259B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					AL_BUILD_LIBRARY,
+					AL_ALEXT_PROTOTYPES,
+					MACOSX,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = include;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+			};
+			name = Debug;
+		};
+		96FF32F10FBD2BDF00F259B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					AL_BUILD_LIBRARY,
+					AL_ALEXT_PROTOTYPES,
+					MACOSX,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = include;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+			};
+			name = Release;
+		};
+		96FF33060FBD2C2900F259B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				PRODUCT_NAME = openal;
+			};
+			name = Debug;
+		};
+		96FF33070FBD2C2900F259B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				PRODUCT_NAME = openal;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		96FF32F20FBD2BDF00F259B8 /* Build configuration list for PBXProject "openal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96FF32F00FBD2BDF00F259B8 /* Debug */,
+				96FF32F10FBD2BDF00F259B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96FF33080FBD2C2900F259B8 /* Build configuration list for PBXNativeTarget "openal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96FF33060FBD2C2900F259B8 /* Debug */,
+				96FF33070FBD2C2900F259B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 96FF32EF0FBD2BDF00F259B8 /* Project object */;
+}

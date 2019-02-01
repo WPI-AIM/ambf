@@ -1,0 +1,12 @@
+bodies: [cylinder]
+joints: []
+high resolution path: ../../../models/tools/high_res/
+low resolution path: ../../../models/tools/low_res/
+
+cylinder:
+ name: cylinder
+ mass: 0.08
+ mesh: Cylinder.STL
+ scale: 1.0
+ friction: {static: 0.2}
+ color: random

@@ -1,0 +1,30 @@
+# This is the base file for Coordination Application
+world config: ./world/world.yaml
+color config: ./color/colors.yaml
+multibody configs:
+  # - "./multi-bodies/robots/urdf-mtm.yaml"
+  # - "./multi-bodies/robots/urdf-ecm.yaml"
+  # - "./multi-bodies/robots/urdf-psm.yaml"
+  # - "./multi-bodies/robots/urdf-suj.yaml"
+  # - "./multi-bodies/robots/urdf-kuka.yaml"
+  # - "./multi-bodies/robots/blender-mtm.yaml"
+  # - "./multi-bodies/robots/blender-ecm.yaml"
+  # - "./multi-bodies/robots/blender-psm.yaml"
+  # - "./multi-bodies/robots/blender-suj.yaml"
+  # - "./multi-bodies/robots/blender-kuka.yaml"
+  - "./multi-bodies/puzzles/puzzle1.yaml"
+gripper configs:
+  - Default
+  - MTMR
+  - MTML
+  - Novint Falcon
+  - Geomagic Touch
+  - PHANTOM Omni
+  - Razer Hydra
+Default: "./multi-bodies/grippers/single joint1.yaml"
+MTMR: "./multi-bodies/grippers/multi joint1.yaml"
+MTML: "./multi-bodies/grippers/multi joint1.yaml"
+Novint Falcon: "./multi-bodies/grippers/single joint2.yaml"
+Geomagic Touch: "./multi-bodies/grippers/single joint1.yaml"
+PHANTOM Omni: "./multi-bodies/grippers/pr2 gripper.yaml"
+Razer Hydra: "./multi-bodies/grippers/pr2 gripper.yaml"

@@ -1,0 +1,12 @@
+bodies: [tool]
+joints: []
+high resolution path: ../../../models/tools/high_res/
+low resolution path: ../../../models/tools/low_res/
+
+tool:
+ name: bar
+ mass: 0.08
+ mesh: Bar.STL
+ scale: 1.0
+ friction: {static: 0.8}
+ color: magenta

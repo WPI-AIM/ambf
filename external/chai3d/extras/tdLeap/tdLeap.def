@@ -1,0 +1,10 @@
+EXPORTS
+   tdLeapGetNumDevices
+   tdLeapOpen
+   tdLeapClose
+   tdLeapUpdate
+   tdLeapGetPosition
+   tdLeapGetRotation
+   tdLeapGetGripperAngleRad
+   tdLeapGetUserSwitches
+   tdLeapGetFrame

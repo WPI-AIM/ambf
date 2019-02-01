@@ -1,0 +1,9 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classchai3d_1_1c_generic_device.html" title="This class implements an abstract class for hardware devices. " alt="" coords="5,107,167,133"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_generic_haptic_device.html" title="This class implements a base class for haptic devices. " alt="" coords="215,107,413,133"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_delta_device.html" title="This class implements an interface to all Force Dimension and Novint haptic devices. " alt="" coords="478,5,625,32"/>
+<area shape="rect" id="node4" href="$classchai3d_1_1c_leap_device.html" title="This class implements an interface to the Leap Motion tracker interface. " alt="" coords="479,56,623,83"/>
+<area shape="rect" id="node5" href="$classchai3d_1_1c_my_custom_device.html" title="This class is a interface to support custom haptic devices (template). " alt="" coords="461,107,641,133"/>
+<area shape="rect" id="node6" href="$classchai3d_1_1c_phantom_device.html" title="This class implements an interface to all 3D&#45;System Phantom haptic devices. " alt="" coords="467,157,635,184"/>
+<area shape="rect" id="node7" href="$classchai3d_1_1c_sixense_device.html" title="This class implements an interface to the Sixense Razor Hydra magnetic tracker interface. " alt="" coords="470,208,633,235"/>
+</map>

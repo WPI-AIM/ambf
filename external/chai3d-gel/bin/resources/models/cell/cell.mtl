@@ -1,0 +1,86 @@
+# 
+# Wavefront material file
+# Converted by the DEEP Exploration  Deep Exploration 5.5 5.5.4.2708 Release
+# Right Hemisphere, LTD
+# http://www.righthemisphere.com/
+# 
+
+newmtl Red_Vascular
+Ka 0.6 0.6 0.6
+Kd 0.6 0.6 0.6
+Ks 0.9 0.9 0.9
+illum 2
+Ns 2
+map_Kd RedVascular.bmp
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Blue_Vascular
+Ka 0.6 0.6 0.6
+Kd 0.6 0.6 0.6
+Ks 0.9 0.9 0.9
+illum 2
+Ns 2
+map_Kd BlueVascular.bmp
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Green_Vascular
+Ka 0.6 0.6 0.6
+Kd 0.6 0.6 0.6
+Ks 0.9 0.9 0.9
+illum 2
+Ns 2
+map_Kd GreenVascular.bmp
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Heart
+Ka 0.6 0.6 0.6
+Kd 0.6 0.6 0.6
+Ks 0.9 0.9 0.9
+illum 2
+Ns 2
+map_Kd Heart.bmp
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl Environment
+Ka 0.6 0.6 0.6
+Kd 0.6 0.6 0.6
+Ks 0.9 0.9 0.9
+illum 2
+Ns 2
+map_Kd Environment.bmp
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 

@@ -1,0 +1,904 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		9662C26E0FC0207300177FFC /* All */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 9662C2780FC020C900177FFC /* Build configuration list for PBXAggregateTarget "All" */;
+			buildPhases = (
+			);
+			dependencies = (
+				96D0117E14E3727800446A6B /* PBXTargetDependency */,
+				96D0119814E3733B00446A6B /* PBXTargetDependency */,
+				96D011B414E373C400446A6B /* PBXTargetDependency */,
+			);
+			name = All;
+			productName = All;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		9655D47D17549C0500E47F24 /* libdrd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9655D47C17549C0500E47F24 /* libdrd.a */; };
+		9655D47F17549C2800E47F24 /* libdrd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9655D47C17549C0500E47F24 /* libdrd.a */; };
+		9655D48017549C2D00E47F24 /* libdrd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9655D47C17549C0500E47F24 /* libdrd.a */; };
+		9670695B1500C42F001F52FA /* 01-GEL-membrane.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9670695A1500C42F001F52FA /* 01-GEL-membrane.cpp */; };
+		9670695D1500C449001F52FA /* 02-GEL-cell.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9670695C1500C449001F52FA /* 02-GEL-cell.cpp */; };
+		967069631500C462001F52FA /* 03-GEL-duck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9670695E1500C462001F52FA /* 03-GEL-duck.cpp */; };
+		967069641500C462001F52FA /* predicates.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 967069601500C462001F52FA /* predicates.cpp */; };
+		967069651500C462001F52FA /* tetgen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 967069611500C462001F52FA /* tetgen.cpp */; };
+		96AFEB8719A9ED4B00B87262 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8619A9ED4B00B87262 /* CoreAudio.framework */; };
+		96AFEB8919A9ED5800B87262 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8819A9ED5800B87262 /* AudioToolbox.framework */; };
+		96AFEB8B19A9ED6400B87262 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8A19A9ED6400B87262 /* AudioUnit.framework */; };
+		96AFEB8C19A9EDD700B87262 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8619A9ED4B00B87262 /* CoreAudio.framework */; };
+		96AFEB8D19A9EDD700B87262 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8819A9ED5800B87262 /* AudioToolbox.framework */; };
+		96AFEB8E19A9EDD700B87262 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8A19A9ED6400B87262 /* AudioUnit.framework */; };
+		96AFEB8F19A9EDEB00B87262 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8619A9ED4B00B87262 /* CoreAudio.framework */; };
+		96AFEB9019A9EDEB00B87262 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8819A9ED5800B87262 /* AudioToolbox.framework */; };
+		96AFEB9119A9EDEB00B87262 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96AFEB8A19A9ED6400B87262 /* AudioUnit.framework */; };
+		96BBEC8B15007C49004DCE30 /* libchai3d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96BBEC8715007C24004DCE30 /* libchai3d.a */; };
+		96BBEC9C15007C9F004DCE30 /* libchai3d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96BBEC8715007C24004DCE30 /* libchai3d.a */; };
+		96BBECA215007D8A004DCE30 /* libchai3d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96BBEC8715007C24004DCE30 /* libchai3d.a */; };
+		96BBECB015007E0E004DCE30 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 967EBB4011E311A7006A62E9 /* CoreServices.framework */; };
+		96BBECB115007E46004DCE30 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 967EBB4011E311A7006A62E9 /* CoreServices.framework */; };
+		96BBECB215007E53004DCE30 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 967EBB4011E311A7006A62E9 /* CoreServices.framework */; };
+		96CB03731D9C6714008D07F6 /* libglfw.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB036C1D9C667A008D07F6 /* libglfw.a */; };
+		96CB03751D9C671A008D07F6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03741D9C671A008D07F6 /* Cocoa.framework */; };
+		96CB03771D9C6724008D07F6 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03761D9C6724008D07F6 /* CoreVideo.framework */; };
+		96CB03781D9C672E008D07F6 /* libglfw.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB036C1D9C667A008D07F6 /* libglfw.a */; };
+		96CB03791D9C6736008D07F6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03741D9C671A008D07F6 /* Cocoa.framework */; };
+		96CB037A1D9C673D008D07F6 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03761D9C6724008D07F6 /* CoreVideo.framework */; };
+		96CB037B1D9C6746008D07F6 /* libglfw.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB036C1D9C667A008D07F6 /* libglfw.a */; };
+		96CB037C1D9C674C008D07F6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03741D9C671A008D07F6 /* Cocoa.framework */; };
+		96CB037D1D9C6753008D07F6 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96CB03761D9C6724008D07F6 /* CoreVideo.framework */; };
+		96D0117814E3723C00446A6B /* libchai3d-GEL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 962E5F0414C52C27008E447A /* libchai3d-GEL.a */; };
+		96D0117914E3724400446A6B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C1470FC01C9000177FFC /* CoreFoundation.framework */; };
+		96D0117A14E3725300446A6B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C13C0FC01C0D00177FFC /* OpenGL.framework */; };
+		96D0117B14E3725C00446A6B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C14B0FC01CB000177FFC /* IOKit.framework */; };
+		96D0119214E3730A00446A6B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C13C0FC01C0D00177FFC /* OpenGL.framework */; };
+		96D0119314E3731200446A6B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C14B0FC01CB000177FFC /* IOKit.framework */; };
+		96D0119514E3731D00446A6B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C1470FC01C9000177FFC /* CoreFoundation.framework */; };
+		96D0119614E3732100446A6B /* libchai3d-GEL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 962E5F0414C52C27008E447A /* libchai3d-GEL.a */; };
+		96D011AE14E373A400446A6B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C13C0FC01C0D00177FFC /* OpenGL.framework */; };
+		96D011AF14E373AC00446A6B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C14B0FC01CB000177FFC /* IOKit.framework */; };
+		96D011B114E373B900446A6B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9662C1470FC01C9000177FFC /* CoreFoundation.framework */; };
+		96D011B214E373BC00446A6B /* libchai3d-GEL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 962E5F0414C52C27008E447A /* libchai3d-GEL.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		962E5F0314C52C27008E447A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96BBEC8615007C24004DCE30 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96BBEC8915007C41004DCE30 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96BBEC8C15007C56004DCE30 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96BBEC9E15007D7F004DCE30 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96CB036B1D9C667A008D07F6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 96FF33040FBD2C2800F259B8;
+			remoteInfo = glfw;
+		};
+		96CB036D1D9C6700008D07F6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 96FF33030FBD2C2800F259B8;
+			remoteInfo = glfw;
+		};
+		96CB036F1D9C6707008D07F6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 96FF33030FBD2C2800F259B8;
+			remoteInfo = glfw;
+		};
+		96CB03711D9C670B008D07F6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 96FF33030FBD2C2800F259B8;
+			remoteInfo = glfw;
+		};
+		96D0117614E3722C00446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96D0117D14E3727800446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96D0116814E3713C00446A6B;
+			remoteInfo = "01-GEL-membrane";
+		};
+		96D0119014E372FA00446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96D0119714E3733B00446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96D0118314E372C600446A6B;
+			remoteInfo = "02-GEL-cell";
+		};
+		96D011AA14E3738D00446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96D011B314E373C400446A6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96D0119C14E3735000446A6B;
+			remoteInfo = "03-GEL-duck";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "libchai3d-GEL.xcodeproj"; sourceTree = "<group>"; };
+		9655D47C17549C0500E47F24 /* libdrd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdrd.a; path = ../../external/DHD/lib/mac/libdrd.a; sourceTree = "<group>"; };
+		9662C1380FC01BFF00177FFC /* GLFW.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLFW.framework; path = System/Library/Frameworks/GLFW.framework; sourceTree = SDKROOT; };
+		9662C13C0FC01C0D00177FFC /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		9662C1470FC01C9000177FFC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		9662C14B0FC01CB000177FFC /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		9670695A1500C42F001F52FA /* 01-GEL-membrane.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "01-GEL-membrane.cpp"; path = "examples/GLFW/01-GEL-membrane/01-GEL-membrane.cpp"; sourceTree = "<group>"; };
+		9670695C1500C449001F52FA /* 02-GEL-cell.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "02-GEL-cell.cpp"; path = "examples/GLFW/02-GEL-cell/02-GEL-cell.cpp"; sourceTree = "<group>"; };
+		9670695E1500C462001F52FA /* 03-GEL-duck.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "03-GEL-duck.cpp"; path = "examples/GLFW/03-GEL-duck/03-GEL-duck.cpp"; sourceTree = "<group>"; };
+		9670695F1500C462001F52FA /* geometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = geometry.h; path = "examples/GLFW/03-GEL-duck/geometry.h"; sourceTree = "<group>"; };
+		967069601500C462001F52FA /* predicates.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = predicates.cpp; path = "examples/GLFW/03-GEL-duck/predicates.cpp"; sourceTree = "<group>"; };
+		967069611500C462001F52FA /* tetgen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tetgen.cpp; path = "examples/GLFW/03-GEL-duck/tetgen.cpp"; sourceTree = "<group>"; };
+		967069621500C462001F52FA /* tetgen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tetgen.h; path = "examples/GLFW/03-GEL-duck/tetgen.h"; sourceTree = "<group>"; };
+		967EBB4011E311A7006A62E9 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		96AFEB8619A9ED4B00B87262 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		96AFEB8819A9ED5800B87262 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		96AFEB8A19A9ED6400B87262 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libchai3d.xcodeproj; path = ../../libchai3d.xcodeproj; sourceTree = "<group>"; };
+		96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = GLFW.xcodeproj; path = ../../extras/GLFW/GLFW.xcodeproj; sourceTree = "<group>"; };
+		96CB03741D9C671A008D07F6 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		96CB03761D9C6724008D07F6 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		96D0116914E3713C00446A6B /* 01-GEL-membrane */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "01-GEL-membrane"; sourceTree = BUILT_PRODUCTS_DIR; };
+		96D0118414E372C600446A6B /* 02-GEL-cell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "02-GEL-cell"; sourceTree = BUILT_PRODUCTS_DIR; };
+		96D0119D14E3735000446A6B /* 03-GEL-duck */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "03-GEL-duck"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		96D0116614E3713C00446A6B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96CB03731D9C6714008D07F6 /* libglfw.a in Frameworks */,
+				96BBEC8B15007C49004DCE30 /* libchai3d.a in Frameworks */,
+				96D0117814E3723C00446A6B /* libchai3d-GEL.a in Frameworks */,
+				9655D47D17549C0500E47F24 /* libdrd.a in Frameworks */,
+				96CB03751D9C671A008D07F6 /* Cocoa.framework in Frameworks */,
+				96D0117914E3724400446A6B /* CoreFoundation.framework in Frameworks */,
+				96D0117B14E3725C00446A6B /* IOKit.framework in Frameworks */,
+				96D0117A14E3725300446A6B /* OpenGL.framework in Frameworks */,
+				96BBECB015007E0E004DCE30 /* CoreServices.framework in Frameworks */,
+				96AFEB8719A9ED4B00B87262 /* CoreAudio.framework in Frameworks */,
+				96CB03771D9C6724008D07F6 /* CoreVideo.framework in Frameworks */,
+				96AFEB8919A9ED5800B87262 /* AudioToolbox.framework in Frameworks */,
+				96AFEB8B19A9ED6400B87262 /* AudioUnit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96D0118114E372C600446A6B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96CB03781D9C672E008D07F6 /* libglfw.a in Frameworks */,
+				96BBEC9C15007C9F004DCE30 /* libchai3d.a in Frameworks */,
+				96D0119614E3732100446A6B /* libchai3d-GEL.a in Frameworks */,
+				9655D47F17549C2800E47F24 /* libdrd.a in Frameworks */,
+				96CB03791D9C6736008D07F6 /* Cocoa.framework in Frameworks */,
+				96D0119514E3731D00446A6B /* CoreFoundation.framework in Frameworks */,
+				96D0119314E3731200446A6B /* IOKit.framework in Frameworks */,
+				96D0119214E3730A00446A6B /* OpenGL.framework in Frameworks */,
+				96BBECB115007E46004DCE30 /* CoreServices.framework in Frameworks */,
+				96AFEB8C19A9EDD700B87262 /* CoreAudio.framework in Frameworks */,
+				96CB037A1D9C673D008D07F6 /* CoreVideo.framework in Frameworks */,
+				96AFEB8D19A9EDD700B87262 /* AudioToolbox.framework in Frameworks */,
+				96AFEB8E19A9EDD700B87262 /* AudioUnit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96D0119A14E3735000446A6B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96CB037B1D9C6746008D07F6 /* libglfw.a in Frameworks */,
+				96BBECA215007D8A004DCE30 /* libchai3d.a in Frameworks */,
+				96D011B214E373BC00446A6B /* libchai3d-GEL.a in Frameworks */,
+				9655D48017549C2D00E47F24 /* libdrd.a in Frameworks */,
+				96CB037C1D9C674C008D07F6 /* Cocoa.framework in Frameworks */,
+				96D011B114E373B900446A6B /* CoreFoundation.framework in Frameworks */,
+				96D011AF14E373AC00446A6B /* IOKit.framework in Frameworks */,
+				96D011AE14E373A400446A6B /* OpenGL.framework in Frameworks */,
+				96BBECB215007E53004DCE30 /* CoreServices.framework in Frameworks */,
+				96AFEB8F19A9EDEB00B87262 /* CoreAudio.framework in Frameworks */,
+				96CB037D1D9C6753008D07F6 /* CoreVideo.framework in Frameworks */,
+				96AFEB9019A9EDEB00B87262 /* AudioToolbox.framework in Frameworks */,
+				96AFEB9119A9EDEB00B87262 /* AudioUnit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* chai3d-GEL */ = {
+			isa = PBXGroup;
+			children = (
+				96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */,
+				962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */,
+				9662C0EB0FC0182300177FFC /* Examples */,
+				9655D47E17549C0900E47F24 /* External */,
+				96CB03661D9C6664008D07F6 /* Extras */,
+				9662C1530FC01D9100177FFC /* Frameworks */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = "chai3d-GEL";
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96D0116914E3713C00446A6B /* 01-GEL-membrane */,
+				96D0118414E372C600446A6B /* 02-GEL-cell */,
+				96D0119D14E3735000446A6B /* 03-GEL-duck */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		962E5EED14C52C26008E447A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				962E5F0414C52C27008E447A /* libchai3d-GEL.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9655D47E17549C0900E47F24 /* External */ = {
+			isa = PBXGroup;
+			children = (
+				9655D47C17549C0500E47F24 /* libdrd.a */,
+			);
+			name = External;
+			sourceTree = "<group>";
+		};
+		9662C0EB0FC0182300177FFC /* Examples */ = {
+			isa = PBXGroup;
+			children = (
+				96D0117314E371F000446A6B /* 01-GEL-membrane */,
+				96D0117F14E3729900446A6B /* 02-GEL-cell */,
+				96D011A714E3735D00446A6B /* 03-GEL-duck */,
+			);
+			name = Examples;
+			sourceTree = "<group>";
+		};
+		9662C1530FC01D9100177FFC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				96CB03761D9C6724008D07F6 /* CoreVideo.framework */,
+				96CB03741D9C671A008D07F6 /* Cocoa.framework */,
+				9662C1470FC01C9000177FFC /* CoreFoundation.framework */,
+				9662C14B0FC01CB000177FFC /* IOKit.framework */,
+				9662C13C0FC01C0D00177FFC /* OpenGL.framework */,
+				9662C1380FC01BFF00177FFC /* GLFW.framework */,
+				967EBB4011E311A7006A62E9 /* CoreServices.framework */,
+				96AFEB8619A9ED4B00B87262 /* CoreAudio.framework */,
+				96AFEB8819A9ED5800B87262 /* AudioToolbox.framework */,
+				96AFEB8A19A9ED6400B87262 /* AudioUnit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		96BBEC7415007C23004DCE30 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96BBEC8715007C24004DCE30 /* libchai3d.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96CB03661D9C6664008D07F6 /* Extras */ = {
+			isa = PBXGroup;
+			children = (
+				96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */,
+			);
+			name = Extras;
+			sourceTree = "<group>";
+		};
+		96CB03681D9C667A008D07F6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96CB036C1D9C667A008D07F6 /* libglfw.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96D0117314E371F000446A6B /* 01-GEL-membrane */ = {
+			isa = PBXGroup;
+			children = (
+				9670695A1500C42F001F52FA /* 01-GEL-membrane.cpp */,
+			);
+			name = "01-GEL-membrane";
+			sourceTree = "<group>";
+		};
+		96D0117F14E3729900446A6B /* 02-GEL-cell */ = {
+			isa = PBXGroup;
+			children = (
+				9670695C1500C449001F52FA /* 02-GEL-cell.cpp */,
+			);
+			name = "02-GEL-cell";
+			sourceTree = "<group>";
+		};
+		96D011A714E3735D00446A6B /* 03-GEL-duck */ = {
+			isa = PBXGroup;
+			children = (
+				9670695E1500C462001F52FA /* 03-GEL-duck.cpp */,
+				9670695F1500C462001F52FA /* geometry.h */,
+				967069601500C462001F52FA /* predicates.cpp */,
+				967069611500C462001F52FA /* tetgen.cpp */,
+				967069621500C462001F52FA /* tetgen.h */,
+			);
+			name = "03-GEL-duck";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		96D0116814E3713C00446A6B /* 01-GEL-membrane */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96D0117014E3713D00446A6B /* Build configuration list for PBXNativeTarget "01-GEL-membrane" */;
+			buildPhases = (
+				96D0116514E3713C00446A6B /* Sources */,
+				96D0116614E3713C00446A6B /* Frameworks */,
+				96C1D7651A27DDF60067DEB6 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				96CB036E1D9C6700008D07F6 /* PBXTargetDependency */,
+				96BBEC8A15007C41004DCE30 /* PBXTargetDependency */,
+				96D0117714E3722C00446A6B /* PBXTargetDependency */,
+			);
+			name = "01-GEL-membrane";
+			productName = "01-GEL-membrane";
+			productReference = 96D0116914E3713C00446A6B /* 01-GEL-membrane */;
+			productType = "com.apple.product-type.tool";
+		};
+		96D0118314E372C600446A6B /* 02-GEL-cell */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96D0118B14E372C700446A6B /* Build configuration list for PBXNativeTarget "02-GEL-cell" */;
+			buildPhases = (
+				96D0118014E372C600446A6B /* Sources */,
+				96D0118114E372C600446A6B /* Frameworks */,
+				96C1D7691A27DE170067DEB6 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				96CB03701D9C6707008D07F6 /* PBXTargetDependency */,
+				96BBEC8D15007C56004DCE30 /* PBXTargetDependency */,
+				96D0119114E372FA00446A6B /* PBXTargetDependency */,
+			);
+			name = "02-GEL-cell";
+			productName = "02-GEL-cell";
+			productReference = 96D0118414E372C600446A6B /* 02-GEL-cell */;
+			productType = "com.apple.product-type.tool";
+		};
+		96D0119C14E3735000446A6B /* 03-GEL-duck */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96D011A414E3735000446A6B /* Build configuration list for PBXNativeTarget "03-GEL-duck" */;
+			buildPhases = (
+				96D0119914E3735000446A6B /* Sources */,
+				96D0119A14E3735000446A6B /* Frameworks */,
+				96C1D76A1A27DE1D0067DEB6 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				96CB03721D9C670B008D07F6 /* PBXTargetDependency */,
+				96BBEC9F15007D7F004DCE30 /* PBXTargetDependency */,
+				96D011AB14E3738D00446A6B /* PBXTargetDependency */,
+			);
+			name = "03-GEL-duck";
+			productName = "03-GEL-duck";
+			productReference = 96D0119D14E3735000446A6B /* 03-GEL-duck */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0800;
+			};
+			buildConfigurationList = 1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "chai3d-GEL" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07 /* chai3d-GEL */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 96CB03681D9C667A008D07F6 /* Products */;
+					ProjectRef = 96CB03671D9C667A008D07F6 /* GLFW.xcodeproj */;
+				},
+				{
+					ProductGroup = 962E5EED14C52C26008E447A /* Products */;
+					ProjectRef = 962E5EEC14C52C26008E447A /* libchai3d-GEL.xcodeproj */;
+				},
+				{
+					ProductGroup = 96BBEC7415007C23004DCE30 /* Products */;
+					ProjectRef = 96BBEC7315007C23004DCE30 /* libchai3d.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				9662C26E0FC0207300177FFC /* All */,
+				96D0116814E3713C00446A6B /* 01-GEL-membrane */,
+				96D0118314E372C600446A6B /* 02-GEL-cell */,
+				96D0119C14E3735000446A6B /* 03-GEL-duck */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		962E5F0414C52C27008E447A /* libchai3d-GEL.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libchai3d-GEL.a";
+			remoteRef = 962E5F0314C52C27008E447A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		96BBEC8715007C24004DCE30 /* libchai3d.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libchai3d.a;
+			remoteRef = 96BBEC8615007C24004DCE30 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		96CB036C1D9C667A008D07F6 /* libglfw.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libglfw.a;
+			remoteRef = 96CB036B1D9C667A008D07F6 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		96C1D7651A27DDF60067DEB6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "Rez -append $BUILT_PRODUCTS_DIR/../resources/icons/chai3d.rsrc -o $BUILT_PRODUCTS_DIR/$PRODUCT_NAME\nSetFile -a C $BUILT_PRODUCTS_DIR/$PRODUCT_NAME";
+		};
+		96C1D7691A27DE170067DEB6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "Rez -append $BUILT_PRODUCTS_DIR/../resources/icons/chai3d.rsrc -o $BUILT_PRODUCTS_DIR/$PRODUCT_NAME\nSetFile -a C $BUILT_PRODUCTS_DIR/$PRODUCT_NAME";
+		};
+		96C1D76A1A27DE1D0067DEB6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "Rez -append $BUILT_PRODUCTS_DIR/../resources/icons/chai3d.rsrc -o $BUILT_PRODUCTS_DIR/$PRODUCT_NAME\nSetFile -a C $BUILT_PRODUCTS_DIR/$PRODUCT_NAME";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		96D0116514E3713C00446A6B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9670695B1500C42F001F52FA /* 01-GEL-membrane.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96D0118014E372C600446A6B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9670695D1500C449001F52FA /* 02-GEL-cell.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96D0119914E3735000446A6B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				967069631500C462001F52FA /* 03-GEL-duck.cpp in Sources */,
+				967069641500C462001F52FA /* predicates.cpp in Sources */,
+				967069651500C462001F52FA /* tetgen.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		96BBEC8A15007C41004DCE30 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96BBEC8915007C41004DCE30 /* PBXContainerItemProxy */;
+		};
+		96BBEC8D15007C56004DCE30 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96BBEC8C15007C56004DCE30 /* PBXContainerItemProxy */;
+		};
+		96BBEC9F15007D7F004DCE30 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96BBEC9E15007D7F004DCE30 /* PBXContainerItemProxy */;
+		};
+		96CB036E1D9C6700008D07F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = glfw;
+			targetProxy = 96CB036D1D9C6700008D07F6 /* PBXContainerItemProxy */;
+		};
+		96CB03701D9C6707008D07F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = glfw;
+			targetProxy = 96CB036F1D9C6707008D07F6 /* PBXContainerItemProxy */;
+		};
+		96CB03721D9C670B008D07F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = glfw;
+			targetProxy = 96CB03711D9C670B008D07F6 /* PBXContainerItemProxy */;
+		};
+		96D0117714E3722C00446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96D0117614E3722C00446A6B /* PBXContainerItemProxy */;
+		};
+		96D0117E14E3727800446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96D0116814E3713C00446A6B /* 01-GEL-membrane */;
+			targetProxy = 96D0117D14E3727800446A6B /* PBXContainerItemProxy */;
+		};
+		96D0119114E372FA00446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96D0119014E372FA00446A6B /* PBXContainerItemProxy */;
+		};
+		96D0119814E3733B00446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96D0118314E372C600446A6B /* 02-GEL-cell */;
+			targetProxy = 96D0119714E3733B00446A6B /* PBXContainerItemProxy */;
+		};
+		96D011AB14E3738D00446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 96D011AA14E3738D00446A6B /* PBXContainerItemProxy */;
+		};
+		96D011B414E373C400446A6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96D0119C14E3735000446A6B /* 03-GEL-duck */;
+			targetProxy = 96D011B314E373C400446A6B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB91F008733DB70010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					./src,
+					../../src,
+					../../external/Eigen,
+				);
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SYMROOT = "bin/mac-$(CURRENT_ARCH)";
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Debug;
+		};
+		1DEB91F108733DB70010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					./src,
+					../../src,
+					../../external/Eigen,
+				);
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SYMROOT = "bin/mac-$(CURRENT_ARCH)";
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Release;
+		};
+		9662C26F0FC0207300177FFC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = All;
+			};
+			name = Debug;
+		};
+		9662C2700FC0207300177FFC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				PRODUCT_NAME = All;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		96D0117114E3713D00446A6B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Debug;
+		};
+		96D0117214E3713D00446A6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Release;
+		};
+		96D0118C14E372C700446A6B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Debug;
+		};
+		96D0118D14E372C700446A6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Release;
+		};
+		96D011A514E3735000446A6B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					TETLIBRARY,
+					MACOSX,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Debug;
+		};
+		96D011A614E3735000446A6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					TETLIBRARY,
+					MACOSX,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../extras/GLFW/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../external/DHD/lib/mac\"",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "chai3d-GEL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB91F008733DB70010E9CD /* Debug */,
+				1DEB91F108733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9662C2780FC020C900177FFC /* Build configuration list for PBXAggregateTarget "All" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9662C26F0FC0207300177FFC /* Debug */,
+				9662C2700FC0207300177FFC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96D0117014E3713D00446A6B /* Build configuration list for PBXNativeTarget "01-GEL-membrane" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96D0117114E3713D00446A6B /* Debug */,
+				96D0117214E3713D00446A6B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96D0118B14E372C700446A6B /* Build configuration list for PBXNativeTarget "02-GEL-cell" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96D0118C14E372C700446A6B /* Debug */,
+				96D0118D14E372C700446A6B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96D011A414E3735000446A6B /* Build configuration list for PBXNativeTarget "03-GEL-duck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96D011A514E3735000446A6B /* Debug */,
+				96D011A614E3735000446A6B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

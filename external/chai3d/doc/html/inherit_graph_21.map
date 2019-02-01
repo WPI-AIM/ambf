@@ -1,0 +1,8 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classchai3d_1_1c_generic_texture.html" title="This class implements a base class for textures. " alt="" coords="5,56,169,83"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_texture1d.html" title="This class implements a 1D texture map. " alt="" coords="217,56,351,83"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_texture2d.html" title="This class implements a 2D texture map. " alt="" coords="399,56,532,83"/>
+<area shape="rect" id="node4" href="$classchai3d_1_1c_normal_map.html" title="This class implements a normal map. " alt="" coords="585,5,727,32"/>
+<area shape="rect" id="node5" href="$classchai3d_1_1c_texture3d.html" title="This class implements a 3D texture map. " alt="" coords="589,56,723,83"/>
+<area shape="rect" id="node6" href="$classchai3d_1_1c_texture_video.html" title="This class implements a video texture map. " alt="" coords="580,107,732,133"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="/home/seb/workspace/svn.chai3d.org/tags/3.2.0/doc/doxygen/chai3d.tag$classchai3d_1_1c_generic_type.html" title="chai3d::cGenericType" alt="" coords="5,31,155,57"/>
+<area shape="rect" id="node2" href="/home/seb/workspace/svn.chai3d.org/tags/3.2.0/doc/doxygen/chai3d.tag$classchai3d_1_1c_generic_object.html" title="chai3d::cGenericObject" alt="" coords="203,31,361,57"/>
+<area shape="rect" id="node3" href="$classc_g_e_l_world.html" title="This class implements a virtual world that manages deformable objects. " alt="" coords="432,5,521,32"/>
+<area shape="rect" id="node4" href="/home/seb/workspace/svn.chai3d.org/tags/3.2.0/doc/doxygen/chai3d.tag$classchai3d_1_1c_multi_mesh.html" title="chai3d::cMultiMesh" alt="" coords="409,56,544,83"/>
+<area shape="rect" id="node5" href="$classc_g_e_l_mesh.html" title="This class inherits from class cMesh and integrate a skeleton model for modelling deformations of the..." alt="" coords="592,56,679,83"/>
+</map>

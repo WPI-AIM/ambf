@@ -1,0 +1,132 @@
+g++ -I./include -fsigned-char -O3 -DLINUX -Dlinux -Wno-deprecated -std=c++0x -m64 -I../../src -I../../external/glew/include -I../../external/Eigen -fPIC -fno-common -c -o obj/release/lin-x86_64-gcc/shared/hdPhantom.o hdPhantom.cpp
+In file included from ../../external/Eigen/Eigen/Core:263:0,
+                 from ../../external/Eigen/Eigen/Dense:1,
+                 from ../../external/Eigen/Eigen/Eigen:1,
+                 from ../../src/math/CConstants.h:51,
+                 from ../../src/math/CMatrix3d.h:48,
+                 from ../../src/math/CTransform.h:48,
+                 from ../../src/math/CMaths.h:48,
+                 from ../../src/audio/CAudioBuffer.h:48,
+                 from ../../src/chai3d.h:63,
+                 from hdPhantom.cpp:66:
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:29:39: warning: ignoring attributes on template argument ‘__m128 {aka __vector(4) float}’ [-Wignored-attributes]
+ template<> struct is_arithmetic<__m128>  { enum { value = true }; };
+                                       ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:30:40: warning: ignoring attributes on template argument ‘__m128i {aka __vector(2) long long int}’ [-Wignored-attributes]
+ template<> struct is_arithmetic<__m128i> { enum { value = true }; };
+                                        ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:31:40: warning: ignoring attributes on template argument ‘__m128d {aka __vector(2) double}’ [-Wignored-attributes]
+ template<> struct is_arithmetic<__m128d> { enum { value = true }; };
+                                        ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:101:43: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4f {aka __vector(4) float}’ [-Wignored-attributes]
+ template<> struct unpacket_traits<Packet4f> { typedef float  type; enum {size=4}; };
+                                           ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:102:43: warning: ignoring attributes on template argument ‘Eigen::internal::Packet2d {aka __vector(2) double}’ [-Wignored-attributes]
+ template<> struct unpacket_traits<Packet2d> { typedef double type; enum {size=2}; };
+                                           ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:103:43: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4i {aka __vector(2) long long int}’ [-Wignored-attributes]
+ template<> struct unpacket_traits<Packet4i> { typedef int    type; enum {size=4}; };
+                                           ^
+In file included from ../../external/Eigen/Eigen/Core:263:0,
+                 from ../../external/Eigen/Eigen/Dense:1,
+                 from ../../external/Eigen/Eigen/Eigen:1,
+                 from ../../src/math/CConstants.h:51,
+                 from ../../src/math/CMatrix3d.h:48,
+                 from ../../src/math/CTransform.h:48,
+                 from ../../src/math/CMaths.h:48,
+                 from ../../src/audio/CAudioBuffer.h:48,
+                 from ../../src/chai3d.h:63,
+                 from hdPhantom.cpp:66:
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:586:35: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4f {aka __vector(4) float}’ [-Wignored-attributes]
+ struct palign_impl<Offset,Packet4f>
+                                   ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:609:35: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4i {aka __vector(2) long long int}’ [-Wignored-attributes]
+ struct palign_impl<Offset,Packet4i>
+                                   ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/PacketMath.h:632:35: warning: ignoring attributes on template argument ‘Eigen::internal::Packet2d {aka __vector(2) double}’ [-Wignored-attributes]
+ struct palign_impl<Offset,Packet2d>
+                                   ^
+In file included from ../../external/Eigen/Eigen/Core:265:0,
+                 from ../../external/Eigen/Eigen/Dense:1,
+                 from ../../external/Eigen/Eigen/Eigen:1,
+                 from ../../src/math/CConstants.h:51,
+                 from ../../src/math/CMatrix3d.h:48,
+                 from ../../src/math/CTransform.h:48,
+                 from ../../src/math/CMaths.h:48,
+                 from ../../src/audio/CAudioBuffer.h:48,
+                 from ../../src/chai3d.h:63,
+                 from hdPhantom.cpp:66:
+../../external/Eigen/Eigen/src/Core/arch/SSE/Complex.h:211:63: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4f {aka __vector(4) float}’ [-Wignored-attributes]
+ template<> struct conj_helper<Packet4f, Packet2cf, false,false>
+                                                               ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/Complex.h:220:63: warning: ignoring attributes on template argument ‘Eigen::internal::Packet4f {aka __vector(4) float}’ [-Wignored-attributes]
+ template<> struct conj_helper<Packet2cf, Packet4f, false,false>
+                                                               ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/Complex.h:407:63: warning: ignoring attributes on template argument ‘Eigen::internal::Packet2d {aka __vector(2) double}’ [-Wignored-attributes]
+ template<> struct conj_helper<Packet2d, Packet1cd, false,false>
+                                                               ^
+../../external/Eigen/Eigen/src/Core/arch/SSE/Complex.h:416:63: warning: ignoring attributes on template argument ‘Eigen::internal::Packet2d {aka __vector(2) double}’ [-Wignored-attributes]
+ template<> struct conj_helper<Packet1cd, Packet2d, false,false>
+                                                               ^
+In file included from ../../external/Eigen/Eigen/Core:277:0,
+                 from ../../external/Eigen/Eigen/Dense:1,
+                 from ../../external/Eigen/Eigen/Eigen:1,
+                 from ../../src/math/CConstants.h:51,
+                 from ../../src/math/CMatrix3d.h:48,
+                 from ../../src/math/CTransform.h:48,
+                 from ../../src/math/CMaths.h:48,
+                 from ../../src/audio/CAudioBuffer.h:48,
+                 from ../../src/chai3d.h:63,
+                 from hdPhantom.cpp:66:
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h: In instantiation of ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<float, 4, 1>, 0>’:
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:274:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<float, 4, 1>, 1>’
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:636:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<float, 4, 1>, 3>’
+../../external/Eigen/Eigen/src/Core/util/XprHelper.h:371:8:   required from ‘struct Eigen::internal::special_scalar_op_base<Eigen::Matrix<float, 4, 1>, float, float, Eigen::DenseCoeffsBase<Eigen::Matrix<float, 4, 1>, 3>, false>’
+../../external/Eigen/Eigen/src/Core/DenseBase.h:41:34:   required from ‘class Eigen::DenseBase<Eigen::Matrix<float, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/MatrixBase.h:48:34:   required from ‘class Eigen::MatrixBase<Eigen::Matrix<float, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/PlainObjectBase.h:88:7:   required from ‘class Eigen::PlainObjectBase<Eigen::Matrix<float, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/Matrix.h:127:7:   required from ‘class Eigen::Matrix<float, 4, 1>’
+../../external/Eigen/Eigen/src/Geometry/Quaternion.h:282:16:   required from ‘class Eigen::Quaternion<float>’
+../../external/Eigen/Eigen/src/Geometry/arch/Geometry_SSE.h:22:3:   required from here
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:56:30: warning: ignoring attributes on template argument ‘Eigen::internal::packet_traits<float>::type {aka __vector(4) float}’ [-Wignored-attributes]
+                      >::type PacketReturnType;
+                              ^~~~~~~~~~~~~~~~
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h: In instantiation of ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 4, 1>, 0>’:
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:274:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 4, 1>, 1>’
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:636:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 4, 1>, 3>’
+../../external/Eigen/Eigen/src/Core/util/XprHelper.h:371:8:   required from ‘struct Eigen::internal::special_scalar_op_base<Eigen::Matrix<double, 4, 1>, double, double, Eigen::DenseCoeffsBase<Eigen::Matrix<double, 4, 1>, 3>, false>’
+../../external/Eigen/Eigen/src/Core/DenseBase.h:41:34:   required from ‘class Eigen::DenseBase<Eigen::Matrix<double, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/MatrixBase.h:48:34:   required from ‘class Eigen::MatrixBase<Eigen::Matrix<double, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/PlainObjectBase.h:88:7:   required from ‘class Eigen::PlainObjectBase<Eigen::Matrix<double, 4, 1> >’
+../../external/Eigen/Eigen/src/Core/Matrix.h:127:7:   required from ‘class Eigen::Matrix<double, 4, 1>’
+../../external/Eigen/Eigen/src/Geometry/Quaternion.h:282:16:   required from ‘class Eigen::Quaternion<double>’
+../../external/Eigen/Eigen/src/Geometry/arch/Geometry_SSE.h:63:3:   required from here
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:56:30: warning: ignoring attributes on template argument ‘Eigen::internal::packet_traits<double>::type {aka __vector(2) double}’ [-Wignored-attributes]
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h: In instantiation of ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 1>, 0>’:
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:274:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 1>, 1>’
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:636:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 1>, 3>’
+../../external/Eigen/Eigen/src/Core/util/XprHelper.h:371:8:   required from ‘struct Eigen::internal::special_scalar_op_base<Eigen::Matrix<double, 3, 1>, double, double, Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 1>, 3>, false>’
+../../external/Eigen/Eigen/src/Core/DenseBase.h:41:34:   required from ‘class Eigen::DenseBase<Eigen::Matrix<double, 3, 1> >’
+../../external/Eigen/Eigen/src/Core/MatrixBase.h:48:34:   required from ‘class Eigen::MatrixBase<Eigen::Matrix<double, 3, 1> >’
+../../external/Eigen/Eigen/src/Core/PlainObjectBase.h:88:7:   required from ‘class Eigen::PlainObjectBase<Eigen::Matrix<double, 3, 1> >’
+../../external/Eigen/Eigen/src/Core/Matrix.h:127:7:   required from ‘class Eigen::Matrix<double, 3, 1>’
+../../src/math/CVector3d.h:162:32:   required from here
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:56:30: warning: ignoring attributes on template argument ‘Eigen::internal::packet_traits<double>::type {aka __vector(2) double}’ [-Wignored-attributes]
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h: In instantiation of ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 3>, 0>’:
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:274:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 3>, 1>’
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:636:7:   required from ‘class Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 3>, 3>’
+../../external/Eigen/Eigen/src/Core/util/XprHelper.h:371:8:   required from ‘struct Eigen::internal::special_scalar_op_base<Eigen::Matrix<double, 3, 3>, double, double, Eigen::DenseCoeffsBase<Eigen::Matrix<double, 3, 3>, 3>, false>’
+../../external/Eigen/Eigen/src/Core/DenseBase.h:41:34:   required from ‘class Eigen::DenseBase<Eigen::Matrix<double, 3, 3> >’
+../../external/Eigen/Eigen/src/Core/MatrixBase.h:48:34:   required from ‘class Eigen::MatrixBase<Eigen::Matrix<double, 3, 3> >’
+../../external/Eigen/Eigen/src/Core/PlainObjectBase.h:88:7:   required from ‘class Eigen::PlainObjectBase<Eigen::Matrix<double, 3, 3> >’
+../../external/Eigen/Eigen/src/Core/Matrix.h:127:7:   required from ‘class Eigen::Matrix<double, 3, 3>’
+../../src/math/CMatrix3d.h:123:36:   required from here
+../../external/Eigen/Eigen/src/Core/DenseCoeffsBase.h:56:30: warning: ignoring attributes on template argument ‘Eigen::internal::packet_traits<double>::type {aka __vector(2) double}’ [-Wignored-attributes]
+hdPhantom.cpp:115:62: warning: ‘stdcall’ attribute ignored [-Wattributes]
+ HDCallbackCode HDCALLBACK servoPhantomDevices(void* pUserData);
+                                                              ^
+hdPhantom.cpp:889:62: warning: ‘stdcall’ attribute ignored [-Wattributes]
+ HDCallbackCode HDCALLBACK servoPhantomDevices(void* pUserData)
+                                                              ^
+g++ -I./include -fsigned-char -O3 -DLINUX -Dlinux -Wno-deprecated -std=c++0x -m64 -I../../src -I../../external/glew/include -I../../external/Eigen -shared -lHDU -Wl,-soname,libhdPhantom.so.3 -o ./lib/release/lin-x86_64-gcc/libhdPhantom.so.3.2.0 obj/release/lin-x86_64-gcc/shared/hdPhantom.o
+rm: cannot remove '/usr/local/lib/libhdPhantom.so': No such file or directory

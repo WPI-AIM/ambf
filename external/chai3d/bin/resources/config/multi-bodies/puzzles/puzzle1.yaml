@@ -1,0 +1,135 @@
+# Generate By: Adnan Munawar
+# Testing, no version number yet
+bodies: [body1, body2, body3, body4, body5, body6, body7, body8, body9]
+joints: [joint1, joint2]
+high resolution path: ../../../models/puzzle/high_res/
+low resolution path: ../../../models/puzzle/low_res/
+
+body1:
+ name: Torus
+ mass: 0.8
+ mesh: Torus.STL
+ scale: 1.0
+ location: {
+   position: {x: -1.5, y: -1.5, z: -0.5},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: orange_tomato
+
+body2:
+ name: PegBase
+ mass: 10.0
+ mesh: PegBase.STL
+ scale: 1.0
+ location: {
+   position: {x: -1.5, y: -1.5, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: blue_navy
+ friction: {static: 0.9, rolling: 0.1}
+
+body3:
+ name: PuzzleBase
+ mass: 8.0
+ mesh: PuzzleBase.STL
+ scale: 1.0
+ location: {
+   position: {x: -1.0, y: 0.0, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: purple_dark_magenta
+ friction: {static: 0.9, rolling: 0.1}
+
+body4:
+ name: CirclePuzzle
+ mass: 0.8
+ mesh: CirclePuzzle.STL
+ inertial offset: {position: {x: 0.0, y: 0.0, z: 0.135}, orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ scale: 1.0
+ location: {
+   position: {x: 0.0, y: -0.5, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: yellow
+ friction: {linear: 0.8}
+
+body5:
+ name: TrianglePuzzle
+ mass: 0.8
+ mesh: TrianglePuzzle.STL
+ inertial offset: {position: {x: 0.0, y: 0.0, z: 0.135}, orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ scale: 1.0
+ location: {
+   position: {x: 0.0, y: 0.0, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: pink_pale_violet_red
+ friction: {linear: 0.8}
+
+body6:
+ name: SquarePuzzle
+ mass: 0.8
+ mesh: SquarePuzzle.STL
+ inertial offset: {position: {x: 0.0, y: 0.0, z: 0.135}}
+ scale: 1.0
+ location: {
+   position: {x: 0.0, y: 0.5, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: blue_corn_flower
+ friction: {linear: 0.8}
+
+body7:
+ name: HandleLeft
+ mass: 0.3
+ mesh: HandleLeft.STL
+ inertial offset: {position: {x: 0.0, y: -0.2, z: 0.0}}
+ scale: 1.0
+ location: {
+   position: {x: 1.0, y: -0.85, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: orange
+ friction: {linear: 0.5}
+
+body8:
+ name: HandleRight
+ mass: 0.3
+ mesh: HandleRight.STL
+ inertial offset: {position: {x: 0.0, y: 0.2, z: 0.0}}
+ scale: 1.0
+ location: {
+   position: {x: 1.0, y: 0.85, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: orange_coral
+ friction: {linear: 0.5}
+
+body9:
+ name: CenterPuzzle
+ mass: 1.0
+ linear gain: {P: 200.0, D: 10.0}
+ angular gain: {P: 1.0, D: 1.0}
+ mesh: Center.STL
+ scale: 1.0
+ location: {
+   position: {x: 1.0, y: 0.0, z: -1.0},
+   orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: green_medium_spring
+ friction: {linear: 0.5}
+
+joint1:
+ name: PuzzleLeftJoint
+ parent: body9
+ child: body7
+ parent axis: {x: 1.0, y: 0, z: 0.0}
+ parent pivot: {x: 0, y: -0.85, z: 0.0}
+ child axis: {x: 1.0, y: 0, z: 0.0}
+ child pivot: {x: 0, y: 0, z: 0}
+ joint limits: {low: -1.2, high: 1.2}
+ #enable_motor: 1
+ #max_motor_impulse: 0.05
+
+joint2:
+ name: PuzzleRightJoint
+ parent: body9
+ child: body8
+ parent axis: {x: 1.0, y: 0, z: 0}
+ parent pivot: {x: 0, y: 0.85, z: 0.0}
+ child axis: {x: 1.0, y: 0, z: 0}
+ child pivot: {x: 0, y: 0, z: 0}
+ joint limits: {low: -1.2, high: 1.2}
+ #enable_motor: 1
+ #max_motor_impulse: 0.05

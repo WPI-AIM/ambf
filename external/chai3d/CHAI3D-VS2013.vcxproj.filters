@@ -1,0 +1,1432 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="collisions">
+      <UniqueIdentifier>{688ace29-adbe-4aa7-9f49-5c1cec110f29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="display">
+      <UniqueIdentifier>{7ac9ed4d-d5e5-4500-bde4-443248d7ed1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="effects">
+      <UniqueIdentifier>{b89fc4d3-80ef-40b9-8688-4fadd2574494}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="files">
+      <UniqueIdentifier>{d9da1149-9af3-4c4c-ae66-895f569b1fc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="forces">
+      <UniqueIdentifier>{050c0f81-74be-4ed7-a32e-e42f9805f194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="graphics">
+      <UniqueIdentifier>{827ed10b-139c-43c0-b3fa-1114e831d1fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math">
+      <UniqueIdentifier>{9bcc51e7-2fb4-42fd-bd25-42472a84e982}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="timers">
+      <UniqueIdentifier>{db5c7758-0a2c-48ad-9b32-f62251e07b6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tools">
+      <UniqueIdentifier>{fbf153d3-3af2-4065-a5ab-7088d1939d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="widgets">
+      <UniqueIdentifier>{b29976fa-234d-4ff1-8e1d-91e02b250b6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{74e34530-e3d9-41f9-a420-0a2cdd5c8e3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="world">
+      <UniqueIdentifier>{03527f5e-d139-46d9-8495-5b7dd696e4fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lighting">
+      <UniqueIdentifier>{ec20519c-23ba-4b37-a5e6-ea3ff45c6f94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="materials">
+      <UniqueIdentifier>{28c8de62-fb08-4c04-bfeb-27cb79e8c5c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{3e9796b7-4aa5-4514-9a98-22dde2e42ff6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="devices">
+      <UniqueIdentifier>{0e0ad3e0-05a9-462e-ad90-9e1ea519efbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{00c05e34-eaad-4040-9841-1d3c0982def3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/lib3ds">
+      <UniqueIdentifier>{d635e6d1-6353-407d-be0e-0132ab19b4e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/libjpeg">
+      <UniqueIdentifier>{1bd7bdbd-787c-4d11-815a-312e5c77c268}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/libpng">
+      <UniqueIdentifier>{f97fdb7b-d59b-4b52-ba80-70b14f9f8d8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/giflib">
+      <UniqueIdentifier>{c23dc555-71cf-4db5-b014-cee12282c662}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/glew">
+      <UniqueIdentifier>{340a3ec4-efd1-4171-9d09-0ec188a973b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/openal">
+      <UniqueIdentifier>{b8390cd7-a49c-48ad-8ee8-3004c1adfb78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/theoraplayer">
+      <UniqueIdentifier>{4c45a938-7ac2-413e-b6f1-b44a11226eca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{79043ca0-97c3-4a63-9273-a66c13fdc773}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="audio">
+      <UniqueIdentifier>{de954ca7-5e3c-4d39-ace6-8c2ad97056c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external/pugixml">
+      <UniqueIdentifier>{53e1d517-1a50-402b-acef-4af0e863981c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src/collisions/CCollisionAABB.cpp">
+      <Filter>collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="src/collisions/CCollisionAABBTree.cpp">
+      <Filter>collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="src/collisions/CCollisionBrute.cpp">
+      <Filter>collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="src/collisions/CGenericCollision.cpp">
+      <Filter>collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CDeltaDevices.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CGenericDevice.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CGenericHapticDevice.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CHapticDeviceHandler.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/display/CCamera.cpp">
+      <Filter>display</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CEffectMagnet.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CEffectStickSlip.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CEffectSurface.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CEffectVibration.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CEffectViscosity.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/effects/CGenericEffect.cpp">
+      <Filter>effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImageBMP.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImageGIF.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImageJPG.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImagePNG.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImagePPM.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileImageRAW.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileModel3DS.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileModelOBJ.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/forces/CAlgorithmFingerProxy.cpp">
+      <Filter>forces</Filter>
+    </ClCompile>
+    <ClCompile Include="src/forces/CAlgorithmPotentialField.cpp">
+      <Filter>forces</Filter>
+    </ClCompile>
+    <ClCompile Include="src/forces/CGenericForceAlgorithm.cpp">
+      <Filter>forces</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CColor.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CDisplayList.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CDraw3D.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CFog.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CFont.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CImage.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CPrimitives.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/lighting/CDirectionalLight.cpp">
+      <Filter>lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="src/lighting/CGenericLight.cpp">
+      <Filter>lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="src/lighting/CPositionalLight.cpp">
+      <Filter>lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="src/lighting/CShadowMap.cpp">
+      <Filter>lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="src/lighting/CSpotLight.cpp">
+      <Filter>lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CMaterial.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CTexture1d.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CTexture2d.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/system/CGlobals.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="src/system/CMutex.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="src/system/CString.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="src/system/CThread.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="src/timers/CFrequencyCounter.cpp">
+      <Filter>timers</Filter>
+    </ClCompile>
+    <ClCompile Include="src/timers/CPrecisionClock.cpp">
+      <Filter>timers</Filter>
+    </ClCompile>
+    <ClCompile Include="src/tools/CGenericTool.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src/tools/CHapticPoint.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src/tools/CToolCursor.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src/tools/CToolGripper.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CGenericObject.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CMesh.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CMultiMesh.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CShapeBox.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CShapeCylinder.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CShapeLine.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CShapeSphere.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CShapeTorus.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CWorld.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_atmosphere.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_background.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_camera.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_chunk.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_chunktable.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_file.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_io.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_light.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_material.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_math.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_matrix.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_mesh.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_node.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_quat.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_shadow.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_track.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_util.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_vector.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/lib3ds/src/lib3ds_viewport.c">
+      <Filter>external/lib3ds</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/dev2gif.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/dgif_lib.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/egif_lib.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/getarg.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/gif_err.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/gif_font.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/gif_hash.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/gifalloc.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/qprintf.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/giflib/src/quantize.c">
+      <Filter>external/giflib</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jaricom.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcapimin.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcapistd.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcarith.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jccoefct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jccolor.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcdctmgr.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jchuff.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcinit.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcmainct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcmarker.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcmaster.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcomapi.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcparam.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcprepct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jcsample.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jctrans.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdapimin.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdapistd.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdarith.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdatadst.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdatasrc.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdcoefct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdcolor.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jddctmgr.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdhuff.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdinput.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdmainct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdmarker.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdmaster.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdmerge.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdpostct.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdsample.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jdtrans.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jerror.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jfdctflt.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jfdctfst.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jfdctint.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jidctflt.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jidctfst.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jidctint.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jmemansi.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jmemmgr.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jmemnobs.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jquant1.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jquant2.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libjpeg/src/jutils.c">
+      <Filter>external/libjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/adler32.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/compress.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/crc32.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/deflate.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/gzclose.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/gzlib.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/gzread.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/gzwrite.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/infback.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/inffast.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/inflate.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/inftrees.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/png.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngerror.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngget.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngmem.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngpread.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngread.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngrio.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngrtran.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngrutil.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngset.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngtrans.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngwio.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngwrite.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngwtran.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/pngwutil.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/trees.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/uncompr.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/libpng/src/zutil.c">
+      <Filter>external/libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="external/glew/src/glew.c">
+      <Filter>external/glew</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CSixenseDevices.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CPhantomDevices.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CMyCustomDevice.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CPanel.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CLabel.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CBackground.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CBitmap.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CLevel.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CDial.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CScope.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CGenericWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alAuxEffectSlot.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alBuffer.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/ALc.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcConfig.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcDedicated.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcEcho.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcModulator.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcReverb.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcRing.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/alcThread.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alEffect.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alError.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alExtension.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alFilter.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alListener.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alSource.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alState.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/OpenAL32/alThunk.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/ALu.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/bs2b.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/dsound.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/helpers.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/hrtf.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/loopback.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/mixer.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/mixer_c.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/mixer_sse.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/mmdevapi.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/null.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/panning.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/wave.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/openal/Alc/backends/winmm.c">
+      <Filter>external/openal</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/OpenAL_AudioInterface.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraAsync.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraAudioInterface.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraAudioPacketQueue.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraDataSource.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraException.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraFrameQueue.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraTimer.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraUtil.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraVideoClip.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraVideoFrame.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraVideoManager.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/TheoraWorkerThread.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/Theora/TheoraVideoClip_Theora.cpp">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/ogg/src/bitwise.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/ogg/src/framing.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/analyze.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/apiwrapper.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/bitpack.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/collect.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/decapiwrapper.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/decinfo.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/decode.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/dequant.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/encapiwrapper.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/encfrag.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/encinfo.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/encode.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/encoder_disabled.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/enquant.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/fdct.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/fragment.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/huffdec.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/huffenc.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/idct.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/infot.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/internal.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/mathops.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/mcenc.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/quant.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/rate.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/state.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/tokenize.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/mmxencfrag.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/mmxfdct.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/mmxfrag.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/mmxidct.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/mmxstate.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/x86cpu.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/x86enc.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/theora/lib/x86_vc/x86state.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/analysis.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/bitrate.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/block.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/codebook.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/envelope.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/floor0.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/floor1.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/info.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/lookup.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/lpc.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/lsp.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/mapping0.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/mdct.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/psy.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/registry.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/res0.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/sharedbook.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/smallft.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/synthesis.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/vorbisenc.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/vorbisfile.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/external/vorbis/lib/window.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CVideo.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/YUV/C/yuv420_grey_c.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/YUV/C/yuv420_rgb_c.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/YUV/C/yuv420_yuv_c.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CTextureVideo.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/shaders/CShader.cpp">
+      <Filter>shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src/shaders/CShaderProgram.cpp">
+      <Filter>shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CNormalMap.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CTriangleArray.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/materials/CTexture3d.cpp">
+      <Filter>materials</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CMultiImage.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CVoxelObject.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/audio/CAudioBuffer.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src/audio/CAudioDevice.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src/audio/CAudioSource.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileAudioWAV.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/display/CFrameBuffer.cpp">
+      <Filter>display</Filter>
+    </ClCompile>
+    <ClCompile Include="src/widgets/CViewPanel.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileModelSTL.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CPointArray.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/graphics/CSegmentArray.cpp">
+      <Filter>graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CMultiPoint.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="src/world/CMultiSegment.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="external/theoraplayer/src/YUV/C/yuv_util.c">
+      <Filter>external/theoraplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="src/devices/CLeapDevices.cpp">
+      <Filter>devices</Filter>
+    </ClCompile>
+    <ClCompile Include="src/files/CFileXML.cpp">
+      <Filter>files</Filter>
+    </ClCompile>
+    <ClCompile Include="external/pugixml/src/pugixml.cpp">
+      <Filter>external/pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="src\world\CShapeEllipsoid.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src/collisions/CCollisionAABB.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/collisions/CCollisionAABBBox.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/collisions/CCollisionAABBTree.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/collisions/CCollisionBasics.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/collisions/CCollisionBrute.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/collisions/CGenericCollision.h">
+      <Filter>collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CDeltaDevices.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CGenericDevice.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CGenericHapticDevice.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CHapticDeviceHandler.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/display/CCamera.h">
+      <Filter>display</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CEffectMagnet.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CEffectStickSlip.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CEffectSurface.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CEffectVibration.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CEffectViscosity.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/effects/CGenericEffect.h">
+      <Filter>effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImageBMP.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImageGIF.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImageJPG.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImagePNG.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImagePPM.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileImageRAW.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileModel3DS.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileModelOBJ.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/forces/CAlgorithmFingerProxy.h">
+      <Filter>forces</Filter>
+    </ClInclude>
+    <ClInclude Include="src/forces/CAlgorithmPotentialField.h">
+      <Filter>forces</Filter>
+    </ClInclude>
+    <ClInclude Include="src/forces/CGenericForceAlgorithm.h">
+      <Filter>forces</Filter>
+    </ClInclude>
+    <ClInclude Include="src/forces/CInteractionBasics.h">
+      <Filter>forces</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CColor.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CDisplayList.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CDraw3D.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CFog.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CFont.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CImage.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CPrimitives.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CRenderOptions.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CTriangleArray.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CVertexArray.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/lighting/CDirectionalLight.h">
+      <Filter>lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="src/lighting/CGenericLight.h">
+      <Filter>lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="src/lighting/CPositionalLight.h">
+      <Filter>lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="src/lighting/CShadowMap.h">
+      <Filter>lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="src/lighting/CSpotLight.h">
+      <Filter>lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CGenericTexture.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CMaterial.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CTexture1d.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CTexture2d.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CConstants.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CMaths.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CMatrix3d.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CQuaternion.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CTransform.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CVector3d.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CChai3dLogo.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri16.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri18.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri20.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri22.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri24.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri26.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri28.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri32.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri36.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri40.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri72.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CFontCalibri144.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/system/CGenericType.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="src/system/CGlobals.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="src/system/CMutex.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="src/system/CString.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="src/system/CThread.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="src/timers/CFrequencyCounter.h">
+      <Filter>timers</Filter>
+    </ClInclude>
+    <ClInclude Include="src/timers/CPrecisionClock.h">
+      <Filter>timers</Filter>
+    </ClInclude>
+    <ClInclude Include="src/tools/CGenericTool.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src/tools/CHapticPoint.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src/tools/CToolCursor.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src/tools/CToolGripper.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CGenericWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CGenericObject.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CMesh.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CMultiMesh.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CShapeBox.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CShapeCylinder.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CShapeLine.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CShapeSphere.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CShapeTorus.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CWorld.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="external/glew/include/GL/glew.h">
+      <Filter>external/glew</Filter>
+    </ClInclude>
+    <ClInclude Include="external/glew/include/GL/wglew.h">
+      <Filter>external/glew</Filter>
+    </ClInclude>
+    <ClInclude Include="src/chai3d.h" />
+    <ClInclude Include="src/devices/CSixenseDevices.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CPhantomDevices.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CMyCustomDevice.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CPanel.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CLabel.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CBackground.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CBitmap.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CLevel.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CDial.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CScope.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CVideo.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CTextureVideo.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/shaders/CShader.h">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src/shaders/CShaderProgram.h">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CNormalMap.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/materials/CTexture3d.h">
+      <Filter>materials</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CMultiImage.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CVoxelObject.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CGeometry.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/math/CPolySolver.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src/audio/CAudioBuffer.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src/audio/CAudioDevice.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src/audio/CAudioSource.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileAudioWAV.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/display/CFrameBuffer.h">
+      <Filter>display</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderBasicVoxel-LUT8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderBasicVoxel-RGBA8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderIsosurfaceColor-L8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderIsosurfaceColor-LUT8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderIsosurfaceColor-RGBA8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderIsosurface-L8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderIsosurface-RGBA8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/widgets/CViewPanel.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileModelSTL.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CGenericArray.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CPointArray.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/graphics/CSegmentArray.h">
+      <Filter>graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CMultiPoint.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/world/CMultiSegment.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="src/resources/CShaderDVR-LUT8.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src/devices/CLeapDevices.h">
+      <Filter>devices</Filter>
+    </ClInclude>
+    <ClInclude Include="src/files/CFileXML.h">
+      <Filter>files</Filter>
+    </ClInclude>
+    <ClInclude Include="external/pugixml/include/pugiconfig.hpp">
+      <Filter>external/pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="external/pugixml/include/pugixml.hpp">
+      <Filter>external/pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\CMarchingCubes.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\world\CShapeEllipsoid.h">
+      <Filter>world</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,312 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		968B3047151C287000AC5577 /* lib3ds_atmosphere.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3034151C287000AC5577 /* lib3ds_atmosphere.c */; };
+		968B3048151C287000AC5577 /* lib3ds_background.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3035151C287000AC5577 /* lib3ds_background.c */; };
+		968B3049151C287000AC5577 /* lib3ds_camera.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3036151C287000AC5577 /* lib3ds_camera.c */; };
+		968B304A151C287000AC5577 /* lib3ds_chunk.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3037151C287000AC5577 /* lib3ds_chunk.c */; };
+		968B304B151C287000AC5577 /* lib3ds_chunktable.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3038151C287000AC5577 /* lib3ds_chunktable.c */; };
+		968B304C151C287000AC5577 /* lib3ds_file.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3039151C287000AC5577 /* lib3ds_file.c */; };
+		968B304D151C287000AC5577 /* lib3ds_io.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303A151C287000AC5577 /* lib3ds_io.c */; };
+		968B304E151C287000AC5577 /* lib3ds_light.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303B151C287000AC5577 /* lib3ds_light.c */; };
+		968B304F151C287000AC5577 /* lib3ds_material.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303C151C287000AC5577 /* lib3ds_material.c */; };
+		968B3050151C287000AC5577 /* lib3ds_math.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303D151C287000AC5577 /* lib3ds_math.c */; };
+		968B3051151C287000AC5577 /* lib3ds_matrix.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303E151C287000AC5577 /* lib3ds_matrix.c */; };
+		968B3052151C287000AC5577 /* lib3ds_mesh.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B303F151C287000AC5577 /* lib3ds_mesh.c */; };
+		968B3053151C287000AC5577 /* lib3ds_node.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3040151C287000AC5577 /* lib3ds_node.c */; };
+		968B3054151C287000AC5577 /* lib3ds_quat.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3041151C287000AC5577 /* lib3ds_quat.c */; };
+		968B3055151C287000AC5577 /* lib3ds_shadow.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3042151C287000AC5577 /* lib3ds_shadow.c */; };
+		968B3056151C287000AC5577 /* lib3ds_track.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3043151C287000AC5577 /* lib3ds_track.c */; };
+		968B3057151C287000AC5577 /* lib3ds_util.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3044151C287000AC5577 /* lib3ds_util.c */; };
+		968B3058151C287000AC5577 /* lib3ds_vector.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3045151C287000AC5577 /* lib3ds_vector.c */; };
+		968B3059151C287000AC5577 /* lib3ds_viewport.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B3046151C287000AC5577 /* lib3ds_viewport.c */; };
+		968B305C151C287D00AC5577 /* lib3ds_impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 968B305A151C287D00AC5577 /* lib3ds_impl.h */; };
+		968B305D151C287D00AC5577 /* lib3ds.h in Headers */ = {isa = PBXBuildFile; fileRef = 968B305B151C287D00AC5577 /* lib3ds.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		968B3034151C287000AC5577 /* lib3ds_atmosphere.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_atmosphere.c; path = src/lib3ds_atmosphere.c; sourceTree = "<group>"; };
+		968B3035151C287000AC5577 /* lib3ds_background.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_background.c; path = src/lib3ds_background.c; sourceTree = "<group>"; };
+		968B3036151C287000AC5577 /* lib3ds_camera.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_camera.c; path = src/lib3ds_camera.c; sourceTree = "<group>"; };
+		968B3037151C287000AC5577 /* lib3ds_chunk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_chunk.c; path = src/lib3ds_chunk.c; sourceTree = "<group>"; };
+		968B3038151C287000AC5577 /* lib3ds_chunktable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_chunktable.c; path = src/lib3ds_chunktable.c; sourceTree = "<group>"; };
+		968B3039151C287000AC5577 /* lib3ds_file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_file.c; path = src/lib3ds_file.c; sourceTree = "<group>"; };
+		968B303A151C287000AC5577 /* lib3ds_io.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_io.c; path = src/lib3ds_io.c; sourceTree = "<group>"; };
+		968B303B151C287000AC5577 /* lib3ds_light.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_light.c; path = src/lib3ds_light.c; sourceTree = "<group>"; };
+		968B303C151C287000AC5577 /* lib3ds_material.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_material.c; path = src/lib3ds_material.c; sourceTree = "<group>"; };
+		968B303D151C287000AC5577 /* lib3ds_math.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_math.c; path = src/lib3ds_math.c; sourceTree = "<group>"; };
+		968B303E151C287000AC5577 /* lib3ds_matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_matrix.c; path = src/lib3ds_matrix.c; sourceTree = "<group>"; };
+		968B303F151C287000AC5577 /* lib3ds_mesh.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_mesh.c; path = src/lib3ds_mesh.c; sourceTree = "<group>"; };
+		968B3040151C287000AC5577 /* lib3ds_node.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_node.c; path = src/lib3ds_node.c; sourceTree = "<group>"; };
+		968B3041151C287000AC5577 /* lib3ds_quat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_quat.c; path = src/lib3ds_quat.c; sourceTree = "<group>"; };
+		968B3042151C287000AC5577 /* lib3ds_shadow.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_shadow.c; path = src/lib3ds_shadow.c; sourceTree = "<group>"; };
+		968B3043151C287000AC5577 /* lib3ds_track.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_track.c; path = src/lib3ds_track.c; sourceTree = "<group>"; };
+		968B3044151C287000AC5577 /* lib3ds_util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_util.c; path = src/lib3ds_util.c; sourceTree = "<group>"; };
+		968B3045151C287000AC5577 /* lib3ds_vector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_vector.c; path = src/lib3ds_vector.c; sourceTree = "<group>"; };
+		968B3046151C287000AC5577 /* lib3ds_viewport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib3ds_viewport.c; path = src/lib3ds_viewport.c; sourceTree = "<group>"; };
+		968B305A151C287D00AC5577 /* lib3ds_impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lib3ds_impl.h; path = include/lib3ds_impl.h; sourceTree = "<group>"; };
+		968B305B151C287D00AC5577 /* lib3ds.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lib3ds.h; path = include/lib3ds.h; sourceTree = "<group>"; };
+		96FF33040FBD2C2800F259B8 /* lib3ds.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib3ds.a; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		96FF33020FBD2C2800F259B8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		96FF32ED0FBD2BDF00F259B8 = {
+			isa = PBXGroup;
+			children = (
+				96FF33E10FBD2D5D00F259B8 /* Sources */,
+				96FF33050FBD2C2800F259B8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		96FF33050FBD2C2800F259B8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96FF33040FBD2C2800F259B8 /* lib3ds.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96FF33E10FBD2D5D00F259B8 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				968B305A151C287D00AC5577 /* lib3ds_impl.h */,
+				968B305B151C287D00AC5577 /* lib3ds.h */,
+				968B3034151C287000AC5577 /* lib3ds_atmosphere.c */,
+				968B3035151C287000AC5577 /* lib3ds_background.c */,
+				968B3036151C287000AC5577 /* lib3ds_camera.c */,
+				968B3037151C287000AC5577 /* lib3ds_chunk.c */,
+				968B3038151C287000AC5577 /* lib3ds_chunktable.c */,
+				968B3039151C287000AC5577 /* lib3ds_file.c */,
+				968B303A151C287000AC5577 /* lib3ds_io.c */,
+				968B303B151C287000AC5577 /* lib3ds_light.c */,
+				968B303C151C287000AC5577 /* lib3ds_material.c */,
+				968B303D151C287000AC5577 /* lib3ds_math.c */,
+				968B303E151C287000AC5577 /* lib3ds_matrix.c */,
+				968B303F151C287000AC5577 /* lib3ds_mesh.c */,
+				968B3040151C287000AC5577 /* lib3ds_node.c */,
+				968B3041151C287000AC5577 /* lib3ds_quat.c */,
+				968B3042151C287000AC5577 /* lib3ds_shadow.c */,
+				968B3043151C287000AC5577 /* lib3ds_track.c */,
+				968B3044151C287000AC5577 /* lib3ds_util.c */,
+				968B3045151C287000AC5577 /* lib3ds_vector.c */,
+				968B3046151C287000AC5577 /* lib3ds_viewport.c */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		96FF33000FBD2C2800F259B8 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				968B305C151C287D00AC5577 /* lib3ds_impl.h in Headers */,
+				968B305D151C287D00AC5577 /* lib3ds.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		96FF33030FBD2C2800F259B8 /* lib3ds */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96FF33080FBD2C2900F259B8 /* Build configuration list for PBXNativeTarget "lib3ds" */;
+			buildPhases = (
+				96FF33000FBD2C2800F259B8 /* Headers */,
+				96FF33010FBD2C2800F259B8 /* Sources */,
+				96FF33020FBD2C2800F259B8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = lib3ds;
+			productName = ode;
+			productReference = 96FF33040FBD2C2800F259B8 /* lib3ds.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		96FF32EF0FBD2BDF00F259B8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0800;
+			};
+			buildConfigurationList = 96FF32F20FBD2BDF00F259B8 /* Build configuration list for PBXProject "lib3ds" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 96FF32ED0FBD2BDF00F259B8;
+			productRefGroup = 96FF33050FBD2C2800F259B8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				96FF33030FBD2C2800F259B8 /* lib3ds */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		96FF33010FBD2C2800F259B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				968B3047151C287000AC5577 /* lib3ds_atmosphere.c in Sources */,
+				968B3048151C287000AC5577 /* lib3ds_background.c in Sources */,
+				968B3049151C287000AC5577 /* lib3ds_camera.c in Sources */,
+				968B304A151C287000AC5577 /* lib3ds_chunk.c in Sources */,
+				968B304B151C287000AC5577 /* lib3ds_chunktable.c in Sources */,
+				968B304C151C287000AC5577 /* lib3ds_file.c in Sources */,
+				968B304D151C287000AC5577 /* lib3ds_io.c in Sources */,
+				968B304E151C287000AC5577 /* lib3ds_light.c in Sources */,
+				968B304F151C287000AC5577 /* lib3ds_material.c in Sources */,
+				968B3050151C287000AC5577 /* lib3ds_math.c in Sources */,
+				968B3051151C287000AC5577 /* lib3ds_matrix.c in Sources */,
+				968B3052151C287000AC5577 /* lib3ds_mesh.c in Sources */,
+				968B3053151C287000AC5577 /* lib3ds_node.c in Sources */,
+				968B3054151C287000AC5577 /* lib3ds_quat.c in Sources */,
+				968B3055151C287000AC5577 /* lib3ds_shadow.c in Sources */,
+				968B3056151C287000AC5577 /* lib3ds_track.c in Sources */,
+				968B3057151C287000AC5577 /* lib3ds_util.c in Sources */,
+				968B3058151C287000AC5577 /* lib3ds_vector.c in Sources */,
+				968B3059151C287000AC5577 /* lib3ds_viewport.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		96FF32F00FBD2BDF00F259B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = 3ds;
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+			};
+			name = Debug;
+		};
+		96FF32F10FBD2BDF00F259B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/mac";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				PRODUCT_NAME = 3ds;
+				SDKROOT = macosx;
+				SYMROOT = lib;
+				VALID_ARCHS = x86_64;
+			};
+			name = Release;
+		};
+		96FF33060FBD2C2900F259B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = include;
+				PRODUCT_NAME = 3ds;
+			};
+			name = Debug;
+		};
+		96FF33070FBD2C2900F259B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = include;
+				PRODUCT_NAME = 3ds;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		96FF32F20FBD2BDF00F259B8 /* Build configuration list for PBXProject "lib3ds" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96FF32F00FBD2BDF00F259B8 /* Debug */,
+				96FF32F10FBD2BDF00F259B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96FF33080FBD2C2900F259B8 /* Build configuration list for PBXNativeTarget "lib3ds" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96FF33060FBD2C2900F259B8 /* Debug */,
+				96FF33070FBD2C2900F259B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 96FF32EF0FBD2BDF00F259B8 /* Project object */;
+}

@@ -1,0 +1,12 @@
+bodies: [hook]
+joints: []
+high resolution path: ../../../models/tools/high_res/
+low resolution path: ../../../models/tools/low_res/
+
+hook:
+ name: hook2
+ mass: 0.08
+ mesh: Hook2.STL
+ scale: 1.0
+ friction: {static: 0.8}
+ color: blue

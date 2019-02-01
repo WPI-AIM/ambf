@@ -1,0 +1,7 @@
+<map id="chai3d::cGenericLight" name="chai3d::cGenericLight">
+<area shape="rect" id="node4" href="$classchai3d_1_1c_directional_light.html" title="This class implements a directional light source. " alt="" coords="5,229,171,256"/>
+<area shape="rect" id="node6" href="$classchai3d_1_1c_positional_light.html" title="This class implements a positional light source. " alt="" coords="195,229,355,256"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_generic_object.html" title="This class implements a base class for all 2D or 3D objects in CHAI3D. " alt="" coords="102,80,261,107"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_generic_type.html" title="This class implements an abstract type. " alt="" coords="107,5,256,32"/>
+<area shape="rect" id="node5" href="$classchai3d_1_1c_spot_light.html" title="This class implements a spot light source. " alt="" coords="116,304,247,331"/>
+</map>

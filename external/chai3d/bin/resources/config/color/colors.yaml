@@ -1,0 +1,175 @@
+# Copied and Formatted from CHIA-3D colors by using Regex
+# By: Adnan Munawar
+#------------------------------------------------------------------------
+# Section - red colors
+#------------------------------------------------------------------------
+red_indian: &red_indian {r: 0xcd, g: 0x5c, b: 0x5c, a: 0xff}
+red_light_coral: &red_light_coral {r: 0xf0, g: 0x80, b: 0x80, a: 0xff}
+red_salmon: &red_salmon {r: 0xfa, g: 0x80, b: 0x72, a: 0xff}
+red_dark_salmon: &red_dark_salmon {r: 0xe9, g: 0x96, b: 0x7a, a: 0xff}
+red_light_salmon: &red_light_salmon {r: 0xff, g: 0xa0, b: 0x7a, a: 0xff}
+red_crimson: &red_crimson {r: 0xdc, g: 0x14, b: 0x3c, a: 0xff}
+red: &red {r: 0xff, g: 0x00, b: 0x00, a: 0xff}
+red_fire_brick: &red_fire_brick {r: 0xb2, g: 0x22, b: 0x22, a: 0xff}
+red_dark: &red_dark {r: 0x8b, g: 0x00, b: 0x00, a: 0xff}
+#------------------------------------------------------------------------
+# Section - pink colors
+#------------------------------------------------------------------------
+pink: &pink {r: 0xff, g: 0xc0, b: 0xcb, a: 0xff}
+pink_light: &pink_light {r: 0xff, g: 0xb6, b: 0xc, a: 0xff}
+pink_hot: &pink_hot {r: 0xff, g: 0x69, b: 0xb4, a: 0xff}
+pink_deep: &pink_deep {r: 0xff, g: 0x14, b: 0x93, a: 0xff}
+pink_medium_violet_red: &pink_medium_violet_red {r: 0xc7, g: 0x15, b: 0x85, a: 0xff}
+pink_pale_violet_red: &pink_pale_violet_red {r: 0xdb, g: 0x70, b: 0x93, a: 0xff}
+#------------------------------------------------------------------------
+# Section - orange colors
+#------------------------------------------------------------------------
+orange_light_salmon: &orange_light_salmon {r: 0xff, g: 0xa0, b: 0x7a, a: 0xff}
+orange_coral: &orange_coral {r: 0xff, g: 0x7f, b: 0x50, a: 0xff}
+orange_tomato: &orange_tomato {r: 0xff, g: 0x63, b: 0x47, a: 0xff}
+orange_red: &orange_red {r: 0xff, g: 0x45, b: 0x00, a: 0xff}
+orange_dark: &orange_dark {r: 0xff, g: 0x8c, b: 0x00, a: 0xff}
+orange: &orange {r: 0xff, g: 0xa5, b: 0x00, a: 0xff}
+#------------------------------------------------------------------------
+# Section - yellow colors
+#------------------------------------------------------------------------
+yellow_gold: &yellow_gold {r: 0xff, g: 0xd7, b: 0x00, a: 0xff}
+yellow: &yellow {r: 0xff, g: 0xff, b: 0x00, a: 0xff}
+yellow_light: &yellow_light {r: 0xff, g: 0xff, b: 0xe0, a: 0xff}
+yellow_lemon_chiffon: &yellow_lemon_chiffon {r: 0xff, g: 0xfa, b: 0xcd, a: 0xff}
+yellow_light_golden_rod: &yellow_light_golden_rod {r: 0xfa, g: 0xfa, b: 0xd, a: 0xff}
+yellow_papaya_whip: &yellow_papaya_whip {r: 0xff, g: 0xef, b: 0xd5, a: 0xff}
+yellow_moccasin: &yellow_moccasin {r: 0xff, g: 0xe4, b: 0xb5, a: 0xff}
+yellow_peach_puff: &yellow_peach_puff {r: 0xff, g: 0xda, b: 0xb9, a: 0xff}
+yellow_pale_golden_rod: &yellow_pale_golden_rod {r: 0xee, g: 0xe8, b: 0xaa, a: 0xff}
+yellow_khaki: &yellow_khaki {r: 0xf0, g: 0xe6, b: 0x8c, a: 0xff}
+yellow_dark_khaki: &yellow_dark_khaki {r: 0xbd, g: 0xb7, b: 0x6b, a: 0xff}
+#------------------------------------------------------------------------
+# Section - purple colors
+#------------------------------------------------------------------------
+purple_lavender: &purple_lavender {r: 0xe6, g: 0xe6, b: 0xfa, a: 0xff}
+purple_thistle: &purple_thistle {r: 0xd8, g: 0xbf, b: 0xd8, a: 0xff}
+purple_plum: &purple_plum {r: 0xdd, g: 0xa0, b: 0xdd, a: 0xff}
+purple_violet: &purple_violet {r: 0xee, g: 0x82, b: 0xee, a: 0xff}
+purple_orchid: &purple_orchid {r: 0xda, g: 0x70, b: 0xd6, a: 0xff}
+purple_fuchsia: &purple_fuchsia {r: 0xff, g: 0x00, b: 0xff, a: 0xff}
+purple_magenta: &purple_magenta {r: 0xff, g: 0x00, b: 0xff, a: 0xff}
+purple_medium_orchid: &purple_medium_orchid {r: 0xba, g: 0x55, b: 0xd3, a: 0xff}
+purple_medium: &purple_medium {r: 0x93, g: 0x70, b: 0xdb, a: 0xff}
+purple_amethyst: &purple_amethyst {r: 0x99, g: 0x66, b: 0xcc, a: 0xff}
+purple_blue_violet: &purple_blue_violet {r: 0x8a, g: 0x2b, b: 0xe2, a: 0xff}
+purple_dark_violet: &purple_dark_violet {r: 0x94, g: 0x00, b: 0xd3, a: 0xff}
+purple_dark_orchid: &purple_dark_orchid {r: 0x99, g: 0x32, b: 0xcc, a: 0xff}
+purple_dark_magenta: &purple_dark_magenta {r: 0x8b, g: 0x00, b: 0x8b, a: 0xff}
+purple: &purple {r: 0x80, g: 0x00, b: 0x80, a: 0xff}
+purple_indigo: &purple_indigo {r: 0x4b, g: 0x00, b: 0x82, a: 0xff}
+purple_slate_blue: &purple_slate_blue {r: 0x6a, g: 0x5a, b: 0xcd, a: 0xff}
+purple_dark_slate_blue: &purple_dark_slate_blue {r: 0x48, g: 0x3d, b: 0x8b, a: 0xff}
+purple_medium_slate_blue: &purple_medium_slate_blue {r: 0x7b, g: 0x68, b: 0xee, a: 0xff}
+#------------------------------------------------------------------------
+# Section - green colors
+#------------------------------------------------------------------------
+green_yellow: &green_yellow {r: 0xad, g: 0xff, b: 0x2f, a: 0xff}
+green_chartreuse: &green_chartreuse {r: 0x7f, g: 0xff, b: 0x00, a: 0xff}
+green_lawn: &green_lawn {r: 0x7c, g: 0xfc, b: 0x00, a: 0xff}
+green_lime: &green_lime {r: 0x00, g: 0xff, b: 0x00, a: 0xff}
+green_lime_green: &green_lime_green {r: 0x32, g: 0xcd, b: 0x32, a: 0xff}
+green_pale: &green_pale {r: 0x98, g: 0xfb, b: 0x98, a: 0xff}
+green_light: &green_light {r: 0x90, g: 0xee, b: 0x90, a: 0xff}
+green_medium_spring: &green_medium_spring {r: 0x00, g: 0xfa, b: 0x9a, a: 0xff}
+green_spring: &green_spring {r: 0x00, g: 0xff, b: 0x7f, a: 0xff}
+green_medium_sea: &green_medium_sea {r: 0x3c, g: 0xb3, b: 0x71, a: 0xff}
+green_sea: &green_sea {r: 0x2e, g: 0x8b, b: 0x57, a: 0xff}
+green_forest: &green_forest {r: 0x22, g: 0x8b, b: 0x22, a: 0xff}
+green: &green {r: 0x00, g: 0x80, b: 0x00, a: 0xff}
+green_dark: &green_dark {r: 0x00, g: 0x64, b: 0x00, a: 0xff}
+green_yellow_green: &green_yellow_green {r: 0x9a, g: 0xcd, b: 0x32, a: 0xff}
+green_olivedrab: &green_olivedrab {r: 0x6b, g: 0x8e, b: 0x23, a: 0xff}
+green_olive: &green_olive {r: 0x80, g: 0x80, b: 0x00, a: 0xff}
+green_dark_olive: &green_dark_olive {r: 0x55, g: 0x6b, b: 0x2f, a: 0xff}
+green_medium_aqua_marine: &green_medium_aqua_marine {r: 0x66, g: 0xcd, b: 0xaa, a: 0xff}
+green_dark_sea: &green_dark_sea {r: 0x8f, g: 0xbc, b: 0x8f, a: 0xff}
+green_light_sea: &green_light_sea {r: 0x20, g: 0xb2, b: 0xaa, a: 0xff}
+green_dark_cyan: &green_dark_cyan {r: 0x00, g: 0x8b, b: 0x8b, a: 0xff}
+green_teal: &green_teal {r: 0x00, g: 0x80, b: 0x80, a: 0xff}
+#------------------------------------------------------------------------
+# Section - blue colors
+#------------------------------------------------------------------------
+blue_aqua: &blue_aqua {r: 0x00, g: 0xff, b: 0xff, a: 0xff}
+blue_cyan: &blue_cyan {r: 0x00, g: 0xff, b: 0xff, a: 0xff}
+blue_light_cyan: &blue_light_cyan {r: 0xe0, g: 0xff, b: 0xff, a: 0xff}
+blue_pale_turquoise: &blue_pale_turquoise {r: 0xaf, g: 0xee, b: 0xee, a: 0xff}
+blue_aqua_marine: &blue_aqua_marine {r: 0x7f, g: 0xff, b: 0xd4, a: 0xff}
+blue_turquoise: &blue_turquoise {r: 0x40, g: 0xe0, b: 0xd0, a: 0xff}
+blue_medium_turquoise: &blue_medium_turquoise {r: 0x48, g: 0xd1, b: 0xcc, a: 0xff}
+blue_dark_turquoise: &blue_dark_turquoise {r: 0x00, g: 0xce, b: 0xd1, a: 0xff}
+blue_cadet: &blue_cadet {r: 0x5f, g: 0x9e, b: 0xa0, a: 0xff}
+blue_steel: &blue_steel {r: 0x46, g: 0x82, b: 0xb4, a: 0xff}
+blue_light_steel: &blue_light_steel {r: 0xb0, g: 0xc4, b: 0xde, a: 0xff}
+blue_powder: &blue_powder {r: 0xb0, g: 0xe0, b: 0xe6, a: 0xff}
+blue_light: &blue_light {r: 0xad, g: 0xd8, b: 0xe6, a: 0xff}
+blue_sky: &blue_sky {r: 0x87, g: 0xce, b: 0xeb, a: 0xff}
+blue_light_sky: &blue_light_sky {r: 0x87, g: 0xce, b: 0xfa, a: 0xff}
+blue_deepsky: &blue_deepsky {r: 0x00, g: 0xbf, b: 0xff, a: 0xff}
+blue_dodger: &blue_dodger {r: 0x1e, g: 0x90, b: 0xff, a: 0xff}
+blue_corn_flower: &blue_corn_flower {r: 0x64, g: 0x95, b: 0xed, a: 0xff}
+blue_medium_slate: &blue_medium_slate {r: 0x7b, g: 0x68, b: 0xee, a: 0xff}
+blue_royal: &blue_royal {r: 0x41, g: 0x69, b: 0xe1, a: 0xff}
+blue: &blue {r: 0x00, g: 0x00, b: 0xff, a: 0xff}
+blue_medium: &blue_medium {r: 0x00, g: 0x00, b: 0xcd, a: 0xff}
+blue_dark: &blue_dark {r: 0x00, g: 0x00, b: 0x8b, a: 0xff}
+blue_navy: &blue_navy {r: 0x00, g: 0x00, b: 0x80, a: 0xff}
+blue_midnight: &blue_midnight {r: 0x19, g: 0x19, b: 0x70, a: 0xff}
+#------------------------------------------------------------------------
+# Section - brown colors
+#------------------------------------------------------------------------
+brown_corn_silk: &brown_corn_silk {r: 0xff, g: 0xf8, b: 0xdc, a: 0xff}
+brown_blanched_almond: &brown_blanched_almond {r: 0xff, g: 0xeb, b: 0xcd, a: 0xff}
+brown_bisque: &brown_bisque {r: 0xff, g: 0xe4, b: 0xc4, a: 0xff}
+brown_navajo_white: &brown_navajo_white {r: 0xff, g: 0xde, b: 0xad, a: 0xff}
+brown_wheat: &brown_wheat {r: 0xf5, g: 0xde, b: 0xb3, a: 0xff}
+brown_burly_wood: &brown_burly_wood {r: 0xde, g: 0xb8, b: 0x87, a: 0xff}
+brown_tan: &brown_tan {r: 0xd2, g: 0xb4, b: 0x8c, a: 0xff}
+brown_rosy: &brown_rosy {r: 0xbc, g: 0x8f, b: 0x8f, a: 0xff}
+brown_sandy: &brown_sandy {r: 0xf4, g: 0xa4, b: 0x60, a: 0xff}
+brown_golden_rod: &brown_golden_rod {r: 0xda, g: 0xa5, b: 0x20, a: 0xff}
+brown_dark_goldenrod: &brown_dark_goldenrod {r: 0xb8, g: 0x86, b: 0x0b, a: 0xff}
+brown_peru: &brown_peru {r: 0xcd, g: 0x85, b: 0x3f, a: 0xff}
+brown_chocolate: &brown_chocolate {r: 0xd2, g: 0x69, b: 0x1e, a: 0xff}
+brown_saddle: &brown_saddle {r: 0x8b, g: 0x45, b: 0x13, a: 0xff}
+brown_sienna: &brown_sienna {r: 0xa0, g: 0x52, b: 0x2d, a: 0xff}
+brown: &brown {r: 0xa5, g: 0x2a, b: 0x2a, a: 0xff}
+brown_maroon: &brown_maroon {r: 0x80, g: 0x00, b: 0x00, a: 0xff}
+#------------------------------------------------------------------------
+# Section - white colors
+#------------------------------------------------------------------------
+white: &white {r: 0xff, g: 0xff, b: 0xff, a: 0xff}
+white_snow: &white_snow {r: 0xff, g: 0xfa, b: 0xfa, a: 0xff}
+white_honeydew: &white_honeydew {r: 0xf0, g: 0xff, b: 0xf0, a: 0xff}
+white_mint_cream: &white_mint_cream {r: 0xf5, g: 0xff, b: 0xfa, a: 0xff}
+white_azure: &white_azure {r: 0xf0, g: 0xff, b: 0xff, a: 0xff}
+white_alice_blue: &white_alice_blue {r: 0xf0, g: 0xf8, b: 0xff, a: 0xff}
+white_ghost: &white_ghost {r: 0xf8, g: 0xf8, b: 0xff, a: 0xff}
+white_smoke: &white_smoke {r: 0xf5, g: 0xf5, b: 0xf5, a: 0xff}
+white_seashell: &white_seashell {r: 0xff, g: 0xf5, b: 0xee, a: 0xff}
+white_beige: &white_beige {r: 0xf5, g: 0xf5, b: 0xdc, a: 0xff}
+white_old_lace: &white_old_lace {r: 0xfd, g: 0xf5, b: 0xe6, a: 0xff}
+white_floral: &white_floral {r: 0xff, g: 0xfa, b: 0xf0, a: 0xff}
+white_ivory: &white_ivory {r: 0xff, g: 0xff, b: 0xf0, a: 0xff}
+white_antique: &white_antique {r: 0xfa, g: 0xeb, b: 0xd7, a: 0xff}
+white_linen: &white_linen {r: 0xfa, g: 0xf0, b: 0xe6, a: 0xff}
+white_lavender_blush: &white_lavender_blush {r: 0xff, g: 0xf0, b: 0xf5, a: 0xff}
+white_misty_rose: &white_misty_rose {r: 0xff, g: 0xe4, b: 0xe1, a: 0xff}
+#------------------------------------------------------------------------
+# Section - gray colors
+#------------------------------------------------------------------------
+gray_gainsboro: &gray_gainsboro {r: 0xdc, g: 0xdc, b: 0xdc, a: 0xff}
+gray_light: &gray_light {r: 0xd3, g: 0xd3, b: 0xd3, a: 0xff}
+gray_silver: &gray_silver {r: 0xc0, g: 0xc0, b: 0xc0, a: 0xff}
+gray_dark: &gray_dark {r: 0xa9, g: 0xa9, b: 0xa9, a: 0xff}
+gray: &gray {r: 0x80, g: 0x80, b: 0x80, a: 0xff}
+gray_dim: &gray_dim {r: 0x69, g: 0x69, b: 0x69, a: 0xff}
+gray_light_slate: &gray_light_slate {r: 0x77, g: 0x88, b: 0x99, a: 0xff}
+gray_slate: &gray_slate {r: 0x70, g: 0x80, b: 0x90, a: 0xff}
+gray_dark_slate: &gray_dark_slate {r: 0x2f, g: 0x4f, b: 0x4f, a: 0xff}
+black: &black {r: 0x00, g: 0x00, b: 0x00, a: 0xff}

@@ -1,0 +1,20 @@
+/* additional/overloaded CSS for doxygen 1.8.6 */
+
+h1, h2, h3, h4, h5, h6 
+{
+    margin-top: 38px;
+}
+
+#projectlogo
+{
+    text-align: center;
+    vertical-align: middle;
+    border-collapse: separate;
+    padding: 10px;
+}
+
+div.fragment 
+{
+    padding: 4px 6px;
+    margin: 20px 8px 20px 2px;
+}

@@ -1,0 +1,218 @@
+bodies: [BODY ArmParallel, BODY ArmParallel1, BODY BottomArm, BODY OutPitch Shoulder,
+  BODY Top Panel, BODY WristPitch, BODY WristPlatform, BODY WristRoll, BODY WristYaw]
+joints: [JOINT OutPitch Shoulder-ArmParallel, JOINT ArmParallel-ArmParallel1, JOINT
+    ArmParallel-BottomArm, JOINT Top Panel-OutPitch Shoulder, JOINT WristPlatform-WristPitch,
+  JOINT BottomArm-WristPlatform, JOINT WristYaw-WristRoll, JOINT WristPitch-WristYaw]
+high resolution path: ../../../models/blender_afmb/mtm/high_res/
+low resolution path: ../../../models/blender_afmb/mtm/low_res/
+ignore inter-collision: 'False'
+BODY ArmParallel:
+  name: ArmParallel
+  mesh: ArmParallel.STL
+  mass: 0.9
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: 1.572, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: -0.19}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.109, y: 0.012, z: 0.02}
+  color rgba: {a: 1.0, b: 0.5281, g: 0.5597, r: 0.4178}
+BODY ArmParallel1:
+  name: ArmParallel1
+  mesh: ArmParallel1.STL
+  mass: 0.5
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 1.571, y: 0.001}
+    position: {x: 0.0, y: -0.065, z: -0.19}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.038, y: 0.0, z: -0.007}
+  color rgba: {a: 1.0, b: 0.0, g: 0.0, r: 0.0}
+BODY BottomArm:
+  name: BottomArm
+  mesh: BottomArm.STL
+  mass: 0.8
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.571, y: -3.14}
+    position: {x: -0.0, y: -0.0, z: -0.469}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.188, y: -0.008, z: 0.0}
+  color rgba: {a: 1.0, b: 0.2884, g: 0.0848, r: 0.0033}
+BODY OutPitch Shoulder:
+  name: OutPitch Shoulder
+  mesh: OutPitch Shoulder.STL
+  mass: 1.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: -3.141}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.003, y: 0.035, z: -0.119}
+  color rgba: {a: 1.0, b: 0.8, g: 0.2388, r: 0.0493}
+BODY Top Panel:
+  name: Top Panel
+  mesh: Top Panel.STL
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 1.571}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.008, y: 0.064, z: 0.028}
+  color rgba: {a: 1.0, b: 0.0237, g: 0.0066, r: 0.0}
+BODY WristPitch:
+  name: WristPitch
+  mesh: WristPitch.STL
+  mass: 0.2
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.571, y: -3.14}
+    position: {x: 0.364, y: 0.0, z: -0.313}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.041, z: -0.037}
+  color rgba: {a: 1.0, b: 0.5816, g: 0.1653, r: 0.0832}
+BODY WristPlatform:
+  name: WristPlatform
+  mesh: WristPlatform.STL
+  mass: 0.4
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -0.0, y: -3.14}
+    position: {x: 0.364, y: 0.0, z: -0.313}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.055, z: -0.054}
+  color rgba: {a: 1.0, b: 0.4576, g: 0.3377, r: 0.0488}
+BODY WristRoll:
+  name: WristRoll
+  mesh: WristRoll.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: 1.57, y: -1.564}
+    position: {x: 0.325, y: 0.0, z: -0.313}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: -0.036}
+  color rgba: {a: 1.0, b: 0.2331, g: 0.0415, r: 0.0067}
+BODY WristYaw:
+  name: WristYaw
+  mesh: WristYaw.STL
+  mass: 0.2
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.0, y: -1.569}
+    position: {x: 0.364, y: 0.0, z: -0.313}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.031, z: -0.03}
+  color rgba: {a: 1.0, b: 0.0617, g: 0.3912, r: 0.8}
+JOINT OutPitch Shoulder-ArmParallel:
+  name: OutPitch Shoulder-ArmParallel
+  parent: BODY OutPitch Shoulder
+  child: BODY ArmParallel
+  parent axis: {x: -0.001, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: -0.19}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.57
+JOINT ArmParallel-ArmParallel1:
+  name: ArmParallel-ArmParallel1
+  parent: BODY ArmParallel
+  child: BODY ArmParallel1
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.065}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.571, low: -1.571}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT ArmParallel-BottomArm:
+  name: ArmParallel-BottomArm
+  parent: BODY ArmParallel
+  child: BODY BottomArm
+  parent axis: {x: 0.0, y: -0.0, z: 1.0}
+  parent pivot: {x: -0.279, y: 0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT Top Panel-OutPitch Shoulder:
+  name: Top Panel-OutPitch Shoulder
+  parent: BODY Top Panel
+  child: BODY OutPitch Shoulder
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.785, low: -1.309}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT WristPlatform-WristPitch:
+  name: WristPlatform-WristPitch
+  parent: BODY WristPlatform
+  child: BODY WristPitch
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 3.142, low: -1.571}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT BottomArm-WristPlatform:
+  name: BottomArm-WristPlatform
+  parent: BODY BottomArm
+  child: BODY WristPlatform
+  parent axis: {x: -0.0, y: -1.0, z: 0.0}
+  parent pivot: {x: -0.364, y: -0.156, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 4.276, low: -1.047}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT WristYaw-WristRoll:
+  name: WristYaw-WristRoll
+  parent: BODY WristYaw
+  child: BODY WristRoll
+  parent axis: {x: 0.006, y: -1.0, z: -0.0}
+  parent pivot: {x: -0.0, y: -0.039, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 3.054, low: -3.054}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.565
+JOINT WristPitch-WristYaw:
+  name: WristPitch-WristYaw
+  parent: BODY WristPitch
+  child: BODY WristYaw
+  parent axis: {x: -0.0, y: -1.0, z: -0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.785, low: -0.785}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571

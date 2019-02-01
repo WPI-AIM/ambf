@@ -1,0 +1,394 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		96FA3B441E073A3A005229C9 /* All */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 96FA3B471E073A3A005229C9 /* Build configuration list for PBXAggregateTarget "All" */;
+			buildPhases = (
+			);
+			dependencies = (
+				96FA3B491E073A41005229C9 /* PBXTargetDependency */,
+			);
+			name = All;
+			productName = All;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		9620A30219D8F25F005D816B /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9620A30119D8F25F005D816B /* CoreServices.framework */; };
+		9620A30419D8F279005D816B /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9620A30319D8F279005D816B /* CoreAudio.framework */; };
+		9620A30619D8F288005D816B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9620A30519D8F288005D816B /* AudioToolbox.framework */; };
+		9620A30819D8F28F005D816B /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9620A30719D8F28F005D816B /* AudioUnit.framework */; };
+		9689850818ECB7B70029A981 /* application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9689850718ECB7B70029A981 /* application.cpp */; };
+		9689851918ECB8330029A981 /* libchai3d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689851618ECB7F90029A981 /* libchai3d.a */; };
+		9689851D18ECB9350029A981 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689851A18ECB8710029A981 /* GLUT.framework */; };
+		9689852018ECBC420029A981 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689851F18ECBC420029A981 /* CoreFoundation.framework */; };
+		9689852218ECBC470029A981 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689852118ECBC470029A981 /* IOKit.framework */; };
+		9689852418ECBC4C0029A981 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689852318ECBC4C0029A981 /* OpenGL.framework */; };
+		9689852718ECBCC10029A981 /* libdrd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9689852618ECBCC10029A981 /* libdrd.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9689851518ECB7F90029A981 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9689850A18ECB7F90029A981 /* libchai3d.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		9689851718ECB8200029A981 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9689850A18ECB7F90029A981 /* libchai3d.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = chai3d;
+		};
+		96FA3B481E073A41005229C9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9665644218ECB76A0032011B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9665644918ECB76A0032011B;
+			remoteInfo = application;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		9620A30119D8F25F005D816B /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		9620A30319D8F279005D816B /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		9620A30519D8F288005D816B /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		9620A30719D8F28F005D816B /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		9665644A18ECB76A0032011B /* application */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = application; sourceTree = BUILT_PRODUCTS_DIR; };
+		9689850718ECB7B70029A981 /* application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = application.cpp; sourceTree = SOURCE_ROOT; };
+		9689850A18ECB7F90029A981 /* libchai3d.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libchai3d.xcodeproj; path = ../../libchai3d.xcodeproj; sourceTree = "<group>"; };
+		9689851A18ECB8710029A981 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		9689851F18ECBC420029A981 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		9689852118ECBC470029A981 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		9689852318ECBC4C0029A981 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		9689852618ECBCC10029A981 /* libdrd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdrd.a; path = ../../external/DHD/lib/mac/libdrd.a; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9665644718ECB76A0032011B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9689852718ECBCC10029A981 /* libdrd.a in Frameworks */,
+				9689851918ECB8330029A981 /* libchai3d.a in Frameworks */,
+				9689852018ECBC420029A981 /* CoreFoundation.framework in Frameworks */,
+				9689852218ECBC470029A981 /* IOKit.framework in Frameworks */,
+				9689852418ECBC4C0029A981 /* OpenGL.framework in Frameworks */,
+				9689851D18ECB9350029A981 /* GLUT.framework in Frameworks */,
+				9620A30219D8F25F005D816B /* CoreServices.framework in Frameworks */,
+				9620A30419D8F279005D816B /* CoreAudio.framework in Frameworks */,
+				9620A30619D8F288005D816B /* AudioToolbox.framework in Frameworks */,
+				9620A30819D8F28F005D816B /* AudioUnit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9665644118ECB76A0032011B = {
+			isa = PBXGroup;
+			children = (
+				9665644C18ECB76A0032011B /* application */,
+				9689850A18ECB7F90029A981 /* libchai3d.xcodeproj */,
+				9689852518ECBC850029A981 /* External */,
+				9689851C18ECB8F80029A981 /* Frameworks */,
+				9665644B18ECB76A0032011B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9665644B18ECB76A0032011B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9665644A18ECB76A0032011B /* application */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9665644C18ECB76A0032011B /* application */ = {
+			isa = PBXGroup;
+			children = (
+				9689850718ECB7B70029A981 /* application.cpp */,
+			);
+			path = application;
+			sourceTree = "<group>";
+		};
+		9689850B18ECB7F90029A981 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9689851618ECB7F90029A981 /* libchai3d.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9689851C18ECB8F80029A981 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9689851F18ECBC420029A981 /* CoreFoundation.framework */,
+				9689852118ECBC470029A981 /* IOKit.framework */,
+				9689852318ECBC4C0029A981 /* OpenGL.framework */,
+				9689851A18ECB8710029A981 /* GLUT.framework */,
+				9620A30119D8F25F005D816B /* CoreServices.framework */,
+				9620A30319D8F279005D816B /* CoreAudio.framework */,
+				9620A30519D8F288005D816B /* AudioToolbox.framework */,
+				9620A30719D8F28F005D816B /* AudioUnit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9689852518ECBC850029A981 /* External */ = {
+			isa = PBXGroup;
+			children = (
+				9689852618ECBCC10029A981 /* libdrd.a */,
+			);
+			name = External;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9665644918ECB76A0032011B /* application */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9665645318ECB76A0032011B /* Build configuration list for PBXNativeTarget "application" */;
+			buildPhases = (
+				9665644618ECB76A0032011B /* Sources */,
+				9665644718ECB76A0032011B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9689851818ECB8200029A981 /* PBXTargetDependency */,
+			);
+			name = application;
+			productName = application;
+			productReference = 9665644A18ECB76A0032011B /* application */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9665644218ECB76A0032011B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0820;
+				ORGANIZATIONNAME = "Force Dimension";
+				TargetAttributes = {
+					96FA3B441E073A3A005229C9 = {
+						CreatedOnToolsVersion = 8.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9665644518ECB76A0032011B /* Build configuration list for PBXProject "application" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 9665644118ECB76A0032011B;
+			productRefGroup = 9665644B18ECB76A0032011B /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 9689850B18ECB7F90029A981 /* Products */;
+					ProjectRef = 9689850A18ECB7F90029A981 /* libchai3d.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				9665644918ECB76A0032011B /* application */,
+				96FA3B441E073A3A005229C9 /* All */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		9689851618ECB7F90029A981 /* libchai3d.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libchai3d.a;
+			remoteRef = 9689851518ECB7F90029A981 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9665644618ECB76A0032011B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9689850818ECB7B70029A981 /* application.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9689851818ECB8200029A981 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = chai3d;
+			targetProxy = 9689851718ECB8200029A981 /* PBXContainerItemProxy */;
+		};
+		96FA3B491E073A41005229C9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9665644918ECB76A0032011B /* application */;
+			targetProxy = 96FA3B481E073A41005229C9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		9665645118ECB76A0032011B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../../src,
+					../../external/Eigen,
+					../../external/glew/include,
+				);
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SYMROOT = "../../bin/mac-$(CURRENT_ARCH)";
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Debug;
+		};
+		9665645218ECB76A0032011B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../../src,
+					../../external/Eigen,
+					../../external/glew/include,
+				);
+				OBJROOT = "obj/$(CONFIGURATION)/mac";
+				SDKROOT = macosx;
+				SYMROOT = "../../bin/mac-$(CURRENT_ARCH)";
+				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = "-Wno-deprecated";
+			};
+			name = Release;
+		};
+		9665645418ECB76A0032011B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../external/DHD/lib/mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		9665645518ECB76A0032011B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../external/DHD/lib/mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		96FA3B451E073A3A005229C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		96FA3B461E073A3A005229C9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9665644518ECB76A0032011B /* Build configuration list for PBXProject "application" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9665645118ECB76A0032011B /* Debug */,
+				9665645218ECB76A0032011B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9665645318ECB76A0032011B /* Build configuration list for PBXNativeTarget "application" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9665645418ECB76A0032011B /* Debug */,
+				9665645518ECB76A0032011B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96FA3B471E073A3A005229C9 /* Build configuration list for PBXAggregateTarget "All" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96FA3B451E073A3A005229C9 /* Debug */,
+				96FA3B461E073A3A005229C9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9665644218ECB76A0032011B /* Project object */;
+}

@@ -1,0 +1,11 @@
+<map id="chai3d::cPanel" name="chai3d::cPanel">
+<area shape="rect" id="node6" href="$classchai3d_1_1c_bitmap.html" title="This class implements a 2D bitmap widget. " alt="" coords="19,379,135,405"/>
+<area shape="rect" id="node8" href="$classchai3d_1_1c_label.html" title="This class implements a 2D label widget to display one line of text. " alt="" coords="160,379,267,405"/>
+<area shape="rect" id="node9" href="$classchai3d_1_1c_scope.html" title="This class implements a 2D scope to display signals. " alt="" coords="291,379,403,405"/>
+<area shape="rect" id="node10" href="$classchai3d_1_1c_view_panel.html" title="This class implements a 2D display panel associated with a framebuffer. " alt="" coords="427,379,565,405"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_generic_widget.html" title="This class implements a base class for widgets. " alt="" coords="199,229,361,256"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_mesh.html" title="This class implements a 3D polygonal mesh. " alt="" coords="227,155,333,181"/>
+<area shape="rect" id="node4" href="$classchai3d_1_1c_generic_object.html" title="This class implements a base class for all 2D or 3D objects in CHAI3D. " alt="" coords="201,80,359,107"/>
+<area shape="rect" id="node5" href="$classchai3d_1_1c_generic_type.html" title="This class implements an abstract type. " alt="" coords="205,5,355,32"/>
+<area shape="rect" id="node7" href="$classchai3d_1_1c_background.html" title="This class implements a 2D background widget. " alt="" coords="5,453,149,480"/>
+</map>

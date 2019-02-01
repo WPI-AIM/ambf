@@ -1,0 +1,1066 @@
+bodies: [BODY base_link, BODY bl_caster_l_wheel_link, BODY bl_caster_r_wheel_link,
+  BODY bl_caster_rotation_link, BODY br_caster_l_wheel_link, BODY br_caster_r_wheel_link,
+  BODY br_caster_rotation_link, BODY fl_caster_l_wheel_link, BODY fl_caster_r_wheel_link,
+  BODY fl_caster_rotation_link, BODY fr_caster_l_wheel_link, BODY fr_caster_r_wheel_link,
+  BODY fr_caster_rotation_link, BODY head_pan_link, BODY head_tilt_link, BODY l_elbow_flex_link,
+  BODY l_forearm_link, BODY l_forearm_roll_link, BODY l_gripper_l_finger_link, BODY
+    l_gripper_l_finger_tip_link, BODY l_gripper_palm_link, BODY l_gripper_r_finger_link,
+  BODY l_gripper_r_finger_tip_link, BODY l_shoulder_lift_link, BODY l_shoulder_pan_link,
+  BODY l_upper_arm_link, BODY l_upper_arm_roll_link, BODY l_wrist_flex_link, BODY
+    l_wrist_roll_link, BODY laser_tilt_mount_link, BODY r_elbow_flex_link, BODY r_forearm_link,
+  BODY r_forearm_roll_link, BODY r_gripper_l_finger_link, BODY r_gripper_l_finger_tip_link,
+  BODY r_gripper_palm_link, BODY r_gripper_r_finger_link, BODY r_gripper_r_finger_tip_link,
+  BODY r_shoulder_lift_link, BODY r_shoulder_pan_link, BODY r_upper_arm_link, BODY
+    r_upper_arm_roll_link, BODY r_wrist_flex_link, BODY r_wrist_roll_link, BODY torso_lift_link]
+joints: [JOINT bl_caster_rotation_link-bl_caster_l_wheel_link, JOINT bl_caster_rotation_link-bl_caster_r_wheel_link,
+  JOINT base_link-bl_caster_rotation_link, JOINT br_caster_rotation_link-br_caster_l_wheel_link,
+  JOINT br_caster_rotation_link-br_caster_r_wheel_link, JOINT base_link-br_caster_rotation_link,
+  JOINT fl_caster_rotation_link-fl_caster_l_wheel_link, JOINT fl_caster_rotation_link-fl_caster_r_wheel_link,
+  JOINT base_link-fl_caster_rotation_link, JOINT fr_caster_rotation_link-fr_caster_l_wheel_link,
+  JOINT fr_caster_rotation_link-fr_caster_r_wheel_link, JOINT base_link-fr_caster_rotation_link,
+  JOINT torso_lift_link-head_pan_link, JOINT head_pan_link-head_tilt_link, JOINT l_upper_arm_link-l_elbow_flex_link,
+  JOINT l_forearm_roll_link-l_forearm_link, JOINT l_elbow_flex_link-l_forearm_roll_link,
+  JOINT l_gripper_palm_link-l_gripper_l_finger_link, JOINT l_gripper_l_finger_link-l_gripper_l_finger_tip_link,
+  JOINT l_wrist_roll_link-l_gripper_palm_link, JOINT l_gripper_palm_link-l_gripper_r_finger_link,
+  JOINT l_gripper_r_finger_link-l_gripper_r_finger_tip_link, JOINT l_shoulder_pan_link-l_shoulder_lift_link,
+  JOINT torso_lift_link-l_shoulder_pan_link, JOINT l_upper_arm_roll_link-l_upper_arm_link,
+  JOINT l_shoulder_lift_link-l_upper_arm_roll_link, JOINT l_forearm_link-l_wrist_flex_link,
+  JOINT l_wrist_flex_link-l_wrist_roll_link, JOINT torso_lift_link-laser_tilt_mount_link,
+  JOINT r_upper_arm_link-r_elbow_flex_link, JOINT r_forearm_roll_link-r_forearm_link,
+  JOINT r_elbow_flex_link-r_forearm_roll_link, JOINT r_gripper_palm_link-r_gripper_l_finger_link,
+  JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link, JOINT r_wrist_roll_link-r_gripper_palm_link,
+  JOINT r_gripper_palm_link-r_gripper_r_finger_link, JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link,
+  JOINT r_shoulder_pan_link-r_shoulder_lift_link, JOINT torso_lift_link-r_shoulder_pan_link,
+  JOINT r_upper_arm_roll_link-r_upper_arm_link, JOINT r_shoulder_lift_link-r_upper_arm_roll_link,
+  JOINT r_forearm_link-r_wrist_flex_link, JOINT r_wrist_flex_link-r_wrist_roll_link,
+  JOINT base_link-torso_lift_link]
+high resolution path: ../../../models/blender_afmb/pr2/high_res/
+low resolution path: ../../../models/blender_afmb/pr2/low_res/
+ignore inter-collision: 'True'
+BODY base_link:
+  name: base_link
+  mesh: base_link.STL
+  mass: 116.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.478, y: 0.0, z: -0.424}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.001, y: 0.0, z: 0.328}
+  color rgba: {a: 1.0, b: 0.4385, g: 0.3985, r: 0.4306}
+BODY bl_caster_l_wheel_link:
+  name: bl_caster_l_wheel_link
+  mesh: bl_caster_l_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.703, y: 0.274, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: 0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0027, g: 0.0, r: 0.8}
+BODY bl_caster_r_wheel_link:
+  name: bl_caster_r_wheel_link
+  mesh: bl_caster_r_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.703, y: 0.176, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: 0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0215, g: 0.0, r: 0.8}
+BODY bl_caster_rotation_link:
+  name: bl_caster_rotation_link
+  mesh: bl_caster_rotation_link.STL
+  mass: 3.473
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.703, y: 0.225, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: 0.068}
+  color rgba: {a: 1.0, b: 0.0668, g: 0.0668, r: 0.0668}
+BODY br_caster_l_wheel_link:
+  name: br_caster_l_wheel_link
+  mesh: br_caster_l_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.703, y: -0.176, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: -0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0, g: 1.0, r: 0.915}
+BODY br_caster_r_wheel_link:
+  name: br_caster_r_wheel_link
+  mesh: br_caster_r_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.703, y: -0.274, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: -0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0, g: 0.8863, r: 1.0}
+BODY br_caster_rotation_link:
+  name: br_caster_rotation_link
+  mesh: br_caster_rotation_link.STL
+  mass: 3.473
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.703, y: -0.225, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: 0.068}
+  color rgba: {a: 1.0, b: 0.042, g: 0.042, r: 0.042}
+BODY fl_caster_l_wheel_link:
+  name: fl_caster_l_wheel_link
+  mesh: fl_caster_l_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.253, y: 0.274, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.8, g: 0.0647, r: 0.0}
+BODY fl_caster_r_wheel_link:
+  name: fl_caster_r_wheel_link
+  mesh: fl_caster_r_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.253, y: 0.176, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.8, g: 0.009, r: 0.0}
+BODY fl_caster_rotation_link:
+  name: fl_caster_rotation_link
+  mesh: fl_caster_rotation_link.STL
+  mass: 3.473
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.253, y: 0.225, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: 0.068}
+  color rgba: {a: 1.0, b: 0.0946, g: 0.0946, r: 0.0946}
+BODY fr_caster_l_wheel_link:
+  name: fr_caster_l_wheel_link
+  mesh: fr_caster_l_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.253, y: -0.176, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0, g: 0.8, r: 0.0017}
+BODY fr_caster_r_wheel_link:
+  name: fr_caster_r_wheel_link
+  mesh: fr_caster_r_wheel_link.STL
+  mass: 0.44
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.253, y: -0.274, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.0, z: -0.006}
+  color rgba: {a: 1.0, b: 0.0, g: 0.8, r: 0.0005}
+BODY fr_caster_rotation_link:
+  name: fr_caster_rotation_link
+  mesh: fr_caster_rotation_link.STL
+  mass: 3.473
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.253, y: -0.225, z: -0.396}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.0, z: 0.068}
+  color rgba: {a: 1.0, b: 0.0236, g: 0.0236, r: 0.0236}
+BODY head_pan_link:
+  name: head_pan_link
+  mesh: head_pan_link.STL
+  mass: 6.339
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.545, y: 0.0, z: 0.697}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.016, y: 0.0, z: 0.006}
+  color rgba: {a: 1.0, b: 0.477, g: 0.0, r: 0.446}
+BODY head_tilt_link:
+  name: head_tilt_link
+  mesh: head_tilt_link.STL
+  mass: 4.479
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: -0.0}
+    position: {x: -0.477, y: 0.0, z: 0.697}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.053, y: -0.046, z: -0.0}
+  color rgba: {a: 1.0, b: 1.0, g: 0.9708, r: 0.9068}
+BODY l_elbow_flex_link:
+  name: l_elbow_flex_link
+  mesh: l_elbow_flex_link.STL
+  mass: 1.903
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: -0.0}
+    position: {x: -0.028, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.006, y: -0.0, z: -0.0}
+  color rgba: {a: 1.0, b: 0.8, g: 0.2935, r: 0.5654}
+BODY l_forearm_link:
+  name: l_forearm_link
+  mesh: l_forearm_link.STL
+  mass: 2.58
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.0, y: -0.0}
+    position: {x: -0.028, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.226, y: 0.0, z: 0.006}
+  color rgba: {a: 1.0, b: 0.0971, g: 0.8, r: 0.7177}
+BODY l_forearm_roll_link:
+  name: l_forearm_roll_link
+  mesh: l_forearm_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: -1.57, y: -1.57}
+    position: {x: -0.028, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.001, y: -0.0, z: 0.041}
+  color: random
+BODY l_gripper_l_finger_link:
+  name: l_gripper_l_finger_link
+  mesh: l_gripper_l_finger_link.STL
+  mass: 0.171
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.001, y: -0.0}
+    position: {x: 0.37, y: 0.198, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.043, y: 0.018, z: 0.0}
+  color rgba: {a: 1.0, b: 0.1789, g: 0.1789, r: 0.1789}
+BODY l_gripper_l_finger_tip_link:
+  name: l_gripper_l_finger_tip_link
+  mesh: l_gripper_l_finger_tip_link.STL
+  mass: 0.044
+  scale: 1.0
+  location:
+    orientation: {p: -3.142, r: -0.001, y: -0.0}
+    position: {x: 0.461, y: 0.203, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: 0.006, z: -0.0}
+  color rgba: {a: 1.0, b: 0.1733, g: 0.1733, r: 0.1733}
+BODY l_gripper_palm_link:
+  name: l_gripper_palm_link
+  mesh: l_gripper_palm_link.STL
+  mass: 0.58
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.001, y: -0.0}
+    position: {x: 0.293, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.078, y: 0.0, z: 0.0}
+  color rgba: {a: 1.0, b: 0.6963, g: 0.8, r: 0.0}
+BODY l_gripper_r_finger_link:
+  name: l_gripper_r_finger_link
+  mesh: l_gripper_r_finger_link.STL
+  mass: 0.174
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -3.141, y: -0.0}
+    position: {x: 0.37, y: 0.178, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.043, y: 0.018, z: 0.0}
+  color rgba: {a: 1.0, b: 0.1626, g: 0.1626, r: 0.1626}
+BODY l_gripper_r_finger_tip_link:
+  name: l_gripper_r_finger_tip_link
+  mesh: l_gripper_r_finger_tip_link.STL
+  mass: 0.044
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.001, y: 3.141}
+    position: {x: 0.461, y: 0.173, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: 0.006, z: -0.0}
+  color rgba: {a: 1.0, b: 0.1902, g: 0.1902, r: 0.1902}
+BODY l_shoulder_lift_link:
+  name: l_shoulder_lift_link
+  mesh: l_shoulder_lift_link.STL
+  mass: 2.75
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.428, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: -0.0, z: 0.0}
+  color rgba: {a: 1.0, b: 0.0021, g: 0.0021, r: 0.0021}
+BODY l_shoulder_pan_link:
+  name: l_shoulder_pan_link
+  mesh: l_shoulder_pan_link.STL
+  mass: 25.799
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.528, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.05, y: 0.0, z: -0.175}
+  color rgba: {a: 1.0, b: 0.5725, g: 0.1259, r: 0.7484}
+BODY l_upper_arm_link:
+  name: l_upper_arm_link
+  mesh: l_upper_arm_link.STL
+  mass: 6.018
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: -0.0}
+    position: {x: -0.428, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.215, y: 0.0, z: -0.002}
+  color rgba: {a: 1.0, b: 0.7874, g: 0.367, r: 0.213}
+BODY l_upper_arm_roll_link:
+  name: l_upper_arm_roll_link
+  mesh: l_upper_arm_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: 1.57, y: 1.57}
+    position: {x: -0.428, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.003, z: 0.129}
+  color: random
+BODY l_wrist_flex_link:
+  name: l_wrist_flex_link
+  mesh: l_wrist_flex_link.STL
+  mass: 0.614
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.57, y: -0.0}
+    position: {x: 0.293, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.005, y: 0.002, z: 0.0}
+  color rgba: {a: 1.0, b: 0.0, g: 0.1844, r: 0.8}
+BODY l_wrist_roll_link:
+  name: l_wrist_roll_link
+  mesh: l_wrist_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: -1.57, y: -1.57}
+    position: {x: 0.293, y: 0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.0, z: 0.033}
+  color: random
+BODY laser_tilt_mount_link:
+  name: laser_tilt_mount_link
+  mesh: laser_tilt_mount_link.STL
+  mass: 0.591
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.571, y: 0.0}
+    position: {x: -0.429, y: 0.0, z: 0.543}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.002, y: -0.004, z: -0.0}
+  color rgba: {a: 1.0, b: 0.015, g: 0.8971, r: 0.8548}
+BODY r_elbow_flex_link:
+  name: r_elbow_flex_link
+  mesh: r_elbow_flex_link.STL
+  mass: 1.903
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: -0.0}
+    position: {x: -0.028, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.006, y: -0.0, z: -0.0}
+  color rgba: {a: 1.0, b: 0.8, g: 0.3929, r: 0.6551}
+BODY r_forearm_link:
+  name: r_forearm_link
+  mesh: r_forearm_link.STL
+  mass: 2.58
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.0, y: -0.0}
+    position: {x: -0.028, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.226, y: 0.0, z: 0.006}
+  color rgba: {a: 1.0, b: 0.0586, g: 0.8, r: 0.7388}
+BODY r_forearm_roll_link:
+  name: r_forearm_roll_link
+  mesh: r_forearm_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: -1.57, y: -1.57}
+    position: {x: -0.028, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.001, y: -0.0, z: 0.041}
+  color: random
+BODY r_gripper_l_finger_link:
+  name: r_gripper_l_finger_link
+  mesh: r_gripper_l_finger_link.STL
+  mass: 0.171
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.001, y: -0.0}
+    position: {x: 0.37, y: -0.178, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.043, y: 0.018, z: 0.0}
+  color rgba: {a: 1.0, b: 0.1679, g: 0.1679, r: 0.1679}
+BODY r_gripper_l_finger_tip_link:
+  name: r_gripper_l_finger_tip_link
+  mesh: r_gripper_l_finger_tip_link.STL
+  mass: 0.044
+  scale: 1.0
+  location:
+    orientation: {p: -3.142, r: -0.001, y: -0.0}
+    position: {x: 0.461, y: -0.173, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: 0.006, z: -0.0}
+  color rgba: {a: 1.0, b: 0.0908, g: 0.0908, r: 0.0908}
+BODY r_gripper_palm_link:
+  name: r_gripper_palm_link
+  mesh: r_gripper_palm_link.STL
+  mass: 0.58
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.001, y: -0.0}
+    position: {x: 0.293, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.078, y: 0.0, z: 0.0}
+  color rgba: {a: 1.0, b: 0.4818, g: 0.8, r: 0.0}
+BODY r_gripper_r_finger_link:
+  name: r_gripper_r_finger_link
+  mesh: r_gripper_r_finger_link.STL
+  mass: 0.174
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -3.141, y: -0.0}
+    position: {x: 0.37, y: -0.198, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.043, y: 0.018, z: 0.0}
+  color rgba: {a: 1.0, b: 0.1574, g: 0.1574, r: 0.1574}
+BODY r_gripper_r_finger_tip_link:
+  name: r_gripper_r_finger_tip_link
+  mesh: r_gripper_r_finger_tip_link.STL
+  mass: 0.044
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.001, y: 3.141}
+    position: {x: 0.461, y: -0.203, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: 0.006, z: -0.0}
+  color rgba: {a: 1.0, b: 0.0607, g: 0.0607, r: 0.0607}
+BODY r_shoulder_lift_link:
+  name: r_shoulder_lift_link
+  mesh: r_shoulder_lift_link.STL
+  mass: 2.75
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: 0.0}
+    position: {x: -0.428, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.003, y: -0.0, z: 0.0}
+  color rgba: {a: 1.0, b: 0.0122, g: 0.0122, r: 0.0122}
+BODY r_shoulder_pan_link:
+  name: r_shoulder_pan_link
+  mesh: r_shoulder_pan_link.STL
+  mass: 25.799
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: -0.528, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.05, y: 0.0, z: -0.175}
+  color rgba: {a: 1.0, b: 0.6554, g: 0.1432, r: 0.7356}
+BODY r_upper_arm_link:
+  name: r_upper_arm_link
+  mesh: r_upper_arm_link.STL
+  mass: 6.018
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: -0.0}
+    position: {x: -0.428, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.215, y: 0.0, z: -0.002}
+  color rgba: {a: 1.0, b: 0.7613, g: 0.3936, r: 0.1846}
+BODY r_upper_arm_roll_link:
+  name: r_upper_arm_roll_link
+  mesh: r_upper_arm_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: 1.57, y: 1.57}
+    position: {x: -0.428, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.003, z: 0.129}
+  color: random
+BODY r_wrist_flex_link:
+  name: r_wrist_flex_link
+  mesh: r_wrist_flex_link.STL
+  mass: 0.614
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.57, y: -0.0}
+    position: {x: 0.293, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.005, y: 0.002, z: 0.0}
+  color rgba: {a: 1.0, b: 0.0, g: 0.1938, r: 0.8}
+BODY r_wrist_roll_link:
+  name: r_wrist_roll_link
+  mesh: r_wrist_roll_link.STL
+  mass: 0.1
+  scale: 1.0
+  location:
+    orientation: {p: 1.571, r: -1.57, y: -1.57}
+    position: {x: 0.293, y: -0.188, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.0, z: 0.033}
+  color: random
+BODY torso_lift_link:
+  name: torso_lift_link
+  mesh: torso_lift_link.STL
+  mass: 36.248
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: -0.0, y: 0.0}
+    position: {x: -0.528, y: 0.0, z: 0.316}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.095, y: -0.0, z: 0.089}
+  color rgba: {a: 1.0, b: 0.8, g: 0.1752, r: 0.0}
+JOINT bl_caster_rotation_link-bl_caster_l_wheel_link:
+  name: bl_caster_rotation_link-bl_caster_l_wheel_link
+  parent: BODY bl_caster_rotation_link
+  child: BODY bl_caster_l_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT bl_caster_rotation_link-bl_caster_r_wheel_link:
+  name: bl_caster_rotation_link-bl_caster_r_wheel_link
+  parent: BODY bl_caster_rotation_link
+  child: BODY bl_caster_r_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT base_link-bl_caster_rotation_link:
+  name: base_link-bl_caster_rotation_link
+  parent: BODY base_link
+  child: BODY bl_caster_rotation_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.225, y: 0.225, z: 0.028}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT br_caster_rotation_link-br_caster_l_wheel_link:
+  name: br_caster_rotation_link-br_caster_l_wheel_link
+  parent: BODY br_caster_rotation_link
+  child: BODY br_caster_l_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT br_caster_rotation_link-br_caster_r_wheel_link:
+  name: br_caster_rotation_link-br_caster_r_wheel_link
+  parent: BODY br_caster_rotation_link
+  child: BODY br_caster_r_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT base_link-br_caster_rotation_link:
+  name: base_link-br_caster_rotation_link
+  parent: BODY base_link
+  child: BODY br_caster_rotation_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.225, y: -0.225, z: 0.028}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT fl_caster_rotation_link-fl_caster_l_wheel_link:
+  name: fl_caster_rotation_link-fl_caster_l_wheel_link
+  parent: BODY fl_caster_rotation_link
+  child: BODY fl_caster_l_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT fl_caster_rotation_link-fl_caster_r_wheel_link:
+  name: fl_caster_rotation_link-fl_caster_r_wheel_link
+  parent: BODY fl_caster_rotation_link
+  child: BODY fl_caster_r_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT base_link-fl_caster_rotation_link:
+  name: base_link-fl_caster_rotation_link
+  parent: BODY base_link
+  child: BODY fl_caster_rotation_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.225, y: 0.225, z: 0.028}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT fr_caster_rotation_link-fr_caster_l_wheel_link:
+  name: fr_caster_rotation_link-fr_caster_l_wheel_link
+  parent: BODY fr_caster_rotation_link
+  child: BODY fr_caster_l_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: 0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT fr_caster_rotation_link-fr_caster_r_wheel_link:
+  name: fr_caster_rotation_link-fr_caster_r_wheel_link
+  parent: BODY fr_caster_rotation_link
+  child: BODY fr_caster_r_wheel_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.0, y: -0.049, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT base_link-fr_caster_rotation_link:
+  name: base_link-fr_caster_rotation_link
+  parent: BODY base_link
+  child: BODY fr_caster_rotation_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.225, y: -0.225, z: 0.028}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+JOINT torso_lift_link-head_pan_link:
+  name: torso_lift_link-head_pan_link
+  parent: BODY torso_lift_link
+  child: BODY head_pan_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: 0.381, y: 0.0, z: 0.017}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 3.007, low: -3.007}
+  max motor impulse: 0.01
+  type: revolute
+JOINT head_pan_link-head_tilt_link:
+  name: head_pan_link-head_tilt_link
+  parent: BODY head_pan_link
+  child: BODY head_tilt_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.068, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.396, low: -0.471}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_upper_arm_link-l_elbow_flex_link:
+  name: l_upper_arm_link-l_elbow_flex_link
+  parent: BODY l_upper_arm_link
+  child: BODY l_elbow_flex_link
+  parent axis: {x: -0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.4, y: 0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.0, low: -2.321}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_forearm_roll_link-l_forearm_link:
+  name: l_forearm_roll_link-l_forearm_link
+  parent: BODY l_forearm_roll_link
+  child: BODY l_forearm_link
+  parent axis: {x: -1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT l_elbow_flex_link-l_forearm_roll_link:
+  name: l_elbow_flex_link-l_forearm_roll_link
+  parent: BODY l_elbow_flex_link
+  child: BODY l_forearm_roll_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+  offset: 1.571
+JOINT l_gripper_palm_link-l_gripper_l_finger_link:
+  name: l_gripper_palm_link-l_gripper_l_finger_link
+  parent: BODY l_gripper_palm_link
+  child: BODY l_gripper_l_finger_link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.077, y: 0.01, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_gripper_l_finger_link-l_gripper_l_finger_tip_link:
+  name: l_gripper_l_finger_link-l_gripper_l_finger_tip_link
+  parent: BODY l_gripper_l_finger_link
+  child: BODY l_gripper_l_finger_tip_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.091, y: 0.005, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_wrist_roll_link-l_gripper_palm_link:
+  name: l_wrist_roll_link-l_gripper_palm_link
+  parent: BODY l_wrist_roll_link
+  child: BODY l_gripper_palm_link
+  parent axis: {x: -1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: 0.0, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT l_gripper_palm_link-l_gripper_r_finger_link:
+  name: l_gripper_palm_link-l_gripper_r_finger_link
+  parent: BODY l_gripper_palm_link
+  child: BODY l_gripper_r_finger_link
+  parent axis: {x: -0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.077, y: -0.01, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+  offset: 3.142
+JOINT l_gripper_r_finger_link-l_gripper_r_finger_tip_link:
+  name: l_gripper_r_finger_link-l_gripper_r_finger_tip_link
+  parent: BODY l_gripper_r_finger_link
+  child: BODY l_gripper_r_finger_tip_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.091, y: 0.005, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_shoulder_pan_link-l_shoulder_lift_link:
+  name: l_shoulder_pan_link-l_shoulder_lift_link
+  parent: BODY l_shoulder_pan_link
+  child: BODY l_shoulder_lift_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.1, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.396, low: -0.524}
+  max motor impulse: 0.01
+  type: revolute
+JOINT torso_lift_link-l_shoulder_pan_link:
+  name: torso_lift_link-l_shoulder_pan_link
+  parent: BODY torso_lift_link
+  child: BODY l_shoulder_pan_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.188, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 2.285, low: -0.715}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_upper_arm_roll_link-l_upper_arm_link:
+  name: l_upper_arm_roll_link-l_upper_arm_link
+  parent: BODY l_upper_arm_roll_link
+  child: BODY l_upper_arm_link
+  parent axis: {x: -1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT l_shoulder_lift_link-l_upper_arm_roll_link:
+  name: l_shoulder_lift_link-l_upper_arm_roll_link
+  parent: BODY l_shoulder_lift_link
+  child: BODY l_upper_arm_roll_link
+  parent axis: {x: 1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 3.9, low: -0.8}
+  max motor impulse: 0.01
+  type: revolute
+  offset: 1.571
+JOINT l_forearm_link-l_wrist_flex_link:
+  name: l_forearm_link-l_wrist_flex_link
+  parent: BODY l_forearm_link
+  child: BODY l_wrist_flex_link
+  parent axis: {x: -0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.321, y: 0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.0, low: -2.18}
+  max motor impulse: 0.01
+  type: revolute
+JOINT l_wrist_flex_link-l_wrist_roll_link:
+  name: l_wrist_flex_link-l_wrist_roll_link
+  parent: BODY l_wrist_flex_link
+  child: BODY l_wrist_roll_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+  offset: 1.571
+JOINT torso_lift_link-laser_tilt_mount_link:
+  name: torso_lift_link-laser_tilt_mount_link
+  parent: BODY torso_lift_link
+  child: BODY laser_tilt_mount_link
+  parent axis: {x: -0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.227, y: 0.0, z: -0.099}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.484, low: -0.785}
+  max motor impulse: 0.01
+  type: revolute
+  offset: 1.571
+JOINT r_upper_arm_link-r_elbow_flex_link:
+  name: r_upper_arm_link-r_elbow_flex_link
+  parent: BODY r_upper_arm_link
+  child: BODY r_elbow_flex_link
+  parent axis: {x: -0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.4, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.0, low: -2.321}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_forearm_roll_link-r_forearm_link:
+  name: r_forearm_roll_link-r_forearm_link
+  parent: BODY r_forearm_roll_link
+  child: BODY r_forearm_link
+  parent axis: {x: -1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT r_elbow_flex_link-r_forearm_roll_link:
+  name: r_elbow_flex_link-r_forearm_roll_link
+  parent: BODY r_elbow_flex_link
+  child: BODY r_forearm_roll_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+  offset: 1.571
+JOINT r_gripper_palm_link-r_gripper_l_finger_link:
+  name: r_gripper_palm_link-r_gripper_l_finger_link
+  parent: BODY r_gripper_palm_link
+  child: BODY r_gripper_l_finger_link
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.077, y: 0.01, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link:
+  name: r_gripper_l_finger_link-r_gripper_l_finger_tip_link
+  parent: BODY r_gripper_l_finger_link
+  child: BODY r_gripper_l_finger_tip_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.091, y: 0.005, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_wrist_roll_link-r_gripper_palm_link:
+  name: r_wrist_roll_link-r_gripper_palm_link
+  parent: BODY r_wrist_roll_link
+  child: BODY r_gripper_palm_link
+  parent axis: {x: -1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT r_gripper_palm_link-r_gripper_r_finger_link:
+  name: r_gripper_palm_link-r_gripper_r_finger_link
+  parent: BODY r_gripper_palm_link
+  child: BODY r_gripper_r_finger_link
+  parent axis: {x: -0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.077, y: -0.01, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+  offset: 3.142
+JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link:
+  name: r_gripper_r_finger_link-r_gripper_r_finger_tip_link
+  parent: BODY r_gripper_r_finger_link
+  child: BODY r_gripper_r_finger_tip_link
+  parent axis: {x: 0.0, y: 0.0, z: -1.0}
+  parent pivot: {x: 0.091, y: 0.005, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.548, low: 0.0}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_shoulder_pan_link-r_shoulder_lift_link:
+  name: r_shoulder_pan_link-r_shoulder_lift_link
+  parent: BODY r_shoulder_pan_link
+  child: BODY r_shoulder_lift_link
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.1, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.396, low: -0.524}
+  max motor impulse: 0.01
+  type: revolute
+JOINT torso_lift_link-r_shoulder_pan_link:
+  name: torso_lift_link-r_shoulder_pan_link
+  parent: BODY torso_lift_link
+  child: BODY r_shoulder_pan_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: -0.188, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.715, low: -2.285}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_upper_arm_roll_link-r_upper_arm_link:
+  name: r_upper_arm_roll_link-r_upper_arm_link
+  parent: BODY r_upper_arm_roll_link
+  child: BODY r_upper_arm_link
+  parent axis: {x: -1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  max motor impulse: 0.01
+  type: fixed
+JOINT r_shoulder_lift_link-r_upper_arm_roll_link:
+  name: r_shoulder_lift_link-r_upper_arm_roll_link
+  parent: BODY r_shoulder_lift_link
+  child: BODY r_upper_arm_roll_link
+  parent axis: {x: 1.0, y: -0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.8, low: -3.9}
+  max motor impulse: 0.01
+  type: revolute
+  offset: 1.571
+JOINT r_forearm_link-r_wrist_flex_link:
+  name: r_forearm_link-r_wrist_flex_link
+  parent: BODY r_forearm_link
+  child: BODY r_wrist_flex_link
+  parent axis: {x: -0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: 0.321, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.0, low: -2.18}
+  max motor impulse: 0.01
+  type: revolute
+JOINT r_wrist_flex_link-r_wrist_roll_link:
+  name: r_wrist_flex_link-r_wrist_roll_link
+  parent: BODY r_wrist_flex_link
+  child: BODY r_wrist_roll_link
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {}
+  max motor impulse: 0.01
+  type: continuous
+  offset: 1.571
+JOINT base_link-torso_lift_link:
+  name: base_link-torso_lift_link
+  parent: BODY base_link
+  child: BODY torso_lift_link
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.05, y: 0.0, z: 0.74}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.33, low: 0.0}
+  max motor impulse: 0.01
+  type: prismatic

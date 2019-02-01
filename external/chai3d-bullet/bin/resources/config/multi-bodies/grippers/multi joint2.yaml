@@ -1,0 +1,118 @@
+bodies: [base, r1, l1, r2, l2]
+joints: [j1, j2, j3, j4]
+high resolution path: ../../../models/grippers/type2/high_res/
+low resolution path: ../../../models/grippers/type2/low_res/
+
+base:
+ name: gripperBase
+ mass: 0.02
+ mesh: BaseLink.STL
+ scale: 1.0
+ #location:{
+   #position: {x: 0.0, y: 0.0, z: 0.0};
+   #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: red
+
+r1:
+ name: gripperR1
+ mass: 0.02
+ mesh: MultiLinkR1.STL
+ inertial offset: {position: {x: -0.133, y: 0.035, z: -0.0016}, orientation: {r: 0.0, p: 0.0, y: 0.262}}
+ scale: 1.0
+ location: {
+   position: {x: 0.0, y: 0.085, z: 0.0}}
+   #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: red
+
+l1:
+ name: gripperL1
+ mass: 0.02
+ mesh: MultiLinkL1.STL
+ inertial offset: {position: {x: -0.133, y: -0.035, z: -0.0016}, orientation: {r: 0.0, p: 0.0, y: -0.262}}
+ scale: 1.0
+ location: {
+  position: {x: 0.0, y: -0.085, z: 0.0}}
+  #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: white
+
+r2:
+ name: gripperR2
+ mass: 0.02
+ mesh: MultiLinkR2.STL
+ inertial offset: {position: {x: -0.091, y: -0.052, z: -0.004}, orientation: {r: 0.0, p: 0.0, y: 0.523}}
+ scale: 1.0
+ location: {
+   position: {x: -0.26, y: 0.069, z: 0.0}}
+   #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: red
+
+l2:
+ name: gripperL2
+ mass: 0.02
+ mesh: MultiLinkL2.STL
+ inertial offset: {position: {x: -0.091, y: 0.052, z: -0.004}, orientation: {r: 0.0, p: 0.0, y: -0.523}}
+ scale: 1.0
+ location: {
+  position: {x: -0.26, y: -0.069, z: 0.0}}
+  #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: red
+
+joint_template: &anchor
+ name:
+ parent:
+ child:
+ parent pivot: {x: 0, y: 0, z: 0.5}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: 0.5, high: 1.0}
+ enable motor: 1
+ max motor impulse: 0.05
+
+j1:
+ name: base_r1
+ parent: base
+ child: r1
+ parent pivot: {x: 0, y: 0.1, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: 0.25, high: -0.20}
+ enable motor: 1
+ max motor impulse: 0.05
+
+j2:
+ name: base_l1
+ parent: base
+ child: l1
+ parent pivot: {x: 0, y: -0.1, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: -0.25, high: 0.20}
+ enable motor: 1
+ max motor impulse: 0.05
+
+j3:
+ name: r1_r2
+ parent: r1
+ child: r2
+ parent pivot: {x: -0.2627, y: 0.0702, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: 0.45, high: -0.15}
+ enable motor: 1
+ max motor impulse: 0.05
+
+j4:
+ name: l1_l2
+ parent: l1
+ child: l2
+ parent pivot: {x: -0.2627, y: -0.0702, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: -0.45, high: 0.15}
+ enable motor: 1
+ max motor impulse: 0.05

@@ -1,0 +1,2 @@
+# Razor Hydra devices
+SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="1532", ATTR{idProduct}=="0300", MODE:="0666"

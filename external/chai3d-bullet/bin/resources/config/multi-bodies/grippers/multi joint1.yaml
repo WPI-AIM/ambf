@@ -1,0 +1,56 @@
+bodies: [base, l1, r1]
+joints: [j1, j2]
+high resolution path: ../../../models/grippers/type1/high_res/
+low resolution path: ../../../models/grippers/type1/low_res/
+
+base:
+ name: gripperBase
+ mass: 0.04
+ mesh: BaseLink.STL
+ scale: 1.0
+ #location: {
+   #position: {x: 0.0, y: 0.0, z: 0.0},
+   #orientation: {r: 0.0, p: 0.0, y: 0.0}}
+ color: purple
+
+r1:
+ name: gripperR1
+ mass: 0.02
+ mesh: SingleLinkR1.STL
+ inertial offset: {position: {x: -0.211, y: 0.0902, z: 0.0}}
+ scale: 1.0
+ friction: {static: 8.0}
+ color: white
+
+l1:
+ name: gripperL1
+ mass: 0.02
+ mesh: SingleLinkL1.STL
+ inertial offset: {position: {x: -0.211, y: -0.0902, z: 0.0}}
+ scale: 1.0
+ friction: {static: 8.0}
+ color: purple
+
+j1:
+ name: base_r1
+ parent: base
+ child: r1
+ parent pivot: {x: 0, y: 0.085, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: 0.25, high: -0.20}
+ enable motor: 1
+ max motor impulse: 0.05
+
+j2:
+ name: base_l1
+ parent: base
+ child: l1
+ parent pivot: {x: 0, y: -0.085, z: 0.0}
+ parent axis: {x: 0, y: 0, z: 1.0}
+ child axis: {x: 0, y: 0, z: 1.0}
+ child pivot: {x: 0, y: 0, z: 0.0}
+ joint limits: {low: -0.25, high: 0.20}
+ enable motor: 1
+ max motor impulse: 0.05

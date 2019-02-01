@@ -1,0 +1,499 @@
+bodies: [BODY base link, BODY suj ecm L0, BODY suj ecm L1, BODY suj ecm L2, BODY suj
+    ecm L3, BODY suj psm1 L0, BODY suj psm1 L1, BODY suj psm1 L2, BODY suj psm1 L3,
+  BODY suj psm1 L4, BODY suj psm2 L0, BODY suj psm2 L1, BODY suj psm2 L2, BODY suj
+    psm2 L3, BODY suj psm2 L4, BODY suj psm3 L0, BODY suj psm3 L1, BODY suj psm3 L2,
+  BODY suj psm3 L3, BODY suj psm3 L4]
+joints: [JOINT base link-suj ecm L0, JOINT suj ecm L0-suj ecm L1, JOINT suj ecm L1-suj
+    ecm L2, JOINT suj ecm L2-suj ecm L3, JOINT base link-suj psm1 L0, JOINT suj psm1
+    L0-suj psm1 L1, JOINT suj psm1 L1-suj psm1 L2, JOINT suj psm1 L2-suj psm1 L3,
+  JOINT suj psm1 L3-suj psm1 L4, JOINT base link-suj psm2 L0, JOINT suj psm2 L0-suj
+    psm2 L1, JOINT suj psm2 L1-suj psm2 L2, JOINT suj psm2 L2-suj psm2 L3, JOINT suj
+    psm2 L3-suj psm2 L4, JOINT base link-suj psm3 L0, JOINT suj psm3 L0-suj psm3 L1,
+  JOINT suj psm3 L1-suj psm3 L2, JOINT suj psm3 L2-suj psm3 L3, JOINT suj psm3 L3-suj
+    psm3 L4]
+high resolution path: ../../../models/blender_afmb/suj/high_res/
+low resolution path: ../../../models/blender_afmb/suj/low_res/
+ignore inter-collision: 'True'
+BODY base link:
+  name: base link
+  mesh: base link.STL
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.101, y: 0.0, z: 0.817}
+  color rgba: {a: 1.0, b: 0.6471, g: 0.1247, r: 0.0602}
+BODY suj ecm L0:
+  name: suj ecm L0
+  mesh: suj ecm L0.STL
+  mass: 8.19
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: 0.0, y: 0.0}
+    position: {x: 0.09, y: -0.0, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.166, y: 0.0, z: 0.021}
+  color rgba: {a: 1.0, b: 0.0829, g: 0.1424, r: 0.1367}
+BODY suj ecm L1:
+  name: suj ecm L1
+  mesh: suj ecm L1.STL
+  mass: 4.285
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 1.571}
+    position: {x: 0.09, y: -0.0, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.213, z: 0.147}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6145, r: 0.1916}
+BODY suj ecm L2:
+  name: suj ecm L2
+  mesh: suj ecm L2.STL
+  mass: 3.374
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.0, y: -3.141}
+    position: {x: 0.522, y: 0.0, z: 0.932}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.213, y: -0.0, z: 0.112}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.8033, r: 0.3362}
+BODY suj ecm L3:
+  name: suj ecm L3
+  mesh: suj ecm L3.STL
+  mass: 3.459
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.954, y: 0.0, z: 0.88}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.09, y: -0.0, z: -0.092}
+  color rgba: {a: 1.0, b: 0.2524, g: 1.0, r: 0.777}
+BODY suj psm1 L0:
+  name: suj psm1 L0
+  mesh: suj psm1 L0.STL
+  mass: 8.19
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: 1.57, y: 0.0}
+    position: {x: -0.102, y: 0.191, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.166, y: 0.0, z: 0.021}
+  color rgba: {a: 1.0, b: 0.0807, g: 0.1025, r: 0.0967}
+BODY suj psm1 L1:
+  name: suj psm1 L1
+  mesh: suj psm1 L1.STL
+  mass: 4.285
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.0, y: -0.001}
+    position: {x: -0.102, y: 0.191, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.213, z: 0.147}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6131, r: 0.2363}
+BODY suj psm1 L2:
+  name: suj psm1 L2
+  mesh: suj psm1 L2.STL
+  mass: 3.374
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -0.0, y: 1.57}
+    position: {x: -0.102, y: 0.623, z: 0.932}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.213, y: -0.0, z: 0.112}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6592, r: 0.2332}
+BODY suj psm1 L3:
+  name: suj psm1 L3
+  mesh: suj psm1 L3.STL
+  mass: 0.955
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.0, y: -0.001}
+    position: {x: -0.101, y: 1.055, z: 0.932}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.051, z: -0.06}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6584, r: 0.2704}
+BODY suj psm1 L4:
+  name: suj psm1 L4
+  mesh: suj psm1 L4.STL
+  mass: 3.171
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -1.571, y: -0.001}
+    position: {x: -0.101, y: 1.116, z: 0.859}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.09, z: 0.196}
+  color rgba: {a: 1.0, b: 0.2462, g: 1.0, r: 0.7874}
+BODY suj psm2 L0:
+  name: suj psm2 L0
+  mesh: suj psm2 L0.STL
+  mass: 8.19
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: -1.571, y: 0.0}
+    position: {x: -0.102, y: -0.191, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.166, y: 0.0, z: 0.021}
+  color rgba: {a: 1.0, b: 0.0926, g: 0.1788, r: 0.173}
+BODY suj psm2 L1:
+  name: suj psm2 L1
+  mesh: suj psm2 L1.STL
+  mass: 4.285
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 3.141}
+    position: {x: -0.102, y: -0.191, z: 0.761}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: 0.213, z: 0.147}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6558, r: 0.353}
+BODY suj psm2 L2:
+  name: suj psm2 L2
+  mesh: suj psm2 L2.STL
+  mass: 3.374
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.0, y: -1.571}
+    position: {x: -0.102, y: -0.623, z: 0.932}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.213, y: 0.0, z: 0.112}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.6564, r: 0.3385}
+BODY suj psm2 L3:
+  name: suj psm2 L3
+  mesh: suj psm2 L3.STL
+  mass: 0.955
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 3.141}
+    position: {x: -0.102, y: -1.055, z: 0.932}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.051, z: -0.06}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.589, r: 0.267}
+BODY suj psm2 L4:
+  name: suj psm2 L4
+  mesh: suj psm2 L4.STL
+  mass: 3.171
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 1.571, y: -0.0}
+    position: {x: -0.102, y: -1.116, z: 0.859}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.09, z: 0.196}
+  color rgba: {a: 1.0, b: 0.2585, g: 1.0, r: 0.7854}
+BODY suj psm3 L0:
+  name: suj psm3 L0
+  mesh: suj psm3 L0.STL
+  mass: 6.048
+  scale: 1.0
+  location:
+    orientation: {p: -1.571, r: 0.0, y: 0.0}
+    position: {x: 0.09, y: -0.0, z: 0.381}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.127, y: 0.0, z: 0.021}
+  color rgba: {a: 1.0, b: 0.0822, g: 0.1424, r: 0.1361}
+BODY suj psm3 L1:
+  name: suj psm3 L1
+  mesh: suj psm3 L1.STL
+  mass: 9.214
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 1.571}
+    position: {x: 0.09, y: -0.0, z: 0.381}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.289, z: 0.129}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.565, r: 0.2853}
+BODY suj psm3 L2:
+  name: suj psm3 L2
+  mesh: suj psm3 L2.STL
+  mass: 3.374
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: -0.0, y: -3.141}
+    position: {x: 0.674, y: 0.0, z: 0.381}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.213, y: 0.0, z: -0.112}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.4865, r: 0.1565}
+BODY suj psm3 L3:
+  name: suj psm3 L3
+  mesh: suj psm3 L3.STL
+  mass: 1.46
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -0.0, y: -1.57}
+    position: {x: 1.106, y: 0.001, z: 0.381}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: -0.051, z: 0.124}
+  color rgba: {a: 1.0, b: 0.9333, g: 0.5901, r: 0.243}
+BODY suj psm3 L4:
+  name: suj psm3 L4
+  mesh: suj psm3 L4.STL
+  mass: 3.171
+  scale: 1.0
+  location:
+    orientation: {p: 0.0, r: -1.571, y: -1.57}
+    position: {x: 1.167, y: 0.001, z: 0.581}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: -0.0, y: 0.09, z: 0.196}
+  color rgba: {a: 1.0, b: 0.237, g: 0.9333, r: 0.7339}
+JOINT base link-suj ecm L0:
+  name: base link-suj ecm L0
+  parent: BODY base link
+  child: BODY suj ecm L0
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.09, y: -0.0, z: 0.761}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.843, low: -0.38}
+  enable motor: 0
+  max motor impulse: 0
+  type: prismatic
+JOINT suj ecm L0-suj ecm L1:
+  name: suj ecm L0-suj ecm L1
+  parent: BODY suj ecm L0
+  child: BODY suj ecm L1
+  parent axis: {x: 1.0, y: -0.0, z: -0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj ecm L1-suj ecm L2:
+  name: suj ecm L1-suj ecm L2
+  parent: BODY suj ecm L1
+  child: BODY suj ecm L2
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.0, y: -0.432, z: 0.171}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj ecm L2-suj ecm L3:
+  name: suj ecm L2-suj ecm L3
+  parent: BODY suj ecm L2
+  child: BODY suj ecm L3
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.432, y: -0.0, z: -0.052}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 3.141
+JOINT base link-suj psm1 L0:
+  name: base link-suj psm1 L0
+  parent: BODY base link
+  child: BODY suj psm1 L0
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.102, y: 0.191, z: 0.761}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.843, low: -0.38}
+  enable motor: 0
+  max motor impulse: 0
+  type: prismatic
+  offset: 1.57
+JOINT suj psm1 L0-suj psm1 L1:
+  name: suj psm1 L0-suj psm1 L1
+  parent: BODY suj psm1 L0
+  child: BODY suj psm1 L1
+  parent axis: {x: 1.0, y: 0.0, z: -0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT suj psm1 L1-suj psm1 L2:
+  name: suj psm1 L1-suj psm1 L2
+  parent: BODY suj psm1 L1
+  child: BODY suj psm1 L2
+  parent axis: {x: -0.0, y: -0.0, z: 1.0}
+  parent pivot: {x: -0.0, y: 0.432, z: 0.171}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj psm1 L2-suj psm1 L3:
+  name: suj psm1 L2-suj psm1 L3
+  parent: BODY suj psm1 L2
+  child: BODY suj psm1 L3
+  parent axis: {x: -0.0, y: -0.0, z: 1.0}
+  parent pivot: {x: 0.432, y: -0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT suj psm1 L3-suj psm1 L4:
+  name: suj psm1 L3-suj psm1 L4
+  parent: BODY suj psm1 L3
+  child: BODY suj psm1 L4
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: 0.0, y: 0.061, z: -0.073}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+JOINT base link-suj psm2 L0:
+  name: base link-suj psm2 L0
+  parent: BODY base link
+  child: BODY suj psm2 L0
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.102, y: -0.191, z: 0.761}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 0.843, low: -0.38}
+  enable motor: 0
+  max motor impulse: 0
+  type: prismatic
+  offset: -1.571
+JOINT suj psm2 L0-suj psm2 L1:
+  name: suj psm2 L0-suj psm2 L1
+  parent: BODY suj psm2 L0
+  child: BODY suj psm2 L1
+  parent axis: {x: 1.0, y: 0.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.0, z: 0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT suj psm2 L1-suj psm2 L2:
+  name: suj psm2 L1-suj psm2 L2
+  parent: BODY suj psm2 L1
+  child: BODY suj psm2 L2
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.0, y: 0.432, z: 0.171}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj psm2 L2-suj psm2 L3:
+  name: suj psm2 L2-suj psm2 L3
+  parent: BODY suj psm2 L2
+  child: BODY suj psm2 L3
+  parent axis: {x: -0.0, y: -0.0, z: 1.0}
+  parent pivot: {x: 0.432, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: -1.571
+JOINT suj psm2 L3-suj psm2 L4:
+  name: suj psm2 L3-suj psm2 L4
+  parent: BODY suj psm2 L3
+  child: BODY suj psm2 L4
+  parent axis: {x: 0.0, y: 1.0, z: -0.0}
+  parent pivot: {x: -0.0, y: 0.061, z: -0.073}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 3.142
+JOINT base link-suj psm3 L0:
+  name: base link-suj psm3 L0
+  parent: BODY base link
+  child: BODY suj psm3 L0
+  parent axis: {x: 0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: 0.09, y: -0.0, z: 0.381}
+  child axis: {x: 1.0, y: 0.0, z: 0.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.222, low: 0.0}
+  enable motor: 0
+  max motor impulse: 0
+  type: prismatic
+JOINT suj psm3 L0-suj psm3 L1:
+  name: suj psm3 L0-suj psm3 L1
+  parent: BODY suj psm3 L0
+  child: BODY suj psm3 L1
+  parent axis: {x: 1.0, y: -0.0, z: -0.0}
+  parent pivot: {x: -0.0, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj psm3 L1-suj psm3 L2:
+  name: suj psm3 L1-suj psm3 L2
+  parent: BODY suj psm3 L1
+  child: BODY suj psm3 L2
+  parent axis: {x: -0.0, y: 0.0, z: 1.0}
+  parent pivot: {x: -0.0, y: -0.584, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj psm3 L2-suj psm3 L3:
+  name: suj psm3 L2-suj psm3 L3
+  parent: BODY suj psm3 L2
+  child: BODY suj psm3 L3
+  parent axis: {x: -0.0, y: -0.0, z: 1.0}
+  parent pivot: {x: -0.432, y: -0.0, z: -0.0}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute
+  offset: 1.571
+JOINT suj psm3 L3-suj psm3 L4:
+  name: suj psm3 L3-suj psm3 L4
+  parent: BODY suj psm3 L3
+  child: BODY suj psm3 L4
+  parent axis: {x: 0.0, y: 1.0, z: 0.0}
+  parent pivot: {x: -0.0, y: 0.061, z: 0.2}
+  child axis: {x: 0.0, y: 0.0, z: 1.0}
+  child pivot: {x: 0.0, y: 0.0, z: 0.0}
+  joint limits: {high: 1.2, low: -1.2}
+  enable motor: 0
+  max motor impulse: 0
+  type: revolute

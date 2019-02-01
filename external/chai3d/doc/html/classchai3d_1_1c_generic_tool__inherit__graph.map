@@ -1,0 +1,6 @@
+<map id="chai3d::cGenericTool" name="chai3d::cGenericTool">
+<area shape="rect" id="node4" href="$classchai3d_1_1c_tool_cursor.html" title="This class implements a cursor using a single haptic point. " alt="" coords="5,229,144,256"/>
+<area shape="rect" id="node5" href="$classchai3d_1_1c_tool_gripper.html" title="This class implements a gripper using a two haptic points. " alt="" coords="169,229,311,256"/>
+<area shape="rect" id="node2" href="$classchai3d_1_1c_generic_object.html" title="This class implements a base class for all 2D or 3D objects in CHAI3D. " alt="" coords="78,80,237,107"/>
+<area shape="rect" id="node3" href="$classchai3d_1_1c_generic_type.html" title="This class implements an abstract type. " alt="" coords="83,5,232,32"/>
+</map>
