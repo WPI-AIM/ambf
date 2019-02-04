@@ -38,6 +38,7 @@
     \author:    <http://www.aimlab.wpi.edu>
     \author:    <amunawar@wpi.edu>
     \author:    Adnan Munawar
+    \coutesy:   Extended from cBulletMultiMesh Class by Francois Conti
     \version:   $
 */
 //==============================================================================
@@ -53,18 +54,13 @@
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 //------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-namespace chai3d {
-//------------------------------------------------------------------------------
+namespace ambf {
+using namespace chai3d;
 
-
-//==============================================================================
-/*!
-    This method assigns a desired position to the object.
-
-    \param  a_position  New desired position.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::setLocalPos: This method assigns a desired position to the object.
+/// \param a_position
+///
 void afSoftMultiMesh::setLocalPos(const cVector3d& a_position)
 {
     m_gelMesh.setLocalPos(a_position);
@@ -99,13 +95,10 @@ void afSoftMultiMesh::setLocalPos(const cVector3d& a_position)
 }
 
 
-//==============================================================================
-/*!
-    This method assigns a desired rotation to the object.
-
-    \param  a_rotation  New desired orientation.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::setLocalRot This method assigns a desired rotation to the object.
+/// \param a_rotation
+///
 void afSoftMultiMesh::setLocalRot(const cMatrix3d& a_rotation)
 {
     m_gelMesh.setLocalRot(a_rotation);
@@ -139,44 +132,48 @@ void afSoftMultiMesh::setLocalRot(const cMatrix3d& a_rotation)
         m_bulletSoftBody->rotate(q);
 }
 
-//==============================================================================
-/*!
-    This method updates x,y,z to the max value as compared to v
-*/
-//==============================================================================
+///
+/// \brief updateMins: Updated the min and max bounds for a mesh
+/// \param x
+/// \param y
+/// \param z
+/// \param v
+///
 void updateMins(double &x, double &y, double &z, cVector3d &v){
     x = cMin(x,v.x());
     y = cMin(y,v.y());
     z = cMin(z,v.z());
 }
 
-//==============================================================================
-/*!
-    This method updates vMin to the min value as compared to v
-*/
-//==============================================================================
+///
+/// \brief updateMins: Updates the min and max bounds for a mesh
+/// \param vMin
+/// \param v
+///
 void updateMins(cVector3d &vMin, cVector3d &v){
     vMin.x(cMin(vMin.x(),v.x()));
     vMin.y(cMin(vMin.y(),v.y()));
     vMin.z(cMin(vMin.z(),v.z()));
 }
 
-//==============================================================================
-/*!
-    This method updates x,y,z to the max value as compared to v
-*/
-//==============================================================================
+///
+/// \brief updateMaxs
+/// \param x
+/// \param y
+/// \param z
+/// \param v
+///
 void updateMaxs(double &x, double &y, double &z, cVector3d &v){
     x = cMax(x,v.x());
     y = cMax(y,v.y());
     z = cMax(z,v.z());
 }
 
-//==============================================================================
-/*!
-    This method updates vMax to the max value as compared to v
-*/
-//==============================================================================
+///
+/// \brief updateMaxs
+/// \param vMax
+/// \param v
+///
 void updateMaxs(cVector3d &vMax, cVector3d &v){
     vMax.x(cMax(vMax.x(),v.x()));
     vMax.y(cMax(vMax.y(),v.y()));
@@ -184,11 +181,12 @@ void updateMaxs(cVector3d &vMax, cVector3d &v){
 }
 
 
-//==============================================================================
-/*!
-    This method updates the vertices from the nodes of bullet soft body
-*/
-//==============================================================================
+///
+/// \brief updateMesh: Updates the visuals of a mesh from softbody
+/// \param mesh
+/// \param sb
+/// \param tree
+///
 void updateMesh(cMesh* mesh, btSoftBody* sb, std::vector<VertexTree>* tree){
     btVector3 bVec;
     cVector3d cVec;
@@ -203,6 +201,10 @@ void updateMesh(cMesh* mesh, btSoftBody* sb, std::vector<VertexTree>* tree){
     mesh->computeAllNormals();
 }
 
+///
+/// \brief afSoftMultiMesh::render renders the mesh
+/// \param a_options
+///
 void afSoftMultiMesh::render(cRenderOptions &a_options){
     m_gelMesh.updateVertexPosition();
     m_gelMesh.computeAllNormals();
@@ -210,12 +212,10 @@ void afSoftMultiMesh::render(cRenderOptions &a_options){
 }
 
 
-//==============================================================================
-/*!
-    This method updates the position and orientation data from the Bullet
-    representation to the CHAI3D representation.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::updatePositionFromDynamics: This method updates the
+/// position and orientation data from the Bullet representation to the CHAI3D representation.
+///
 void afSoftMultiMesh::updatePositionFromDynamics()
 {
     if (m_bulletSoftBody)
@@ -245,16 +245,34 @@ void afSoftMultiMesh::updatePositionFromDynamics()
 //    }
 //}
 
+///
+/// \brief clearArrays
+/// \param vtxChkBlock
+/// \param vtxIdxBlock
+/// \param blockSize
+///
 void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize){
     int s = blockSize*blockSize*blockSize;
     memset(vtxChkBlock, false, s*sizeof(bool));
     memset(vtxIdxBlock, -1, s*sizeof(int));
 }
 
+///
+/// \brief afSoftMultiMesh::loadFromFile
+/// \param a_filename
+/// \return
+///
 bool afSoftMultiMesh::loadFromFile(std::string a_filename){
    return m_gelMesh.loadFromFile(a_filename);
 }
 
+///
+/// \brief afSoftMultiMesh::computeUniqueVerticesandTriangles
+/// \param mesh
+/// \param outputVertices
+/// \param outputTriangles
+/// \param print_debug_info
+///
 void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, bool print_debug_info){
 
     // read number of triangles of the object
@@ -460,11 +478,10 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 }
 
 
-//==============================================================================
-/*!
-    This method creates a GEL Skeleton based on the underlying bullet softbody
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::createGELSkeleton: This method creates a GEL Skeleton
+///  based on the underlying bullet softbody
+///
 void afSoftMultiMesh::createGELSkeleton(){
     int nLinks = m_bulletSoftBody->m_links.size();
     int nNodes = m_bulletSoftBody->m_nodes.size();
@@ -500,6 +517,9 @@ void afSoftMultiMesh::createGELSkeleton(){
     m_gelMesh.m_useSkeletonModel = true;
 }
 
+///
+/// \brief afSoftMultiMesh::updateGELSkeletonFrombtSoftBody
+///
 void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
     std::list<cGELSkeletonNode*>::iterator n;
     int i = 0;
@@ -525,11 +545,11 @@ void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 }
 
 
-//==============================================================================
-/*!
-    This method creates a Bullet collision model for this object.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::buildContactTriangles: This method creates a Bullet collision model for this object.
+/// \param a_margin
+/// \param lowResMesh
+///
 void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh)
 {
     m_gelMesh.buildVertices();
@@ -592,22 +612,20 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
 }
 
 
-//==============================================================================
-/*!
-    This method creates a Bullet collision model for this object.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::buildContactConvexTriangles
+/// \param a_margin
+///
 void afSoftMultiMesh::buildContactConvexTriangles(const double a_margin)
 {
 
 }
 
 
-//==============================================================================
-/*!
-    This method creates a Bullet collision model for this object.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::buildContactHull: This method creates a Bullet collision model for this object.
+/// \param a_margin
+///
 void afSoftMultiMesh::buildContactHull(const double a_margin)
 {
     m_gelMesh.buildVertices();
@@ -635,11 +653,9 @@ void afSoftMultiMesh::buildContactHull(const double a_margin)
     }
 }
 
-//==============================================================================
-/*!
-    Build the dynamic model of the bullet soft body.
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::buildDynamicModel: Build the dynamic model of the bullet soft body.
+///
 void afSoftMultiMesh::buildDynamicModel(){
     // add collision shape to compound
     m_bulletSoftBody->setTotalMass(m_mass, true);
@@ -649,16 +665,16 @@ void afSoftMultiMesh::buildDynamicModel(){
     m_dynamicWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 }
 
-//==============================================================================
-/*!
-    Scale the mesh for the softBody
-*/
-//==============================================================================
+///
+/// \brief afSoftMultiMesh::scale
+/// \param a_scaleFactor
+/// \param a_affectChildren
+///
 void afSoftMultiMesh::scale(const double &a_scaleFactor, const bool a_affectChildren){
     m_gelMesh.scale(a_scaleFactor);
 }
 
 
 //------------------------------------------------------------------------------
-} // namespace chai3d
+} // namespace ambf
 //------------------------------------------------------------------------------

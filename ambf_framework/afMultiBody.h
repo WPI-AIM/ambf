@@ -44,18 +44,26 @@
 */
 //==============================================================================
 
+//------------------------------------------------------------------------------
 #ifndef CBulletMultiBody_H
 #define CBulletMultiBody_H
+//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 #include "CBulletMultiMesh.h"
 #include "afSoftMultiMesh.h"
 #include "CBulletWorld.h"
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
+//------------------------------------------------------------------------------
 
-namespace chai3d {
+//------------------------------------------------------------------------------
+namespace ambf {
+using namespace chai3d;
+//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 class afMultiBody;
 class afRigidBody;
 class afSoftBody;
@@ -72,6 +80,7 @@ typedef afSoftBodyConfigProperties* afSoftBodyConfigPropertiesPtr;
 typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
 typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
 typedef std::map<std::string, afJointPtr> afJointMap;
+//------------------------------------------------------------------------------
 
 ///
 /// \brief The afConfigHandler class
@@ -398,5 +407,6 @@ protected:
 };
 
 }
-
+//------------------------------------------------------------------------------
 #endif
+//------------------------------------------------------------------------------

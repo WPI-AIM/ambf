@@ -44,18 +44,22 @@
     \version   $
 */
 //==============================================================================
+
+//------------------------------------------------------------------------------
 #include "afMultiBody.h"
-//==============================================================================
 #include "chai3d.h"
+//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 #define PI 3.14159
-// root resource path
-std::string resourceRootMB;
-// convert to resource path
-#define RESOURCE_PATH(p)    (char*)((resourceRootMB+std::string(p)).c_str())
+//------------------------------------------------------------------------------
 
-namespace chai3d{
+//------------------------------------------------------------------------------
+namespace ambf {
+using namespace chai3d;
+//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 /// Declare Static Variables
 cMaterial afRigidBody::m_mat;
 afRigidBodySurfaceProperties afRigidBody::m_surfaceProps;
@@ -73,6 +77,7 @@ cBulletWorld* afWorld::m_chaiWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
+//------------------------------------------------------------------------------
 
 /// End declare static variables
 
@@ -707,7 +712,7 @@ void afRigidBody::updatePositionFromDynamics()
         btVector3 pos = trans.getOrigin();
         btQuaternion q = trans.getRotation();
 
-       // set new position
+        // set new position
         m_localPos.set(pos[0],pos[1],pos[2]);
 
         // set new orientation
@@ -719,7 +724,7 @@ void afRigidBody::updatePositionFromDynamics()
     }
 
     // update Transform data for m_ObjectPtr
-    #ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afObjectPtr.get() != nullptr){
         m_afObjectPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
@@ -738,7 +743,7 @@ void afRigidBody::updatePositionFromDynamics()
         }
         m_write_count++;
     }
-    #endif
+#endif
 }
 
 ///
@@ -1251,8 +1256,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
         // If the body is not world, print what we just did
         if ((!strcmp(afBodyA->m_name.c_str(), "world") == 0)
-            &&(!strcmp(afBodyA->m_name.c_str(), "World") == 0)
-            &&(!strcmp(afBodyA->m_name.c_str(), "WORLD") == 0)){
+                &&(!strcmp(afBodyA->m_name.c_str(), "World") == 0)
+                &&(!strcmp(afBodyA->m_name.c_str(), "WORLD") == 0)){
             std::cerr <<"INFO: JOINT: \"" << m_name <<
                         "\'s\" PARENT BODY \"" << m_parent_name <<
                         "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
@@ -1269,8 +1274,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
         // If the body is not world, print what we just did
         if ((!strcmp(afBodyB->m_name.c_str(), "world") == 0)
-            &&(!strcmp(afBodyB->m_name.c_str(), "World") == 0)
-            &&(!strcmp(afBodyB->m_name.c_str(), "WORLD") == 0)){
+                &&(!strcmp(afBodyB->m_name.c_str(), "World") == 0)
+                &&(!strcmp(afBodyB->m_name.c_str(), "WORLD") == 0)){
             std::cerr <<"INFO: JOINT: \"" << m_name <<
                         "\'s\" CHILD BODY \"" << m_child_name <<
                         "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
@@ -1352,7 +1357,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     if(jointLimits.IsDefined()){
         if (jointLimits["low"].IsDefined())
             m_lower_limit = jointLimits["low"].as<double>();
-         if (jointLimits["high"].IsDefined())
+        if (jointLimits["high"].IsDefined())
             m_higher_limit = jointLimits["high"].as<double>();
     }
 
@@ -2097,3 +2102,4 @@ afMultiBody::~afMultiBody(){
 }
 
 }
+//------------------------------------------------------------------------------

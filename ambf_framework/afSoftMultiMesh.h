@@ -38,6 +38,7 @@
     \author:    <http://www.aimlab.wpi.edu>
     \author:    <amunawar@wpi.edu>
     \author:    Adnan Munawar
+    \coutesy:   Extended from cBulletMultiMesh Class by Francois Conti
     \version:   $
 */
 //==============================================================================
@@ -46,45 +47,29 @@
 #ifndef CBulletSoftMultiMeshH
 #define CBulletSoftMultiMeshH
 //------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 #include "CBulletMultiMesh.h"
 #include "chai3d.h"
 #include "CGELMesh.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-namespace chai3d {
+namespace ambf {
+using namespace chai3d;
 //------------------------------------------------------------------------------
 
 ///
-/// \brief The TVPair struct: A tree
+/// \brief The VertexTree struct
 ///
 struct VertexTree{
     std::vector<int> triangleIdx;
     std::vector<int> vertexIdx;
 };
 
-//==============================================================================
-/*!
-    \file       CBulletSoftMultiMesh.h
-
-    \brief
-    <b> Bullet Module </b> \n
-    Bullet Soft MultiMesh Object.
-*/
-//==============================================================================
-
-//==============================================================================
-/*!
-    \class      afSoftMultiMesh
-    \ingroup    Bullet
-
-    \brief
-    This class implements a Bullet dynamic soft multi-mesh.
-
-    \details
-    afSoftMultiMesh models a dynamic soft multi-mesh object.
-*/
-//==============================================================================
+///
+/// \brief The afSoftMultiMesh class
+///
 class afSoftMultiMesh : public cBulletMultiMesh
 {
     //--------------------------------------------------------------------------
@@ -192,9 +177,6 @@ private:
 };
 
 //------------------------------------------------------------------------------
-} // namespace chai3d
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
+} // namespace ambf
 #endif
 //------------------------------------------------------------------------------

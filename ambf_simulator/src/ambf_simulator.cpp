@@ -36,9 +36,8 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author:    <http://www.aimlab.wpi.edu>
+    \author:    <amunawar@wpi.edu>
     \author:    Adnan Munawar
-    \author:    Francois Conti
-    \author:    <www.chai3d.org>
     \courtesy:  Starting point CHAI3D-BULLET examples by Francois Conti from <www.chai3d.org>
     \version:   $
 */
@@ -52,6 +51,7 @@
 #include <boost/program_options.hpp>
 #include <mutex>
 //---------------------------------------------------------------------------
+using namespace ambf;
 using namespace chai3d;
 using namespace std;
 //---------------------------------------------------------------------------

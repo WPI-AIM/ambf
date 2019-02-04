@@ -35,8 +35,10 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE. 
 
-    \author    <http://www.chai3d.org>
+    \author    <http://www.aimlab.wpi.edu>
     \author    Adnan Munawar, WPI.
+    \author    <http://www.chai3d.org>
+    \author    Francois Conti.
     \version   3.2.0 $Rev: 1875 $
 */
 //==============================================================================
