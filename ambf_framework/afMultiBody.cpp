@@ -311,7 +311,7 @@ void afRigidBody::populateParentsTree(afRigidBodyPtr a_body, afJointPtr a_jnt){
 }
 
 ///
-/// \brief afBody::add_parent_body
+/// \brief afRigidBody::addParentBody
 /// \param a_parentBody
 ///
 void afRigidBody::addParentBody(afRigidBody* a_parentBody){
@@ -324,23 +324,29 @@ void afRigidBody::addParentBody(afRigidBody* a_parentBody){
 /// \param a_jnt
 ///
 void afRigidBody::addChildBody(afRigidBody* a_childBody, afJointPtr a_jnt){
-    a_childBody->addParentBody(this);
-    a_childBody->m_parentBodies.insert(a_childBody->m_parentBodies.end(),
-                                       m_parentBodies.begin(), m_parentBodies.end());
-    m_childrenBodies.push_back(a_childBody);
-    m_childrenBodies.insert(m_childrenBodies.end(),
-                            a_childBody->m_childrenBodies.begin(),
-                            a_childBody->m_childrenBodies.end());
-    m_joints.push_back(a_jnt);
-    m_joints.insert(m_joints.end(),
-                    a_childBody->m_joints.begin(),
-                    a_childBody->m_joints.end());
-    for (m_bodyIt = m_parentBodies.begin() ; m_bodyIt != m_parentBodies.end() ; ++m_bodyIt){
-        (*m_bodyIt)->populateParentsTree(a_childBody, a_jnt);
+    //TODO: TEST THIS LOGIC
+    if (this == a_childBody){
+        std::cerr << "WARNING, " << this->m_name << ": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
     }
+    else{
+        a_childBody->addParentBody(this);
+        a_childBody->m_parentBodies.insert(a_childBody->m_parentBodies.end(),
+                                           this->m_parentBodies.begin(), this->m_parentBodies.end());
+        this->m_childrenBodies.push_back(a_childBody);
+        this->m_childrenBodies.insert(this->m_childrenBodies.end(),
+                                a_childBody->m_childrenBodies.begin(),
+                                a_childBody->m_childrenBodies.end());
+        this->m_joints.push_back(a_jnt);
+        this->m_joints.insert(this->m_joints.end(),
+                        a_childBody->m_joints.begin(),
+                        a_childBody->m_joints.end());
+        for (m_bodyIt = this->m_parentBodies.begin() ; m_bodyIt != this->m_parentBodies.end() ; ++m_bodyIt){
+            (*m_bodyIt)->populateParentsTree(a_childBody, a_jnt);
+        }
 
-    for (m_bodyIt = a_childBody->m_childrenBodies.begin() ; m_bodyIt != a_childBody->m_childrenBodies.end() ; ++m_bodyIt){
-        (*m_bodyIt)->addParentBody(this);
+        for (m_bodyIt = a_childBody->m_childrenBodies.begin() ; m_bodyIt != a_childBody->m_childrenBodies.end() ; ++m_bodyIt){
+            (*m_bodyIt)->addParentBody(this);
+        }
     }
 }
 
