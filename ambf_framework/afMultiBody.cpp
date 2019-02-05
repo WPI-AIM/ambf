@@ -903,11 +903,11 @@ void afRigidBody::afObjectCommandExecute(double dt){
                             m_joints[jnt]->commandPosition(m_afCommand.J_cmd[jnt]);
                         }
                         else{
-                            m_joints[jnt]->commandTorque(m_afCommand.J_cmd[jnt]);
+                            m_joints[jnt]->commandEffort(m_afCommand.J_cmd[jnt]);
                         }
                     }
                     else{
-                        m_joints[jnt]->commandTorque(m_afCommand.J_cmd[jnt]);
+                        m_joints[jnt]->commandEffort(m_afCommand.J_cmd[jnt]);
                     }
                 }
             }
@@ -1314,6 +1314,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointOffset = jointNode["offset"];
     YAML::Node jointDamping = jointNode["joint damping"];
     YAML::Node jointType = jointNode["type"];
+    YAML::Node jointController = jointNode["controller"];
 
     if (!jointParentName.IsDefined() || !jointChildName.IsDefined()){
         std::cerr << "ERROR: PARENT/CHILD FOR: " << node_name << " NOT DEFINED \n";
@@ -1336,6 +1337,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_jointType = JointType::revolute;
 
     afRigidBodyPtr afBodyA, afBodyB;
+
+    m_mB = mB;
 
     afBodyA = mB->getRidigBody(mB->getNameSpace() + m_parent_name + name_remapping, true);
     afBodyB = mB->getRidigBody(mB->getNameSpace() + m_child_name + name_remapping, true);
@@ -1456,6 +1459,15 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_lower_limit = jointLimits["low"].as<double>();
         if (jointLimits["high"].IsDefined())
             m_higher_limit = jointLimits["high"].as<double>();
+    }
+
+    if (jointController.IsDefined()){
+        if( (jointController["P"]).IsDefined())
+            m_controller.P = jointController["P"].as<double>();
+        if( (jointController["I"]).IsDefined())
+            m_controller.I = jointController["I"].as<double>();
+        if( (jointController["D"]).IsDefined())
+            m_controller.D = jointController["D"].as<double>();
     }
 
     if (jointType.IsDefined()){
@@ -1617,22 +1629,32 @@ btQuaternion afJoint::getRotationBetweenVectors(btVector3 &v1, btVector3 &v2){
 /// \brief afJoint::command_position
 /// \param cmd
 ///
-void afJoint::commandPosition(double &cmd){
+void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enable_actuator){
         if (m_jointType == JointType::revolute){
-            if (!((btHingeConstraint*)m_btConstraint)->getEnableAngularMotor()){
-                ((btHingeConstraint*)m_btConstraint)->enableMotor(m_enable_actuator);
-                ((btHingeConstraint*)m_btConstraint)->setMaxMotorImpulse(m_max_motor_impulse);
+            if (!m_hinge->getEnableAngularMotor()){
+                m_hinge->enableMotor(m_enable_actuator);
+                m_hinge->setMaxMotorImpulse(m_max_motor_impulse);
             }
-            ((btHingeConstraint*)m_btConstraint)->setMotorTarget(cmd, 0.001);
+            double effort_command = m_controller.compute_output(m_hinge->getHingeAngle(), position_cmd, m_mB->m_wallClock.getCurrentTimeSeconds());
+            btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
+            btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
+            m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * effort_command);
+            m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * effort_command);
         }
         else if(m_jointType == JointType::prismatic){
-            if (!((btSliderConstraint*) m_btConstraint)->getPoweredLinMotor()){
-                ((btSliderConstraint*) m_btConstraint)->setPoweredLinMotor(m_enable_actuator);
-                ((btSliderConstraint*) m_btConstraint)->setMaxLinMotorForce(m_max_motor_impulse * 1000);
+            if (!m_slider->getPoweredLinMotor()){
+                m_slider->setPoweredLinMotor(m_enable_actuator);
+                m_slider->setMaxLinMotorForce(m_max_motor_impulse * 1000);
             }
+            double effort_command = m_controller.compute_output(m_slider->getLinearPos(), position_cmd,  m_mB->m_wallClock.getCurrentTimeSeconds());
+            btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
+            const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
+            const btVector3 relPos(0,0,0);
+            m_rbodyA->applyForce(-sliderAxisInWorld * effort_command, relPos);
+            m_rbodyB->applyForce(sliderAxisInWorld * effort_command, relPos);
         }
     }
     else{
@@ -1644,11 +1666,11 @@ void afJoint::commandPosition(double &cmd){
 /// \brief afJoint::command_torque
 /// \param cmd
 ///
-void afJoint::commandTorque(double &cmd){
+void afJoint::commandEffort(double &cmd){
     if (m_jointType == JointType::revolute){
         // If the motor was enabled, disable it before setting joint torques
-        if (((btHingeConstraint*)m_btConstraint)->getEnableAngularMotor())
-            ((btHingeConstraint*)m_btConstraint)->enableMotor(false);{
+        if (m_hinge->getEnableAngularMotor())
+            m_hinge->enableMotor(false);{
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
@@ -1657,8 +1679,8 @@ void afJoint::commandTorque(double &cmd){
     }
     else if (m_jointType == JointType::prismatic){
         // If the motor was enabled, disable it before setting joint torques
-        if (((btSliderConstraint*) m_btConstraint)->getPoweredLinMotor())
-            ((btSliderConstraint*) m_btConstraint)->setPoweredLinMotor(false);{
+        if (m_slider->getPoweredLinMotor()){
+            m_slider->setPoweredLinMotor(false);
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
@@ -1763,6 +1785,11 @@ bool afWorld::loadWorld(std::string a_world_config){
 ///
 afMultiBody::afMultiBody(){
     m_wallClock.start(true);
+}
+
+afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
+    m_wallClock.start(true);
+    m_chaiWorld = a_chaiWorld;
 }
 
 

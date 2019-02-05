@@ -221,6 +221,9 @@ private:
     // Counter for the times we have written to ambf_comm API
     // This is only of internal use as it could be reset
     unsigned short m_write_count = 0;
+    double m_P=10;
+    double m_I=0;
+    double m_D=1;
 
 };
 
@@ -270,6 +273,40 @@ protected:
     static cMaterial m_mat;
 };
 
+
+///
+/// \brief The PID struct
+///
+struct PID{
+    double P = 1000;
+    double I = 0;
+    double D = 50;
+    double e[4] = {0, 0, 0, 0};
+    double de[4] = {0, 0, 0, 0};
+    double dde[4] = {0, 0, 0, 0};
+    double t[4]= {0, 0, 0, 0};
+    size_t n = 4;
+    double output;
+
+    double compute_output(double process_val, double set_point, double current_time){
+        for (size_t i = n-1 ; i >= 1 ; i--){
+            t[i] = t[i-1];
+            e[i] = e[i-1];
+            de[i] = de[i-1];
+        }
+        t[0] = current_time;
+        e[0] = set_point - process_val;
+        double dt = t[0] - t[1];
+        if (!dt > 0.0001 || !dt > 0.0){
+            dt = 0.0001;
+        }
+        de[0] = de[0] + ( (de[0] - de[1]) / dt );
+        dde[0] = (e[0] - e[1]) / dt;
+        output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
+        return output;
+    }
+};
+
 enum JointType{
     revolute = 0,
     prismatic = 1,
@@ -290,8 +327,8 @@ public:
     virtual ~afJoint();
     virtual bool loadJoint(std::string jnt_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
     virtual bool loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-    void commandTorque(double &cmd);
-    void commandPosition(double &cmd);
+    void commandEffort(double &effort_cmd);
+    void commandPosition(double &position_cmd);
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
     double getPosition();
     JointType m_jointType;
@@ -323,6 +360,8 @@ private:
     // control loops
     btHingeConstraint* m_hinge;
     btSliderConstraint* m_slider;
+    afMultiBodyPtr m_mB;
+    PID m_controller;
 };
 
 
@@ -368,7 +407,7 @@ class afMultiBody: public afWorld{
 public:
 
     afMultiBody();
-    afMultiBody(cBulletWorld* a_chaiWorld){m_chaiWorld = a_chaiWorld;}
+    afMultiBody(cBulletWorld* a_chaiWorld);
     virtual ~afMultiBody();
     virtual bool loadMultiBody(int i);
     virtual bool loadMultiBody(std::string a_multibody_config);

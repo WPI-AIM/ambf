@@ -89,7 +89,8 @@ JOINT l1-l2:
   parent pivot: {x: 0.139, y: 0.138, z: 0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  joint limits: {high: 0.785, low: -0.785}
+  joint limits: {high: 0.6, low: -0.6}
+  controller: {P: 10000, I: 1, D:300}
   max motor impulse: 0.01
   type: revolute
   offset: 1.575
@@ -101,7 +102,7 @@ JOINT l1-l4:
   parent pivot: {x: 0.07, y: -0.77, z: 0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: -0.07, y: -0.77, z: 0.0}
-  joint limits: {high: 0.785, low: -0.785}
+  joint limits: {high: 0.6, low: -0.6}
   max motor impulse: 0.01
   type: revolute
   offset: -1.575
@@ -113,7 +114,7 @@ JOINT l2-l3:
   parent pivot: {x: -0.141, y: -0.832, z: 0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  joint limits: {high: 0.785, low: -0.785}
+  joint limits: {high: 0.6, low: -0.6}
   max motor impulse: 0.01
   type: revolute
   offset: -1.575
