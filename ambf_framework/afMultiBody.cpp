@@ -814,6 +814,13 @@ void afRigidBody::updatePositionFromDynamics()
                 m_write_count = 0;
             }
         }
+        if (_publish_joint_names){
+            // Since joint names aren't going to change that often
+            // change the field less so often
+            if (m_write_count % 2000 == 0){
+                afObjectStateSetJointNames();
+            }
+        }
         m_write_count++;
     }
 #endif
@@ -923,6 +930,23 @@ void afRigidBody::afObjectStateSetChildrenNames(){
             children_names[i] = m_childrenBodies[i]->m_name;
         }
         m_afObjectPtr->set_children_names(children_names);
+    }
+#endif
+}
+
+///
+/// \brief afRigidBody::afObjectStateSetJointNames
+///
+void afRigidBody::afObjectStateSetJointNames(){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    int num_joints = m_joints.size();
+    if (num_joints > 0 && m_afObjectPtr != NULL){
+        std::vector<std::string> joint_names;
+        joint_names.resize(num_joints);
+        for (size_t i = 0 ; i < num_joints ; i++){
+            joint_names[i] = m_joints[i]->m_name;
+        }
+        m_afObjectPtr->set_joint_names(joint_names);
     }
 #endif
 }

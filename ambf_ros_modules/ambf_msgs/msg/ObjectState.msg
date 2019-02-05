@@ -9,5 +9,6 @@ geometry_msgs/Pose pose
 geometry_msgs/Wrench wrench
 string userdata_description
 string[] children_names
+string[] joint_names
 float32[] userdata
 float32[] joint_positions

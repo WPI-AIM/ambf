@@ -107,6 +107,10 @@ void Object::set_children_names(std::vector<std::string> children_names){
     m_State.children_names = children_names;
 }
 
+void Object::set_joint_names(std::vector<std::string> joint_names){
+    m_State.joint_names = joint_names;
+}
+
 void Object::set_joint_positions(std::vector<float> joint_positions){
     if (m_State.joint_positions.size() != joint_positions.size()){
         m_State.joint_positions.resize(joint_positions.size());

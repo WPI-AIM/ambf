@@ -196,6 +196,7 @@ protected:
     bool _ang_gains_computed = false;
     bool _publish_joint_positions = false;
     bool _publish_children_names = false;
+    bool _publish_joint_names = true;
     int _min_publish_frequency;
     int _max_publish_frequency;
     void computeControllerGains();
@@ -207,6 +208,8 @@ protected:
     void downwardTreePopulation(afRigidBodyPtr a_parentbody);
     // Update the children for this body in the afObject State Message
     virtual void afObjectStateSetChildrenNames();
+    // Update the joints for this body in the afObject State Message
+    virtual void afObjectStateSetJointNames();
     // Update the joint positions of children in afObject State Message
     virtual void afObjectSetJointPositions();
     static afRigidBodySurfaceProperties m_surfaceProps;

@@ -117,8 +117,9 @@ public:
     // This method is to set any additional data that could for debugging purposes or future use
     void set_userdata(std::vector<float> &a_data);
     void set_children_names(std::vector<std::string> children_names);
-    // Get the children defined in the state message
     inline std::vector<std::string> get_children_names(){return m_State.children_names;}
+    void set_joint_names(std::vector<std::string> joint_names);
+    inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
     void set_joint_positions(std::vector<float> joint_positions);
     ObjectCommand m_objectCommand;
 };
