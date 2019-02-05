@@ -13,17 +13,17 @@ joints: [JOINT pitch end link-main insertion link, JOINT yaw link-pitch back lin
 high resolution path: ../../../meshes/blender_afmb/ecm/high_res/
 low resolution path: ../../../meshes/blender_afmb/ecm/low_res/
 ignore inter-collision: 'True'
+namespace: '/chai/env/ecm/'
 BODY base link:
   name: base link
   mesh: base link.STL
   mass: 0.0
   scale: 1.0
-
   publish children names: True
   publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 1.571}
-    position: {x: -0.5, y: -0.7, z: -0.7}
+    position: {x: 0.5, y: -1.0, z: -0.7}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: -0.005, y: -0.0, z: 0.08}

@@ -171,7 +171,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         std::string body_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
         if (tmpBody->loadRidigBody(a_gripper_config_file.c_str(), body_name, this)){
-            m_afRigidBodyMap[body_name.c_str()] = tmpBody;
+            m_afRigidBodyMap[m_multibody_namespace + body_name.c_str()] = tmpBody;
         }
     }
     afJoint *tmpJoint;
@@ -181,7 +181,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         //        printf("Loading body: %s \n", jnt_name.c_str());
         if (tmpJoint->loadJoint(a_gripper_config_file.c_str(), jnt_name, this)){
-            m_afJointMap[jnt_name] = tmpJoint;
+            m_afJointMap[m_multibody_namespace + jnt_name] = tmpJoint;
             if (tmpJoint->m_jointType == JointType::revolute){
                 ((btHingeConstraint* )tmpJoint->getConstraint())->enableMotor(true);
             }

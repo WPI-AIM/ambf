@@ -11,6 +11,7 @@ joints: [JOINT ArmParallel1-ArmFront, JOINT OutPitch Shoulder-ArmParallel, JOINT
 high resolution path: ../../../meshes/blender_afmb/mtm/high_res/
 low resolution path: ../../../meshes/blender_afmb/mtm/low_res/
 ignore inter-collision: 'True'
+namespace: '/chai/env/mtm/'
 BODY ArmFront:
   name: ArmFront
   mesh: ArmFront.STL
@@ -90,7 +91,7 @@ BODY Top Panel:
   publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 1.571}
-    position: {x: 0.0, y: 0.0, z: 0.0}
+    position: {x: -0.5, y: 0.0, z: 0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: -0.008, y: 0.064, z: 0.028}

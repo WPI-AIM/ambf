@@ -15,6 +15,7 @@ joints: [JOINT pitch end link-main insertion link, JOINT yaw link-pitch back lin
 high resolution path: ../../../meshes/blender_afmb/psm/high_res/
 low resolution path: ../../../meshes/blender_afmb/psm/low_res/
 ignore inter-collision: 'True'
+namespace: '/chai/env/psm/'
 BODY base link:
   name: base link
   mesh: base link.STL
@@ -22,7 +23,7 @@ BODY base link:
   scale: 1.0
   location:
     orientation: {p: -0.0, r: 0.0, y: 3.14}
-    position: {x: -0.7, y: 0.7, z: -0.7}
+    position: {x: 0.5, y: 1.0, z: -0.7}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: 0.0, y: -0.086, z: -0.043}

@@ -7,13 +7,13 @@ multibody configs:
   # - "./multi-bodies/robots/urdf-psm.yaml"
   # - "./multi-bodies/robots/urdf-suj.yaml"
   # - "./multi-bodies/robots/urdf-kuka.yaml"
-  - "./multi-bodies/robots/blender-mtm.yaml"
+  # - "./multi-bodies/robots/blender-mtm.yaml"
   # - "./multi-bodies/robots/blender-ecm.yaml"
   # - "./multi-bodies/robots/blender-psm.yaml"
   # - "./multi-bodies/robots/blender-suj.yaml"
   # - "./multi-bodies/robots/blender-kuka.yaml"
   # - "./multi-bodies/puzzles/parallel_structure.yaml"
-  # - "./multi-bodies/puzzles/puzzle1.yaml"
+  - "./multi-bodies/puzzles/puzzle1.yaml"
 gripper configs:
   - Default
   - MTMR

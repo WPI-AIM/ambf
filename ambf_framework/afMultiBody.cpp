@@ -1429,8 +1429,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     afRigidBodyPtr afBodyA, afBodyB;
 
-    afBodyA = mB->getRidigBody(m_parent_name + name_remapping, true);
-    afBodyB = mB->getRidigBody(m_child_name + name_remapping, true);
+    afBodyA = mB->getRidigBody(mB->getNameSpace() + m_parent_name + name_remapping, true);
+    afBodyB = mB->getRidigBody(mB->getNameSpace() + m_child_name + name_remapping, true);
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
@@ -1447,9 +1447,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if ((!strcmp(afBodyA->m_name.c_str(), "world") == 0)
                 &&(!strcmp(afBodyA->m_name.c_str(), "World") == 0)
                 &&(!strcmp(afBodyA->m_name.c_str(), "WORLD") == 0)){
-            std::cerr <<"INFO: JOINT: \"" << m_name <<
-                        "\'s\" PARENT BODY \"" << m_parent_name <<
-                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
+//            std::cerr <<"INFO: JOINT: \"" << m_name <<
+//                        "\'s\" PARENT BODY \"" << m_parent_name <<
+//                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
     if(afBodyB == NULL){
@@ -2016,7 +2016,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
         YAML::Node rb_node = multiBodyNode[rb_name];
         if (tmpRigidBody->loadRidigBody(&rb_node, rb_name, this)){
-            m_afRigidBodyMap[(rb_name + remap_str).c_str()] = tmpRigidBody;
+            m_afRigidBodyMap[(m_multibody_namespace + rb_name + remap_str).c_str()] = tmpRigidBody;
             std::string af_name = tmpRigidBody->m_name;
             if ((strcmp(af_name.c_str(), "world") == 0) ||
                     (strcmp(af_name.c_str(), "World") == 0) ||
@@ -2043,7 +2043,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
         YAML::Node sb_node = multiBodyNode[sb_name];
         if (tmpSoftBody->loadSoftBody(&sb_node, sb_name, this)){
-            m_afSoftBodyMap[(sb_name + remap_str).c_str()] = tmpSoftBody;
+            m_afSoftBodyMap[(m_multibody_namespace + sb_name + remap_str).c_str()] = tmpSoftBody;
             //            tmpSoftBody->createAFObject(tmpSoftBody->m_name + remap_str);
         }
     }
@@ -2058,7 +2058,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         //        printf("Loading body: %s \n", (jnt_name + remap_str).c_str());
         YAML::Node jnt_node = multiBodyNode[jnt_name];
         if (tmpJoint->loadJoint(&jnt_node, jnt_name, this, remap_str)){
-            m_afJointMap[jnt_name+remap_str] = tmpJoint;
+            m_afJointMap[m_multibody_namespace + jnt_name+remap_str] = tmpJoint;
         }
     }
     if (multiBodyNode["ignore inter-collision"].IsDefined()){
