@@ -145,7 +145,7 @@ JOINT pitch end link-main insertion link:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.254, low: 0.0}
-  controller: {P: 5000, I: 0, D:500}
+  controller: {P: 5000, I: 0, D: 500}
   type: prismatic
 JOINT yaw link-pitch back link:
   name: yaw link-pitch back link
@@ -156,7 +156,7 @@ JOINT yaw link-pitch back link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.158, low: -0.784}
-  controller: {P: 5000, I: 0, D:100}
+  controller: {P: 5000, I: 0, D: 100}
   type: revolute
   offset: 3.14
 JOINT pitch front link-pitch bottom link:
@@ -168,7 +168,7 @@ JOINT pitch front link-pitch bottom link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.784, low: -1.158}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: revolute
 JOINT pitch bottom link-pitch end link:
   name: pitch bottom link-pitch end link
@@ -179,7 +179,7 @@ JOINT pitch bottom link-pitch end link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.158, low: -0.784}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: revolute
 JOINT yaw link-pitch front link:
   name: yaw link-pitch front link
@@ -190,7 +190,7 @@ JOINT yaw link-pitch front link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.158, low: -0.784}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: revolute
   offset: 3.14
 JOINT pitch front link-pitch top link:
@@ -202,7 +202,7 @@ JOINT pitch front link-pitch top link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.784, low: -1.158}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: revolute
 JOINT tool link-remote center link:
   name: tool link-remote center link
@@ -212,7 +212,7 @@ JOINT tool link-remote center link:
   parent pivot: {x: 0.0, y: -0.0, z: -0.389}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: fixed
   offset: 3.141
 JOINT main insertion link-tool link:
@@ -224,7 +224,7 @@ JOINT main insertion link-tool link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.567, low: -1.553}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: revolute
   offset: 1.571
 JOINT base link-yaw link:
@@ -236,7 +236,7 @@ JOINT base link-yaw link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.582, low: -1.595}
-  controller: {P: 5000, I: 0, D:100}
+  controller: {P: 5000, I: 0, D: 100}
   type: revolute
   offset: 1.571
 
@@ -248,7 +248,7 @@ JOINT temp1:
   parent pivot: {x: -0.102, y: -0.2926, z: 0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: -0.035, y: 0.01, z: 0.0}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: continuous
 
 JOINT temp2:
@@ -260,7 +260,7 @@ JOINT temp2:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: -0.005, y: -0.037, z: 0.0}
   enable motor: 0
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: continuous
 
 JOINT temp3:
@@ -271,5 +271,5 @@ JOINT temp3:
   parent pivot: {x: 0.34, y: 0.0, z: 0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: -0.005, y: -0.037, z: 0.0}
-  controller: {P: 10, I: 0, D:1}
+  controller: {P: 10, I: 0, D: 1}
   type: continuous

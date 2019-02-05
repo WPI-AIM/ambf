@@ -185,6 +185,7 @@ JOINT ArmParallel-ArmParallel1:
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.571, low: -1.571}
   max motor impulse: 0.01
+  controller: {P: 500, I: 0, D: 10}
   type: revolute
   offset: -1.571
 JOINT ArmParallel-BottomArm:
@@ -208,7 +209,7 @@ JOINT Top Panel-OutPitch Shoulder:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: -1.309}
-  max motor impulse: 0.01
+  controller: {P: 1000, I: 0, D: 10}
   type: revolute
   offset: 1.571
 JOINT WristPlatform-WristPitch:

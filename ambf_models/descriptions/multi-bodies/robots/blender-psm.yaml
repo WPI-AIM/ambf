@@ -21,6 +21,8 @@ BODY base link:
   mesh: base link.STL
   mass: 0.0
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 3.14}
     position: {x: 0.5, y: 1.0, z: -0.7}
@@ -181,7 +183,7 @@ JOINT pitch end link-main insertion link:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.24, low: 0.0}
-  max motor impulse: 0.01
+  controller: {P: 4000, I: 0, D: 10}
   type: prismatic
   offset: 3.141
 JOINT yaw link-pitch back link:

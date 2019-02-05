@@ -278,6 +278,9 @@ protected:
 /// \brief The PID struct
 ///
 struct PID{
+    // Set some default values of PID
+    // TODO: Maybe set PID's to 0 so the
+    // user has to explicitly set them
     double P = 1000;
     double I = 0;
     double D = 50;
