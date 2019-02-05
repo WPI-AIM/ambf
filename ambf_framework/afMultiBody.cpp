@@ -299,23 +299,115 @@ afRigidBody::afRigidBody(cBulletWorld* a_world): cBulletMultiMesh(a_world){
 /// \param a_body
 /// \param a_jnt
 ///
-void afRigidBody::populateParentsTree(afRigidBodyPtr a_body, afJointPtr a_jnt){
-    m_childrenBodies.push_back(a_body);
-    m_childrenBodies.insert(m_childrenBodies.end(),
-                            a_body->m_childrenBodies.begin(),
-                            a_body->m_childrenBodies.end());
-    m_joints.push_back(a_jnt);
-    m_joints.insert(m_joints.end(),
-                    a_body->m_joints.begin(),
-                    a_body->m_joints.end());
+void afRigidBody::populateParentsTree(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
+    bool _childExists = false;
+    if (m_childrenBodies.size() == 0){
+        _childExists = false;
+    }
+    else{
+        for (size_t cIdx = 0; cIdx < m_childrenBodies.size() ; cIdx++){
+            if (a_childBody == m_childrenBodies[cIdx]){
+                _childExists = true;
+                break;
+            }
+        }
+    }
+
+    if (!_childExists){
+        m_childrenBodies.push_back(a_childBody);
+    }
+    else{
+        std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+                  << a_childBody->m_name << "\" IGNORING" << std::endl;
+    }
+
+    std::vector<afRigidBodyPtr>::iterator ccBodyIt;
+    for (ccBodyIt = a_childBody->m_childrenBodies.begin() ; ccBodyIt != a_childBody->m_childrenBodies.end(); ++ccBodyIt){
+        bool _childsChildExists = false;
+        for (size_t cIdx = 0; cIdx < m_childrenBodies.size() ; cIdx++){
+            if (*ccBodyIt == m_childrenBodies[cIdx]){
+                _childsChildExists = true;
+                break;
+            }
+        }
+
+        if (!_childsChildExists){
+            m_childrenBodies.push_back(*ccBodyIt);
+        }
+        else{
+            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+                      << (*ccBodyIt)->m_name << "\" IGNORING" << std::endl;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    bool _jointExists = false;
+    if (this->m_joints.size() == 0){
+        _jointExists = false;
+    }
+    else{
+        for (size_t jIdx = 0; jIdx < m_joints.size() ; jIdx++){
+            if (a_jnt == m_joints[jIdx]){
+               _jointExists = true;
+               break;
+            }
+        }
+    }
+    if(!_jointExists){
+        m_joints.push_back(a_jnt);
+    }
+    else{
+        std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
+                  << a_jnt->m_name << "\" IGNORING" << std::endl;
+    }
+
+    std::vector<afJointPtr>::iterator cJointIt;
+    for (cJointIt = a_childBody->m_joints.begin() ; cJointIt != a_childBody->m_joints.end(); ++cJointIt){
+        bool _childsJointExists = false;
+        for (size_t jIdx = 0; jIdx < m_joints.size() ; jIdx++){
+            if (*cJointIt == m_joints[jIdx]){
+                 _childsJointExists = true;
+                 break;
+            }
+        }
+        if(!_childsJointExists){
+            m_joints.push_back(*cJointIt);
+        }
+        else{
+            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
+                      << (*cJointIt)->m_name << "\" IGNORING" << std::endl;
+        }
+    }
 }
 
 ///
 /// \brief afRigidBody::addParentBody
 /// \param a_parentBody
 ///
-void afRigidBody::addParentBody(afRigidBody* a_parentBody){
-    m_parentBodies.push_back(a_parentBody);
+void afRigidBody::addParentBody(afRigidBodyPtr a_parentBody){
+
+    //TODO: TEST THIS LOGIC RIGOROUSLY
+
+    // Check against existing parent bodies
+    bool _parentExists = false;
+    if (m_parentBodies.size() == 0){
+        _parentExists = false;
+    }
+    else{
+        for (size_t pIdx = 0; pIdx < m_parentBodies.size() ; pIdx++){
+            if (a_parentBody == m_parentBodies[pIdx]){
+                _parentExists = true;
+                break;
+            }
+        }
+    }
+    if(!_parentExists){
+        m_parentBodies.push_back(a_parentBody);
+    }
+    else{
+        std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A PARENT BODY NAMED \""
+                  << a_parentBody->m_name << "\" IGNORING" << std::endl;
+    }
 }
 
 ///
@@ -323,27 +415,118 @@ void afRigidBody::addParentBody(afRigidBody* a_parentBody){
 /// \param a_childBody
 /// \param a_jnt
 ///
-void afRigidBody::addChildBody(afRigidBody* a_childBody, afJointPtr a_jnt){
-    //TODO: TEST THIS LOGIC
+void afRigidBody::addChildBody(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
+    //TODO: TEST THIS LOGIC RIGOROUSLY
     if (this == a_childBody){
-        std::cerr << "WARNING, " << this->m_name << ": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
+        std::cerr << "INFO, BODY \"" << this->m_name << "\": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
     }
     else{
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //1. Add this body as the parent of the child body
         a_childBody->addParentBody(this);
-        a_childBody->m_parentBodies.insert(a_childBody->m_parentBodies.end(),
-                                           this->m_parentBodies.begin(), this->m_parentBodies.end());
-        this->m_childrenBodies.push_back(a_childBody);
-        this->m_childrenBodies.insert(this->m_childrenBodies.end(),
-                                a_childBody->m_childrenBodies.begin(),
-                                a_childBody->m_childrenBodies.end());
-        this->m_joints.push_back(a_jnt);
-        this->m_joints.insert(this->m_joints.end(),
-                        a_childBody->m_joints.begin(),
-                        a_childBody->m_joints.end());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //2. Now we add all of the parent bodies of this body as to parent bodies of the child body
+        std::vector<afRigidBodyPtr>::iterator pIt;
+        for (pIt = m_parentBodies.begin(); pIt != m_parentBodies.end(); ++pIt){
+            a_childBody->addParentBody(*pIt);
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //3. Now we add the child body as this body's child
+        bool _childExists = false;
+        if (m_childrenBodies.size() == 0){
+            _childExists = false;
+        }
+        else{
+            for (size_t cIdx = 0; cIdx < m_childrenBodies.size() ; cIdx++){
+                if (a_childBody == m_childrenBodies[cIdx]){
+                    _childExists = true;
+                    break;
+                }
+            }
+        }
+
+        if (!_childExists){
+            m_childrenBodies.push_back(a_childBody);
+        }
+        else{
+            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+                      << a_childBody->m_name << "\" IGNORING" << std::endl;
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //4. Now we add all the children of the child body as this bodies children
+        std::vector<afRigidBodyPtr>::iterator ccBodyIt;
+        for (ccBodyIt = a_childBody->m_childrenBodies.begin(); ccBodyIt != a_childBody->m_childrenBodies.end(); ++ccBodyIt){
+            bool _childsChildExists = false;
+            for (size_t cIdx = 0; cIdx < m_childrenBodies.size() ; cIdx++){
+                if (*ccBodyIt == m_childrenBodies[cIdx]){
+                    _childsChildExists = true;
+                    break;
+                }
+            }
+            if (!_childsChildExists){
+                m_childrenBodies.push_back(*ccBodyIt);
+            }
+            else{
+                std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+                          << (*ccBodyIt)->m_name << "\" IGNORING" << std::endl;
+            }
+        }
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //5. Now we add the joint to this Body
+        bool _jointExists = false;
+        if (this->m_joints.size() == 0){
+            _jointExists = false;
+        }
+        else{
+            for (size_t jIdx = 0; jIdx < m_joints.size() ; jIdx++){
+                if (a_jnt == m_joints[jIdx]){
+                   _jointExists = true;
+                   break;
+                }
+            }
+        }
+
+        if(!_jointExists){
+            m_joints.push_back(a_jnt);
+        }
+        else{
+            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
+                      << a_jnt->m_name << "\" IGNORING" << std::endl;
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //6. Now we add the all the joints of the child body to this Body
+        std::vector<afJointPtr>::iterator cJointIt;
+        for (cJointIt = a_childBody->m_joints.begin(); cJointIt != a_childBody->m_joints.end(); ++cJointIt){
+            bool _childJointExists = false;
+            for (size_t jIdx = 0; jIdx < m_joints.size() ; jIdx++){
+                if (*cJointIt == m_joints[jIdx]){
+                     _childJointExists = true;
+                     break;
+                }
+            }
+            if(!_childJointExists){
+                m_joints.push_back(*cJointIt);
+            }
+            else{
+                std::cerr << "INFO, BODY \"" << this->m_name << "\":  ALREADY HAS A JOINT NAMED\" "
+                          << (*cJointIt)->m_name << "\" IGNORING" << std::endl;
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //7. Now we add the child and all of it's children to this body's parent bodies
         for (m_bodyIt = this->m_parentBodies.begin() ; m_bodyIt != this->m_parentBodies.end() ; ++m_bodyIt){
             (*m_bodyIt)->populateParentsTree(a_childBody, a_jnt);
         }
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //8. Now we add this body as the parent of all the children of the child body
         for (m_bodyIt = a_childBody->m_childrenBodies.begin() ; m_bodyIt != a_childBody->m_childrenBodies.end() ; ++m_bodyIt){
             (*m_bodyIt)->addParentBody(this);
         }

@@ -16,6 +16,8 @@ BODY ArmFront:
   mesh: ArmFront.STL
   mass: 0.15
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 1.571, y: 0.0}
     position: {x: 0.101, y: -0.035, z: -0.19}
@@ -28,6 +30,8 @@ BODY ArmParallel:
   mesh: ArmParallel.STL
   mass: 0.9
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -1.571, r: 1.572, y: 0.001}
     position: {x: 0.0, y: 0.0, z: -0.19}
@@ -40,6 +44,8 @@ BODY ArmParallel1:
   mesh: ArmParallel1.STL
   mass: 0.15
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: 0.0, r: 1.571, y: 0.002}
     position: {x: 0.0, y: -0.065, z: -0.19}
@@ -52,6 +58,8 @@ BODY BottomArm:
   mesh: BottomArm.STL
   mass: 0.8
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: -1.571, y: -3.139}
     position: {x: -0.0, y: -0.0, z: -0.469}
@@ -64,6 +72,8 @@ BODY OutPitch Shoulder:
   mesh: OutPitch Shoulder.STL
   mass: 1.0
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: -3.141}
     position: {x: 0.0, y: 0.0, z: 0.0}
@@ -76,6 +86,8 @@ BODY Top Panel:
   mesh: Top Panel.STL
   mass: 0.0
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 1.571}
     position: {x: 0.0, y: 0.0, z: 0.0}
@@ -88,6 +100,8 @@ BODY WristPitch:
   mesh: WristPitch.STL
   mass: 0.2
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: -1.571, y: -3.139}
     position: {x: 0.364, y: 0.001, z: -0.313}
@@ -100,6 +114,8 @@ BODY WristPlatform:
   mesh: WristPlatform.STL
   mass: 0.4
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: -0.0, y: -3.139}
     position: {x: 0.364, y: 0.001, z: -0.313}
@@ -112,6 +128,8 @@ BODY WristRoll:
   mesh: WristRoll.STL
   mass: 0.1
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: 1.571, r: 1.571, y: -1.562}
     position: {x: 0.325, y: 0.001, z: -0.313}
@@ -124,6 +142,8 @@ BODY WristYaw:
   mesh: WristYaw.STL
   mass: 0.2
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: 0.0, r: -0.0, y: -1.568}
     position: {x: 0.364, y: 0.001, z: -0.313}
