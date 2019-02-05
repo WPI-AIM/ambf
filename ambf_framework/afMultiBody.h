@@ -203,7 +203,8 @@ protected:
 protected:
 
     void addParentBody(afRigidBodyPtr a_body);
-    void populateParentsTree(afRigidBodyPtr a_body, afJointPtr a_jnt);
+    void upwardTreePopulation(afRigidBodyPtr a_childbody, afJointPtr a_jnt);
+    void downwardTreePopulation(afRigidBodyPtr a_parentbody);
     // Update the children for this body in the afObject State Message
     virtual void afObjectStateSetChildrenNames();
     // Update the joint positions of children in afObject State Message
