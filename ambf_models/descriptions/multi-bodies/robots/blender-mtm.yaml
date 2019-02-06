@@ -78,6 +78,8 @@ BODY Top Panel:
   mesh: Top Panel.STL
   mass: 0.0
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 1.571}
     position: {x: -0.5, y: 0.0, z: 0.0}
@@ -153,7 +155,7 @@ JOINT OutPitch Shoulder-ArmParallel:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: -0.785}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 50, I: 0, P: 5000}
   type: revolute
   offset: -1.568
 JOINT ArmParallel-ArmParallel1:
@@ -165,7 +167,7 @@ JOINT ArmParallel-ArmParallel1:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.571, low: -1.571}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 5, I: 0, P: 1000}
   type: revolute
   offset: -1.571
 JOINT ArmParallel-BottomArm:
@@ -189,7 +191,7 @@ JOINT Top Panel-OutPitch Shoulder:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: -1.309}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 1, I: 0, P: 1000}
   type: revolute
   offset: 1.571
 JOINT ArmFront-BottomArm:

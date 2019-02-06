@@ -22,6 +22,8 @@ BODY base link:
   mesh: base link.STL
   mass: 0.0
   scale: 1.0
+  publish children names: True
+  publish joint positions: True
   location:
     orientation: {p: -0.0, r: 0.0, y: 3.14}
     position: {x: 0.5, y: 1.0, z: -0.7}
@@ -182,7 +184,7 @@ JOINT pitch end link-main insertion link:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.24, low: 0.0}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 5, I: 0, P: 3000}
   type: prismatic
   offset: 3.141
 JOINT yaw link-pitch back link:
@@ -194,7 +196,7 @@ JOINT yaw link-pitch back link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.942, low: -0.936}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 50, I: 0, P: 4000}
   type: revolute
   offset: -0.291
 JOINT pitch back link-pitch bottom link:
@@ -336,6 +338,6 @@ JOINT base link-yaw link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.599, low: -1.605}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 50, I: 0, P: 5000}
   type: revolute
   offset: 1.57

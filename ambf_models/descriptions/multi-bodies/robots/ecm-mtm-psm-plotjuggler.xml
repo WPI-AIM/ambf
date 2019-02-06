@@ -1,72 +1,72 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
  <tabbed_widget name="Main Window" parent="main_window">
-  <plotmatrix rows="3" tab_name="ECM" columns="1">
+  <plotmatrix rows="3" columns="1" tab_name="ECM">
    <plot row="0" col="0">
-    <range top="0.525000" bottom="-0.525000" left="0.000000" right="9.999949"/>
+    <range top="0.525646" right="155.148615" left="150.148763" bottom="-0.525016"/>
     <limitY/>
-    <curve G="0" B="255" R="255" name="/chai/env/ecm/baselink/Command/joint_cmds.8"/>
-    <curve G="128" B="128" R="0" name="/chai/env/ecm/baselink/State/joint_positions.8"/>
+    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.10" G="128" R="0" B="0"/>
+    <curve name="/chai/env/ecm/baselink/State/joint_positions.10" G="0" R="0" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
-    <range top="0.184000" bottom="0.016000" left="0.000000" right="9.999949"/>
+    <range top="0.184000" right="155.148615" left="150.148763" bottom="0.016000"/>
     <limitY/>
-    <curve G="0" B="0" R="255" name="/chai/env/ecm/baselink/Command/joint_cmds.2"/>
-    <curve G="128" B="0" R="128" name="/chai/env/ecm/baselink/State/joint_positions.2"/>
+    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.2" G="0" R="255" B="0"/>
+    <curve name="/chai/env/ecm/baselink/State/joint_positions.2" G="128" R="128" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
-    <range top="0.525000" bottom="-0.525000" left="0.000000" right="9.999949"/>
+    <range top="0.525000" right="155.148615" left="150.148763" bottom="-0.525000"/>
     <limitY/>
-    <curve G="128" B="0" R="0" name="/chai/env/ecm/baselink/Command/joint_cmds.0"/>
-    <curve G="0" B="0" R="255" name="/chai/env/ecm/baselink/State/joint_positions.0"/>
+    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.0" G="128" R="0" B="0"/>
+    <curve name="/chai/env/ecm/baselink/State/joint_positions.0" G="0" R="255" B="0"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
-  <plotmatrix rows="3" tab_name="PSM" columns="1">
+  <plotmatrix rows="3" columns="1" tab_name="PSM">
    <plot row="0" col="0">
-    <range top="0.528334" bottom="-0.528585" left="1.079986" right="11.080367"/>
+    <range top="0.525000" right="156.027540" left="151.027699" bottom="-0.525000"/>
     <limitY/>
-    <curve G="0" B="0" R="128" name="/chai/env/psm/baselink/Command/joint_cmds.11"/>
-    <curve G="0" B="255" R="0" name="/chai/env/psm/baselink/State/joint_positions.11"/>
+    <curve name="/chai/env/psm/baselink/Command/joint_cmds.13" G="0" R="255" B="0"/>
+    <curve name="/chai/env/psm/baselink/State/joint_positions.13" G="0" R="255" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
-    <range top="0.315153" bottom="-0.321279" left="1.079986" right="11.080367"/>
+    <range top="0.315038" right="156.027540" left="151.027699" bottom="-0.316576"/>
     <limitY/>
-    <curve G="0" B="0" R="255" name="/chai/env/psm/baselink/Command/joint_cmds.0"/>
-    <curve G="128" B="0" R="0" name="/chai/env/psm/baselink/State/joint_positions.0"/>
+    <curve name="/chai/env/psm/baselink/Command/joint_cmds.0" G="0" R="255" B="0"/>
+    <curve name="/chai/env/psm/baselink/State/joint_positions.0" G="128" R="0" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
-    <range top="0.255000" bottom="0.045000" left="1.079986" right="11.080367"/>
+    <range top="0.255000" right="156.027540" left="151.027699" bottom="0.045000"/>
     <limitY/>
-    <curve G="0" B="255" R="255" name="/chai/env/psm/baselink/Command/joint_cmds.2"/>
-    <curve G="0" B="128" R="0" name="/chai/env/psm/baselink/State/joint_positions.2"/>
+    <curve name="/chai/env/psm/baselink/Command/joint_cmds.2" G="0" R="255" B="255"/>
+    <curve name="/chai/env/psm/baselink/State/joint_positions.2" G="0" R="0" B="128"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
-  <plotmatrix rows="3" tab_name="MTM" columns="1">
+  <plotmatrix rows="3" columns="1" tab_name="MTM">
    <plot row="0" col="0">
-    <range top="0.472500" bottom="-0.472500" left="8.440244" right="18.440981"/>
+    <range top="0.472500" right="503.844832" left="477.114194" bottom="-0.472500"/>
     <limitY/>
-    <curve G="0" B="0" R="128" name="/chai/env/mtm/TopPanel/Command/joint_cmds.4"/>
-    <curve G="0" B="255" R="0" name="/chai/env/mtm/TopPanel/State/joint_positions.4"/>
+    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.4" G="0" R="128" B="0"/>
+    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.4" G="0" R="0" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
-    <range top="0.315033" bottom="-0.316357" left="8.440244" right="18.440981"/>
+    <range top="0.321902" right="503.844832" left="477.114194" bottom="-0.324848"/>
     <limitY/>
-    <curve G="0" B="128" R="0" name="/chai/env/mtm/TopPanel/Command/joint_cmds.0"/>
-    <curve G="128" B="128" R="0" name="/chai/env/mtm/TopPanel/State/joint_positions.0"/>
+    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.0" G="0" R="0" B="128"/>
+    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.0" G="128" R="0" B="128"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
-    <range top="0.210132" bottom="-0.215425" left="8.440244" right="18.440981"/>
+    <range top="0.210000" right="503.844832" left="477.114194" bottom="-0.210000"/>
     <limitY/>
-    <curve G="128" B="0" R="128" name="/chai/env/mtm/TopPanel/Command/joint_cmds.2"/>
-    <curve G="160" B="164" R="160" name="/chai/env/mtm/TopPanel/State/joint_positions.2"/>
+    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.2" G="128" R="128" B="0"/>
+    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.2" G="160" R="160" B="164"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
@@ -81,7 +81,7 @@
    <selected_topics list=""/>
   </DataLoad_ROS_bags>
   <ROS_Topic_Streamer>
-   <selected_topics list="/chai/env/ecm/baselink/Command;/chai/env/ecm/baselink/State;/chai/env/mtm/TopPanel/Command;/chai/env/mtm/TopPanel/State;/chai/env/psm/baselink/State;/chai/env/psm/baselink/Command"/>
+   <selected_topics list="/chai/env/ecm/baselink/Command;/chai/env/ecm/baselink/State;/chai/env/mtm/TopPanel/Command;/chai/env/mtm/TopPanel/State;/chai/env/psm/baselink/Command;/chai/env/psm/baselink/State"/>
   </ROS_Topic_Streamer>
   <RosoutPublisherROS/>
   <TopicPublisherROS/>
