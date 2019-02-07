@@ -104,7 +104,7 @@ bool g_force_enable = true;
 // Default switch index for clutches
 
 // a camera to render the world in the window display
-cCamera* g_camera;
+cCamera* g_camera, *g_camera2;
 
 // a label to display the rates [Hz] at which the simulation is running
 cLabel* g_labelRates;
@@ -141,6 +141,7 @@ cThread* g_bulletSimThread;
 
 // a handle to window display context
 GLFWwindow* g_window = NULL;
+GLFWwindow* g_window2 = NULL;
 
 // current width of window
 int g_width = 0;
@@ -1119,6 +1120,33 @@ int main(int argc, char* argv[])
     // set current display context
     glfwMakeContextCurrent(g_window);
 
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // create display context
+    g_window2 = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
+    if (!g_window2)
+    {
+        cout << "failed to create window" << endl;
+        cSleepMs(1000);
+        glfwTerminate();
+        return 1;
+    }
+
+    // get width and height of window
+    glfwGetWindowSize(g_window2, &g_width, &g_height);
+
+    // set position of window
+    glfwSetWindowPos(g_window2, x, y);
+
+    // set key callback
+    glfwSetKeyCallback(g_window2, keyCallback);
+
+    // set resize callback
+    glfwSetWindowSizeCallback(g_window2, windowSizeCallback);
+
+    // set current display context
+    glfwMakeContextCurrent(g_window2);
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
     // sets the swap interval for the current display context
     glfwSwapInterval(g_swapInterval);
 
@@ -1164,6 +1192,34 @@ int main(int argc, char* argv[])
 
     // set vertical mirrored display mode
     g_camera->setMirrorVertical(mirroredDisplay);
+
+    g_bulletWorld->addChild(g_camera);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // create a camera and insert it into the virtual world
+    g_camera2 = new cCamera(g_bulletWorld);
+
+
+    // position and orient the camera
+    g_camera2->set(cVector3d(-4.0, 0.0, 2.0),    // camera position (eye)
+                  cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
+                  cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
+
+    // set the near and far clipping planes of the camera
+    g_camera2->setClippingPlanes(0.01, 10.0);
+
+    // set stereo mode
+    g_camera2->setStereoMode(stereoMode);
+
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
+    g_camera2->setStereoEyeSeparation(0.02);
+    g_camera2->setStereoFocalLength(2.0);
+
+    // set vertical mirrored display mode
+    g_camera2->setMirrorVertical(mirroredDisplay);
+
+    g_bulletWorld->addChild(g_camera2);
+    ///////////////////////////////////////////////////////////////////////////
 
 
     //--------------------------------------------------------------------------
@@ -1336,18 +1392,23 @@ int main(int argc, char* argv[])
 
     // call window size callback at initialization
     windowSizeCallback(g_window, g_width, g_height);
+    windowSizeCallback(g_window2, g_width, g_height);
 
     // main graphic loop
-    while (!glfwWindowShouldClose(g_window))
+    while (!glfwWindowShouldClose(g_window) || !glfwWindowShouldClose(g_window2))
     {
         // get width and height of window
         glfwGetWindowSize(g_window, &g_width, &g_height);
+        // get width and height of window
+        glfwGetWindowSize(g_window2, &g_width, &g_height);
 
         // render graphics
         updateGraphics();
 
         // swap buffers
         glfwSwapBuffers(g_window);
+        // swap buffers
+        glfwSwapBuffers(g_window2);
 
         // process events
         glfwPollEvents();
@@ -1358,6 +1419,8 @@ int main(int argc, char* argv[])
 
     // close window
     glfwDestroyWindow(g_window);
+    // close window
+    glfwDestroyWindow(g_window2);
 
     // terminate GLFW library
     glfwTerminate();
@@ -1428,6 +1491,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         {
             glfwSetWindowMonitor(g_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
             glfwSwapInterval(g_swapInterval);
+            glfwSetWindowMonitor(g_window2, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            glfwSwapInterval(g_swapInterval);
         }
         else
         {
@@ -1436,6 +1501,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             int x = 0.5 * (mode->width - w);
             int y = 0.5 * (mode->height - h);
             glfwSetWindowMonitor(g_window, NULL, x, y, w, h, mode->refreshRate);
+            glfwSetWindowMonitor(g_window2, NULL, x, y, w, h, mode->refreshRate);
             glfwSwapInterval(g_swapInterval);
         }
     }
@@ -1638,6 +1704,7 @@ void updateGraphics(void)
 
     // render world
     g_camera->renderView(g_width, g_height);
+    g_camera2->renderView(g_width, g_height);
 
     // wait until all GL commands are completed
     glFinish();
