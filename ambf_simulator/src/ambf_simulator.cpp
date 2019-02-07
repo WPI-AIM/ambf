@@ -1144,7 +1144,7 @@ int main(int argc, char* argv[])
     glfwSetWindowSizeCallback(g_window2, windowSizeCallback);
 
     // set current display context
-    glfwMakeContextCurrent(g_window2);
+//    glfwMakeContextCurrent(g_window2);
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     // sets the swap interval for the current display context
@@ -1201,7 +1201,7 @@ int main(int argc, char* argv[])
 
 
     // position and orient the camera
-    g_camera2->set(cVector3d(-4.0, 0.0, 2.0),    // camera position (eye)
+    g_camera2->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
                   cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
                   cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
 
@@ -1339,7 +1339,8 @@ int main(int argc, char* argv[])
         g_bulletBoxWallY[i]->setTransparencyLevel(0.5, true, true);
     }
 
-    g_camera->setLocalPos(1.5 + box_l/2, 0, 0.2 + box_h/2);
+    g_camera->setLocalPos(1.5 + box_l/2, 0.5, 0.2 + box_h/2);
+    g_camera2->setLocalPos(1.5 + box_l/2, 0.5, 0.2 + box_h/2);
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -1395,7 +1396,7 @@ int main(int argc, char* argv[])
     windowSizeCallback(g_window2, g_width, g_height);
 
     // main graphic loop
-    while (!glfwWindowShouldClose(g_window) || !glfwWindowShouldClose(g_window2))
+    while (!glfwWindowShouldClose(g_window) && !glfwWindowShouldClose(g_window2))
     {
         // get width and height of window
         glfwGetWindowSize(g_window, &g_width, &g_height);
@@ -1700,10 +1701,18 @@ void updateGraphics(void)
     /////////////////////////////////////////////////////////////////////
 
     // update shadow maps (if any)
+
+    // set current display context
+    glfwMakeContextCurrent(g_window);
     g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
 
     // render world
     g_camera->renderView(g_width, g_height);
+
+    glfwMakeContextCurrent(g_window2);
+//    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
+
+    // render world
     g_camera2->renderView(g_width, g_height);
 
     // wait until all GL commands are completed
