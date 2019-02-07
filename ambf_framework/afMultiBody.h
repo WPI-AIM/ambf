@@ -367,6 +367,34 @@ private:
     PID m_controller;
 };
 
+//-----------------------------------------------------------------------------
+
+///
+/// \brief The ShadowQuality enum
+///
+enum ShadowQuality{
+    no_shadow=0,
+    very_low=1,
+    low=2,
+    medium=3,
+    high=4,
+    very_high=5
+};
+
+
+///
+/// \brief The afLight struct
+///
+struct afLight{
+    cVector3d location;
+    cVector3d direction;
+    double spot_exponent;
+    ShadowQuality shadow_quality;
+    double cuttoff_angle;
+};
+
+
+//-----------------------------------------------------------------------------
 
 ///
 /// \brief The afWorld class
@@ -384,6 +412,7 @@ public:
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
     static cBulletWorld *m_chaiWorld;
+    std::vector<afLight> m_lights;
 
 protected:
 

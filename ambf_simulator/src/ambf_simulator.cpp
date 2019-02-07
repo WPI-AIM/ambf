@@ -106,9 +106,6 @@ bool g_force_enable = true;
 // a camera to render the world in the window display
 cCamera* g_camera;
 
-// a light source to illuminate the objects in the world
-cSpotLight *g_light;
-
 // a label to display the rates [Hz] at which the simulation is running
 cLabel* g_labelRates;
 cLabel* g_labelDevRates[10];
@@ -1168,34 +1165,6 @@ int main(int argc, char* argv[])
     // set vertical mirrored display mode
     g_camera->setMirrorVertical(mirroredDisplay);
 
-    // create a light source
-    g_light = new cSpotLight(g_bulletWorld);
-
-    // attach light to camera
-    g_bulletWorld->addChild(g_light);
-
-    // enable light source
-    g_light->setEnabled(true);
-
-    // position the light source
-    g_light->setLocalPos( 0, -0.5, 2.5);
-
-    // define the direction of the light beam
-    g_light->setDir(0, 0, -1.0);
-
-    // set uniform concentration level of light
-    g_light->setSpotExponent(0.3);
-
-    // enable this light source to generate shadows
-    g_light->setShadowMapEnabled(true);
-
-    // set the resolution of the shadow map
-    g_light->m_shadowMap->setQualityHigh();
-    //light->m_shadowMap->setQualityMedium();
-
-    // set light cone half angle
-    g_light->setCutOffAngleDeg(45);
-
 
     //--------------------------------------------------------------------------
     // WIDGETS
@@ -1251,6 +1220,38 @@ int main(int argc, char* argv[])
     g_bulletBoxWallY[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * box_w);
     g_bulletBoxWallX[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
     g_bulletBoxWallX[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
+
+    for (size_t ligth_idx = 0; ligth_idx < g_afWorld->m_lights.size(); ligth_idx++){
+        cSpotLight* spot_light = new cSpotLight(g_bulletWorld);
+        afLight light_data = g_afWorld->m_lights[ligth_idx];
+        spot_light->setLocalPos(light_data.location);
+        spot_light->setDir(light_data.direction);
+        spot_light->setSpotExponent(light_data.spot_exponent);
+        spot_light->setCutOffAngleDeg(light_data.cuttoff_angle * (180/3.14));
+        spot_light->setShadowMapEnabled(true);
+        switch (light_data.shadow_quality) {
+        case ShadowQuality::no_shadow:
+            spot_light->setShadowMapEnabled(false);
+            break;
+        case ShadowQuality::very_low:
+            spot_light->m_shadowMap->setQualityVeryLow();
+            break;
+        case ShadowQuality::low:
+            spot_light->m_shadowMap->setQualityLow();
+            break;
+        case ShadowQuality::medium:
+            spot_light->m_shadowMap->setQualityMedium();
+            break;
+        case ShadowQuality::high:
+            spot_light->m_shadowMap->setQualityHigh();
+            break;
+        case ShadowQuality::very_high:
+            spot_light->m_shadowMap->setQualityVeryHigh();
+            break;
+        }
+        spot_light->setEnabled(true);
+        g_bulletWorld->addChild(spot_light);
+    }
 
     cVector3d worldZ(0.0, 0.0, 1.0);
     cMaterial matPlane;

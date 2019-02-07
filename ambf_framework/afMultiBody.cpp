@@ -1772,9 +1772,53 @@ bool afWorld::loadWorld(std::string a_world_config){
         return 0;
     }
 
-    m_encl_length = worldNode["enclosure size"]["length"].as<double>();
-    m_encl_width = worldNode["enclosure size"]["width"].as<double>();
-    m_encl_height = worldNode["enclosure size"]["height"].as<double>();
+    YAML::Node worldEnclosureData = worldNode["enclosure"];
+    YAML::Node worldLightsData = worldNode["lights"];
+
+    if (worldEnclosureData.IsDefined()){
+        m_encl_length = worldEnclosureData["length"].as<double>();
+        m_encl_width =  worldEnclosureData["width"].as<double>();
+        m_encl_height = worldEnclosureData["height"].as<double>();
+    }
+
+    if (worldLightsData.IsDefined()){
+        size_t n_lights = worldLightsData.size();
+        for (size_t idx = 0 ; idx < n_lights; idx++){
+            std::string light_name = worldLightsData[idx].as<std::string>();
+            YAML::Node lightData = worldNode[light_name];
+            YAML::Node lightLocationData = lightData["location"];
+            YAML::Node lightDirectionData = lightData["direction"];
+            YAML::Node lightSpotExponentData = lightData["spot exponent"];
+            YAML::Node lightShadowQualityData = lightData["shadow quality"];
+            YAML::Node lightCuttOffAngleData = lightData["cutoff angle"];
+            afLight light;
+            if (lightLocationData.IsDefined()){
+                assignXYZ(&lightLocationData, &light.location);
+            }
+            if (lightDirectionData.IsDefined()){
+                assignXYZ(&lightDirectionData, &light.direction);
+            }
+            if (lightSpotExponentData.IsDefined()){
+                light.spot_exponent = lightSpotExponentData.as<double>();
+            }
+            if (lightShadowQualityData.IsDefined()){
+                int shadow_quality = lightShadowQualityData.as<int>();
+                if (shadow_quality < 0){
+                    shadow_quality = 0;
+                    std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+                }
+                else if (shadow_quality > 5){
+                    shadow_quality = 5;
+                    std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+                }
+                light.shadow_quality = (ShadowQuality)shadow_quality;
+            }
+            if (lightCuttOffAngleData.IsDefined()){
+                light.cuttoff_angle = lightCuttOffAngleData.as<double>();
+            }
+            m_lights.push_back(light);
+        }
+    }
 
     return true;
 

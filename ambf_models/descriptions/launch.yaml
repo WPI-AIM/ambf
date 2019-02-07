@@ -23,8 +23,8 @@ gripper configs:
   - PHANTOM Omni
   - Razer Hydra
 Default: "./multi-bodies/grippers/single joint1.yaml"
-MTMR: "./multi-bodies/grippers/multi joint1.yaml"
-MTML: "./multi-bodies/grippers/multi joint1.yaml"
+MTMR: "./multi-bodies/grippers/multi joint2.yaml"
+MTML: "./multi-bodies/grippers/multi joint2.yaml"
 Novint Falcon: "./multi-bodies/grippers/single joint2.yaml"
 Geomagic Touch: "./multi-bodies/grippers/single joint1.yaml"
 PHANTOM Omni: "./multi-bodies/grippers/pr2 gripper.yaml"
