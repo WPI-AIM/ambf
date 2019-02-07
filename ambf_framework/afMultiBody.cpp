@@ -1774,6 +1774,7 @@ bool afWorld::loadWorld(std::string a_world_config){
 
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
+    YAML::Node worldCamerasData = worldNode["cameras"];
 
     if (worldEnclosureData.IsDefined()){
         m_encl_length = worldEnclosureData["length"].as<double>();
@@ -1785,43 +1786,160 @@ bool afWorld::loadWorld(std::string a_world_config){
         size_t n_lights = worldLightsData.size();
         for (size_t idx = 0 ; idx < n_lights; idx++){
             std::string light_name = worldLightsData[idx].as<std::string>();
-            YAML::Node lightData = worldNode[light_name];
-            YAML::Node lightLocationData = lightData["location"];
-            YAML::Node lightDirectionData = lightData["direction"];
-            YAML::Node lightSpotExponentData = lightData["spot exponent"];
-            YAML::Node lightShadowQualityData = lightData["shadow quality"];
-            YAML::Node lightCuttOffAngleData = lightData["cutoff angle"];
-            afLight light;
-            if (lightLocationData.IsDefined()){
-                assignXYZ(&lightLocationData, &light.location);
+            afLightPtr lightPtr = new afLight();
+            YAML::Node lightNode = worldNode[light_name];
+            if (lightPtr->loadLight(&lightNode, light_name)){
+                m_lights.push_back(lightPtr);
             }
-            if (lightDirectionData.IsDefined()){
-                assignXYZ(&lightDirectionData, &light.direction);
+        }
+    }
+
+    if (worldCamerasData.IsDefined()){
+        size_t n_cameras = worldCamerasData.size();
+        for (size_t idx = 0 ; idx < n_cameras; idx++){
+            std::string camera_name = worldCamerasData[idx].as<std::string>();
+            afCameraPtr cameraPtr = new afCamera();
+            YAML::Node cameraNode = worldNode[camera_name];
+            if (cameraPtr->loadCamera(&cameraNode, camera_name)){
+                m_cameras.push_back(cameraPtr);
             }
-            if (lightSpotExponentData.IsDefined()){
-                light.spot_exponent = lightSpotExponentData.as<double>();
-            }
-            if (lightShadowQualityData.IsDefined()){
-                int shadow_quality = lightShadowQualityData.as<int>();
-                if (shadow_quality < 0){
-                    shadow_quality = 0;
-                    std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
-                }
-                else if (shadow_quality > 5){
-                    shadow_quality = 5;
-                    std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
-                }
-                light.shadow_quality = (ShadowQuality)shadow_quality;
-            }
-            if (lightCuttOffAngleData.IsDefined()){
-                light.cuttoff_angle = lightCuttOffAngleData.as<double>();
-            }
-            m_lights.push_back(light);
         }
     }
 
     return true;
 
+}
+
+///
+/// \brief afCamera::afCamera
+///
+afCamera::afCamera(){
+}
+
+///
+/// \brief afCamera::loadCamera
+/// \param camera_node
+/// \param camera_name
+/// \return
+///
+bool afCamera::loadCamera(YAML::Node* camera_node, std::string camera_name){
+    YAML::Node cameraNode = *camera_node;
+    YAML::Node cameraLocationData = cameraNode["location"];
+    YAML::Node cameraLookAtData = cameraNode["look at"];
+    YAML::Node cameraUpData = cameraNode["up"];
+    YAML::Node cameraClippingPlaneData = cameraNode["clipping plane"];
+    YAML::Node cameraFieldViewAngleData = cameraNode["field view angle"];
+    YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
+
+    bool _is_valid = true;
+
+    if (cameraLocationData.IsDefined()){
+        assignXYZ(&cameraLocationData, &m_location);
+    }
+    else{
+        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
+         _is_valid = false;
+    }
+    if (cameraLookAtData.IsDefined()){
+        assignXYZ(&cameraLookAtData, &m_look_at);
+    }
+    else{
+        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    if (cameraUpData.IsDefined()){
+        assignXYZ(&cameraUpData, &m_up);
+    }
+    else{
+        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    if (cameraClippingPlaneData.IsDefined()){
+        m_clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
+        m_clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
+    }
+    else{
+        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    if (cameraFieldViewAngleData.IsDefined()){
+        m_field_view_angle = cameraFieldViewAngleData.as<double>();
+    }
+    else{
+        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA FIELD VIEW DATA NOT DEFINED, IGNORING " << std::endl;
+        m_field_view_angle = 0.8;
+    }
+    if (cameraOrthoWidthData.IsDefined()){
+        m_enable_ortho_view = true;
+        m_ortho_view_width = cameraOrthoWidthData.as<double>();
+    }
+    else{
+         m_enable_ortho_view = false;
+    }
+
+    return _is_valid;
+}
+
+
+
+///
+/// \brief afLight::afLight
+///
+afLight::afLight(){
+}
+
+///
+/// \brief afLight::loadLight
+/// \param light_node
+/// \return
+///
+bool afLight::loadLight(YAML::Node* light_node, std::string light_name){
+    YAML::Node lightNode = *light_node;
+    YAML::Node lightLocationData = lightNode["location"];
+    YAML::Node lightDirectionData = lightNode["direction"];
+    YAML::Node lightSpotExponentData = lightNode["spot exponent"];
+    YAML::Node lightShadowQualityData = lightNode["shadow quality"];
+    YAML::Node lightCuttOffAngleData = lightNode["cutoff angle"];
+
+    bool _is_valid = true;
+
+    if (lightLocationData.IsDefined()){
+        assignXYZ(&lightLocationData, &m_location);
+    }
+    else{
+        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    if (lightDirectionData.IsDefined()){
+        assignXYZ(&lightDirectionData, &m_direction);
+    }
+    else{
+        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    if (lightSpotExponentData.IsDefined()){
+        m_spot_exponent = lightSpotExponentData.as<double>();
+    }
+    if (lightShadowQualityData.IsDefined()){
+        int shadow_quality = lightShadowQualityData.as<int>();
+        if (shadow_quality < 0){
+            shadow_quality = 0;
+            std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+        }
+        else if (shadow_quality > 5){
+            shadow_quality = 5;
+            std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+        }
+        m_shadow_quality = (ShadowQuality)shadow_quality;
+    }
+    if (lightCuttOffAngleData.IsDefined()){
+        m_cuttoff_angle = lightCuttOffAngleData.as<double>();
+    }
+    else{
+        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT CUTOFF NOT DEFINED, IGNORING " << std::endl;
+        _is_valid = false;
+    }
+    return _is_valid;
 }
 
 ///

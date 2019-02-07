@@ -1143,29 +1143,6 @@ int main(int argc, char* argv[])
     // set the background color of the environment
     g_bulletWorld->m_backgroundColor.setWhite();
 
-    // create a camera and insert it into the virtual world
-    g_camera = new cCamera(g_bulletWorld);
-    g_bulletWorld->addChild(g_camera);
-
-    // position and orient the camera
-    g_camera->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
-                  cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
-                  cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
-
-    // set the near and far clipping planes of the camera
-    g_camera->setClippingPlanes(0.01, 10.0);
-
-    // set stereo mode
-    g_camera->setStereoMode(stereoMode);
-
-    // set stereo eye separation and focal length (applies only if stereo is enabled)
-    g_camera->setStereoEyeSeparation(0.02);
-    g_camera->setStereoFocalLength(2.0);
-
-    // set vertical mirrored display mode
-    g_camera->setMirrorVertical(mirroredDisplay);
-
-
     //--------------------------------------------------------------------------
     // WIDGETS
     //--------------------------------------------------------------------------
@@ -1182,10 +1159,6 @@ int main(int argc, char* argv[])
     g_labelTimes->m_fontColor.setBlack();
     g_labelModes->m_fontColor.setBlack();
     g_labelBtnAction->m_fontColor.setBlack();
-    g_camera->m_frontLayer->addChild(g_labelRates);
-    g_camera->m_frontLayer->addChild(g_labelTimes);
-    g_camera->m_frontLayer->addChild(g_labelModes);
-    g_camera->m_frontLayer->addChild(g_labelBtnAction);
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
@@ -1221,36 +1194,99 @@ int main(int argc, char* argv[])
     g_bulletBoxWallX[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
     g_bulletBoxWallX[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
 
-    for (size_t ligth_idx = 0; ligth_idx < g_afWorld->m_lights.size(); ligth_idx++){
-        cSpotLight* spot_light = new cSpotLight(g_bulletWorld);
-        afLight light_data = g_afWorld->m_lights[ligth_idx];
-        spot_light->setLocalPos(light_data.location);
-        spot_light->setDir(light_data.direction);
-        spot_light->setSpotExponent(light_data.spot_exponent);
-        spot_light->setCutOffAngleDeg(light_data.cuttoff_angle * (180/3.14));
-        spot_light->setShadowMapEnabled(true);
-        switch (light_data.shadow_quality) {
-        case ShadowQuality::no_shadow:
-            spot_light->setShadowMapEnabled(false);
-            break;
-        case ShadowQuality::very_low:
-            spot_light->m_shadowMap->setQualityVeryLow();
-            break;
-        case ShadowQuality::low:
-            spot_light->m_shadowMap->setQualityLow();
-            break;
-        case ShadowQuality::medium:
-            spot_light->m_shadowMap->setQualityMedium();
-            break;
-        case ShadowQuality::high:
-            spot_light->m_shadowMap->setQualityHigh();
-            break;
-        case ShadowQuality::very_high:
-            spot_light->m_shadowMap->setQualityVeryHigh();
-            break;
+    if (g_afWorld->m_lights.size() > 0){
+        for (size_t ligth_idx = 0; ligth_idx < g_afWorld->m_lights.size(); ligth_idx++){
+            cSpotLight* lightPtr = new cSpotLight(g_bulletWorld);
+            afLight light_data = *(g_afWorld->m_lights[ligth_idx]);
+            lightPtr->setLocalPos(light_data.m_location);
+            lightPtr->setDir(light_data.m_direction);
+            lightPtr->setSpotExponent(light_data.m_spot_exponent);
+            lightPtr->setCutOffAngleDeg(light_data.m_cuttoff_angle * (180/3.14));
+            lightPtr->setShadowMapEnabled(true);
+            switch (light_data.m_shadow_quality) {
+            case ShadowQuality::no_shadow:
+                lightPtr->setShadowMapEnabled(false);
+                break;
+            case ShadowQuality::very_low:
+                lightPtr->m_shadowMap->setQualityVeryLow();
+                break;
+            case ShadowQuality::low:
+                lightPtr->m_shadowMap->setQualityLow();
+                break;
+            case ShadowQuality::medium:
+                lightPtr->m_shadowMap->setQualityMedium();
+                break;
+            case ShadowQuality::high:
+                lightPtr->m_shadowMap->setQualityHigh();
+                break;
+            case ShadowQuality::very_high:
+                lightPtr->m_shadowMap->setQualityVeryHigh();
+                break;
+            }
+            lightPtr->setEnabled(true);
+            g_bulletWorld->addChild(lightPtr);
         }
-        spot_light->setEnabled(true);
-        g_bulletWorld->addChild(spot_light);
+    }
+    else{
+        std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHT" << std::endl;
+        cSpotLight* lightPtr = new cSpotLight(g_bulletWorld);
+        lightPtr->setLocalPos(cVector3d(0.0, 0.5, 2.5));
+        lightPtr->setDir(0, 0, -1);
+        lightPtr->setSpotExponent(0.3);
+        lightPtr->setCutOffAngleDeg(60);
+        lightPtr->setShadowMapEnabled(true);
+        lightPtr->m_shadowMap->setQualityVeryHigh();
+        lightPtr->setEnabled(true);
+        g_bulletWorld->addChild(lightPtr);
+    }
+
+    if (g_afWorld->m_cameras.size() > 0){
+        for (size_t camera_idx = 0; camera_idx < g_afWorld->m_cameras.size(); camera_idx++){
+            g_camera = new cCamera(g_bulletWorld);
+            afCamera camera_data = *(g_afWorld->m_cameras[camera_idx]);
+            g_bulletWorld->addChild(g_camera);
+
+            g_camera->set(camera_data.m_location, camera_data.m_look_at, camera_data.m_up);
+            g_camera->setClippingPlanes(camera_data.m_clipping_plane_limits[0], camera_data.m_clipping_plane_limits[1]);
+            g_camera->setFieldViewAngleRad(camera_data.m_field_view_angle);
+            if (camera_data.m_enable_ortho_view){
+                g_camera->setOrthographicView(camera_data.m_ortho_view_width);
+            }
+            g_camera->setEnabled(true);
+            g_camera->setStereoMode(stereoMode);
+            g_camera->setStereoEyeSeparation(0.02);
+            g_camera->setStereoFocalLength(2.0);
+            g_camera->setMirrorVertical(mirroredDisplay);
+
+            g_camera->m_frontLayer->addChild(g_labelRates);
+            g_camera->m_frontLayer->addChild(g_labelTimes);
+            g_camera->m_frontLayer->addChild(g_labelModes);
+            g_camera->m_frontLayer->addChild(g_labelBtnAction);
+
+        }
+    }
+    else{
+        std::cerr << "INFO: NO CAMERA SPECIFIED, USING DEFAULT CAMERA" << std::endl;
+        g_camera = new cCamera(g_bulletWorld);
+        g_bulletWorld->addChild(g_camera);
+
+        // position and orient the camera
+        g_camera->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
+                      cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
+                      cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
+
+        // set the near and far clipping planes of the camera
+        g_camera->setClippingPlanes(0.01, 10.0);
+
+        // set stereo mode
+        g_camera->setStereoMode(stereoMode);
+
+        // set stereo eye separation and focal length (applies only if stereo is enabled)
+        g_camera->setStereoEyeSeparation(0.02);
+        g_camera->setStereoFocalLength(2.0);
+
+        // set vertical mirrored display mode
+        g_camera->setMirrorVertical(mirroredDisplay);
     }
 
     cVector3d worldZ(0.0, 0.0, 1.0);
@@ -1282,8 +1318,6 @@ int main(int argc, char* argv[])
         g_bulletBoxWallY[i]->setMaterial(matPlane);
         g_bulletBoxWallY[i]->setTransparencyLevel(0.5, true, true);
     }
-
-    g_camera->setLocalPos(1.5 + box_l/2, 0, 0.2 + box_h/2);
 
 
     //////////////////////////////////////////////////////////////////////////

@@ -81,6 +81,11 @@ typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
 typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
 typedef std::map<std::string, afJointPtr> afJointMap;
 //------------------------------------------------------------------------------
+class afLight;
+class afCamera;
+typedef afLight* afLightPtr;
+typedef afCamera* afCameraPtr;
+//------------------------------------------------------------------------------
 
 ///
 /// \brief The afConfigHandler class
@@ -370,6 +375,26 @@ private:
 //-----------------------------------------------------------------------------
 
 ///
+/// \brief The afCamera class
+///
+class afCamera{
+public:
+
+    afCamera();
+    bool loadCamera(YAML::Node* camera_node, std::string camera_name);
+    cVector3d m_location;
+    cVector3d m_look_at;
+    cVector3d m_up;
+    double m_clipping_plane_limits[2];
+    double m_field_view_angle;
+    bool m_enable_ortho_view;
+    double m_ortho_view_width;
+};
+
+
+//-----------------------------------------------------------------------------
+
+///
 /// \brief The ShadowQuality enum
 ///
 enum ShadowQuality{
@@ -385,12 +410,15 @@ enum ShadowQuality{
 ///
 /// \brief The afLight struct
 ///
-struct afLight{
-    cVector3d location;
-    cVector3d direction;
-    double spot_exponent;
-    ShadowQuality shadow_quality;
-    double cuttoff_angle;
+class afLight{
+public:
+    afLight();
+    bool loadLight(YAML::Node* light_node, std::string light_name);
+    cVector3d m_location;
+    cVector3d m_direction;
+    double m_spot_exponent;
+    ShadowQuality m_shadow_quality;
+    double m_cuttoff_angle;
 };
 
 
@@ -412,7 +440,8 @@ public:
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
     static cBulletWorld *m_chaiWorld;
-    std::vector<afLight> m_lights;
+    std::vector<afLightPtr> m_lights;
+    std::vector<afCameraPtr> m_cameras;
 
 protected:
 
