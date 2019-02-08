@@ -101,11 +101,6 @@ double g_dt_fixed = 0;
 bool g_force_enable = true;
 // Default switch index for clutches
 
-// a label to display the rates [Hz] at which the simulation is running
-cLabel* g_labelRates;
-cLabel* g_labelTimes;
-cLabel* g_labelModes;
-cLabel* g_labelBtnAction;
 std::string g_btn_action_str = "";
 bool g_cam_btn_pressed = false;
 bool g_clutch_btn_pressed = false;
@@ -132,12 +127,6 @@ cFrequencyCounter g_freqCounterHaptics;
 std::vector<cThread*> g_hapticsThreads;
 // bullet simulation thread
 cThread* g_bulletSimThread;
-
-// current width of window
-int g_width = 0;
-
-// current height of window
-int g_height = 0;
 
 // swap interval for the display context (vertical synchronization)
 int g_swapInterval = 1;
@@ -170,12 +159,14 @@ void close(void);
 
 const int MAX_DEVICES = 10;
 
+// Some helping labels for simulation windows
+cLabel* g_graphicsDynamicsFreqLabel;
+cLabel* g_wallSimTimeLabel;
+
 //Forward Declarations
 class PhysicalDevice;
 class SimulatedGripper;
 struct DeviceGripperPair;
-
-std::vector<cLabel*> m_labelDevRates;
 
 ///
 /// \brief The VisualHandle struct
@@ -184,7 +175,7 @@ struct WindowCameraHandle{
   GLFWwindow* m_window = NULL;
   GLFWmonitor* m_monitor = NULL;
   cCamera* m_camera;
-  std::vector<DeviceGripperPair> m_dgPair;
+  std::vector<DeviceGripperPair> m_deviceGripperPairs;
   std::vector<std::string> m_deviceNames;
   int m_height = 0;
   int m_width = 0;
@@ -193,6 +184,15 @@ struct WindowCameraHandle{
   std::vector<cMatrix3d> m_dev_rot_last;
   std::vector<cMatrix3d> m_dev_rot_cur;
   std::vector<bool> m_cam_pressed;
+  int m_win_x;
+  int m_win_y;
+
+  // labels to display the rates [Hz] at which the simulation is running
+  cLabel* m_devicesModesLabel;
+  cLabel* m_deviceButtonLabel;
+  cLabel* m_controllingDeviceLabel;
+  std::vector<cLabel*> m_devHapticFreqLabels;
+
 };
 
 // Vector of WindowCamera Handles Struct
@@ -784,21 +784,24 @@ Coordination::~Coordination(){
 /// \return
 ///
 std::vector<DeviceGripperPair> Coordination::get_device_gripper_pairs(std::vector<std::string> a_device_names){
-    std::vector<DeviceGripperPair> dgPairs;
-    std::vector<DeviceGripperPair>::iterator dgIt = m_deviceGripperPairs.begin();
-    for(int nameIdx = 0 ; nameIdx < a_device_names.size() ; nameIdx++){
-        std::string dev_name = a_device_names[nameIdx];
-        for(; dgIt != m_deviceGripperPairs.end() ; ++dgIt){
-            if( dgIt->m_name.compare(dev_name) == 0 ){
-                dgPairs.push_back(*dgIt);
+    std::vector<DeviceGripperPair> req_dg_Pairs;
+    std::vector<DeviceGripperPair>::iterator dgIt;
+    for(int req_name_Idx = 0 ; req_name_Idx < a_device_names.size() ; req_name_Idx++){
+        std::string req_dev_name = a_device_names[req_name_Idx];
+        bool _found_req_device = false;
+        for(dgIt = m_deviceGripperPairs.begin(); dgIt != m_deviceGripperPairs.end() ; ++dgIt){
+            if( dgIt->m_name.compare(req_dev_name) == 0 ){
+                req_dg_Pairs.push_back(*dgIt);
+                _found_req_device = true;
+//                cerr << "INFO, DEVICE GRIPPER PAIR FOUND DEVICE \"" << req_dev_name << "\"" << endl;
             }
-            else{
-                cerr << "INFO, DEVICE GRIPPER PAIR: \"" << dev_name << "\" NOT FOUND" << endl;
-            }
+        }
+        if (!_found_req_device){
+            cerr << "INFO, DEVICE GRIPPER PAIR: \"" << req_dev_name << "\" NOT FOUND" << endl;
         }
     }
 
-    return dgPairs;
+    return req_dg_Pairs;
 
 }
 
@@ -1140,12 +1143,12 @@ int main(int argc, char* argv[])
     // set error callback
     glfwSetErrorCallback(errorCallback);
 
-    // compute desired size of window
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int w = 0.8 * mode->height;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
+//    // compute desired size of window
+//    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+//    int w = 0.8 * mode->height;
+//    int h = 0.5 * mode->height;
+//    int x = 0.5 * (mode->width - w);
+//    int y = 0.5 * (mode->height - h);
 
     // set OpenGL version
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
@@ -1180,14 +1183,15 @@ int main(int argc, char* argv[])
     cFontPtr font = NEW_CFONTCALIBRI20();
 
     // create a label to display the haptic and graphic rate of the simulation
-    g_labelRates = new cLabel(font);
-    g_labelTimes = new cLabel(font);
-    g_labelModes = new cLabel(font);
-    g_labelBtnAction = new cLabel(font);
-    g_labelRates->m_fontColor.setBlack();
-    g_labelTimes->m_fontColor.setBlack();
-    g_labelModes->m_fontColor.setBlack();
-    g_labelBtnAction->m_fontColor.setBlack();
+    g_graphicsDynamicsFreqLabel = new cLabel(font);
+    g_wallSimTimeLabel = new cLabel(font);
+    cLabel* modesLabel = new cLabel(font);
+    cLabel* btnLabel = new cLabel(font);
+
+    g_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    g_wallSimTimeLabel->m_fontColor.setBlack();
+    modesLabel->m_fontColor.setBlack();
+    btnLabel->m_fontColor.setBlack();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
@@ -1223,6 +1227,9 @@ int main(int argc, char* argv[])
     g_bulletBoxWallX[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
     g_bulletBoxWallX[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
 
+    //-----------------------------------------------------------------------------------------------------------
+    // START: Search for defined lights and add them to the world
+    //-----------------------------------------------------------------------------------------------------------
     if (g_afWorld->m_lights.size() > 0){
         for (size_t ligth_idx = 0; ligth_idx < g_afWorld->m_lights.size(); ligth_idx++){
             cSpotLight* lightPtr = new cSpotLight(g_bulletWorld);
@@ -1256,6 +1263,9 @@ int main(int argc, char* argv[])
             g_bulletWorld->addChild(lightPtr);
         }
     }
+    //-----------------------------------------------------------------------------------------------------------
+    // CONDITION: If not lights are defined in AMBF, add a default light
+    //-----------------------------------------------------------------------------------------------------------
     else{
         std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHT" << std::endl;
         cSpotLight* lightPtr = new cSpotLight(g_bulletWorld);
@@ -1268,7 +1278,13 @@ int main(int argc, char* argv[])
         lightPtr->setEnabled(true);
         g_bulletWorld->addChild(lightPtr);
     }
+    //-----------------------------------------------------------------------------------------------------------
+    // END: Search for defined lights and add them to the world
+    //-----------------------------------------------------------------------------------------------------------
 
+    //-----------------------------------------------------------------------------------------------------------
+    // START: Search for defined cameras and add Create a New Window and a Camera and Create a WindowCameraPair
+    //-----------------------------------------------------------------------------------------------------------
     if (g_afWorld->m_cameras.size() > 0){
         int num_monitors;
         GLFWmonitor** monitors = glfwGetMonitors(&num_monitors);
@@ -1293,17 +1309,24 @@ int main(int argc, char* argv[])
 
             g_bulletWorld->addChild(cameraPtr);
 
-            cameraPtr->m_frontLayer->addChild(g_labelRates);
-            cameraPtr->m_frontLayer->addChild(g_labelTimes);
-            cameraPtr->m_frontLayer->addChild(g_labelModes);
-            cameraPtr->m_frontLayer->addChild(g_labelBtnAction);
-
             std::string window_name = "AMBF Simulator Window " + std::to_string(camera_idx + 1);
+            if (camera_data.m_controlling_devices.size() > 0){
+                for (int i=0 ; i< camera_data.m_controlling_devices.size() ; i++){
+                    window_name += (" - " + camera_data.m_controlling_devices[i]);
+                }
+
+            }
             // create display context
             int monitor_to_load = 0;
             if (camera_idx < num_monitors){
                 monitor_to_load = camera_idx;
             }
+            // compute desired size of window
+            const GLFWvidmode* mode = glfwGetVideoMode(monitors[monitor_to_load]);
+            int w = 0.8 * mode->height;
+            int h = 0.5 * mode->height;
+            int x = 0.5 * (mode->width - w);
+            int y = 0.5 * (mode->height - h);
             GLFWwindow* windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
 
             // Assign the Window Camera Handles
@@ -1312,13 +1335,26 @@ int main(int argc, char* argv[])
             winCamHandle.m_monitor = monitors[monitor_to_load];
             winCamHandle.m_camera = cameraPtr;
             winCamHandle.m_deviceNames = camera_data.m_controlling_devices;
+            winCamHandle.m_win_x = x;
+            winCamHandle.m_win_y = y;
+
+            cameraPtr->m_frontLayer->addChild(g_graphicsDynamicsFreqLabel);
+            cameraPtr->m_frontLayer->addChild(g_wallSimTimeLabel);
+            cameraPtr->m_frontLayer->addChild(modesLabel);
+            cameraPtr->m_frontLayer->addChild(btnLabel);
+
+            winCamHandle.m_devicesModesLabel = modesLabel;
+            winCamHandle.m_deviceButtonLabel = btnLabel;
+
             g_windowCameraHandles.push_back(winCamHandle);
         }
     }
+    //-----------------------------------------------------------------------------------------------------------
+    // CONDITION: If no Valid Camera is defined in AMBF create a default Camera/Window and Create a WindowCameraPair
+    //-----------------------------------------------------------------------------------------------------------
     else{
         std::cerr << "INFO: NO CAMERA SPECIFIED, USING DEFAULT CAMERA" << std::endl;
         cCamera* cameraPtr = new cCamera(g_bulletWorld);
-        g_bulletWorld->addChild(cameraPtr);
 
         // position and orient the camera
         cameraPtr->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
@@ -1338,20 +1374,43 @@ int main(int argc, char* argv[])
         // set vertical mirrored display mode
         cameraPtr->setMirrorVertical(mirroredDisplay);
 
+        g_bulletWorld->addChild(cameraPtr);
+
         // create display context
+        // compute desired size of window
+        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        int w = 0.8 * mode->height;
+        int h = 0.5 * mode->height;
+        int x = 0.5 * (mode->width - w);
+        int y = 0.5 * (mode->height - h);
         GLFWwindow* windowPtr = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
-        GLFWmonitor* monitorPtr = glfwGetPrimaryMonitor();
 
         // Assign the Window Camera Handles
         WindowCameraHandle winCamHandle;
         winCamHandle.m_window = windowPtr;
-        winCamHandle.m_monitor = monitorPtr;
+        winCamHandle.m_monitor = glfwGetPrimaryMonitor();
         winCamHandle.m_camera = cameraPtr;
+        winCamHandle.m_win_x = x;
+        winCamHandle.m_win_y = y;
+
+        cameraPtr->m_frontLayer->addChild(g_graphicsDynamicsFreqLabel);
+        cameraPtr->m_frontLayer->addChild(g_wallSimTimeLabel);
+        cameraPtr->m_frontLayer->addChild(modesLabel);
+        cameraPtr->m_frontLayer->addChild(btnLabel);
+
+        winCamHandle.m_devicesModesLabel = modesLabel;
+        winCamHandle.m_deviceButtonLabel = btnLabel;
+
         g_windowCameraHandles.push_back(winCamHandle);
     }
+    //-----------------------------------------------------------------------------------------------------------
+    // END: Search for defined cameras and add Create a New Window and a Camera and Create a WindowCameraPair
+    //-----------------------------------------------------------------------------------------------------------
 
-    g_winCamIt = g_windowCameraHandles.begin();
-    for(; g_winCamIt != g_windowCameraHandles.end() ; ++g_winCamIt){
+    //-----------------------------------------------------------------------------------------------------------
+    // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
+    //-----------------------------------------------------------------------------------------------------------
+    for(g_winCamIt = g_windowCameraHandles.begin() ; g_winCamIt != g_windowCameraHandles.end() ; ++g_winCamIt){
         GLFWwindow* windowPtr = g_winCamIt->m_window;
         if (!windowPtr)
         {
@@ -1362,10 +1421,10 @@ int main(int argc, char* argv[])
         }
 
         // get width and height of window
-        glfwGetWindowSize(windowPtr, &g_width, &g_height);
+        glfwGetWindowSize(windowPtr, &g_winCamIt->m_width, &g_winCamIt->m_height);
 
         // set position of window
-        glfwSetWindowPos(windowPtr, x, y);
+        glfwSetWindowPos(windowPtr, g_winCamIt->m_win_x, g_winCamIt->m_win_y);
 
         // set key callback
         glfwSetKeyCallback(windowPtr, keyCallback);
@@ -1376,22 +1435,26 @@ int main(int argc, char* argv[])
         // set the current context
         glfwMakeContextCurrent(windowPtr);
 
-        // sets the swap interval for the current display context
-//        glfwSwapInterval(g_swapInterval);
-    }
+        glfwSwapInterval(g_swapInterval);
 
-    glfwSwapInterval(g_swapInterval);
-
-    // initialize GLEW library
+        // initialize GLEW library
 #ifdef GLEW_VERSION
-    if (glewInit() != GLEW_OK)
-    {
-        cout << "failed to initialize GLEW library" << endl;
-        glfwTerminate();
-        return 1;
-    }
+        if (glewInit() != GLEW_OK)
+        {
+            cout << "failed to initialize GLEW library" << endl;
+            glfwTerminate();
+            return 1;
+        }
 #endif
+    }
 
+    //-----------------------------------------------------------------------------------------------------------
+    // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
+    //-----------------------------------------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------------------------------------
+    // START: CREATE A GROUND PLANE AND ENCLOSURE AS DEFINED IN THE AMBF WORLD FILE
+    //-----------------------------------------------------------------------------------------------------------
     cVector3d worldZ(0.0, 0.0, 1.0);
     cMaterial matPlane;
     matPlane.setWhiteIvory();
@@ -1435,6 +1498,7 @@ int main(int argc, char* argv[])
 
     // create a mesh plane where the static plane is located
     cCreatePlane(g_bulletGround, box_l + 0.4, box_w + 0.8, g_bulletGround->getPlaneConstant() * g_bulletGround->getPlaneNormal());
+    g_bulletGround->computeAllNormals();
 
     // define some material properties and apply to mesh
     cMaterial matGround;
@@ -1443,35 +1507,20 @@ int main(int argc, char* argv[])
     g_bulletGround->setMaterial(matGround);
     g_bulletGround->m_bulletRigidBody->setFriction(1.0);
 
-    //-----------------------------------------------------------------------
-    // START SIMULATION
-    //-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
+    // END: CREATE A GROUND PLANE AND ENCLOSURE AS DEFINED IN THE AMBF WORLD FILE
+    //-----------------------------------------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------------------------------------
+    // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
+    //-----------------------------------------------------------------------------------------------------------
     g_coordApp = std::make_shared<Coordination>(g_bulletWorld, num_devices_to_load);
 
     // create a thread which starts the main haptics rendering loop
     int dev_num[10] = {0,1,2,3,4,5,6,7,8,9};
-    int num_grippers = g_coordApp->m_num_grippers;
-    for (int gIdx = 0 ; gIdx < num_grippers ; gIdx++){
+    for (int gIdx = 0 ; gIdx < g_coordApp->m_num_grippers; gIdx++){
         g_hapticsThreads.push_back(new cThread());
         g_hapticsThreads[gIdx]->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS, &dev_num[gIdx]);
-        m_labelDevRates.push_back(new cLabel(font));
-        m_labelDevRates[gIdx]->m_fontColor.setBlack();
-        m_labelDevRates[gIdx]->setFontScale(0.8);
-        g_winCamIt = g_windowCameraHandles.begin();
-        for (;  g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
-            g_winCamIt->m_camera->m_frontLayer->addChild(m_labelDevRates[gIdx]);
-            g_winCamIt->m_cam_rot_last.resize(num_grippers);
-            g_winCamIt->m_dev_rot_last.resize(num_grippers);
-            g_winCamIt->m_dev_rot_cur.resize(num_grippers);
-            g_winCamIt->m_cam_pressed.resize(num_grippers);
-            if(g_winCamIt->m_deviceNames.size() == 0){
-                g_winCamIt->m_dgPair  = g_coordApp->get_all_device_gripper_pairs();
-            }
-            else{
-                g_winCamIt->m_dgPair  = g_coordApp->get_device_gripper_pairs(g_winCamIt->m_deviceNames);
-            }
-        }
-
     }
 
     //create a thread which starts the Bullet Simulation loop
@@ -1480,7 +1529,52 @@ int main(int argc, char* argv[])
 
     // setup callback when application exits
     atexit(close);
+    //-----------------------------------------------------------------------------------------------------------
+    // END: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
+    //-----------------------------------------------------------------------------------------------------------
 
+    //-----------------------------------------------------------------------------------------------------------
+    // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
+    //-----------------------------------------------------------------------------------------------------------
+    for (g_winCamIt = g_windowCameraHandles.begin() ;  g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
+        cLabel* controllingDevLabel = new cLabel(font);
+        controllingDevLabel->m_fontColor.setBlack();
+        controllingDevLabel->setFontScale(0.8);
+        g_winCamIt->m_camera->m_frontLayer->addChild(controllingDevLabel);
+        g_winCamIt->m_controllingDeviceLabel = controllingDevLabel;
+
+        int n_controlling_devs = g_winCamIt->m_deviceNames.size();
+
+        // If no controlling devices are defined for the camera context, add all
+        // the current haptics devices specified for the simulation to each Window-Camera pair
+        if(n_controlling_devs == 0){
+            g_winCamIt->m_deviceGripperPairs  = g_coordApp->get_all_device_gripper_pairs();
+            n_controlling_devs = g_coordApp->m_num_devices;
+        }
+        else{
+            // Pass the names of the controlling devices to only get the controlling devices
+            // defined for the window camera pair in the context
+            g_winCamIt->m_deviceGripperPairs  = g_coordApp->get_device_gripper_pairs(g_winCamIt->m_deviceNames);
+        }
+
+        g_winCamIt->m_cam_rot_last.resize(n_controlling_devs);
+        g_winCamIt->m_dev_rot_last.resize(n_controlling_devs);
+        g_winCamIt->m_dev_rot_cur.resize(n_controlling_devs);
+        g_winCamIt->m_cam_pressed.resize(n_controlling_devs);
+
+        // Create labels for the contextual controlling devices for each Window-Camera Pair
+        for (int nameIdx = 0 ; nameIdx < n_controlling_devs ; nameIdx++){
+            cLabel* devFreqLabel = new cLabel(font);
+            devFreqLabel->m_fontColor.setBlack();
+            devFreqLabel->setFontScale(0.8);
+            g_winCamIt->m_camera->m_frontLayer->addChild(devFreqLabel);
+            g_winCamIt->m_devHapticFreqLabels.push_back(devFreqLabel);
+
+        }
+    }
+    //-----------------------------------------------------------------------------------------------------------
+    // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
+    //-----------------------------------------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     // MAIN GRAPHIC LOOP
@@ -1489,7 +1583,7 @@ int main(int argc, char* argv[])
     // call window size callback at initialization
     g_winCamIt = g_windowCameraHandles.begin();
     for (; g_winCamIt != g_windowCameraHandles.end() ; ++ g_winCamIt){
-        windowSizeCallback(g_winCamIt->m_window, g_width, g_height);
+        windowSizeCallback(g_winCamIt->m_window, g_winCamIt->m_width, g_winCamIt->m_height);
     }
     bool _window_closed = false;
     // main graphic loop
@@ -1501,7 +1595,7 @@ int main(int argc, char* argv[])
             glfwMakeContextCurrent(g_winCamIt->m_window);
 
             // get width and height of window
-            glfwGetWindowSize(g_winCamIt->m_window, &g_width, &g_height);
+            glfwGetWindowSize(g_winCamIt->m_window, &g_winCamIt->m_width, &g_winCamIt->m_height);
 
             // render graphics
             updateGraphics(*g_winCamIt);
@@ -1555,9 +1649,16 @@ int main(int argc, char* argv[])
 ///
 void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
 {
-    // update window size
-    g_width = a_width;
-    g_height = a_height;
+    std::vector<WindowCameraHandle>::iterator wcIt = g_windowCameraHandles.begin();
+
+    for(; wcIt != g_windowCameraHandles.end() ; ++wcIt){
+        if(wcIt->m_window == a_window){
+            // update window size
+            wcIt->m_width = a_width;
+            wcIt->m_height = a_height;
+        }
+    }
+
 }
 
 ///
@@ -1784,33 +1885,42 @@ void updateGraphics(WindowCameraHandle& a_winCamHandle)
     // UPDATE WIDGETS
     /////////////////////////////////////////////////////////////////////
     cCamera* devCam = a_winCamHandle.m_camera;
-    int n_grippers = a_winCamHandle.m_dgPair.size();
+    int n_devsAttached = a_winCamHandle.m_deviceGripperPairs.size();
+    int width = a_winCamHandle.m_width;
+    int height = a_winCamHandle.m_height;
 
     // update haptic and graphic rate data
-    g_labelTimes->setText("Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s" +
+    g_wallSimTimeLabel->setText("Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s" +
                           + " / "+" Simulation Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s");
-    g_labelRates->setText(cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz / " + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz");
-    g_labelModes->setText("MODE: " + g_coordApp->m_mode_str);
-    g_labelBtnAction->setText(" : " + g_btn_action_str);
+    g_graphicsDynamicsFreqLabel->setText(cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz / " + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz");
+    a_winCamHandle.m_devicesModesLabel->setText("MODE: " + g_coordApp->m_mode_str);
+    a_winCamHandle.m_deviceButtonLabel->setText(" : " + g_btn_action_str);
 
-    for (int gIdx = 0 ; gIdx < n_grippers ; gIdx++){
-        PhysicalDevice* pDev = a_winCamHandle.m_dgPair[gIdx].m_physicalDevice;
-        m_labelDevRates[gIdx]->setText(pDev->m_hInfo.m_modelName + ": "
+    std::string controlling_dev_names = "Context Devices: [ ";
+    for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
+        PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
+        a_winCamHandle.m_devHapticFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": "
                                     + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
-        m_labelDevRates[gIdx]->setLocalPos(10, (int)(g_height - (gIdx+1)*20));
+        a_winCamHandle.m_devHapticFreqLabels[gIdx]->setLocalPos(10, (int)(height - (gIdx+1)*20));
+
+        controlling_dev_names += a_winCamHandle.m_deviceGripperPairs[gIdx].m_name + " <> ";
     }
+    controlling_dev_names += "]";
+    a_winCamHandle.m_controllingDeviceLabel->setText(controlling_dev_names);
 
 //    updateMesh();
 
     // update position of label
-    g_labelTimes->setLocalPos((int)(0.5 * (g_width - g_labelTimes->getWidth())), 30);
-    g_labelRates->setLocalPos((int)(0.5 * (g_width - g_labelRates->getWidth())), 10);
-    g_labelModes->setLocalPos((int)(0.5 * (g_width - g_labelModes->getWidth())), 50);
-    g_labelBtnAction->setLocalPos((int)(0.5 * (g_width - g_labelModes->getWidth()) + g_labelModes->getWidth()), 50);
+    g_wallSimTimeLabel->setLocalPos((int)(0.5 * (width - g_wallSimTimeLabel->getWidth())), 30);
+    g_graphicsDynamicsFreqLabel->setLocalPos((int)(0.5 * (width - g_graphicsDynamicsFreqLabel->getWidth())), 10);
+    a_winCamHandle.m_devicesModesLabel->setLocalPos((int)(0.5 * (width - a_winCamHandle.m_devicesModesLabel->getWidth())), 50);
+    a_winCamHandle.m_deviceButtonLabel->setLocalPos((int)(0.5 * (width -a_winCamHandle.m_devicesModesLabel->getWidth())
+                                                          + a_winCamHandle.m_devicesModesLabel->getWidth()), 50);
+    a_winCamHandle.m_controllingDeviceLabel->setLocalPos((int)(0.5 * (width - a_winCamHandle.m_controllingDeviceLabel->getWidth())), (int)(height - 20));
 
-    for (int gIdx = 0; gIdx < n_grippers ; gIdx++){
-        PhysicalDevice* pDev = a_winCamHandle.m_dgPair[gIdx].m_physicalDevice;
-        SimulatedGripper* sGripper = a_winCamHandle.m_dgPair[gIdx].m_simulatedGripper;
+    for (int gIdx = 0; gIdx < n_devsAttached ; gIdx++){
+        PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
+        SimulatedGripper* sGripper = a_winCamHandle.m_deviceGripperPairs[gIdx].m_simulatedGripper;
         bool _cam_pressed = a_winCamHandle.m_cam_pressed[gIdx];
         pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn,_cam_pressed);
         a_winCamHandle.m_cam_pressed[gIdx] = _cam_pressed;
@@ -1833,7 +1943,7 @@ void updateGraphics(WindowCameraHandle& a_winCamHandle)
     /////////////////////////////////////////////////////////////////////
 
     // render world
-    devCam->renderView(g_width, g_height);
+    devCam->renderView(width, height);
 
 //    // update shadow maps (if any)
 //    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);

@@ -17,7 +17,7 @@ light2:
   cutoff angle: 0.7
 
 camera1:
-  location: {x: 4.0, y: -1.0, z: 2.0}
+  location: {x: 3.0, y: -3.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
@@ -27,11 +27,11 @@ camera1:
   # device: Razer Hydra
 
 camera2:
-  location: {x: 4.0, y: 1.0, z: 2.0}
+  location: {x: 3.0, y: 3.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  controlling devices: [PHANTOM Omni]
+  controlling devices: [PHANTOM Omni,Falcon]
   # orthographic view width: 6
   # device: Razer Hydra
