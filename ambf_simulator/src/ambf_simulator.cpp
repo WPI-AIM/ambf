@@ -202,7 +202,7 @@ std::vector<WindowCameraHandle> g_windowCameraHandles;
 std::vector<WindowCameraHandle>::iterator g_winCamIt;
 
 // this function renders the scene
-void updateGraphics(WindowCameraHandle a_winCamHandle);
+void updateGraphics(WindowCameraHandle& a_winCamHandle);
 
 ///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
@@ -1778,7 +1778,7 @@ void close(void)
 
 
 
-void updateGraphics(WindowCameraHandle a_winCamHandle)
+void updateGraphics(WindowCameraHandle& a_winCamHandle)
 {
     /////////////////////////////////////////////////////////////////////
     // UPDATE WIDGETS
@@ -1817,13 +1817,11 @@ void updateGraphics(WindowCameraHandle a_winCamHandle)
         if(_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.3;
             g_dev_vel = pDev->measured_lin_vel();
-            cerr << "BEFORE " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
             pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_cur[gIdx]);
-            cerr << "AFTER " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
             devCam->setLocalPos(devCam->getLocalPos() + cMul(scale, cMul(devCam->getGlobalRot(), g_dev_vel)));
             devCam->setLocalRot(a_winCamHandle.m_cam_rot_last[gIdx] * cTranspose(a_winCamHandle.m_dev_rot_last[gIdx]) * a_winCamHandle.m_dev_rot_cur[gIdx]);
         }
-        cerr << "AFTER2 " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
+
         if(!_cam_pressed){
             a_winCamHandle.m_cam_rot_last[gIdx] = devCam->getGlobalRot();
             pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_last[gIdx]);

@@ -1,6 +1,6 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
 lights: [light1, light2]
-cameras: []
+cameras: [camera1, camera2]
 
 light1:
   location: {x: 0.0, y: 0.5, z: 2.5}
@@ -22,7 +22,7 @@ camera1:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  # controlling devices: [PHANTOM Omni]
+  controlling devices: [Falcon]
   # orthographic view width: 6
   # device: Razer Hydra
 
@@ -32,6 +32,6 @@ camera2:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  # controlling devices: [Razer Hydra]
+  controlling devices: [PHANTOM Omni]
   # orthographic view width: 6
   # device: Razer Hydra
