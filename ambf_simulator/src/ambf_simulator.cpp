@@ -97,18 +97,12 @@ afWorld *g_afWorld;
 
 cVector3d g_camPos(0,0,0);
 cVector3d g_dev_vel;
-cMatrix3d g_cam_rot_last[10], g_dev_rot_last[10], g_dev_rot_cur[10];
-bool _cam_pressed[10];
 double g_dt_fixed = 0;
 bool g_force_enable = true;
 // Default switch index for clutches
 
-// a camera to render the world in the window display
-cCamera* g_camera;
-
 // a label to display the rates [Hz] at which the simulation is running
 cLabel* g_labelRates;
-cLabel* g_labelDevRates[10];
 cLabel* g_labelTimes;
 cLabel* g_labelModes;
 cLabel* g_labelBtnAction;
@@ -135,12 +129,9 @@ cFrequencyCounter g_freqCounterGraphics;
 cFrequencyCounter g_freqCounterHaptics;
 
 // haptic thread
-cThread* g_hapticsThreads[10];
+std::vector<cThread*> g_hapticsThreads;
 // bullet simulation thread
 cThread* g_bulletSimThread;
-
-// a handle to window display context
-GLFWwindow* g_window = NULL;
 
 // current width of window
 int g_width = 0;
@@ -150,7 +141,6 @@ int g_height = 0;
 
 // swap interval for the display context (vertical synchronization)
 int g_swapInterval = 1;
-
 
 //---------------------------------------------------------------------------
 // DECLARED MACROS
@@ -169,9 +159,6 @@ void errorCallback(int error, const char* a_description);
 // callback when a key is pressed
 void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods);
 
-// this function renders the scene
-void updateGraphics(void);
-
 // this function contains the main haptics simulation loop
 void updateHaptics(void*);
 
@@ -183,15 +170,48 @@ void close(void);
 
 const int MAX_DEVICES = 10;
 
+//Forward Declarations
+class PhysicalDevice;
+class SimulatedGripper;
+struct DeviceGripperPair;
+
+std::vector<cLabel*> m_labelDevRates;
+
+///
+/// \brief The VisualHandle struct
+///
+struct WindowCameraHandle{
+  GLFWwindow* m_window = NULL;
+  GLFWmonitor* m_monitor = NULL;
+  cCamera* m_camera;
+  std::vector<DeviceGripperPair> m_dgPair;
+  std::vector<std::string> m_deviceNames;
+  int m_height = 0;
+  int m_width = 0;
+  int m_swapInterval = 1;
+  std::vector<cMatrix3d> m_cam_rot_last;
+  std::vector<cMatrix3d> m_dev_rot_last;
+  std::vector<cMatrix3d> m_dev_rot_cur;
+  std::vector<bool> m_cam_pressed;
+};
+
+// Vector of WindowCamera Handles Struct
+std::vector<WindowCameraHandle> g_windowCameraHandles;
+
+// Global iterator for WindowsCamera Handle
+std::vector<WindowCameraHandle>::iterator g_winCamIt;
+
+// this function renders the scene
+void updateGraphics(WindowCameraHandle a_winCamHandle);
 
 ///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
 /// state/commands, button's state and grippers state if present
 ///
-class Device{
+class PhysicalDevice{
 public:
-    Device(){}
-    virtual ~Device();
+    PhysicalDevice(){}
+    virtual ~PhysicalDevice();
     virtual cVector3d measured_pos();
     virtual cMatrix3d measured_rot();
     virtual cVector3d measured_lin_vel();
@@ -222,11 +242,11 @@ private:
 };
 
 ///
-/// \brief Device::create_cursor
+/// \brief PhysicalDevice::create_cursor
 /// \param a_world
 /// \return
 ///
-cShapeSphere* Device::create_cursor(cBulletWorld* a_world){
+cShapeSphere* PhysicalDevice::create_cursor(cBulletWorld* a_world){
     m_cursor = new cShapeSphere(0.05);
     m_cursor->setShowEnabled(true);
     m_cursor->setShowFrame(true);
@@ -239,18 +259,18 @@ cShapeSphere* Device::create_cursor(cBulletWorld* a_world){
 }
 
 ///
-/// \brief Device::~Device
+/// \brief PhysicalDevice::~PhysicalDevice
 ///
-Device::~Device(){
+PhysicalDevice::~PhysicalDevice(){
 }
 
 ///
-/// \brief Device::create_af_cursor
+/// \brief PhysicalDevice::create_af_cursor
 /// \param a_world
 /// \param a_name
 /// \return
 ///
-cBulletSphere* Device::create_af_cursor(cBulletWorld *a_world, string a_name){
+cBulletSphere* PhysicalDevice::create_af_cursor(cBulletWorld *a_world, string a_name){
     m_af_cursor = new cBulletSphere(a_world, 0.05, a_name);
     m_af_cursor->setShowEnabled(true);
     m_af_cursor->setShowFrame(true);
@@ -263,26 +283,30 @@ cBulletSphere* Device::create_af_cursor(cBulletWorld *a_world, string a_name){
 }
 
 ///
-/// \brief Device::measured_pos
+/// \brief PhysicalDevice::measured_pos
 /// \return
 ///
-cVector3d Device::measured_pos(){
+cVector3d PhysicalDevice::measured_pos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getPosition(m_pos);
     update_cursor_pose();
     return m_pos;
 }
 
-cMatrix3d Device::measured_rot(){
+///
+/// \brief PhysicalDevice::measured_rot
+/// \return
+///
+cMatrix3d PhysicalDevice::measured_rot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getRotation(m_rot);
     return m_rot;
 }
 
 ///
-/// \brief Device::update_cursor_pose
+/// \brief PhysicalDevice::update_cursor_pose
 ///
-void Device::update_cursor_pose(){
+void PhysicalDevice::update_cursor_pose(){
     if(m_cursor){
         m_cursor->setLocalPos(m_pos * m_workspace_scale_factor);
         m_cursor->setLocalRot(m_rot);
@@ -298,30 +322,30 @@ void Device::update_cursor_pose(){
 }
 
 ///
-/// \brief Device::measured_lin_vel
+/// \brief PhysicalDevice::measured_lin_vel
 /// \return
 ///
-cVector3d Device::measured_lin_vel(){
+cVector3d PhysicalDevice::measured_lin_vel(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getLinearVelocity(m_vel);
     return m_vel;
 }
 
 ///
-/// \brief Device::mearured_ang_vel
+/// \brief PhysicalDevice::mearured_ang_vel
 /// \return
 ///
-cVector3d Device::mearured_ang_vel(){
+cVector3d PhysicalDevice::mearured_ang_vel(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getAngularVelocity(m_avel);
     return m_avel;
 }
 
 ///
-/// \brief Device::measured_gripper_angle
+/// \brief PhysicalDevice::measured_gripper_angle
 /// \return
 ///
-double Device::measured_gripper_angle(){
+double PhysicalDevice::measured_gripper_angle(){
     std::lock_guard<std::mutex> lock(m_mutex);
     double angle;
     m_hDevice->getGripperAngleRad(angle);
@@ -329,11 +353,11 @@ double Device::measured_gripper_angle(){
 }
 
 ///
-/// \brief Device::is_button_pressed
+/// \brief PhysicalDevice::is_button_pressed
 /// \param button_index
 /// \return
 ///
-bool Device::is_button_pressed(int button_index){
+bool PhysicalDevice::is_button_pressed(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -341,11 +365,11 @@ bool Device::is_button_pressed(int button_index){
 }
 
 ///
-/// \brief Device::is_button_press_rising_edge
+/// \brief PhysicalDevice::is_button_press_rising_edge
 /// \param button_index
 /// \return
 ///
-bool Device::is_button_press_rising_edge(int button_index){
+bool PhysicalDevice::is_button_press_rising_edge(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -362,11 +386,11 @@ bool Device::is_button_press_rising_edge(int button_index){
 }
 
 ///
-/// \brief Device::is_button_press_falling_edge
+/// \brief PhysicalDevice::is_button_press_falling_edge
 /// \param button_index
 /// \return
 ///
-bool Device::is_button_press_falling_edge(int button_index){
+bool PhysicalDevice::is_button_press_falling_edge(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -383,11 +407,11 @@ bool Device::is_button_press_falling_edge(int button_index){
 }
 
 ///
-/// \brief Device::apply_wrench
+/// \brief PhysicalDevice::apply_wrench
 /// \param force
 /// \param torque
 ///
-void Device::apply_wrench(cVector3d force, cVector3d torque){
+void PhysicalDevice::apply_wrench(cVector3d force, cVector3d torque){
     std::lock_guard<std::mutex> lock(m_mutex);
     force = force * m_dev_force_enabled;
     torque = torque * m_dev_force_enabled;
@@ -400,9 +424,9 @@ void Device::apply_wrench(cVector3d force, cVector3d torque){
 /// action/mode buttons, capturing button triggers in addition to presses, mapping the workspace scale factors
 /// for a device and so on.
 ///
-class Sim{
+class SimulationParams{
 public:
-    Sim(){
+    SimulationParams(){
         m_workspaceScaleFactor = 30.0;
         K_lh = 0.02;
         K_ah = 0.03;
@@ -428,7 +452,7 @@ public:
         btn_clutch_rising_edge = false;
         m_loop_exec_flag = false;
     }
-    void set_sim_params(cHapticDeviceInfo &a_hInfo, Device* a_dev);
+    void set_sim_params(cHapticDeviceInfo &a_hInfo, PhysicalDevice* a_dev);
     inline void set_loop_exec_flag(){m_loop_exec_flag=true;}
     inline void clear_loop_exec_flag(){m_loop_exec_flag = false;}
     inline bool is_loop_exec(){return m_loop_exec_flag;}
@@ -457,11 +481,11 @@ public:
 };
 
 ///
-/// \brief Sim::set_sim_params
+/// \brief SimulationParams::set_sim_params
 /// \param a_hInfo
 /// \param a_dev
 ///
-void Sim::set_sim_params(cHapticDeviceInfo &a_hInfo, Device* a_dev){
+void SimulationParams::set_sim_params(cHapticDeviceInfo &a_hInfo, PhysicalDevice* a_dev){
     double maxStiffness	= a_hInfo.m_maxLinearStiffness / m_workspaceScaleFactor;
 
     // clamp the force output gain to the max device stiffness
@@ -509,13 +533,12 @@ void Sim::set_sim_params(cHapticDeviceInfo &a_hInfo, Device* a_dev){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///
-/// \brief This class encapsulates a single Gripper, simulated in Bullet and provides methods to get/set state/commands
-///        for interface with the haptics device
+/// \brief The SimulatedGripper class
 ///
-class ToolGripper: public Sim, public afGripper{
+class SimulatedGripper: public SimulationParams, public afGripper{
 public:
-    ToolGripper(cBulletWorld *a_chaiWorld);
-    ~ToolGripper(){}
+    SimulatedGripper(cBulletWorld *a_chaiWorld);
+    ~SimulatedGripper(){}
     bool loadFromAMBF(std::string a_gripper_name, std::string a_device_name);
     virtual cVector3d measured_pos();
     virtual cMatrix3d measured_rot();
@@ -534,22 +557,20 @@ public:
 };
 
 ///
-/// \brief ToolGripper::ToolGripper
+/// \brief SimulatedGripper::SimulatedGripper
 /// \param a_chaiWorld
-/// \param a_gripper_name
-/// \param a_device_name
 ///
-ToolGripper::ToolGripper(cBulletWorld *a_chaiWorld): afGripper (a_chaiWorld){
+SimulatedGripper::SimulatedGripper(cBulletWorld *a_chaiWorld): afGripper (a_chaiWorld){
     m_gripper_angle = 0.5;
 }
 
 ///
-/// \brief ToolGripper::loadFromAMBF
+/// \brief SimulatedGripper::loadFromAMBF
 /// \param a_gripper_name
 /// \param a_device_name
 /// \return
 ///
-bool ToolGripper::loadFromAMBF(std::string a_gripper_name, std::string a_device_name){
+bool SimulatedGripper::loadFromAMBF(std::string a_gripper_name, std::string a_device_name){
     std::string config = getGripperConfig(a_device_name);
     bool res = loadMultiBody(config, a_gripper_name, a_device_name);
     m_rootLink = getRootRigidBody();
@@ -557,56 +578,56 @@ bool ToolGripper::loadFromAMBF(std::string a_gripper_name, std::string a_device_
 }
 
 ///
-/// \brief ToolGripper::measured_pos
+/// \brief SimulatedGripper::measured_pos
 /// \return
 ///
-cVector3d ToolGripper::measured_pos(){
+cVector3d SimulatedGripper::measured_pos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalPos();
 }
 
 ///
-/// \brief ToolGripper::measured_rot
+/// \brief SimulatedGripper::measured_rot
 /// \return
 ///
-cMatrix3d ToolGripper::measured_rot(){
+cMatrix3d SimulatedGripper::measured_rot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalRot();
 }
 
 ///
-/// \brief ToolGripper::update_measured_pose
+/// \brief SimulatedGripper::update_measured_pose
 ///
-void ToolGripper::update_measured_pose(){
+void SimulatedGripper::update_measured_pose(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pos  = m_rootLink->getLocalPos();
     m_rot = m_rootLink->getLocalRot();
 }
 
 ///
-/// \brief ToolGripper::set_gripper_angle
+/// \brief SimulatedGripper::setGripperAngle
 /// \param angle
 /// \param dt
 ///
-void ToolGripper::setGripperAngle(double angle, double dt){
+void SimulatedGripper::setGripperAngle(double angle, double dt){
     m_rootLink->setAngle(angle, dt);
 }
 
 ///
-/// \brief ToolGripper::offset_gripper_angle
+/// \brief SimulatedGripper::offset_gripper_angle
 /// \param offset
 ///
-void ToolGripper::offset_gripper_angle(double offset){
+void SimulatedGripper::offset_gripper_angle(double offset){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_gripper_angle += offset;
     m_gripper_angle = cClamp(m_gripper_angle, 0.0, 1.0);
 }
 
 ///
-/// \brief ToolGripper::is_wrench_set
+/// \brief SimulatedGripper::is_wrench_set
 /// \return
 ///
-bool ToolGripper::is_wrench_set(){
+bool SimulatedGripper::is_wrench_set(){
     btVector3 f = m_rootLink->m_bulletRigidBody->getTotalForce();
     btVector3 n = m_rootLink->m_bulletRigidBody->getTotalTorque();
     if (f.isZero()) return false;
@@ -614,9 +635,9 @@ bool ToolGripper::is_wrench_set(){
 }
 
 ///
-/// \brief ToolGripper::clear_wrench
+/// \brief SimulatedGripper::clear_wrench
 ///
-void ToolGripper::clear_wrench(){
+void SimulatedGripper::clear_wrench(){
     m_rootLink->m_bulletRigidBody->clearForces();
 }
 
@@ -634,6 +655,15 @@ enum MODES{ CAM_CLUTCH_CONTROL,
           };
 
 
+///
+/// \brief The DeviceGripperPair struct
+///
+struct DeviceGripperPair{
+    PhysicalDevice* m_physicalDevice;
+    SimulatedGripper* m_simulatedGripper;
+
+    std::string m_name;
+};
 
 ///
 /// \brief This is a higher level class that queries the number of haptics devices available on the sytem
@@ -644,8 +674,7 @@ class Coordination{
 public:
     Coordination(cBulletWorld* a_bullet_world, int a_max_load_devs = MAX_DEVICES);
     ~Coordination();
-    bool retrieve_device_handle(uint dev_num);
-    bool create_bullet_gripper(uint dev_num);
+    SimulatedGripper* create_simulated_gripper(uint dev_num, PhysicalDevice* a_physicalDevice);
     void close_devices();
 
     double increment_K_lh(double a_offset);
@@ -662,14 +691,17 @@ public:
     void prev_mode();
 
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
-    ToolGripper *m_bulletGrippers[MAX_DEVICES];
-    Device m_hapticDevices[MAX_DEVICES];
+    std::vector<DeviceGripperPair> m_deviceGripperPairs;
+
     uint m_num_devices;
     uint m_num_grippers;
     cBulletWorld* m_bulletWorld;
 
-    // bool to enable the rotation of tool be in camera frame. i.e. Orienting the camera
-    // re-orients the tool.
+    std::vector<DeviceGripperPair> get_device_gripper_pairs(std::vector<std::string> a_device_names);
+    std::vector<DeviceGripperPair> get_all_device_gripper_pairs();
+
+    // bool to enable the rotation of simulated gripper be in camera frame. i.e. Orienting the camera
+    // re-orients the simulate gripper.
     bool m_use_cam_frame_rot;
     MODES m_simModes;
     std::string m_mode_str;
@@ -708,12 +740,26 @@ Coordination::Coordination(cBulletWorld* a_bullet_world, int a_max_load_devs){
         m_num_devices = a_max_load_devs < numDevs ? a_max_load_devs : numDevs;
         m_num_grippers = m_num_devices;
         std::cerr << "Num of devices " << m_num_devices << std::endl;
-        for (uint i = 0; i < m_num_grippers; i++){
-            m_deviceHandler->getDeviceSpecifications(m_hapticDevices[i].m_hInfo, i);
-            retrieve_device_handle(i);
-            if (!create_bullet_gripper(i)){
-                delete m_bulletGrippers[i];
-                m_num_grippers--;
+        for (uint devIdx = 0; devIdx < m_num_grippers; devIdx++){
+
+            PhysicalDevice* physicalDevice = new PhysicalDevice();
+            m_deviceHandler->getDeviceSpecifications(physicalDevice->m_hInfo, devIdx);
+            if(m_deviceHandler->getDevice(physicalDevice->m_hDevice, devIdx)){
+                physicalDevice->m_hDevice->open();
+                std::string name = "Device" + std::to_string(devIdx+1);
+                physicalDevice->create_af_cursor(m_bulletWorld, name);
+
+                SimulatedGripper* simulatedGripper = create_simulated_gripper(devIdx, physicalDevice);
+                if (simulatedGripper == NULL){
+                    m_num_grippers--;
+                }
+                else{
+                    DeviceGripperPair dgPair;
+                    dgPair.m_physicalDevice = physicalDevice;
+                    dgPair.m_simulatedGripper = simulatedGripper;
+                    dgPair.m_name = physicalDevice->m_hInfo.m_modelName;
+                    m_deviceGripperPairs.push_back(dgPair);
+                }
             }
         }
     }
@@ -732,6 +778,38 @@ Coordination::Coordination(cBulletWorld* a_bullet_world, int a_max_load_devs){
 ///
 Coordination::~Coordination(){
 }
+
+///
+/// \brief Coordination::get_device_gripper_pairs
+/// \return
+///
+std::vector<DeviceGripperPair> Coordination::get_device_gripper_pairs(std::vector<std::string> a_device_names){
+    std::vector<DeviceGripperPair> dgPairs;
+    std::vector<DeviceGripperPair>::iterator dgIt = m_deviceGripperPairs.begin();
+    for(int nameIdx = 0 ; nameIdx < a_device_names.size() ; nameIdx++){
+        std::string dev_name = a_device_names[nameIdx];
+        for(; dgIt != m_deviceGripperPairs.end() ; ++dgIt){
+            if( dgIt->m_name.compare(dev_name) == 0 ){
+                dgPairs.push_back(*dgIt);
+            }
+            else{
+                cerr << "INFO, DEVICE GRIPPER PAIR: \"" << dev_name << "\" NOT FOUND" << endl;
+            }
+        }
+    }
+
+    return dgPairs;
+
+}
+
+///
+/// \brief Coordination::get_all_device_gripper_pairs
+/// \return
+///
+std::vector<DeviceGripperPair> Coordination::get_all_device_gripper_pairs(){
+    return m_deviceGripperPairs;
+}
+
 
 ///
 /// \brief Coordination::next_mode
@@ -760,54 +838,43 @@ void Coordination::prev_mode(){
 }
 
 ///
-/// \brief Coordination::retrieve_device_handle
+/// \brief Coordination::create_simulated_gripper
 /// \param dev_num
+/// \param a_physicalDevice
 /// \return
 ///
-bool Coordination::retrieve_device_handle(uint dev_num){
-    bool result = m_deviceHandler->getDevice(m_hapticDevices[dev_num].m_hDevice, dev_num);
-    if (result){
-        m_hapticDevices[dev_num].m_hDevice->open();
-        std::string name = "Device" + std::to_string(dev_num+1);
-        //        m_hapticDevices[i].create_cursor(m_bulletWorld);
-        m_hapticDevices[dev_num].create_af_cursor(m_bulletWorld, name);
-    }
-    return result;
-}
-
-///
-/// \brief Coordination::create_bullet_gripper
-/// \param dev_num
-///
-bool Coordination::create_bullet_gripper(uint dev_num){
+SimulatedGripper* Coordination::create_simulated_gripper(uint dev_num, PhysicalDevice* a_physicalDevice){
     std::ostringstream dev_str;
     dev_str << (dev_num + 1);
     std::string gripper_name = "Gripper" + dev_str.str();
-    m_bulletGrippers[dev_num] = new ToolGripper(m_bulletWorld);
-    bool res = m_bulletGrippers[dev_num]->loadFromAMBF(gripper_name, m_hapticDevices[dev_num].m_hInfo.m_modelName);
-    if (res){
-        m_bulletGrippers[dev_num]->set_sim_params(m_hapticDevices[dev_num].m_hInfo, & m_hapticDevices[dev_num]);
-        m_hapticDevices[dev_num].m_workspace_scale_factor = m_bulletGrippers[dev_num]->get_workspace_scale_factor();
-        cVector3d localGripperPos = m_bulletGrippers[dev_num]->m_rootLink->getLocalPos();
+    SimulatedGripper* simulatedGripper = new SimulatedGripper(m_bulletWorld);
+    if(simulatedGripper->loadFromAMBF(gripper_name, a_physicalDevice->m_hInfo.m_modelName)){
+        simulatedGripper->set_sim_params(a_physicalDevice->m_hInfo, a_physicalDevice);
+        a_physicalDevice->m_workspace_scale_factor = simulatedGripper->get_workspace_scale_factor();
+        cVector3d localGripperPos = simulatedGripper->m_rootLink->getLocalPos();
         double l,w,h;
-        m_bulletGrippers[dev_num]->getEnclosureExtents(l,w,h);
+        simulatedGripper->getEnclosureExtents(l,w,h);
         if (localGripperPos.length() == 0.0){
             double x = (int(dev_num / 2.0) * 0.8);
             double y = (dev_num % 2) ? +0.4 : -0.4;
-            x /= m_bulletGrippers[dev_num]->m_workspaceScaleFactor;
-            y /= m_bulletGrippers[dev_num]->m_workspaceScaleFactor;
-            m_bulletGrippers[dev_num]->m_posRefOrigin.set(x, y, 0);
+            x /= simulatedGripper->m_workspaceScaleFactor;
+            y /= simulatedGripper->m_workspaceScaleFactor;
+            simulatedGripper->m_posRefOrigin.set(x, y, 0);
         }
+        return simulatedGripper;
     }
-    return res;
+    else{
+        delete simulatedGripper;
+        return NULL;
+    }
 }
 
 ///
 /// \brief Coordination::close_devices
 ///
 void Coordination::close_devices(){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        m_hapticDevices[i].m_hDevice->close();
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        m_deviceGripperPairs[devIdx].m_physicalDevice->m_hDevice->close();
     }
 }
 
@@ -817,8 +884,8 @@ void Coordination::close_devices(){
 ///
 int Coordination::num_of_haptics_loop_execd(){
     int num_devs_loop_execd = 0;
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->is_loop_exec()) num_devs_loop_execd++;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if ( m_deviceGripperPairs[devIdx].m_simulatedGripper->is_loop_exec()) num_devs_loop_execd++;
     }
     return num_devs_loop_execd;
 }
@@ -829,8 +896,8 @@ int Coordination::num_of_haptics_loop_execd(){
 ///
 bool Coordination::are_all_haptics_loop_exec(){
     bool flag = true;
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        flag &= m_bulletGrippers[i]->is_loop_exec();
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        flag &= m_deviceGripperPairs[devIdx].m_simulatedGripper->is_loop_exec();
     }
     return flag;
 }
@@ -839,8 +906,8 @@ bool Coordination::are_all_haptics_loop_exec(){
 /// \brief Coordination::clear_all_haptics_loop_exec_flags
 ///
 void Coordination::clear_all_haptics_loop_exec_flags(){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        m_bulletGrippers[i]->clear_loop_exec_flag();
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        m_deviceGripperPairs[devIdx].m_simulatedGripper->clear_loop_exec_flag();
     }
 }
 
@@ -850,18 +917,18 @@ void Coordination::clear_all_haptics_loop_exec_flags(){
 /// \return
 ///
 double Coordination::increment_K_lh(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->K_lh + a_offset <= 0)
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lh + a_offset <= 0)
         {
-            m_bulletGrippers[i]->K_lh = 0.0;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lh = 0.0;
         }
         else{
-            m_bulletGrippers[i]->K_lh += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lh += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->K_lh;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_lh;
         g_btn_action_str = "K_lh = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -873,17 +940,17 @@ double Coordination::increment_K_lh(double a_offset){
 /// \return
 ///
 double Coordination::increment_K_ah(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->K_ah + a_offset <=0){
-            m_bulletGrippers[i]->K_ah = 0.0;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ah + a_offset <=0){
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ah = 0.0;
         }
         else{
-            m_bulletGrippers[i]->K_ah += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ah += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->K_ah;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_ah;
         g_btn_action_str = "K_ah = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -895,17 +962,17 @@ double Coordination::increment_K_ah(double a_offset){
 /// \return
 ///
 double Coordination::increment_K_lc(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->K_lc + a_offset <=0){
-            m_bulletGrippers[i]->K_lc = 0.0;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc + a_offset <=0){
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc = 0.0;
         }
         else{
-            m_bulletGrippers[i]->K_lc += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc += a_offset;
         }
     }
     //Set the return value to the stiffness of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->K_lc;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_lc;
         g_btn_action_str = "K_lc = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -917,17 +984,17 @@ double Coordination::increment_K_lc(double a_offset){
 /// \return
 ///
 double Coordination::increment_K_ac(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->K_ac + a_offset <=0){
-            m_bulletGrippers[i]->K_ac = 0.0;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac + a_offset <=0){
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac = 0.0;
         }
         else{
-            m_bulletGrippers[i]->K_ac += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac += a_offset;
         }
     }
     //Set the return value to the stiffness of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->K_ac;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_ac;
         g_btn_action_str = "K_ac = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -939,17 +1006,17 @@ double Coordination::increment_K_ac(double a_offset){
 /// \return
 ///
 double Coordination::increment_B_lc(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->B_lc + a_offset <=0){
-            m_bulletGrippers[i]->B_lc = 0.0;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc + a_offset <=0){
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc = 0.0;
         }
         else{
-            m_bulletGrippers[i]->B_lc += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc += a_offset;
         }
     }
     //Set the return value to the stiffness of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->B_lc;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->B_lc;
         g_btn_action_str = "B_lc = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -961,17 +1028,17 @@ double Coordination::increment_B_lc(double a_offset){
 /// \return
 ///
 double Coordination::increment_B_ac(double a_offset){
-    for (int i = 0 ; i < m_num_grippers ; i++){
-        if (m_bulletGrippers[i]->B_ac + a_offset <=0){
-            m_bulletGrippers[i]->B_ac = 0.0;
+    for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
+        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac + a_offset <=0){
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac = 0.0;
         }
         else{
-            m_bulletGrippers[i]->B_ac += a_offset;
+            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac += a_offset;
         }
     }
     //Set the return value to the stiffness of the last device
     if(m_num_grippers > 0){
-        a_offset = m_bulletGrippers[m_num_grippers-1]->B_ac;
+        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->B_ac;
         g_btn_action_str = "B_ac = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -1094,44 +1161,6 @@ int main(int argc, char* argv[])
         glfwWindowHint(GLFW_STEREO, GL_FALSE);
     }
 
-    // create display context
-    g_window = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
-    if (!g_window)
-    {
-        cout << "failed to create window" << endl;
-        cSleepMs(1000);
-        glfwTerminate();
-        return 1;
-    }
-
-    // get width and height of window
-    glfwGetWindowSize(g_window, &g_width, &g_height);
-
-    // set position of window
-    glfwSetWindowPos(g_window, x, y);
-
-    // set key callback
-    glfwSetKeyCallback(g_window, keyCallback);
-
-    // set resize callback
-    glfwSetWindowSizeCallback(g_window, windowSizeCallback);
-
-    // set current display context
-    glfwMakeContextCurrent(g_window);
-
-    // sets the swap interval for the current display context
-    glfwSwapInterval(g_swapInterval);
-
-    // initialize GLEW library
-#ifdef GLEW_VERSION
-    if (glewInit() != GLEW_OK)
-    {
-        cout << "failed to initialize GLEW library" << endl;
-        glfwTerminate();
-        return 1;
-    }
-#endif
-
 
     //-----------------------------------------------------------------------
     // 3D - SCENEGRAPH
@@ -1241,53 +1270,127 @@ int main(int argc, char* argv[])
     }
 
     if (g_afWorld->m_cameras.size() > 0){
+        int num_monitors;
+        GLFWmonitor** monitors = glfwGetMonitors(&num_monitors);
         for (size_t camera_idx = 0; camera_idx < g_afWorld->m_cameras.size(); camera_idx++){
-            g_camera = new cCamera(g_bulletWorld);
+            cCamera* cameraPtr = new cCamera(g_bulletWorld);
             afCamera camera_data = *(g_afWorld->m_cameras[camera_idx]);
-            g_bulletWorld->addChild(g_camera);
 
-            g_camera->set(camera_data.m_location, camera_data.m_look_at, camera_data.m_up);
-            g_camera->setClippingPlanes(camera_data.m_clipping_plane_limits[0], camera_data.m_clipping_plane_limits[1]);
-            g_camera->setFieldViewAngleRad(camera_data.m_field_view_angle);
+            // set camera name
+            cameraPtr->m_name = camera_data.m_name;
+
+            cameraPtr->set(camera_data.m_location, camera_data.m_look_at, camera_data.m_up);
+            cameraPtr->setClippingPlanes(camera_data.m_clipping_plane_limits[0], camera_data.m_clipping_plane_limits[1]);
+            cameraPtr->setFieldViewAngleRad(camera_data.m_field_view_angle);
             if (camera_data.m_enable_ortho_view){
-                g_camera->setOrthographicView(camera_data.m_ortho_view_width);
+                cameraPtr->setOrthographicView(camera_data.m_ortho_view_width);
             }
-            g_camera->setEnabled(true);
-            g_camera->setStereoMode(stereoMode);
-            g_camera->setStereoEyeSeparation(0.02);
-            g_camera->setStereoFocalLength(2.0);
-            g_camera->setMirrorVertical(mirroredDisplay);
+//            cameraPtr->setEnabled(true);
+            cameraPtr->setStereoMode(stereoMode);
+            cameraPtr->setStereoEyeSeparation(0.02);
+            cameraPtr->setStereoFocalLength(2.0);
+            cameraPtr->setMirrorVertical(mirroredDisplay);
 
-            g_camera->m_frontLayer->addChild(g_labelRates);
-            g_camera->m_frontLayer->addChild(g_labelTimes);
-            g_camera->m_frontLayer->addChild(g_labelModes);
-            g_camera->m_frontLayer->addChild(g_labelBtnAction);
+            g_bulletWorld->addChild(cameraPtr);
 
+            cameraPtr->m_frontLayer->addChild(g_labelRates);
+            cameraPtr->m_frontLayer->addChild(g_labelTimes);
+            cameraPtr->m_frontLayer->addChild(g_labelModes);
+            cameraPtr->m_frontLayer->addChild(g_labelBtnAction);
+
+            std::string window_name = "AMBF Simulator Window " + std::to_string(camera_idx + 1);
+            // create display context
+            int monitor_to_load = 0;
+            if (camera_idx < num_monitors){
+                monitor_to_load = camera_idx;
+            }
+            GLFWwindow* windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
+
+            // Assign the Window Camera Handles
+            WindowCameraHandle winCamHandle;
+            winCamHandle.m_window = windowPtr;
+            winCamHandle.m_monitor = monitors[monitor_to_load];
+            winCamHandle.m_camera = cameraPtr;
+            winCamHandle.m_deviceNames = camera_data.m_controlling_devices;
+            g_windowCameraHandles.push_back(winCamHandle);
         }
     }
     else{
         std::cerr << "INFO: NO CAMERA SPECIFIED, USING DEFAULT CAMERA" << std::endl;
-        g_camera = new cCamera(g_bulletWorld);
-        g_bulletWorld->addChild(g_camera);
+        cCamera* cameraPtr = new cCamera(g_bulletWorld);
+        g_bulletWorld->addChild(cameraPtr);
 
         // position and orient the camera
-        g_camera->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
+        cameraPtr->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
                       cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
                       cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
 
         // set the near and far clipping planes of the camera
-        g_camera->setClippingPlanes(0.01, 10.0);
+        cameraPtr->setClippingPlanes(0.01, 10.0);
 
         // set stereo mode
-        g_camera->setStereoMode(stereoMode);
+        cameraPtr->setStereoMode(stereoMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
-        g_camera->setStereoEyeSeparation(0.02);
-        g_camera->setStereoFocalLength(2.0);
+        cameraPtr->setStereoEyeSeparation(0.02);
+        cameraPtr->setStereoFocalLength(2.0);
 
         // set vertical mirrored display mode
-        g_camera->setMirrorVertical(mirroredDisplay);
+        cameraPtr->setMirrorVertical(mirroredDisplay);
+
+        // create display context
+        GLFWwindow* windowPtr = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
+        GLFWmonitor* monitorPtr = glfwGetPrimaryMonitor();
+
+        // Assign the Window Camera Handles
+        WindowCameraHandle winCamHandle;
+        winCamHandle.m_window = windowPtr;
+        winCamHandle.m_monitor = monitorPtr;
+        winCamHandle.m_camera = cameraPtr;
+        g_windowCameraHandles.push_back(winCamHandle);
     }
+
+    g_winCamIt = g_windowCameraHandles.begin();
+    for(; g_winCamIt != g_windowCameraHandles.end() ; ++g_winCamIt){
+        GLFWwindow* windowPtr = g_winCamIt->m_window;
+        if (!windowPtr)
+        {
+            cout << "failed to create window" << endl;
+            cSleepMs(1000);
+            glfwTerminate();
+            return 1;
+        }
+
+        // get width and height of window
+        glfwGetWindowSize(windowPtr, &g_width, &g_height);
+
+        // set position of window
+        glfwSetWindowPos(windowPtr, x, y);
+
+        // set key callback
+        glfwSetKeyCallback(windowPtr, keyCallback);
+
+        // set resize callback
+        glfwSetWindowSizeCallback(windowPtr, windowSizeCallback);
+
+        // set the current context
+        glfwMakeContextCurrent(windowPtr);
+
+        // sets the swap interval for the current display context
+//        glfwSwapInterval(g_swapInterval);
+    }
+
+    glfwSwapInterval(g_swapInterval);
+
+    // initialize GLEW library
+#ifdef GLEW_VERSION
+    if (glewInit() != GLEW_OK)
+    {
+        cout << "failed to initialize GLEW library" << endl;
+        glfwTerminate();
+        return 1;
+    }
+#endif
 
     cVector3d worldZ(0.0, 0.0, 1.0);
     cMaterial matPlane;
@@ -1347,13 +1450,28 @@ int main(int argc, char* argv[])
 
     // create a thread which starts the main haptics rendering loop
     int dev_num[10] = {0,1,2,3,4,5,6,7,8,9};
-    for (int i = 0 ; i < g_coordApp->m_num_grippers ; i++){
-        g_hapticsThreads[i] = new cThread();
-        g_hapticsThreads[i]->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS, &dev_num[i]);
-        g_labelDevRates[i] = new cLabel(font);
-        g_labelDevRates[i]->m_fontColor.setBlack();
-        g_labelDevRates[i]->setFontScale(0.8);
-        g_camera->m_frontLayer->addChild(g_labelDevRates[i]);
+    int num_grippers = g_coordApp->m_num_grippers;
+    for (int gIdx = 0 ; gIdx < num_grippers ; gIdx++){
+        g_hapticsThreads.push_back(new cThread());
+        g_hapticsThreads[gIdx]->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS, &dev_num[gIdx]);
+        m_labelDevRates.push_back(new cLabel(font));
+        m_labelDevRates[gIdx]->m_fontColor.setBlack();
+        m_labelDevRates[gIdx]->setFontScale(0.8);
+        g_winCamIt = g_windowCameraHandles.begin();
+        for (;  g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
+            g_winCamIt->m_camera->m_frontLayer->addChild(m_labelDevRates[gIdx]);
+            g_winCamIt->m_cam_rot_last.resize(num_grippers);
+            g_winCamIt->m_dev_rot_last.resize(num_grippers);
+            g_winCamIt->m_dev_rot_cur.resize(num_grippers);
+            g_winCamIt->m_cam_pressed.resize(num_grippers);
+            if(g_winCamIt->m_deviceNames.size() == 0){
+                g_winCamIt->m_dgPair  = g_coordApp->get_all_device_gripper_pairs();
+            }
+            else{
+                g_winCamIt->m_dgPair  = g_coordApp->get_device_gripper_pairs(g_winCamIt->m_deviceNames);
+            }
+        }
+
     }
 
     //create a thread which starts the Bullet Simulation loop
@@ -1369,19 +1487,44 @@ int main(int argc, char* argv[])
     //--------------------------------------------------------------------------
 
     // call window size callback at initialization
-    windowSizeCallback(g_window, g_width, g_height);
-
+    g_winCamIt = g_windowCameraHandles.begin();
+    for (; g_winCamIt != g_windowCameraHandles.end() ; ++ g_winCamIt){
+        windowSizeCallback(g_winCamIt->m_window, g_width, g_height);
+    }
+    bool _window_closed = false;
     // main graphic loop
-    while (!glfwWindowShouldClose(g_window))
+    while (!_window_closed)
     {
-        // get width and height of window
-        glfwGetWindowSize(g_window, &g_width, &g_height);
+        g_winCamIt = g_windowCameraHandles.begin();
+        for (; g_winCamIt != g_windowCameraHandles.end(); ++ g_winCamIt){
+            // set current display context
+            glfwMakeContextCurrent(g_winCamIt->m_window);
 
-        // render graphics
-        updateGraphics();
+            // get width and height of window
+            glfwGetWindowSize(g_winCamIt->m_window, &g_width, &g_height);
 
-        // swap buffers
-        glfwSwapBuffers(g_window);
+            // render graphics
+            updateGraphics(*g_winCamIt);
+
+            // swap buffers
+            glfwSwapBuffers(g_winCamIt->m_window);
+
+            // Only set the _window_closed if the condition is met
+            // otherwise a non-closed window will set the variable back
+            // to false
+            if (glfwWindowShouldClose(g_winCamIt->m_window)){
+                _window_closed = true;
+            }
+        }
+
+        g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
+
+        // wait until all GL commands are completed
+        glFinish();
+
+        // check for any OpenGL errors
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
 
         // process events
         glfwPollEvents();
@@ -1391,7 +1534,11 @@ int main(int argc, char* argv[])
     }
 
     // close window
-    glfwDestroyWindow(g_window);
+    g_winCamIt = g_windowCameraHandles.begin();
+    for (; g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
+        glfwDestroyWindow(g_winCamIt->m_window);
+    }
+
 
     // terminate GLFW library
     glfwTerminate();
@@ -1451,34 +1598,41 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // toggle state variable
         fullscreen = !fullscreen;
 
-        // get handle to monitor
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        std::vector<WindowCameraHandle>::iterator win_cam_it;
+        for (win_cam_it = g_windowCameraHandles.begin() ; win_cam_it != g_windowCameraHandles.end() ; ++win_cam_it){
 
-        // get information about monitor
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            // get handle to monitor
+            GLFWmonitor* monitor = win_cam_it->m_monitor;
 
-        // set fullscreen or window mode
-        if (fullscreen)
-        {
-            glfwSetWindowMonitor(g_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            glfwSwapInterval(g_swapInterval);
-        }
-        else
-        {
-            int w = 0.8 * mode->height;
-            int h = 0.5 * mode->height;
-            int x = 0.5 * (mode->width - w);
-            int y = 0.5 * (mode->height - h);
-            glfwSetWindowMonitor(g_window, NULL, x, y, w, h, mode->refreshRate);
-            glfwSwapInterval(g_swapInterval);
+            // get information about monitor
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            // set fullscreen or window mode
+            if (fullscreen)
+            {
+                glfwSetWindowMonitor(win_cam_it->m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                glfwSwapInterval(win_cam_it->m_swapInterval);
+            }
+            else
+            {
+                int w = 0.8 * mode->height;
+                int h = 0.5 * mode->height;
+                int x = 0.5 * (mode->width - w);
+                int y = 0.5 * (mode->height - h);
+                glfwSetWindowMonitor(win_cam_it->m_window, NULL, x, y, w, h, mode->refreshRate);
+                glfwSwapInterval(win_cam_it->m_swapInterval);
+            }
         }
     }
 
     // option - toggle vertical mirroring
     else if (a_key == GLFW_KEY_M)
     {
-        mirroredDisplay = !mirroredDisplay;
-        g_camera->setMirrorVertical(mirroredDisplay);
+         mirroredDisplay = !mirroredDisplay;
+        std::vector<WindowCameraHandle>::iterator win_cam_it;
+        for (win_cam_it = g_windowCameraHandles.begin() ; win_cam_it != g_windowCameraHandles.end() ; ++win_cam_it){
+            win_cam_it->m_camera->setMirrorVertical(mirroredDisplay);
+        }
     }
 
     // option - help menu
@@ -1622,11 +1776,15 @@ void close(void)
     delete g_afMultiBody;
 }
 
-void updateGraphics(void)
+
+
+void updateGraphics(WindowCameraHandle a_winCamHandle)
 {
     /////////////////////////////////////////////////////////////////////
     // UPDATE WIDGETS
     /////////////////////////////////////////////////////////////////////
+    cCamera* devCam = a_winCamHandle.m_camera;
+    int n_grippers = a_winCamHandle.m_dgPair.size();
 
     // update haptic and graphic rate data
     g_labelTimes->setText("Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s" +
@@ -1635,9 +1793,11 @@ void updateGraphics(void)
     g_labelModes->setText("MODE: " + g_coordApp->m_mode_str);
     g_labelBtnAction->setText(" : " + g_btn_action_str);
 
-    for (int i = 0 ; i < g_coordApp->m_num_grippers ; i++){
-        g_labelDevRates[i]->setText(g_coordApp->m_hapticDevices[i].m_hInfo.m_modelName + ": " + cStr(g_coordApp->m_hapticDevices[i].m_freq_ctr.getFrequency(), 0) + " Hz");
-        g_labelDevRates[i]->setLocalPos(10, (int)(g_height - (i+1)*20));
+    for (int gIdx = 0 ; gIdx < n_grippers ; gIdx++){
+        PhysicalDevice* pDev = a_winCamHandle.m_dgPair[gIdx].m_physicalDevice;
+        m_labelDevRates[gIdx]->setText(pDev->m_hInfo.m_modelName + ": "
+                                    + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        m_labelDevRates[gIdx]->setLocalPos(10, (int)(g_height - (gIdx+1)*20));
     }
 
 //    updateMesh();
@@ -1648,18 +1808,25 @@ void updateGraphics(void)
     g_labelModes->setLocalPos((int)(0.5 * (g_width - g_labelModes->getWidth())), 50);
     g_labelBtnAction->setLocalPos((int)(0.5 * (g_width - g_labelModes->getWidth()) + g_labelModes->getWidth()), 50);
 
-    for (size_t gripper_num = 0; gripper_num < g_coordApp->m_num_grippers ; gripper_num ++){
-        g_coordApp->m_hapticDevices[gripper_num].m_hDevice->getUserSwitch(g_coordApp->m_bulletGrippers[gripper_num]->act_2_btn, _cam_pressed[gripper_num]);
-        if(_cam_pressed[gripper_num] && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
+    for (int gIdx = 0; gIdx < n_grippers ; gIdx++){
+        PhysicalDevice* pDev = a_winCamHandle.m_dgPair[gIdx].m_physicalDevice;
+        SimulatedGripper* sGripper = a_winCamHandle.m_dgPair[gIdx].m_simulatedGripper;
+        bool _cam_pressed = a_winCamHandle.m_cam_pressed[gIdx];
+        pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn,_cam_pressed);
+        a_winCamHandle.m_cam_pressed[gIdx] = _cam_pressed;
+        if(_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.3;
-            g_dev_vel = g_coordApp->m_hapticDevices[gripper_num].measured_lin_vel();
-            g_coordApp->m_hapticDevices[gripper_num].m_hDevice->getRotation(g_dev_rot_cur[gripper_num]);
-            g_camera->setLocalPos(g_camera->getLocalPos() + cMul(scale, cMul(g_camera->getGlobalRot(), g_dev_vel)));
-            g_camera->setLocalRot(cMul(g_cam_rot_last[gripper_num], cMul(cTranspose(g_dev_rot_last[gripper_num]), g_dev_rot_cur[gripper_num])));
+            g_dev_vel = pDev->measured_lin_vel();
+            cerr << "BEFORE " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
+            pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_cur[gIdx]);
+            cerr << "AFTER " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
+            devCam->setLocalPos(devCam->getLocalPos() + cMul(scale, cMul(devCam->getGlobalRot(), g_dev_vel)));
+            devCam->setLocalRot(a_winCamHandle.m_cam_rot_last[gIdx] * cTranspose(a_winCamHandle.m_dev_rot_last[gIdx]) * a_winCamHandle.m_dev_rot_cur[gIdx]);
         }
-        if(!_cam_pressed[gripper_num]){
-            g_cam_rot_last[gripper_num] = g_camera->getGlobalRot();
-            g_coordApp->m_hapticDevices[gripper_num].m_hDevice->getRotation(g_dev_rot_last[gripper_num]);
+        cerr << "AFTER2 " << a_winCamHandle.m_dev_rot_cur[gIdx].getCol0() << endl;
+        if(!_cam_pressed){
+            a_winCamHandle.m_cam_rot_last[gIdx] = devCam->getGlobalRot();
+            pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_last[gIdx]);
         }
     }
 
@@ -1667,18 +1834,13 @@ void updateGraphics(void)
     // RENDER SCENE
     /////////////////////////////////////////////////////////////////////
 
-    // update shadow maps (if any)
-    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
-
     // render world
-    g_camera->renderView(g_width, g_height);
+    devCam->renderView(g_width, g_height);
 
-    // wait until all GL commands are completed
-    glFinish();
+//    // update shadow maps (if any)
+//    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
 
-    // check for any OpenGL errors
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+
 }
 
 ///
@@ -1735,50 +1897,50 @@ void updateBulletSim(){
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
         else dt = compute_dt(true);
-        for (unsigned int i = 0 ; i < g_coordApp->m_num_grippers ; i++){
-            // update position of tool
-            ToolGripper * bGripper = g_coordApp->m_bulletGrippers[i];
-            bGripper->update_measured_pose();
+        for (unsigned int devIdx = 0 ; devIdx < g_coordApp->m_num_grippers ; devIdx++){
+            // update position of simulate gripper
+            SimulatedGripper * simGripper = g_coordApp->m_deviceGripperPairs[devIdx].m_simulatedGripper;
+            simGripper->update_measured_pose();
 
-            dposPre[i] = dpos[i];
-            dpos[i] = bGripper->m_posRef - bGripper->m_pos;
-            ddpos[i] = (dpos[i] - dposPre[i]) / dt;
+            dposPre[devIdx] = dpos[devIdx];
+            dpos[devIdx] = simGripper->m_posRef - simGripper->m_pos;
+            ddpos[devIdx] = (dpos[devIdx] - dposPre[devIdx]) / dt;
 
-            drotPre[i] = drot[i];
-            drot[i] = cTranspose(bGripper->m_rot) * bGripper->m_rotRef;
-            ddrot[i] = (cTranspose(drot[i]) * drotPre[i]);
+            drotPre[devIdx] = drot[devIdx];
+            drot[devIdx] = cTranspose(simGripper->m_rot) * simGripper->m_rotRef;
+            ddrot[devIdx] = (cTranspose(drot[devIdx]) * drotPre[devIdx]);
 
             double angle, dangle;
             cVector3d axis, daxis;
-            drot[i].toAxisAngle(axis, angle);
-            ddrot[i].toAxisAngle(daxis, dangle);
+            drot[devIdx].toAxisAngle(axis, angle);
+            ddrot[devIdx].toAxisAngle(daxis, dangle);
 
             cVector3d force, torque;
 
-            force = bGripper->K_lc_ramp * (bGripper->K_lc * dpos[i] + (bGripper->B_lc) * ddpos[i]);
-            torque = bGripper->K_ac_ramp * ((bGripper->K_ac * angle) * axis);
-            bGripper->m_rot.mul(torque);
+            force = simGripper->K_lc_ramp * (simGripper->K_lc * dpos[devIdx] + (simGripper->B_lc) * ddpos[devIdx]);
+            torque = simGripper->K_ac_ramp * ((simGripper->K_ac * angle) * axis);
+            simGripper->m_rot.mul(torque);
 
-            bGripper->apply_force(force);
-            bGripper->apply_torque(torque);
-            bGripper->setGripperAngle(bGripper->m_gripper_angle, dt);
+            simGripper->apply_force(force);
+            simGripper->apply_torque(torque);
+            simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
 
-            if (bGripper->K_lc_ramp < 1.0)
+            if (simGripper->K_lc_ramp < 1.0)
             {
-                bGripper->K_lc_ramp = bGripper->K_lc_ramp + 0.5 * dt;
+                simGripper->K_lc_ramp = simGripper->K_lc_ramp + 0.5 * dt;
             }
             else
             {
-                bGripper->K_lc_ramp = 1.0;
+                simGripper->K_lc_ramp = 1.0;
             }
 
-            if (bGripper->K_ac_ramp < 1.0)
+            if (simGripper->K_ac_ramp < 1.0)
             {
-                bGripper->K_ac_ramp = bGripper->K_ac_ramp + 0.5 * dt;
+                simGripper->K_ac_ramp = simGripper->K_ac_ramp + 0.5 * dt;
             }
             else
             {
-                bGripper->K_ac_ramp = 1.0;
+                simGripper->K_ac_ramp = 1.0;
             }
         }
         g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_coordApp->m_num_grippers);
@@ -1793,18 +1955,18 @@ void updateBulletSim(){
 /// \param a_arg
 ///
 void updateHaptics(void* a_arg){
-    int i = *(int*) a_arg;
+    int devIdx = *(int*) a_arg;
     // simulation in now running
     g_simulationRunning = true;
     g_simulationFinished = false;
 
-    // update position and orientation of tool
-    Device *hDev = & g_coordApp->m_hapticDevices[i];
-    ToolGripper* bGripper = g_coordApp->m_bulletGrippers[i];
-    hDev->m_posClutched.set(0.0,0.0,0.0);
-    hDev->measured_rot();
-    hDev->m_rotClutched.identity();
-    bGripper->m_rotRefOrigin = hDev->m_rot;
+    // update position and orientation of simulated gripper
+    PhysicalDevice *physicalDevice = g_coordApp->m_deviceGripperPairs[devIdx].m_physicalDevice;
+    SimulatedGripper* simulatedGripper = g_coordApp->m_deviceGripperPairs[devIdx].m_simulatedGripper;
+    physicalDevice->m_posClutched.set(0.0,0.0,0.0);
+    physicalDevice->measured_rot();
+    physicalDevice->m_rotClutched.identity();
+    simulatedGripper->m_rotRefOrigin = physicalDevice->m_rot;
 
     cVector3d dpos, ddpos, dposLast;
     cMatrix3d drot, ddrot, drotLast;
@@ -1819,47 +1981,47 @@ void updateHaptics(void* a_arg){
     double K_ah_offset = 1;
 
     double wait_time = 1.0;
-    if (std::strcmp(hDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
+    if (std::strcmp(physicalDevice->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
         wait_time = 5.0;
     }
 
     // main haptic simulation loop
     while(g_simulationRunning)
     {
-        hDev->m_freq_ctr.signal(1);
+        physicalDevice->m_freq_ctr.signal(1);
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
         else dt = compute_dt();
 
-        hDev->m_pos = hDev->measured_pos();
-        hDev->m_rot = hDev->measured_rot();
+        physicalDevice->m_pos = physicalDevice->measured_pos();
+        physicalDevice->m_rot = physicalDevice->measured_rot();
 
-        if(bGripper->m_gripper_pinch_btn >= 0){
-            if(hDev->is_button_pressed(bGripper->m_gripper_pinch_btn)){
-                hDev->enable_force_feedback(true);
+        if(simulatedGripper->m_gripper_pinch_btn >= 0){
+            if(physicalDevice->is_button_pressed(simulatedGripper->m_gripper_pinch_btn)){
+                physicalDevice->enable_force_feedback(true);
             }
         }
-        if (hDev->m_hInfo.m_sensedGripper){
-            bGripper->m_gripper_angle = hDev->measured_gripper_angle();
+        if (physicalDevice->m_hInfo.m_sensedGripper){
+            simulatedGripper->m_gripper_angle = physicalDevice->measured_gripper_angle();
         }
         else{
-            bGripper->m_gripper_angle = 0.5;
+            simulatedGripper->m_gripper_angle = 0.5;
         }
 
-        if(hDev->is_button_press_rising_edge(bGripper->mode_next_btn)) g_coordApp->next_mode();
-        if(hDev->is_button_press_rising_edge(bGripper->mode_prev_btn)) g_coordApp->prev_mode();
+        if(physicalDevice->is_button_press_rising_edge(simulatedGripper->mode_next_btn)) g_coordApp->next_mode();
+        if(physicalDevice->is_button_press_rising_edge(simulatedGripper->mode_prev_btn)) g_coordApp->prev_mode();
 
-        bool btn_1_rising_edge = hDev->is_button_press_rising_edge(bGripper->act_1_btn);
-        bool btn_1_falling_edge = hDev->is_button_press_falling_edge(bGripper->act_1_btn);
-        bool btn_2_rising_edge = hDev->is_button_press_rising_edge(bGripper->act_2_btn);
-        bool btn_2_falling_edge = hDev->is_button_press_falling_edge(bGripper->act_2_btn);
+        bool btn_1_rising_edge = physicalDevice->is_button_press_rising_edge(simulatedGripper->act_1_btn);
+        bool btn_1_falling_edge = physicalDevice->is_button_press_falling_edge(simulatedGripper->act_1_btn);
+        bool btn_2_rising_edge = physicalDevice->is_button_press_rising_edge(simulatedGripper->act_2_btn);
+        bool btn_2_falling_edge = physicalDevice->is_button_press_falling_edge(simulatedGripper->act_2_btn);
 
         double gripper_offset = 0;
         switch (g_coordApp->m_simModes){
         case MODES::CAM_CLUTCH_CONTROL:
-            g_clutch_btn_pressed  = hDev->is_button_pressed(bGripper->act_1_btn);
-            g_cam_btn_pressed     = hDev->is_button_pressed(bGripper->act_2_btn);
+            g_clutch_btn_pressed  = physicalDevice->is_button_pressed(simulatedGripper->act_1_btn);
+            g_cam_btn_pressed     = physicalDevice->is_button_pressed(simulatedGripper->act_2_btn);
             if(g_clutch_btn_pressed) g_btn_action_str = "Clutch Pressed";
             if(g_cam_btn_pressed)   {g_btn_action_str = "Cam Pressed";}
             if(btn_1_falling_edge || btn_2_falling_edge) g_btn_action_str = "";
@@ -1867,7 +2029,7 @@ void updateHaptics(void* a_arg){
         case MODES::GRIPPER_JAW_CONTROL:
             if (btn_1_rising_edge) gripper_offset = 0.1;
             if (btn_2_rising_edge) gripper_offset = -0.1;
-            bGripper->offset_gripper_angle(gripper_offset);
+            simulatedGripper->offset_gripper_angle(gripper_offset);
             break;
         case MODES::CHANGE_CONT_LIN_GAIN:
             if(btn_1_rising_edge) g_coordApp->increment_K_lc(K_lc_offset);
@@ -1897,55 +2059,55 @@ void updateHaptics(void* a_arg){
 
 
         if (g_clockWorld.getCurrentTimeSeconds() < wait_time){
-            hDev->m_posClutched = hDev->m_pos;
+            physicalDevice->m_posClutched = physicalDevice->m_pos;
         }
 
         if(g_cam_btn_pressed){
-            if(bGripper->btn_cam_rising_edge){
-                bGripper->btn_cam_rising_edge = false;
-                bGripper->m_posRefOrigin = bGripper->m_posRef / bGripper->m_workspaceScaleFactor;
-                bGripper->m_rotRefOrigin = bGripper->m_rotRef;
+            if(simulatedGripper->btn_cam_rising_edge){
+                simulatedGripper->btn_cam_rising_edge = false;
+                simulatedGripper->m_posRefOrigin = simulatedGripper->m_posRef / simulatedGripper->m_workspaceScaleFactor;
+                simulatedGripper->m_rotRefOrigin = simulatedGripper->m_rotRef;
             }
-            hDev->m_posClutched = hDev->m_pos;
-            hDev->m_rotClutched = hDev->m_rot;
+            physicalDevice->m_posClutched = physicalDevice->m_pos;
+            physicalDevice->m_rotClutched = physicalDevice->m_rot;
         }
         else{
-            bGripper->btn_cam_rising_edge = true;
+            simulatedGripper->btn_cam_rising_edge = true;
         }
         if(g_clutch_btn_pressed){
-            if(bGripper->btn_clutch_rising_edge){
-                bGripper->btn_clutch_rising_edge = false;
-                bGripper->m_posRefOrigin = bGripper->m_posRef / bGripper->m_workspaceScaleFactor;
-                bGripper->m_rotRefOrigin = bGripper->m_rotRef;
+            if(simulatedGripper->btn_clutch_rising_edge){
+                simulatedGripper->btn_clutch_rising_edge = false;
+                simulatedGripper->m_posRefOrigin = simulatedGripper->m_posRef / simulatedGripper->m_workspaceScaleFactor;
+                simulatedGripper->m_rotRefOrigin = simulatedGripper->m_rotRef;
             }
-            hDev->m_posClutched = hDev->m_pos;
-            hDev->m_rotClutched = hDev->m_rot;
+            physicalDevice->m_posClutched = physicalDevice->m_pos;
+            physicalDevice->m_rotClutched = physicalDevice->m_rot;
         }
         else{
-            bGripper->btn_clutch_rising_edge = true;
+            simulatedGripper->btn_clutch_rising_edge = true;
         }
 
-        bGripper->m_posRef = bGripper->m_posRefOrigin +
-                (g_camera->getLocalRot() * (hDev->m_pos - hDev->m_posClutched));
+        simulatedGripper->m_posRef = simulatedGripper->m_posRefOrigin +
+                (g_windowCameraHandles[0].m_camera->getLocalRot() * (physicalDevice->m_pos - physicalDevice->m_posClutched));
         if (!g_coordApp->m_use_cam_frame_rot){
-            bGripper->m_rotRef = bGripper->m_rotRefOrigin * g_camera->getLocalRot() *
-                    cTranspose(hDev->m_rotClutched) * hDev->m_rot *
-                    cTranspose(g_camera->getLocalRot());
+            simulatedGripper->m_rotRef = simulatedGripper->m_rotRefOrigin * g_windowCameraHandles[0].m_camera->getLocalRot() *
+                    cTranspose(physicalDevice->m_rotClutched) * physicalDevice->m_rot *
+                    cTranspose(g_windowCameraHandles[0].m_camera->getLocalRot());
         }
         else{
-            bGripper->m_rotRef = hDev->m_rot;
+            simulatedGripper->m_rotRef = physicalDevice->m_rot;
         }
-        bGripper->m_posRef.mul(bGripper->m_workspaceScaleFactor);
+        simulatedGripper->m_posRef.mul(simulatedGripper->m_workspaceScaleFactor);
 
-        // update position of tool
-        bGripper->update_measured_pose();
+        // update position of simulated gripper
+        simulatedGripper->update_measured_pose();
 
         dposLast = dpos;
-        dpos = bGripper->m_posRef - bGripper->m_pos;
+        dpos = simulatedGripper->m_posRef - simulatedGripper->m_pos;
         ddpos = (dpos - dposLast) / dt;
 
         drotLast = drot;
-        drot = cTranspose(bGripper->m_rot) * bGripper->m_rotRef;
+        drot = cTranspose(simulatedGripper->m_rot) * simulatedGripper->m_rotRef;
         ddrot = (cTranspose(drot) * drotLast);
 
         double angle, dangle;
@@ -1955,30 +2117,30 @@ void updateHaptics(void* a_arg){
 
         cVector3d force, torque;
 
-        force  = - g_force_enable * bGripper->K_lh_ramp * (bGripper->K_lc * dpos + (bGripper->B_lc) * ddpos);
-        torque = - g_force_enable * bGripper->K_ah_ramp * ((bGripper->K_ac * angle) * axis);
+        force  = - g_force_enable * simulatedGripper->K_lh_ramp * (simulatedGripper->K_lc * dpos + (simulatedGripper->B_lc) * ddpos);
+        torque = - g_force_enable * simulatedGripper->K_ah_ramp * ((simulatedGripper->K_ac * angle) * axis);
 
-        hDev->apply_wrench(force, torque);
+        physicalDevice->apply_wrench(force, torque);
 
-        if (bGripper->K_lh_ramp < bGripper->K_lh)
+        if (simulatedGripper->K_lh_ramp < simulatedGripper->K_lh)
         {
-            bGripper->K_lh_ramp = bGripper->K_lh_ramp + 0.1 * dt * bGripper->K_lh;
+            simulatedGripper->K_lh_ramp = simulatedGripper->K_lh_ramp + 0.1 * dt * simulatedGripper->K_lh;
         }
         else
         {
-            bGripper->K_lh_ramp = bGripper->K_lh;
+            simulatedGripper->K_lh_ramp = simulatedGripper->K_lh;
         }
 
-        if (bGripper->K_ah_ramp < bGripper->K_ah)
+        if (simulatedGripper->K_ah_ramp < simulatedGripper->K_ah)
         {
-            bGripper->K_ah_ramp = bGripper->K_ah_ramp + 0.1 * dt * bGripper->K_ah;
+            simulatedGripper->K_ah_ramp = simulatedGripper->K_ah_ramp + 0.1 * dt * simulatedGripper->K_ah;
         }
         else
         {
-            bGripper->K_ah_ramp = bGripper->K_ah;
+            simulatedGripper->K_ah_ramp = simulatedGripper->K_ah;
         }
 
-        bGripper->set_loop_exec_flag();
+        simulatedGripper->set_loop_exec_flag();
     }
     // exit haptics thread
 }

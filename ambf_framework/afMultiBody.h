@@ -389,6 +389,8 @@ public:
     double m_field_view_angle;
     bool m_enable_ortho_view;
     double m_ortho_view_width;
+    std::string m_name;
+    std::vector<std::string> m_controlling_devices;
 };
 
 
@@ -419,6 +421,7 @@ public:
     double m_spot_exponent;
     ShadowQuality m_shadow_quality;
     double m_cuttoff_angle;
+    std::string m_name;
 };
 
 

@@ -1822,14 +1822,16 @@ afCamera::afCamera(){
 /// \param camera_name
 /// \return
 ///
-bool afCamera::loadCamera(YAML::Node* camera_node, std::string camera_name){
-    YAML::Node cameraNode = *camera_node;
+bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
+    YAML::Node cameraNode = *a_camera_node;
+    m_name = a_camera_name;
     YAML::Node cameraLocationData = cameraNode["location"];
     YAML::Node cameraLookAtData = cameraNode["look at"];
     YAML::Node cameraUpData = cameraNode["up"];
     YAML::Node cameraClippingPlaneData = cameraNode["clipping plane"];
     YAML::Node cameraFieldViewAngleData = cameraNode["field view angle"];
     YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
+    YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
 
     bool _is_valid = true;
 
@@ -1837,21 +1839,21 @@ bool afCamera::loadCamera(YAML::Node* camera_node, std::string camera_name){
         assignXYZ(&cameraLocationData, &m_location);
     }
     else{
-        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
          _is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
         assignXYZ(&cameraLookAtData, &m_look_at);
     }
     else{
-        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraUpData.IsDefined()){
         assignXYZ(&cameraUpData, &m_up);
     }
     else{
-        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraClippingPlaneData.IsDefined()){
@@ -1859,14 +1861,14 @@ bool afCamera::loadCamera(YAML::Node* camera_node, std::string camera_name){
         m_clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
     }
     else{
-        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraFieldViewAngleData.IsDefined()){
         m_field_view_angle = cameraFieldViewAngleData.as<double>();
     }
     else{
-        std::cerr << "INFO: CAMERA \"" << camera_name << "\" CAMERA FIELD VIEW DATA NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA FIELD VIEW DATA NOT DEFINED, IGNORING " << std::endl;
         m_field_view_angle = 0.8;
     }
     if (cameraOrthoWidthData.IsDefined()){
@@ -1875,6 +1877,11 @@ bool afCamera::loadCamera(YAML::Node* camera_node, std::string camera_name){
     }
     else{
          m_enable_ortho_view = false;
+    }
+    if (cameraControllingDevicesData.IsDefined()){
+        for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
+            m_controlling_devices.push_back( cameraControllingDevicesData[idx].as<std::string>());
+        }
     }
 
     return _is_valid;
@@ -1893,8 +1900,9 @@ afLight::afLight(){
 /// \param light_node
 /// \return
 ///
-bool afLight::loadLight(YAML::Node* light_node, std::string light_name){
-    YAML::Node lightNode = *light_node;
+bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
+    YAML::Node lightNode = *a_light_node;
+    m_name = a_light_name;
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -1907,14 +1915,14 @@ bool afLight::loadLight(YAML::Node* light_node, std::string light_name){
         assignXYZ(&lightLocationData, &m_location);
     }
     else{
-        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightDirectionData.IsDefined()){
         assignXYZ(&lightDirectionData, &m_direction);
     }
     else{
-        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightSpotExponentData.IsDefined()){
@@ -1924,11 +1932,11 @@ bool afLight::loadLight(YAML::Node* light_node, std::string light_name){
         int shadow_quality = lightShadowQualityData.as<int>();
         if (shadow_quality < 0){
             shadow_quality = 0;
-            std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+            std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
         else if (shadow_quality > 5){
             shadow_quality = 5;
-            std::cerr << "INFO: LIGHT \"" << light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
+            std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
         m_shadow_quality = (ShadowQuality)shadow_quality;
     }
@@ -1936,7 +1944,7 @@ bool afLight::loadLight(YAML::Node* light_node, std::string light_name){
         m_cuttoff_angle = lightCuttOffAngleData.as<double>();
     }
     else{
-        std::cerr << "INFO: LIGHT \"" << light_name << "\" LIGHT CUTOFF NOT DEFINED, IGNORING " << std::endl;
+        std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT CUTOFF NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     return _is_valid;
