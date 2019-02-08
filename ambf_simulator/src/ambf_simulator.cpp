@@ -159,10 +159,6 @@ void close(void);
 
 const int MAX_DEVICES = 10;
 
-// Some helping labels for simulation windows
-cLabel* g_graphicsDynamicsFreqLabel;
-cLabel* g_wallSimTimeLabel;
-
 //Forward Declarations
 class PhysicalDevice;
 class SimulatedGripper;
@@ -188,6 +184,8 @@ struct WindowCameraHandle{
   int m_win_y;
 
   // labels to display the rates [Hz] at which the simulation is running
+  cLabel* m_graphicsDynamicsFreqLabel;
+  cLabel* m_wallSimTimeLabel;
   cLabel* m_devicesModesLabel;
   cLabel* m_deviceButtonLabel;
   cLabel* m_controllingDeviceLabel;
@@ -1182,17 +1180,6 @@ int main(int argc, char* argv[])
     // create a font
     cFontPtr font = NEW_CFONTCALIBRI20();
 
-    // create a label to display the haptic and graphic rate of the simulation
-    g_graphicsDynamicsFreqLabel = new cLabel(font);
-    g_wallSimTimeLabel = new cLabel(font);
-    cLabel* modesLabel = new cLabel(font);
-    cLabel* btnLabel = new cLabel(font);
-
-    g_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
-    g_wallSimTimeLabel->m_fontColor.setBlack();
-    modesLabel->m_fontColor.setBlack();
-    btnLabel->m_fontColor.setBlack();
-
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
     //////////////////////////////////////////////////////////////////////////
@@ -1338,13 +1325,31 @@ int main(int argc, char* argv[])
             winCamHandle.m_win_x = x;
             winCamHandle.m_win_y = y;
 
-            cameraPtr->m_frontLayer->addChild(g_graphicsDynamicsFreqLabel);
-            cameraPtr->m_frontLayer->addChild(g_wallSimTimeLabel);
+            // create helpful labels for displaying device/sim information in windows
+            cLabel* dynFreqLabel = new cLabel(font);
+            cLabel* timesLabel = new cLabel(font);
+            cLabel* modesLabel = new cLabel(font);
+            cLabel* btnLabel = new cLabel(font);
+            cLabel* controllingDevLabel = new cLabel(font);
+
+            dynFreqLabel->m_fontColor.setBlack();
+            timesLabel->m_fontColor.setBlack();
+            modesLabel->m_fontColor.setBlack();
+            btnLabel->m_fontColor.setBlack();
+            controllingDevLabel->m_fontColor.setBlack();
+            controllingDevLabel->setFontScale(0.8);
+
+            cameraPtr->m_frontLayer->addChild(dynFreqLabel);
+            cameraPtr->m_frontLayer->addChild(timesLabel);
             cameraPtr->m_frontLayer->addChild(modesLabel);
             cameraPtr->m_frontLayer->addChild(btnLabel);
+            cameraPtr->m_frontLayer->addChild(controllingDevLabel);
 
+            winCamHandle.m_graphicsDynamicsFreqLabel = dynFreqLabel;
+            winCamHandle.m_wallSimTimeLabel = timesLabel;
             winCamHandle.m_devicesModesLabel = modesLabel;
             winCamHandle.m_deviceButtonLabel = btnLabel;
+            winCamHandle.m_controllingDeviceLabel = controllingDevLabel;
 
             g_windowCameraHandles.push_back(winCamHandle);
         }
@@ -1393,13 +1398,31 @@ int main(int argc, char* argv[])
         winCamHandle.m_win_x = x;
         winCamHandle.m_win_y = y;
 
-        cameraPtr->m_frontLayer->addChild(g_graphicsDynamicsFreqLabel);
-        cameraPtr->m_frontLayer->addChild(g_wallSimTimeLabel);
+        // create helpful labels for displaying device/sim information in windows
+        cLabel* dynFreqLabel = new cLabel(font);
+        cLabel* timesLabel = new cLabel(font);
+        cLabel* modesLabel = new cLabel(font);
+        cLabel* btnLabel = new cLabel(font);
+        cLabel* controllingDevLabel = new cLabel(font);
+
+        dynFreqLabel->m_fontColor.setBlack();
+        timesLabel->m_fontColor.setBlack();
+        modesLabel->m_fontColor.setBlack();
+        btnLabel->m_fontColor.setBlack();
+        controllingDevLabel->m_fontColor.setBlack();
+        controllingDevLabel->setFontScale(0.8);
+
+        cameraPtr->m_frontLayer->addChild(dynFreqLabel);
+        cameraPtr->m_frontLayer->addChild(timesLabel);
         cameraPtr->m_frontLayer->addChild(modesLabel);
         cameraPtr->m_frontLayer->addChild(btnLabel);
+        cameraPtr->m_frontLayer->addChild(controllingDevLabel);
 
+        winCamHandle.m_graphicsDynamicsFreqLabel = dynFreqLabel;
+        winCamHandle.m_wallSimTimeLabel = timesLabel;
         winCamHandle.m_devicesModesLabel = modesLabel;
         winCamHandle.m_deviceButtonLabel = btnLabel;
+        winCamHandle.m_controllingDeviceLabel = controllingDevLabel;
 
         g_windowCameraHandles.push_back(winCamHandle);
     }
@@ -1537,12 +1560,6 @@ int main(int argc, char* argv[])
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
     //-----------------------------------------------------------------------------------------------------------
     for (g_winCamIt = g_windowCameraHandles.begin() ;  g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
-        cLabel* controllingDevLabel = new cLabel(font);
-        controllingDevLabel->m_fontColor.setBlack();
-        controllingDevLabel->setFontScale(0.8);
-        g_winCamIt->m_camera->m_frontLayer->addChild(controllingDevLabel);
-        g_winCamIt->m_controllingDeviceLabel = controllingDevLabel;
-
         int n_controlling_devs = g_winCamIt->m_deviceNames.size();
 
         // If no controlling devices are defined for the camera context, add all
@@ -1885,38 +1902,43 @@ void updateGraphics(WindowCameraHandle& a_winCamHandle)
     // UPDATE WIDGETS
     /////////////////////////////////////////////////////////////////////
     cCamera* devCam = a_winCamHandle.m_camera;
+
     int n_devsAttached = a_winCamHandle.m_deviceGripperPairs.size();
     int width = a_winCamHandle.m_width;
     int height = a_winCamHandle.m_height;
 
+    cLabel* dynFreqLabel = a_winCamHandle.m_graphicsDynamicsFreqLabel;
+    cLabel* timesLabel = a_winCamHandle.m_wallSimTimeLabel;
+    cLabel* modesLabel = a_winCamHandle.m_devicesModesLabel;
+    cLabel* btnLabel = a_winCamHandle.m_deviceButtonLabel;
+    cLabel* contextDevicesLabel = a_winCamHandle.m_controllingDeviceLabel;
+    std::vector<cLabel*> devFreqLabels = a_winCamHandle.m_devHapticFreqLabels;
+
     // update haptic and graphic rate data
-    g_wallSimTimeLabel->setText("Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s" +
+    timesLabel->setText("Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s" +
                           + " / "+" Simulation Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s");
-    g_graphicsDynamicsFreqLabel->setText(cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz / " + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz");
-    a_winCamHandle.m_devicesModesLabel->setText("MODE: " + g_coordApp->m_mode_str);
-    a_winCamHandle.m_deviceButtonLabel->setText(" : " + g_btn_action_str);
+    dynFreqLabel->setText(cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz / " + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz");
+    modesLabel->setText("MODE: " + g_coordApp->m_mode_str);
+    btnLabel->setText(" : " + g_btn_action_str);
 
     std::string controlling_dev_names = "Context Devices: [ ";
     for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
         PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
-        a_winCamHandle.m_devHapticFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": "
-                                    + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
-        a_winCamHandle.m_devHapticFreqLabels[gIdx]->setLocalPos(10, (int)(height - (gIdx+1)*20));
-
+        devFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        devFreqLabels[gIdx]->setLocalPos(10, (int)(height - (gIdx+1)*20));
         controlling_dev_names += a_winCamHandle.m_deviceGripperPairs[gIdx].m_name + " <> ";
     }
     controlling_dev_names += "]";
-    a_winCamHandle.m_controllingDeviceLabel->setText(controlling_dev_names);
+    contextDevicesLabel->setText(controlling_dev_names);
 
 //    updateMesh();
 
     // update position of label
-    g_wallSimTimeLabel->setLocalPos((int)(0.5 * (width - g_wallSimTimeLabel->getWidth())), 30);
-    g_graphicsDynamicsFreqLabel->setLocalPos((int)(0.5 * (width - g_graphicsDynamicsFreqLabel->getWidth())), 10);
-    a_winCamHandle.m_devicesModesLabel->setLocalPos((int)(0.5 * (width - a_winCamHandle.m_devicesModesLabel->getWidth())), 50);
-    a_winCamHandle.m_deviceButtonLabel->setLocalPos((int)(0.5 * (width -a_winCamHandle.m_devicesModesLabel->getWidth())
-                                                          + a_winCamHandle.m_devicesModesLabel->getWidth()), 50);
-    a_winCamHandle.m_controllingDeviceLabel->setLocalPos((int)(0.5 * (width - a_winCamHandle.m_controllingDeviceLabel->getWidth())), (int)(height - 20));
+    timesLabel->setLocalPos((int)(0.5 * (width - timesLabel->getWidth() ) ), 30);
+    dynFreqLabel->setLocalPos((int)(0.5 * (width - dynFreqLabel->getWidth() ) ), 10);
+    modesLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth())), 50);
+    btnLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth()) + modesLabel->getWidth()), 50);
+    contextDevicesLabel->setLocalPos((int)(0.5 * (width - contextDevicesLabel->getWidth())), (int)(height - 20));
 
     for (int gIdx = 0; gIdx < n_devsAttached ; gIdx++){
         PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
