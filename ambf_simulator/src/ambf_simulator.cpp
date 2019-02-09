@@ -161,6 +161,7 @@ const int MAX_DEVICES = 10;
 
 //Forward Declarations
 class PhysicalDevice;
+class PhysicalDeviceCamera;
 class SimulatedGripper;
 struct DeviceGripperPair;
 
@@ -170,16 +171,12 @@ struct DeviceGripperPair;
 struct WindowCameraHandle{
   GLFWwindow* m_window = NULL;
   GLFWmonitor* m_monitor = NULL;
-  cCamera* m_camera;
+  PhysicalDeviceCamera* m_camera;
   std::vector<DeviceGripperPair> m_deviceGripperPairs;
   std::vector<std::string> m_deviceNames;
   int m_height = 0;
   int m_width = 0;
   int m_swapInterval = 1;
-  std::vector<cMatrix3d> m_cam_rot_last;
-  std::vector<cMatrix3d> m_dev_rot_last;
-  std::vector<cMatrix3d> m_dev_rot_cur;
-  std::vector<bool> m_cam_pressed;
   int m_win_x;
   int m_win_y;
 
@@ -212,6 +209,10 @@ public:
     virtual ~PhysicalDevice();
     virtual cVector3d measured_pos();
     virtual cMatrix3d measured_rot();
+    cVector3d measured_pos_preclutch();
+    void set_pos_preclutch(cVector3d a_pos);
+    cMatrix3d measured_rot_preclutch();
+    void set_rot_preclutch(cMatrix3d a_rot);
     virtual cVector3d measured_lin_vel();
     virtual cVector3d mearured_ang_vel();
     virtual double measured_gripper_angle();
@@ -224,8 +225,9 @@ public:
     cBulletSphere* create_af_cursor(cBulletWorld* a_world, std::string a_name);
     cGenericHapticDevicePtr m_hDevice;
     cHapticDeviceInfo m_hInfo;
-    cVector3d m_pos, m_posClutched, m_vel, m_avel;
-    cMatrix3d m_rot, m_rotClutched;
+    cVector3d m_pos, m_posClutched, m_pos_pre_clutch;
+    cMatrix3d m_rot, m_rotClutched, m_rot_pre_clutch;
+    cVector3d m_vel, m_avel;
     double m_workspace_scale_factor;
     cShapeSphere* m_cursor = NULL;
     cBulletSphere* m_af_cursor = NULL;
@@ -292,6 +294,24 @@ cVector3d PhysicalDevice::measured_pos(){
 }
 
 ///
+/// \brief PhysicalDevice::measured_pos_last
+/// \return
+///
+cVector3d PhysicalDevice::measured_pos_preclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_pos_pre_clutch;
+}
+
+///
+/// \brief PhysicalDevice::set_pos_preclutch
+/// \param a_pos
+///
+void PhysicalDevice::set_pos_preclutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_pos_pre_clutch = a_pos;
+}
+
+///
 /// \brief PhysicalDevice::measured_rot
 /// \return
 ///
@@ -299,6 +319,24 @@ cMatrix3d PhysicalDevice::measured_rot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getRotation(m_rot);
     return m_rot;
+}
+
+///
+/// \brief PhysicalDevice::measured_rot_last
+/// \return
+///
+cMatrix3d PhysicalDevice::measured_rot_preclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rot_pre_clutch;
+}
+
+///
+/// \brief PhysicalDevice::set_rot_preclutch
+/// \param a_rot
+///
+void PhysicalDevice::set_rot_preclutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rot_pre_clutch = a_rot;
 }
 
 ///
@@ -414,6 +452,84 @@ void PhysicalDevice::apply_wrench(cVector3d force, cVector3d torque){
     force = force * m_dev_force_enabled;
     torque = torque * m_dev_force_enabled;
     m_hDevice->setForceAndTorqueAndGripperForce(force, torque, 0.0);
+}
+
+///
+/// \brief The afCamera class
+///
+class PhysicalDeviceCamera: public cCamera{
+public:
+    PhysicalDeviceCamera(cWorld* a_world): cCamera(a_world){}
+    cVector3d measured_pos();
+    cMatrix3d measured_rot();
+    cVector3d measured_pos_preclutch();
+    void set_pos_preclutch(cVector3d a_pos);
+    cMatrix3d measured_rot_preclutch();
+    void set_rot_preclutch(cMatrix3d a_rot);
+    bool m_cam_pressed;
+
+protected:
+    std::mutex m_mutex;
+    cVector3d m_pos, m_posClutched, m_pos_pre_clutch;
+    cMatrix3d m_rot, m_rotClutched, m_rot_pre_clutch;
+
+};
+
+
+///
+/// \brief afCamera::measured_pos
+/// \return
+///
+cVector3d PhysicalDeviceCamera::measured_pos(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_pos = getGlobalPos();
+    return m_pos;
+}
+
+///
+/// \brief afCamera::measured_pos_last
+/// \return
+///
+cVector3d PhysicalDeviceCamera::measured_pos_preclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_pos_pre_clutch;
+}
+
+///
+/// \brief PhysicalDeviceCamera::set_pos_preclutch
+/// \param a_pos
+///
+void PhysicalDeviceCamera::set_pos_preclutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_pos_pre_clutch = a_pos;
+}
+
+///
+/// \brief afCamera::measured_rot
+/// \return
+///
+cMatrix3d PhysicalDeviceCamera::measured_rot(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rot = getGlobalRot();
+    return m_rot;
+}
+
+///
+/// \brief afCamera::measured_rot_last
+/// \return
+///
+cMatrix3d PhysicalDeviceCamera::measured_rot_preclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rot_pre_clutch;
+}
+
+///
+/// \brief PhysicalDeviceCamera::set_rot_preclutch
+/// \param a_rot
+///
+void PhysicalDeviceCamera::set_rot_preclutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rot_pre_clutch = a_rot;
 }
 
 ///
@@ -1276,7 +1392,7 @@ int main(int argc, char* argv[])
         int num_monitors;
         GLFWmonitor** monitors = glfwGetMonitors(&num_monitors);
         for (size_t camera_idx = 0; camera_idx < g_afWorld->m_cameras.size(); camera_idx++){
-            cCamera* cameraPtr = new cCamera(g_bulletWorld);
+            PhysicalDeviceCamera* cameraPtr = new PhysicalDeviceCamera(g_bulletWorld);
             afCamera camera_data = *(g_afWorld->m_cameras[camera_idx]);
 
             // set camera name
@@ -1359,7 +1475,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     else{
         std::cerr << "INFO: NO CAMERA SPECIFIED, USING DEFAULT CAMERA" << std::endl;
-        cCamera* cameraPtr = new cCamera(g_bulletWorld);
+        PhysicalDeviceCamera* cameraPtr = new PhysicalDeviceCamera(g_bulletWorld);
 
         // position and orient the camera
         cameraPtr->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
@@ -1573,11 +1689,6 @@ int main(int argc, char* argv[])
             // defined for the window camera pair in the context
             g_winCamIt->m_deviceGripperPairs  = g_coordApp->get_device_gripper_pairs(g_winCamIt->m_deviceNames);
         }
-
-        g_winCamIt->m_cam_rot_last.resize(n_controlling_devs);
-        g_winCamIt->m_dev_rot_last.resize(n_controlling_devs);
-        g_winCamIt->m_dev_rot_cur.resize(n_controlling_devs);
-        g_winCamIt->m_cam_pressed.resize(n_controlling_devs);
 
         // Create labels for the contextual controlling devices for each Window-Camera Pair
         for (int nameIdx = 0 ; nameIdx < n_controlling_devs ; nameIdx++){
@@ -1901,7 +2012,7 @@ void updateGraphics(WindowCameraHandle& a_winCamHandle)
     /////////////////////////////////////////////////////////////////////
     // UPDATE WIDGETS
     /////////////////////////////////////////////////////////////////////
-    cCamera* devCam = a_winCamHandle.m_camera;
+    PhysicalDeviceCamera* devCam = a_winCamHandle.m_camera;
 
     int n_devsAttached = a_winCamHandle.m_deviceGripperPairs.size();
     int width = a_winCamHandle.m_width;
@@ -1943,20 +2054,16 @@ void updateGraphics(WindowCameraHandle& a_winCamHandle)
     for (int gIdx = 0; gIdx < n_devsAttached ; gIdx++){
         PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
         SimulatedGripper* sGripper = a_winCamHandle.m_deviceGripperPairs[gIdx].m_simulatedGripper;
-        bool _cam_pressed = a_winCamHandle.m_cam_pressed[gIdx];
-        pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn,_cam_pressed);
-        a_winCamHandle.m_cam_pressed[gIdx] = _cam_pressed;
-        if(_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
+        pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn, devCam->m_cam_pressed);
+        if(devCam->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.3;
-            g_dev_vel = pDev->measured_lin_vel();
-            pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_cur[gIdx]);
-            devCam->setLocalPos(devCam->getLocalPos() + cMul(scale, cMul(devCam->getGlobalRot(), g_dev_vel)));
-            devCam->setLocalRot(a_winCamHandle.m_cam_rot_last[gIdx] * cTranspose(a_winCamHandle.m_dev_rot_last[gIdx]) * a_winCamHandle.m_dev_rot_cur[gIdx]);
+            devCam->setLocalPos(devCam->measured_pos() + cMul(scale, devCam->measured_rot() * pDev->measured_lin_vel() ) );
+            devCam->setLocalRot(devCam->measured_rot_preclutch() * cTranspose(pDev->measured_rot_preclutch()) * pDev->measured_rot());
         }
 
-        if(!_cam_pressed){
-            a_winCamHandle.m_cam_rot_last[gIdx] = devCam->getGlobalRot();
-            pDev->m_hDevice->getRotation(a_winCamHandle.m_dev_rot_last[gIdx]);
+        if(!devCam->m_cam_pressed){
+            devCam->set_rot_preclutch( devCam->measured_rot() );
+            pDev->set_rot_preclutch( pDev->measured_rot() );
         }
     }
 
