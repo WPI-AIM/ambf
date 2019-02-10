@@ -148,6 +148,12 @@ void errorCallback(int error, const char* a_description);
 // callback when a key is pressed
 void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods);
 
+//callback for mouse buttons
+void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_modes);
+
+//callback for mouse positions
+void mousePosCallback(GLFWwindow* a_window, double x_pos, double y_pos);
+
 // this function contains the main haptics simulation loop
 void updateHapticDevice(void*);
 
@@ -169,6 +175,10 @@ struct DeviceGripperPair;
 /// \brief The VisualHandle struct
 ///
 struct WindowCameraPair{
+    WindowCameraPair(){
+        camRot.identity();
+        camRotPre.identity();
+    }
   GLFWwindow* m_window = NULL;
   GLFWmonitor* m_monitor = NULL;
   PhysicalDeviceCamera* m_camera;
@@ -188,10 +198,16 @@ struct WindowCameraPair{
   cLabel* m_controllingDeviceLabel;
   std::vector<cLabel*> m_devHapticFreqLabels;
 
+  // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
+  double mouse_x[2], mouse_y[2], mouse_scroll[2];
+  bool mouse_r_clicked = false, mouse_l_clicked= false, mouse_scroll_clicked = false;
+  bool mouse_r_btn_rising_edge = false, mouse_l_btn_rising_edge = false;
+
+  cMatrix3d camRot, camRotPre;
 };
 
 // Vector of WindowCamera Handles Struct
-std::vector<WindowCameraPair> g_windowCameraHandles;
+std::vector<WindowCameraPair> g_windowCameraPairs;
 
 // Global iterator for WindowsCamera Handle
 std::vector<WindowCameraPair>::iterator g_winCamIt;
@@ -1414,7 +1430,7 @@ int main(int argc, char* argv[])
             winCamHandle.m_win_x = x;
             winCamHandle.m_win_y = y;
 
-            g_windowCameraHandles.push_back(winCamHandle);
+            g_windowCameraPairs.push_back(winCamHandle);
         }
     }
     //-----------------------------------------------------------------------------------------------------------
@@ -1461,7 +1477,7 @@ int main(int argc, char* argv[])
         winCamHandle.m_win_x = x;
         winCamHandle.m_win_y = y;
 
-        g_windowCameraHandles.push_back(winCamHandle);
+        g_windowCameraPairs.push_back(winCamHandle);
     }
     //-----------------------------------------------------------------------------------------------------------
     // END: Search for defined cameras and add Create a New Window and a Camera and Create a WindowCameraPair
@@ -1470,7 +1486,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
     //-----------------------------------------------------------------------------------------------------------
-    for(g_winCamIt = g_windowCameraHandles.begin() ; g_winCamIt != g_windowCameraHandles.end() ; ++g_winCamIt){
+    for(g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         GLFWwindow* windowPtr = g_winCamIt->m_window;
         if (!windowPtr)
         {
@@ -1488,6 +1504,12 @@ int main(int argc, char* argv[])
 
         // set key callback
         glfwSetKeyCallback(windowPtr, keyCallback);
+
+        // set mouse buttons callback
+        glfwSetMouseButtonCallback(windowPtr, mouseBtnsCallback);
+
+        //set mouse buttons callback
+        glfwSetCursorPosCallback(windowPtr, mousePosCallback);
 
         // set resize callback
         glfwSetWindowSizeCallback(windowPtr, windowSizeCallback);
@@ -1624,7 +1646,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
     //-----------------------------------------------------------------------------------------------------------
-    for (g_winCamIt = g_windowCameraHandles.begin() ;  g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
+    for (g_winCamIt = g_windowCameraPairs.begin() ;  g_winCamIt !=  g_windowCameraPairs.end() ; ++ g_winCamIt){
         int n_controlling_devs = g_winCamIt->m_deviceNames.size();
 
         // If no controlling devices are defined for the camera context, add all
@@ -1663,16 +1685,16 @@ int main(int argc, char* argv[])
     //--------------------------------------------------------------------------
 
     // call window size callback at initialization
-    g_winCamIt = g_windowCameraHandles.begin();
-    for (; g_winCamIt != g_windowCameraHandles.end() ; ++ g_winCamIt){
+    g_winCamIt = g_windowCameraPairs.begin();
+    for (; g_winCamIt != g_windowCameraPairs.end() ; ++ g_winCamIt){
         windowSizeCallback(g_winCamIt->m_window, g_winCamIt->m_width, g_winCamIt->m_height);
     }
     bool _window_closed = false;
     // main graphic loop
     while (!_window_closed)
     {
-        g_winCamIt = g_windowCameraHandles.begin();
-        for (; g_winCamIt != g_windowCameraHandles.end(); ++ g_winCamIt){
+        g_winCamIt = g_windowCameraPairs.begin();
+        for (; g_winCamIt != g_windowCameraPairs.end(); ++ g_winCamIt){
             // set current display context
             glfwMakeContextCurrent(g_winCamIt->m_window);
 
@@ -1710,8 +1732,8 @@ int main(int argc, char* argv[])
     }
 
     // close window
-    g_winCamIt = g_windowCameraHandles.begin();
-    for (; g_winCamIt !=  g_windowCameraHandles.end() ; ++ g_winCamIt){
+    g_winCamIt = g_windowCameraPairs.begin();
+    for (; g_winCamIt !=  g_windowCameraPairs.end() ; ++ g_winCamIt){
         glfwDestroyWindow(g_winCamIt->m_window);
     }
 
@@ -1731,9 +1753,9 @@ int main(int argc, char* argv[])
 ///
 void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
 {
-    std::vector<WindowCameraPair>::iterator wcIt = g_windowCameraHandles.begin();
+    std::vector<WindowCameraPair>::iterator wcIt = g_windowCameraPairs.begin();
 
-    for(; wcIt != g_windowCameraHandles.end() ; ++wcIt){
+    for(; wcIt != g_windowCameraPairs.end() ; ++wcIt){
         if(wcIt->m_window == a_window){
             // update window size
             wcIt->m_width = a_width;
@@ -1782,7 +1804,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         fullscreen = !fullscreen;
 
         std::vector<WindowCameraPair>::iterator win_cam_it;
-        for (win_cam_it = g_windowCameraHandles.begin() ; win_cam_it != g_windowCameraHandles.end() ; ++win_cam_it){
+        for (win_cam_it = g_windowCameraPairs.begin() ; win_cam_it != g_windowCameraPairs.end() ; ++win_cam_it){
 
             // get handle to monitor
             GLFWmonitor* monitor = win_cam_it->m_monitor;
@@ -1813,7 +1835,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     {
          mirroredDisplay = !mirroredDisplay;
         std::vector<WindowCameraPair>::iterator win_cam_it;
-        for (win_cam_it = g_windowCameraHandles.begin() ; win_cam_it != g_windowCameraHandles.end() ; ++win_cam_it){
+        for (win_cam_it = g_windowCameraPairs.begin() ; win_cam_it != g_windowCameraPairs.end() ; ++win_cam_it){
             win_cam_it->m_camera->setMirrorVertical(mirroredDisplay);
         }
     }
@@ -1929,6 +1951,69 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         afRigidBodyMap::const_iterator rbIt;
         for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
             rbIt->second->toggleFrameVisibility();
+        }
+    }
+
+}
+
+///
+/// \brief mouseBtnCallback
+/// \param window
+/// \param a_button1
+/// \param a_button2
+/// \param a_button3
+/// \param a_button4
+///
+void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_modes){
+//    cerr << "Window " << a_window->title() << endl;
+//    cerr << "Buttons " << a_button << endl;
+//    cerr << "Pressed " << a_action << endl;
+
+    for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
+        if (a_window == g_winCamIt->m_window){
+            if (a_button == 0){
+                g_winCamIt->mouse_r_clicked = a_action;
+            }
+            if (a_button == 1){
+                g_winCamIt->mouse_l_clicked = a_action;
+            }
+        }
+    }
+}
+
+///
+void mousePosCallback(GLFWwindow* a_window, double a_posX, double a_posY){
+//    cerr << "Mouse CB x: (" << a_posX << ") y: (" << a_posY << ")\n";
+    for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
+        if (a_window == g_winCamIt->m_window){
+            PhysicalDeviceCamera* devCam = g_winCamIt->m_camera;
+            g_winCamIt->mouse_x[1] = g_winCamIt->mouse_x[0];
+            g_winCamIt->mouse_x[0] = a_posX;
+            g_winCamIt->mouse_y[1] = g_winCamIt->mouse_y[0];
+            g_winCamIt->mouse_y[0] = a_posY;
+
+            if(g_winCamIt->mouse_r_clicked){
+                cMatrix3d camRot;
+                double scale = 0.3;
+                double z_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
+                double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
+                camRot.setIntrinsicEulerRotationDeg(0, y_vel, z_vel, cEulerOrder::C_EULER_ORDER_XYZ);
+                g_winCamIt->camRot = camRot;
+                devCam->setLocalRot( devCam->measuredRot() * g_winCamIt->camRot);
+            }
+            else{
+                devCam->setRotPreclutch(devCam->measuredRot());
+                g_winCamIt->camRotPre = g_winCamIt->camRot;
+            }
+
+            if(g_winCamIt->mouse_l_clicked){
+                double scale = 0.05;
+                double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
+                double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
+                cVector3d camVel(y_vel, x_vel, 0);
+                devCam->setLocalPos( devCam->getLocalPos() + camVel );
+            }
+
         }
     }
 
