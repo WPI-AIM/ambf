@@ -2012,11 +2012,11 @@ void mousePosCallback(GLFWwindow* a_window, double a_posX, double a_posY){
             }
 
             if(g_winCamIt->mouse_l_clicked){
-                double scale = 0.05;
+                double scale = 0.01;
                 double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
                 double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
                 cVector3d camVel(y_vel, x_vel, 0);
-                devCam->setLocalPos( devCam->getLocalPos() + camVel );
+                devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
             }
 
         }

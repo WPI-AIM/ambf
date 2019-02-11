@@ -32,6 +32,6 @@ camera2:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  controlling devices: [PHANTOM Omni,Falcon]
+  controlling devices: [PHANTOM Omni]
   # orthographic view width: 6
   # device: Razer Hydra
