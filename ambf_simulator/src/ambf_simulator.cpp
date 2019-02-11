@@ -182,7 +182,7 @@ struct WindowCameraPair{
   GLFWwindow* m_window = NULL;
   GLFWmonitor* m_monitor = NULL;
   PhysicalDeviceCamera* m_camera;
-  std::vector<DeviceGripperPair> m_deviceGripperPairs;
+  std::vector<DeviceGripperPair*> m_deviceGripperPairs;
   std::vector<std::string> m_deviceNames;
   int m_height = 0;
   int m_width = 0;
@@ -831,8 +831,8 @@ public:
     void nextMode();
     void prevMode();
 
-    std::vector<DeviceGripperPair> getDeviceGripperPairs(std::vector<std::string> a_device_names);
-    std::vector<DeviceGripperPair> getAllDeviceGripperPairs();
+    std::vector<DeviceGripperPair*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
+    std::vector<DeviceGripperPair*> getAllDeviceGripperPairs();
 
 public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
@@ -925,15 +925,15 @@ Coordination::~Coordination(){
 /// \brief Coordination::get_device_gripper_pairs
 /// \return
 ///
-std::vector<DeviceGripperPair> Coordination::getDeviceGripperPairs(std::vector<std::string> a_device_names){
-    std::vector<DeviceGripperPair> req_dg_Pairs;
+std::vector<DeviceGripperPair*> Coordination::getDeviceGripperPairs(std::vector<std::string> a_device_names){
+    std::vector<DeviceGripperPair*> req_dg_Pairs;
     std::vector<DeviceGripperPair>::iterator dgIt;
     for(int req_name_Idx = 0 ; req_name_Idx < a_device_names.size() ; req_name_Idx++){
         std::string req_dev_name = a_device_names[req_name_Idx];
         bool _found_req_device = false;
         for(dgIt = m_deviceGripperPairs.begin(); dgIt != m_deviceGripperPairs.end() ; ++dgIt){
             if( dgIt->m_name.compare(req_dev_name) == 0 ){
-                req_dg_Pairs.push_back(*dgIt);
+                req_dg_Pairs.push_back(&(*dgIt));
                 _found_req_device = true;
 //                cerr << "INFO, DEVICE GRIPPER PAIR FOUND DEVICE \"" << req_dev_name << "\"" << endl;
             }
@@ -951,8 +951,13 @@ std::vector<DeviceGripperPair> Coordination::getDeviceGripperPairs(std::vector<s
 /// \brief Coordination::get_all_device_gripper_pairs
 /// \return
 ///
-std::vector<DeviceGripperPair> Coordination::getAllDeviceGripperPairs(){
-    return m_deviceGripperPairs;
+std::vector<DeviceGripperPair*> Coordination::getAllDeviceGripperPairs(){
+     std::vector<DeviceGripperPair*> req_dg_Pairs;
+      std::vector<DeviceGripperPair>::iterator dgIt;
+     for(dgIt = m_deviceGripperPairs.begin(); dgIt != m_deviceGripperPairs.end() ; ++dgIt){
+             req_dg_Pairs.push_back(&(*dgIt));
+     }
+    return req_dg_Pairs;
 }
 
 
@@ -1626,23 +1631,6 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     g_coordApp = std::make_shared<Coordination>(g_bulletWorld, num_devices_to_load);
 
-    // create a thread which starts the main haptics rendering loop
-    int dev_num[10] = {0,1,2,3,4,5,6,7,8,9};
-    for (int gIdx = 0 ; gIdx < g_coordApp->m_num_grippers; gIdx++){
-        g_hapticsThreads.push_back(new cThread());
-        g_hapticsThreads[gIdx]->start(updateHapticDevice, CTHREAD_PRIORITY_HAPTICS, &dev_num[gIdx]);
-    }
-
-    //create a thread which starts the Bullet Simulation loop
-    g_bulletSimThread = new cThread();
-    g_bulletSimThread->start(updatePhysics, CTHREAD_PRIORITY_HAPTICS);
-
-    // setup callback when application exits
-    atexit(close);
-    //-----------------------------------------------------------------------------------------------------------
-    // END: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
-    //-----------------------------------------------------------------------------------------------------------
-
     //-----------------------------------------------------------------------------------------------------------
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
     //-----------------------------------------------------------------------------------------------------------
@@ -1663,7 +1651,7 @@ int main(int argc, char* argv[])
 
         // Now assign the current WindowCameraPair to it's DeviceGripperPairs
         for (int dgPairIdx = 0 ; dgPairIdx < g_winCamIt->m_deviceGripperPairs.size() ; dgPairIdx++){
-            g_winCamIt->m_deviceGripperPairs[dgPairIdx].m_windowCameraPair = &(*g_winCamIt);
+            g_winCamIt->m_deviceGripperPairs[dgPairIdx]->m_windowCameraPair = &(*g_winCamIt);
         }
 
         // Create labels for the contextual controlling devices for each Window-Camera Pair
@@ -1678,6 +1666,23 @@ int main(int argc, char* argv[])
     }
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
+    //-----------------------------------------------------------------------------------------------------------
+
+    // create a thread which starts the main haptics rendering loop
+    int dev_num[10] = {0,1,2,3,4,5,6,7,8,9};
+    for (int gIdx = 0 ; gIdx < g_coordApp->m_num_grippers; gIdx++){
+        g_hapticsThreads.push_back(new cThread());
+        g_hapticsThreads[gIdx]->start(updateHapticDevice, CTHREAD_PRIORITY_HAPTICS, &dev_num[gIdx]);
+    }
+
+    //create a thread which starts the Bullet Simulation loop
+    g_bulletSimThread = new cThread();
+    g_bulletSimThread->start(updatePhysics, CTHREAD_PRIORITY_HAPTICS);
+
+    // setup callback when application exits
+    atexit(close);
+    //-----------------------------------------------------------------------------------------------------------
+    // END: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
@@ -2083,13 +2088,13 @@ void updateGraphics(WindowCameraPair& a_winCamHandle)
 
     std::string controlling_dev_names;
     for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
-        PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx].m_physicalDevice;
-        SimulatedGripper* sGripper = a_winCamHandle.m_deviceGripperPairs[gIdx].m_simulatedGripper;
+        PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx]->m_physicalDevice;
+        SimulatedGripper* sGripper = a_winCamHandle.m_deviceGripperPairs[gIdx]->m_simulatedGripper;
         pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn, devCam->m_cam_pressed);
 
         devFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
         devFreqLabels[gIdx]->setLocalPos(10, (int)( height - ( gIdx + 1 ) * 20 ) );
-        controlling_dev_names += a_winCamHandle.m_deviceGripperPairs[gIdx].m_name + " <> ";
+        controlling_dev_names += a_winCamHandle.m_deviceGripperPairs[gIdx]->m_name + " <> ";
 
         if(devCam->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.3;
@@ -2243,6 +2248,8 @@ void updateHapticDevice(void* a_arg){
     // update position and orientation of simulated gripper
     PhysicalDevice *physicalDevice = g_coordApp->m_deviceGripperPairs[devIdx].m_physicalDevice;
     SimulatedGripper* simulatedGripper = g_coordApp->m_deviceGripperPairs[devIdx].m_simulatedGripper;
+    PhysicalDeviceCamera* devCam = g_coordApp->m_deviceGripperPairs[devIdx].m_windowCameraPair->m_camera;
+
     physicalDevice->m_posClutched.set(0.0,0.0,0.0);
     physicalDevice->measuredRot();
     physicalDevice->m_rotClutched.identity();
@@ -2252,8 +2259,6 @@ void updateHapticDevice(void* a_arg){
     cMatrix3d drot, ddrot, drotLast;
     dpos.set(0,0,0); ddpos.set(0,0,0); dposLast.set(0,0,0);
     drot.identity(); ddrot.identity(); drotLast.identity();
-
-    PhysicalDeviceCamera* devCam = g_coordApp->m_deviceGripperPairs[devIdx].m_windowCameraPair->m_camera;
 
     double K_lc_offset = 10;
     double K_ac_offset = 1;

@@ -11,3 +11,5 @@ bin/lin-x86_64/ambf_simulator
 bin/lin-x86_64/dvrk_arm_test
 
 bin/mac-x86_64/ambf_simulator
+
+build-debug/
