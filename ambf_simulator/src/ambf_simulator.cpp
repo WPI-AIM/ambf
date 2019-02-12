@@ -136,6 +136,15 @@ int g_swapInterval = 1;
 //---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
+// DECLARED MACROS
+//---------------------------------------------------------------------------
+class PhysicalDevice;
+class PhysicalDeviceCamera;
+class SimulatedGripper;
+struct DeviceGripperPair;
+struct WindowCameraPair;
+
+//---------------------------------------------------------------------------
 // DECLARED FUNCTIONS
 //---------------------------------------------------------------------------
 
@@ -165,47 +174,6 @@ void close(void);
 
 const int MAX_DEVICES = 10;
 
-//Forward Declarations
-class PhysicalDevice;
-class PhysicalDeviceCamera;
-class SimulatedGripper;
-struct DeviceGripperPair;
-
-///
-/// \brief The VisualHandle struct
-///
-struct WindowCameraPair{
-    WindowCameraPair(){
-        camRot.identity();
-        camRotPre.identity();
-    }
-  GLFWwindow* m_window = NULL;
-  GLFWmonitor* m_monitor = NULL;
-  PhysicalDeviceCamera* m_camera;
-  std::vector<DeviceGripperPair*> m_deviceGripperPairs;
-  std::vector<std::string> m_deviceNames;
-  int m_height = 0;
-  int m_width = 0;
-  int m_swapInterval = 1;
-  int m_win_x;
-  int m_win_y;
-
-  // labels to display the rates [Hz] at which the simulation is running
-  cLabel* m_graphicsDynamicsFreqLabel;
-  cLabel* m_wallSimTimeLabel;
-  cLabel* m_devicesModesLabel;
-  cLabel* m_deviceButtonLabel;
-  cLabel* m_controllingDeviceLabel;
-  std::vector<cLabel*> m_devHapticFreqLabels;
-
-  // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
-  double mouse_x[2], mouse_y[2], mouse_scroll[2];
-  bool mouse_r_clicked = false, mouse_l_clicked= false, mouse_scroll_clicked = false;
-  bool mouse_r_btn_rising_edge = false, mouse_l_btn_rising_edge = false;
-
-  cMatrix3d camRot, camRotPre;
-};
-
 // Vector of WindowCamera Handles Struct
 std::vector<WindowCameraPair> g_windowCameraPairs;
 
@@ -226,9 +194,13 @@ public:
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     cVector3d measuredPosPreclutch();
-    void setPosPreclutch(cVector3d a_pos);
     cMatrix3d measuredRotPreclutch();
+    void setPosPreclutch(cVector3d a_pos);
     void setRotPreclutch(cMatrix3d a_rot);
+    cVector3d measuredPosCamPreclutch();
+    cMatrix3d measuredRotCamPreclutch();
+    void setPosCamPreclutch(cVector3d a_pos);
+    void setRotCamPreclutch(cMatrix3d a_rot);
     cVector3d measuredVelLin();
     cVector3d mearuredVelAng();
     double measuredGripperAngle();
@@ -243,8 +215,10 @@ public:
     cBulletSphere* createAfCursor(cBulletWorld* a_world, std::string a_name);
     cGenericHapticDevicePtr m_hDevice;
     cHapticDeviceInfo m_hInfo;
-    cVector3d m_pos, m_posClutched, m_pos_pre_clutch;
-    cMatrix3d m_rot, m_rotClutched, m_rot_pre_clutch;
+    cVector3d m_pos, m_posClutched, m_posPreClutch;
+    cMatrix3d m_rot, m_rotClutched, m_rotPreClutch;
+    cVector3d m_posCamPreClutch;
+    cMatrix3d m_rotCamPreClutch;
     cVector3d m_vel, m_avel;
     double m_workspace_scale_factor;
     cShapeSphere* m_cursor = NULL;
@@ -317,7 +291,7 @@ cVector3d PhysicalDevice::measuredPos(){
 ///
 cVector3d PhysicalDevice::measuredPosPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
-    return m_pos_pre_clutch;
+    return m_posPreClutch;
 }
 
 ///
@@ -326,7 +300,7 @@ cVector3d PhysicalDevice::measuredPosPreclutch(){
 ///
 void PhysicalDevice::setPosPreclutch(cVector3d a_pos){
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_pos_pre_clutch = a_pos;
+    m_posPreClutch = a_pos;
 }
 
 ///
@@ -345,7 +319,7 @@ cMatrix3d PhysicalDevice::measuredRot(){
 ///
 cMatrix3d PhysicalDevice::measuredRotPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
-    return m_rot_pre_clutch;
+    return m_rotPreClutch;
 }
 
 ///
@@ -354,7 +328,44 @@ cMatrix3d PhysicalDevice::measuredRotPreclutch(){
 ///
 void PhysicalDevice::setRotPreclutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_rot_pre_clutch = a_rot;
+    m_rotPreClutch = a_rot;
+}
+
+
+///
+/// \brief PhysicalDevice::measuredPosCamPreclutch
+/// \return
+///
+cVector3d PhysicalDevice::measuredPosCamPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posCamPreClutch;
+}
+
+///
+/// \brief PhysicalDevice::setPosCamPreclutch
+/// \param a_pos
+///
+void PhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posCamPreClutch = a_pos;
+}
+
+///
+/// \brief PhysicalDevice::measuredRotCamPreclutch
+/// \return
+///
+cMatrix3d PhysicalDevice::measuredRotCamPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotCamPreClutch;
+}
+
+///
+/// \brief PhysicalDevice::setRotCamPreclutch
+/// \param a_rot
+///
+void PhysicalDevice::setRotCamPreclutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotCamPreClutch = a_rot;
 }
 
 ///
@@ -480,18 +491,14 @@ public:
     PhysicalDeviceCamera(cWorld* a_world): cCamera(a_world){}
     cVector3d measuredPos();
     cMatrix3d measuredRot();
-    cVector3d measuredPosPreclutch();
-    void setPosPreclutch(cVector3d a_pos);
-    cMatrix3d measuredRotPreclutch();
-    void setRotPreclutch(cMatrix3d a_rot);
 
 public:
     bool m_cam_pressed;
 
 protected:
     std::mutex m_mutex;
-    cVector3d m_pos, m_posClutched, m_pos_pre_clutch;
-    cMatrix3d m_rot, m_rotClutched, m_rot_pre_clutch;
+    cVector3d m_pos, m_posClutched;
+    cMatrix3d m_rot, m_rotClutched;
 
 };
 
@@ -507,24 +514,6 @@ cVector3d PhysicalDeviceCamera::measuredPos(){
 }
 
 ///
-/// \brief afCamera::measured_pos_last
-/// \return
-///
-cVector3d PhysicalDeviceCamera::measuredPosPreclutch(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_pos_pre_clutch;
-}
-
-///
-/// \brief PhysicalDeviceCamera::set_pos_preclutch
-/// \param a_pos
-///
-void PhysicalDeviceCamera::setPosPreclutch(cVector3d a_pos){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_pos_pre_clutch = a_pos;
-}
-
-///
 /// \brief afCamera::measured_rot
 /// \return
 ///
@@ -532,24 +521,6 @@ cMatrix3d PhysicalDeviceCamera::measuredRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rot = getGlobalRot();
     return m_rot;
-}
-
-///
-/// \brief afCamera::measured_rot_last
-/// \return
-///
-cMatrix3d PhysicalDeviceCamera::measuredRotPreclutch(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_rot_pre_clutch;
-}
-
-///
-/// \brief PhysicalDeviceCamera::set_rot_preclutch
-/// \param a_rot
-///
-void PhysicalDeviceCamera::setRotPreclutch(cMatrix3d a_rot){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_rot_pre_clutch = a_rot;
 }
 
 ///
@@ -796,14 +767,48 @@ enum MODES{ CAM_CLUTCH_CONTROL,
             CHANGE_DEV_ANG_GAIN
           };
 
+///
+/// \brief The VisualHandle struct
+///
+struct WindowCameraPair{
+    WindowCameraPair(){
+        camRot.identity();
+        camRotPre.identity();
+    }
+  GLFWwindow* m_window = NULL;
+  GLFWmonitor* m_monitor = NULL;
+  PhysicalDeviceCamera* m_camera = NULL;
+  std::vector<DeviceGripperPair*> m_deviceGripperPairs;
+  std::vector<std::string> m_deviceNames;
+  int m_height = 0;
+  int m_width = 0;
+  int m_swapInterval = 1;
+  int m_win_x;
+  int m_win_y;
+
+  // labels to display the rates [Hz] at which the simulation is running
+  cLabel* m_graphicsDynamicsFreqLabel;
+  cLabel* m_wallSimTimeLabel;
+  cLabel* m_devicesModesLabel;
+  cLabel* m_deviceButtonLabel;
+  cLabel* m_controllingDeviceLabel;
+  std::vector<cLabel*> m_devHapticFreqLabels;
+
+  // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
+  double mouse_x[2], mouse_y[2], mouse_scroll[2];
+  bool mouse_r_clicked = false, mouse_l_clicked= false, mouse_scroll_clicked = false;
+  bool mouse_r_btn_rising_edge = false, mouse_l_btn_rising_edge = false;
+
+  cMatrix3d camRot, camRotPre;
+};
 
 ///
 /// \brief The DeviceGripperPair struct
 ///
 struct DeviceGripperPair{
-    PhysicalDevice* m_physicalDevice;
-    SimulatedGripper* m_simulatedGripper;
-    WindowCameraPair* m_windowCameraPair;
+    PhysicalDevice* m_physicalDevice = NULL;
+    SimulatedGripper* m_simulatedGripper = NULL;
+    WindowCameraPair* m_windowCameraPair = NULL;
 
     std::string m_name;
 };
@@ -2007,7 +2012,6 @@ void mousePosCallback(GLFWwindow* a_window, double a_posX, double a_posY){
                 devCam->setLocalRot( devCam->measuredRot() * g_winCamIt->camRot);
             }
             else{
-                devCam->setRotPreclutch(devCam->measuredRot());
                 g_winCamIt->camRotPre = g_winCamIt->camRot;
             }
 
@@ -2099,11 +2103,11 @@ void updateGraphics(WindowCameraPair& a_winCamHandle)
         if(devCam->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.3;
             devCam->setLocalPos(devCam->measuredPos() + cMul(scale, devCam->measuredRot() * pDev->measuredVelLin() ) );
-            devCam->setLocalRot(devCam->measuredRotPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
+            devCam->setLocalRot(pDev->measuredRotCamPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
         }
 
         if(!devCam->m_cam_pressed){
-            devCam->setRotPreclutch( devCam->measuredRot() );
+            pDev->setRotCamPreclutch( devCam->measuredRot() );
             pDev->setRotPreclutch( pDev->measuredRot() );
         }
     }
@@ -2248,7 +2252,14 @@ void updateHapticDevice(void* a_arg){
     // update position and orientation of simulated gripper
     PhysicalDevice *physicalDevice = g_coordApp->m_deviceGripperPairs[devIdx].m_physicalDevice;
     SimulatedGripper* simulatedGripper = g_coordApp->m_deviceGripperPairs[devIdx].m_simulatedGripper;
-    PhysicalDeviceCamera* devCam = g_coordApp->m_deviceGripperPairs[devIdx].m_windowCameraPair->m_camera;
+    PhysicalDeviceCamera* devCam;
+    if (g_coordApp->m_deviceGripperPairs[devIdx].m_windowCameraPair == NULL){
+        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << physicalDevice->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
+        devCam = g_windowCameraPairs[0].m_camera;
+    }
+    else{
+    devCam = g_coordApp->m_deviceGripperPairs[devIdx].m_windowCameraPair->m_camera;
+    }
 
     physicalDevice->m_posClutched.set(0.0,0.0,0.0);
     physicalDevice->measuredRot();
