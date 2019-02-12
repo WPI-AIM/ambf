@@ -117,6 +117,9 @@ bool g_simulationRunning = false;
 // flag to indicate if the haptic simulation has terminated
 bool g_simulationFinished = true;
 
+// Flag to check if any window is closed by the user
+bool g_window_closed = false;
+
 // a frequency counter to measure the simulation graphic rate
 cFrequencyCounter g_freqCounterGraphics;
 
@@ -181,7 +184,7 @@ std::vector<WindowCameraPair> g_windowCameraPairs;
 std::vector<WindowCameraPair>::iterator g_winCamIt;
 
 // this function renders the scene
-void updateGraphics(WindowCameraPair& a_winCamHandle);
+void updateGraphics();
 
 ///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
@@ -1712,40 +1715,12 @@ int main(int argc, char* argv[])
     for (; g_winCamIt != g_windowCameraPairs.end() ; ++ g_winCamIt){
         windowSizeCallback(g_winCamIt->m_window, g_winCamIt->m_width, g_winCamIt->m_height);
     }
-    bool _window_closed = false;
+
     // main graphic loop
-    while (!_window_closed)
+    while (!g_window_closed)
     {
-        g_winCamIt = g_windowCameraPairs.begin();
-        for (; g_winCamIt != g_windowCameraPairs.end(); ++ g_winCamIt){
-            // set current display context
-            glfwMakeContextCurrent(g_winCamIt->m_window);
-
-            // get width and height of window
-            glfwGetWindowSize(g_winCamIt->m_window, &g_winCamIt->m_width, &g_winCamIt->m_height);
-
-            // render graphics
-            updateGraphics(*g_winCamIt);
-
-            // swap buffers
-            glfwSwapBuffers(g_winCamIt->m_window);
-
-            // Only set the _window_closed if the condition is met
-            // otherwise a non-closed window will set the variable back
-            // to false
-            if (glfwWindowShouldClose(g_winCamIt->m_window)){
-                _window_closed = true;
-            }
-        }
-
-        g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
-
-        // wait until all GL commands are completed
-        glFinish();
-
-        // check for any OpenGL errors
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+        // Call the update graphics method
+        updateGraphics();
 
         // process events
         glfwPollEvents();
@@ -2068,81 +2043,108 @@ void close(void)
 
 
 
-void updateGraphics(WindowCameraPair& a_winCamHandle)
+void updateGraphics()
 {
-    /////////////////////////////////////////////////////////////////////
-    // UPDATE WIDGETS
-    /////////////////////////////////////////////////////////////////////
-    PhysicalDeviceCamera* devCam = a_winCamHandle.m_camera;
+    // Update shadow maps once
+    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
 
-    int n_devsAttached = a_winCamHandle.m_deviceGripperPairs.size();
-    int width = a_winCamHandle.m_width;
-    int height = a_winCamHandle.m_height;
+    for (g_winCamIt = g_windowCameraPairs.begin(); g_winCamIt != g_windowCameraPairs.end(); ++ g_winCamIt){
+        WindowCameraPair* winCamPair = &(*g_winCamIt);
+        // set current display context
+        glfwMakeContextCurrent(winCamPair->m_window);
 
-    cLabel* dynFreqLabel = a_winCamHandle.m_graphicsDynamicsFreqLabel;
-    cLabel* timesLabel = a_winCamHandle.m_wallSimTimeLabel;
-    cLabel* modesLabel = a_winCamHandle.m_devicesModesLabel;
-    cLabel* btnLabel = a_winCamHandle.m_deviceButtonLabel;
-    cLabel* contextDevicesLabel = a_winCamHandle.m_controllingDeviceLabel;
-    std::vector<cLabel*> devFreqLabels = a_winCamHandle.m_devHapticFreqLabels;
+        // get width and height of window
+        glfwGetWindowSize(winCamPair->m_window, &winCamPair->m_width, &winCamPair->m_height);
 
-    // update haptic and graphic rate data
-    std::string wallTimeStr = "Wall Time:" + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-    std::string simTimeStr = "Sim Time" + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        /////////////////////////////////////////////////////////////////////
+        // RENDER GRAPHICS AND UPDATE WIDGETS
+        /////////////////////////////////////////////////////////////////////
+        PhysicalDeviceCamera* devCam = winCamPair->m_camera;
 
-    std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
-    std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
+        int n_devsAttached = winCamPair->m_deviceGripperPairs.size();
+        int width = winCamPair->m_width;
+        int height = winCamPair->m_height;
 
-    std::string timeLabelStr = wallTimeStr + " / " + simTimeStr;
-    std::string dynHapticFreqLabelStr = graphicsFreqStr + " / " + hapticFreqStr;
-    std::string modeLabelStr = "MODE: " + g_coordApp->m_mode_str;
-    std::string btnLabelStr = " : " + g_btn_action_str;
+        cLabel* dynFreqLabel = winCamPair->m_graphicsDynamicsFreqLabel;
+        cLabel* timesLabel = winCamPair->m_wallSimTimeLabel;
+        cLabel* modesLabel = winCamPair->m_devicesModesLabel;
+        cLabel* btnLabel = winCamPair->m_deviceButtonLabel;
+        cLabel* contextDevicesLabel = winCamPair->m_controllingDeviceLabel;
+        std::vector<cLabel*> devFreqLabels = winCamPair->m_devHapticFreqLabels;
 
-    timesLabel->setText(timeLabelStr);
-    dynFreqLabel->setText(dynHapticFreqLabelStr);
-    modesLabel->setText(modeLabelStr);
-    btnLabel->setText(btnLabelStr);
+        // update haptic and graphic rate data
+        std::string wallTimeStr = "Wall Time:" + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
+        std::string simTimeStr = "Sim Time" + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
 
-    std::string controlling_dev_names;
-    for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
-        PhysicalDevice* pDev = a_winCamHandle.m_deviceGripperPairs[gIdx]->m_physicalDevice;
-        SimulatedGripper* sGripper = a_winCamHandle.m_deviceGripperPairs[gIdx]->m_simulatedGripper;
-        pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn, devCam->m_cam_pressed);
+        std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
+        std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
 
-        devFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
-        devFreqLabels[gIdx]->setLocalPos(10, (int)( height - ( gIdx + 1 ) * 20 ) );
-        controlling_dev_names += a_winCamHandle.m_deviceGripperPairs[gIdx]->m_name + " <> ";
+        std::string timeLabelStr = wallTimeStr + " / " + simTimeStr;
+        std::string dynHapticFreqLabelStr = graphicsFreqStr + " / " + hapticFreqStr;
+        std::string modeLabelStr = "MODE: " + g_coordApp->m_mode_str;
+        std::string btnLabelStr = " : " + g_btn_action_str;
 
-        if(devCam->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
-            double scale = 0.3;
-            devCam->setLocalPos(devCam->measuredPos() + cMul(scale, devCam->measuredRot() * pDev->measuredVelLin() ) );
-            devCam->setLocalRot(pDev->measuredRotCamPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
+        timesLabel->setText(timeLabelStr);
+        dynFreqLabel->setText(dynHapticFreqLabelStr);
+        modesLabel->setText(modeLabelStr);
+        btnLabel->setText(btnLabelStr);
+
+        std::string controlling_dev_names;
+        for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
+            PhysicalDevice* pDev = winCamPair->m_deviceGripperPairs[gIdx]->m_physicalDevice;
+            SimulatedGripper* sGripper = winCamPair->m_deviceGripperPairs[gIdx]->m_simulatedGripper;
+            pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn, devCam->m_cam_pressed);
+
+            devFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+            devFreqLabels[gIdx]->setLocalPos(10, (int)( height - ( gIdx + 1 ) * 20 ) );
+            controlling_dev_names += winCamPair->m_deviceGripperPairs[gIdx]->m_name + " <> ";
+
+            if(devCam->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
+                double scale = 0.3;
+                devCam->setLocalPos(devCam->measuredPos() + cMul(scale, devCam->measuredRot() * pDev->measuredVelLin() ) );
+                devCam->setLocalRot(pDev->measuredRotCamPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
+            }
+
+            if(!devCam->m_cam_pressed){
+                pDev->setRotCamPreclutch( devCam->measuredRot() );
+                pDev->setRotPreclutch( pDev->measuredRot() );
+            }
         }
 
-        if(!devCam->m_cam_pressed){
-            pDev->setRotCamPreclutch( devCam->measuredRot() );
-            pDev->setRotPreclutch( pDev->measuredRot() );
+        contextDevicesLabel->setText("Controlling Devices: [ " + controlling_dev_names + " ]");
+
+        // update position of label
+        timesLabel->setLocalPos((int)(0.5 * (width - timesLabel->getWidth() ) ), 30);
+        dynFreqLabel->setLocalPos((int)(0.5 * (width - dynFreqLabel->getWidth() ) ), 10);
+        modesLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth())), 50);
+        btnLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth()) + modesLabel->getWidth()), 50);
+        contextDevicesLabel->setLocalPos((int)(0.5 * (width - contextDevicesLabel->getWidth())), (int)(height - 20));
+
+        /////////////////////////////////////////////////////////////////////
+        // RENDER SCENE
+        /////////////////////////////////////////////////////////////////////
+
+        // render world
+        devCam->renderView(width, height);
+
+
+        // swap buffers
+        glfwSwapBuffers(winCamPair->m_window);
+
+        // Only set the _window_closed if the condition is met
+        // otherwise a non-closed window will set the variable back
+        // to false
+        if (glfwWindowShouldClose(winCamPair->m_window)){
+            g_window_closed = true;
         }
+
+        // wait until all GL commands are completed
+        glFinish();
+
+        // check for any OpenGL errors
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
     }
-
-    contextDevicesLabel->setText("Controlling Devices: [ " + controlling_dev_names + " ]");
-
-    // update position of label
-    timesLabel->setLocalPos((int)(0.5 * (width - timesLabel->getWidth() ) ), 30);
-    dynFreqLabel->setLocalPos((int)(0.5 * (width - dynFreqLabel->getWidth() ) ), 10);
-    modesLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth())), 50);
-    btnLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth()) + modesLabel->getWidth()), 50);
-    contextDevicesLabel->setLocalPos((int)(0.5 * (width - contextDevicesLabel->getWidth())), (int)(height - 20));
-
-    /////////////////////////////////////////////////////////////////////
-    // RENDER SCENE
-    /////////////////////////////////////////////////////////////////////
-
-    // render world
-    devCam->renderView(width, height);
-
-//    // update shadow maps (if any)
-//    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
 
 }
 
