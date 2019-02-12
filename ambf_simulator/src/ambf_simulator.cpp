@@ -120,6 +120,9 @@ bool g_simulationFinished = true;
 // Flag to check if any window is closed by the user
 bool g_window_closed = false;
 
+// Flag to toggle between inverted/non_inverted mouse pitch with mouse
+bool g_mouse_inverted_y = false;
+
 // a frequency counter to measure the simulation graphic rate
 cFrequencyCounter g_freqCounterGraphics;
 
@@ -166,6 +169,9 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 //callback for mouse positions
 void mousePosCallback(GLFWwindow* a_window, double x_pos, double y_pos);
 
+//callback for mouse positions
+void mouseScrollCallback(GLFWwindow* a_window, double x_pos, double y_pos);
+
 // this function contains the main haptics simulation loop
 void updateHapticDevice(void*);
 
@@ -183,8 +189,14 @@ std::vector<WindowCameraPair> g_windowCameraPairs;
 // Global iterator for WindowsCamera Handle
 std::vector<WindowCameraPair>::iterator g_winCamIt;
 
+//Define a macro for the WindowCameraPairIt
+typedef std::vector<WindowCameraPair>::iterator WindowCameraPairIt;
+
 // this function renders the scene
 void updateGraphics();
+
+// Function to update labels
+void updateLabels();
 
 ///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
@@ -1537,6 +1549,9 @@ int main(int argc, char* argv[])
         //set mouse buttons callback
         glfwSetCursorPosCallback(windowPtr, mousePosCallback);
 
+        //set mouse scroll callback
+        glfwSetScrollCallback(windowPtr, mouseScrollCallback);
+
         // set resize callback
         glfwSetWindowSizeCallback(windowPtr, windowSizeCallback);
 
@@ -1858,6 +1873,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[w] - use world frame for orientation clutch" << endl;
         cout << "[c] - use camera frame for orientation clutch" << endl;
         cout << "[n] - next device mode" << endl << endl;
+        cout << "[i] - toogle inverted y for camera control via mouse" << endl << endl;
         cout << "[q] - Exit application\n" << endl;
         cout << endl << endl;
     }
@@ -1925,18 +1941,26 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     {
         printf("angular stiffness:  %f\n", g_coordApp->increment_K_ac(1));
     }
+
+    // option - grippers orientation w.r.t contextual camera
     else if (a_key == GLFW_KEY_C){
         g_coordApp->m_use_cam_frame_rot = true;
         printf("Gripper Rotation w.r.t Camera Frame:\n");
     }
+
+    // option - grippers orientation w.r.t world
     else if (a_key == GLFW_KEY_W){
         g_coordApp->m_use_cam_frame_rot = false;
         printf("Gripper Rotation w.r.t World Frame:\n");
     }
+
+    // option - Change to next device mode
     else if (a_key == GLFW_KEY_N){
         g_coordApp->nextMode();
         printf("Changing to next device mode:\n");
     }
+
+    // option - Toggle visibility of soft-bodies wireframe
     else if (a_key == GLFW_KEY_S){
         auto sbMap = g_afMultiBody->getSoftBodyMap();
         afSoftBodyMap::const_iterator sbIt;
@@ -1944,12 +1968,19 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             sbIt->second->toggleSkeletalModelVisibility();
         }
     }
+
+    // option - Toogle visibility of body frames
     else if (a_key == GLFW_KEY_V){
         auto rbMap = g_afMultiBody->getRigidBodyMap();
         afRigidBodyMap::const_iterator rbIt;
         for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
             rbIt->second->toggleFrameVisibility();
         }
+    }
+
+    // option - Toggle Inverted Y axis of mouse for camera control
+    else if (a_key == GLFW_KEY_I){
+        g_mouse_inverted_y = !g_mouse_inverted_y;
     }
 
 }
@@ -1969,35 +2000,50 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 
     for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         if (a_window == g_winCamIt->m_window){
-            if (a_button == 0){
+            if (a_button == GLFW_MOUSE_BUTTON_1){
                 g_winCamIt->mouse_r_clicked = a_action;
             }
-            if (a_button == 1){
+            if (a_button == GLFW_MOUSE_BUTTON_2){
                 g_winCamIt->mouse_l_clicked = a_action;
+            }
+            if (a_button == GLFW_MOUSE_BUTTON_3){
+                g_winCamIt->mouse_scroll_clicked = a_action;
             }
         }
     }
 }
 
 ///
-void mousePosCallback(GLFWwindow* a_window, double a_posX, double a_posY){
+void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 //    cerr << "Mouse CB x: (" << a_posX << ") y: (" << a_posY << ")\n";
     for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         if (a_window == g_winCamIt->m_window){
             PhysicalDeviceCamera* devCam = g_winCamIt->m_camera;
             g_winCamIt->mouse_x[1] = g_winCamIt->mouse_x[0];
-            g_winCamIt->mouse_x[0] = a_posX;
+            g_winCamIt->mouse_x[0] = a_xpos;
             g_winCamIt->mouse_y[1] = g_winCamIt->mouse_y[0];
-            g_winCamIt->mouse_y[0] = a_posY;
+            g_winCamIt->mouse_y[0] = a_ypos;
 
             if(g_winCamIt->mouse_r_clicked){
                 cMatrix3d camRot;
                 double scale = 0.3;
                 double z_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
                 double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
+                if (g_mouse_inverted_y){
+                    y_vel = -y_vel;
+                }
+
+                cVector3d camStrafe = cCross(devCam->getLookVector(), devCam->getUpVector());
+                cVector3d nz(0, 0, 1);
+                cVector3d ny(0, 1, 0);
+
+                cMatrix3d camViewWithoutPitch(cCross(camStrafe, nz), camStrafe ,nz);
+                cMatrix3d camViewPitchOnly;
+                double pitchAngle = -cAngle(nz, devCam->getUpVector());
+                camViewPitchOnly.setAxisAngleRotationRad(ny, pitchAngle);
                 camRot.setIntrinsicEulerRotationDeg(0, y_vel, z_vel, cEulerOrder::C_EULER_ORDER_XYZ);
                 g_winCamIt->camRot = camRot;
-                devCam->setLocalRot( devCam->measuredRot() * g_winCamIt->camRot);
+                devCam->setLocalRot( camViewWithoutPitch * g_winCamIt->camRot * camViewPitchOnly);
             }
             else{
                 g_winCamIt->camRotPre = g_winCamIt->camRot;
@@ -2007,13 +2053,30 @@ void mousePosCallback(GLFWwindow* a_window, double a_posX, double a_posY){
                 double scale = 0.01;
                 double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
                 double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
-                cVector3d camVel(y_vel, x_vel, 0);
+                if (g_mouse_inverted_y){
+                    y_vel = -y_vel;
+                }
+                cVector3d camVel(0, x_vel, y_vel);
                 devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
             }
 
         }
     }
 
+}
+
+void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
+    for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
+        if (a_window == g_winCamIt->m_window){
+            PhysicalDeviceCamera* devCam = g_winCamIt->m_camera;
+            g_winCamIt->mouse_scroll[1] = g_winCamIt->mouse_scroll[0];
+            g_winCamIt->mouse_scroll[0] = -a_ypos;
+
+            double scale = 0.05;
+            cVector3d camVelAlongLook(g_winCamIt->mouse_scroll[0], 0, 0);
+            devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVelAlongLook );
+        }
+    }
 }
 
 ///
@@ -2056,11 +2119,43 @@ void updateGraphics()
         // get width and height of window
         glfwGetWindowSize(winCamPair->m_window, &winCamPair->m_width, &winCamPair->m_height);
 
-        /////////////////////////////////////////////////////////////////////
-        // RENDER GRAPHICS AND UPDATE WIDGETS
-        /////////////////////////////////////////////////////////////////////
+        // Update the Labels in a separate sub-routine
+        updateLabels();
+
         PhysicalDeviceCamera* devCam = winCamPair->m_camera;
 
+        // render world
+        devCam->renderView(g_winCamIt->m_width, g_winCamIt->m_height);
+
+        // swap buffers
+        glfwSwapBuffers(winCamPair->m_window);
+
+        // Only set the _window_closed if the condition is met
+        // otherwise a non-closed window will set the variable back
+        // to false
+        if (glfwWindowShouldClose(winCamPair->m_window)){
+            g_window_closed = true;
+        }
+
+        // wait until all GL commands are completed
+        glFinish();
+
+        // check for any OpenGL errors
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+    }
+
+}
+
+///
+/// \brief updateLabels
+///
+void updateLabels(){
+    // Not all labels change at every frame buffer.
+    // We should prioritize the update of freqeunt labels
+    WindowCameraPairIt winCamIt;
+    for (winCamIt = g_windowCameraPairs.begin(); winCamIt != g_windowCameraPairs.end(); ++ winCamIt){
+        WindowCameraPair* winCamPair = &(*winCamIt);
         int n_devsAttached = winCamPair->m_deviceGripperPairs.size();
         int width = winCamPair->m_width;
         int height = winCamPair->m_height;
@@ -2093,6 +2188,8 @@ void updateGraphics()
         for (int gIdx = 0 ; gIdx < n_devsAttached ; gIdx++){
             PhysicalDevice* pDev = winCamPair->m_deviceGripperPairs[gIdx]->m_physicalDevice;
             SimulatedGripper* sGripper = winCamPair->m_deviceGripperPairs[gIdx]->m_simulatedGripper;
+            PhysicalDeviceCamera* devCam = winCamPair->m_camera;
+
             pDev->m_hDevice->getUserSwitch(sGripper->act_2_btn, devCam->m_cam_pressed);
 
             devFreqLabels[gIdx]->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
@@ -2120,30 +2217,6 @@ void updateGraphics()
         btnLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth()) + modesLabel->getWidth()), 50);
         contextDevicesLabel->setLocalPos((int)(0.5 * (width - contextDevicesLabel->getWidth())), (int)(height - 20));
 
-        /////////////////////////////////////////////////////////////////////
-        // RENDER SCENE
-        /////////////////////////////////////////////////////////////////////
-
-        // render world
-        devCam->renderView(width, height);
-
-
-        // swap buffers
-        glfwSwapBuffers(winCamPair->m_window);
-
-        // Only set the _window_closed if the condition is met
-        // otherwise a non-closed window will set the variable back
-        // to false
-        if (glfwWindowShouldClose(winCamPair->m_window)){
-            g_window_closed = true;
-        }
-
-        // wait until all GL commands are completed
-        glFinish();
-
-        // check for any OpenGL errors
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
     }
 
 }
