@@ -782,7 +782,6 @@ struct WindowCameraPair{
   std::vector<std::string> m_deviceNames;
   int m_height = 0;
   int m_width = 0;
-  int m_swapInterval = 1;
   int m_win_x;
   int m_win_y;
 
@@ -1389,6 +1388,10 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     if (g_afWorld->m_cameras.size() > 0){
         int num_monitors;
+         // To be able to show shadows in multiple windows, we need to share resources. This is done
+        // by passing the first created window as "share" with the windows created afterwards
+        GLFWwindow* firstWindow;
+        int numWindows = 0;
         GLFWmonitor** monitors = glfwGetMonitors(&num_monitors);
         for (size_t camera_idx = 0; camera_idx < g_afWorld->m_cameras.size(); camera_idx++){
             PhysicalDeviceCamera* cameraPtr = new PhysicalDeviceCamera(g_bulletWorld);
@@ -1429,7 +1432,16 @@ int main(int argc, char* argv[])
             int h = 0.5 * mode->height;
             int x = 0.5 * (mode->width - w);
             int y = 0.5 * (mode->height - h);
-            GLFWwindow* windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
+
+            GLFWwindow* windowPtr;
+            if (numWindows == 0){
+                windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
+                firstWindow = windowPtr;
+            }
+            else{
+                windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, firstWindow);
+            }
+            numWindows++;
 
             // Assign the Window Camera Handles
             WindowCameraPair winCamHandle;
@@ -1442,6 +1454,7 @@ int main(int argc, char* argv[])
 
             g_windowCameraPairs.push_back(winCamHandle);
         }
+        g_swapInterval = g_swapInterval / (numWindows + 1);
     }
     //-----------------------------------------------------------------------------------------------------------
     // CONDITION: If no Valid Camera is defined in AMBF create a default Camera/Window and Create a WindowCameraPair
@@ -1826,7 +1839,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             if (fullscreen)
             {
                 glfwSetWindowMonitor(win_cam_it->m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                glfwSwapInterval(win_cam_it->m_swapInterval);
+                glfwSwapInterval(g_swapInterval);
             }
             else
             {
@@ -1835,7 +1848,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                 int x = 0.5 * (mode->width - w);
                 int y = 0.5 * (mode->height - h);
                 glfwSetWindowMonitor(win_cam_it->m_window, NULL, x, y, w, h, mode->refreshRate);
-                glfwSwapInterval(win_cam_it->m_swapInterval);
+                glfwSwapInterval(g_swapInterval);
             }
         }
     }
