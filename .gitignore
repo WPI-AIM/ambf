@@ -5,4 +5,5 @@ build-debug/
 *.idea
 *~
 bin/lin-x86_64/*
+bin/mac-x86_64/ambf_simulator
 bin-debug/

@@ -7,25 +7,25 @@ multibody configs:
   # - "./multi-bodies/robots/urdf-psm.yaml"
   # - "./multi-bodies/robots/urdf-suj.yaml"
   # - "./multi-bodies/robots/urdf-kuka.yaml"
-  - "./multi-bodies/robots/blender-mtm.yaml"
-  - "./multi-bodies/robots/blender-ecm.yaml"
-  - "./multi-bodies/robots/blender-psm.yaml"
+  # - "./multi-bodies/robots/blender-mtm.yaml"
+  # - "./multi-bodies/robots/blender-ecm.yaml"
+  # - "./multi-bodies/robots/blender-psm.yaml"
   # - "./multi-bodies/robots/blender-suj.yaml"
   # - "./multi-bodies/robots/blender-kuka.yaml"
-  # - "./multi-bodies/puzzles/parallel_structure.yaml"
+  - "./multi-bodies/puzzles/parallel_structure.yaml"
   # - "./multi-bodies/puzzles/puzzle1.yaml"
 gripper configs:
   - Default
   - MTMR
   - MTML
-  - Novint Falcon
+  - Falcon
   - Geomagic Touch
   - PHANTOM Omni
   - Razer Hydra
 Default: "./multi-bodies/grippers/single joint1.yaml"
 MTMR: "./multi-bodies/grippers/multi joint2.yaml"
 MTML: "./multi-bodies/grippers/multi joint2.yaml"
-Novint Falcon: "./multi-bodies/grippers/single joint2.yaml"
+Falcon: "./multi-bodies/grippers/single joint2.yaml"
 Geomagic Touch: "./multi-bodies/grippers/single joint1.yaml"
 PHANTOM Omni: "./multi-bodies/grippers/pr2 gripper.yaml"
 Razer Hydra: "./multi-bodies/grippers/pr2 gripper.yaml"
