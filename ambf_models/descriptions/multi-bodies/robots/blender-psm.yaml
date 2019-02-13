@@ -16,7 +16,7 @@ joints: [JOINT pitch end link-main insertion link, JOINT yaw link-pitch back lin
 high resolution path: ../../../meshes/blender_afmb/psm/high_res/
 low resolution path: ../../../meshes/blender_afmb/psm/low_res/
 ignore inter-collision: 'True'
-namespace: /chai/env/psm/
+namespace: /ambf/env/psm/
 BODY base link:
   name: base link
   mesh: base link.STL

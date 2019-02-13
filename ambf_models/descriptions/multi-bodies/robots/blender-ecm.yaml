@@ -13,7 +13,7 @@ joints: [JOINT pitch end link-main insertion link, JOINT yaw link-pitch back lin
 high resolution path: ../../../meshes/blender_afmb/ecm/high_res/
 low resolution path: ../../../meshes/blender_afmb/ecm/low_res/
 ignore inter-collision: 'True'
-namespace: /chai/env/ecm/
+namespace: /ambf/env/ecm/
 BODY base link:
   name: base link
   mesh: base link.STL

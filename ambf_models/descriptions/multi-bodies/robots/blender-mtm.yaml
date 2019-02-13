@@ -12,7 +12,7 @@ joints: [JOINT ArmParallel1-ArmFront, JOINT OutPitch Shoulder-ArmParallel, JOINT
 high resolution path: ../../../meshes/blender_afmb/mtm/high_res/
 low resolution path: ../../../meshes/blender_afmb/mtm/low_res/
 ignore inter-collision: 'True'
-namespace: /chai/env/mtm/
+namespace: /ambf/env/mtm/
 BODY ArmFront:
   name: ArmFront
   mesh: ArmFront.STL

@@ -2110,7 +2110,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         m_multibody_namespace = multiBodyNameSpace.as<std::string>();
     }
     else{
-        m_multibody_namespace = "/chai/env/";
+        m_multibody_namespace = "/ambf/env/";
     }
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();

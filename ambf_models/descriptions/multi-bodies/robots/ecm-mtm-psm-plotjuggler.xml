@@ -5,22 +5,22 @@
    <plot row="0" col="0">
     <range top="0.525646" right="155.148615" left="150.148763" bottom="-0.525016"/>
     <limitY/>
-    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.10" G="128" R="0" B="0"/>
-    <curve name="/chai/env/ecm/baselink/State/joint_positions.10" G="0" R="0" B="255"/>
+    <curve name="/ambf/env/ecm/baselink/Command/joint_cmds.10" G="128" R="0" B="0"/>
+    <curve name="/ambf/env/ecm/baselink/State/joint_positions.10" G="0" R="0" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
     <range top="0.184000" right="155.148615" left="150.148763" bottom="0.016000"/>
     <limitY/>
-    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.2" G="0" R="255" B="0"/>
-    <curve name="/chai/env/ecm/baselink/State/joint_positions.2" G="128" R="128" B="0"/>
+    <curve name="/ambf/env/ecm/baselink/Command/joint_cmds.2" G="0" R="255" B="0"/>
+    <curve name="/ambf/env/ecm/baselink/State/joint_positions.2" G="128" R="128" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
     <range top="0.525000" right="155.148615" left="150.148763" bottom="-0.525000"/>
     <limitY/>
-    <curve name="/chai/env/ecm/baselink/Command/joint_cmds.0" G="128" R="0" B="0"/>
-    <curve name="/chai/env/ecm/baselink/State/joint_positions.0" G="0" R="255" B="0"/>
+    <curve name="/ambf/env/ecm/baselink/Command/joint_cmds.0" G="128" R="0" B="0"/>
+    <curve name="/ambf/env/ecm/baselink/State/joint_positions.0" G="0" R="255" B="0"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
@@ -28,22 +28,22 @@
    <plot row="0" col="0">
     <range top="0.525000" right="156.027540" left="151.027699" bottom="-0.525000"/>
     <limitY/>
-    <curve name="/chai/env/psm/baselink/Command/joint_cmds.13" G="0" R="255" B="0"/>
-    <curve name="/chai/env/psm/baselink/State/joint_positions.13" G="0" R="255" B="255"/>
+    <curve name="/ambf/env/psm/baselink/Command/joint_cmds.13" G="0" R="255" B="0"/>
+    <curve name="/ambf/env/psm/baselink/State/joint_positions.13" G="0" R="255" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
     <range top="0.315038" right="156.027540" left="151.027699" bottom="-0.316576"/>
     <limitY/>
-    <curve name="/chai/env/psm/baselink/Command/joint_cmds.0" G="0" R="255" B="0"/>
-    <curve name="/chai/env/psm/baselink/State/joint_positions.0" G="128" R="0" B="0"/>
+    <curve name="/ambf/env/psm/baselink/Command/joint_cmds.0" G="0" R="255" B="0"/>
+    <curve name="/ambf/env/psm/baselink/State/joint_positions.0" G="128" R="0" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
     <range top="0.255000" right="156.027540" left="151.027699" bottom="0.045000"/>
     <limitY/>
-    <curve name="/chai/env/psm/baselink/Command/joint_cmds.2" G="0" R="255" B="255"/>
-    <curve name="/chai/env/psm/baselink/State/joint_positions.2" G="0" R="0" B="128"/>
+    <curve name="/ambf/env/psm/baselink/Command/joint_cmds.2" G="0" R="255" B="255"/>
+    <curve name="/ambf/env/psm/baselink/State/joint_positions.2" G="0" R="0" B="128"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
@@ -51,22 +51,22 @@
    <plot row="0" col="0">
     <range top="0.472500" right="503.844832" left="477.114194" bottom="-0.472500"/>
     <limitY/>
-    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.4" G="0" R="128" B="0"/>
-    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.4" G="0" R="0" B="255"/>
+    <curve name="/ambf/env/mtm/TopPanel/Command/joint_cmds.4" G="0" R="128" B="0"/>
+    <curve name="/ambf/env/mtm/TopPanel/State/joint_positions.4" G="0" R="0" B="255"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="1" col="0">
     <range top="0.321902" right="503.844832" left="477.114194" bottom="-0.324848"/>
     <limitY/>
-    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.0" G="0" R="0" B="128"/>
-    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.0" G="128" R="0" B="128"/>
+    <curve name="/ambf/env/mtm/TopPanel/Command/joint_cmds.0" G="0" R="0" B="128"/>
+    <curve name="/ambf/env/mtm/TopPanel/State/joint_positions.0" G="128" R="0" B="128"/>
     <transform value="noTransform"/>
    </plot>
    <plot row="2" col="0">
     <range top="0.210000" right="503.844832" left="477.114194" bottom="-0.210000"/>
     <limitY/>
-    <curve name="/chai/env/mtm/TopPanel/Command/joint_cmds.2" G="128" R="128" B="0"/>
-    <curve name="/chai/env/mtm/TopPanel/State/joint_positions.2" G="160" R="160" B="164"/>
+    <curve name="/ambf/env/mtm/TopPanel/Command/joint_cmds.2" G="128" R="128" B="0"/>
+    <curve name="/ambf/env/mtm/TopPanel/State/joint_positions.2" G="160" R="160" B="164"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
@@ -81,7 +81,7 @@
    <selected_topics list=""/>
   </DataLoad_ROS_bags>
   <ROS_Topic_Streamer>
-   <selected_topics list="/chai/env/ecm/baselink/Command;/chai/env/ecm/baselink/State;/chai/env/mtm/TopPanel/Command;/chai/env/mtm/TopPanel/State;/chai/env/psm/baselink/Command;/chai/env/psm/baselink/State"/>
+   <selected_topics list="/ambf/env/ecm/baselink/Command;/ambf/env/ecm/baselink/State;/ambf/env/mtm/TopPanel/Command;/ambf/env/mtm/TopPanel/State;/ambf/env/psm/baselink/Command;/ambf/env/psm/baselink/State"/>
   </ROS_Topic_Streamer>
   <RosoutPublisherROS/>
   <TopicPublisherROS/>

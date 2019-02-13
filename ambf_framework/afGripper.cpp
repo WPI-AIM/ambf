@@ -162,7 +162,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         m_multibody_namespace = multiBodyNameSpace.as<std::string>();
     }
     else{
-        m_multibody_namespace = "/chai/env/";
+        m_multibody_namespace = "/ambf/env/";
     }
 
     size_t totalBodies = multiBodyRidigBodies.size();
