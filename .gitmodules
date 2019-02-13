@@ -1,0 +1,6 @@
+[submodule "ambf_utilities/ambf_addon"]
+	path = ambf_utilities/ambf_addon
+	url = https://github.com/adnanmunawar/ambf_addon.git
+[submodule "ambf_utilities/urdf_2_ambf"]
+	path = ambf_utilities/urdf_2_ambf
+	url = https://github.com/adnanmunawar/urdf_2_ambf.git
