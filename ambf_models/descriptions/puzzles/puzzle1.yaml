@@ -114,6 +114,7 @@ joint1:
  name: PuzzleLeftJoint
  parent: body9
  child: body7
+ type: revolute
  parent axis: {x: 1.0, y: 0, z: 0.0}
  parent pivot: {x: 0, y: -0.85, z: 0.0}
  child axis: {x: 1.0, y: 0, z: 0.0}
@@ -126,6 +127,7 @@ joint2:
  name: PuzzleRightJoint
  parent: body9
  child: body8
+ type: revolute
  parent axis: {x: 1.0, y: 0, z: 0}
  parent pivot: {x: 0, y: 0.85, z: 0.0}
  child axis: {x: 1.0, y: 0, z: 0}
