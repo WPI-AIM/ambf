@@ -3,11 +3,11 @@
 #### Email: amunawar@wpi.edu
 
 ## Description:
-This multi-body framework offer real-time dynamic simulation of multi-bodies (robots, free
+This multi-body framework offers real-time dynamic simulation of multi-bodies (robots, free
 bodies and multi-link puzzles) and real-time haptic interaction with multiple haptic devices
-(CHAI-3D) including dVRK Manipulators. It also provides a python client for training NN and
+(CHAI-3D) (including dVRK Manipulators and Razer Hydras). It also provides a python client for training NN and
 RL Agents on real-time data from running simulation. This framework is built around several
-external tools that include an extended version of CHAI-3D, BULLET-Physics, Open-GL, GLFW to
+external tools that include an extended version of CHAI-3D (developed along-side AMBF), BULLET-Physics, Open-GL, GLFW and yaml-cpp, pyyaml and Eigen to
 name a few.
 
 ## Usage:
@@ -26,6 +26,10 @@ If you are using Linux, then after succesful build, source the devel to add the 
 is the workspace using
 
 `source ./devel/setup.bash`
+
+You can also set the source file in your .bashrc with the following command:
+
+`echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
 ### Running the Simulator:
 After successful build, running the simulator is easy. Follow the steps below. Depending
