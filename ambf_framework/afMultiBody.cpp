@@ -970,29 +970,27 @@ void afRigidBody::afObjectSetJointPositions(){
 }
 
 ///
-/// \brief afBody::set_angle
+/// \brief afRigidBody::setAngle
 /// \param angle
-/// \param dt
 ///
-void afRigidBody::setAngle(double &angle, double dt){
+void afRigidBody::setAngle(double &angle){
     if (m_parentBodies.size() == 0){
         for (size_t jnt = 0 ; jnt < m_joints.size() ; jnt++){
-            ((btHingeConstraint*) m_joints[jnt]->m_btConstraint)->setMotorTarget(angle, dt);
+            m_joints[jnt]->commandPosition(angle);
         }
 
     }
 }
 
 ///
-/// \brief afBody::set_angle
+/// \brief afRigidBody::setAngle
 /// \param angles
-/// \param dt
 ///
-void afRigidBody::setAngle(std::vector<double> &angles, double dt){
+void afRigidBody::setAngle(std::vector<double> &angles){
     if (m_parentBodies.size() == 0){
         double jntCmdSize = m_joints.size() < angles.size() ? m_joints.size() : angles.size();
         for (size_t jnt = 0 ; jnt < jntCmdSize ; jnt++){
-            ((btHingeConstraint*) m_joints[jnt]->m_btConstraint)->setMotorTarget(angles[jnt], dt);
+            m_joints[jnt]->commandPosition(angles[jnt]);
         }
 
     }
@@ -1242,6 +1240,55 @@ void afSoftBody::setConfigProperties(const afSoftBodyPtr a_body, const afSoftBod
 
 }
 
+
+///
+/// \brief afController::computeOutput
+/// \param process_val
+/// \param set_point
+/// \param current_time
+/// \return
+///
+double afController::computeOutput(double process_val, double set_point, double current_time){
+        for (size_t i = n-1 ; i >= 1 ; i--){
+            t[i] = t[i-1];
+            e[i] = e[i-1];
+            de[i] = de[i-1];
+        }
+        t[0] = current_time;
+        e[0] = set_point - process_val;
+        double dt = t[0] - t[1];
+        if (!dt > 0.0001 || !dt > 0.0){
+            dt = 0.0001;
+        }
+        de[0] = de[0] + ( (de[0] - de[1]) / dt );
+        dde[0] = (e[0] - e[1]) / dt;
+        output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
+//        boundImpulse(output);
+//        std::cerr << "Output " << output << std::endl ;
+        return output;
+}
+
+
+///
+/// \brief afController::boundImpulse
+/// \param effort_cmd
+/// \param effort_time
+///
+void afController::boundImpulse(double &effort_cmd){
+    double impulse = ( effort_cmd - m_last_cmd ) / (t[0]- t[1]);
+//    std::cerr << "Before " << effort_cmd ;
+    int sign = 1;
+    if (impulse > max_impulse){
+        if (impulse < 0){
+            sign = -1;
+        }
+        effort_cmd = m_last_cmd + (sign * max_impulse * (t[0]- t[1]));
+    }
+//    std::cerr << " - After " << effort_cmd << " Impulse: " << max_impulse << std::endl ;
+    m_last_cmd = effort_cmd;
+}
+
+
 ///
 /// \brief afJoint::afJoint
 ///
@@ -1260,6 +1307,7 @@ void afJoint::printVec(std::string name, btVector3* v){
            "\t\t pz = %f \n",
            name.c_str(), v->x(), v->y(), v->z());
 }
+
 
 ///
 /// \brief afJoint::load
@@ -1329,7 +1377,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // Joint Axis
     btVector3 joint_axis(0,0,1);
     m_enable_actuator = true;
-    m_max_motor_impulse = 0.05;
+    m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
     m_joint_offset = 0.0;
     m_lower_limit = -100;
     m_higher_limit = 100;
@@ -1517,8 +1565,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // this keeps the joint behave freely when it's launched
 
         if(jointMaxMotorImpulse.IsDefined()){
-            m_max_motor_impulse = jointMaxMotorImpulse.as<double>();
-            ((btHingeConstraint*)m_btConstraint)->setMaxMotorImpulse(m_max_motor_impulse);
+            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            ((btHingeConstraint*)m_btConstraint)->setMaxMotorImpulse(m_controller.max_impulse);
         }
 
         if(jointLimits.IsDefined()){
@@ -1557,8 +1605,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_enable_actuator = jointEnableMotor.as<int>();
             // Don't enable motor yet, only enable when set position is called
             if(jointMaxMotorImpulse.IsDefined()){
-                m_max_motor_impulse = jointMaxMotorImpulse.as<double>();
-                ((btSliderConstraint*) m_btConstraint)->setMaxLinMotorForce(m_max_motor_impulse);
+                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
             }
         }
 
@@ -1591,6 +1638,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
     return true;
 }
+
 
 ///
 /// \brief afJoint::getRotationBetweenVectors
@@ -1634,22 +1682,14 @@ void afJoint::commandPosition(double &position_cmd){
     // if it was set to be enabled in the first place
     if (m_enable_actuator){
         if (m_jointType == JointType::revolute){
-            if (!m_hinge->getEnableAngularMotor()){
-                m_hinge->enableMotor(m_enable_actuator);
-                m_hinge->setMaxMotorImpulse(m_max_motor_impulse);
-            }
-            double effort_command = m_controller.compute_output(m_hinge->getHingeAngle(), position_cmd, m_mB->m_wallClock.getCurrentTimeSeconds());
+            double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_mB->m_wallClock.getCurrentTimeSeconds());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
             m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * effort_command);
             m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * effort_command);
         }
         else if(m_jointType == JointType::prismatic){
-            if (!m_slider->getPoweredLinMotor()){
-                m_slider->setPoweredLinMotor(m_enable_actuator);
-                m_slider->setMaxLinMotorForce(m_max_motor_impulse * 1000);
-            }
-            double effort_command = m_controller.compute_output(m_slider->getLinearPos(), position_cmd,  m_mB->m_wallClock.getCurrentTimeSeconds());
+            double effort_command = m_controller.computeOutput(m_slider->getLinearPos(), position_cmd,  m_mB->m_wallClock.getCurrentTimeSeconds());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
             const btVector3 relPos(0,0,0);
@@ -1668,20 +1708,12 @@ void afJoint::commandPosition(double &position_cmd){
 ///
 void afJoint::commandEffort(double &cmd){
     if (m_jointType == JointType::revolute){
-        // If the motor was enabled, disable it before setting joint torques
-        if (m_hinge->getEnableAngularMotor())
-            m_hinge->enableMotor(false);{
-        }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
         m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * cmd);
         m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * cmd);
     }
     else if (m_jointType == JointType::prismatic){
-        // If the motor was enabled, disable it before setting joint torques
-        if (m_slider->getPoweredLinMotor()){
-            m_slider->setPoweredLinMotor(false);
-        }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
         const btVector3 relPos(0,0,0);

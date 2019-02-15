@@ -169,8 +169,8 @@ public:
     std::vector<afRigidBodyPtr> m_childrenBodies;
     std::vector<afRigidBodyPtr> m_parentBodies;
 
-    virtual void setAngle(double &angle, double dt);
-    virtual void setAngle(std::vector<double> &angle, double dt);
+    virtual void setAngle(double &angle);
+    virtual void setAngle(std::vector<double> &angle);
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
     std::string m_body_namespace;
     btVector3 computeInertialOffset(cMesh* mesh);
@@ -282,7 +282,8 @@ protected:
 ///
 /// \brief The PID struct
 ///
-struct PID{
+class afController{
+public:
     // Set some default values of PID
     // TODO: Maybe set PID's to 0 so the
     // user has to explicitly set them
@@ -295,24 +296,15 @@ struct PID{
     double t[4]= {0, 0, 0, 0};
     size_t n = 4;
     double output;
+    double max_impulse;
+    double max_effort;
 
-    double compute_output(double process_val, double set_point, double current_time){
-        for (size_t i = n-1 ; i >= 1 ; i--){
-            t[i] = t[i-1];
-            e[i] = e[i-1];
-            de[i] = de[i-1];
-        }
-        t[0] = current_time;
-        e[0] = set_point - process_val;
-        double dt = t[0] - t[1];
-        if (!dt > 0.0001 || !dt > 0.0){
-            dt = 0.0001;
-        }
-        de[0] = de[0] + ( (de[0] - de[1]) / dt );
-        dde[0] = (e[0] - e[1]) / dt;
-        output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
-        return output;
-    }
+    // Store the last effort command to compute and bound max impulse
+    double m_last_cmd = 0;
+
+    double computeOutput(double process_val, double set_point, double current_time);
+    void boundImpulse(double& effort_cmd);
+    void boundEffort(double& effort_cmd);
 };
 
 enum JointType{
@@ -351,7 +343,6 @@ protected:
     double m_joint_damping;
     double m_max_effort;
     bool m_enable_actuator;
-    double m_max_motor_impulse;
     double m_lower_limit, m_higher_limit;
     double m_joint_offset;
     btRigidBody *m_rbodyA, *m_rbodyB;
@@ -369,7 +360,7 @@ private:
     btHingeConstraint* m_hinge;
     btSliderConstraint* m_slider;
     afMultiBodyPtr m_mB;
-    PID m_controller;
+    afController m_controller;
 };
 
 //-----------------------------------------------------------------------------

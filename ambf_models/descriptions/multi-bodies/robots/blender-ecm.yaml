@@ -216,7 +216,7 @@ JOINT pitch end link-main insertion link:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.254, low: 0.0}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 50, I: 0, P: 5000}
   type: prismatic
 JOINT main insertion link-tool link:
   name: main insertion link-tool link

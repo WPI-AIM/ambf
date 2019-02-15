@@ -184,7 +184,7 @@ JOINT base link-yaw link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.599, low: -1.605}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 50, I: 0, P: 800}
   type: revolute
   offset: 1.57
 JOINT yaw link-pitch back link:
@@ -208,7 +208,7 @@ JOINT pitch back link-pitch bottom link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.936, low: -0.942}
-  controller: {D: 50, I: 0, P: 1000}
+  controller: {D: 10, I: 0, P: 100}
   type: revolute
   offset: 1.861
 JOINT pitch bottom link-pitch end link:
