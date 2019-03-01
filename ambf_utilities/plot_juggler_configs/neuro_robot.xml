@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <plotmatrix columns="1" rows="5" tab_name="plot">
+   <plot row="0" col="0">
+    <range left="938.016592" top="0.051120" right="950.332811" bottom="-0.001241"/>
+    <limitY/>
+    <curve name="/ambf/env/neuro_robot/base_link/Command/joint_cmds.0" G="18" R="22" custom_transform="" B="18"/>
+    <curve name="/ambf/env/neuro_robot/base_link/State/joint_positions.0" G="0" R="255" custom_transform="" B="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="1" col="0">
+    <range left="938.016592" top="0.093235" right="950.332811" bottom="0.006785"/>
+    <limitY/>
+    <curve name="/ambf/env/neuro_robot/base_link/Command/joint_cmds.1" G="21" R="51" custom_transform="" B="21"/>
+    <curve name="/ambf/env/neuro_robot/base_link/State/joint_positions.1" G="0" R="255" custom_transform="" B="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="2" col="0">
+    <range left="938.016592" top="0.422586" right="951.059913" bottom="-0.420625"/>
+    <limitY/>
+    <curve name="/ambf/env/neuro_robot/base_link/State/joint_positions.7" G="0" R="255" custom_transform="" B="0"/>
+    <curve name="/ambf/env/neuro_robot/vertical_translation_fol/Command/joint_cmds.3" G="0" R="0" custom_transform="" B="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="3" col="0">
+    <range left="938.016592" top="0.424903" right="951.852585" bottom="-0.423927"/>
+    <limitY/>
+    <curve name="/ambf/env/neuro_robot/base_link/State/joint_positions.8" G="27" R="27" custom_transform="" B="27"/>
+    <curve name="/ambf/env/neuro_robot/yaw_link/Command/joint_cmds.0" G="0" R="255" custom_transform="" B="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="4" col="0">
+    <range left="938.016592" top="0.041002" right="952.567372" bottom="-0.001071"/>
+    <limitY/>
+    <curve name="/ambf/env/neuro_robot/base_link/State/joint_positions.12" G="0" R="255" custom_transform="" B="8"/>
+    <curve name="/ambf/env/neuro_robot/needle_driver_base_link/Command/joint_cmds.1" G="0" R="0" custom_transform="" B="0"/>
+    <transform value=""/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <Plugins>
+  <DataLoad_CSV>
+   <default time_axis=""/>
+  </DataLoad_CSV>
+  <DataLoad_ROS_bags>
+   <selected_topics list=""/>
+  </DataLoad_ROS_bags>
+  <ROS_Topic_Streamer>
+   <selected_topics list="/ambf/env/neuro_robot/base_link/Command;/ambf/env/neuro_robot/base_link/State;/ambf/env/neuro_robot/needle_driver_base_link/Command;/ambf/env/neuro_robot/vertical_translation_fol/Command;/dvrk/joint/states;/ambf/env/neuro_robot/yaw_link/Command"/>
+  </ROS_Topic_Streamer>
+  <RosoutPublisherROS/>
+  <TopicPublisherROS/>
+ </Plugins>
+ <previouslyLoadedStreamer name="ROS_Topic_Streamer"/>
+ <customMathEquations/>
+ <snippets>
+  <snippet name="1st_derivative">
+   <global>var prevX = 0
+var prevY = 0</global>
+   <equation>dx = time - prevX
+dy = value - prevY
+prevX = time
+prevY = value
+
+return dy/dx</equation>
+  </snippet>
+  <snippet name="1st_order_lowpass">
+   <global>var prevY = 0
+var alpha = 0.1</global>
+   <equation>prevY = alpha * value + (1.-alpha) * prevY
+
+return prevY</equation>
+  </snippet>
+  <snippet name="difference">
+   <global></global>
+   <equation>return $$/ambf/env/ecm/baselink/State/joint_positions.0$$ - $$/ambf/env/ecm/baselink/Command/joint_cmds.0$$</equation>
+  </snippet>
+  <snippet name="sum_A_B">
+   <global></global>
+   <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+  </snippet>
+  <snippet name="yaw_from_quaternion">
+   <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToYaw(x, y, z, w)
+{
+  // yaw (z-axis rotation)
+  t1 = 2.0 * (w * z + x * y);
+  t2 = 1.0 - 2.0 * (y * y + z * z);
+  yaw = Math.atan2(t1, t2);
+
+  return yaw
+}</global>
+   <equation>return quaternionToYaw($$x$$, $$y$$, $$z$$, $$w$$);</equation>
+  </snippet>
+ </snippets>
+</root>
+
