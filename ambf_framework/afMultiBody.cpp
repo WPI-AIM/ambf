@@ -320,8 +320,8 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
             m_childrenBodies.push_back(*cBodyIt);
         }
         else{
-            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
-                      << (*cBodyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
+//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+//                      << (*cBodyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 
@@ -344,8 +344,8 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
             m_joints.push_back(*cJointIt);
         }
         else{
-            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
-                      << (*cJointIt)->m_name << "\ PARALLEL LINKAGE FOUND" << std::endl;
+//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
+//                      << (*cJointIt)->m_name << "\ PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 }
@@ -375,8 +375,8 @@ void afRigidBody::downwardTreePopulation(afRigidBodyPtr a_parentBody){
             m_parentBodies.push_back(*pBobyIt);
         }
         else{
-            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
-                      << (*pBobyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
+//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+//                      << (*pBobyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 }
@@ -1065,6 +1065,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node softBodyConfigData = softBodyNode["config"];
     YAML::Node softBodyRandomizeConstraints = softBodyNode["randomize constraints"];
 
+    YAML::Node cfg_kLST = softBodyConfigData["kLST"];
     YAML::Node cfg_kVCF = softBodyConfigData["kVCF"];
     YAML::Node cfg_kDP = softBodyConfigData["kDP"];
     YAML::Node cfg_kDG = softBodyConfigData["kDG"];
@@ -1192,6 +1193,11 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         printf("Warning, no soft body config properties defined");
     }
     else{
+        if (cfg_kLST.IsDefined()){
+            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kLST = cfg_kLST.as<double>();
+            m_bulletSoftBody->m_materials[0]->m_kLST = cfg_kLST.as<double>();
+        }
         if (cfg_kVCF.IsDefined()) m_bulletSoftBody->m_cfg.kVCF = cfg_kVCF.as<double>();
         if (cfg_kDP.IsDefined()) m_bulletSoftBody->m_cfg.kDP = cfg_kDP.as<double>();
         if (cfg_kDG.IsDefined()) m_bulletSoftBody->m_cfg.kDG = cfg_kDG.as<double>();

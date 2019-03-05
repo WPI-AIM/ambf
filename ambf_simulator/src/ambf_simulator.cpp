@@ -1788,6 +1788,8 @@ void errorCallback(int a_error, const char* a_description)
     cout << "Error: " << a_description << endl;
 }
 
+bool g_updateLabels = true;
+
 ///
 /// \brief keyCallback
 /// \param a_window
@@ -1978,9 +1980,23 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         }
     }
 
+    // option - Toogle visibility of body frames
+    else if (a_key == GLFW_KEY_X){
+        auto sbMap = g_afMultiBody->getSoftBodyMap();
+        cerr<< "X Pressed \n";
+        afSoftBodyMap::const_iterator sbIt;
+        for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
+            sbIt->second->toggleSkeletalModelVisibility();
+        }
+    }
+
     // option - Toggle Inverted Y axis of mouse for camera control
     else if (a_key == GLFW_KEY_I){
         g_mouse_inverted_y = !g_mouse_inverted_y;
+    }
+    // option - Toggle Inverted Y axis of mouse for camera control
+    else if (a_key == GLFW_KEY_U){
+        g_updateLabels = !g_updateLabels;
     }
 
 }
@@ -2120,7 +2136,8 @@ void updateGraphics()
         glfwGetWindowSize(winCamPair->m_window, &winCamPair->m_width, &winCamPair->m_height);
 
         // Update the Labels in a separate sub-routine
-        updateLabels();
+        if (g_updateLabels)
+            updateLabels();
 
         PhysicalDeviceCamera* devCam = winCamPair->m_camera;
 
