@@ -456,7 +456,11 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     // Declare all the yaml parameters that we want to look for
     YAML::Node bodyName = bodyNode["name"];
     YAML::Node bodyMesh = bodyNode["mesh"];
+    YAML::Node bodyShape = bodyNode["shape"];
+    YAML::Node bodyGeometry = bodyNode["geometry"];
     YAML::Node bodyCollisionMesh = bodyNode["collision mesh"];
+    YAML::Node bodyCollisionShape = bodyNode["collision shape"];
+    YAML::Node bodyCollisionGeometry = bodyNode["collision geometry"];
     YAML::Node bodyScale = bodyNode["scale"];
     YAML::Node bodyInertialOffsetPos = bodyNode["inertial offset"]["position"];
     YAML::Node bodyInertialOffsetRot = bodyNode["inertial offset"]["orientation"];
@@ -493,8 +497,87 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
 
     }
 
-    if(bodyMesh.IsDefined()){
+    bool _visual_geometry_valid = false;
+    bool _collision_geometry_valid = false;
+    m_visualGeometryType = GeometryType::invalid;
+    m_collisionGeometryType = GeometryType::invalid;
+    boost::filesystem::path high_res_filepath;
+    boost::filesystem::path low_res_filepath;
+    std::string _visual_shape_str;
+    std::string _collision_shape_str;
+
+    if (bodyCollisionShape.IsDefined()){
+        _collision_geometry_valid = true;
+        m_collisionGeometryType = GeometryType::shape;
+        _collision_shape_str = bodyCollisionShape.as<std::string>();
+    }
+
+    if (bodyShape.IsDefined()){
+        _visual_geometry_valid = true;
+        m_visualGeometryType = GeometryType::shape;
+        _visual_shape_str = bodyShape.as<std::string>();
+        if (!_collision_geometry_valid){
+            _collision_shape_str = _visual_shape_str;
+            _collision_geometry_valid = true;
+            m_collisionGeometryType = GeometryType::shape;
+            bodyCollisionGeometry = bodyGeometry;
+            bodyCollisionShape = bodyShape;
+        }
+    }
+    else if(bodyMesh.IsDefined()){
         m_mesh_name = bodyMesh.as<std::string>();
+        if (!m_mesh_name.empty()){
+            // Each ridig body can have a seperate path for its low and high res meshes
+            // Incase they are defined, we use those paths and if they are not, we use
+            // the paths for the whole file
+            if (bodyMeshPathHR.IsDefined()){
+                high_res_filepath = bodyMeshPathHR.as<std::string>() + m_mesh_name;
+                if (high_res_filepath.is_relative()){
+                    high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+                }
+            }
+            else{
+                high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
+            }
+            _visual_geometry_valid = true;
+            m_visualGeometryType = GeometryType::mesh;
+        }
+
+        // Only check for collision mesh definition if visual mesh is defined
+        if (!_collision_geometry_valid){
+            if(bodyCollisionMesh.IsDefined()){
+                m_collision_mesh_name = bodyCollisionMesh.as<std::string>();
+                if (!m_collision_mesh_name.empty()){
+                    if (bodyMeshPathLR.IsDefined()){
+                        low_res_filepath = bodyMeshPathLR.as<std::string>() + m_collision_mesh_name;
+                        if (low_res_filepath.is_relative()){
+                            low_res_filepath = mB->getMultiBodyPath() + '/' + low_res_filepath.c_str();
+                        }
+                    }
+                    else{
+                        // If low res path is not defined, use the high res path to load the high-res mesh for collision
+                        low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
+                    }
+                    _collision_geometry_valid = true;
+                    m_collisionGeometryType = GeometryType::mesh;
+                }
+            }
+            else{
+                m_collision_mesh_name = m_mesh_name;
+                if (bodyMeshPathLR.IsDefined()){
+                    low_res_filepath = bodyMeshPathLR.as<std::string>() + m_collision_mesh_name;
+                    if (low_res_filepath.is_relative()){
+                        low_res_filepath = mB->getMultiBodyPath() + '/' + low_res_filepath.c_str();
+                    }
+                }
+                else{
+                    // If low res path is not defined, use the high res path to load the high-res mesh for collision
+                    low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
+                }
+                _collision_geometry_valid = true;
+                m_collisionGeometryType = GeometryType::mesh;
+            }
+        }
     }
 
     if(!bodyMass.IsDefined()){
@@ -510,58 +593,23 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
         return 0;
 
     }
-    else if (m_mesh_name.empty() && bodyMass.as<double>() > 0.0 && !bodyInertia.IsDefined()){
+    else if (!_visual_geometry_valid && bodyMass.as<double>() > 0.0 && !bodyInertia.IsDefined()){
         std::cerr << "WARNING: Body "
                   << m_name
-                  << "'s mesh field is empty, mass > 0 and no intertia defined, hence ignoring\n";
+                  << "'s geometry is empty, mass > 0 and no intertia defined, hence ignoring\n";
         return 0;
     }
-    else if (m_mesh_name.empty() && bodyMass.as<double>() > 0.0 && bodyInertia.IsDefined()){
+    else if (!_visual_geometry_valid && bodyMass.as<double>() > 0.0 && bodyInertia.IsDefined()){
         std::cerr << "INFO: Body "
                   << m_name
                   << "'s mesh field is empty but mass and interia defined\n";
     }
 
-    if (!m_mesh_name.empty()){
+    if(bodyScale.IsDefined()){
+        m_scale = bodyScale.as<double>();
+    }
 
-        if(bodyCollisionMesh.IsDefined()){
-            m_collision_mesh_name = bodyCollisionMesh.as<std::string>();
-        }
-        else{
-            m_collision_mesh_name = m_mesh_name;
-        }
-
-        if(bodyScale.IsDefined()){
-            m_scale = bodyScale.as<double>();
-        }
-
-        boost::filesystem::path high_res_filepath;
-        boost::filesystem::path low_res_filepath;
-
-        // Each ridig body can have a seperate path for its low and high res meshes
-        // Incase they are defined, we use those paths and if they are not, we use
-        // the paths for the whole file
-        if (bodyMeshPathHR.IsDefined()){
-            high_res_filepath = bodyMeshPathHR.as<std::string>() + m_mesh_name;
-            if (high_res_filepath.is_relative()){
-                high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
-            }
-        }
-        else{
-            high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
-        }
-
-        if (bodyMeshPathLR.IsDefined()){
-            low_res_filepath = bodyMeshPathLR.as<std::string>() + m_collision_mesh_name;
-            if (low_res_filepath.is_relative()){
-                low_res_filepath = mB->getMultiBodyPath() + '/' + low_res_filepath.c_str();
-            }
-        }
-        else{
-            // If low res path is not defined, use the high res path to load the high-res mesh for collision
-            low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
-        }
-
+    if (m_visualGeometryType == GeometryType::mesh){
         if ( loadFromFile(high_res_filepath.c_str()) ){
             if(m_scale != 1.0){
                 this->scale(m_scale);
@@ -572,6 +620,68 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
                       << m_name
                       << "'s mesh \"" << high_res_filepath << "\" not found\n";
         }
+    }
+
+    else if (m_visualGeometryType == GeometryType::shape){
+        cMesh* tempMesh = new cMesh();
+            if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
+                double _width = bodyGeometry["width"].as<double>();
+                double _length = bodyGeometry["length"].as<double>();
+                double _height = bodyGeometry["height"].as<double>();
+                cCreateBox(tempMesh, _width, _length, _height);
+//                btVector3 halfExtents(_width/2, _height/2, length/2);
+//                m_bulletCollisionShape = btBoxShape(halfExtents);
+            }
+            else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
+                int x_count = bodyGeometry["x density"].as<int>();
+                int y_count = bodyGeometry["y density"].as<int>();
+                double radius = bodyGeometry["radius"].as<double>();
+                cCreateSphere(tempMesh, radius, x_count, y_count);
+//                m_bulletCollisionShape = btSphereShape(radius);
+            }
+            else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
+                int x_count = bodyGeometry["x density"].as<int>();
+                int y_count = bodyGeometry["y density"].as<int>();
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                cCreateCylinder(tempMesh, height, radius, x_count, y_count, 1, true, true, cVector3d(0.0, 0.0,-0.5 * height));
+//                btVector3 halfExtents(radius, radius, height);
+//                m_bulletCollisionShape = btCylinderShapeZ(halfExtents);
+            }
+            else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
+                int x_count = bodyGeometry["x density"].as<int>();
+                int y_count = bodyGeometry["y density"].as<int>();
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                cCreateEllipsoid(tempMesh, radius, radius, height, x_count, y_count);
+//                m_bulletCollisionShape = btCapsuleShapeZ(radius, height);
+            }
+            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
+                int x_count = bodyGeometry["x density"].as<int>();
+                int y_count = bodyGeometry["y density"].as<int>();
+                int z_count = bodyGeometry["z density"].as<int>();
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                cCreateCone(tempMesh, height, radius, 0, x_count, y_count, z_count, true, true, cVector3d(0.0, 0.0,-0.5 * height));
+//                m_bulletCollisionShape = btConeShapeZ(radius, height);
+            }
+            m_meshes->push_back(tempMesh);
+        }
+
+    if(bodyColorRGBA.IsDefined()){
+        m_mat.setColorf(bodyColorRGBA["r"].as<float>(),
+                bodyColorRGBA["g"].as<float>(),
+                bodyColorRGBA["b"].as<float>(),
+                bodyColorRGBA["a"].as<float>());
+    }
+    else if(bodyColor.IsDefined()){
+        std::vector<double> rgba = mB->getColorRGBA(bodyColor.as<std::string>());
+        m_mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+    }
+
+    setMaterial(m_mat);
+
+    if(m_collisionGeometryType == GeometryType::mesh){
 
         if( m_lowResMesh.loadFromFile(low_res_filepath.c_str()) ){
             if(m_scale != 1.0){
@@ -584,18 +694,37 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
                       << "'s mesh \"" << low_res_filepath << "\" not found\n";
         }
 
-        if(bodyColorRGBA.IsDefined()){
-            m_mat.setColorf(bodyColorRGBA["r"].as<float>(),
-                    bodyColorRGBA["g"].as<float>(),
-                    bodyColorRGBA["b"].as<float>(),
-                    bodyColorRGBA["a"].as<float>());
+    }
+    else if (m_collisionGeometryType == GeometryType::shape){
+        std::string _shape_str = bodyCollisionShape.as<std::string>();
+        if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
+            double _width = bodyCollisionGeometry["width"].as<double>();
+            double _length = bodyCollisionGeometry["length"].as<double>();
+            double _height = bodyCollisionGeometry["height"].as<double>();
+            btVector3 halfExtents(_width/2, _length/2, _height/2);
+            m_bulletCollisionShape = new btBoxShape(halfExtents);
         }
-        else if(bodyColor.IsDefined()){
-            std::vector<double> rgba = mB->getColorRGBA(bodyColor.as<std::string>());
-            m_mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+        else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
+            double radius = bodyCollisionGeometry["radius"].as<double>();
+            m_bulletCollisionShape = new btSphereShape(radius);
         }
-
-        setMaterial(m_mat);
+        else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
+            double radius = bodyCollisionGeometry["radius"].as<double>();
+            double length = bodyCollisionGeometry["length"].as<double>();
+            double height = bodyCollisionGeometry["height"].as<double>();
+            btVector3 halfExtents(radius, length, height/2);
+            m_bulletCollisionShape = new btCylinderShapeZ(halfExtents);
+        }
+        else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
+            double radius = bodyCollisionGeometry["radius"].as<double>();
+            double height = bodyCollisionGeometry["height"].as<double>();
+            m_bulletCollisionShape = new btCapsuleShapeZ(radius, height);
+        }
+        else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("Cone") == 0){
+            double radius = bodyCollisionGeometry["radius"].as<double>();
+            double height = bodyCollisionGeometry["height"].as<double>();
+            m_bulletCollisionShape = new btConeShapeZ(radius, height);
+        }
     }
 
     if (bodyNameSpace.IsDefined()){
@@ -620,7 +749,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
             iOffQuat.setEulerZYX(y, p, r);
         }
     }
-    else{
+    else if (m_collisionGeometryType == GeometryType::mesh){
         // Call the compute inertial offset before the build contact triangle method
         // Sanity check, see if a mesh is defined or not
         if (m_lowResMesh.m_meshes->size() > 0){
@@ -632,8 +761,10 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     iOffTrans.setRotation(iOffQuat);
     setInertialOffsetTransform(iOffTrans);
 
-    // Build contact triangles
-    buildContactTriangles(0.001, &m_lowResMesh);
+    if (m_collisionGeometryType == GeometryType::mesh){
+        // Build contact triangles
+        buildContactTriangles(0.001, &m_lowResMesh);
+    }
 
     m_mass = bodyMass.as<double>();
     if(bodyLinGain.IsDefined()){
@@ -660,7 +791,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
                 return 0;
             }
         }
-        else if (m_lowResMesh.m_meshes->size() > 0){
+        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == GeometryType::shape){
             estimateInertia();
         }
     }

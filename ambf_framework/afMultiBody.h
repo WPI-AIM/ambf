@@ -127,10 +127,10 @@ struct afRigidBodySurfaceProperties{
 public:
     afRigidBodySurfaceProperties(){
         m_linear_damping = 0.1;
-        m_angular_damping = 0.01;
-        m_static_friction = 0.5;
-        m_dynamic_friction = 0.5;
-        m_rolling_friction = 0.5;
+        m_angular_damping = 0.1;
+        m_static_friction = 0.1;
+        m_dynamic_friction = 0.1;
+        m_rolling_friction = 0.1;
     }
     double m_linear_damping;
     double m_angular_damping;
@@ -144,6 +144,13 @@ public:
 ///
 struct afSoftBodyConfigProperties: public btSoftBody::Config{
 
+};
+
+///
+/// \brief The Geometrytype enum
+///
+enum GeometryType{
+    invalid= 0, mesh = 1, shape = 2
 };
 
 ///
@@ -229,7 +236,7 @@ private:
     double m_P=10;
     double m_I=0;
     double m_D=1;
-
+    GeometryType m_visualGeometryType, m_collisionGeometryType;
 };
 
 ///
