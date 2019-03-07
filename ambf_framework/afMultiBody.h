@@ -126,17 +126,19 @@ protected:
 struct afRigidBodySurfaceProperties{
 public:
     afRigidBodySurfaceProperties(){
-        m_linear_damping = 0.1;
+        m_linear_damping = 0.04;
         m_angular_damping = 0.1;
-        m_static_friction = 0.1;
-        m_dynamic_friction = 0.1;
+        m_static_friction = 0.5;
+        m_dynamic_friction = 0.5;
         m_rolling_friction = 0.1;
+        m_restitution = 0.1;
     }
     double m_linear_damping;
     double m_angular_damping;
     double m_static_friction;
     double m_dynamic_friction;
     double m_rolling_friction;
+    double m_restitution;
 };
 
 ///
@@ -483,10 +485,16 @@ public:
     inline std::string getNameSpace(){return m_multibody_namespace;}
     inline const afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
     inline const afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMap;}
+
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
     // between all these bodies connected in a tree
     void removeOverlappingCollisionChecking();
+
+    // This method build the collision graph based on the collision group numbers
+    // defined in the bodies
+    void buildCollisionGroups();
+
     //Remove collision checking for this entire multi-body, mostly for
     // debugging purposes
     void ignoreCollisionChecking();
@@ -509,6 +517,13 @@ protected:
     std::string remapBodyName(std::string a_body_name, const T* tMap);
     std::string remapJointName(std::string a_joint_name);
     void remapName(std::string &name, std::string remap_idx_str);
+
+protected:
+    // The collision groups are sorted by integer indices. A group is an array of
+    // ridig bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 };
 
 }

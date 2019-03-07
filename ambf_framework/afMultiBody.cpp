@@ -479,9 +479,11 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyAngDamping = bodyNode["damping"]["angular"];
     YAML::Node bodyStaticFriction = bodyNode["friction"]["static"];
     YAML::Node bodyRollingFriction = bodyNode["friction"]["rolling"];
+    YAML::Node bodyRestitution = bodyNode["restitution"];
     YAML::Node bodyPublishChildrenNames = bodyNode["publish children names"];
     YAML::Node bodyPublishJointPositions = bodyNode["publish joint positions"];
     YAML::Node bodyPublishFrequency = bodyNode["publish frequency"];
+    YAML::Node bodyCollisionGroups = bodyNode["collision groups"];
 
     if(bodyName.IsDefined()){
         m_name = bodyName.as<std::string>();
@@ -819,6 +821,8 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
         m_surfaceProps.m_static_friction = bodyStaticFriction.as<double>();
     if (bodyRollingFriction.IsDefined())
         m_surfaceProps.m_rolling_friction = bodyRollingFriction.as<double>();
+    if (bodyRestitution.IsDefined())
+        m_surfaceProps.m_restitution = bodyRestitution.as<double>();
 
     if (bodyPublishChildrenNames.IsDefined()){
         _publish_children_names = bodyPublishChildrenNames.as<bool>();
@@ -836,6 +840,26 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
         // Set min to 50 Hz and max to 2000 Hz
         _min_publish_frequency = 50;
         _max_publish_frequency = 2000;
+    }
+
+    // The collision groups are sorted by integer indices. A group is an array of
+    // ridig bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+
+    if (bodyCollisionGroups.IsDefined()){
+        for (int gIdx = 0 ; gIdx < bodyCollisionGroups.size() ; gIdx++){
+            int gNum = bodyCollisionGroups[gIdx].as<int>();
+            // Sanity check for the group number
+            if (gNum >= 0 && gNum <= 999){
+                mB->m_collisionGroups[gNum].push_back(this);
+            }
+            else{
+                std::cerr << "WARNING: Body "
+                          << m_name
+                          << "'s group number is \"" << gNum << "\" which should be between [0 - 999], ignoring\n";
+            }
+        }
     }
 
     setConfigProperties(this, &m_surfaceProps);
@@ -899,6 +923,7 @@ void afRigidBody::setConfigProperties(const afRigidBodyPtr a_body, const afRigid
     a_body->m_bulletRigidBody->setFriction(a_props->m_static_friction);
     a_body->m_bulletRigidBody->setDamping(a_props->m_linear_damping, a_props->m_angular_damping);
     a_body->m_bulletRigidBody->setRollingFriction(a_props->m_rolling_friction);
+    a_body->m_bulletRigidBody->setRestitution(a_props->m_restitution);
 }
 
 ///
@@ -2335,12 +2360,22 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
             m_afJointMap[m_multibody_namespace + jnt_name+remap_str] = tmpJoint;
         }
     }
+
+    // This flag would ignore collision for all the multibodies in the scene
+    bool _ignore_inter_collision = false;
     if (multiBodyNode["ignore inter-collision"].IsDefined()){
-        if (multiBodyNode["ignore inter-collision"].as<bool>())
+        if (multiBodyNode["ignore inter-collision"].as<bool>()){
             ignoreCollisionChecking();
+            _ignore_inter_collision = multiBodyNode["ignore inter-collision"].as<bool>();
+        }
+    }
+    // If the ignore_inter_collision flag is false, then ignore collision based on collision
+    // groups
+    if (!_ignore_inter_collision){
+        buildCollisionGroups();
     }
 
-    removeOverlappingCollisionChecking();
+//    removeOverlappingCollisionChecking();
 
     return true;
 }
@@ -2363,6 +2398,39 @@ void afMultiBody::ignoreCollisionChecking(){
             rBodiesVec[i]->setIgnoreCollisionCheck(rBodiesVec[j], true);
         }
     }
+}
+
+///
+/// \brief afMultiBody::buildCollisionGroups
+///
+void afMultiBody::buildCollisionGroups(){
+   std::vector<int> groupNumbers;
+   groupNumbers.resize(m_collisionGroups.size());
+
+//   for (int aIdx = 0 ; aIdx < groupNumbers.size() ; aIdx++){
+//       std::cerr << "****" << std::endl;
+//        std::cerr << "Group " << aIdx << " = [" ;
+//       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+//       for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+//           std::cerr << " " << grpA[aBodyIdx]->m_name << ",";
+//       }
+//       std::cerr << " ]" << std::endl;
+//   }
+
+   for (int aIdx = 0 ; aIdx < groupNumbers.size() - 1 ; aIdx++){
+       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+       for (int bIdx = aIdx + 1 ; bIdx < groupNumbers.size() ; bIdx ++){
+           std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
+
+           for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+               afRigidBodyPtr bodyA = grpA[aBodyIdx];
+               for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
+                   afRigidBodyPtr bodyB = grpB[bBodyIdx];
+                   bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+               }
+           }
+       }
+   }
 }
 
 ///
