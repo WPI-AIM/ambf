@@ -2072,7 +2072,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 if (g_mouse_inverted_y){
                     y_vel = -y_vel;
                 }
-                cVector3d camVel(0, x_vel, y_vel);
+                cVector3d camVel(0, -x_vel, y_vel);
                 devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
             }
 
@@ -2088,8 +2088,8 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             g_winCamIt->mouse_scroll[1] = g_winCamIt->mouse_scroll[0];
             g_winCamIt->mouse_scroll[0] = -a_ypos;
 
-            double scale = 0.05;
-            cVector3d camVelAlongLook(g_winCamIt->mouse_scroll[0], 0, 0);
+            double scale = 0.1;
+            cVector3d camVelAlongLook(scale * g_winCamIt->mouse_scroll[0], 0, 0);
             devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVelAlongLook );
         }
     }
