@@ -627,45 +627,38 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     else if (m_visualGeometryType == GeometryType::shape){
         cMesh* tempMesh = new cMesh();
             if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
-                double _width = bodyGeometry["width"].as<double>();
-                double _length = bodyGeometry["length"].as<double>();
-                double _height = bodyGeometry["height"].as<double>();
-                cCreateBox(tempMesh, _width, _length, _height);
-//                btVector3 halfExtents(_width/2, _height/2, length/2);
-//                m_bulletCollisionShape = btBoxShape(halfExtents);
+                double x = bodyGeometry["x"].as<double>();
+                double y = bodyGeometry["y"].as<double>();
+                double z = bodyGeometry["z"].as<double>();
+                cCreateBox(tempMesh, x, y, z);
             }
             else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-                int x_count = bodyGeometry["x density"].as<int>();
-                int y_count = bodyGeometry["y density"].as<int>();
+                int dx = bodyGeometry["dx"].as<int>();
+                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
-                cCreateSphere(tempMesh, radius, x_count, y_count);
-//                m_bulletCollisionShape = btSphereShape(radius);
+                cCreateSphere(tempMesh, radius, dx, dy);
             }
             else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-                int x_count = bodyGeometry["x density"].as<int>();
-                int y_count = bodyGeometry["y density"].as<int>();
+                int x_count = bodyGeometry["dx"].as<int>();
+                int y_count = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 cCreateCylinder(tempMesh, height, radius, x_count, y_count, 1, true, true, cVector3d(0.0, 0.0,-0.5 * height));
-//                btVector3 halfExtents(radius, radius, height);
-//                m_bulletCollisionShape = btCylinderShapeZ(halfExtents);
             }
             else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-                int x_count = bodyGeometry["x density"].as<int>();
-                int y_count = bodyGeometry["y density"].as<int>();
+                int dx = bodyGeometry["dx"].as<int>();
+                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
-                cCreateEllipsoid(tempMesh, radius, radius, height, x_count, y_count);
-//                m_bulletCollisionShape = btCapsuleShapeZ(radius, height);
+                cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
             }
             else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
-                int x_count = bodyGeometry["x density"].as<int>();
-                int y_count = bodyGeometry["y density"].as<int>();
-                int z_count = bodyGeometry["z density"].as<int>();
+                int dx = bodyGeometry["dx"].as<int>();
+                int dy = bodyGeometry["dy"].as<int>();
+                int dz = bodyGeometry["dz"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
-                cCreateCone(tempMesh, height, radius, 0, x_count, y_count, z_count, true, true, cVector3d(0.0, 0.0,-0.5 * height));
-//                m_bulletCollisionShape = btConeShapeZ(radius, height);
+                cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
             }
             m_meshes->push_back(tempMesh);
         }
@@ -700,10 +693,10 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     else if (m_collisionGeometryType == GeometryType::shape){
         std::string _shape_str = bodyCollisionShape.as<std::string>();
         if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
-            double _width = bodyCollisionGeometry["width"].as<double>();
-            double _length = bodyCollisionGeometry["length"].as<double>();
-            double _height = bodyCollisionGeometry["height"].as<double>();
-            btVector3 halfExtents(_width/2, _length/2, _height/2);
+            double x = bodyCollisionGeometry["x"].as<double>();
+            double y = bodyCollisionGeometry["y"].as<double>();
+            double z = bodyCollisionGeometry["z"].as<double>();
+            btVector3 halfExtents(x/2, y/2, z/2);
             m_bulletCollisionShape = new btBoxShape(halfExtents);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
@@ -712,20 +705,79 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
         }
         else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
-            double length = bodyCollisionGeometry["length"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
-            btVector3 halfExtents(radius, length, height/2);
-            m_bulletCollisionShape = new btCylinderShapeZ(halfExtents);
+            std::string axis = "z";
+            if(bodyCollisionGeometry["axis"].IsDefined()){
+                axis = bodyCollisionGeometry["axis"].as<std::string>();
+            }
+            if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                btVector3 halfExtents(height/2, radius, radius);
+                m_bulletCollisionShape = new btCylinderShapeX(halfExtents);
+            }
+            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                btVector3 halfExtents(radius, height/2, radius);
+                m_bulletCollisionShape = new btCylinderShape(halfExtents);
+            }
+            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                btVector3 halfExtents(radius, radius, height/2);
+                m_bulletCollisionShape = new btCylinderShapeZ(halfExtents);
+            }
+            else{
+                std::cerr << "WARNING: Body "
+                          << m_name
+                          << "'s axis \"" << axis << "\" not understood?\n";
+                btVector3 halfExtents(radius, radius, height/2);
+                m_bulletCollisionShape = new btCylinderShapeZ(halfExtents);
+            }
         }
         else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
-            m_bulletCollisionShape = new btCapsuleShapeZ(radius, height);
+            // Adjust for height as bullet treats the height as the distance
+            // between the two spheres forming the capsule's ends.
+            height = height - 2*radius;
+            std::string axis = "z";
+            if(bodyCollisionGeometry["axis"].IsDefined()){
+                axis = bodyCollisionGeometry["axis"].as<std::string>();
+            }
+            if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                m_bulletCollisionShape = new btCapsuleShapeX(radius, height);
+            }
+            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                m_bulletCollisionShape = new btCapsuleShape(radius, height);
+            }
+            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                m_bulletCollisionShape = new btCapsuleShapeZ(radius, height);
+            }
+            else{
+                std::cerr << "WARNING: Body "
+                          << m_name
+                          << "'s axis \"" << axis << "\" not understood?\n";
+                m_bulletCollisionShape = new btCapsuleShapeZ(radius, height);
+            }
         }
-        else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("Cone") == 0){
+        else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
-            m_bulletCollisionShape = new btConeShapeZ(radius, height);
+            std::string axis = "z";
+            if(bodyCollisionGeometry["axis"].IsDefined()){
+                axis = bodyCollisionGeometry["axis"].as<std::string>();
+            }
+            if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                m_bulletCollisionShape = new btConeShapeX(radius, height);
+            }
+            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                m_bulletCollisionShape = new btConeShape(radius, height);
+            }
+            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                m_bulletCollisionShape = new btConeShapeZ(radius, height);
+            }
+            else{
+                std::cerr << "WARNING: Body "
+                          << m_name
+                          << "'s axis \"" << axis << "\" not understood?\n";
+                m_bulletCollisionShape = new btConeShapeZ(radius, height);
+            }
         }
     }
 
