@@ -616,6 +616,8 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
             if(m_scale != 1.0){
                 this->scale(m_scale);
             }
+            setUseDisplayList(true);
+            markForUpdate(false);
         }
         else{
             std::cerr << "WARNING: Body "
