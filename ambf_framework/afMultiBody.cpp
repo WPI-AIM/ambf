@@ -2441,33 +2441,34 @@ void afMultiBody::ignoreCollisionChecking(){
 /// \brief afMultiBody::buildCollisionGroups
 ///
 void afMultiBody::buildCollisionGroups(){
-   std::vector<int> groupNumbers;
-   groupNumbers.resize(m_collisionGroups.size());
+    if (m_collisionGroups.size() > 0){
+        std::vector<int> groupNumbers;
+        groupNumbers.resize(m_collisionGroups.size());
 
-//   for (int aIdx = 0 ; aIdx < groupNumbers.size() ; aIdx++){
-//       std::cerr << "****" << std::endl;
-//        std::cerr << "Group " << aIdx << " = [" ;
-//       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-//       for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
-//           std::cerr << " " << grpA[aBodyIdx]->m_name << ",";
-//       }
-//       std::cerr << " ]" << std::endl;
-//   }
+        //   for (int aIdx = 0 ; aIdx < groupNumbers.size() ; aIdx++){
+        //       std::cerr << "****" << std::endl;
+        //        std::cerr << "Group " << aIdx << " = [" ;
+        //       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+        //       for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+        //           std::cerr << " " << grpA[aBodyIdx]->m_name << ",";
+        //       }
+        //       std::cerr << " ]" << std::endl;
+        //   }
+        for (int aIdx = 0 ; aIdx < groupNumbers.size() - 1 ; aIdx++){
+            std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+            for (int bIdx = aIdx + 1 ; bIdx < groupNumbers.size() ; bIdx ++){
+                std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
 
-   for (int aIdx = 0 ; aIdx < groupNumbers.size() - 1 ; aIdx++){
-       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-       for (int bIdx = aIdx + 1 ; bIdx < groupNumbers.size() ; bIdx ++){
-           std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
-
-           for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
-               afRigidBodyPtr bodyA = grpA[aBodyIdx];
-               for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
-                   afRigidBodyPtr bodyB = grpB[bBodyIdx];
-                   bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
-               }
-           }
-       }
-   }
+                for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+                    afRigidBodyPtr bodyA = grpA[aBodyIdx];
+                    for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
+                        afRigidBodyPtr bodyB = grpB[bBodyIdx];
+                        bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                    }
+                }
+            }
+        }
+    }
 }
 
 ///
