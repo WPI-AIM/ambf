@@ -405,12 +405,12 @@ void cBulletGenericObject::afObjectCommandExecute(double dt){
         }
         else{
 
-            force.set(m_afObjectPtr->m_objectCommand.Fx,
-                      m_afObjectPtr->m_objectCommand.Fy,
-                      m_afObjectPtr->m_objectCommand.Fz);
-            torque.set(m_afObjectPtr->m_objectCommand.Nx,
-                       m_afObjectPtr->m_objectCommand.Ny,
-                       m_afObjectPtr->m_objectCommand.Nz);
+            force.set(m_afObjectPtr->m_objectCommand.fx,
+                      m_afObjectPtr->m_objectCommand.fy,
+                      m_afObjectPtr->m_objectCommand.fz);
+            torque.set(m_afObjectPtr->m_objectCommand.tx,
+                       m_afObjectPtr->m_objectCommand.ty,
+                       m_afObjectPtr->m_objectCommand.tz);
         }
         addExternalForce(force);
         addExternalTorque(torque);

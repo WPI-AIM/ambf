@@ -68,18 +68,9 @@ void afGripperLink::setAngle(double &angle, double dt){
     if (m_parentBodies.size() == 0){
         double clipped_angle = cClamp(angle, 0.0, 1.0);
         for (size_t jnt = 0 ; jnt < m_joints.size() ; jnt++){
-            double ang;
-            ang = m_joints[jnt]->m_lower_limit + clipped_angle * (m_joints[jnt]->m_higher_limit - m_joints[jnt]->m_lower_limit);
-            if (m_joints[jnt]->m_jointType == JointType::revolute){
-                ((btHingeConstraint* )m_joints[jnt]->m_btConstraint)->setMotorTarget(ang, dt);
-            }
-            else if (m_joints[jnt]->m_jointType == JointType::prismatic){
-                // Implement Slider Constraint
-                std::cerr << "Prismatic Joint Control Not Implemented Yet";
-                //((btSliderConstraint* )m_joints[jnt]->m_btConstraint)->set;
-            }
+            double ang = m_joints[jnt]->m_lower_limit + clipped_angle * (m_joints[jnt]->m_higher_limit - m_joints[jnt]->m_lower_limit);
+            m_joints[jnt]->commandPosition(ang);
         }
-
     }
 }
 
@@ -96,14 +87,7 @@ void afGripperLink::setAngle(std::vector<double> &angles, double dt){
         double jntCmdSize = m_joints.size() < angles.size() ? m_joints.size() : angles.size();
         for (size_t jnt = 0 ; jnt < jntCmdSize ; jnt++){
             double clipped_angle = cClamp(angles[jnt], 0.0, 1.0);
-            if (m_joints[jnt]->m_jointType == JointType::revolute){
-                ((btHingeConstraint*) m_joints[jnt]->m_btConstraint)->setMotorTarget(clipped_angle, dt);
-            }
-            else if (m_joints[jnt]->m_jointType == JointType::prismatic){
-                // Implement Slider Constraint
-                std::cerr << "Prismatic Joint Control Not Implemented Yet";
-                //((btSliderConstraint* )m_joints[jnt]->m_btConstraint)->set;
-            }
+            m_joints[jnt]->commandPosition(clipped_angle);
         }
 
     }
@@ -182,12 +166,8 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         //        printf("Loading body: %s \n", jnt_name.c_str());
         if (tmpJoint->loadJoint(a_gripper_config_file.c_str(), jnt_name, this)){
             m_afJointMap[m_multibody_namespace + jnt_name] = tmpJoint;
-            if (tmpJoint->m_jointType == JointType::revolute){
-                ((btHingeConstraint* )tmpJoint->getConstraint())->enableMotor(true);
-            }
-            else if(tmpJoint->m_jointType == JointType::prismatic){
-                // Not enabled yet
-            }
+            // Disable the IPC Control Switch
+//            tmpJoint->m_ipc_ctrl_swtch1 = false;
         }
     }
 

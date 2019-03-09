@@ -53,9 +53,9 @@
 // layer of abstraction in between
 struct ObjectCommand{
     ObjectCommand(){
-        Fx = Fy = Fz = 0;
-        Nx = Ny = Nz = 0;
-        size_J_cmd = 0;
+        fx = fy = fz = 0;
+        tx = ty = tz = 0;
+        joint_commands_size = 0;
     }
     // Call this update method to assign all the fields from ros_msg
     // to this struct
@@ -68,27 +68,33 @@ struct ObjectCommand{
         qz = cmd->pose.orientation.z;
         qw = cmd->pose.orientation.w;
 
-        Fx = cmd->wrench.force.x;
-        Fy = cmd->wrench.force.y;
-        Fz = cmd->wrench.force.z;
-        Nx = cmd->wrench.torque.x;
-        Ny = cmd->wrench.torque.y;
-        Nz = cmd->wrench.torque.z;
-        size_J_cmd = cmd->joint_cmds.size();
-        J_cmd.resize(size_J_cmd);
+        fx = cmd->wrench.force.x;
+        fy = cmd->wrench.force.y;
+        fz = cmd->wrench.force.z;
+        tx = cmd->wrench.torque.x;
+        ty = cmd->wrench.torque.y;
+        tz = cmd->wrench.torque.z;
+        joint_commands_size = cmd->joint_cmds.size();
+        joint_commands.resize(joint_commands_size);
+        position_controller_mask.resize(joint_commands_size);
         enable_position_controller = cmd->enable_position_controller;
-        position_controller_mask = cmd->position_controller_mask;
-        for(size_t idx = 0; idx < size_J_cmd ; idx++){
-            J_cmd[idx] = cmd->joint_cmds[idx];
+        for(size_t idx = 0; idx < joint_commands_size ; idx++){
+            joint_commands[idx] = cmd->joint_cmds[idx];
+            if (idx <= cmd->position_controller_mask.size()){
+                position_controller_mask[idx] = cmd->position_controller_mask[idx];
+            }
+            else{
+                position_controller_mask[idx] = 0;
+            }
         }
     }
     double px, py, pz;
     double qx, qy, qz, qw;
-    double Fx, Fy, Fz;
-    double Nx, Ny, Nz;
-    std::vector<double> J_cmd;
+    double fx, fy, fz;
+    double tx, ty, tz;
+    std::vector<double> joint_commands;
     std::vector<uint8_t> position_controller_mask;
-    size_t size_J_cmd;
+    size_t joint_commands_size;
     // By default, always consider force control, unless pos_ctrl is set to true
     bool enable_position_controller;
 };

@@ -1083,40 +1083,25 @@ void afRigidBody::afObjectCommandExecute(double dt){
             cur_rot_mat.mul(torque);
         }
         else{
-            force.set(m_afCommand.Fx, m_afCommand.Fy, m_afCommand.Fz);
-            torque.set(m_afCommand.Nx, m_afCommand.Ny, m_afCommand.Nz);
+            force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
+            torque.set(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
         }
         addExternalForce(force);
         addExternalTorque(torque);
-        size_t jntCmdSize = m_afCommand.size_J_cmd;
+        size_t jntCmdSize = m_afCommand.joint_commands_size;
         if (jntCmdSize > 0){
             size_t jntCmdCnt = m_joints.size() < jntCmdSize ? m_joints.size() : jntCmdSize;
-            // If the enable position controllers flag is set, run
-            // position control on all joints
-            if (m_afCommand.enable_position_controller){
-                for (size_t jnt = 0 ; jnt < jntCmdCnt ; jnt++){
-                    m_joints[jnt]->commandPosition(m_afCommand.J_cmd[jnt]);
+            for (size_t jnt = 0 ; jnt < jntCmdCnt ; jnt++){
+                // If the enable position controllers flag is set, run
+                // position control on all joints
+                // The size of pos ctrl mask can be less than the num of joint commands
+                // keep this in check and still read the mask to apply it. Run
+                // effort control on the masks not specified
+                if (m_afCommand.position_controller_mask[jnt] == true || m_afCommand.enable_position_controller == true){
+                    m_joints[jnt]->commandPosition(m_afCommand.joint_commands[jnt]);
                 }
-            }
-            // Otherwise, read the pos controller mask and set the joints with 1
-            // in the mask to pos ctrl and the others to effort control
-            else{
-                size_t jntMaskSize = m_afCommand.position_controller_mask.size();
-                for (size_t jnt = 0 ; jnt < jntCmdCnt ; jnt++){
-                    // The size of pos ctrl mask can be less than the num of joint commands
-                    // keep this in check and still read the mask to apply it. Run
-                    // effort control on the masks not specified
-                    if (jnt < jntMaskSize){
-                        if (m_afCommand.position_controller_mask[jnt] == true){
-                            m_joints[jnt]->commandPosition(m_afCommand.J_cmd[jnt]);
-                        }
-                        else{
-                            m_joints[jnt]->commandEffort(m_afCommand.J_cmd[jnt]);
-                        }
-                    }
-                    else{
-                        m_joints[jnt]->commandEffort(m_afCommand.J_cmd[jnt]);
-                    }
+                else{
+                    m_joints[jnt]->commandEffort(m_afCommand.joint_commands[jnt]);
                 }
             }
         }
