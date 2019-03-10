@@ -2431,10 +2431,11 @@ void afMultiBody::ignoreCollisionChecking(){
         rBodiesVec[i] = rBodyItA->second->m_bulletRigidBody;
         i++;
     }
-
-    for (int i = 0 ; i < rBodiesVec.size() - 1 ; i++){
-        for (int j = i+1 ; j < rBodiesVec.size() ; j++){
-            rBodiesVec[i]->setIgnoreCollisionCheck(rBodiesVec[j], true);
+    if (rBodiesVec.size() >0){
+        for (int i = 0 ; i < rBodiesVec.size() - 1 ; i++){
+            for (int j = i+1 ; j < rBodiesVec.size() ; j++){
+                rBodiesVec[i]->setIgnoreCollisionCheck(rBodiesVec[j], true);
+            }
         }
     }
 }
