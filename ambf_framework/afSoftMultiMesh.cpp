@@ -263,7 +263,7 @@ void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize){
 /// \return
 ///
 bool afSoftMultiMesh::loadFromFile(std::string a_filename){
-   return m_gelMesh.loadFromFile(a_filename);
+    return m_gelMesh.loadFromFile(a_filename);
 }
 
 ///
@@ -535,7 +535,7 @@ void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
         if (rotAxes.length() == 1.0){
             (*n)->m_nextRot.rotateAboutGlobalAxisRad(rotAxes, angle);
         }
-//        (*n)->m_nextRot.identity();
+        //        (*n)->m_nextRot.identity();
         i++;
     }
     for(n = m_gelMesh.m_nodes.begin(); n != m_gelMesh.m_nodes.end(); ++n)
@@ -575,7 +575,9 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         int numTriangles = mesh->m_triangles->getNumElements();
         computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr);
         m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
-                                                                          m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+                                                                m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        // Set the default radius of the GEL Skeleton Node
+        cGELSkeletonNode::s_default_radius = a_margin;
         createGELSkeleton();
         m_gelMesh.connectVerticesToSkeleton(false);
         // add to compound object

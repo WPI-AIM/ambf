@@ -461,6 +461,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyCollisionMesh = bodyNode["collision mesh"];
     YAML::Node bodyCollisionShape = bodyNode["collision shape"];
     YAML::Node bodyCollisionGeometry = bodyNode["collision geometry"];
+    YAML::Node bodyCollisionMargin = bodyNode["collision margin"];
     YAML::Node bodyScale = bodyNode["scale"];
     YAML::Node bodyInertialOffsetPos = bodyNode["inertial offset"]["position"];
     YAML::Node bodyInertialOffsetRot = bodyNode["inertial offset"]["orientation"];
@@ -817,9 +818,15 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     iOffTrans.setRotation(iOffQuat);
     setInertialOffsetTransform(iOffTrans);
 
+    double _collision_margin = 0.001;
+
+    if (bodyCollisionMargin.IsDefined()){
+        _collision_margin = bodyCollisionMargin.as<double>();
+    }
+
     if (m_collisionGeometryType == GeometryType::mesh){
         // Build contact triangles
-        buildContactTriangles(0.001, &m_lowResMesh);
+        buildContactTriangles(_collision_margin, &m_lowResMesh);
     }
 
     m_mass = bodyMass.as<double>();
@@ -1244,6 +1251,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     // Declare all the yaml parameters that we want to look for
     YAML::Node softBodyName = softBodyNode["name"];
     YAML::Node softBodyMesh = softBodyNode["mesh"];
+    YAML::Node softBodyCollisionMargin = softBodyNode["collision margin"];
     YAML::Node softBodyScale = softBodyNode["scale"];
     YAML::Node softBodyInertialOffsetPos = softBodyNode["inertial offset"]["position"];
     YAML::Node softBodyInertialOffsetRot = softBodyNode["inertial offset"]["orientation"];
@@ -1336,12 +1344,16 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     else{
         low_res_filepath = mB->getLowResMeshesPath() + m_mesh_name;
     }
+     double _collision_margin = 0.1;
+     if(softBodyCollisionMargin.IsDefined()){
+         _collision_margin = softBodyCollisionMargin.as<double>();
+     }
 
     loadFromFile(high_res_filepath.c_str());
     m_lowResMesh.loadFromFile(low_res_filepath.c_str());
     scale(m_scale);
     m_lowResMesh.scale(m_scale);
-    buildContactTriangles(0.001, &m_lowResMesh);
+    buildContactTriangles(_collision_margin, &m_lowResMesh);
 
     if(softBodyMass.IsDefined()){
         m_mass = softBodyMass.as<double>();
@@ -1426,7 +1438,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
 
 
     setMaterial(m_mat);
-    //    setConfigProperties(this, &m_bulletSoftBody->m_cfg);
+    m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
     mB->m_chaiWorld->addChild(this);
     return true;
 }
