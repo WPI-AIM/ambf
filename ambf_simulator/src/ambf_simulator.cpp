@@ -137,6 +137,12 @@ cThread* g_bulletSimThread;
 // swap interval for the display context (vertical synchronization)
 int g_swapInterval = 1;
 
+// Copied from CommonRidiBodyBase.h of Bullet Physics by Erwin Coumans with
+// Ray Tracing for Camera Pick and Place
+cVector3d getRayTo(int x, int y);
+
+bool g_mousePickingEnabled = false;
+
 //---------------------------------------------------------------------------
 // DECLARED MACROS
 //---------------------------------------------------------------------------
@@ -810,7 +816,7 @@ struct WindowCameraPair{
 
   // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
   double mouse_x[2], mouse_y[2], mouse_scroll[2];
-  bool mouse_r_clicked = false, mouse_l_clicked= false, mouse_scroll_clicked = false;
+  bool mouse_l_clicked = false, mouse_r_clicked= false, mouse_scroll_clicked = false;
   bool mouse_r_btn_rising_edge = false, mouse_l_btn_rising_edge = false;
 
   cMatrix3d camRot, camRotPre;
@@ -1981,13 +1987,9 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     }
 
     // option - Toogle visibility of body frames
-    else if (a_key == GLFW_KEY_X){
-        auto sbMap = g_afMultiBody->getSoftBodyMap();
-        cerr<< "X Pressed \n";
-        afSoftBodyMap::const_iterator sbIt;
-        for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
-            sbIt->second->toggleSkeletalModelVisibility();
-        }
+    else if (a_key == GLFW_KEY_P){
+        g_mousePickingEnabled = !g_mousePickingEnabled;
+        std::cerr << "P Pressed: " << g_mousePickingEnabled << std::endl;
     }
 
     // option - Toggle Inverted Y axis of mouse for camera control
@@ -2017,10 +2019,20 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
     for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         if (a_window == g_winCamIt->m_window){
             if (a_button == GLFW_MOUSE_BUTTON_1){
-                g_winCamIt->mouse_r_clicked = a_action;
+                g_winCamIt->mouse_l_clicked = a_action;
+                if (a_action){
+                    if (g_mousePickingEnabled){
+                        cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
+                        cVector3d rayTo = getRayTo(g_winCamIt->mouse_x[0], g_winCamIt->mouse_x[1]);
+                        g_afMultiBody->pickBody(rayFrom, rayTo);
+                    }
+                }
+                else{
+                    g_afMultiBody->removePickingConstraint();
+                }
             }
             if (a_button == GLFW_MOUSE_BUTTON_2){
-                g_winCamIt->mouse_l_clicked = a_action;
+                g_winCamIt->mouse_r_clicked = a_action;
             }
             if (a_button == GLFW_MOUSE_BUTTON_3){
                 g_winCamIt->mouse_scroll_clicked = a_action;
@@ -2040,7 +2052,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             g_winCamIt->mouse_y[1] = g_winCamIt->mouse_y[0];
             g_winCamIt->mouse_y[0] = a_ypos;
 
-            if(g_winCamIt->mouse_l_clicked){
+            if(g_winCamIt->mouse_r_clicked){
                 cMatrix3d camRot;
                 double scale = 0.3;
                 double z_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
@@ -2065,15 +2077,23 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 g_winCamIt->camRotPre = g_winCamIt->camRot;
             }
 
-            if(g_winCamIt->mouse_r_clicked){
-                double scale = 0.01;
-                double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
-                double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
-                if (g_mouse_inverted_y){
-                    y_vel = -y_vel;
+            if(g_winCamIt->mouse_l_clicked){
+                if(g_mousePickingEnabled){
+                    cVector3d rayTo = getRayTo(a_xpos, a_ypos);
+                    cVector3d rayFrom = g_windowCameraPairs[0].m_camera->getLocalPos();
+                    g_afMultiBody->movePickedBody(rayFrom, rayTo);
                 }
-                cVector3d camVel(0, -x_vel, y_vel);
-                devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
+                else{
+                    double scale = 0.01;
+                    double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
+                    double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
+                    if (g_mouse_inverted_y){
+                        y_vel = -y_vel;
+                    }
+                    cVector3d camVel(0, -x_vel, y_vel);
+                    devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
+
+                }
             }
 
             if(g_winCamIt->mouse_scroll_clicked){
@@ -2104,6 +2124,64 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVelAlongLook );
         }
     }
+}
+
+
+cVector3d getRayTo(int x, int y)
+{
+    PhysicalDeviceCamera* pCam = g_windowCameraPairs[0].m_camera;
+
+    float top = 1.f;
+    float bottom = -1.f;
+    float nearPlane = 1.f;
+    float tanFov = (top - bottom) * 0.5f / nearPlane;
+    float fov = btScalar(2.0) * btAtan(tanFov);
+
+    btVector3 camPos, camTarget;
+
+    camPos.setValue(pCam->getLocalPos().x(), pCam->getLocalPos().y(), pCam->getLocalPos().z());
+    camTarget.setValue(pCam->getLookVector().x(), pCam->getLookVector().y(), pCam->getLookVector().z());
+
+    btVector3 rayFrom = camPos;
+    btVector3 rayForward = (camTarget - camPos);
+    rayForward.normalize();
+    float farPlane = 10000.f;
+    rayForward *= farPlane;
+
+    btVector3 cameraUp = btVector3(0, 0, 0);
+    cameraUp[2] = 1;
+
+    btVector3 vertical = cameraUp;
+
+    btVector3 hor;
+    hor = rayForward.cross(vertical);
+    hor.safeNormalize();
+    vertical = hor.cross(rayForward);
+    vertical.safeNormalize();
+
+    float tanfov = tanf(0.5f * fov);
+
+    hor *= 2.f * farPlane * tanfov;
+    vertical *= 2.f * farPlane * tanfov;
+
+    btScalar aspect;
+    float width = float(g_windowCameraPairs[0].m_width);
+    float height = float(g_windowCameraPairs[0].m_height);
+
+    aspect = width / height;
+
+    hor *= aspect;
+
+    btVector3 rayToCenter = rayFrom + rayForward;
+    btVector3 dHor = hor * 1.f / width;
+    btVector3 dVert = vertical * 1.f / height;
+
+    btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
+    rayTo += btScalar(x) * dHor;
+    rayTo -= btScalar(y) * dVert;
+    cVector3d cRay(rayTo.x(), rayTo.y(), rayTo.z());
+//    std::cerr << "RAY TO: (" << cRay << ")" << std::endl;
+    return cRay;
 }
 
 ///

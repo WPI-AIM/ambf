@@ -56,6 +56,7 @@
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
+#include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -499,6 +500,10 @@ public:
     // debugging purposes
     void ignoreCollisionChecking();
 
+    bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+    bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+    void removePickingConstraint();
+
     cPrecisionClock m_wallClock;
 
 protected:
@@ -524,6 +529,17 @@ protected:
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
+private:
+    //data for picking objects
+    class btRigidBody* m_pickedBody=0;
+    class btTypedConstraint* m_pickedConstraint=0;
+    int m_savedState;
+    btVector3 m_oldPickingPos;
+    btVector3 m_hitPos;
+    btScalar m_oldPickingDist;
+    struct GUIHelperInterface* m_guiHelper;
+    cMesh* m_pickSphere;
 };
 
 }
