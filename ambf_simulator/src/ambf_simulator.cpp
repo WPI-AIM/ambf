@@ -2040,7 +2040,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             g_winCamIt->mouse_y[1] = g_winCamIt->mouse_y[0];
             g_winCamIt->mouse_y[0] = a_ypos;
 
-            if(g_winCamIt->mouse_r_clicked){
+            if(g_winCamIt->mouse_l_clicked){
                 cMatrix3d camRot;
                 double scale = 0.3;
                 double z_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
@@ -2065,7 +2065,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 g_winCamIt->camRotPre = g_winCamIt->camRot;
             }
 
-            if(g_winCamIt->mouse_l_clicked){
+            if(g_winCamIt->mouse_r_clicked){
                 double scale = 0.01;
                 double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
                 double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
