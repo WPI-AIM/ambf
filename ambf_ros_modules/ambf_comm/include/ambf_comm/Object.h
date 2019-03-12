@@ -80,7 +80,7 @@ struct ObjectCommand{
         enable_position_controller = cmd->enable_position_controller;
         for(size_t idx = 0; idx < joint_commands_size ; idx++){
             joint_commands[idx] = cmd->joint_cmds[idx];
-            if (idx <= cmd->position_controller_mask.size()){
+            if (idx < cmd->position_controller_mask.size()){
                 position_controller_mask[idx] = cmd->position_controller_mask[idx];
             }
             else{
