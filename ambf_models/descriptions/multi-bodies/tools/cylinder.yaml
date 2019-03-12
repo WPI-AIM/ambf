@@ -7,6 +7,8 @@ cylinder:
  name: cylinder
  mass: 0.08
  mesh: Cylinder.STL
+ collision shape: CYLINDER
+ collision geometry: {axis: x, radius: 0.06, height: 0.8}
  scale: 1.0
  friction: {static: 0.2}
  color: random
