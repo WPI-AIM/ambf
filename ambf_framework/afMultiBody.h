@@ -540,7 +540,7 @@ protected:
 
 protected:
     // The collision groups are sorted by integer indices. A group is an array of
-    // ridig bodies that collide with each other. The bodies in one group
+    // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
@@ -550,11 +550,11 @@ private:
     class btRigidBody* m_pickedBody=0;
     class btTypedConstraint* m_pickedConstraint=0;
     int m_savedState;
-    btVector3 m_oldPickingPos;
-    btVector3 m_hitPos;
-    btScalar m_oldPickingDist;
-    struct GUIHelperInterface* m_guiHelper;
+    cVector3d m_oldPickingPos;
+    cVector3d m_hitPos;
+    double m_oldPickingDist;
     cMesh* m_pickSphere;
+//    cMesh* m_pickDragVector;
 };
 
 }

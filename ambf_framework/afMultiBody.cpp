@@ -2233,6 +2233,14 @@ afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
     m_chaiWorld->addChild(m_pickSphere);
+
+//    m_pickDragVector = new cMesh();
+//    cCreateArrow(m_pickDragVector);
+//    m_pickDragVector->m_material->setPurpleAmethyst();
+//    m_pickDragVector->setShowEnabled(false);
+//    m_pickDragVector->setUseDisplayList(true);
+//    m_pickDragVector->markForUpdate(false);
+//    m_chaiWorld->addChild(m_pickDragVector);
 }
 
 
@@ -2646,20 +2654,18 @@ afRigidBodyPtr afMultiBody::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
 /// \return
 ///
 bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btVector3 originVec = cVec2btVec(rayFromWorld);
-    btVector3 targetVec = cVec2btVec(rayToWorld);
     btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
     if (m_dynamicsWorld == 0)
         return false;
 
-    btCollisionWorld::ClosestRayResultCallback rayCallback(originVec, targetVec);
+    btCollisionWorld::ClosestRayResultCallback rayCallback(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld));
 
     rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-    m_dynamicsWorld->rayTest(originVec, targetVec, rayCallback);
+    m_dynamicsWorld->rayTest(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld), rayCallback);
     if (rayCallback.hasHit())
     {
-        btVector3 pickPos = rayCallback.m_hitPointWorld;
-        m_pickSphere->setLocalPos(btVec2cVec(pickPos));
+        cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
+        m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
         btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
         if (body)
@@ -2671,7 +2677,7 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
                 m_savedState = m_pickedBody->getActivationState();
                 m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                 //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * pickPos;
+                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
                 btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
                 m_dynamicsWorld->addConstraint(p2p, true);
                 m_pickedConstraint = p2p;
@@ -2682,12 +2688,9 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
             }
         }
 
-        //					pickObject(pickPos, rayCallback.m_collisionObject);
-        m_oldPickingPos = targetVec;
+        m_oldPickingPos = rayToWorld;
         m_hitPos = pickPos;
-        m_oldPickingDist = (pickPos - originVec).length();
-        //					printf("hit !\n");
-        //add p2p
+        m_oldPickingDist = (pickPos - rayFromWorld).length();
     }
     return false;
 
@@ -2700,8 +2703,6 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
 /// \return
 ///
 bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btVector3 originVec = cVec2btVec(rayFromWorld);
-    btVector3 targetVec = cVec2btVec(rayToWorld);
     if (m_pickedBody && m_pickedConstraint)
     {
         btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
@@ -2709,15 +2710,24 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
         {
             //keep it at the same picking distance
 
-            btVector3 newPivotB;
+            cVector3d newPivotB;
 
-            btVector3 dir = targetVec - originVec;
+            cVector3d dir = rayToWorld - rayFromWorld;
             dir.normalize();
             dir *= m_oldPickingDist;
 
-            newPivotB = originVec + dir;
-            m_pickSphere->setLocalPos(btVec2cVec(newPivotB));
-            pickCon->setPivotB(newPivotB);
+            newPivotB = rayFromWorld + dir;
+            // Set the position of grab sphere
+            m_pickSphere->setLocalPos(newPivotB);
+            // Set the vector properties of the grab velocity vector
+//            cVector3d vPos = newPivotB - m_pickSphere->getLocalPos();
+//            cVector3d vDir = vPos;
+//            m_pickDragVector->setShowEnabled(true);
+//            m_pickDragVector->clear();
+//            double scale = 5.0;
+//            cCreateArrow(m_pickDragVector, vPos.length() * scale, 0.01, 0.1, 0.03, 0, 32, vDir, cVector3d(0,0,0));
+
+            pickCon->setPivotB(cVec2btVec(newPivotB));
             return true;
         }
     }
