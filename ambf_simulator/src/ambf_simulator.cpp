@@ -512,6 +512,8 @@ public:
     PhysicalDeviceCamera(cWorld* a_world): cCamera(a_world){}
     cVector3d measuredPos();
     cMatrix3d measuredRot();
+    inline cVector3d getTargetPos(){return m_targetPos;}
+    inline cVector3d setTargetPos(cVector3d a_pos){m_targetPos = a_pos;}
 
 public:
     bool m_cam_pressed;
@@ -520,6 +522,10 @@ protected:
     std::mutex m_mutex;
     cVector3d m_pos, m_posClutched;
     cMatrix3d m_rot, m_rotClutched;
+    // This is the position that the camera is supposed to be looking at
+    // This is also the point along which the orbital/arcball rotation
+    // of the camera takes place.
+    cVector3d m_targetPos;
 
 };
 
@@ -1420,7 +1426,7 @@ int main(int argc, char* argv[])
 
             // set camera name
             cameraPtr->m_name = camera_data.m_name;
-
+            cameraPtr->setTargetPos(camera_data.m_look_at);
             cameraPtr->set(camera_data.m_location, camera_data.m_look_at, camera_data.m_up);
             cameraPtr->setClippingPlanes(camera_data.m_clipping_plane_limits[0], camera_data.m_clipping_plane_limits[1]);
             cameraPtr->setFieldViewAngleRad(camera_data.m_field_view_angle);
@@ -1485,6 +1491,7 @@ int main(int argc, char* argv[])
         PhysicalDeviceCamera* cameraPtr = new PhysicalDeviceCamera(g_bulletWorld);
 
         // position and orient the camera
+        cameraPtr->setTargetPos(cVector3d(0.0, 0.0,-0.5));
         cameraPtr->set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
                       cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
                       cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
@@ -2012,18 +2019,16 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 /// \param a_button4
 ///
 void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_modes){
-//    cerr << "Window " << a_window->title() << endl;
-//    cerr << "Buttons " << a_button << endl;
-//    cerr << "Pressed " << a_action << endl;
-
     for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         if (a_window == g_winCamIt->m_window){
             if (a_button == GLFW_MOUSE_BUTTON_1){
                 g_winCamIt->mouse_l_clicked = a_action;
                 if (a_action){
                     if (g_mousePickingEnabled){
-                        cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
-                        cVector3d rayTo = getRayTo(g_winCamIt->mouse_x[0], g_winCamIt->mouse_y[0], &(*g_winCamIt));
+                        cVector3d rayFrom = g_winCamIt->m_camera->getGlobalPos();
+                        double x_pos, y_pos;
+                        glfwGetCursorPos(a_window, &x_pos, &y_pos);
+                        cVector3d rayTo = getRayTo(x_pos, y_pos, &(*g_winCamIt));
                         g_afMultiBody->pickBody(rayFrom, rayTo);
                     }
                 }
@@ -2043,7 +2048,6 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 
 ///
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
-//    cerr << "Mouse CB x: (" << a_posX << ") y: (" << a_posY << ")\n";
     for (g_winCamIt = g_windowCameraPairs.begin() ; g_winCamIt != g_windowCameraPairs.end() ; ++g_winCamIt){
         if (a_window == g_winCamIt->m_window){
             PhysicalDeviceCamera* devCam = g_winCamIt->m_camera;
@@ -2051,6 +2055,27 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             g_winCamIt->mouse_x[0] = a_xpos;
             g_winCamIt->mouse_y[1] = g_winCamIt->mouse_y[0];
             g_winCamIt->mouse_y[0] = a_ypos;
+
+            if(g_winCamIt->mouse_l_clicked){
+                if(g_mousePickingEnabled){
+                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, &(*g_winCamIt));
+                    cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
+                    g_afMultiBody->movePickedBody(rayFrom, rayTo);
+                }
+                else{
+                    double scale = 0.01;
+                    double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
+                    double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
+                    if (g_mouse_inverted_y){
+                        y_vel = -y_vel;
+                    }
+                    cVector3d camVel(0, -x_vel, y_vel);
+                    cVector3d dPos = devCam->getLocalPos() + devCam->getLocalRot() * camVel;
+                    cVector3d dLook = devCam->getTargetPos() + devCam->getLocalRot() * camVel;
+                    devCam->setLocalPos(dPos);
+                    devCam->setTargetPos(dLook);
+                }
+            }
 
             if(g_winCamIt->mouse_r_clicked){
                 cMatrix3d camRot;
@@ -2071,29 +2096,16 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 camViewPitchOnly.setAxisAngleRotationRad(ny, pitchAngle);
                 camRot.setIntrinsicEulerRotationDeg(0, y_vel, z_vel, cEulerOrder::C_EULER_ORDER_XYZ);
                 g_winCamIt->camRot = camRot;
-                devCam->setLocalRot( camViewWithoutPitch * g_winCamIt->camRot * camViewPitchOnly);
+
+                cTransform tCinW = devCam->getLocalTransform(); // Transform of Cam in World
+                tCinW.invert(); // Invert to get T of World in Camera
+                cVector3d pLinC = tCinW * devCam->getTargetPos(); // Target vector in camera frame
+                devCam->setLocalRot( camViewWithoutPitch * g_winCamIt->camRot * camViewPitchOnly );
+                cVector3d pLinW = devCam->getLocalTransform() * pLinC; // Target vector in world frame
+                devCam->setTargetPos(pLinW);
             }
             else{
                 g_winCamIt->camRotPre = g_winCamIt->camRot;
-            }
-
-            if(g_winCamIt->mouse_l_clicked){
-                if(g_mousePickingEnabled){
-                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, &(*g_winCamIt));
-                    cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
-                    g_afMultiBody->movePickedBody(rayFrom, rayTo);
-                }
-                else{
-                    double scale = 0.01;
-                    double x_vel = scale * (g_winCamIt->mouse_x[0] - g_winCamIt->mouse_x[1]);
-                    double y_vel = scale * (g_winCamIt->mouse_y[0] - g_winCamIt->mouse_y[1]);
-                    if (g_mouse_inverted_y){
-                        y_vel = -y_vel;
-                    }
-                    cVector3d camVel(0, -x_vel, y_vel);
-                    devCam->setLocalPos( devCam->getLocalPos() + devCam->getLocalRot() * camVel );
-
-                }
             }
 
             if(g_winCamIt->mouse_scroll_clicked){
@@ -2104,12 +2116,11 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                     y_vel = -y_vel;
                 }
                 cVector3d camVel(0, -x_vel, y_vel);
-                devCam->set(devCam->getLocalPos() + devCam->getLocalRot() * camVel, devCam->getLookVector(), cVector3d(0,0,1));
+                devCam->set(devCam->getLocalPos() + devCam->getLocalRot() * camVel, devCam->getTargetPos(), cVector3d(0,0,1));
             }
 
         }
     }
-
 }
 
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
@@ -2132,15 +2143,15 @@ cVector3d getRayTo(int x, int y, WindowCameraPair* winCamPair)
     PhysicalDeviceCamera* pCam = winCamPair->m_camera;
 
     float top = 1.f;
-    float bottom = -1.f;
+    float bottom = -1.0f;
     float nearPlane = 1.f;
     float tanFov = (top - bottom) * 0.5f / nearPlane;
-    float fov = btScalar(2.0) * btAtan(tanFov);
+    float fov = btScalar(1.0) * btAtan(tanFov);
 
     btVector3 camPos, camTarget;
 
-    camPos = cVec2btVec(pCam->getLocalPos());
-    camTarget = cVec2btVec((pCam->getLookVector()));
+    camPos = cVec2btVec( pCam->getLocalPos() );
+    camTarget = cVec2btVec( pCam->getTargetPos() );
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);

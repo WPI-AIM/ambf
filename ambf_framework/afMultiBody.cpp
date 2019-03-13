@@ -2659,7 +2659,6 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
     if (rayCallback.hasHit())
     {
         btVector3 pickPos = rayCallback.m_hitPointWorld;
-        std::cerr << "HIT POSITION:p " << "(" << pickPos.x() << ", " << pickPos.y() << ", " << pickPos.z() << ")" << std::endl;
         m_pickSphere->setLocalPos(btVec2cVec(pickPos));
         m_pickSphere->setShowEnabled(true);
         btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
