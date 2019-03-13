@@ -116,6 +116,26 @@ void assignRPY(YAML::Node* node, btVector3 *v){
     v->setZ((*node)["y"].as<double>());
 }
 
+///
+/// \brief cVec2btVec
+/// \param cVec
+/// \return
+///
+btVector3 cVec2btVec(const cVector3d &cVec){
+    btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
+    return bVec;
+}
+
+///
+/// \brief btVec2cVec
+/// \param bVec
+/// \return
+///
+cVector3d btVec2cVec(const btVector3 &bVec){
+    cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
+    return cVec;
+}
+
 
 ///////////////////////////////////////////////
 
@@ -2211,7 +2231,7 @@ afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_pickSphere->setUseDisplayList(true);
     m_pickSphere->markForUpdate(false);
     m_pickSphere->setLocalPos(0,0,0);
-//    m_pickSphere->setShowEnabled(true);
+    m_pickSphere->setShowEnabled(false);
     m_chaiWorld->addChild(m_pickSphere);
 }
 
@@ -2615,18 +2635,6 @@ afRigidBodyPtr afMultiBody::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
         std::cerr << "WARNING! " << rootParents << " ROOT PARENTS FOUND, RETURNING THE LAST ONE\n";
 
     return rootParentBody;
-}
-
-
-btVector3 cVec2btVec(const cVector3d &cVec){
-    btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
-    return bVec;
-}
-
-
-cVector3d btVec2cVec(const btVector3 &bVec){
-    cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
-    return cVec;
 }
 
 // The following functions have been copied from btRidigBodyBase by Erwin Coumans

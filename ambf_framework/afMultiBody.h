@@ -88,6 +88,21 @@ typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
 //------------------------------------------------------------------------------
 
+
+///
+/// \brief cVec2btVec
+/// \param cVec
+/// \return
+///
+btVector3 cVec2btVec(const cVector3d &cVec);
+
+///
+/// \brief btVec2cVec
+/// \param bVec
+/// \return
+///
+cVector3d btVec2cVec(const btVector3 &bVec);
+
 ///
 /// \brief The afConfigHandler class
 ///

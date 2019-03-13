@@ -137,10 +137,6 @@ cThread* g_bulletSimThread;
 // swap interval for the display context (vertical synchronization)
 int g_swapInterval = 1;
 
-// Copied from CommonRidiBodyBase.h of Bullet Physics by Erwin Coumans with
-// Ray Tracing for Camera Pick and Place
-cVector3d getRayTo(int x, int y);
-
 bool g_mousePickingEnabled = false;
 
 //---------------------------------------------------------------------------
@@ -177,6 +173,10 @@ void mousePosCallback(GLFWwindow* a_window, double x_pos, double y_pos);
 
 //callback for mouse positions
 void mouseScrollCallback(GLFWwindow* a_window, double x_pos, double y_pos);
+
+// Copied from CommonRidiBodyBase.h of Bullet Physics by Erwin Coumans with
+// Ray Tracing for Camera Pick and Place
+cVector3d getRayTo(int x, int y, WindowCameraPair* winCamPair);
 
 // this function contains the main haptics simulation loop
 void updateHapticDevice(void*);
@@ -2023,7 +2023,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
                 if (a_action){
                     if (g_mousePickingEnabled){
                         cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
-                        cVector3d rayTo = getRayTo(g_winCamIt->mouse_x[0], g_winCamIt->mouse_x[1]);
+                        cVector3d rayTo = getRayTo(g_winCamIt->mouse_x[0], g_winCamIt->mouse_y[0], &(*g_winCamIt));
                         g_afMultiBody->pickBody(rayFrom, rayTo);
                     }
                 }
@@ -2079,8 +2079,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
             if(g_winCamIt->mouse_l_clicked){
                 if(g_mousePickingEnabled){
-                    cVector3d rayTo = getRayTo(a_xpos, a_ypos);
-                    cVector3d rayFrom = g_windowCameraPairs[0].m_camera->getLocalPos();
+                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, &(*g_winCamIt));
+                    cVector3d rayFrom = g_winCamIt->m_camera->getLocalPos();
                     g_afMultiBody->movePickedBody(rayFrom, rayTo);
                 }
                 else{
@@ -2127,9 +2127,9 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
 }
 
 
-cVector3d getRayTo(int x, int y)
+cVector3d getRayTo(int x, int y, WindowCameraPair* winCamPair)
 {
-    PhysicalDeviceCamera* pCam = g_windowCameraPairs[0].m_camera;
+    PhysicalDeviceCamera* pCam = winCamPair->m_camera;
 
     float top = 1.f;
     float bottom = -1.f;
@@ -2139,8 +2139,8 @@ cVector3d getRayTo(int x, int y)
 
     btVector3 camPos, camTarget;
 
-    camPos.setValue(pCam->getLocalPos().x(), pCam->getLocalPos().y(), pCam->getLocalPos().z());
-    camTarget.setValue(pCam->getLookVector().x(), pCam->getLookVector().y(), pCam->getLookVector().z());
+    camPos = cVec2btVec(pCam->getLocalPos());
+    camTarget = cVec2btVec((pCam->getLookVector()));
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);
@@ -2165,8 +2165,8 @@ cVector3d getRayTo(int x, int y)
     vertical *= 2.f * farPlane * tanfov;
 
     btScalar aspect;
-    float width = float(g_windowCameraPairs[0].m_width);
-    float height = float(g_windowCameraPairs[0].m_height);
+    float width = float(winCamPair->m_width);
+    float height = float(winCamPair->m_height);
 
     aspect = width / height;
 
@@ -2179,8 +2179,7 @@ cVector3d getRayTo(int x, int y)
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
     rayTo += btScalar(x) * dHor;
     rayTo -= btScalar(y) * dVert;
-    cVector3d cRay(rayTo.x(), rayTo.y(), rayTo.z());
-//    std::cerr << "RAY TO: (" << cRay << ")" << std::endl;
+    cVector3d cRay = btVec2cVec(rayTo);
     return cRay;
 }
 
