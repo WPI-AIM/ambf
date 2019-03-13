@@ -2717,6 +2717,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
             dir *= m_oldPickingDist;
 
             newPivotB = originVec + dir;
+            m_pickSphere->setLocalPos(btVec2cVec(newPivotB));
             pickCon->setPivotB(newPivotB);
             return true;
         }
