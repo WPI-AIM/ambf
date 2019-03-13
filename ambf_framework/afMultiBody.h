@@ -56,6 +56,7 @@
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
+#include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -86,6 +87,21 @@ class afCamera;
 typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
 //------------------------------------------------------------------------------
+
+
+///
+/// \brief cVec2btVec
+/// \param cVec
+/// \return
+///
+btVector3 cVec2btVec(const cVector3d &cVec);
+
+///
+/// \brief btVec2cVec
+/// \param bVec
+/// \return
+///
+cVector3d btVec2cVec(const btVector3 &bVec);
 
 ///
 /// \brief The afConfigHandler class
@@ -499,6 +515,10 @@ public:
     // debugging purposes
     void ignoreCollisionChecking();
 
+    bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+    bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+    void removePickingConstraint();
+
     cPrecisionClock m_wallClock;
 
 protected:
@@ -520,10 +540,21 @@ protected:
 
 protected:
     // The collision groups are sorted by integer indices. A group is an array of
-    // ridig bodies that collide with each other. The bodies in one group
+    // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
+private:
+    //data for picking objects
+    class btRigidBody* m_pickedBody=0;
+    class btTypedConstraint* m_pickedConstraint=0;
+    int m_savedState;
+    cVector3d m_oldPickingPos;
+    cVector3d m_hitPos;
+    double m_oldPickingDist;
+    cMesh* m_pickSphere;
+//    cMesh* m_pickDragVector;
 };
 
 }

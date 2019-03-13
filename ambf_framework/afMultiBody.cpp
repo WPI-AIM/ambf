@@ -116,6 +116,26 @@ void assignRPY(YAML::Node* node, btVector3 *v){
     v->setZ((*node)["y"].as<double>());
 }
 
+///
+/// \brief cVec2btVec
+/// \param cVec
+/// \return
+///
+btVector3 cVec2btVec(const cVector3d &cVec){
+    btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
+    return bVec;
+}
+
+///
+/// \brief btVec2cVec
+/// \param bVec
+/// \return
+///
+cVector3d btVec2cVec(const btVector3 &bVec){
+    cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
+    return cVec;
+}
+
 
 ///////////////////////////////////////////////
 
@@ -2205,6 +2225,22 @@ afMultiBody::afMultiBody(){
 afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_wallClock.start(true);
     m_chaiWorld = a_chaiWorld;
+    m_pickSphere = new cMesh();
+    cCreateSphere(m_pickSphere, 0.02);
+    m_pickSphere->m_material->setPinkHot();
+    m_pickSphere->setUseDisplayList(true);
+    m_pickSphere->markForUpdate(false);
+    m_pickSphere->setLocalPos(0,0,0);
+    m_pickSphere->setShowEnabled(false);
+    m_chaiWorld->addChild(m_pickSphere);
+
+//    m_pickDragVector = new cMesh();
+//    cCreateArrow(m_pickDragVector);
+//    m_pickDragVector->m_material->setPurpleAmethyst();
+//    m_pickDragVector->setShowEnabled(false);
+//    m_pickDragVector->setUseDisplayList(true);
+//    m_pickDragVector->markForUpdate(false);
+//    m_chaiWorld->addChild(m_pickDragVector);
 }
 
 
@@ -2535,63 +2571,6 @@ void afMultiBody::removeOverlappingCollisionChecking(){
     }
 }
 
-/////
-///// \brief afMultiBody::removeOverlappingCollisionChecking
-/////
-//void afMultiBody::removeOverlappingCollisionChecking(){
-//    // This function checks all the constraints of each ridig body
-//    // if there are more than 1, it means that multiple bodies share each other
-//    // In this case, iteratively go over all the shared bodies and ignore their
-//    // collision
-
-//    std::vector<btRigidBody*> rigidBodiesA, rigidBodiesB;
-//    std::vector<afJointPtr> afJoints;
-//    int num_joints = m_afJointMap.size();
-//    rigidBodiesA.resize(num_joints);
-//    rigidBodiesB.resize(num_joints);
-//    afJoints.resize(num_joints);
-//    std::vector<bool> aBodiesChecked(num_joints, false);
-//    std::vector<bool> bBodiesChecked(num_joints, false);
-
-//    afJointMap::iterator jIt = m_afJointMap.begin();
-//    for (int jIdx = 0; jIt != m_afJointMap.end() ; ++ jIt, jIdx++){
-//        afJointPtr afJoint = jIt->second;
-//        rigidBodiesA[jIdx] = &afJoint->m_hinge->getRigidBodyA();
-//        rigidBodiesB[jIdx] = &afJoint->m_hinge->getRigidBodyB();
-//        afJoints[jIdx] = afJoint;
-//    }
-//    std::pair<btVector3, btRigidBody*> pvtConnectedBodyPair;
-//    std::vector< std::pair<btVector3, btRigidBody*> > pvtConnectedBodyPairs;
-//    std::vector < std::vector< std::pair<btVector3, btRigidBody*> > > bodyPvtConnectedBodyPairs;
-
-//    for (int a1 = 0 ; a1 < rigidBodiesA.size() ; a1 ++){
-//        if (aBodiesChecked[a1] == false){
-//            btRigidBody* rBodyA = rigidBodiesA[a1];
-//            for (int a2 = a1 ; a2 < rigidBodiesA.size() ; a2 ++){
-//                btRigidBody* rBodyB = rigidBodiesA[a2];
-//                if (rBodyA == rBodyB){
-//                    pvtConnectedBodyPair.first = afJoints[a1]->m_pvtA;
-//                    pvtConnectedBodyPair.second = rigidBodiesB[a2];
-//                    pvtConnectedBodyPairs.push_back(pvtConnectedBodyPair);
-//                    aBodiesChecked[a2] = true;
-//                }
-//            }
-//            for (int b1 = 0 ; b1 < rigidBodiesB.size() ; b1 ++){
-//                if (bBodiesChecked[b1] == false){
-//                    btRigidBody* rBodyB = rigidBodiesB[b1];
-//                    if (rBodyA == rBodyB){
-//                        pvtConnectedBodyPair.first = afJoints[b1]->m_pvtB;
-//                        pvtConnectedBodyPair.second = rigidBodiesA[b1];
-//                        pvtConnectedBodyPairs.push_back(pvtConnectedBodyPair);
-//                        bBodiesChecked[b1] = true;
-//                    }
-//                }
-//            }
-//            bodyPvtConnectedBodyPairs.push_back(pvtConnectedBodyPairs);
-//        }
-//    }
-
-//}
 
 ///
 /// \brief afMultiBody::getRidigBody
@@ -2664,6 +2643,112 @@ afRigidBodyPtr afMultiBody::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
         std::cerr << "WARNING! " << rootParents << " ROOT PARENTS FOUND, RETURNING THE LAST ONE\n";
 
     return rootParentBody;
+}
+
+// The following functions have been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
+///
+/// \brief afMultiBody::pickBody
+/// \param rayFromWorld
+/// \param rayToWorld
+/// \return
+///
+bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
+    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    if (m_dynamicsWorld == 0)
+        return false;
+
+    btCollisionWorld::ClosestRayResultCallback rayCallback(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld));
+
+    rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
+    m_dynamicsWorld->rayTest(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld), rayCallback);
+    if (rayCallback.hasHit())
+    {
+        cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
+        m_pickSphere->setLocalPos(pickPos);
+        m_pickSphere->setShowEnabled(true);
+        btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
+        if (body)
+        {
+            //other exclusions?
+            if (!(body->isStaticObject() || body->isKinematicObject()))
+            {
+                m_pickedBody = body;
+                m_savedState = m_pickedBody->getActivationState();
+                m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
+                //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
+                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
+                btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
+                m_dynamicsWorld->addConstraint(p2p, true);
+                m_pickedConstraint = p2p;
+                btScalar mousePickClamping = 30.f;
+                p2p->m_setting.m_impulseClamp = mousePickClamping;
+                //very weak constraint for picking
+                p2p->m_setting.m_tau = 0.001f;
+            }
+        }
+
+        m_oldPickingPos = rayToWorld;
+        m_hitPos = pickPos;
+        m_oldPickingDist = (pickPos - rayFromWorld).length();
+    }
+    return false;
+
+}
+
+///
+/// \brief afMultiBody::movePickedBody
+/// \param rayFromWorld
+/// \param rayToWorld
+/// \return
+///
+bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
+    if (m_pickedBody && m_pickedConstraint)
+    {
+        btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
+        if (pickCon)
+        {
+            //keep it at the same picking distance
+
+            cVector3d newPivotB;
+
+            cVector3d dir = rayToWorld - rayFromWorld;
+            dir.normalize();
+            dir *= m_oldPickingDist;
+
+            newPivotB = rayFromWorld + dir;
+            // Set the position of grab sphere
+            m_pickSphere->setLocalPos(newPivotB);
+            // Set the vector properties of the grab velocity vector
+//            cVector3d vPos = newPivotB - m_pickSphere->getLocalPos();
+//            cVector3d vDir = vPos;
+//            m_pickDragVector->setShowEnabled(true);
+//            m_pickDragVector->clear();
+//            double scale = 5.0;
+//            cCreateArrow(m_pickDragVector, vPos.length() * scale, 0.01, 0.1, 0.03, 0, 32, vDir, cVector3d(0,0,0));
+
+            pickCon->setPivotB(cVec2btVec(newPivotB));
+            return true;
+        }
+    }
+    return false;
+}
+
+///
+/// \brief afMultiBody::removePickingConstraint
+///
+void afMultiBody::removePickingConstraint(){
+    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    if (m_pickedConstraint)
+    {
+        m_pickSphere->setShowEnabled(false);
+        m_pickedBody->forceActivationState(m_savedState);
+        m_pickedBody->activate();
+        m_dynamicsWorld->removeConstraint(m_pickedConstraint);
+        delete m_pickedConstraint;
+        m_pickedConstraint = 0;
+        m_pickedBody = 0;
+    }
 }
 
 ///
