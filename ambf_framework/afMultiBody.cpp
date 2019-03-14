@@ -1882,13 +1882,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 btQuaternion afJoint::getRotationBetweenVectors(btVector3 &v1, btVector3 &v2){
     btQuaternion quat;
     double rot_angle = v1.angle(v2);
-    if ( abs(rot_angle) < 0.1){
+    if ( cAbs(rot_angle) < 0.1){
         quat.setEulerZYX(0,0,0);
     }
-    else if ( abs(rot_angle) > 3.13 ){
+    else if ( cAbs(rot_angle) > 3.13 ){
         btVector3 nx(1, 0, 0);
         double temp_ang = v1.angle(nx);
-        if ( abs(temp_ang) > 0.1 && abs(temp_ang) < 3.13 ){
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
             btVector3 rot_axis = v1.cross(nx);
             quat.setRotation(rot_axis, rot_angle);
         }
