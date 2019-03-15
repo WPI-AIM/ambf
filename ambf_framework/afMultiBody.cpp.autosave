@@ -2206,19 +2206,6 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     s_camera_idx++;
     s_num_windows++;
 
-    // Assign the Window Camera Handles
-    WindowCameraPair winCamHandle;
-    winCamHandle.m_window = windowPtr;
-    winCamHandle.m_monitor = monitors[_monitor_to_load];
-    winCamHandle.m_camera = cameraPtr;
-    winCamHandle.m_deviceNames = camera_data.m_controlling_devices;
-    winCamHandle.m_win_x = x;
-    winCamHandle.m_win_y = y;
-
-    g_windowCameraPairs.push_back(winCamHandle);
-
-
-
     return _is_valid;
 }
 

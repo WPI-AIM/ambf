@@ -169,6 +169,9 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
   link_directories (${DHD_LIBRARY_DIRS})
 endif ()
 
+# GLFW
+add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
+
 #
 # static library
 #
@@ -289,8 +292,6 @@ set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 #
 # executables
 #
-# GLFW
-add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
 
 # AMBF Simulator
 add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)

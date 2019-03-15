@@ -57,6 +57,7 @@
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+#include <GLFW/glfw3.h>
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -393,20 +394,40 @@ private:
 ///
 /// \brief The afCamera class
 ///
-class afCamera{
+class afCamera: cCamera{
 public:
 
-    afCamera();
+    afCamera(cBulletWorld* a_world);
     bool loadCamera(YAML::Node* camera_node, std::string camera_name);
-    cVector3d m_location;
-    cVector3d m_look_at;
-    cVector3d m_up;
-    double m_clipping_plane_limits[2];
-    double m_field_view_angle;
-    bool m_enable_ortho_view;
-    double m_ortho_view_width;
-    std::string m_name;
     std::vector<std::string> m_controlling_devices;
+    cVector3d measuredPos();
+    cMatrix3d measuredRot();
+    inline cVector3d getTargetPos(){return m_targetPos;}
+    inline cVector3d setTargetPos(cVector3d a_pos){m_targetPos = a_pos;}
+
+public:
+    bool m_cam_pressed;
+
+public:
+    GLFWmonitor** m_monitors;
+
+protected:
+    std::mutex m_mutex;
+    cVector3d m_pos, m_posClutched;
+    cMatrix3d m_rot, m_rotClutched;
+    // This is the position that the camera is supposed to be looking at
+    // This is also the point along which the orbital/arcball rotation
+    // of the camera takes place.
+    cVector3d m_targetPos;
+    GLFWwindow* m_window;
+
+protected:
+    static GLFWwindow* s_mainWindow;
+
+    static int s_num_cameras;
+    static int s_num_monitors;
+    static int s_num_windows;
+    static int s_camera_idx;
 };
 
 
