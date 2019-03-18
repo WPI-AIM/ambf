@@ -72,16 +72,18 @@ std::vector<std::string> afConfigHandler::s_multiBody_configs;
 std::string afConfigHandler::s_world_config;
 YAML::Node afConfigHandler::s_colorsNode;
 std::map<std::string, std::string> afConfigHandler::s_gripperConfigFiles;
-int afCamera::s_num_cameras;
-int afCamera::s_camera_idx = 0;
-int afCamera::s_num_monitors;
-int afCamera::s_num_windows;
-GLFWwindow* afCamera::s_mainWindow;
 
 cBulletWorld* afWorld::m_chaiWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
+
+GLFWwindow* afCamera::s_mainWindow = NULL;
+GLFWmonitor** afCamera::s_monitors;
+int afCamera::s_numMonitors = 0;
+int afCamera::s_numWindows = 0;
+int afCamera::s_cameraIdx = 0;
+int afCamera::s_windowIdx = 0;
 //------------------------------------------------------------------------------
 
 /// End declare static variables
@@ -2068,7 +2070,7 @@ bool afWorld::loadWorld(std::string a_world_config){
         size_t n_cameras = worldCamerasData.size();
         for (size_t idx = 0 ; idx < n_cameras; idx++){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
-            afCameraPtr cameraPtr = new afCamera();
+            afCameraPtr cameraPtr = new afCamera(m_chaiWorld);
             YAML::Node cameraNode = worldNode[camera_name];
             if (cameraPtr->loadCamera(&cameraNode, camera_name)){
                 m_cameras.push_back(cameraPtr);
@@ -2076,17 +2078,86 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
+    if (m_cameras.size() == 0){
+        // No valid cameras defined in the world config file
+        // hence create a default camera
+        afCameraPtr cameraPtr = new afCamera(m_chaiWorld);
+        if (cameraPtr->createDefaultCamera()){
+            m_cameras.push_back(cameraPtr);
+        }
+
+    }
+
     return true;
 
 }
 
+
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(cBulletWorld* a_world): cCamera(a_world){
-    // To be able to show shadows in multiple windows, we need to share resources. This is done
-   // by passing the first created window as "share" with the windows created afterwards
-   monitors = glfwGetMonitors(&s_num_monitors);
+afCamera::afCamera(cBulletWorld* a_bulletWorld): cCamera(a_bulletWorld){
+
+    s_monitors = glfwGetMonitors(&s_numMonitors);
+    m_bulletWorld = a_bulletWorld;
+}
+
+///
+/// \brief afCamera::createDefaultCamera
+/// \return
+///
+bool afCamera::createDefaultCamera(){
+    std::cerr << "INFO: USING DEFAULT CAMERA" << std::endl;
+
+    // position and orient the camera
+    setTargetPos(cVector3d(0.0, 0.0,-0.5));
+    set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
+        cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
+        cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
+
+    // set the near and far clipping planes of the camera
+    setClippingPlanes(0.01, 10.0);
+
+    // set stereo mode
+    setStereoMode(cStereoMode::C_STEREO_DISABLED);
+
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
+    setStereoEyeSeparation(0.02);
+    setStereoFocalLength(2.0);
+
+    // set vertical mirrored display mode
+    setMirrorVertical(false);
+
+    // create display context
+    // compute desired size of window
+    const GLFWvidmode* _mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int w = 0.8 * _mode->width;
+    int h = 0.5 * _mode->height;
+    int x = 0.5 * (_mode->width - w);
+    int y = 0.5 * (_mode->height - h);
+    m_window = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
+    s_mainWindow = m_window;
+
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
+
+    // create a font
+    cFontPtr font = NEW_CFONTCALIBRI20();
+
+    m_graphicsDynamicsFreqLabel = new cLabel(font);
+    m_wallSimTimeLabel = new cLabel(font);
+    m_devicesModesLabel = new cLabel(font);
+    m_deviceButtonLabel = new cLabel(font);
+    m_controllingDeviceLabel = new cLabel(font);
+
+    s_windowIdx++;
+    s_cameraIdx++;
+
+    // Assign the Window Camera Handles
+    m_bulletWorld->addChild(this);
+    return true;
 }
 
 ///
@@ -2106,11 +2177,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
     YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
 
-    cVector3d _location, _look_at, _up;
-    double _clipping_plane_limits[2], _field_view_angle, _ortho_view_width;
-    bool _enable_ortho_view = false;
-
     bool _is_valid = true;
+    cVector3d _location, _up, _look_at;
+    double _clipping_plane_limits[2], _field_view_angle;
+    bool _enable_ortho_view = false;
+    double _stereo_eye_seperation, _ortho_view_width;
 
     if (cameraLocationData.IsDefined()){
         assignXYZ(&cameraLocationData, &_location);
@@ -2134,8 +2205,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         _is_valid = false;
     }
     if (cameraClippingPlaneData.IsDefined()){
-        _clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
         _clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
+        _clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
@@ -2152,94 +2223,70 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         _enable_ortho_view = true;
         _ortho_view_width = cameraOrthoWidthData.as<double>();
     }
-
+    else{
+         _enable_ortho_view = false;
+    }
     if (cameraControllingDevicesData.IsDefined()){
         for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
-            m_controlling_devices.push_back( cameraControllingDevicesData[idx].as<std::string>());
+            m_controllingDevNames.push_back( cameraControllingDevicesData[idx].as<std::string>());
         }
     }
-    // set camera name
-    m_name = camera_data.m_name;
-    setTargetPos(_look_at);
+
+    //////////////////////////////////////////////////////////////////////////////////////
+
     set(_location, _look_at, _up);
     setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
     setFieldViewAngleRad(_field_view_angle);
+
     if (_enable_ortho_view){
-        cameraPtr->setOrthographicView(_ortho_view_width);
+        setOrthographicView(_ortho_view_width);
     }
-//            cameraPtr->setEnabled(true);
-    setStereoMode(stereoMode);
-    setStereoEyeSeparation(0.02);
-    setStereoFocalLength(2.0);
-    setMirrorVertical(mirroredDisplay);
 
-    a_world->addChild(this);
-
-    std::string window_name = "AMBF Simulator Window " + std::to_string(s_camera_idx + 1);
-    if (m_controlling_devices.size() > 0){
-        for (int i=0 ; i < m_controlling_devices.size() ; i++){
-            window_name += (" - " + m_controlling_devices[i]);
+    std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
+    if (m_controllingDevNames.size() > 0){
+        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
+            window_name += (" - " + m_controllingDevNames[i]);
         }
 
     }
+
     // create display context
-    int _monitor_to_load = 0;
-    if (s_camera_idx < s_num_monitors){
-        _monitor_to_load = s_camera_idx;
+    int monitor_to_load = 0;
+    if (s_cameraIdx < s_numMonitors){
+        monitor_to_load = s_cameraIdx;
     }
     // compute desired size of window
-    const GLFWvidmode* mode = glfwGetVideoMode(m_monitors[_monitor_to_load]);
-    int w = 0.8 * mode->height;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
+    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
+    int w = 0.8 * _mode->width;
+    int h = 0.5 * _mode->height;
+    int x = 0.5 * (_mode->width - w);
+    int y = 0.5 * (_mode->height - h);
 
-    GLFWwindow* windowPtr;
-    if (numWindows == 0){
-        windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
-        s_mainWindow = windowPtr;
-        m_window = s_mainWindow;
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
+
+    m_window = glfwCreateWindow(w, h, window_name.c_str(), NULL, s_mainWindow);
+    if (s_windowIdx == 0){
+        s_mainWindow = m_window;
     }
-    else{
-        m_window = glfwCreateWindow(w, h, window_name.c_str() , NULL, s_mainWindow);
-    }
-    s_camera_idx++;
-    s_num_windows++;
 
-    // Assign the Window Camera Handles
-    WindowCameraPair winCamHandle;
-    winCamHandle.m_window = windowPtr;
-    winCamHandle.m_monitor = monitors[_monitor_to_load];
-    winCamHandle.m_camera = cameraPtr;
-    winCamHandle.m_deviceNames = camera_data.m_controlling_devices;
-    winCamHandle.m_win_x = x;
-    winCamHandle.m_win_y = y;
+    // create a font
+    cFontPtr font = NEW_CFONTCALIBRI20();
 
-    g_windowCameraPairs.push_back(winCamHandle);
+    m_graphicsDynamicsFreqLabel = new cLabel(font);
+    m_wallSimTimeLabel = new cLabel(font);
+    m_devicesModesLabel = new cLabel(font);
+    m_deviceButtonLabel = new cLabel(font);
+    m_controllingDeviceLabel = new cLabel(font);
 
+    s_windowIdx++;
+    s_cameraIdx++;
 
+    m_bulletWorld->addChild(this);
 
     return _is_valid;
-}
-
-///
-/// \brief afCamera::measuredPos
-/// \return
-///
-cVector3d afCamera::measuredPos(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_pos = getGlobalPos();
-    return m_pos;
-}
-
-///
-/// \brief afCamera::measuredRot
-/// \return
-///
-cMatrix3d afCamera::measuredRot(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_rot = getGlobalRot();
-    return m_rot;
 }
 
 
