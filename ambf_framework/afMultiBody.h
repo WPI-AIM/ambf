@@ -50,16 +50,14 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-#include "CBulletMultiMesh.h"
 #include "afSoftMultiMesh.h"
-#include "CBulletWorld.h"
+#include "CBullet.h"
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
-#include <GLFW/glfw3.h>
 //------------------------------------------------------------------------------
-
+#include <GLFW/glfw3.h>
 //------------------------------------------------------------------------------
 namespace ambf {
 using namespace chai3d;
@@ -87,6 +85,8 @@ class afLight;
 class afCamera;
 typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
+typedef std::map<std::string, afCameraPtr> afCameraMap;
+typedef std::vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
 
 
@@ -394,22 +394,53 @@ private:
 ///
 /// \brief The afCamera class
 ///
-class afCamera: cCamera{
+class afCamera: public cCamera{
 public:
 
-    afCamera(cBulletWorld* a_world);
+    afCamera(cBulletWorld* a_bulletWrold);
+    bool createDefaultCamera();
     bool loadCamera(YAML::Node* camera_node, std::string camera_name);
-    std::vector<std::string> m_controlling_devices;
+
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     inline cVector3d getTargetPos(){return m_targetPos;}
-    inline cVector3d setTargetPos(cVector3d a_pos){m_targetPos = a_pos;}
+    inline void setTargetPos(cVector3d a_pos){m_targetPos = a_pos;}
+
+    bool init();
 
 public:
     bool m_cam_pressed;
+    GLFWwindow* m_window;
+
+    static GLFWwindow* s_mainWindow;
+    static GLFWmonitor** s_monitors;
+    GLFWmonitor* m_monitor;
+    static int s_numMonitors;
 
 public:
-    GLFWmonitor** m_monitors;
+    // Labels
+    cLabel* m_graphicsDynamicsFreqLabel;
+    cLabel* m_wallSimTimeLabel;
+    cLabel* m_devicesModesLabel;
+    cLabel* m_deviceButtonLabel;
+    cLabel* m_controllingDeviceLabel;
+    std::vector<cLabel*> m_devHapticFreqLabels;
+
+public:
+    // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
+    double mouse_x[2], mouse_y[2], mouse_scroll[2];
+    bool mouse_l_clicked = false, mouse_r_clicked= false, mouse_scroll_clicked = false;
+    bool mouse_r_btn_rising_edge = false, mouse_l_btn_rising_edge = false;
+
+
+    cMatrix3d camRot, camRotPre;
+
+    // Window parameters
+    int m_width, m_height;
+    int m_win_x, m_win_y;
+
+public:
+    std::vector<std::string> m_controllingDevNames;
 
 protected:
     std::mutex m_mutex;
@@ -419,17 +450,15 @@ protected:
     // This is also the point along which the orbital/arcball rotation
     // of the camera takes place.
     cVector3d m_targetPos;
-    GLFWwindow* m_window;
 
 protected:
-    static GLFWwindow* s_mainWindow;
+    static int s_numWindows;
+    static int s_cameraIdx;
+    static int s_windowIdx;
 
-    static int s_num_cameras;
-    static int s_num_monitors;
-    static int s_num_windows;
-    static int s_camera_idx;
+private:
+    cBulletWorld* m_bulletWorld;
 };
-
 
 //-----------------------------------------------------------------------------
 
@@ -451,14 +480,16 @@ enum ShadowQuality{
 ///
 class afLight{
 public:
-    afLight();
+    afLight(cBulletWorld* a_bulletWorld);
     bool loadLight(YAML::Node* light_node, std::string light_name);
-    cVector3d m_location;
-    cVector3d m_direction;
-    double m_spot_exponent;
-    ShadowQuality m_shadow_quality;
-    double m_cuttoff_angle;
+    bool createDefaultLight();
+
     std::string m_name;
+
+protected:
+    cSpotLight* m_spotLight;
+private:
+    cBulletWorld* m_bulletWorld;
 };
 
 
@@ -475,13 +506,19 @@ public:
     afWorld(cBulletWorld *bulletWorld);
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "");
+    bool createDefaultWorld();
     double getEnclosureLength();
     double getEnclosureWidth();
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
-    static cBulletWorld *m_chaiWorld;
+    afCameraVec getCameras(){return m_cameras;}
+    static cBulletWorld *s_bulletWorld;
     std::vector<afLightPtr> m_lights;
     std::vector<afCameraPtr> m_cameras;
+
+    GLFWwindow* m_mainWindow;
+
+    afCameraMap m_cameraMap;
 
 protected:
 

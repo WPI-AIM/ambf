@@ -169,12 +169,16 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
   link_directories (${DHD_LIBRARY_DIRS})
 endif ()
 
-# GLFW
-add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
-
 #
 # static library
 #
+
+# GLFW
+add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
+
+# GLFW Includes
+find_package(GLFW REQUIRED)
+include_directories (${GLFW_INCLUDE_DIRS})
 
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)

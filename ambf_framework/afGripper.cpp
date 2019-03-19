@@ -151,7 +151,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
 
     size_t totalBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalBodies; ++i) {
-        tmpBody = new afGripperLink(m_chaiWorld);
+        tmpBody = new afGripperLink(s_bulletWorld);
         std::string body_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
         if (tmpBody->loadRidigBody(a_gripper_config_file.c_str(), body_name, this)){

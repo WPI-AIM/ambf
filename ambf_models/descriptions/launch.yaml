@@ -7,21 +7,14 @@ multibody configs:
   # - "./multi-bodies/robots/urdf-psm.yaml"
   # - "./multi-bodies/robots/urdf-suj.yaml"
   # - "./multi-bodies/robots/urdf-kuka.yaml"
-  # - "./multi-bodies/robots/blender-neuro-robot.yaml"
-  # - "./multi-bodies/robots/blender-toy-car.yaml"
   # - "./multi-bodies/robots/blender-mtm.yaml"
   # - "./multi-bodies/robots/blender-ecm.yaml"
   # - "./multi-bodies/robots/blender-psm.yaml"
   # - "./multi-bodies/robots/blender-suj.yaml"
   # - "./multi-bodies/robots/blender-kuka.yaml"
   # - "./multi-bodies/robots/blender-pr2.yaml"
-  # - "./multi-bodies/puzzles/parallel_structure.yaml"
-  # - "./multi-bodies/puzzles/puzzle1.yaml"
-  # - "/home/adnan/jhu_urdfs/test4.yaml"
-  - "/home/adnan/jhu_urdfs/neuro_robot/neuro_robot.yaml"
-  # - "/home/adnan/jhu_urdfs/pr2_gripper/pr2_gripper.yaml"
-  # - "/home/adnan/jhu_urdfs/pr2_gripper/pr2_gripper.yaml"
-  # - "./multi-bodies/grippers/pr2 gripper.yaml"
+  - "./multi-bodies/puzzles/parallel_structure.yaml"
+  - "./multi-bodies/puzzles/puzzle1.yaml"
 gripper configs:
   - Default
   - MTMR
@@ -31,8 +24,8 @@ gripper configs:
   - PHANTOM Omni
   - Razer Hydra
 Default: "./multi-bodies/grippers/single joint1.yaml"
-MTMR: "/home/adnan/jhu_urdfs/pr2_gripper/pr2_gripper0.yaml"
-MTML: "/home/adnan/jhu_urdfs/pr2_gripper/pr2_gripper0.yaml"
+MTMR: "./multi-bodies/grippers/multi joint2.yaml"
+MTML: "./multi-bodies/grippers/multi joint2.yaml"
 Falcon: "./multi-bodies/grippers/single joint2.yaml"
 Geomagic Touch: "./multi-bodies/grippers/single joint1.yaml"
 PHANTOM Omni: "./multi-bodies/grippers/pr2 gripper.yaml"

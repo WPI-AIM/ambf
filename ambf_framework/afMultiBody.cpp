@@ -47,7 +47,6 @@
 
 //------------------------------------------------------------------------------
 #include "afMultiBody.h"
-#include "chai3d.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -72,16 +71,18 @@ std::vector<std::string> afConfigHandler::s_multiBody_configs;
 std::string afConfigHandler::s_world_config;
 YAML::Node afConfigHandler::s_colorsNode;
 std::map<std::string, std::string> afConfigHandler::s_gripperConfigFiles;
-int afCamera::s_num_cameras;
-int afCamera::s_camera_idx = 0;
-int afCamera::s_num_monitors;
-int afCamera::s_num_windows;
-GLFWwindow* afCamera::s_mainWindow;
 
-cBulletWorld* afWorld::m_chaiWorld;
+cBulletWorld* afWorld::s_bulletWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
+
+GLFWwindow* afCamera::s_mainWindow = NULL;
+GLFWmonitor** afCamera::s_monitors;
+int afCamera::s_numMonitors = 0;
+int afCamera::s_numWindows = 0;
+int afCamera::s_cameraIdx = 0;
+int afCamera::s_windowIdx = 0;
 //------------------------------------------------------------------------------
 
 /// End declare static variables
@@ -949,7 +950,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     setConfigProperties(this, &m_surfaceProps);
-    mB->m_chaiWorld->addChild(this);
+    mB->s_bulletWorld->addChild(this);
     return true;
 }
 
@@ -1464,7 +1465,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
 
     setMaterial(m_mat);
     m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
-    mB->m_chaiWorld->addChild(this);
+    mB->s_bulletWorld->addChild(this);
     return true;
 }
 
@@ -1811,7 +1812,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btHingeConstraint*)m_btConstraint)->setLimit(m_lower_limit, m_higher_limit);
         }
 
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::prismatic){
@@ -1852,7 +1853,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btSliderConstraint*) m_btConstraint)->setUpperLinLimit(m_higher_limit);
         }
 
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::fixed){
@@ -1871,7 +1872,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse());
         frameB.setOrigin(m_pvtB);
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     return true;
@@ -1981,7 +1982,7 @@ afJoint::~afJoint(){
 /// \param a_chaiWorld
 ///
 afWorld::afWorld(cBulletWorld* a_chaiWorld){
-    m_chaiWorld = a_chaiWorld;
+    s_bulletWorld = a_chaiWorld;
     m_encl_length = 4.0;
     m_encl_width = 4.0;
     m_encl_height = 3.0;
@@ -2023,6 +2024,73 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_encl_height;
 }
 
+bool afWorld::createDefaultWorld(){
+    // TRANSPARENT WALLS
+    double _box_l, _box_w, _box_h;
+    _box_l = getEnclosureLength();
+    _box_w = getEnclosureWidth();
+    _box_h = getEnclosureHeight();
+
+    // bullet static walls and ground
+    cBulletStaticPlane* _bulletGround;
+
+    cBulletStaticPlane* _bulletBoxWall[4];
+
+    _bulletBoxWall[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWall[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWall[2] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * _box_l);
+    _bulletBoxWall[3] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * _box_l);
+
+    cVector3d _nz(0.0, 0.0, 1.0);
+    cMaterial _matPlane;
+    _matPlane.setWhiteIvory();
+    _matPlane.setShininess(1);
+    cVector3d _planeNorm;
+    cMatrix3d _planeRot;
+
+    double _dim1, _dim2;
+
+    for (int i = 0 ; i < 4 ; i++){
+        cBulletStaticPlane* wall = _bulletBoxWall[i];
+        _planeNorm = cCross(wall->getPlaneNormal(), _nz);
+        _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
+        if (i < 2){
+            _dim1 = _box_l; _dim2 = _box_h;
+        }
+        else{
+            _dim1 = _box_h; _dim2 = _box_w;
+        }
+        cCreatePlane(wall, _dim1, _dim2,
+                     wall->getPlaneConstant() * wall->getPlaneNormal(), _planeRot);
+        wall->setMaterial(_matPlane);
+        if (i == 0) wall->setTransparencyLevel(0.3, true, true);
+        else wall->setTransparencyLevel(0.5, true, true);
+
+        s_bulletWorld->addChild(wall);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // GROUND
+    //////////////////////////////////////////////////////////////////////////
+
+    // create ground plane
+    _bulletGround = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * _box_h);
+
+    // add plane to world as we will want to make it visibe
+    s_bulletWorld->addChild(_bulletGround);
+
+    // create a mesh plane where the static plane is located
+    cCreatePlane(_bulletGround, _box_l + 0.4, _box_w + 0.8,
+                 _bulletGround->getPlaneConstant() * _bulletGround->getPlaneNormal());
+    _bulletGround->computeAllNormals();
+
+    // define some material properties and apply to mesh
+    _bulletGround->m_material->m_emission.setGrayLevel(0.3);
+    _bulletGround->m_material->setGreenChartreuse();
+    _bulletGround->m_bulletRigidBody->setFriction(1.0);
+}
+
 
 ///
 /// \brief afWorld::load_world
@@ -2052,11 +2120,13 @@ bool afWorld::loadWorld(std::string a_world_config){
         m_encl_height = worldEnclosureData["height"].as<double>();
     }
 
+    createDefaultWorld();
+
     if (worldLightsData.IsDefined()){
         size_t n_lights = worldLightsData.size();
         for (size_t idx = 0 ; idx < n_lights; idx++){
             std::string light_name = worldLightsData[idx].as<std::string>();
-            afLightPtr lightPtr = new afLight();
+            afLightPtr lightPtr = new afLight(s_bulletWorld);
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name)){
                 m_lights.push_back(lightPtr);
@@ -2064,11 +2134,18 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
+    if (m_lights.size() == 0){
+        // No Valid Lights defined, so use the default light
+        afLightPtr lightPtr = new afLight(s_bulletWorld);
+        if (lightPtr->createDefaultLight()){
+            m_lights.push_back(lightPtr);
+        }
+    }
+
     if (worldCamerasData.IsDefined()){
-        size_t n_cameras = worldCamerasData.size();
-        for (size_t idx = 0 ; idx < n_cameras; idx++){
+        for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
-            afCameraPtr cameraPtr = new afCamera();
+            afCameraPtr cameraPtr = new afCamera(s_bulletWorld);
             YAML::Node cameraNode = worldNode[camera_name];
             if (cameraPtr->loadCamera(&cameraNode, camera_name)){
                 m_cameras.push_back(cameraPtr);
@@ -2076,17 +2153,99 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
+    if (m_cameras.size() == 0){
+        // No valid cameras defined in the world config file
+        // hence create a default camera
+        afCameraPtr cameraPtr = new afCamera(s_bulletWorld);
+        if (cameraPtr->createDefaultCamera()){
+            m_cameras.push_back(cameraPtr);
+        }
+
+    }
+
     return true;
 
 }
 
+
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(cBulletWorld* a_world): cCamera(a_world){
-    // To be able to show shadows in multiple windows, we need to share resources. This is done
-   // by passing the first created window as "share" with the windows created afterwards
-   monitors = glfwGetMonitors(&s_num_monitors);
+afCamera::afCamera(cBulletWorld* a_bulletWorld): cCamera(a_bulletWorld){
+
+    s_monitors = glfwGetMonitors(&s_numMonitors);
+    m_bulletWorld = a_bulletWorld;
+}
+
+///
+/// \brief afCamera::createDefaultCamera
+/// \return
+///
+bool afCamera::createDefaultCamera(){
+    std::cerr << "INFO: USING DEFAULT CAMERA" << std::endl;
+
+    // position and orient the camera
+    setTargetPos(cVector3d(0.0, 0.0,-0.5));
+    set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
+        cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
+        cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
+
+    // set the near and far clipping planes of the camera
+    setClippingPlanes(0.01, 10.0);
+
+    // set stereo mode
+    setStereoMode(cStereoMode::C_STEREO_DISABLED);
+
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
+    setStereoEyeSeparation(0.02);
+    setStereoFocalLength(2.0);
+
+    // set vertical mirrored display mode
+    setMirrorVertical(false);
+
+    // create display context
+    // compute desired size of window
+    const GLFWvidmode* _mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int w = 0.5 * _mode->width;
+    int h = 0.5 * _mode->height;
+    int x = 0.5 * (_mode->width - w);
+    int y = 0.5 * (_mode->height - h);
+    m_window = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
+    s_mainWindow = m_window;
+
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
+
+    // create a font
+    cFontPtr font = NEW_CFONTCALIBRI20();
+
+    m_graphicsDynamicsFreqLabel = new cLabel(font);
+    m_wallSimTimeLabel = new cLabel(font);
+    m_devicesModesLabel = new cLabel(font);
+    m_deviceButtonLabel = new cLabel(font);
+    m_controllingDeviceLabel = new cLabel(font);
+
+    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    m_wallSimTimeLabel->m_fontColor.setBlack();
+    m_devicesModesLabel->m_fontColor.setBlack();
+    m_deviceButtonLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->setFontScale(0.8);
+
+    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_frontLayer->addChild(m_devicesModesLabel);
+    m_frontLayer->addChild(m_deviceButtonLabel);
+    m_frontLayer->addChild(m_controllingDeviceLabel);
+
+    s_windowIdx++;
+    s_cameraIdx++;
+
+    // Assign the Window Camera Handles
+    m_bulletWorld->addChild(this);
+    return true;
 }
 
 ///
@@ -2106,11 +2265,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
     YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
 
-    cVector3d _location, _look_at, _up;
-    double _clipping_plane_limits[2], _field_view_angle, _ortho_view_width;
-    bool _enable_ortho_view = false;
-
     bool _is_valid = true;
+    cVector3d _location, _up, _look_at;
+    double _clipping_plane_limits[2], _field_view_angle;
+    bool _enable_ortho_view = false;
+    double _stereo_eye_seperation, _ortho_view_width;
 
     if (cameraLocationData.IsDefined()){
         assignXYZ(&cameraLocationData, &_location);
@@ -2134,8 +2293,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         _is_valid = false;
     }
     if (cameraClippingPlaneData.IsDefined()){
-        _clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
         _clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
+        _clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
@@ -2152,84 +2311,111 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         _enable_ortho_view = true;
         _ortho_view_width = cameraOrthoWidthData.as<double>();
     }
-
+    else{
+         _enable_ortho_view = false;
+    }
     if (cameraControllingDevicesData.IsDefined()){
         for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
-            m_controlling_devices.push_back( cameraControllingDevicesData[idx].as<std::string>());
+            m_controllingDevNames.push_back( cameraControllingDevicesData[idx].as<std::string>());
         }
     }
-    // set camera name
-    m_name = camera_data.m_name;
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // position and orient the camera
     setTargetPos(_look_at);
-    set(_location, _look_at, _up);
+    set(_location,
+        _look_at,
+        _up);
+
+    // set the near and far clipping planes of the camera
     setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
-    setFieldViewAngleRad(_field_view_angle);
-    if (_enable_ortho_view){
-        cameraPtr->setOrthographicView(_ortho_view_width);
-    }
-//            cameraPtr->setEnabled(true);
-    setStereoMode(stereoMode);
+
+    // set stereo mode
+    setStereoMode(cStereoMode::C_STEREO_DISABLED);
+
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
     setStereoEyeSeparation(0.02);
     setStereoFocalLength(2.0);
-    setMirrorVertical(mirroredDisplay);
 
-    a_world->addChild(this);
+    // set vertical mirrored display mode
+    setMirrorVertical(false);
 
-    std::string window_name = "AMBF Simulator Window " + std::to_string(s_camera_idx + 1);
-    if (m_controlling_devices.size() > 0){
-        for (int i=0 ; i < m_controlling_devices.size() ; i++){
-            window_name += (" - " + m_controlling_devices[i]);
+    setFieldViewAngleRad(_field_view_angle);
+
+    // Check if ortho view is enabled
+    if (_enable_ortho_view){
+        setOrthographicView(_ortho_view_width);
+    }
+
+    std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
+    if (m_controllingDevNames.size() > 0){
+        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
+            window_name += (" - " + m_controllingDevNames[i]);
         }
 
     }
+
     // create display context
     int _monitor_to_load = 0;
-    if (s_camera_idx < s_num_monitors){
-        _monitor_to_load = s_camera_idx;
+    if (s_cameraIdx < s_numMonitors){
+        _monitor_to_load = s_cameraIdx;
     }
+    m_monitor = s_monitors[_monitor_to_load];
+
     // compute desired size of window
-    const GLFWvidmode* mode = glfwGetVideoMode(m_monitors[_monitor_to_load]);
-    int w = 0.8 * mode->height;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
+    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
+    int w = 0.5 * _mode->width;
+    int h = 0.5 * _mode->height;
+    int x = 0.5 * (_mode->width - w);
+    int y = 0.5 * (_mode->height - h);
 
-    GLFWwindow* windowPtr;
-    if (numWindows == 0){
-        windowPtr = glfwCreateWindow(w, h, window_name.c_str() , NULL, NULL);
-        s_mainWindow = windowPtr;
-        m_window = s_mainWindow;
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
+
+    m_window = glfwCreateWindow(w, h, window_name.c_str(), NULL, s_mainWindow);
+    if (s_windowIdx == 0){
+        s_mainWindow = m_window;
     }
-    else{
-        m_window = glfwCreateWindow(w, h, window_name.c_str() , NULL, s_mainWindow);
-    }
-    s_camera_idx++;
-    s_num_windows++;
 
-    // Assign the Window Camera Handles
-    WindowCameraPair winCamHandle;
-    winCamHandle.m_window = windowPtr;
-    winCamHandle.m_monitor = monitors[_monitor_to_load];
-    winCamHandle.m_camera = cameraPtr;
-    winCamHandle.m_deviceNames = camera_data.m_controlling_devices;
-    winCamHandle.m_win_x = x;
-    winCamHandle.m_win_y = y;
+    // create a font
+    cFontPtr font = NEW_CFONTCALIBRI20();
 
-    g_windowCameraPairs.push_back(winCamHandle);
+    m_graphicsDynamicsFreqLabel = new cLabel(font);
+    m_wallSimTimeLabel = new cLabel(font);
+    m_devicesModesLabel = new cLabel(font);
+    m_deviceButtonLabel = new cLabel(font);
+    m_controllingDeviceLabel = new cLabel(font);
 
+    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    m_wallSimTimeLabel->m_fontColor.setBlack();
+    m_devicesModesLabel->m_fontColor.setBlack();
+    m_deviceButtonLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->setFontScale(0.8);
 
+    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_frontLayer->addChild(m_devicesModesLabel);
+    m_frontLayer->addChild(m_deviceButtonLabel);
+    m_frontLayer->addChild(m_controllingDeviceLabel);
+
+    s_windowIdx++;
+    s_cameraIdx++;
+
+    m_bulletWorld->addChild(this);
 
     return _is_valid;
 }
+
 
 ///
 /// \brief afCamera::measuredPos
 /// \return
 ///
 cVector3d afCamera::measuredPos(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_pos = getGlobalPos();
-    return m_pos;
+    return getLocalPos();
 }
 
 ///
@@ -2237,9 +2423,7 @@ cVector3d afCamera::measuredPos(){
 /// \return
 ///
 cMatrix3d afCamera::measuredRot(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_rot = getGlobalRot();
-    return m_rot;
+    return getLocalRot();
 }
 
 
@@ -2247,8 +2431,29 @@ cMatrix3d afCamera::measuredRot(){
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(){
+afLight::afLight(cBulletWorld* a_bulletWorld){
+    m_bulletWorld = a_bulletWorld;
 }
+
+///
+/// \brief afLight::createDefaultLight
+/// \return
+///
+bool afLight::createDefaultLight(){
+    std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << std::endl;
+    m_spotLight = new cSpotLight(m_bulletWorld);
+    m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
+    m_spotLight->setDir(0, 0, -1);
+    m_spotLight->setSpotExponent(0.3);
+    m_spotLight->setCutOffAngleDeg(60);
+    m_spotLight->setShadowMapEnabled(true);
+    m_spotLight->m_shadowMap->setQualityVeryHigh();
+    m_spotLight->setEnabled(true);
+    m_bulletWorld->addChild(m_spotLight);
+
+    return true;
+}
+
 
 ///
 /// \brief afLight::loadLight
@@ -2256,8 +2461,8 @@ afLight::afLight(){
 /// \return
 ///
 bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
-    YAML::Node lightNode = *a_light_node;
     m_name = a_light_name;
+    YAML::Node lightNode = *a_light_node;
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -2265,43 +2470,82 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     YAML::Node lightCuttOffAngleData = lightNode["cutoff angle"];
 
     bool _is_valid = true;
+    cVector3d _location, _direction;
+    double _spot_exponent, _cuttoff_angle;
+    int _shadow_quality;
+
+
 
     if (lightLocationData.IsDefined()){
-        assignXYZ(&lightLocationData, &m_location);
+        assignXYZ(&lightLocationData, &_location);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightDirectionData.IsDefined()){
-        assignXYZ(&lightDirectionData, &m_direction);
+        assignXYZ(&lightDirectionData, &_direction);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightSpotExponentData.IsDefined()){
-        m_spot_exponent = lightSpotExponentData.as<double>();
+        _spot_exponent = lightSpotExponentData.as<double>();
     }
     if (lightShadowQualityData.IsDefined()){
-        int shadow_quality = lightShadowQualityData.as<int>();
-        if (shadow_quality < 0){
-            shadow_quality = 0;
+        _shadow_quality = lightShadowQualityData.as<int>();
+        if (_shadow_quality < 0){
+            _shadow_quality = 0;
             std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
-        else if (shadow_quality > 5){
-            shadow_quality = 5;
+        else if (_shadow_quality > 5){
+            _shadow_quality = 5;
             std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
-        m_shadow_quality = (ShadowQuality)shadow_quality;
     }
     if (lightCuttOffAngleData.IsDefined()){
-        m_cuttoff_angle = lightCuttOffAngleData.as<double>();
+        _cuttoff_angle = lightCuttOffAngleData.as<double>();
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT CUTOFF NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
+
+    if (_is_valid){
+        m_spotLight = new cSpotLight(m_bulletWorld);
+        m_spotLight->setLocalPos(_location);
+        m_spotLight->setDir(_direction);
+        m_spotLight->setSpotExponent(_spot_exponent);
+        m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
+        m_spotLight->setShadowMapEnabled(true);
+
+        ShadowQuality sQ = (ShadowQuality) _shadow_quality;
+        switch (sQ) {
+        case ShadowQuality::no_shadow:
+            m_spotLight->setShadowMapEnabled(false);
+            break;
+        case ShadowQuality::very_low:
+            m_spotLight->m_shadowMap->setQualityVeryLow();
+            break;
+        case ShadowQuality::low:
+            m_spotLight->m_shadowMap->setQualityLow();
+            break;
+        case ShadowQuality::medium:
+            m_spotLight->m_shadowMap->setQualityMedium();
+            break;
+        case ShadowQuality::high:
+            m_spotLight->m_shadowMap->setQualityHigh();
+            break;
+        case ShadowQuality::very_high:
+            m_spotLight->m_shadowMap->setQualityVeryHigh();
+            break;
+        }
+        m_spotLight->setEnabled(true);
+
+        m_bulletWorld->addChild(m_spotLight);
+    }
+
     return _is_valid;
 }
 
@@ -2314,7 +2558,7 @@ afMultiBody::afMultiBody(){
 
 afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_wallClock.start(true);
-    m_chaiWorld = a_chaiWorld;
+    s_bulletWorld = a_chaiWorld;
     m_pickSphere = new cMesh();
     cCreateSphere(m_pickSphere, 0.02);
     m_pickSphere->m_material->setPinkHot();
@@ -2322,7 +2566,7 @@ afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_pickSphere->markForUpdate(false);
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
-    m_chaiWorld->addChild(m_pickSphere);
+    s_bulletWorld->addChild(m_pickSphere);
 
 //    m_pickDragVector = new cMesh();
 //    cCreateArrow(m_pickDragVector);
@@ -2486,7 +2730,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
-        tmpRigidBody = new afRigidBody(m_chaiWorld);
+        tmpRigidBody = new afRigidBody(s_bulletWorld);
         std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
         std::string remap_str = remapBodyName(rb_name, &m_afRigidBodyMap);
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
@@ -2513,7 +2757,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     afSoftBodyPtr tmpSoftBody;
     size_t totalSoftBodies = multiBodySoftBodies.size();
     for (size_t i = 0; i < totalSoftBodies; ++i) {
-        tmpSoftBody = new afSoftBody(m_chaiWorld);
+        tmpSoftBody = new afSoftBody(s_bulletWorld);
         std::string sb_name = multiBodySoftBodies[i].as<std::string>();
         std::string remap_str = remapBodyName(sb_name, &m_afSoftBodyMap);
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
@@ -2744,7 +2988,7 @@ afRigidBodyPtr afMultiBody::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
 /// \return
 ///
 bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
     if (m_dynamicsWorld == 0)
         return false;
 
@@ -2828,7 +3072,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
 /// \brief afMultiBody::removePickingConstraint
 ///
 void afMultiBody::removePickingConstraint(){
-    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
     if (m_pickedConstraint)
     {
         m_pickSphere->setShowEnabled(false);
