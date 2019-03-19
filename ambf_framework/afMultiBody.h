@@ -50,9 +50,8 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-#include "CBulletMultiMesh.h"
 #include "afSoftMultiMesh.h"
-#include "CBulletWorld.h"
+#include "CBullet.h"
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
@@ -507,12 +506,13 @@ public:
     afWorld(cBulletWorld *bulletWorld);
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "");
+    bool createDefaultWorld();
     double getEnclosureLength();
     double getEnclosureWidth();
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
     afCameraVec getCameras(){return m_cameras;}
-    static cBulletWorld *m_chaiWorld;
+    static cBulletWorld *s_bulletWorld;
     std::vector<afLightPtr> m_lights;
     std::vector<afCameraPtr> m_cameras;
 

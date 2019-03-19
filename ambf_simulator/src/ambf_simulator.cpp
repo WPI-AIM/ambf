@@ -85,13 +85,6 @@ bool mirroredDisplay = false;
 // bullet world
 cBulletWorld* g_bulletWorld;
 
-// bullet static walls and ground
-cBulletStaticPlane* g_bulletGround;
-
-cBulletStaticPlane* g_bulletBoxWallX[2];
-cBulletStaticPlane* g_bulletBoxWallY[2];
-cBulletStaticPlane* g_bulletBoxWallZ[1];
-
 afMultiBody *g_afMultiBody;
 afWorld *g_afWorld;
 
@@ -1245,27 +1238,12 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     g_afWorld = new afWorld(g_bulletWorld);
     if (g_afWorld->loadBaseConfig("../../ambf_models/descriptions/launch.yaml")){
+        // The world loads the lights and cameras + windows
         g_afWorld->loadWorld();
         g_afMultiBody = new afMultiBody(g_bulletWorld);
-    //    g_afMultiBody->loadMultiBody();
         g_afMultiBody->loadAllMultiBodies();
         g_cameras = g_afWorld->getCameras();
     }
-
-    // end puzzle meshes
-    //////////////////////////////////////////////////////////////////////////
-    // INVISIBLE WALLS
-    //////////////////////////////////////////////////////////////////////////
-    // we create 5 static walls to contain the dynamic objects within a limited workspace
-    double box_l, box_w, box_h;
-    box_l = g_afWorld->getEnclosureLength();
-    box_w = g_afWorld->getEnclosureWidth();
-    box_h = g_afWorld->getEnclosureHeight();
-    g_bulletBoxWallZ[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(0.0, 0.0, -1.0), -0.5 * box_h);
-    g_bulletBoxWallY[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * box_w);
-    g_bulletBoxWallY[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * box_w);
-    g_bulletBoxWallX[0] = new cBulletStaticPlane(g_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
-    g_bulletBoxWallX[1] = new cBulletStaticPlane(g_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
 
     //-----------------------------------------------------------------------------------------------------------
     // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
@@ -1319,65 +1297,6 @@ int main(int argc, char* argv[])
 
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
-    //-----------------------------------------------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------------------------------------------
-    // START: CREATE A GROUND PLANE AND ENCLOSURE AS DEFINED IN THE AMBF WORLD FILE
-    //-----------------------------------------------------------------------------------------------------------
-    cVector3d worldZ(0.0, 0.0, 1.0);
-    cMaterial matPlane;
-    matPlane.setWhiteIvory();
-    matPlane.setShininess(1);
-    cVector3d planeNorm;
-    cMatrix3d planeRot;
-
-    for (int i = 0 ; i < 2 ; i++){
-        planeNorm = cCross(g_bulletBoxWallX[i]->getPlaneNormal(), worldZ);
-        planeRot.setAxisAngleRotationDeg(planeNorm, 90);
-        g_bulletWorld->addChild(g_bulletBoxWallX[i]);
-        cCreatePlane(g_bulletBoxWallX[i], box_h, box_w,
-                     g_bulletBoxWallX[i]->getPlaneConstant() * g_bulletBoxWallX[i]->getPlaneNormal(),
-                     planeRot);
-        g_bulletBoxWallX[i]->setMaterial(matPlane);
-        if (i == 0) g_bulletBoxWallX[i]->setTransparencyLevel(0.3, true, true);
-        else g_bulletBoxWallX[i]->setTransparencyLevel(0.5, true, true);
-    }
-
-    for (int i = 0 ; i < 2 ; i++){
-        planeNorm = cCross(g_bulletBoxWallY[i]->getPlaneNormal(), worldZ);
-        planeRot.setAxisAngleRotationDeg(planeNorm, 90);
-        g_bulletWorld->addChild(g_bulletBoxWallY[i]);
-        cCreatePlane(g_bulletBoxWallY[i], box_l, box_h,
-                     g_bulletBoxWallY[i]->getPlaneConstant() * g_bulletBoxWallY[i]->getPlaneNormal(),
-                     planeRot);
-        g_bulletBoxWallY[i]->setMaterial(matPlane);
-        g_bulletBoxWallY[i]->setTransparencyLevel(0.5, true, true);
-    }
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // GROUND
-    //////////////////////////////////////////////////////////////////////////
-
-    // create ground plane
-    g_bulletGround = new cBulletStaticPlane(g_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * box_h);
-
-    // add plane to world as we will want to make it visibe
-    g_bulletWorld->addChild(g_bulletGround);
-
-    // create a mesh plane where the static plane is located
-    cCreatePlane(g_bulletGround, box_l + 0.4, box_w + 0.8, g_bulletGround->getPlaneConstant() * g_bulletGround->getPlaneNormal());
-    g_bulletGround->computeAllNormals();
-
-    // define some material properties and apply to mesh
-    cMaterial matGround;
-    matGround.setGreenChartreuse();
-    matGround.m_emission.setGrayLevel(0.3);
-    g_bulletGround->setMaterial(matGround);
-    g_bulletGround->m_bulletRigidBody->setFriction(1.0);
-
-    //-----------------------------------------------------------------------------------------------------------
-    // END: CREATE A GROUND PLANE AND ENCLOSURE AS DEFINED IN THE AMBF WORLD FILE
     //-----------------------------------------------------------------------------------------------------------
 
     //-----------------------------------------------------------------------------------------------------------
@@ -2019,7 +1938,6 @@ void updateLabels(){
 
         std::string controlling_dev_names;
         for (int devIdx = 0 ; devIdx < devFreqLabels.size() ; devIdx++){
-//            devFreqLabels[devIdx]->setText(devFreqLabels[devIdx] + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
             devFreqLabels[devIdx]->setLocalPos(10, (int)( height - ( devIdx + 1 ) * 20 ) );
             controlling_dev_names += cameraPtr->m_controllingDevNames[devIdx] + " <> ";
         }

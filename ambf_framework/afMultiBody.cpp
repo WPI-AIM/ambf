@@ -47,7 +47,6 @@
 
 //------------------------------------------------------------------------------
 #include "afMultiBody.h"
-#include "chai3d.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -73,7 +72,7 @@ std::string afConfigHandler::s_world_config;
 YAML::Node afConfigHandler::s_colorsNode;
 std::map<std::string, std::string> afConfigHandler::s_gripperConfigFiles;
 
-cBulletWorld* afWorld::m_chaiWorld;
+cBulletWorld* afWorld::s_bulletWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
@@ -951,7 +950,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     setConfigProperties(this, &m_surfaceProps);
-    mB->m_chaiWorld->addChild(this);
+    mB->s_bulletWorld->addChild(this);
     return true;
 }
 
@@ -1466,7 +1465,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
 
     setMaterial(m_mat);
     m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
-    mB->m_chaiWorld->addChild(this);
+    mB->s_bulletWorld->addChild(this);
     return true;
 }
 
@@ -1813,7 +1812,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btHingeConstraint*)m_btConstraint)->setLimit(m_lower_limit, m_higher_limit);
         }
 
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::prismatic){
@@ -1854,7 +1853,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btSliderConstraint*) m_btConstraint)->setUpperLinLimit(m_higher_limit);
         }
 
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::fixed){
@@ -1873,7 +1872,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse());
         frameB.setOrigin(m_pvtB);
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
-        mB->m_chaiWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        mB->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
     return true;
@@ -1983,7 +1982,7 @@ afJoint::~afJoint(){
 /// \param a_chaiWorld
 ///
 afWorld::afWorld(cBulletWorld* a_chaiWorld){
-    m_chaiWorld = a_chaiWorld;
+    s_bulletWorld = a_chaiWorld;
     m_encl_length = 4.0;
     m_encl_width = 4.0;
     m_encl_height = 3.0;
@@ -2025,6 +2024,76 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_encl_height;
 }
 
+bool afWorld::createDefaultWorld(){
+    // TRANSPARENT WALLS
+    double _box_l, _box_w, _box_h;
+    _box_l = getEnclosureLength();
+    _box_w = getEnclosureWidth();
+    _box_h = getEnclosureHeight();
+
+    // bullet static walls and ground
+    cBulletStaticPlane* _bulletGround;
+
+    cBulletStaticPlane* _bulletBoxWallX[2];
+    cBulletStaticPlane* _bulletBoxWallY[2];
+
+    _bulletBoxWallY[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWallY[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWallX[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * _box_l);
+    _bulletBoxWallX[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * _box_l);
+
+    cVector3d _nz(0.0, 0.0, 1.0);
+    cMaterial _matPlane;
+    _matPlane.setWhiteIvory();
+    _matPlane.setShininess(1);
+    cVector3d _planeNorm;
+    cMatrix3d _planeRot;
+
+    for (int i = 0 ; i < 2 ; i++){
+        _planeNorm = cCross(_bulletBoxWallX[i]->getPlaneNormal(), _nz);
+        _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
+        s_bulletWorld->addChild(_bulletBoxWallX[i]);
+        cCreatePlane(_bulletBoxWallX[i], _box_h, _box_w,
+                     _bulletBoxWallX[i]->getPlaneConstant() * _bulletBoxWallX[i]->getPlaneNormal(),
+                     _planeRot);
+        _bulletBoxWallX[i]->setMaterial(_matPlane);
+        if (i == 0) _bulletBoxWallX[i]->setTransparencyLevel(0.3, true, true);
+        else _bulletBoxWallX[i]->setTransparencyLevel(0.5, true, true);
+    }
+
+    for (int i = 0 ; i < 2 ; i++){
+        _planeNorm = cCross(_bulletBoxWallY[i]->getPlaneNormal(), _nz);
+        _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
+        s_bulletWorld->addChild(_bulletBoxWallY[i]);
+        cCreatePlane(_bulletBoxWallY[i], _box_l, _box_h,
+                     _bulletBoxWallY[i]->getPlaneConstant() * _bulletBoxWallY[i]->getPlaneNormal(),
+                     _planeRot);
+        _bulletBoxWallY[i]->setMaterial(_matPlane);
+        _bulletBoxWallY[i]->setTransparencyLevel(0.5, true, true);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // GROUND
+    //////////////////////////////////////////////////////////////////////////
+
+    // create ground plane
+    _bulletGround = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * _box_h);
+
+    // add plane to world as we will want to make it visibe
+    s_bulletWorld->addChild(_bulletGround);
+
+    // create a mesh plane where the static plane is located
+    cCreatePlane(_bulletGround, _box_l + 0.4, _box_w + 0.8,
+                 _bulletGround->getPlaneConstant() * _bulletGround->getPlaneNormal());
+    _bulletGround->computeAllNormals();
+
+    // define some material properties and apply to mesh
+    _bulletGround->m_material->m_emission.setGrayLevel(0.3);
+    _bulletGround->m_material->setGreenChartreuse();
+    _bulletGround->m_bulletRigidBody->setFriction(1.0);
+}
+
 
 ///
 /// \brief afWorld::load_world
@@ -2054,11 +2123,13 @@ bool afWorld::loadWorld(std::string a_world_config){
         m_encl_height = worldEnclosureData["height"].as<double>();
     }
 
+    createDefaultWorld();
+
     if (worldLightsData.IsDefined()){
         size_t n_lights = worldLightsData.size();
         for (size_t idx = 0 ; idx < n_lights; idx++){
             std::string light_name = worldLightsData[idx].as<std::string>();
-            afLightPtr lightPtr = new afLight(m_chaiWorld);
+            afLightPtr lightPtr = new afLight(s_bulletWorld);
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name)){
                 m_lights.push_back(lightPtr);
@@ -2068,7 +2139,7 @@ bool afWorld::loadWorld(std::string a_world_config){
 
     if (m_lights.size() == 0){
         // No Valid Lights defined, so use the default light
-        afLightPtr lightPtr = new afLight(m_chaiWorld);
+        afLightPtr lightPtr = new afLight(s_bulletWorld);
         if (lightPtr->createDefaultLight()){
             m_lights.push_back(lightPtr);
         }
@@ -2077,7 +2148,7 @@ bool afWorld::loadWorld(std::string a_world_config){
     if (worldCamerasData.IsDefined()){
         for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
-            afCameraPtr cameraPtr = new afCamera(m_chaiWorld);
+            afCameraPtr cameraPtr = new afCamera(s_bulletWorld);
             YAML::Node cameraNode = worldNode[camera_name];
             if (cameraPtr->loadCamera(&cameraNode, camera_name)){
                 m_cameras.push_back(cameraPtr);
@@ -2088,7 +2159,7 @@ bool afWorld::loadWorld(std::string a_world_config){
     if (m_cameras.size() == 0){
         // No valid cameras defined in the world config file
         // hence create a default camera
-        afCameraPtr cameraPtr = new afCamera(m_chaiWorld);
+        afCameraPtr cameraPtr = new afCamera(s_bulletWorld);
         if (cameraPtr->createDefaultCamera()){
             m_cameras.push_back(cameraPtr);
         }
@@ -2490,7 +2561,7 @@ afMultiBody::afMultiBody(){
 
 afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_wallClock.start(true);
-    m_chaiWorld = a_chaiWorld;
+    s_bulletWorld = a_chaiWorld;
     m_pickSphere = new cMesh();
     cCreateSphere(m_pickSphere, 0.02);
     m_pickSphere->m_material->setPinkHot();
@@ -2498,7 +2569,7 @@ afMultiBody::afMultiBody(cBulletWorld *a_chaiWorld){
     m_pickSphere->markForUpdate(false);
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
-    m_chaiWorld->addChild(m_pickSphere);
+    s_bulletWorld->addChild(m_pickSphere);
 
 //    m_pickDragVector = new cMesh();
 //    cCreateArrow(m_pickDragVector);
@@ -2662,7 +2733,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
-        tmpRigidBody = new afRigidBody(m_chaiWorld);
+        tmpRigidBody = new afRigidBody(s_bulletWorld);
         std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
         std::string remap_str = remapBodyName(rb_name, &m_afRigidBodyMap);
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
@@ -2689,7 +2760,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     afSoftBodyPtr tmpSoftBody;
     size_t totalSoftBodies = multiBodySoftBodies.size();
     for (size_t i = 0; i < totalSoftBodies; ++i) {
-        tmpSoftBody = new afSoftBody(m_chaiWorld);
+        tmpSoftBody = new afSoftBody(s_bulletWorld);
         std::string sb_name = multiBodySoftBodies[i].as<std::string>();
         std::string remap_str = remapBodyName(sb_name, &m_afSoftBodyMap);
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
@@ -2920,7 +2991,7 @@ afRigidBodyPtr afMultiBody::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
 /// \return
 ///
 bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
     if (m_dynamicsWorld == 0)
         return false;
 
@@ -3004,7 +3075,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
 /// \brief afMultiBody::removePickingConstraint
 ///
 void afMultiBody::removePickingConstraint(){
-    btDynamicsWorld* m_dynamicsWorld = m_chaiWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
     if (m_pickedConstraint)
     {
         m_pickSphere->setShowEnabled(false);
