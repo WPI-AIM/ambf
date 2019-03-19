@@ -2058,7 +2058,7 @@ bool afWorld::loadWorld(std::string a_world_config){
         size_t n_lights = worldLightsData.size();
         for (size_t idx = 0 ; idx < n_lights; idx++){
             std::string light_name = worldLightsData[idx].as<std::string>();
-            afLightPtr lightPtr = new afLight();
+            afLightPtr lightPtr = new afLight(m_chaiWorld);
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name)){
                 m_lights.push_back(lightPtr);
@@ -2066,9 +2066,16 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
+    if (m_lights.size() == 0){
+        // No Valid Lights defined, so use the default light
+        afLightPtr lightPtr = new afLight(m_chaiWorld);
+        if (lightPtr->createDefaultLight()){
+            m_lights.push_back(lightPtr);
+        }
+    }
+
     if (worldCamerasData.IsDefined()){
-        size_t n_cameras = worldCamerasData.size();
-        for (size_t idx = 0 ; idx < n_cameras; idx++){
+        for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
             afCameraPtr cameraPtr = new afCamera(m_chaiWorld);
             YAML::Node cameraNode = worldNode[camera_name];
@@ -2131,7 +2138,7 @@ bool afCamera::createDefaultCamera(){
     // create display context
     // compute desired size of window
     const GLFWvidmode* _mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int w = 0.8 * _mode->width;
+    int w = 0.5 * _mode->width;
     int h = 0.5 * _mode->height;
     int x = 0.5 * (_mode->width - w);
     int y = 0.5 * (_mode->height - h);
@@ -2151,6 +2158,19 @@ bool afCamera::createDefaultCamera(){
     m_devicesModesLabel = new cLabel(font);
     m_deviceButtonLabel = new cLabel(font);
     m_controllingDeviceLabel = new cLabel(font);
+
+    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    m_wallSimTimeLabel->m_fontColor.setBlack();
+    m_devicesModesLabel->m_fontColor.setBlack();
+    m_deviceButtonLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->setFontScale(0.8);
+
+    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_frontLayer->addChild(m_devicesModesLabel);
+    m_frontLayer->addChild(m_deviceButtonLabel);
+    m_frontLayer->addChild(m_controllingDeviceLabel);
 
     s_windowIdx++;
     s_cameraIdx++;
@@ -2233,11 +2253,28 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
+    // position and orient the camera
+    setTargetPos(_look_at);
+    set(_location,
+        _look_at,
+        _up);
 
-    set(_location, _look_at, _up);
+    // set the near and far clipping planes of the camera
     setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
+
+    // set stereo mode
+    setStereoMode(cStereoMode::C_STEREO_DISABLED);
+
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
+    setStereoEyeSeparation(0.02);
+    setStereoFocalLength(2.0);
+
+    // set vertical mirrored display mode
+    setMirrorVertical(false);
+
     setFieldViewAngleRad(_field_view_angle);
 
+    // Check if ortho view is enabled
     if (_enable_ortho_view){
         setOrthographicView(_ortho_view_width);
     }
@@ -2251,13 +2288,15 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
 
     // create display context
-    int monitor_to_load = 0;
+    int _monitor_to_load = 0;
     if (s_cameraIdx < s_numMonitors){
-        monitor_to_load = s_cameraIdx;
+        _monitor_to_load = s_cameraIdx;
     }
+    m_monitor = s_monitors[_monitor_to_load];
+
     // compute desired size of window
     const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
-    int w = 0.8 * _mode->width;
+    int w = 0.5 * _mode->width;
     int h = 0.5 * _mode->height;
     int x = 0.5 * (_mode->width - w);
     int y = 0.5 * (_mode->height - h);
@@ -2281,6 +2320,19 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     m_deviceButtonLabel = new cLabel(font);
     m_controllingDeviceLabel = new cLabel(font);
 
+    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    m_wallSimTimeLabel->m_fontColor.setBlack();
+    m_devicesModesLabel->m_fontColor.setBlack();
+    m_deviceButtonLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->setFontScale(0.8);
+
+    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_frontLayer->addChild(m_devicesModesLabel);
+    m_frontLayer->addChild(m_deviceButtonLabel);
+    m_frontLayer->addChild(m_controllingDeviceLabel);
+
     s_windowIdx++;
     s_cameraIdx++;
 
@@ -2290,12 +2342,50 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
 }
 
 
+///
+/// \brief afCamera::measuredPos
+/// \return
+///
+cVector3d afCamera::measuredPos(){
+    return getLocalPos();
+}
+
+///
+/// \brief afCamera::measuredRot
+/// \return
+///
+cMatrix3d afCamera::measuredRot(){
+    return getLocalRot();
+}
+
+
 
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(){
+afLight::afLight(cBulletWorld* a_bulletWorld){
+    m_bulletWorld = a_bulletWorld;
 }
+
+///
+/// \brief afLight::createDefaultLight
+/// \return
+///
+bool afLight::createDefaultLight(){
+    std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << std::endl;
+    m_spotLight = new cSpotLight(m_bulletWorld);
+    m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
+    m_spotLight->setDir(0, 0, -1);
+    m_spotLight->setSpotExponent(0.3);
+    m_spotLight->setCutOffAngleDeg(60);
+    m_spotLight->setShadowMapEnabled(true);
+    m_spotLight->m_shadowMap->setQualityVeryHigh();
+    m_spotLight->setEnabled(true);
+    m_bulletWorld->addChild(m_spotLight);
+
+    return true;
+}
+
 
 ///
 /// \brief afLight::loadLight
@@ -2303,8 +2393,8 @@ afLight::afLight(){
 /// \return
 ///
 bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
-    YAML::Node lightNode = *a_light_node;
     m_name = a_light_name;
+    YAML::Node lightNode = *a_light_node;
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -2312,43 +2402,82 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     YAML::Node lightCuttOffAngleData = lightNode["cutoff angle"];
 
     bool _is_valid = true;
+    cVector3d _location, _direction;
+    double _spot_exponent, _cuttoff_angle;
+    int _shadow_quality;
+
+
 
     if (lightLocationData.IsDefined()){
-        assignXYZ(&lightLocationData, &m_location);
+        assignXYZ(&lightLocationData, &_location);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightDirectionData.IsDefined()){
-        assignXYZ(&lightDirectionData, &m_direction);
+        assignXYZ(&lightDirectionData, &_direction);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightSpotExponentData.IsDefined()){
-        m_spot_exponent = lightSpotExponentData.as<double>();
+        _spot_exponent = lightSpotExponentData.as<double>();
     }
     if (lightShadowQualityData.IsDefined()){
-        int shadow_quality = lightShadowQualityData.as<int>();
-        if (shadow_quality < 0){
-            shadow_quality = 0;
+        _shadow_quality = lightShadowQualityData.as<int>();
+        if (_shadow_quality < 0){
+            _shadow_quality = 0;
             std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
-        else if (shadow_quality > 5){
-            shadow_quality = 5;
+        else if (_shadow_quality > 5){
+            _shadow_quality = 5;
             std::cerr << "INFO: LIGHT \"" << a_light_name << "\" SHADOW QUALITY SHOULD BE BETWEEN [0-5] " << std::endl;
         }
-        m_shadow_quality = (ShadowQuality)shadow_quality;
     }
     if (lightCuttOffAngleData.IsDefined()){
-        m_cuttoff_angle = lightCuttOffAngleData.as<double>();
+        _cuttoff_angle = lightCuttOffAngleData.as<double>();
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT CUTOFF NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
+
+    if (_is_valid){
+        m_spotLight = new cSpotLight(m_bulletWorld);
+        m_spotLight->setLocalPos(_location);
+        m_spotLight->setDir(_direction);
+        m_spotLight->setSpotExponent(_spot_exponent);
+        m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
+        m_spotLight->setShadowMapEnabled(true);
+
+        ShadowQuality sQ = (ShadowQuality) _shadow_quality;
+        switch (sQ) {
+        case ShadowQuality::no_shadow:
+            m_spotLight->setShadowMapEnabled(false);
+            break;
+        case ShadowQuality::very_low:
+            m_spotLight->m_shadowMap->setQualityVeryLow();
+            break;
+        case ShadowQuality::low:
+            m_spotLight->m_shadowMap->setQualityLow();
+            break;
+        case ShadowQuality::medium:
+            m_spotLight->m_shadowMap->setQualityMedium();
+            break;
+        case ShadowQuality::high:
+            m_spotLight->m_shadowMap->setQualityHigh();
+            break;
+        case ShadowQuality::very_high:
+            m_spotLight->m_shadowMap->setQualityVeryHigh();
+            break;
+        }
+        m_spotLight->setEnabled(true);
+
+        m_bulletWorld->addChild(m_spotLight);
+    }
+
     return _is_valid;
 }
 

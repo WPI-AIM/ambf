@@ -425,6 +425,7 @@ public:
     cLabel* m_devicesModesLabel;
     cLabel* m_deviceButtonLabel;
     cLabel* m_controllingDeviceLabel;
+    std::vector<cLabel*> m_devHapticFreqLabels;
 
 public:
     // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
@@ -480,14 +481,16 @@ enum ShadowQuality{
 ///
 class afLight{
 public:
-    afLight();
+    afLight(cBulletWorld* a_bulletWorld);
     bool loadLight(YAML::Node* light_node, std::string light_name);
-    cVector3d m_location;
-    cVector3d m_direction;
-    double m_spot_exponent;
-    ShadowQuality m_shadow_quality;
-    double m_cuttoff_angle;
+    bool createDefaultLight();
+
     std::string m_name;
+
+protected:
+    cSpotLight* m_spotLight;
+private:
+    cBulletWorld* m_bulletWorld;
 };
 
 
