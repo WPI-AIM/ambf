@@ -88,8 +88,6 @@ cBulletWorld* g_bulletWorld;
 afMultiBody *g_afMultiBody;
 afWorld *g_afWorld;
 
-cVector3d g_camPos(0,0,0);
-cVector3d g_dev_vel;
 double g_dt_fixed = 0;
 bool g_force_enable = true;
 // Default switch index for clutches

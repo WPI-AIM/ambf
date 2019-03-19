@@ -2034,13 +2034,12 @@ bool afWorld::createDefaultWorld(){
     // bullet static walls and ground
     cBulletStaticPlane* _bulletGround;
 
-    cBulletStaticPlane* _bulletBoxWallX[2];
-    cBulletStaticPlane* _bulletBoxWallY[2];
+    cBulletStaticPlane* _bulletBoxWall[4];
 
-    _bulletBoxWallY[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * _box_w);
-    _bulletBoxWallY[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * _box_w);
-    _bulletBoxWallX[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * _box_l);
-    _bulletBoxWallX[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * _box_l);
+    _bulletBoxWall[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWall[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * _box_w);
+    _bulletBoxWall[2] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * _box_l);
+    _bulletBoxWall[3] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * _box_l);
 
     cVector3d _nz(0.0, 0.0, 1.0);
     cMaterial _matPlane;
@@ -2049,27 +2048,25 @@ bool afWorld::createDefaultWorld(){
     cVector3d _planeNorm;
     cMatrix3d _planeRot;
 
-    for (int i = 0 ; i < 2 ; i++){
-        _planeNorm = cCross(_bulletBoxWallX[i]->getPlaneNormal(), _nz);
-        _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
-        s_bulletWorld->addChild(_bulletBoxWallX[i]);
-        cCreatePlane(_bulletBoxWallX[i], _box_h, _box_w,
-                     _bulletBoxWallX[i]->getPlaneConstant() * _bulletBoxWallX[i]->getPlaneNormal(),
-                     _planeRot);
-        _bulletBoxWallX[i]->setMaterial(_matPlane);
-        if (i == 0) _bulletBoxWallX[i]->setTransparencyLevel(0.3, true, true);
-        else _bulletBoxWallX[i]->setTransparencyLevel(0.5, true, true);
-    }
+    double _dim1, _dim2;
 
-    for (int i = 0 ; i < 2 ; i++){
-        _planeNorm = cCross(_bulletBoxWallY[i]->getPlaneNormal(), _nz);
+    for (int i = 0 ; i < 4 ; i++){
+        cBulletStaticPlane* wall = _bulletBoxWall[i];
+        _planeNorm = cCross(wall->getPlaneNormal(), _nz);
         _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
-        s_bulletWorld->addChild(_bulletBoxWallY[i]);
-        cCreatePlane(_bulletBoxWallY[i], _box_l, _box_h,
-                     _bulletBoxWallY[i]->getPlaneConstant() * _bulletBoxWallY[i]->getPlaneNormal(),
-                     _planeRot);
-        _bulletBoxWallY[i]->setMaterial(_matPlane);
-        _bulletBoxWallY[i]->setTransparencyLevel(0.5, true, true);
+        if (i < 2){
+            _dim1 = _box_l; _dim2 = _box_h;
+        }
+        else{
+            _dim1 = _box_h; _dim2 = _box_w;
+        }
+        cCreatePlane(wall, _dim1, _dim2,
+                     wall->getPlaneConstant() * wall->getPlaneNormal(), _planeRot);
+        wall->setMaterial(_matPlane);
+        if (i == 0) wall->setTransparencyLevel(0.3, true, true);
+        else wall->setTransparencyLevel(0.5, true, true);
+
+        s_bulletWorld->addChild(wall);
     }
 
 
