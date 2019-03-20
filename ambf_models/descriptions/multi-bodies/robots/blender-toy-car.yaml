@@ -5,8 +5,8 @@
 bodies: [BODY Chassis, BODY WheelBL, BODY WheelBR, BODY WheelFL, BODY WheelFR]
 joints: [JOINT Chassis-WheelBL, JOINT Chassis-WheelBR, JOINT Chassis-WheelFL, JOINT
     Chassis-WheelFR]
-high resolution path: ../../../meshes/blender_afmb/high_res/
-low resolution path: ../../../meshes/blender_afmb/low_res/
+high resolution path: ../../../meshes/blender_afmb/toy_car/high_res/
+low resolution path: ../../../meshes/blender_afmb/toy_car/low_res/
 ignore inter-collision: false
 namespace: /ambf/env/
 BODY Chassis:
