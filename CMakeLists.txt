@@ -109,7 +109,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_COMM_SUPPORT)
         set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
 
-        find_package(razer_hydra)
+        find_package(razer_hydra QUIET)
         if (${razer_hydra_FOUND})
             message("-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING SUPPORT")
             add_definitions(-DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
