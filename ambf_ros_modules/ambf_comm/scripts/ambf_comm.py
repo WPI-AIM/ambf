@@ -40,7 +40,7 @@ class ChaiEnv:
         self.action_space = spaces.Box(self.action_lims_low, self.action_lims_high)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(13,))
 
-        self.base_handle = self.ambf_client.get_obj_handle('Base')
+        self.base_handle = self.ambf_client.get_obj_handle('PegBase')
         self.prev_sim_step = 0
 
         pass

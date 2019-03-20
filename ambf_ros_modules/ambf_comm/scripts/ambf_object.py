@@ -33,7 +33,7 @@ class Object(WatchDog):
 
     def pose_command(self, px, py, pz, roll, pitch, yaw, *jnt_cmds):
         quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
-        self.cmd.pos_ctrl = True
+        self.cmd.enable_position_controller = True
         self.cmd.pose.position.x = px
         self.cmd.pose.position.y = py
         self.cmd.pose.position.z = pz
