@@ -940,6 +940,7 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
             // Sanity check for the group number
             if (gNum >= 0 && gNum <= 999){
                 mB->m_collisionGroups[gNum].push_back(this);
+                m_collisionGroupsIdx.push_back(gNum);
             }
             else{
                 std::cerr << "WARNING: Body "
@@ -1224,6 +1225,40 @@ void afRigidBody::setAngle(std::vector<double> &angles){
     }
 }
 
+///
+/// \brief afRigidBody::checkCollisionGroupIdx
+/// \param a_idx
+/// \return
+///
+bool afRigidBody::checkCollisionGroupIdx(int a_idx){
+    bool in_group = false;
+    for (int i = 0 ; i < m_collisionGroupsIdx.size() ; i++){
+        if (m_collisionGroupsIdx[i] == a_idx){
+            in_group = true;
+            break;
+        }
+    }
+
+    return in_group;
+}
+
+bool afRigidBody::isCommonCollisionGroupIdx(std::vector<int> a_idx){
+    bool in_group = false;
+    for (int i = 0 ; i < a_idx.size() ; i ++){
+        for (int j = 0 ; j < m_collisionGroupsIdx.size() ; j++){
+            if (a_idx[i] == m_collisionGroupsIdx[j]){
+                in_group = true;
+                break;
+            }
+        }
+    }
+
+    return in_group;
+}
+
+///
+/// \brief afRigidBody::~afRigidBody
+///
 afRigidBody::~afRigidBody(){
     int numConstraints = m_bulletRigidBody->getNumConstraintRefs();
     for (int i = numConstraints - 1 ; i >=0 ; i--){
@@ -2828,27 +2863,25 @@ void afMultiBody::ignoreCollisionChecking(){
 void afMultiBody::buildCollisionGroups(){
     if (m_collisionGroups.size() > 0){
         std::vector<int> groupNumbers;
-        groupNumbers.resize(m_collisionGroups.size());
 
-        //   for (int aIdx = 0 ; aIdx < groupNumbers.size() ; aIdx++){
-        //       std::cerr << "****" << std::endl;
-        //        std::cerr << "Group " << aIdx << " = [" ;
-        //       std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-        //       for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
-        //           std::cerr << " " << grpA[aBodyIdx]->m_name << ",";
-        //       }
-        //       std::cerr << " ]" << std::endl;
-        //   }
-        for (int aIdx = 0 ; aIdx < groupNumbers.size() - 1 ; aIdx++){
+        std::map<int, std::vector<afRigidBodyPtr> >::iterator cgIt;
+        for(cgIt = m_collisionGroups.begin() ; cgIt != m_collisionGroups.end() ; ++cgIt){
+            groupNumbers.push_back(cgIt->first);
+        }
+
+        for (int i = 0 ; i < groupNumbers.size() - 1 ; i++){
+            int aIdx = groupNumbers[i];
             std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-            for (int bIdx = aIdx + 1 ; bIdx < groupNumbers.size() ; bIdx ++){
+            for (int j = i + 1 ; j < groupNumbers.size() ; j ++){
+                int bIdx = groupNumbers[j];
                 std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
 
                 for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
                     afRigidBodyPtr bodyA = grpA[aBodyIdx];
                     for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
                         afRigidBodyPtr bodyB = grpB[bBodyIdx];
-                        bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                        if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroupsIdx))
+                            bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
                     }
                 }
             }

@@ -209,6 +209,14 @@ public:
     inline int getMaxPublishFrequency(){return _max_publish_frequency;}
 
 public:
+    // function to check if this rigid body is part of the collision group
+    // at a_idx
+    bool checkCollisionGroupIdx(int a_idx);
+    // function to check if this rigid body is part of the collision group
+    // at a_idxs
+    bool isCommonCollisionGroupIdx(std::vector<int> a_idx);
+
+public:
     //! If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
 
@@ -245,6 +253,9 @@ protected:
     virtual void afObjectSetJointPositions();
     static afRigidBodySurfaceProperties m_surfaceProps;
     static cMaterial m_mat;
+
+protected:
+    std::vector<int> m_collisionGroupsIdx;
 
 private:
     std::vector<float> m_joint_positions;
