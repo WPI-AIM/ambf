@@ -82,12 +82,17 @@ typedef afSoftBodyConfigProperties* afSoftBodyConfigPropertiesPtr;
 typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
 typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
 typedef std::map<std::string, afJointPtr> afJointMap;
+typedef std::vector<afRigidBodyPtr> afRightBodyVec;
+typedef std::vector<afSoftBodyPtr> afSoftBodyVec;
+typedef std::vector<afJointPtr> afJointVec;
 //------------------------------------------------------------------------------
 class afLight;
 class afCamera;
 typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
+typedef std::map<std::string, afLightPtr> afLightMap;
 typedef std::map<std::string, afCameraPtr> afCameraMap;
+typedef std::vector<afLightPtr> afLightVec;
 typedef std::vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
 
@@ -530,31 +535,44 @@ public:
     double getEnclosureWidth();
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
-    afCameraVec getCameras(){return m_cameras;}
+
     static cBulletWorld *s_bulletWorld;
-    std::vector<afLightPtr> m_lights;
-    std::vector<afCameraPtr> m_cameras;
-
     GLFWwindow* m_mainWindow;
-
-    afCameraMap m_cameraMap;
-
 
 public:
 
-    bool addRigidBody(std::string a_name, afRigidBodyPtr a_rb);
-    bool addSoftBody(std::string a_name, afSoftBodyPtr a_sb);
-    bool addJoint(std::string a_name, afJointPtr a_jnt);
+    bool addLight(afLightPtr a_rb, std::string a_name);
+    bool addCamera(afCameraPtr a_rb, std::string a_name);
+    bool addRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+    bool addSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+    bool addJoint(afJointPtr a_jnt, std::string a_name);
 
+    afLightPtr getLight(std::string a_name);
+    afCameraPtr getCamera(std::string a_name);
     afRigidBodyPtr getRidigBody(std::string a_name, bool suppress_warning=false);
-    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
     afSoftBodyPtr getSoftBody(std::string a_name);
-    inline afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
+    afJointPtr getJoint(std::string a_name);
+
+    inline afLightMap* getLightMap(){return &m_afLightMap;}
+    inline afCameraMap* getCameraMap(){return &m_afCameraMap;}
     inline afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMap;}
+    inline afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
     inline afJointMap* getJointMap(){return &m_afJointMap;}
+
+    afLightVec  getLighs();
+    afCameraVec getCameras();
+    afRightBodyVec getRigidBodies();
+    afSoftBodyVec getSoftBodies();
+    afJointVec getJoints();
+
+    // Get the root parent of a body, if null is provided, returns the parent body
+    // with most children
+    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
 
 protected:
 
+    afLightMap m_afLightMap;
+    afCameraMap m_afCameraMap;
     afRigidBodyMap m_afRigidBodyMap;
     afSoftBodyMap m_afSoftBodyMap;
     afJointMap m_afJointMap;
