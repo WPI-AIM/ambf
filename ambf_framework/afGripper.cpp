@@ -149,18 +149,18 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         m_multibody_namespace = "/ambf/env/";
     }
 
-    afRigidBodyMap _rbMap = *(m_afWorld->getRigidBodyMap());
+    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
     size_t totalBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalBodies; ++i) {
         tmpBody = new afGripperLink(m_afWorld);
         std::string body_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
         if (tmpBody->loadRidigBody(a_gripper_config_file.c_str(), body_name, this)){
-            _rbMap[m_multibody_namespace + body_name.c_str()] = tmpBody;
+            (*_rbMap)[m_multibody_namespace + body_name.c_str()] = tmpBody;
         }
     }
 
-    afJointMap _jntMap = *(m_afWorld->getJointMap());
+    afJointMap* _jntMap = m_afWorld->getJointMap();
     afJoint *tmpJoint;
     size_t totalJoints = multiBodyJoints.size();
     for (size_t i = 0; i < totalJoints; ++i) {
@@ -168,7 +168,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         //        printf("Loading body: %s \n", jnt_name.c_str());
         if (tmpJoint->loadJoint(a_gripper_config_file.c_str(), jnt_name, this)){
-            _jntMap[m_multibody_namespace + jnt_name] = tmpJoint;
+            (*_jntMap)[m_multibody_namespace + jnt_name] = tmpJoint;
             // Disable the IPC Control Switch
 //            tmpJoint->m_ipc_ctrl_swtch1 = false;
         }
@@ -207,7 +207,7 @@ afGripper::~afGripper(){
     for ( ; lIt != _rbMap->end() ; ++lIt){
         delete lIt->second;
     }
-    const afJointMap* _jntMap =  m_afWorld->getJointMap();
+    afJointMap* _jntMap =  m_afWorld->getJointMap();
     afJointMap::const_iterator jIt = _jntMap->begin();
     for (; jIt != _jntMap->end() ; ++jIt){
         delete jIt->second;
