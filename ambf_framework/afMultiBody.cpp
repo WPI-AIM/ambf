@@ -1082,49 +1082,60 @@ void afRigidBody::afObjectCommandExecute(double dt){
         cVector3d force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
-        if (m_afCommand.enable_position_controller){
-            computeControllerGains();
-            cVector3d cur_pos, cmd_pos, rot_axis, rot_axix_w_gain;
-            cQuaternion cur_rot, cmd_rot;
-            cMatrix3d cur_rot_mat, cmd_rot_mat;
-            btTransform b_trans;
-            double rot_angle;
-            m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
-            cur_pos.set(b_trans.getOrigin().getX(),
-                        b_trans.getOrigin().getY(),
-                        b_trans.getOrigin().getZ());
-
-            cur_rot.x = b_trans.getRotation().getX();
-            cur_rot.y = b_trans.getRotation().getY();
-            cur_rot.z = b_trans.getRotation().getZ();
-            cur_rot.w = b_trans.getRotation().getW();
-            cur_rot.toRotMat(cur_rot_mat);
-
-            cmd_pos.set(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
-
-            cmd_rot.x = m_afCommand.qx;
-            cmd_rot.y = m_afCommand.qy;
-            cmd_rot.z = m_afCommand.qz;
-            cmd_rot.w = m_afCommand.qw;
-            cmd_rot.toRotMat(cmd_rot_mat);
-
-            m_dpos_prev = m_dpos;
-            m_dpos = cmd_pos - cur_pos;
-            m_ddpos = (m_dpos - m_dpos_prev)/dt;
-            m_drot_prev = m_drot;
-            m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
-            m_drot.toAxisAngle(rot_axis, rot_angle);
-
-            force = K_lin * m_dpos + D_lin * m_ddpos;
-            torque = cMul(K_ang * rot_angle, rot_axis);
-            cur_rot_mat.mul(torque);
+        // If the body is kinematic, we just want to control the position
+        if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
+            btTransform _Td;
+            _Td.setOrigin(btVector3(m_afCommand.px, m_afCommand.py, m_afCommand.pz));
+            _Td.setRotation(btQuaternion(m_afCommand.qx, m_afCommand.qy, m_afCommand.qz, m_afCommand.qw));
+            m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
         }
         else{
-            force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
-            torque.set(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
+            if (m_afCommand.enable_position_controller){
+                // If the gains have not been defined for the body,
+                // they shall be computed for the first call
+                computeControllerGains();
+                cVector3d cur_pos, cmd_pos, rot_axis, rot_axix_w_gain;
+                cQuaternion cur_rot, cmd_rot;
+                cMatrix3d cur_rot_mat, cmd_rot_mat;
+                btTransform b_trans;
+                double rot_angle;
+                m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
+                cur_pos.set(b_trans.getOrigin().getX(),
+                            b_trans.getOrigin().getY(),
+                            b_trans.getOrigin().getZ());
+
+                cur_rot.x = b_trans.getRotation().getX();
+                cur_rot.y = b_trans.getRotation().getY();
+                cur_rot.z = b_trans.getRotation().getZ();
+                cur_rot.w = b_trans.getRotation().getW();
+                cur_rot.toRotMat(cur_rot_mat);
+
+                cmd_pos.set(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
+
+                cmd_rot.x = m_afCommand.qx;
+                cmd_rot.y = m_afCommand.qy;
+                cmd_rot.z = m_afCommand.qz;
+                cmd_rot.w = m_afCommand.qw;
+                cmd_rot.toRotMat(cmd_rot_mat);
+
+                m_dpos_prev = m_dpos;
+                m_dpos = cmd_pos - cur_pos;
+                m_ddpos = (m_dpos - m_dpos_prev)/dt;
+                m_drot_prev = m_drot;
+                m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
+                m_drot.toAxisAngle(rot_axis, rot_angle);
+
+                force = K_lin * m_dpos + D_lin * m_ddpos;
+                torque = cMul(K_ang * rot_angle, rot_axis);
+                cur_rot_mat.mul(torque);
+            }
+            else{
+                force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
+                torque.set(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
+            }
+            addExternalForce(force);
+            addExternalTorque(torque);
         }
-        addExternalForce(force);
-        addExternalTorque(torque);
         size_t jntCmdSize = m_afCommand.joint_commands_size;
         if (jntCmdSize > 0){
             size_t jntCmdCnt = m_joints.size() < jntCmdSize ? m_joints.size() : jntCmdSize;
