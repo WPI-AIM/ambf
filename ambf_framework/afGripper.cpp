@@ -174,7 +174,9 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         }
     }
 
-    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody());
+    // Pass the tmpBody, which is any link in the loaded gripper to get the root
+    // parent
+    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody(tmpBody));
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
