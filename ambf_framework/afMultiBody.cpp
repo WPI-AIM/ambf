@@ -2277,7 +2277,8 @@ bool afCamera::createDefaultCamera(){
 
     // create display context
     // compute desired size of window
-    const GLFWvidmode* _mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    m_monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
     int w = 0.5 * _mode->width;
     int h = 0.5 * _mode->height;
     int x = 0.5 * (_mode->width - w);
