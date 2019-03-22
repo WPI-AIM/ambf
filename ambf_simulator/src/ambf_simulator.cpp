@@ -2105,8 +2105,9 @@ void updateHapticDevice(void* a_arg){
     while(g_simulationRunning)
     {
         pDev->m_freq_ctr.signal(1);
-
-        devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        if (devFreqLabel != NULL){
+            devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
