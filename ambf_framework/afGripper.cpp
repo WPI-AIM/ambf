@@ -149,29 +149,32 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         m_multibody_namespace = "/ambf/env/";
     }
 
+    afRigidBodyMap _rbMap = *(m_afWorld->getRigidBodyMap());
     size_t totalBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalBodies; ++i) {
-        tmpBody = new afGripperLink(s_bulletWorld);
+        tmpBody = new afGripperLink(m_afWorld);
         std::string body_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
         if (tmpBody->loadRidigBody(a_gripper_config_file.c_str(), body_name, this)){
-            m_afRigidBodyMap[m_multibody_namespace + body_name.c_str()] = tmpBody;
+            _rbMap[m_multibody_namespace + body_name.c_str()] = tmpBody;
         }
     }
+
+    afJointMap _jntMap = *(m_afWorld->getJointMap());
     afJoint *tmpJoint;
     size_t totalJoints = multiBodyJoints.size();
     for (size_t i = 0; i < totalJoints; ++i) {
-        tmpJoint = new afJoint();
+        tmpJoint = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         //        printf("Loading body: %s \n", jnt_name.c_str());
         if (tmpJoint->loadJoint(a_gripper_config_file.c_str(), jnt_name, this)){
-            m_afJointMap[m_multibody_namespace + jnt_name] = tmpJoint;
+            _jntMap[m_multibody_namespace + jnt_name] = tmpJoint;
             // Disable the IPC Control Switch
 //            tmpJoint->m_ipc_ctrl_swtch1 = false;
         }
     }
 
-    m_rootLink = static_cast<afGripperLinkPtr>(afMultiBody::getRootRigidBody());
+    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody());
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
@@ -199,12 +202,14 @@ afGripperLinkPtr afGripper::getRootRigidBody(){
 /// \brief afGripper::~afGripper
 ///
 afGripper::~afGripper(){
-    afRigidBodyMap::const_iterator lIt = m_afRigidBodyMap.begin();
-    for ( ; lIt != m_afRigidBodyMap.end() ; ++lIt){
+    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
+    afRigidBodyMap::const_iterator lIt = _rbMap->begin();
+    for ( ; lIt != _rbMap->end() ; ++lIt){
         delete lIt->second;
     }
-    afJointMap::const_iterator jIt = m_afJointMap.begin();
-    for (; jIt != m_afJointMap.end() ; ++jIt){
+    const afJointMap* _jntMap =  m_afWorld->getJointMap();
+    afJointMap::const_iterator jIt = _jntMap->begin();
+    for (; jIt != _jntMap->end() ; ++jIt){
         delete jIt->second;
     }
     }
