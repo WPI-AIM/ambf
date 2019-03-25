@@ -259,7 +259,6 @@ protected:
     // Update the joint positions of children in afObject State Message
     virtual void afObjectSetJointPositions();
     static afRigidBodySurfaceProperties m_surfaceProps;
-    static cMaterial m_mat;
 
 protected:
     std::vector<int> m_collisionGroupsIdx;
@@ -320,7 +319,6 @@ protected:
     void addParentBody(afSoftBodyPtr a_body);
     void populateParentsTree(afSoftBodyPtr a_body, afJointPtr a_jnt);
     static afSoftBodyConfigProperties m_configProps;
-    static cMaterial m_mat;
 
 protected:
     afWorldPtr m_afWorld;

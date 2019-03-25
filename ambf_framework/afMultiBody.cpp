@@ -60,10 +60,7 @@ using namespace chai3d;
 
 //------------------------------------------------------------------------------
 /// Declare Static Variables
-cMaterial afRigidBody::m_mat;
 afRigidBodySurfaceProperties afRigidBody::m_surfaceProps;
-
-cMaterial afSoftBody::m_mat;
 
 boost::filesystem::path afConfigHandler::s_boostBaseDir;
 std::string afConfigHandler::s_color_config;
@@ -501,8 +498,9 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyInertia = bodyNode["inertia"];
     YAML::Node bodyPos = bodyNode["location"]["position"];
     YAML::Node bodyRot = bodyNode["location"]["orientation"];
-    YAML::Node bodyColorRGBA = bodyNode["color rgba"];
     YAML::Node bodyColor = bodyNode["color"];
+    YAML::Node bodyColorRGBA = bodyNode["color rgba"];
+    YAML::Node bodyColorComponents = bodyNode["color components"];
     YAML::Node bodyLinDamping = bodyNode["damping"]["linear"];
     YAML::Node bodyAngDamping = bodyNode["damping"]["angular"];
     YAML::Node bodyStaticFriction = bodyNode["friction"]["static"];
@@ -693,18 +691,48 @@ bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMu
             m_meshes->push_back(tempMesh);
         }
 
+    cMaterial _mat;
+    double _r, _g, _b, _a;
     if(bodyColorRGBA.IsDefined()){
-        m_mat.setColorf(bodyColorRGBA["r"].as<float>(),
-                bodyColorRGBA["g"].as<float>(),
-                bodyColorRGBA["b"].as<float>(),
-                bodyColorRGBA["a"].as<float>());
+        _r = bodyColorRGBA["r"].as<float>();
+        _g = bodyColorRGBA["g"].as<float>();
+        _b = bodyColorRGBA["b"].as<float>();
+        _a = bodyColorRGBA["a"].as<float>();
+        _mat.setColorf(_r, _g, _b, _a);
+        setMaterial(_mat);
+        setTransparencyLevel(_a);
+    }
+    else if(bodyColorComponents.IsDefined()){
+
+        if (bodyColorComponents["diffuse"].IsDefined()){
+            _r = bodyColorComponents["diffuse"]["r"].as<float>();
+            _g = bodyColorComponents["diffuse"]["g"].as<float>();
+            _b = bodyColorComponents["diffuse"]["b"].as<float>();
+            _mat.m_diffuse.set(_r, _g, _b);
+        }
+        if (bodyColorComponents["ambient"].IsDefined()){
+            double _level = bodyColorComponents["ambient"]["level"].as<float>();
+            _r *= _level;
+            _g *= _level;
+            _b *= _level;
+            _mat.m_ambient.set(_r, _g, _b);
+
+        }
+        if (bodyColorComponents["specular"].IsDefined()){
+            _r = bodyColorComponents["specular"]["r"].as<float>();
+            _g = bodyColorComponents["specular"]["g"].as<float>();
+            _b = bodyColorComponents["specular"]["b"].as<float>();
+            _mat.m_specular.set(_r, _g, _b);
+        }
+        setMaterial(_mat);
+        setTransparencyLevel(bodyColorComponents["transparency"].as<float>());
     }
     else if(bodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(bodyColor.as<std::string>());
-        m_mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+        _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+        setMaterial(_mat);
+        setTransparencyLevel(rgba[3]);
     }
-
-    setMaterial(m_mat);
 
     if(m_collisionGeometryType == GeometryType::mesh){
 
@@ -1336,8 +1364,9 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node softBodyAngGain = softBodyNode["angular gain"];
     YAML::Node softBodyPos = softBodyNode["location"]["position"];
     YAML::Node softBodyRot = softBodyNode["location"]["orientation"];
-    YAML::Node softBodyColorRaw = softBodyNode["color raw"];
     YAML::Node softBodyColor = softBodyNode["color"];
+    YAML::Node softBodyColorRGBA = softBodyNode["color rgba"];
+    YAML::Node softBodyColorComponents = softBodyNode["color components"];
     YAML::Node softBodyConfigData = softBodyNode["config"];
     YAML::Node softBodyRandomizeConstraints = softBodyNode["randomize constraints"];
 
@@ -1457,16 +1486,46 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         setLocalRot(rot);
     }
 
-    if(softBodyColorRaw.IsDefined()){
-        m_mat.setColorf(softBodyColorRaw["r"].as<float>(),
-                softBodyColorRaw["g"].as<float>(),
-                softBodyColorRaw["b"].as<float>(),
-                softBodyColorRaw["a"].as<float>());
+    cMaterial _mat;
+    double _r, _g, _b, _a;
+    if(softBodyColorRGBA.IsDefined()){
+        _r = softBodyColorRGBA["r"].as<float>();
+        _g = softBodyColorRGBA["g"].as<float>();
+        _b = softBodyColorRGBA["b"].as<float>();
+        _a = softBodyColorRGBA["a"].as<float>();
+        _mat.setColorf(_r, _g, _b, _a);
+        setMaterial(_mat);
+        setTransparencyLevel(softBodyColorRGBA["a"].as<float>());
+    }
+    else if(softBodyColorComponents.IsDefined()){
+        if (softBodyColorComponents["diffuse"].IsDefined()){
+            _r = softBodyColorComponents["diffuse"]["r"].as<float>();
+            _g = softBodyColorComponents["diffuse"]["g"].as<float>();
+            _b = softBodyColorComponents["diffuse"]["b"].as<float>();
+            _mat.m_diffuse.set(_r, _g, _b);
+        }
+        if (softBodyColorComponents["ambient"].IsDefined()){
+            double _level = softBodyColorComponents["ambient"]["level"].as<float>();
+            _r *= _level;
+            _g *= _level;
+            _b *= _level;
+            _mat.m_ambient.set(_r, _g, _b);
+
+        }
+        if (softBodyColorComponents["specular"].IsDefined()){
+            _r = softBodyColorComponents["specular"]["r"].as<float>();
+            _g = softBodyColorComponents["specular"]["g"].as<float>();
+            _b = softBodyColorComponents["specular"]["b"].as<float>();
+            _mat.m_specular.set(_r, _g, _b);
+        }
+        setMaterial(_mat);
+        setTransparencyLevel(softBodyColorComponents["transparency"].as<float>());
     }
     else if(softBodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<std::string>());
-        m_mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-
+        _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+        setMaterial(_mat);
+        setTransparencyLevel(rgba[3]);
     }
 
     if (softBodyConfigData.IsNull()){
@@ -1510,7 +1569,6 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             m_bulletSoftBody->randomizeConstraints();
 
 
-    setMaterial(m_mat);
     m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
     m_afWorld->s_bulletWorld->addChild(this);
     return true;
