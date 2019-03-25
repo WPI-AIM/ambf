@@ -154,7 +154,7 @@ public:
         m_angular_damping = 0.1;
         m_static_friction = 0.5;
         m_dynamic_friction = 0.5;
-        m_rolling_friction = 0.1;
+        m_rolling_friction = 0.01;
         m_restitution = 0.1;
     }
     double m_linear_damping;
@@ -191,31 +191,46 @@ public:
 
     afRigidBody(afWorldPtr a_afWorld);
     virtual ~afRigidBody();
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
     virtual void afObjectCommandExecute(double dt);
+    // Load rigid body named by node_name from the a config file that may contain many bodies
     virtual bool loadRidigBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
+    // Load rigid body named by from the rb_node specification
     virtual bool loadRidigBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
+    // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildBody(afRigidBodyPtr childBody, afJointPtr jnt);
-    //! This method update the CHAI3D position representation from the Bullet dynamics engine.
+    // This method update the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
 
+    // A vector of joints that this bodies is a parent off. Includes joints of all the
+    // connected children all the way down to the last child
     std::vector<afJointPtr> m_joints;
+    // A vector of all the children (children's children ... and so on also count as children)
     std::vector<afRigidBodyPtr> m_childrenBodies;
+    // A vector of all the parent bodies (not just the immediate parents but all the way up to the root parent)
     std::vector<afRigidBodyPtr> m_parentBodies;
 
+    // Set the angle of all the child joints
     virtual void setAngle(double &angle);
+    // Set the angles based on the num elements in the argument vector
     virtual void setAngle(std::vector<double> &angle);
+
+    // Set the config properties, this include, damping, friction restitution
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
-    std::string m_body_namespace;
+
+    // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
 
-    //! This method toggles the viewing of frames of this rigid bodyl.
+    // This method toggles the viewing of frames of this rigid body.
     inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
 
-    //! Get Min/Max publishing frequency for afObjectState for this body
+public:
+
+    // Get Min/Max publishing frequency for afObjectState for this body
     inline int getMinPublishFrequency(){return _min_publish_frequency;}
     inline int getMaxPublishFrequency(){return _max_publish_frequency;}
 
-public:
     // function to check if this rigid body is part of the collision group
     // at a_idx
     bool checkCollisionGroupIdx(int a_idx);
@@ -227,52 +242,101 @@ public:
     //! If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
 
+    // The namespace for this body, this namespace affect afComm and the stored name of the body
+    // in the internal body tree map.
+    std::string m_body_namespace;
+
 protected:
 
+    // Scale of mesh
     double m_scale;
-    double m_total_mass;
+
+    // Name of visual and collision mesh
     std::string m_mesh_name, m_collision_mesh_name;
+
+    // cMultiMesh representation of collision mesh
     cMultiMesh m_lowResMesh;
+
+    // Initial location of Rigid Body
     cVector3d m_initialPos;
+
+    // Initial rotation of Ridig Body
     cMatrix3d m_initialRot;
+
+    // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
+    // Body controller linear gains
     double K_lin, D_lin;
+    // Body controller angular gains
     double K_ang, D_ang;
+
+    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
     bool _lin_gains_computed = false;
+
+    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
     bool _ang_gains_computed = false;
+
+    // Toggle publishing of joint positions
     bool _publish_joint_positions = false;
+
+    // Toggle publishing of children names
     bool _publish_children_names = false;
+    // Toggle publishing of joint names
     bool _publish_joint_names = true;
+
+    // Min and Max publishing frequency
     int _min_publish_frequency;
     int _max_publish_frequency;
+
+    // Function of compute body's controllers based on lumped masses
     void computeControllerGains();
 
 protected:
-
+    // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
+
+    // Go higher in hierarchy to populate the body tree
     void upwardTreePopulation(afRigidBodyPtr a_childbody, afJointPtr a_jnt);
+
+    // Go lower in hierarchy to populate the body tree
     void downwardTreePopulation(afRigidBodyPtr a_parentbody);
+
     // Update the children for this body in the afObject State Message
     virtual void afObjectStateSetChildrenNames();
+
     // Update the joints for this body in the afObject State Message
     virtual void afObjectStateSetJointNames();
+
     // Update the joint positions of children in afObject State Message
     virtual void afObjectSetJointPositions();
+
+    // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
 protected:
+    // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
 
 private:
+    // Ptr to afWorld
     afWorldPtr m_afWorld;
+
+    // Positions of all child joints
     std::vector<float> m_joint_positions;
+
+    // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
+
     // Counter for the times we have written to ambf_comm API
     // This is only of internal use as it could be reset
     unsigned short m_write_count = 0;
+
+    // Default body controller gains
     double m_P=10;
     double m_I=0;
     double m_D=1;
+
+    // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
 };
 
