@@ -72,7 +72,7 @@ class afGripperLink : public afRigidBody{
     friend class afGripper;
 public:
 
-    afGripperLink(cBulletWorld* a_chaiWorld): afRigidBody(a_chaiWorld){
+    afGripperLink(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
         m_surfaceProps.m_linear_damping = 0.5;
         m_surfaceProps.m_angular_damping = 1.0;
         m_surfaceProps.m_static_friction = 0.5;
@@ -93,7 +93,7 @@ class afGripper: public afMultiBody
 
 public:
 
-    afGripper(cBulletWorld *a_chaiWorld) : afMultiBody(a_chaiWorld){}
+    afGripper(afWorldPtr a_afWorld) : afMultiBody(a_afWorld){}
     ~afGripper();
     virtual bool loadMultiBody(std::string a_file,
                                                std::string a_gripper_name,

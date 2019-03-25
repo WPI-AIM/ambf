@@ -614,7 +614,7 @@ void SimulationParams::setSimParams(cHapticDeviceInfo &a_hInfo, PhysicalDevice* 
 ///
 class SimulatedGripper: public SimulationParams, public afGripper{
 public:
-    SimulatedGripper(cBulletWorld *a_chaiWorld);
+    SimulatedGripper(afWorldPtr a_afWorld);
     ~SimulatedGripper(){}
     bool loadFromAMBF(std::string a_gripper_name, std::string a_device_name);
     cVector3d measuredPos();
@@ -640,7 +640,7 @@ private:
 /// \brief SimulatedGripper::SimulatedGripper
 /// \param a_chaiWorld
 ///
-SimulatedGripper::SimulatedGripper(cBulletWorld *a_chaiWorld): afGripper (a_chaiWorld){
+SimulatedGripper::SimulatedGripper(afWorldPtr a_afWorld): afGripper (a_afWorld){
     m_gripper_angle = 0.5;
 }
 
@@ -651,7 +651,7 @@ SimulatedGripper::SimulatedGripper(cBulletWorld *a_chaiWorld): afGripper (a_chai
 /// \return
 ///
 bool SimulatedGripper::loadFromAMBF(std::string a_gripper_name, std::string a_device_name){
-    std::string config = getGripperConfig(a_device_name);
+    std::string config = m_afWorld->getGripperConfig(a_device_name);
     bool res = loadMultiBody(config, a_gripper_name, a_device_name);
     m_rootLink = getRootRigidBody();
     return res;
@@ -938,13 +938,13 @@ SimulatedGripper* Coordination::createSimulatedGripper(uint dev_num, PhysicalDev
     std::ostringstream dev_str;
     dev_str << (dev_num + 1);
     std::string gripper_name = "Gripper" + dev_str.str();
-    SimulatedGripper* simulatedGripper = new SimulatedGripper(m_bulletWorld);
+    SimulatedGripper* simulatedGripper = new SimulatedGripper(g_afWorld);
     if(simulatedGripper->loadFromAMBF(gripper_name, a_physicalDevice->m_hInfo.m_modelName)){
         simulatedGripper->setSimParams(a_physicalDevice->m_hInfo, a_physicalDevice);
         a_physicalDevice->m_workspace_scale_factor = simulatedGripper->getWorkspaceScaleFactor();
         cVector3d localGripperPos = simulatedGripper->m_rootLink->getLocalPos();
         double l,w,h;
-        simulatedGripper->getEnclosureExtents(l,w,h);
+        g_afWorld->getEnclosureExtents(l,w,h);
         if (localGripperPos.length() == 0.0){
             double x = (int(dev_num / 2.0) * 0.8);
             double y = (dev_num % 2) ? +0.4 : -0.4;
@@ -1237,9 +1237,9 @@ int main(int argc, char* argv[])
     g_afWorld = new afWorld(g_bulletWorld);
     if (g_afWorld->loadBaseConfig("../../ambf_models/descriptions/launch.yaml")){
         // The world loads the lights and cameras + windows
-        g_afWorld->loadWorld();
-        g_afMultiBody = new afMultiBody(g_bulletWorld);
+        g_afMultiBody = new afMultiBody(g_afWorld);
         g_afMultiBody->loadAllMultiBodies();
+        g_afWorld->loadWorld();
         g_cameras = g_afWorld->getCameras();
     }
 
@@ -1615,7 +1615,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
     // option - Toggle visibility of soft-bodies wireframe
     else if (a_key == GLFW_KEY_S){
-        auto sbMap = g_afMultiBody->getSoftBodyMap();
+        auto sbMap = g_afWorld->getSoftBodyMap();
         afSoftBodyMap::const_iterator sbIt;
         for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
             sbIt->second->toggleSkeletalModelVisibility();
@@ -1624,7 +1624,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
     // option - Toogle visibility of body frames
     else if (a_key == GLFW_KEY_V){
-        auto rbMap = g_afMultiBody->getRigidBodyMap();
+        auto rbMap = g_afWorld->getRigidBodyMap();
         afRigidBodyMap::const_iterator rbIt;
         for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
             rbIt->second->toggleFrameVisibility();
@@ -2105,8 +2105,9 @@ void updateHapticDevice(void* a_arg){
     while(g_simulationRunning)
     {
         pDev->m_freq_ctr.signal(1);
-
-        devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        if (devFreqLabel != NULL){
+            devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+        }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
