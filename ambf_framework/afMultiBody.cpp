@@ -2558,106 +2558,108 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    // position and orient the camera
-    setTargetPos(_look_at);
-    set(_location,
-        _look_at,
-        _up);
+    if(_is_valid){
+        bool _set_body_as_parent = false;
 
-    // set the near and far clipping planes of the camera
-    setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
-
-    // set stereo mode
-    setStereoMode(cStereoMode::C_STEREO_DISABLED);
-
-    // set stereo eye separation and focal length (applies only if stereo is enabled)
-    setStereoEyeSeparation(0.02);
-    setStereoFocalLength(2.0);
-
-    // set vertical mirrored display mode
-    setMirrorVertical(false);
-
-    setFieldViewAngleRad(_field_view_angle);
-
-    // Check if ortho view is enabled
-    if (_enable_ortho_view){
-        setOrthographicView(_ortho_view_width);
-    }
-
-    std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
-    if (m_controllingDevNames.size() > 0){
-        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
-            window_name += (" - " + m_controllingDevNames[i]);
+        if (cameraParent.IsDefined()){
+            _set_body_as_parent = true;
+            std::string parent_name = cameraParent.as<std::string>();
+            afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
+            if (pBody){
+                pBody->addChild(this);
+            }
+            else{
+                std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
+                          << parent_name << "\"" <<std::endl;
+            }
+        }
+        if (! _set_body_as_parent){
+            m_afWorld->s_bulletWorld->addChild(this);
         }
 
-    }
+        //////////////////////////////////////////////////////////////////////////////////////
+        // position and orient the camera
+        setTargetPos(_look_at);
+        set(_location,
+            _look_at,
+            _up);
 
-    // create display context
-    int _monitor_to_load = 0;
-    if (s_cameraIdx < s_numMonitors){
-        _monitor_to_load = s_cameraIdx;
-    }
-    m_monitor = s_monitors[_monitor_to_load];
+        // set the near and far clipping planes of the camera
+        setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
 
-    // compute desired size of window
-    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * _mode->width;
-    int h = 0.5 * _mode->height;
-    int x = 0.5 * (_mode->width - w);
-    int y = 0.5 * (_mode->height - h);
+        // set stereo mode
+        setStereoMode(cStereoMode::C_STEREO_DISABLED);
 
-    m_win_x = x;
-    m_win_y = y;
-    m_width = w;
-    m_height = h;
+        // set stereo eye separation and focal length (applies only if stereo is enabled)
+        setStereoEyeSeparation(0.02);
+        setStereoFocalLength(2.0);
 
-    m_window = glfwCreateWindow(w, h, window_name.c_str(), NULL, s_mainWindow);
-    if (s_windowIdx == 0){
-        s_mainWindow = m_window;
-    }
+        // set vertical mirrored display mode
+        setMirrorVertical(false);
 
-    // create a font
-    cFontPtr font = NEW_CFONTCALIBRI20();
+        setFieldViewAngleRad(_field_view_angle);
 
-    m_graphicsDynamicsFreqLabel = new cLabel(font);
-    m_wallSimTimeLabel = new cLabel(font);
-    m_devicesModesLabel = new cLabel(font);
-    m_deviceButtonLabel = new cLabel(font);
-    m_controllingDeviceLabel = new cLabel(font);
-
-    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
-    m_wallSimTimeLabel->m_fontColor.setBlack();
-    m_devicesModesLabel->m_fontColor.setBlack();
-    m_deviceButtonLabel->m_fontColor.setBlack();
-    m_controllingDeviceLabel->m_fontColor.setBlack();
-    m_controllingDeviceLabel->setFontScale(0.8);
-
-    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-    m_frontLayer->addChild(m_wallSimTimeLabel);
-    m_frontLayer->addChild(m_devicesModesLabel);
-    m_frontLayer->addChild(m_deviceButtonLabel);
-    m_frontLayer->addChild(m_controllingDeviceLabel);
-
-    s_windowIdx++;
-    s_cameraIdx++;
-
-    bool _set_body_as_parent = false;
-
-    if (cameraParent.IsDefined()){
-        _set_body_as_parent = true;
-        std::string parent_name = cameraParent.as<std::string>();
-        afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
-        if (pBody){
-            pBody->addChild(this);
+        // Check if ortho view is enabled
+        if (_enable_ortho_view){
+            setOrthographicView(_ortho_view_width);
         }
-        else{
-            std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                      << parent_name << "\"" <<std::endl;
+
+        std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
+        if (m_controllingDevNames.size() > 0){
+            for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
+                window_name += (" - " + m_controllingDevNames[i]);
+            }
+
         }
-    }
-    if (! _set_body_as_parent){
-        m_afWorld->s_bulletWorld->addChild(this);
+
+        // create display context
+        int _monitor_to_load = 0;
+        if (s_cameraIdx < s_numMonitors){
+            _monitor_to_load = s_cameraIdx;
+        }
+        m_monitor = s_monitors[_monitor_to_load];
+
+        // compute desired size of window
+        const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
+        int w = 0.5 * _mode->width;
+        int h = 0.5 * _mode->height;
+        int x = 0.5 * (_mode->width - w);
+        int y = 0.5 * (_mode->height - h);
+
+        m_win_x = x;
+        m_win_y = y;
+        m_width = w;
+        m_height = h;
+
+        m_window = glfwCreateWindow(w, h, window_name.c_str(), NULL, s_mainWindow);
+        if (s_windowIdx == 0){
+            s_mainWindow = m_window;
+        }
+
+        // create a font
+        cFontPtr font = NEW_CFONTCALIBRI20();
+
+        m_graphicsDynamicsFreqLabel = new cLabel(font);
+        m_wallSimTimeLabel = new cLabel(font);
+        m_devicesModesLabel = new cLabel(font);
+        m_deviceButtonLabel = new cLabel(font);
+        m_controllingDeviceLabel = new cLabel(font);
+
+        m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+        m_wallSimTimeLabel->m_fontColor.setBlack();
+        m_devicesModesLabel->m_fontColor.setBlack();
+        m_deviceButtonLabel->m_fontColor.setBlack();
+        m_controllingDeviceLabel->m_fontColor.setBlack();
+        m_controllingDeviceLabel->setFontScale(0.8);
+
+        m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+        m_frontLayer->addChild(m_wallSimTimeLabel);
+        m_frontLayer->addChild(m_devicesModesLabel);
+        m_frontLayer->addChild(m_deviceButtonLabel);
+        m_frontLayer->addChild(m_controllingDeviceLabel);
+
+        s_windowIdx++;
+        s_cameraIdx++;
     }
 
     return _is_valid;
@@ -2769,6 +2771,24 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
 
     if (_is_valid){
         m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
+
+        bool _set_body_as_parent = false;
+        if (lightParent.IsDefined()){
+            _set_body_as_parent = true;
+            std::string parent_name = lightParent.as<std::string>();
+            afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
+            if (pBody){
+                pBody->addChild(m_spotLight);
+            }
+            else{
+                std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
+                          << parent_name << "\"" <<std::endl;
+            }
+        }
+        if (! _set_body_as_parent){
+            m_afWorld->s_bulletWorld->addChild(m_spotLight);
+        }
+
         m_spotLight->setLocalPos(_location);
         m_spotLight->setDir(_direction);
         m_spotLight->setSpotExponent(_spot_exponent);
@@ -2797,24 +2817,6 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
             break;
         }
         m_spotLight->setEnabled(true);
-
-        bool _set_body_as_parent = false;
-
-        if (lightParent.IsDefined()){
-            _set_body_as_parent = true;
-            std::string parent_name = lightParent.as<std::string>();
-            afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
-            if (pBody){
-                pBody->addChild(m_spotLight);
-            }
-            else{
-                std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                          << parent_name << "\"" <<std::endl;
-            }
-        }
-        if (! _set_body_as_parent){
-            m_afWorld->s_bulletWorld->addChild(m_spotLight);
-        }
     }
 
     return _is_valid;
