@@ -2067,6 +2067,10 @@ void afJoint::commandEffort(double &cmd){
     }
 }
 
+///
+/// \brief afJoint::getPosition
+/// \return
+///
 double afJoint::getPosition(){
     if (m_jointType == JointType::revolute)
         return m_hinge->getHingeAngle();
@@ -2074,6 +2078,134 @@ double afJoint::getPosition(){
         return m_slider->getLinearPos();
     else if (m_jointType == JointType::fixed)
         return 0;
+}
+
+///
+/// \brief afProximitySensor::afProximitySensor
+/// \param a_afWorld
+///
+afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
+    m_hitSphere = new cMesh();
+    m_fromSphere = new cMesh();
+    m_toSphere = new cMesh();
+    cCreateSphere(m_hitSphere, 0.03);
+    cCreateSphere(m_fromSphere, 0.02);
+    cCreateSphere(m_toSphere, 0.02);
+    a_afWorld->s_bulletWorld->addChild(m_hitSphere);
+    a_afWorld->s_bulletWorld->addChild(m_fromSphere);
+    a_afWorld->s_bulletWorld->addChild(m_toSphere);
+    m_hitSphere->m_material->setPinkHot();
+    m_fromSphere->m_material->setRed();
+    m_toSphere->m_material->setGreen();
+    m_hitSphere->setShowEnabled(false);
+
+    m_fromSphere->setUseDisplayList(true);
+    m_toSphere->setUseDisplayList(true);
+    m_hitSphere->setUseDisplayList(true);
+
+    m_fromSphere->markForUpdate(false);
+    m_toSphere->markForUpdate(false);
+    m_hitSphere->markForUpdate(false);
+}
+
+///
+/// \brief afProximitySensor::loadSensor
+/// \param sensor_config_file
+/// \param node_name
+/// \param name_remapping_idx
+/// \return
+///
+bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(sensor_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sensor_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseSensorNode = baseNode[node_name];
+    return loadSensor(&baseSensorNode, node_name, mB, name_remapping_idx);
+}
+
+///
+/// \brief afProximitySensor::loadSensor
+/// \param sensor_node
+/// \param node_name
+/// \param name_remapping_idx
+/// \return
+///
+bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    YAML::Node sensorNode = *sensor_node;
+    if (sensorNode.IsNull()){
+        std::cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node sensorParentName = sensorNode["parent"];
+    YAML::Node sensorName = sensorNode["name"];
+    YAML::Node sensorLocation = sensorNode["location"];
+    YAML::Node sensorDirection = sensorNode["direction"];
+    YAML::Node sensorRange = sensorNode["range"];
+
+    std::string _parent_name = sensorParentName.as<std::string>();
+    m_name = sensorName.as<std::string>();
+    assignXYZ(&sensorLocation, &m_location);
+    assignXYZ(&sensorDirection, &m_direction);
+    m_range = sensorRange.as<double>();
+
+    m_parentBody = m_afWorld->getRidigBody(_parent_name);
+    if (m_parentBody == NULL){
+        std::cerr << "ERROR: SENSOR'S "<< _parent_name << " NOT FOUND, IGNORING SENSOR\n";
+        return 0;
+    }
+    else{
+        m_parentBody->addSensor(this);
+    }
+
+    m_rayFromLocal = m_location;
+    m_rayToLocal = m_rayFromLocal + (m_direction * m_range);
+}
+
+///
+/// \brief afSensor::processSensor
+///
+void afProximitySensor::updateSensor(){
+    btVector3 _rayFromWorld, _rayToWorld;
+    // Transform of World in Body
+    btTransform T_wInb = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform().inverse();
+    _rayFromWorld = T_wInb *  cVec2btVec(m_rayFromLocal);
+    _rayToWorld = T_wInb *  cVec2btVec(m_rayFromLocal);
+
+    btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
+    m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
+    if (_rayCallBack.hasHit()){
+        if (m_showSensor){
+            m_hitSphere->setShowEnabled(true);
+            m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
+        }
+        m_sensed = true;
+        m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
+    }
+    else{
+        m_hitSphere->setShowEnabled(false);
+        m_sensed = false;
+    }
+
+    // Check for global flag for debug visibility of this sensor
+    if (m_showSensor){
+        m_fromSphere->setShowEnabled(true);
+        m_toSphere->setShowEnabled(true);
+        m_fromSphere->setLocalPos(btVec2cVec(_rayFromWorld) );
+        m_toSphere->setLocalPos(btVec2cVec(_rayToWorld) );
+    }
+    else{
+        m_fromSphere->setShowEnabled(false);
+        m_toSphere->setShowEnabled(false);
+        m_hitSphere->setShowEnabled(false);
+    }
 }
 
 ///
@@ -2329,6 +2461,17 @@ bool afWorld::addJoint(afJointPtr a_jnt, std::string a_name){
 }
 
 ///
+/// \brief afWorld::addSensor
+/// \param a_sensor
+/// \param a_name
+/// \return
+///
+bool afWorld::addSensor(afSensorPtr a_sensor, std::string a_name){
+    m_afSensorMap[a_name] = a_sensor;
+    return true;
+}
+
+///
 /// \brief afWorld::getLighs
 /// \return
 ///
@@ -2401,6 +2544,21 @@ afJointVec afWorld::getJoints(){
     }
 
     return _jnts;
+}
+
+///
+/// \brief afWorld::getSensors
+/// \return
+///
+afSensorVec afWorld::getSensors(){
+    afSensorVec _sensors;
+    afSensorMap::iterator _sIt;
+
+    for (_sIt = m_afSensorMap.begin() ; _sIt != m_afSensorMap.end() ; _sIt++){
+        _sensors.push_back(_sIt->second);
+    }
+
+    return _sensors;
 }
 
 
@@ -2927,6 +3085,30 @@ std::string afMultiBody::remapJointName(std::string a_joint_name){
 }
 
 ///
+/// \brief afMultiBody::remapSensorName
+/// \param a_sensor_name
+/// \return
+///
+std::string afMultiBody::remapSensorName(std::string a_sensor_name){
+    int occurances = 0;
+    std::string remap_string = "" ;
+    std::stringstream ss;
+    afSensorMap _sensorMap = *(m_afWorld->getSensorMap());
+    if (_sensorMap.find(a_sensor_name) == _sensorMap.end()){
+        return remap_string;
+    }
+
+    do{
+        ss.str(std::string());
+        occurances++;
+        ss << occurances;
+        remap_string = ss.str();
+    }
+    while(_sensorMap.find(a_sensor_name + remap_string) != _sensorMap.end() && occurances < 100);
+    return remap_string;
+}
+
+///
 /// \brief afMultiBody::loadMultiBody
 /// \param i
 /// \return
@@ -2970,6 +3152,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     YAML::Node multiBodyRidigBodies = multiBodyNode["bodies"];
     YAML::Node multiBodySoftBodies = multiBodyNode["soft bodies"];
     YAML::Node multiBodyJoints = multiBodyNode["joints"];
+    YAML::Node multiBodySensors = multiBodyNode["sensors"];
 
     boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_multibody_config_file).parent_path();
     m_multibody_path = mb_cfg_dir.c_str();
@@ -3040,6 +3223,35 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
             //            tmpSoftBody->createAFObject(tmpSoftBody->m_name + remap_str);
         }
     }
+
+    /// Loading Joints
+    afSensorPtr sensorPtr = 0;
+    size_t totalSensors = multiBodySensors.size();
+    for (size_t i = 0; i < totalSensors; ++i) {
+        std::string sensor_name = multiBodySensors[i].as<std::string>();
+        std::string remap_str = remapSensorName(sensor_name);
+        YAML::Node sensor_node = multiBodyNode[sensor_name];
+        // Check which type of sensor is this so we can cast appropriately beforehand
+        if (sensor_node["type"].IsDefined()){
+            std::string _sensor_type = sensor_node["type"].as<std::string>();
+            // Check if this is a proximity sensor
+            // More sensors to follow
+            if (_sensor_type.compare("Proximity") ||_sensor_type.compare("proximity") ||_sensor_type.compare("PROXIMITY")){
+                sensorPtr = new afProximitySensor(m_afWorld);
+            }
+
+            // Finally load the sensor from afmb config data
+            if (sensorPtr){
+                if (sensorPtr->loadSensor(&sensor_node, sensor_name, this)){
+                    m_afWorld->addSensor(sensorPtr, m_multibody_namespace + sensor_name+remap_str);
+                }
+            }
+        }
+        else{
+            continue;
+        }
+    }
+
 
     /// Loading Joints
     afJointPtr jntPtr;
