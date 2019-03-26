@@ -1069,6 +1069,11 @@ void afRigidBody::updatePositionFromDynamics()
         m_localRot.orthogonalize();
     }
 
+    // Update the data for sensors
+    for (int i=0 ; i < m_afSensor.size() ; i++){
+        m_afSensor[i]->updateSensor();
+    }
+
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afObjectPtr.get() != nullptr){
@@ -2175,9 +2180,23 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 void afProximitySensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
-    btTransform T_wInb = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform().inverse();
-    _rayFromWorld = T_wInb *  cVec2btVec(m_rayFromLocal);
-    _rayToWorld = T_wInb *  cVec2btVec(m_rayFromLocal);
+    btTransform T_bInw = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform();
+    _rayFromWorld = T_bInw *  cVec2btVec(m_rayFromLocal);
+    _rayToWorld = T_bInw *  cVec2btVec(m_rayToLocal);
+
+    // Check for global flag for debug visibility of this sensor
+    if (m_showSensor){
+        m_fromSphere->setShowEnabled(true);
+        m_toSphere->setShowEnabled(true);
+
+        m_fromSphere->setLocalPos(btVec2cVec(_rayFromWorld) );
+        m_toSphere->setLocalPos(btVec2cVec(_rayToWorld) );
+    }
+    else{
+        m_fromSphere->setShowEnabled(false);
+        m_toSphere->setShowEnabled(false);
+        m_hitSphere->setShowEnabled(false);
+    }
 
     btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
     m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
@@ -2192,19 +2211,6 @@ void afProximitySensor::updateSensor(){
     else{
         m_hitSphere->setShowEnabled(false);
         m_sensed = false;
-    }
-
-    // Check for global flag for debug visibility of this sensor
-    if (m_showSensor){
-        m_fromSphere->setShowEnabled(true);
-        m_toSphere->setShowEnabled(true);
-        m_fromSphere->setLocalPos(btVec2cVec(_rayFromWorld) );
-        m_toSphere->setLocalPos(btVec2cVec(_rayToWorld) );
-    }
-    else{
-        m_fromSphere->setShowEnabled(false);
-        m_toSphere->setShowEnabled(false);
-        m_hitSphere->setShowEnabled(false);
     }
 }
 
