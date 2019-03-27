@@ -631,6 +631,10 @@ public:
     cVector3d m_pos;
     cMatrix3d m_rot;
     double m_gripper_angle;
+    // Gripping constraints, the number is the same as the total
+    // number of sensors attached to the gripper. Not all sensors
+    // are proximity sensors and necessary for gripping.
+    std::vector<btPoint2PointConstraint*> m_grippingConstraints;
 
 private:
     std::mutex m_mutex;
@@ -654,6 +658,11 @@ bool SimulatedGripper::loadFromAMBF(std::string a_gripper_name, std::string a_de
     std::string config = m_afWorld->getGripperConfig(a_device_name);
     bool res = loadMultiBody(config, a_gripper_name, a_device_name);
     m_rootLink = getRootRigidBody();
+    m_grippingConstraints.resize(m_rootLink->getSensors().size());
+    // Initialize all the constraint to null ptr
+    for (int sIdx = 0 ; sIdx < m_grippingConstraints.size() ; sIdx++){
+        m_grippingConstraints[sIdx] = 0;
+    }
     return res;
 }
 
@@ -1438,6 +1447,7 @@ void errorCallback(int a_error, const char* a_description)
 }
 
 bool g_updateLabels = true;
+bool g_enableGrippingAssist = true;
 
 ///
 /// \brief keyCallback
@@ -1521,12 +1531,15 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[8] - increase linear stiffness" << endl;
         cout << "[9] - decrease angular stiffness" << endl;
         cout << "[0] - increase angular stiffness" << endl << endl;
-        cout << "[v] - toggle frame visualization" << endl;
-        cout << "[s] - toggle wireframe mode for softbody" << endl;
+        cout << "[v] - toggle frame/skeleton visualization" << endl;
+        cout << "[s] - toggle sensors visibility" << endl;
         cout << "[w] - use world frame for orientation clutch" << endl;
         cout << "[c] - use camera frame for orientation clutch" << endl;
         cout << "[n] - next device mode" << endl << endl;
         cout << "[i] - toogle inverted y for camera control via mouse" << endl << endl;
+        cout << "[t] - toogle gripper picking constraints" << endl << endl;
+        cout << "[p] - toogle mouse picking constraints" << endl << endl;
+        cout << "[u] - toogle update of labels" << endl << endl;
         cout << "[q] - Exit application\n" << endl;
         cout << endl << endl;
     }
@@ -1613,8 +1626,14 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         printf("Changing to next device mode:\n");
     }
 
-    // option - Toggle visibility of soft-bodies wireframe
-    else if (a_key == GLFW_KEY_S){
+    // option - Toogle visibility of body frames and softbody skeleton
+    else if (a_key == GLFW_KEY_V){
+        auto rbMap = g_afWorld->getRigidBodyMap();
+        afRigidBodyMap::const_iterator rbIt;
+        for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
+            rbIt->second->toggleFrameVisibility();
+        }
+
         auto sbMap = g_afWorld->getSoftBodyMap();
         afSoftBodyMap::const_iterator sbIt;
         for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
@@ -1622,28 +1641,33 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         }
     }
 
-    // option - Toogle visibility of body frames
-    else if (a_key == GLFW_KEY_V){
-        auto rbMap = g_afWorld->getRigidBodyMap();
-        afRigidBodyMap::const_iterator rbIt;
-        for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
-            rbIt->second->toggleFrameVisibility();
-        }
-    }
-
-    // option - Toogle visibility of body frames
+    // option - Toogle mouse picking
     else if (a_key == GLFW_KEY_P){
         g_mousePickingEnabled = !g_mousePickingEnabled;
-        std::cerr << "P Pressed: " << g_mousePickingEnabled << std::endl;
     }
 
     // option - Toggle Inverted Y axis of mouse for camera control
     else if (a_key == GLFW_KEY_I){
         g_mouse_inverted_y = !g_mouse_inverted_y;
     }
-    // option - Toggle Inverted Y axis of mouse for camera control
+
+    // option - Toggle visibility of label updates
     else if (a_key == GLFW_KEY_U){
         g_updateLabels = !g_updateLabels;
+    }
+
+    // option - Toggle Ray Test for Gripper Picking
+    else if (a_key == GLFW_KEY_T){
+        g_enableGrippingAssist = !g_enableGrippingAssist;
+    }
+
+    // option - Toggle Visibility of Sensors
+    else if (a_key == GLFW_KEY_S){
+        auto sMap = g_afWorld->getSensorMap();
+        afSensorMap::const_iterator sIt;
+        for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
+            sIt->second->toggleSensorVisibility();
+        }
     }
 
 }
@@ -1663,7 +1687,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
                 (*g_cameraIt)->mouse_l_clicked = a_action;
                 if (a_action){
                     if (g_mousePickingEnabled){
-                        cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
+                        cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
                         double x_pos, y_pos;
                         glfwGetCursorPos(a_window, &x_pos, &y_pos);
                         cVector3d rayTo = getRayTo(x_pos, y_pos, *g_cameraIt);
@@ -1856,7 +1880,9 @@ void close(void)
 }
 
 
-
+///
+/// \brief updateGraphics
+///
 void updateGraphics()
 {
     // Update shadow maps once
@@ -2024,6 +2050,36 @@ void updatePhysics(){
             cVector3d axis, daxis;
             drot[devIdx].toAxisAngle(axis, angle);
             ddrot[devIdx].toAxisAngle(daxis, dangle);
+
+            if (g_enableGrippingAssist){
+                for (int sIdx = 0 ; sIdx < simGripper->m_rootLink->getSensors().size() ; sIdx++){
+                    afSensorPtr sensorPtr = simGripper->m_rootLink->getSensors()[sIdx];
+                    if (sensorPtr->m_sensorType == afSensorType::proximity){
+                        afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
+                        if (proximitySensorPtr->isTriggered() && simGripper->m_gripper_angle < 0.5){
+                            if (!simGripper->m_grippingConstraints[sIdx]){
+                                btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
+                                btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBody();
+                                if (!simGripper->m_rootLink->isChild(bodyBPtr)){
+                                    cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint();
+                                    btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
+                                    btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
+                                    simGripper->m_grippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
+                                    simGripper->m_grippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
+                                    simGripper->m_grippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
+                                    g_bulletWorld->m_bulletWorld->addConstraint(simGripper->m_grippingConstraints[sIdx]);
+                                }
+                            }
+                        }
+                        else{
+                            if(simGripper->m_grippingConstraints[sIdx]){
+                                g_bulletWorld->m_bulletWorld->removeConstraint(simGripper->m_grippingConstraints[sIdx]);
+                                simGripper->m_grippingConstraints[sIdx] = 0;
+                            }
+                        }
+                    }
+                }
+            }
 
             cVector3d force, torque;
 

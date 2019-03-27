@@ -342,6 +342,9 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
 
         if (!_cExists){
             m_childrenBodies.push_back(*cBodyIt);
+            if ((*cBodyIt)->m_afSensors.size() > 0){
+                m_afSensors.insert(m_afSensors.end(), (*cBodyIt)->m_afSensors.begin(), (*cBodyIt)->m_afSensors.end());
+            }
         }
         else{
 //            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
@@ -449,7 +452,7 @@ void afRigidBody::addChildBody(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
 /// \param name_remapping
 /// \return
 ///
-bool afRigidBody::loadRidigBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB) {
+bool afRigidBody::loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB) {
     YAML::Node baseNode;
     m_mBPtr = mB;
     try{
@@ -460,7 +463,7 @@ bool afRigidBody::loadRidigBody(std::string rb_config_file, std::string node_nam
         return 0;
     }
     YAML::Node bodyNode = baseNode[node_name];
-    return loadRidigBody(&bodyNode, node_name, mB);
+    return loadRigidBody(&bodyNode, node_name, mB);
 }
 
 ///
@@ -470,7 +473,7 @@ bool afRigidBody::loadRidigBody(std::string rb_config_file, std::string node_nam
 /// \param mB
 /// \return
 ///
-bool afRigidBody::loadRidigBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB){
+bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB){
     YAML::Node bodyNode = *rb_node;
     m_mBPtr = mB;
     if (bodyNode.IsNull()){
@@ -1070,8 +1073,8 @@ void afRigidBody::updatePositionFromDynamics()
     }
 
     // Update the data for sensors
-    for (int i=0 ; i < m_afSensor.size() ; i++){
-        m_afSensor[i]->updateSensor();
+    for (int i=0 ; i < m_afSensors.size() ; i++){
+        m_afSensors[i]->updateSensor();
     }
 
     // update Transform data for m_ObjectPtr
@@ -1287,6 +1290,11 @@ bool afRigidBody::checkCollisionGroupIdx(int a_idx){
     return in_group;
 }
 
+///
+/// \brief afRigidBody::isCommonCollisionGroupIdx
+/// \param a_idx
+/// \return
+///
 bool afRigidBody::isCommonCollisionGroupIdx(std::vector<int> a_idx){
     bool in_group = false;
     for (int i = 0 ; i < a_idx.size() ; i ++){
@@ -1299,6 +1307,24 @@ bool afRigidBody::isCommonCollisionGroupIdx(std::vector<int> a_idx){
     }
 
     return in_group;
+}
+
+///
+/// \brief afRigidBody::isChild
+/// \param a_body
+/// \return
+///
+bool afRigidBody::isChild(btRigidBody *a_body){
+    bool _isChild = false;
+    afRigidBodyVec::iterator rbIt;
+    for (rbIt = m_childrenBodies.begin() ; rbIt != m_childrenBodies.end() ; ++rbIt){
+        if (a_body == (*rbIt)->m_bulletRigidBody){
+            _isChild = true;
+            break;
+        }
+    }
+
+    return _isChild;
 }
 
 ///
@@ -2148,6 +2174,8 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         std::cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+
+    bool _is_valid = true;
     // Declare all the yaml parameters that we want to look for
     YAML::Node sensorParentName = sensorNode["parent"];
     YAML::Node sensorName = sensorNode["name"];
@@ -2155,7 +2183,14 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
 
-    std::string _parent_name = sensorParentName.as<std::string>();
+    std::string _parent_name;
+    if (sensorParentName.IsDefined()){
+        _parent_name = sensorParentName.as<std::string>();
+    }
+    else{
+        _is_valid = false;
+    }
+
     m_name = sensorName.as<std::string>();
     assignXYZ(&sensorLocation, &m_location);
     assignXYZ(&sensorDirection, &m_direction);
@@ -2172,6 +2207,10 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 
     m_rayFromLocal = m_location;
     m_rayToLocal = m_rayFromLocal + (m_direction * m_range);
+
+    m_sensorType = afSensorType::proximity;
+
+    return true;
 }
 
 ///
@@ -2180,9 +2219,9 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 void afProximitySensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
-    btTransform T_bInw = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform();
-    _rayFromWorld = T_bInw *  cVec2btVec(m_rayFromLocal);
-    _rayToWorld = T_bInw *  cVec2btVec(m_rayToLocal);
+    cTransform T_bInw = m_parentBody->getLocalTransform();
+    _rayFromWorld = cVec2btVec(T_bInw *  m_rayFromLocal);
+    _rayToWorld = cVec2btVec(T_bInw *  m_rayToLocal);
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
@@ -2205,12 +2244,13 @@ void afProximitySensor::updateSensor(){
             m_hitSphere->setShowEnabled(true);
             m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
         }
-        m_sensed = true;
+        m_triggered = true;
+        m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
         m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
     }
     else{
         m_hitSphere->setShowEnabled(false);
-        m_sensed = false;
+        m_triggered = false;
     }
 }
 
@@ -2511,8 +2551,8 @@ afCameraVec afWorld::getCameras(){
 /// \brief afWorld::getRigidBodies
 /// \return
 ///
-afRightBodyVec afWorld::getRigidBodies(){
-    afRightBodyVec _rbs;
+afRigidBodyVec afWorld::getRigidBodies(){
+    afRigidBodyVec _rbs;
     afRigidBodyMap::iterator _rbIt;
 
     for (_rbIt = m_afRigidBodyMap.begin() ; _rbIt != m_afRigidBodyMap.end() ; _rbIt++){
@@ -3198,7 +3238,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         std::string remap_str = remapBodyName(rb_name, m_afWorld->getRigidBodyMap());
         //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
         YAML::Node rb_node = multiBodyNode[rb_name];
-        if (rBodyPtr->loadRidigBody(&rb_node, rb_name, this)){
+        if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
             m_afWorld->addRigidBody(rBodyPtr, m_multibody_namespace + rb_name + remap_str);
             std::string af_name = rBodyPtr->m_name;
             if ((strcmp(af_name.c_str(), "world") == 0) ||
@@ -3230,7 +3270,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         }
     }
 
-    /// Loading Joints
+    /// Loading Sensors
     afSensorPtr sensorPtr = 0;
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
