@@ -119,10 +119,11 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
     YAML::Node multiBodyNameSpace = multiBodyNode["namespace"];
     YAML::Node multiBodyRidigBodies = multiBodyNode["bodies"];
     YAML::Node multiBodyJoints = multiBodyNode["joints"];
+    YAML::Node multiBodySensors = multiBodyNode["sensors"];
 
     boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_gripper_config_file).parent_path();
 
-    afGripperLinkPtr tmpBody;
+
     boost::filesystem::path high_res_filepath;
     boost::filesystem::path low_res_filepath;
     if(multiBodyMeshPathHR.IsDefined() && multiBodyMeshPathLR.IsDefined()){
@@ -149,34 +150,61 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         m_multibody_namespace = "/ambf/env/";
     }
 
-    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
+    afGripperLinkPtr rBodyPtr;
     size_t totalBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalBodies; ++i) {
-        tmpBody = new afGripperLink(m_afWorld);
-        std::string body_name = multiBodyRidigBodies[i].as<std::string>();
+        rBodyPtr = new afGripperLink(m_afWorld);
+        std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
-        if (tmpBody->loadRidigBody(a_gripper_config_file.c_str(), body_name, this)){
-            (*_rbMap)[m_multibody_namespace + body_name.c_str()] = tmpBody;
+        YAML::Node rb_node = multiBodyNode[rb_name];
+        if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
+            m_afWorld->addRigidBody(rBodyPtr, m_multibody_namespace + rb_name);
         }
     }
 
-    afJointMap* _jntMap = m_afWorld->getJointMap();
-    afJoint *tmpJoint;
+    /// Loading Sensors
+    afSensorPtr sensorPtr = 0;
+    size_t totalSensors = multiBodySensors.size();
+    for (size_t i = 0; i < totalSensors; ++i) {
+        std::string sensor_name = multiBodySensors[i].as<std::string>();
+        std::string remap_str = remapSensorName(sensor_name);
+        YAML::Node sensor_node = multiBodyNode[sensor_name];
+        // Check which type of sensor is this so we can cast appropriately beforehand
+        if (sensor_node["type"].IsDefined()){
+            std::string _sensor_type = sensor_node["type"].as<std::string>();
+            // Check if this is a proximity sensor
+            // More sensors to follow
+            if (_sensor_type.compare("Proximity") ||_sensor_type.compare("proximity") ||_sensor_type.compare("PROXIMITY")){
+                sensorPtr = new afProximitySensor(m_afWorld);
+            }
+
+            // Finally load the sensor from afmb config data
+            if (sensorPtr){
+                if (sensorPtr->loadSensor(&sensor_node, sensor_name, this)){
+                    m_afWorld->addSensor(sensorPtr, m_multibody_namespace + sensor_name+remap_str);
+                }
+            }
+        }
+        else{
+            continue;
+        }
+    }
+
+    afJointPtr jntPtr;
     size_t totalJoints = multiBodyJoints.size();
     for (size_t i = 0; i < totalJoints; ++i) {
-        tmpJoint = new afJoint(m_afWorld);
+        jntPtr = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         //        printf("Loading body: %s \n", jnt_name.c_str());
-        if (tmpJoint->loadJoint(a_gripper_config_file.c_str(), jnt_name, this)){
-            (*_jntMap)[m_multibody_namespace + jnt_name] = tmpJoint;
-            // Disable the IPC Control Switch
-//            tmpJoint->m_ipc_ctrl_swtch1 = false;
+        YAML::Node jnt_node = multiBodyNode[jnt_name];
+        if (jntPtr->loadJoint(&jnt_node, jnt_name, this)){
+            m_afWorld->addJoint(jntPtr, m_multibody_namespace + jnt_name);
         }
     }
 
     // Pass the tmpBody, which is any link in the loaded gripper to get the root
     // parent
-    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody(tmpBody));
+    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody(rBodyPtr));
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }

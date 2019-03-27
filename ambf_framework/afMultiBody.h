@@ -82,7 +82,7 @@ typedef afSoftBodyConfigProperties* afSoftBodyConfigPropertiesPtr;
 typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
 typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
 typedef std::map<std::string, afJointPtr> afJointMap;
-typedef std::vector<afRigidBodyPtr> afRightBodyVec;
+typedef std::vector<afRigidBodyPtr> afRigidBodyVec;
 typedef std::vector<afSoftBodyPtr> afSoftBodyVec;
 typedef std::vector<afJointPtr> afJointVec;
 //------------------------------------------------------------------------------
@@ -95,7 +95,11 @@ typedef std::map<std::string, afCameraPtr> afCameraMap;
 typedef std::vector<afLightPtr> afLightVec;
 typedef std::vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
-
+class afSensor;
+typedef afSensor* afSensorPtr;
+typedef std::map<std::string, afSensorPtr> afSensorMap;
+typedef std::vector<afSensorPtr> afSensorVec;
+//------------------------------------------------------------------------------
 
 ///
 /// \brief cVec2btVec
@@ -195,9 +199,9 @@ public:
     // In case the body is kinematic, only position cmds will be applied
     virtual void afObjectCommandExecute(double dt);
     // Load rigid body named by node_name from the a config file that may contain many bodies
-    virtual bool loadRidigBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
+    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
     // Load rigid body named by from the rb_node specification
-    virtual bool loadRidigBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
+    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
     // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildBody(afRigidBodyPtr childBody, afJointPtr jnt);
     // This method update the AMBF position representation from the Bullet dynamics engine.
@@ -237,6 +241,15 @@ public:
     // function to check if this rigid body is part of the collision group
     // at a_idxs
     bool isCommonCollisionGroupIdx(std::vector<int> a_idx);
+
+    // Check if the btRigidbody is child of this afBody
+    bool isChild(btRigidBody* a_body);
+
+    // Add sensor to this body
+    bool addSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+
+    // Get the sensors for this body
+    inline std::vector<afSensorPtr> getSensors(){return m_afSensors;}
 
 public:
     //! If the Position Controller is active, disable Position Controller from Haptic Device
@@ -290,6 +303,9 @@ protected:
 
     // Function of compute body's controllers based on lumped masses
     void computeControllerGains();
+
+    // Sensors for this Rigid Body
+    afSensorVec m_afSensors;
 
 protected:
     // Internal method called for population densely connected body tree
@@ -476,6 +492,80 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+enum afSensorType{
+    proximity=0, range=1
+};
+
+///
+/// \brief The afSensor class
+///
+class afSensor{
+    friend class afRigidBody;
+public:
+    afSensor(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
+    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    virtual void updateSensor()=0;
+    inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
+    inline afRigidBodyPtr getParentBody(){return m_parentBody;}
+
+public:
+    // Name of this sensor
+    std::string m_name;
+    // The body this sensor is attached to.
+    afRigidBodyPtr m_parentBody;
+    // Location of this sensor w.r.t the parent body.
+    cVector3d m_location;
+    // Ptr to afWorld
+    afWorldPtr m_afWorld;
+
+    // The type this sensor?
+    afSensorType m_sensorType;
+
+public:
+    // Toggle visibility of this sensor
+    bool m_showSensor = true;
+};
+
+
+class afProximitySensor: public afSensor{
+public:
+
+    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+    afProximitySensor(afWorldPtr a_afWorld);
+    virtual void updateSensor();
+    inline bool isTriggered(){return m_triggered;}
+    inline btRigidBody* getSensedBody(){return m_sensedBody;}
+    inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
+
+
+private:
+    // Direction rel to parent that this sensor is looking at
+    cVector3d m_direction;
+    // Range of this sensor, i.e. how far can it sense
+    double m_range;
+
+    // Based on the location, direciton and range, calculate
+    // start and end points for the ray tracing in Local Frame
+    cVector3d m_rayFromLocal;
+    cVector3d m_rayToLocal;
+
+    // The body the this proximity sensor is sensing
+    btRigidBody* m_sensedBody;
+    // Boolean for sensor sensing something
+    bool m_triggered;
+    // Location of sensed point in World Frame
+    // This is along of the sensor direction
+    cVector3d m_sensedLocationWorld;
+
+private:
+    cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;
+    btPoint2PointConstraint* _p2p;
+};
+
+//-----------------------------------------------------------------------------
 
 ///
 /// \brief The afCamera class
@@ -608,24 +698,28 @@ public:
     bool addRigidBody(afRigidBodyPtr a_rb, std::string a_name);
     bool addSoftBody(afSoftBodyPtr a_sb, std::string a_name);
     bool addJoint(afJointPtr a_jnt, std::string a_name);
+    bool addSensor(afSensorPtr a_sensor, std::string a_name);
 
     afLightPtr getLight(std::string a_name);
     afCameraPtr getCamera(std::string a_name);
     afRigidBodyPtr getRidigBody(std::string a_name, bool suppress_warning=false);
     afSoftBodyPtr getSoftBody(std::string a_name);
     afJointPtr getJoint(std::string a_name);
+    afSensorPtr getSensor(std::string a_name);
 
     inline afLightMap* getLightMap(){return &m_afLightMap;}
     inline afCameraMap* getCameraMap(){return &m_afCameraMap;}
     inline afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMap;}
     inline afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
     inline afJointMap* getJointMap(){return &m_afJointMap;}
+    inline afSensorMap* getSensorMap(){return &m_afSensorMap;}
 
     afLightVec  getLighs();
     afCameraVec getCameras();
-    afRightBodyVec getRigidBodies();
+    afRigidBodyVec getRigidBodies();
     afSoftBodyVec getSoftBodies();
     afJointVec getJoints();
+    afSensorVec getSensors();
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
@@ -638,6 +732,7 @@ protected:
     afRigidBodyMap m_afRigidBodyMap;
     afSoftBodyMap m_afSoftBodyMap;
     afJointMap m_afJointMap;
+    afSensorMap m_afSensorMap;
 
 protected:
 
@@ -708,6 +803,7 @@ protected:
     template <typename T>
     std::string remapBodyName(std::string a_body_name, const T* tMap);
     std::string remapJointName(std::string a_joint_name);
+    std::string remapSensorName(std::string a_sensor_name);
     void remapName(std::string &name, std::string remap_idx_str);
 
 protected:
