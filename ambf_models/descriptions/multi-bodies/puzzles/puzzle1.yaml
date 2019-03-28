@@ -3,12 +3,23 @@
 # Link: https://github.com/WPI-AIM/ambf_addon
 # Generated on: 2019-03-21 15:10:25
 bodies: [BODY CenterPuzzle, BODY HandleLeft, BODY HandleRight, BODY CirclePuzzle,
-  BODY PegBase, BODY PuzzleBase, BODY SquarePuzzle, BODY Torus, BODY TrianglePuzzle]
+  BODY PegBase, BODY PuzzleBase, BODY SquarePuzzle, BODY Torus, BODY TrianglePuzzle,
+  BODY Occulus]
 joints: [JOINT CenterPuzzle-HandleLeft, JOINT CenterPuzzle-HandleRight]
 high resolution path: ../../../meshes/puzzle/high_res/
 low resolution path: ../../../meshes/puzzle/low_res/
 ignore inter-collision: false
 namespace: /ambf/env/
+
+BODY Occulus:
+  name: Occulus
+  mesh: ''
+  mass: 0.0
+  scale: 1.0
+  location:
+    orientation: {p: -0.7, r: 0.0, y: 0.0}
+    position: {x: 1.0, y: 0.0, z: 1.0}
+
 BODY CenterPuzzle:
   name: CenterPuzzle
   mesh: CenterPuzzle.STL

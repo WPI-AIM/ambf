@@ -2704,14 +2704,24 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     YAML::Node cameraClippingPlaneData = cameraNode["clipping plane"];
     YAML::Node cameraFieldViewAngleData = cameraNode["field view angle"];
     YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
+    YAML::Node cameraStereo = cameraNode["stereo"];
     YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
     YAML::Node cameraParent = cameraNode["parent"];
+    YAML::Node cameraMonitor = cameraNode["monitor"];
 
     bool _is_valid = true;
     cVector3d _location, _up, _look_at;
     double _clipping_plane_limits[2], _field_view_angle;
     bool _enable_ortho_view = false;
-    double _stereo_eye_seperation, _ortho_view_width;
+    double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
+    cStereoMode _stereMode;
+    std::string _stereoModeStr;
+    int _monitorToLoad = -1;
+
+    // Set some default values
+    _stereMode = C_STEREO_DISABLED;
+    _stereoFocalLength = 2.0;
+    _stereoEyeSeperation = 0.02;
 
     if (cameraLocationData.IsDefined()){
         assignXYZ(&cameraLocationData, &_location);
@@ -2751,10 +2761,27 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
     if (cameraOrthoWidthData.IsDefined()){
         _enable_ortho_view = true;
-        _ortho_view_width = cameraOrthoWidthData.as<double>();
+        _orthoViewWidth = cameraOrthoWidthData.as<double>();
     }
     else{
          _enable_ortho_view = false;
+    }
+    if (cameraStereo.IsDefined()){
+        _stereoModeStr = cameraStereo["mode"].as<std::string>();
+        if (_stereoModeStr.compare("PASSIVE") || _stereoModeStr.compare("passive") || _stereoModeStr.compare("Passive")){
+            _stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
+        }
+        _stereoEyeSeperation = cameraStereo["eye separation"].as<double>();
+        _stereoFocalLength = cameraStereo["focal length"].as<double>();
+    }
+    if (cameraMonitor.IsDefined()){
+        _monitorToLoad = cameraMonitor.as<int>();
+        if (_monitorToLoad < 0 || _monitorToLoad >= s_numMonitors){
+            std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" MONITOR NUMBER \"" << _monitorToLoad
+                      << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << std::endl;
+            _monitorToLoad = -1;
+        }
+
     }
     if (cameraControllingDevicesData.IsDefined()){
         for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
@@ -2792,11 +2819,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
 
         // set stereo mode
-        setStereoMode(cStereoMode::C_STEREO_DISABLED);
+        setStereoMode(_stereMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
-        setStereoEyeSeparation(0.02);
-        setStereoFocalLength(2.0);
+        setStereoEyeSeparation(_stereoEyeSeperation);
+        setStereoFocalLength(_stereoFocalLength);
 
         // set vertical mirrored display mode
         setMirrorVertical(false);
@@ -2805,7 +2832,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
 
         // Check if ortho view is enabled
         if (_enable_ortho_view){
-            setOrthographicView(_ortho_view_width);
+            setOrthographicView(_orthoViewWidth);
         }
 
         std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
@@ -2817,11 +2844,15 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         }
 
         // create display context
-        int _monitor_to_load = 0;
-        if (s_cameraIdx < s_numMonitors){
-            _monitor_to_load = s_cameraIdx;
+        if (_monitorToLoad == -1){
+            if (s_cameraIdx < s_numMonitors){
+                _monitorToLoad = s_cameraIdx;
+            }
+            else{
+                _monitorToLoad = 0;
+            }
         }
-        m_monitor = s_monitors[_monitor_to_load];
+        m_monitor = s_monitors[_monitorToLoad];
 
         // compute desired size of window
         const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
