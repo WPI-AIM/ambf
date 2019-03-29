@@ -2414,6 +2414,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name)){
                 addLight(lightPtr, light_name);
+                lightPtr->afObjectCreate(lightPtr->m_name,
+                                         lightPtr->m_body_namespace,
+                                         lightPtr->getMinPublishFrequency(),
+                                         lightPtr->getMaxPublishFrequency());
             }
         }
     }
@@ -2422,7 +2426,11 @@ bool afWorld::loadWorld(std::string a_world_config){
         // No Valid Lights defined, so use the default light
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createDefaultLight()){
-            addLight(lightPtr, "default light");
+            addLight(lightPtr, "default_light");
+            lightPtr->afObjectCreate(lightPtr->m_name,
+                                     lightPtr->m_body_namespace,
+                                     lightPtr->getMinPublishFrequency(),
+                                     lightPtr->getMaxPublishFrequency());
         }
     }
 
@@ -2433,6 +2441,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             YAML::Node cameraNode = worldNode[camera_name];
             if (cameraPtr->loadCamera(&cameraNode, camera_name)){
                 addCamera(cameraPtr, camera_name);
+                cameraPtr->afObjectCreate(cameraPtr->m_name,
+                                          cameraPtr->m_body_namespace,
+                                          cameraPtr->getMinPublishFrequency(),
+                                          cameraPtr->getMaxPublishFrequency());
             }
         }
     }
@@ -2442,7 +2454,11 @@ bool afWorld::loadWorld(std::string a_world_config){
         // hence create a default camera
         afCameraPtr cameraPtr = new afCamera(this);
         if (cameraPtr->createDefaultCamera()){
-            addCamera(cameraPtr, "default camera");
+            addCamera(cameraPtr, "default_camera");
+            cameraPtr->afObjectCreate(cameraPtr->m_name,
+                                      cameraPtr->m_body_namespace,
+                                      cameraPtr->getMinPublishFrequency(),
+                                      cameraPtr->getMaxPublishFrequency());
         }
 
     }
@@ -2611,10 +2627,109 @@ afSensorVec afWorld::getSensors(){
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(afWorldPtr a_afWorld): cCamera(a_afWorld->s_bulletWorld){
+afCamera::afCamera(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
 
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_afWorld = a_afWorld;
+
+    m_targetVisualMarker = new cMesh();
+    cCreateSphere(m_targetVisualMarker, 0.03);
+    m_targetVisualMarker->m_material->setBlack();
+    m_targetVisualMarker->setShowFrame(false);
+    m_targetVisualMarker->setTransparencyLevel(0.7);
+    m_targetVisualMarker->setUseDisplayList(true);
+    m_targetVisualMarker->markForUpdate(false);
+    m_targetVisualMarker->setShowEnabled(false);
+    addChild(m_targetVisualMarker);
+}
+
+
+///
+/// \brief afCamera::setView
+/// \param a_localPosition
+/// \param a_localLookAt
+/// \param a_localUp
+/// \return
+///
+bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_localLookAt, const cVector3d &a_localUp){
+    // copy new values to temp variables
+    cVector3d pos = a_localPosition;
+    cVector3d lookAt = a_localLookAt;
+    cVector3d up = a_localUp;
+    cVector3d Cy;
+
+    // check validity of vectors
+    if (pos.distancesq(lookAt) < C_SMALL) { return (false); }
+    if (up.lengthsq() < C_SMALL) { return (false); }
+
+    // compute new rotation matrix
+    pos.sub(lookAt);
+    pos.normalize();
+    up.normalize();
+    up.crossr(pos, Cy);
+    if (Cy.lengthsq() < C_SMALL) { return (false); }
+    Cy.normalize();
+    pos.crossr(Cy,up);
+
+    // update frame with new values
+    setLocalPos(a_localPosition);
+    cMatrix3d localRot;
+    localRot.setCol(pos, Cy, up);
+    setLocalRot(localRot);
+
+    // World in this body frame
+    cTransform _T_wINb = getLocalTransform();
+    _T_wINb.invert();
+    m_targetPos = _T_wINb * a_localLookAt;
+    m_targetVisualMarker->setLocalPos(m_targetPos);
+
+    return true;
+}
+
+cVector3d afCamera::getGlobalPos(){
+    if (getParent()){
+        return getParent()->getLocalTransform() * getLocalPos();
+    }
+    else{
+        return getLocalPos();
+    }
+}
+
+
+///
+/// \brief afCamera::setTargetPosLocal
+/// \param a_pos
+///
+void afCamera::setTargetPos(cVector3d a_pos){
+    if(getParent()){
+        cTransform T_inv = getParent()->getLocalTransform();
+        T_inv.invert();
+//        a_pos = T_inv * a_pos;
+    }
+    setView(getLocalPos(), a_pos, m_camera->getUpVector());
+}
+
+///
+/// \brief afCamera::showTargetPos
+/// \param a_show
+///
+void afCamera::showTargetPos(bool a_show){
+    m_targetVisualMarker->setShowEnabled(a_show);
+    m_targetVisualMarker->setShowFrame(a_show);
+}
+
+
+///
+/// \brief afCamera::getTargetPosGlobal
+/// \return
+///
+cVector3d afCamera::getTargetPos(){
+    cTransform _T_pInw;
+    _T_pInw.identity();
+    if (getParent()){
+//        _T_pInw = getParent()->getLocalTransform();
+    }
+    return _T_pInw * getLocalTransform() * m_targetPos;
 }
 
 ///
@@ -2624,21 +2739,26 @@ afCamera::afCamera(afWorldPtr a_afWorld): cCamera(a_afWorld->s_bulletWorld){
 bool afCamera::createDefaultCamera(){
     std::cerr << "INFO: USING DEFAULT CAMERA" << std::endl;
 
+    m_camera = new cCamera(m_afWorld->s_bulletWorld);
+    addChild(m_camera);
+
+    // Set a default name
+    m_name = "default_camera";
+
     // position and orient the camera
-    setTargetPos(cVector3d(0.0, 0.0,-0.5));
-    set(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
+    setView(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
         cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
         cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
 
     // set the near and far clipping planes of the camera
-    setClippingPlanes(0.01, 10.0);
+    m_camera->setClippingPlanes(0.01, 10.0);
 
     // set stereo mode
-    setStereoMode(cStereoMode::C_STEREO_DISABLED);
+    m_camera->setStereoMode(cStereoMode::C_STEREO_DISABLED);
 
     // set stereo eye separation and focal length (applies only if stereo is enabled)
-    setStereoEyeSeparation(0.02);
-    setStereoFocalLength(2.0);
+    m_camera->setStereoEyeSeparation(0.02);
+    m_camera->setStereoFocalLength(2.0);
 
     // set vertical mirrored display mode
     setMirrorVertical(false);
@@ -2675,17 +2795,22 @@ bool afCamera::createDefaultCamera(){
     m_controllingDeviceLabel->m_fontColor.setBlack();
     m_controllingDeviceLabel->setFontScale(0.8);
 
-    m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-    m_frontLayer->addChild(m_wallSimTimeLabel);
-    m_frontLayer->addChild(m_devicesModesLabel);
-    m_frontLayer->addChild(m_deviceButtonLabel);
-    m_frontLayer->addChild(m_controllingDeviceLabel);
+    m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_camera->m_frontLayer->addChild(m_devicesModesLabel);
+    m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
+    m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
 
     s_windowIdx++;
     s_cameraIdx++;
 
     // Assign the Window Camera Handles
     m_afWorld->s_bulletWorld->addChild(this);
+
+    // Make sure to set the mass to 0 as this is a kinematic body
+    m_mass = 0.0;
+    // Build the model which inturn adds this body to bullet world
+    buildDynamicModel();
     return true;
 }
 
@@ -2697,7 +2822,7 @@ bool afCamera::createDefaultCamera(){
 ///
 bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     YAML::Node cameraNode = *a_camera_node;
-    m_name = a_camera_name;
+    YAML::Node cameraName = cameraNode["name"];
     YAML::Node cameraLocationData = cameraNode["location"];
     YAML::Node cameraLookAtData = cameraNode["look at"];
     YAML::Node cameraUpData = cameraNode["up"];
@@ -2723,6 +2848,12 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     _stereoFocalLength = 2.0;
     _stereoEyeSeperation = 0.02;
 
+    if (cameraName.IsDefined()){
+        m_name = cameraName.as<std::string>();
+    }
+    else{
+        m_name = "camera_" + std::to_string(m_afWorld->getCameras().size() + 1);
+    }
     if (cameraLocationData.IsDefined()){
         assignXYZ(&cameraLocationData, &_location);
     }
@@ -2790,10 +2921,13 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
 
     if(_is_valid){
-        bool _set_body_as_parent = false;
+        m_camera = new cCamera(m_afWorld->s_bulletWorld);
+        addChild(m_camera);
+
+        bool _overrideParent = false;
 
         if (cameraParent.IsDefined()){
-            _set_body_as_parent = true;
+            _overrideParent = true;
             std::string parent_name = cameraParent.as<std::string>();
             afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
             if (pBody){
@@ -2804,35 +2938,32 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
                           << parent_name << "\"" <<std::endl;
             }
         }
-        if (! _set_body_as_parent){
+        if (! _overrideParent){
             m_afWorld->s_bulletWorld->addChild(this);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
         // position and orient the camera
-        setTargetPos(_look_at);
-        set(_location,
-            _look_at,
-            _up);
+        setView(_location, _look_at, _up);
 
         // set the near and far clipping planes of the camera
-        setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
+        m_camera->setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
 
         // set stereo mode
-        setStereoMode(_stereMode);
+        m_camera->setStereoMode(_stereMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
-        setStereoEyeSeparation(_stereoEyeSeperation);
-        setStereoFocalLength(_stereoFocalLength);
+        m_camera->setStereoEyeSeparation(_stereoEyeSeperation);
+        m_camera->setStereoFocalLength(_stereoFocalLength);
 
         // set vertical mirrored display mode
         setMirrorVertical(false);
 
-        setFieldViewAngleRad(_field_view_angle);
+        m_camera->setFieldViewAngleRad(_field_view_angle);
 
         // Check if ortho view is enabled
         if (_enable_ortho_view){
-            setOrthographicView(_orthoViewWidth);
+            m_camera->setOrthographicView(_orthoViewWidth);
         }
 
         std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
@@ -2887,14 +3018,19 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         m_controllingDeviceLabel->m_fontColor.setBlack();
         m_controllingDeviceLabel->setFontScale(0.8);
 
-        m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-        m_frontLayer->addChild(m_wallSimTimeLabel);
-        m_frontLayer->addChild(m_devicesModesLabel);
-        m_frontLayer->addChild(m_deviceButtonLabel);
-        m_frontLayer->addChild(m_controllingDeviceLabel);
+        m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+        m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
+        m_camera->m_frontLayer->addChild(m_devicesModesLabel);
+        m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
+        m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
 
         s_windowIdx++;
         s_cameraIdx++;
+
+        // Make sure to set the mass to 0 as this is a kinematic body
+        m_mass = 0.0;
+        // Build the model which inturn adds this body to bullet world
+        buildDynamicModel();
     }
 
     return _is_valid;
@@ -2922,7 +3058,7 @@ cMatrix3d afCamera::measuredRot(){
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(afWorldPtr a_afWorld){
+afLight::afLight(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
     m_afWorld = a_afWorld;
 }
 
@@ -2933,6 +3069,8 @@ afLight::afLight(afWorldPtr a_afWorld){
 bool afLight::createDefaultLight(){
     std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << std::endl;
     m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
+    m_name = "default_light";
+    addChild(m_spotLight);
     m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
     m_spotLight->setDir(0, 0, -1);
     m_spotLight->setSpotExponent(0.3);
@@ -2941,6 +3079,9 @@ bool afLight::createDefaultLight(){
     m_spotLight->m_shadowMap->setQualityVeryHigh();
     m_spotLight->setEnabled(true);
     m_afWorld->s_bulletWorld->addChild(m_spotLight);
+
+    m_mass = 0.0;
+    buildDynamicModel();
 
     return true;
 }
@@ -2954,6 +3095,7 @@ bool afLight::createDefaultLight(){
 bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     m_name = a_light_name;
     YAML::Node lightNode = *a_light_node;
+    YAML::Node lightName = lightNode["name"];
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -2966,7 +3108,12 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     double _spot_exponent, _cuttoff_angle;
     int _shadow_quality;
 
-
+    if(lightName.IsDefined()){
+        m_name = lightName.as<std::string>();
+    }
+    else{
+        m_name = "light_" + std::to_string(m_afWorld->getLighs().size() + 1);
+    }
 
     if (lightLocationData.IsDefined()){
         assignXYZ(&lightLocationData, &_location);
@@ -3006,6 +3153,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
 
     if (_is_valid){
         m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
+        addChild(m_spotLight);
 
         bool _set_body_as_parent = false;
         if (lightParent.IsDefined()){
@@ -3052,6 +3200,9 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
             break;
         }
         m_spotLight->setEnabled(true);
+
+        m_mass = 0.0;
+        buildDynamicModel();
     }
 
     return _is_valid;
@@ -3547,7 +3698,7 @@ afRigidBodyPtr afWorld::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
     return rootParentBody;
 }
 
-// The following functions have been copied from btRidigBodyBase by Erwin Coumans
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
 // with slight modification
 ///
 /// \brief afMultiBody::pickBody
@@ -3598,6 +3749,9 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
 
 }
 
+
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
 ///
 /// \brief afMultiBody::movePickedBody
 /// \param rayFromWorld
@@ -3636,6 +3790,9 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
     return false;
 }
 
+
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
 ///
 /// \brief afMultiBody::removePickingConstraint
 ///

@@ -298,8 +298,8 @@ protected:
     bool _publish_joint_names = true;
 
     // Min and Max publishing frequency
-    int _min_publish_frequency;
-    int _max_publish_frequency;
+    int _min_publish_frequency=50;
+    int _max_publish_frequency=1000;
 
     // Function of compute body's controllers based on lumped masses
     void computeControllerGains();
@@ -570,19 +570,69 @@ private:
 ///
 /// \brief The afCamera class
 ///
-class afCamera: public cCamera{
+class afCamera: public afRigidBody{
 public:
 
     afCamera(afWorld* a_afWorld);
     bool createDefaultCamera();
     bool loadCamera(YAML::Node* camera_node, std::string camera_name);
 
+    // Method similar to cCamera but providing a layer of abstraction
+    // So that we can set camera transform internally and set the
+    // transform of the afRigidBody surrounding the camera the same
+    bool setView(const cVector3d& a_localPosition,
+                     const cVector3d& a_localLookAt,
+                     const cVector3d& a_localUp);
+
+    // The following 5 methods override the cCamera internals as we don't
+    // want the cameras base class "cGenericObject" to be representing the
+    // kinematics. Instead we want the afRigidBody to do so.
+    // This method returns the camera "look at" position vector for this camera.
+    inline cVector3d getLookVector()  const { return (-m_localRot.getCol0()); }
+
+    // This method returns the "up" vector for this camera.
+    inline cVector3d getUpVector()    const { return (m_localRot.getCol2()); }
+
+    // This method returns the "right direction" vector for this camera.
+    inline cVector3d getRightVector() const { return (m_localRot.getCol1()); }
+
+    // This method enables or disables output image mirroring vertically.
+    inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
+
+    // This method renders the the camera view in OpenGL
+    inline void renderView(const int a_windowWidth, const int a_windowHeight){
+        m_camera->renderView(a_windowWidth, a_windowHeight);
+    }
+
+    // Front plane scene graph which can be used to attach widgets.
+    inline cWorld* getFrontLayer(){
+        return m_camera->m_frontLayer;
+    }
+
+    // Front plane scene graph which can be used to attach widgets.
+    inline cWorld* getBackLayer(){
+        return m_camera->m_backLayer;
+    }
+
+    // Override the get Global Position method for camera
+    cVector3d getGlobalPos();
+
     cVector3d measuredPos();
+
     cMatrix3d measuredRot();
-    inline cVector3d getTargetPos(){return m_targetPos;}
-    inline void setTargetPos(cVector3d a_pos){m_targetPos = a_pos;}
+
+    // Get the Target or the lookAt point
+    cVector3d getTargetPos();
+
+    // Set the Camera Target or LookAt position
+    void setTargetPos(cVector3d a_pos);
+
+    // Show a visual marker representing the position of CameraTaregetPosition
+    void showTargetPos(bool a_show);
 
     bool init();
+
+    cMesh* m_targetVisualMarker;
 
 public:
     bool m_cam_pressed;
@@ -622,6 +672,7 @@ protected:
     std::mutex m_mutex;
     cVector3d m_pos, m_posClutched;
     cMatrix3d m_rot, m_rotClutched;
+
     // This is the position that the camera is supposed to be looking at
     // This is also the point along which the orbital/arcball rotation
     // of the camera takes place.
@@ -634,6 +685,12 @@ protected:
 
 private:
     afWorldPtr m_afWorld;
+
+private:
+    // Hold the cCamera private and shield it's kinematics represented
+    // by cGenericObject from the world since we want afRidigBody to
+    // represent the kinematics instead
+    cCamera* m_camera;
 };
 
 //-----------------------------------------------------------------------------
@@ -654,13 +711,11 @@ enum ShadowQuality{
 ///
 /// \brief The afLight struct
 ///
-class afLight{
+class afLight: public afRigidBody{
 public:
     afLight(afWorld* a_afWorld);
     bool loadLight(YAML::Node* light_node, std::string light_name);
     bool createDefaultLight();
-
-    std::string m_name;
 
 protected:
     cSpotLight* m_spotLight;

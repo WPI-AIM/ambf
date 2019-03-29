@@ -126,7 +126,7 @@ std::vector<cThread*> g_hapticsThreads;
 cThread* g_bulletSimThread;
 
 // swap interval for the display context (vertical synchronization)
-int g_swapInterval = 1;
+int g_swapInterval = 0;
 
 bool g_mousePickingEnabled = false;
 
@@ -1257,6 +1257,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     for(g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         GLFWwindow* windowPtr = (*g_cameraIt)->m_window;
+        GLFWmonitor* monitorPtr = (*g_cameraIt)->m_monitor;
         if (!windowPtr)
         {
             cout << "failed to create window" << endl;
@@ -1289,7 +1290,7 @@ int main(int argc, char* argv[])
         // set the current context
         glfwMakeContextCurrent(windowPtr);
 
-        glfwSwapInterval(1);
+        glfwSwapInterval(g_swapInterval);
 
         // initialize GLEW library
 #ifdef GLEW_VERSION
@@ -1333,7 +1334,7 @@ int main(int argc, char* argv[])
                 devFreqLabel->setFontScale(0.8);
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
-                (*g_cameraIt)->m_frontLayer->addChild(devFreqLabel);
+                (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
                             dgPairs[dgPairIdx]->m_physicalDevice->m_hInfo.m_modelName);
@@ -1352,7 +1353,7 @@ int main(int argc, char* argv[])
                 devFreqLabel->setFontScale(0.8);
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
-                (*g_cameraIt)->m_frontLayer->addChild(devFreqLabel);
+                (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
@@ -1685,6 +1686,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
         if (a_window == (*g_cameraIt)->m_window){
             if (a_button == GLFW_MOUSE_BUTTON_1){
                 (*g_cameraIt)->mouse_l_clicked = a_action;
+//                (*g_cameraIt)->showTargetPos(true);
                 if (a_action){
                     if (g_mousePickingEnabled){
                         cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
@@ -1718,7 +1720,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             (*g_cameraIt)->mouse_y[1] = (*g_cameraIt)->mouse_y[0];
             (*g_cameraIt)->mouse_y[0] = a_ypos;
 
-            if( (*g_cameraIt)->mouse_l_clicked ){
+            if( devCam->mouse_l_clicked ){
                 if(g_mousePickingEnabled){
                     cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
                     cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
@@ -1733,13 +1735,11 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                     }
                     cVector3d camVel(0, -x_vel, y_vel);
                     cVector3d dPos = devCam->getLocalPos() + devCam->getLocalRot() * camVel;
-                    cVector3d dLook = devCam->getTargetPos() + devCam->getLocalRot() * camVel;
                     devCam->setLocalPos(dPos);
-                    devCam->setTargetPos(dLook);
                 }
             }
 
-            if( (*g_cameraIt)->mouse_r_clicked ){
+            if( devCam->mouse_r_clicked ){
                 cMatrix3d camRot;
                 double scale = 0.3;
                 double z_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
@@ -1759,27 +1759,28 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 camRot.setIntrinsicEulerRotationDeg(0, y_vel, z_vel, cEulerOrder::C_EULER_ORDER_XYZ);
                 (*g_cameraIt)->camRot = camRot;
 
-                cTransform tCinW = devCam->getLocalTransform(); // Transform of Cam in World
-                tCinW.invert(); // Invert to get T of World in Camera
-                cVector3d pLinC = tCinW * devCam->getTargetPos(); // Target vector in camera frame
                 devCam->setLocalRot( camViewWithoutPitch * (*g_cameraIt)->camRot * camViewPitchOnly );
-                cVector3d pLinW = devCam->getLocalTransform() * pLinC; // Target vector in world frame
-                devCam->setTargetPos(pLinW);
             }
             else{
-                (*g_cameraIt)->camRotPre = (*g_cameraIt)->camRot;
+                devCam->camRotPre = (*g_cameraIt)->camRot;
             }
 
-            if( (*g_cameraIt)->mouse_scroll_clicked){
+            if( devCam->mouse_scroll_clicked){
+//                devCam->showTargetPos(true);
                 double scale = 0.03;
                 double x_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
                 double y_vel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                 if (g_mouse_inverted_y){
                     y_vel = -y_vel;
                 }
-                cVector3d camVel(0, -x_vel, y_vel);
-                devCam->set(devCam->getLocalPos() + devCam->getLocalRot() * camVel, devCam->getTargetPos(), cVector3d(0,0,1));
+                cVector3d dVel(0, -x_vel, y_vel);
+                cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * dVel;
+                devCam->setView(newPos, devCam->getTargetPos(), cVector3d(0,0,1));
+
             }
+//            else{
+//                devCam->showTargetPos(false);
+//            }
 
         }
     }
@@ -1794,12 +1795,27 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
 
             double scale = 0.1;
             cVector3d camVelAlongLook(scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
+            cVector3d _targetPos = cameraPtr->getTargetPos();
+            cVector3d _newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
+            cVector3d dPos = _newPos - _targetPos;
+            if(dPos.length() < 0.5){
+                _targetPos = _targetPos + cameraPtr->getLocalRot() * camVelAlongLook;
+            }
             cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+            cameraPtr->setTargetPos(_targetPos);
         }
     }
 }
 
-
+// The following functions have been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
+///
+/// \brief getRayTo
+/// \param x
+/// \param y
+/// \param a_cameraPtr
+/// \return
+///
 cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 {
     float top = 1.f;
@@ -1810,8 +1826,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     btVector3 camPos, camTarget;
 
-    camPos = cVec2btVec( a_cameraPtr->getLocalPos() );
-    camTarget = cVec2btVec( a_cameraPtr->getTargetPos() );
+    camPos = cVec2btVec(a_cameraPtr->getLocalPos() );
+    camTarget = cVec2btVec(a_cameraPtr->getTargetPos() );
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);
@@ -1913,13 +1929,20 @@ void updateGraphics()
             g_window_closed = true;
         }
 
-        // wait until all GL commands are completed
-        glFinish();
+//        // wait until all GL commands are completed
+//        glFinish();
 
-        // check for any OpenGL errors
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+//        // check for any OpenGL errors
+//        GLenum err = glGetError();
+//        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
     }
+
+    // wait until all GL commands are completed
+    glFinish();
+
+    // check for any OpenGL errors
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
 
 }
 
