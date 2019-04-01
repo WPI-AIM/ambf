@@ -97,6 +97,9 @@ bool g_cam_btn_pressed = false;
 bool g_clutch_btn_pressed = false;
 cPrecisionClock g_clockWorld;
 
+// Info for mouse events in case a body is picked
+bool g_pickBody = false;
+cVector3d g_pickFrom, g_pickTo;
 
 //---------------------------------------------------------------------------
 // GENERAL VARIABLES
@@ -1689,14 +1692,17 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 //                (*g_cameraIt)->showTargetPos(true);
                 if (a_action){
                     if (g_mousePickingEnabled){
+                        g_pickBody = true;
                         cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
                         double x_pos, y_pos;
                         glfwGetCursorPos(a_window, &x_pos, &y_pos);
                         cVector3d rayTo = getRayTo(x_pos, y_pos, *g_cameraIt);
-                        g_afMultiBody->pickBody(rayFrom, rayTo);
+                        g_pickFrom = rayFrom;
+                        g_pickTo = rayTo;
                     }
                 }
                 else{
+                    g_pickBody = false;
                     g_afMultiBody->removePickingConstraint();
                 }
             }
@@ -1722,9 +1728,10 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
             if( devCam->mouse_l_clicked ){
                 if(g_mousePickingEnabled){
-                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
                     cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
-                    g_afMultiBody->movePickedBody(rayFrom, rayTo);
+                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
+                    g_pickFrom = rayFrom;
+                    g_pickTo = rayTo;
                 }
                 else{
                     double scale = 0.01;
@@ -1776,7 +1783,6 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 cVector3d dVel(0, -x_vel, y_vel);
                 cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * dVel;
                 devCam->setView(newPos, devCam->getTargetPos(), cVector3d(0,0,1));
-
             }
 //            else{
 //                devCam->showTargetPos(false);
@@ -2050,9 +2056,27 @@ void updatePhysics(){
         sleepHz= 1000;
 
     RateSleep rateSleep(sleepHz);
+    bool _bodyPicked = false;
     while(g_simulationRunning)
     {
         g_freqCounterHaptics.signal(1);
+
+        // Take care of any picked body by mouse
+        if (g_pickBody){
+            if (_bodyPicked == false){
+                _bodyPicked = true;
+                g_afMultiBody->pickBody(g_pickFrom, g_pickTo);
+            }
+            else{
+                g_afMultiBody->movePickedBody(g_pickFrom, g_pickTo);
+            }
+
+        }
+        else{
+            _bodyPicked = false;
+            g_afMultiBody->removePickingConstraint();
+        }
+
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
         else dt = compute_dt(true);
