@@ -1,5 +1,5 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
-lights: [light1, light2]
+lights: [light1, light2, light3]
 # cameras: [camera1, camera2]
 
 light1:
@@ -15,6 +15,14 @@ light2:
   spot exponent: 0.3
   shadow quality: 5
   cutoff angle: 0.7
+
+light3:
+  location: {x: 0.5, y: 0.0, z: -0.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+  parent: /ambf/env/BODY LightCone
 
 camera1:
   name: /ambf/env/openhmd
