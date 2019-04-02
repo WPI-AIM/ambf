@@ -1909,6 +1909,12 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         else if ((strcmp(jointType.as<std::string>().c_str(), "fixed") == 0)){
             m_jointType = JointType::fixed;
         }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "spring") == 0)){
+            m_jointType = JointType::spring;
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "p2p") == 0)){
+            m_jointType = JointType::p2p;
+        }
 
     }
 
@@ -2011,6 +2017,44 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if(jointLimits.IsDefined()){
             ((btSliderConstraint*) m_btConstraint)->setLowerLinLimit(m_lower_limit);
             ((btSliderConstraint*) m_btConstraint)->setUpperLinLimit(m_higher_limit);
+        }
+
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        afBodyA->addChildBody(afBodyB, this);
+    }
+    else if (m_jointType == JointType::p2p){
+        btTransform frameA, frameB;
+        frameA.setIdentity();
+        frameB.setIdentity();
+
+        // Bullet takes the x axis as the default for prismatic joints
+        btVector3 nx(1,0,0);
+
+        btQuaternion quat_nx_p;
+        quat_nx_p = getRotationBetweenVectors(nx, m_axisA);
+        frameA.setRotation(quat_nx_p);
+        frameA.setOrigin(m_pvtA);
+
+        btQuaternion quat_c_p;
+        quat_c_p = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion offset_quat;
+        offset_quat.setRotation(m_axisA, m_joint_offset);
+        // We need to post-multiply frameA's rot to cancel out the shift in axis, then
+        // the offset along joint axis and finally frameB's axis alignment in frameA.
+        frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse() * quat_nx_p);
+        frameB.setOrigin(m_pvtB);
+
+        m_p2p = new btPoint2PointConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB);
+        m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+        m_btConstraint = m_p2p;
+
+        if (jointEnableMotor.IsDefined()){
+            m_enable_actuator = jointEnableMotor.as<int>();
+            // Don't enable motor yet, only enable when set position is called
+            if(jointMaxMotorImpulse.IsDefined()){
+                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            }
         }
 
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
@@ -2396,7 +2440,7 @@ bool afWorld::createDefaultWorld(){
 
     // define some material properties and apply to mesh
     _bulletGround->m_material->m_emission.setGrayLevel(0.3);
-    _bulletGround->m_material->setGreenChartreuse();
+    _bulletGround->m_material->setWhiteAzure();
     _bulletGround->m_bulletRigidBody->setFriction(0.5);
 }
 

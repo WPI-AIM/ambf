@@ -436,7 +436,9 @@ public:
 enum JointType{
     revolute = 0,
     prismatic = 1,
-    fixed = 2
+    spring = 2,
+    p2p = 3,
+    fixed = 4
 };
 
 ///
@@ -487,6 +489,8 @@ private:
     // control loops
     btHingeConstraint* m_hinge;
     btSliderConstraint* m_slider;
+    btGeneric6DofSpringConstraint* m_spring;
+    btPoint2PointConstraint* m_p2p;
     afMultiBodyPtr m_mB;
     afController m_controller;
 };
