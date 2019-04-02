@@ -1735,6 +1735,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointEnableMotor = jointNode["enable motor"];
     YAML::Node jointMaxMotorImpulse = jointNode["max motor impulse"];
     YAML::Node jointLimits = jointNode["joint limits"];
+    YAML::Node jointERP = jointNode["joint erp"];
+    YAML::Node jointCFM = jointNode["joint cfm"];
     YAML::Node jointOffset = jointNode["offset"];
     YAML::Node jointDamping = jointNode["joint damping"];
     YAML::Node jointType = jointNode["type"];
@@ -1909,6 +1911,23 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
     }
+
+    double _jointERP, _jointCFM;
+
+    if(jointERP.IsDefined()){
+        _jointERP = jointERP.as<double>();
+    }
+    else{
+        _jointERP = mB->m_jointERP;
+    }
+
+    if(jointCFM.IsDefined()){
+        _jointCFM = jointCFM.as<double>();
+    }
+    else{
+        _jointCFM = mB->m_jointCFM;
+    }
+
     if (m_jointType == JointType::revolute){
 #ifdef USE_PIVOT_AXIS_METHOD
         m_btConstraint = new btHingeConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
@@ -1935,6 +1954,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setOrigin(m_pvtB);
 
         m_hinge = new btHingeConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_hinge->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_hinge->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_btConstraint = m_hinge;
 #endif
         // Don't enable motor yet, only enable when set position is called
@@ -1975,6 +1996,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setOrigin(m_pvtB);
 
         m_slider = new btSliderConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_btConstraint = m_slider;
 
         if (jointEnableMotor.IsDefined()){
@@ -2009,6 +2032,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse());
         frameB.setOrigin(m_pvtB);
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
+        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
@@ -3381,6 +3406,8 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     YAML::Node multiBodySoftBodies = multiBodyNode["soft bodies"];
     YAML::Node multiBodyJoints = multiBodyNode["joints"];
     YAML::Node multiBodySensors = multiBodyNode["sensors"];
+    YAML::Node multiBodyJointERP = multiBodyNode["joint erp"];
+    YAML::Node multiBodyJointCFM = multiBodyNode["joint cfm"];
 
     boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_multibody_config_file).parent_path();
     m_multibody_path = mb_cfg_dir.c_str();
@@ -3480,6 +3507,12 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         }
     }
 
+    if (multiBodyJointERP.IsDefined()){
+        m_jointERP = multiBodyJointERP.as<double>();
+    }
+    if (multiBodyJointCFM.IsDefined()){
+        m_jointCFM = multiBodyJointCFM.as<double>();
+    }
 
     /// Loading Joints
     afJointPtr jntPtr;

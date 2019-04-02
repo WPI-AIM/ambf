@@ -844,6 +844,10 @@ public:
 
     cPrecisionClock m_wallClock;
 
+    // Global Constraint ERP and CFM
+    double m_jointERP = 0.1;
+    double m_jointCFM = 0.1;
+
 protected:
 
     afWorldPtr m_afWorld;

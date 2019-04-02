@@ -2,11 +2,6 @@
 world config: ./world/world.yaml
 color config: ./color/colors.yaml
 multibody configs:
-  # - "./multi-bodies/robots/urdf-mtm.yaml"
-  # - "./multi-bodies/robots/urdf-ecm.yaml"
-  # - "./multi-bodies/robots/urdf-psm.yaml"
-  # - "./multi-bodies/robots/urdf-suj.yaml"
-  # - "./multi-bodies/robots/urdf-kuka.yaml"
   # - "./multi-bodies/robots/blender-mtm.yaml"
   # - "./multi-bodies/robots/blender-toy-car.yaml"
   # - "./multi-bodies/robots/blender-neuro-robot.yaml"
