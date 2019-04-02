@@ -3222,11 +3222,11 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
 
     if (_is_valid){
         m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
-        addChild(m_spotLight);
+        addChild(this);
 
-        bool _set_body_as_parent = false;
+        bool _overrideDefaultParenting = false;
         if (lightParent.IsDefined()){
-            _set_body_as_parent = true;
+            _overrideDefaultParenting = true;
             std::string parent_name = lightParent.as<std::string>();
             afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
             if (pBody){
@@ -3237,7 +3237,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
                           << parent_name << "\"" <<std::endl;
             }
         }
-        if (! _set_body_as_parent){
+        if (! _overrideDefaultParenting){
             m_afWorld->s_bulletWorld->addChild(m_spotLight);
         }
 
