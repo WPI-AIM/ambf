@@ -1738,7 +1738,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointERP = jointNode["joint erp"];
     YAML::Node jointCFM = jointNode["joint cfm"];
     YAML::Node jointOffset = jointNode["offset"];
-    YAML::Node jointDamping = jointNode["joint damping"];
+    YAML::Node jointDamping = jointNode["damping"];
+    YAML::Node jointStiffness = jointNode["stiffness"];
     YAML::Node jointType = jointNode["type"];
     YAML::Node jointController = jointNode["controller"];
 
@@ -1910,7 +1911,19 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_jointType = JointType::fixed;
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "spring") == 0)){
-            m_jointType = JointType::spring;
+            m_jointType = JointType::linear_spring;
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "linear spring") == 0)){
+            m_jointType = JointType::linear_spring;
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "torsion spring") == 0)){
+            m_jointType = JointType::torsion_spring;
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "torsional spring") == 0)){
+            m_jointType = JointType::torsion_spring;
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "angular spring") == 0)){
+            m_jointType = JointType::torsion_spring;
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "p2p") == 0)){
             m_jointType = JointType::p2p;
@@ -1950,13 +1963,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameA.setRotation(quat_nz_p);
         frameA.setOrigin(m_pvtA);
 
-        btQuaternion quat_c_p;
-        quat_c_p = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion R_cINp;
+        R_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
         btQuaternion offset_quat;
         offset_quat.setRotation(m_axisA, m_joint_offset);
         // We need to post-multiply frameA's rot to cancel out the shift in axis, then
         // the offset along joint axis and finally frameB's axis alignment in frameA.
-        frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse() * quat_nz_p);
+        frameB.setRotation( R_cINp.inverse() * offset_quat.inverse() * quat_nz_p);
         frameB.setOrigin(m_pvtB);
 
         m_hinge = new btHingeConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
@@ -1987,18 +2000,18 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // Bullet takes the x axis as the default for prismatic joints
         btVector3 nx(1,0,0);
 
-        btQuaternion quat_nx_p;
-        quat_nx_p = getRotationBetweenVectors(nx, m_axisA);
-        frameA.setRotation(quat_nx_p);
+        btQuaternion R_xINp;
+        R_xINp = getRotationBetweenVectors(nx, m_axisA);
+        frameA.setRotation(R_xINp);
         frameA.setOrigin(m_pvtA);
 
-        btQuaternion quat_c_p;
-        quat_c_p = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion R_cINp;
+        R_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
         btQuaternion offset_quat;
         offset_quat.setRotation(m_axisA, m_joint_offset);
         // We need to post-multiply frameA's rot to cancel out the shift in axis, then
         // the offset along joint axis and finally frameB's axis alignment in frameA.
-        frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse() * quat_nx_p);
+        frameB.setRotation( R_cINp.inverse() * offset_quat.inverse() * R_xINp);
         frameB.setOrigin(m_pvtB);
 
         m_slider = new btSliderConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
@@ -2022,6 +2035,96 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
         afBodyA->addChildBody(afBodyB, this);
     }
+    else if (m_jointType == JointType::linear_spring || m_jointType == JointType::torsion_spring){
+        btTransform frameA, frameB;
+        frameA.setIdentity();
+        frameB.setIdentity();
+
+        // Bullet takes the x axis as the default for prismatic joints
+        btVector3 nz(0,0,1);
+
+        // Rotation of nz in parent axis
+        btQuaternion R_zINp;
+        R_zINp = getRotationBetweenVectors(nz, m_axisA);
+        frameA.setRotation(R_zINp);
+        frameA.setOrigin(m_pvtA);
+
+        // Rotation of child axis in parent axis
+        btQuaternion R_cINp;
+        R_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion offset_quat;
+        offset_quat.setRotation(m_axisA, m_joint_offset);
+        // We need to post-multiply frameA's rot to cancel out the shift in axis, then
+        // the offset along joint axis and finally frameB's axis alignment in frameA.
+        frameB.setRotation( R_cINp.inverse() * offset_quat.inverse() * R_zINp);
+        frameB.setOrigin(m_pvtB);
+
+        m_spring = new btGeneric6DofSpringConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_spring->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+        m_btConstraint = m_spring;
+
+        for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
+            m_spring->setLimit(axIdx, 0.0, 0.0);
+            m_spring->setStiffness(axIdx, 0.0);
+            m_spring->setDamping(axIdx, 0.0);
+            m_spring->enableSpring(axIdx, false);
+        }
+
+        // We treat springs along the z axes of constraint, thus chosed
+        // the appropriate axis number based on if the spring is linear
+        // or torsional [0-2] -> linear, [3-5] -> rotational
+        int _axisNumber = -1;
+
+        if (m_jointType == JointType::linear_spring){
+            _axisNumber = 2;
+        }
+        else if (m_jointType == JointType::torsion_spring){
+            _axisNumber = 5;
+        }
+
+        std::cerr << "JOINT TYPE: " << _axisNumber << std::endl;
+
+        if (jointLimits.IsDefined()){
+            double _low, _high;
+            _low = jointLimits["low"].as<double>();
+            _high = jointLimits["high"].as<double>();
+
+            btVector3 _limLow, _limHigh;
+            _limLow.setValue(0, 0, 0);
+            _limHigh.setValue(0, 0, 0);
+            _limLow.setZ(_low);
+            _limHigh.setZ(_high);
+
+            m_spring->setLimit(_axisNumber, _low, _high);
+            m_spring->enableSpring(_axisNumber, true);
+        }
+
+        if (jointNode["equiblirium point"].IsDefined()){
+            double _equiblirium = jointNode["equiblirium point"].as<double>();
+            m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
+        }
+        else{
+            m_spring->setEquilibriumPoint();
+        }
+
+        // Calculcated a stiffness value based on the masses of connected bodies.
+        double _stiffness = 10 * afBodyA->getMass() + afBodyB->getMass();
+        // If stiffness defined, override the above value
+        if (jointStiffness.IsDefined()){
+            _stiffness = jointStiffness.as<double>();
+        }
+        m_spring->setStiffness(_axisNumber, _stiffness);
+
+        if (jointDamping.IsDefined()){
+            double _damping = jointDamping.as<double>();
+            m_spring->setDamping(_axisNumber, _damping);
+        }
+
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+
+        afBodyA->addChildBody(afBodyB, this);
+    }
     else if (m_jointType == JointType::p2p){
         btTransform frameA, frameB;
         frameA.setIdentity();
@@ -2030,18 +2133,18 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // Bullet takes the x axis as the default for prismatic joints
         btVector3 nx(1,0,0);
 
-        btQuaternion quat_nx_p;
-        quat_nx_p = getRotationBetweenVectors(nx, m_axisA);
-        frameA.setRotation(quat_nx_p);
+        btQuaternion R_xINp;
+        R_xINp = getRotationBetweenVectors(nx, m_axisA);
+        frameA.setRotation(R_xINp);
         frameA.setOrigin(m_pvtA);
 
-        btQuaternion quat_c_p;
-        quat_c_p = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion R_cINp;
+        R_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
         btQuaternion offset_quat;
         offset_quat.setRotation(m_axisA, m_joint_offset);
         // We need to post-multiply frameA's rot to cancel out the shift in axis, then
         // the offset along joint axis and finally frameB's axis alignment in frameA.
-        frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse() * quat_nx_p);
+        frameB.setRotation( R_cINp.inverse() * offset_quat.inverse() * R_xINp);
         frameB.setOrigin(m_pvtB);
 
         m_p2p = new btPoint2PointConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB);
@@ -2067,13 +2170,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         frameA.setOrigin(m_pvtA);
 
-        btQuaternion quat_c_p;
-        quat_c_p = getRotationBetweenVectors(m_axisB, m_axisA);
+        btQuaternion R_cINp;
+        R_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
         btQuaternion offset_quat;
         offset_quat.setRotation(m_axisA, m_joint_offset);
         // We need to post-multiply frameA's rot to cancel out the shift in axis, then
         // the offset along joint axis and finally frameB's axis alignment in frameA.
-        frameB.setRotation( quat_c_p.inverse() * offset_quat.inverse());
+        frameB.setRotation( R_cINp.inverse() * offset_quat.inverse());
         frameB.setOrigin(m_pvtB);
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
         ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);

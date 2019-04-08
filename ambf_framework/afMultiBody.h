@@ -436,9 +436,10 @@ public:
 enum JointType{
     revolute = 0,
     prismatic = 1,
-    spring = 2,
-    p2p = 3,
-    fixed = 4
+    linear_spring = 2,
+    torsion_spring = 3,
+    p2p = 4,
+    fixed = 5
 };
 
 ///
