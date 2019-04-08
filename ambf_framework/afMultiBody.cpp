@@ -1742,6 +1742,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointStiffness = jointNode["stiffness"];
     YAML::Node jointType = jointNode["type"];
     YAML::Node jointController = jointNode["controller"];
+    YAML::Node jointIgnoreInterCollision = jointNode["ignore inter-collision"];
 
     if (!jointParentName.IsDefined() || !jointChildName.IsDefined()){
         std::cerr << "ERROR: PARENT/CHILD FOR: " << node_name << " NOT DEFINED \n";
@@ -1769,6 +1770,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     afBodyA = m_afWorld->getRidigBody(mB->getNameSpace() + m_parent_name + name_remapping, true);
     afBodyB = m_afWorld->getRidigBody(mB->getNameSpace() + m_child_name + name_remapping, true);
+
+    bool _ignore_inter_collision = true;
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
@@ -1947,6 +1950,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         _jointCFM = mB->m_jointCFM;
     }
 
+    if (jointIgnoreInterCollision.IsDefined()){
+        _ignore_inter_collision = jointIgnoreInterCollision.as<bool>();
+    }
+
     if (m_jointType == JointType::revolute){
 #ifdef USE_PIVOT_AXIS_METHOD
         m_btConstraint = new btHingeConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
@@ -1989,7 +1996,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btHingeConstraint*)m_btConstraint)->setLimit(m_lower_limit, m_higher_limit);
         }
 
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::prismatic){
@@ -2032,7 +2039,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             ((btSliderConstraint*) m_btConstraint)->setUpperLinLimit(m_higher_limit);
         }
 
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::linear_spring || m_jointType == JointType::torsion_spring){
@@ -2121,7 +2128,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_spring->setDamping(_axisNumber, _damping);
         }
 
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
         afBodyA->addChildBody(afBodyB, this);
     }
@@ -2160,7 +2167,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             }
         }
 
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }
     else if (m_jointType == JointType::fixed){
@@ -2181,7 +2188,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
         ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
         ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, true);
+        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }
     return true;
@@ -3555,6 +3562,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     YAML::Node multiBodySensors = multiBodyNode["sensors"];
     YAML::Node multiBodyJointERP = multiBodyNode["joint erp"];
     YAML::Node multiBodyJointCFM = multiBodyNode["joint cfm"];
+    YAML::Node multiBodyIgnoreInterCollision = multiBodyNode["ignore inter-collision"];
 
     boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_multibody_config_file).parent_path();
     m_multibody_path = mb_cfg_dir.c_str();
@@ -3676,16 +3684,16 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     }
 
     // This flag would ignore collision for all the multibodies in the scene
-    bool _ignore_inter_collision = false;
-    if (multiBodyNode["ignore inter-collision"].IsDefined()){
-        if (multiBodyNode["ignore inter-collision"].as<bool>()){
+    bool _ignoreInterCollision = false;
+    if (multiBodyIgnoreInterCollision.IsDefined()){
+        _ignoreInterCollision = multiBodyIgnoreInterCollision.as<bool>();
+        if (_ignoreInterCollision){
             ignoreCollisionChecking();
-            _ignore_inter_collision = multiBodyNode["ignore inter-collision"].as<bool>();
         }
     }
     // If the ignore_inter_collision flag is false, then ignore collision based on collision
     // groups
-    if (!_ignore_inter_collision){
+    if (! _ignoreInterCollision){
         buildCollisionGroups();
     }
 
