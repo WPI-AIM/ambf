@@ -266,6 +266,12 @@ add_library (ambf_framework STATIC ${source} ${source_eigen} ${source_gif} ${sou
  ${source_chai3d_bullet} ${source_chai3d_gel} ${source_bullet_collision} ${source_bullet_dynamics}
  ${source_bullet_softbody} ${source_bullet_linearmath} )
 
+# To ensure the ambf_ros_modules are build before the ambf_framework,
+# add catkin's targets as build dependency
+ if (${catkin_FOUND})
+   add_dependencies(ambf_framework ${catkin_EXPORTED_TARGETS})
+ endif()
+
 # AMBF library exports
 set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
   "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
