@@ -2090,18 +2090,26 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             _axisNumber = 5;
         }
 
-        std::cerr << "JOINT TYPE: " << _axisNumber << std::endl;
-
+        double _low, _high;
         if (jointLimits.IsDefined()){
-            double _low, _high;
+
+            _high =  jointLimits["high"].as<double>();
             _low = jointLimits["low"].as<double>();
-            _high = jointLimits["high"].as<double>();
+
+            // Somehow bullets springs limits for rotational joints are inverted.
+            // So handle them internally rather than breaking AMBF description specificaiton
+            if (m_jointType == JointType::torsion_spring){
+                double _temp = _low;
+                _low = - _high;
+                _high = - _temp;
+
+            }
 
             btVector3 _limLow, _limHigh;
             _limLow.setValue(0, 0, 0);
             _limHigh.setValue(0, 0, 0);
             _limLow.setZ(_low);
-            _limHigh.setZ(_high);
+            _limHigh.setZ(_low);
 
             m_spring->setLimit(_axisNumber, _low, _high);
             m_spring->enableSpring(_axisNumber, true);
@@ -2109,10 +2117,15 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         if (jointNode["equiblirium point"].IsDefined()){
             double _equiblirium = jointNode["equiblirium point"].as<double>();
+            // The equiblirium offset if also inverted for torsional springs
+            // Fix it internally rather than breaking AMBF description specificaiton
+             if (m_jointType == JointType::torsion_spring){
+                 _equiblirium = - _equiblirium;
+             }
             m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
         }
         else{
-            m_spring->setEquilibriumPoint();
+            m_spring->setEquilibriumPoint(_axisNumber, _low + ((_high - _low) / 2));
         }
 
         // Calculcated a stiffness value based on the masses of connected bodies.
@@ -2123,10 +2136,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
         m_spring->setStiffness(_axisNumber, _stiffness);
 
+        double _damping = 0.1;
         if (jointDamping.IsDefined()){
-            double _damping = jointDamping.as<double>();
-            m_spring->setDamping(_axisNumber, _damping);
+            _damping = jointDamping.as<double>();
         }
+        m_spring->setDamping(_axisNumber, _damping);
 
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
