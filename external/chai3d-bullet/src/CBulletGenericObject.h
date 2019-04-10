@@ -278,7 +278,7 @@ protected:
 
     //! Command Position from Asynchronous Framework
     cVector3d m_dpos, m_dpos_prev, m_ddpos;
-    cMatrix3d m_drot, m_drot_prev;
+    cMatrix3d m_drot, m_drot_prev, m_ddrot;
 
     //! Inetial Offset Transform
     btTransform m_inertialOffsetTransform;

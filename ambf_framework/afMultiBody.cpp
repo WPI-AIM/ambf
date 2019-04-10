@@ -316,6 +316,9 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bu
     m_mesh_name.clear();
     m_collision_mesh_name.clear();
     m_scale = 1.0;
+    m_dpos.set(0, 0, 0);
+    m_drot.identity();
+    m_drot_prev.identity();
 }
 
 ///
@@ -1115,7 +1118,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectPtr.get() != nullptr){
         m_afObjectPtr->update_af_cmd();
-        cVector3d force, torque;
+        cVector3d force, torque, dtorque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
@@ -1131,10 +1134,11 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 // they shall be computed for the first call
                 computeControllerGains();
                 cVector3d cur_pos, cmd_pos, rot_axis, rot_axix_w_gain;
+                cVector3d drot_axis;
                 cQuaternion cur_rot, cmd_rot;
                 cMatrix3d cur_rot_mat, cmd_rot_mat;
                 btTransform b_trans;
-                double rot_angle;
+                double rot_angle, drot_angle;
                 m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
                 cur_pos.set(b_trans.getOrigin().getX(),
                             b_trans.getOrigin().getY(),
@@ -1152,6 +1156,18 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 cmd_rot.y = m_afCommand.qy;
                 cmd_rot.z = m_afCommand.qz;
                 cmd_rot.w = m_afCommand.qw;
+
+                if( cmd_rot.length() < 0.9 || cmd_rot.length() > 1.1 ){
+                    // Invalid Quaternion
+                    std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
+                                                          " not normalized" << std::endl;
+                    if (cmd_rot.length() < 0.1){
+                        // Invalid Quaternion
+                        cmd_rot.w = 1.0;
+                    }
+                    cmd_rot.normalize();
+                }
+
                 cmd_rot.toRotMat(cmd_rot_mat);
 
                 m_dpos_prev = m_dpos;
@@ -1161,9 +1177,19 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
                 m_drot.toAxisAngle(rot_axis, rot_angle);
 
+                m_ddrot = cTranspose(m_drot_prev) * m_drot;
+                m_ddrot.toAxisAngle(drot_axis, drot_angle);
+
                 force = K_lin * m_dpos + D_lin * m_ddpos;
+
+                dtorque = cMul(D_ang * drot_angle, drot_axis);
+                m_ddrot.mul(dtorque);
+
                 torque = cMul(K_ang * rot_angle, rot_axis);
                 cur_rot_mat.mul(torque);
+
+                torque += dtorque;
+
             }
             else{
                 force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
@@ -2067,8 +2093,6 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setOrigin(m_pvtB);
 
         m_spring = new btGeneric6DofSpringConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
-        m_spring->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_btConstraint = m_spring;
 
         for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
@@ -2141,6 +2165,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             _damping = jointDamping.as<double>();
         }
         m_spring->setDamping(_axisNumber, _damping);
+
+        m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
+        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
 
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
