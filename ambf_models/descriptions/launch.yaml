@@ -3,6 +3,7 @@ world config: ./world/world.yaml
 color config: ./color/colors.yaml
 multibody configs:
   # - "./multi-bodies/robots/blender-toy-car.yaml"
+  - "./multi-bodies/robots/blender-toy-car2.yaml"
   # - "./multi-bodies/robots/blender-neuro-robot.yaml"
   # - "./multi-bodies/robots/blender-raven2.yaml"
   # - "./multi-bodies/robots/blender-mtm.yaml"
