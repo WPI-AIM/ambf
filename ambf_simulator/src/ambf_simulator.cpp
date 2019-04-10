@@ -1703,7 +1703,6 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
                 }
                 else{
                     g_pickBody = false;
-                    g_afMultiBody->removePickingConstraint();
                 }
             }
             if (a_button == GLFW_MOUSE_BUTTON_2){
