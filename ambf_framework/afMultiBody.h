@@ -352,6 +352,17 @@ private:
     double m_I=0;
     double m_D=1;
 
+    // Variables for Cartesian PID Control
+
+    btVector3 m_pos, m_dpos, m_ddpos;
+    btVector3 m_dpos_prev;
+
+    btMatrix3x3 m_rot, m_drot, m_ddrot;
+    btMatrix3x3 m_drot_prev;
+
+    // Last Axes
+    btVector3 m_last_daxis, m_last_ddaxis;
+
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
 };

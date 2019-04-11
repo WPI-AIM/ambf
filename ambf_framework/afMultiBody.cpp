@@ -316,9 +316,12 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bu
     m_mesh_name.clear();
     m_collision_mesh_name.clear();
     m_scale = 1.0;
-    m_dpos.set(0, 0, 0);
-    m_drot.identity();
-    m_drot_prev.identity();
+    m_dpos.setValue(0, 0, 0);
+    m_drot.setIdentity();
+    m_drot_prev.setIdentity();
+
+    m_last_daxis.setValue(0, 0, 1);
+    m_last_ddaxis.setValue(0, 0, 1);
 }
 
 ///
@@ -1109,6 +1112,12 @@ void afRigidBody::updatePositionFromDynamics()
     }
 #endif
 }
+double t1 = 0;
+double t2 = 0;
+bool first = true;
+double ang[2];
+double dang[2];
+btMatrix3x3 m_bt_drot, m_bt_drot_prev, m_bt_ddrot_prev, m_bt_ddrot;
 
 ///
 /// \brief afRigidBody::afCommandExecute
@@ -1118,7 +1127,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectPtr.get() != nullptr){
         m_afObjectPtr->update_af_cmd();
-        cVector3d force, torque, dtorque;
+        btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
@@ -1133,70 +1142,66 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 // If the gains have not been defined for the body,
                 // they shall be computed for the first call
                 computeControllerGains();
-                cVector3d cur_pos, cmd_pos, rot_axis, rot_axix_w_gain;
-                cVector3d drot_axis;
-                cQuaternion cur_rot, cmd_rot;
-                cMatrix3d cur_rot_mat, cmd_rot_mat;
+                btVector3 cur_pos, cmd_pos;
+                btQuaternion cmd_rot_quat;
+                btMatrix3x3 cur_rot, cmd_rot;
                 btTransform b_trans;
-                double rot_angle, drot_angle;
                 m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
-                cur_pos.set(b_trans.getOrigin().getX(),
-                            b_trans.getOrigin().getY(),
-                            b_trans.getOrigin().getZ());
 
-                cur_rot.x = b_trans.getRotation().getX();
-                cur_rot.y = b_trans.getRotation().getY();
-                cur_rot.z = b_trans.getRotation().getZ();
-                cur_rot.w = b_trans.getRotation().getW();
-                cur_rot.toRotMat(cur_rot_mat);
+                cur_pos = b_trans.getOrigin();
+                cur_rot.setRotation(b_trans.getRotation());
 
-                cmd_pos.set(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
+                cmd_pos.setValue(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
 
-                cmd_rot.x = m_afCommand.qx;
-                cmd_rot.y = m_afCommand.qy;
-                cmd_rot.z = m_afCommand.qz;
-                cmd_rot.w = m_afCommand.qw;
+                cmd_rot_quat.setX(m_afCommand.qx);
+                cmd_rot_quat.setY(m_afCommand.qy);
+                cmd_rot_quat.setZ(m_afCommand.qz);
+                cmd_rot_quat.setW(m_afCommand.qw);
 
-                if( cmd_rot.length() < 0.9 || cmd_rot.length() > 1.1 ){
+                if( cmd_rot_quat.length() < 0.9 || cmd_rot_quat.length() > 1.1 ){
                     // Invalid Quaternion
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
                                                           " not normalized" << std::endl;
-                    if (cmd_rot.length() < 0.1){
+                    if (cmd_rot_quat.length() < 0.1){
                         // Invalid Quaternion
-                        cmd_rot.w = 1.0;
+                        cmd_rot_quat.setW(1.0);
                     }
-                    cmd_rot.normalize();
                 }
-
-                cmd_rot.toRotMat(cmd_rot_mat);
+                cmd_rot.setRotation(cmd_rot_quat);
 
                 m_dpos_prev = m_dpos;
                 m_dpos = cmd_pos - cur_pos;
                 m_ddpos = (m_dpos - m_dpos_prev)/dt;
-                m_drot_prev = m_drot;
-                m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
-                m_drot.toAxisAngle(rot_axis, rot_angle);
-
-                m_ddrot = cTranspose(m_drot_prev) * m_drot;
-                m_ddrot.toAxisAngle(drot_axis, drot_angle);
 
                 force = K_lin * m_dpos + D_lin * m_ddpos;
 
-                dtorque = cMul(D_ang * drot_angle, drot_axis);
-                m_ddrot.mul(dtorque);
+                m_drot_prev = m_drot;
+                m_drot = cur_rot.transpose() * cmd_rot;
+                m_ddrot = m_drot_prev.transpose() * m_drot;
 
-                torque = cMul(K_ang * rot_angle, rot_axis);
-                cur_rot_mat.mul(torque);
+                m_bt_drot_prev = m_bt_drot;
+                m_bt_drot = cur_rot.transpose() * cmd_rot;
+                m_bt_ddrot = m_bt_drot_prev.transpose() * m_bt_drot;
 
-                torque += dtorque;
+                btQuaternion _bt_drot_quat, _bt_ddrot_quat;
 
+                m_bt_drot.getRotation(_bt_drot_quat);
+                m_bt_ddrot.getRotation(_bt_ddrot_quat);
+
+                torque = K_ang * _bt_drot_quat.getAxis() * _bt_drot_quat.getAngle() +
+                        (D_ang * _bt_ddrot_quat.getAxis() * _bt_ddrot_quat.getAngle() / dt);
+
+                torque = cur_rot.transpose() * torque;
             }
             else{
-                force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
-                torque.set(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
+                force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
+                torque.setValue(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
             }
-            addExternalForce(force);
-            addExternalTorque(torque);
+
+            if (m_bulletRigidBody){
+                m_bulletRigidBody->applyCentralForce(force);
+                m_bulletRigidBody->applyTorque(torque);
+            }
         }
         size_t jntCmdSize = m_afCommand.joint_commands_size;
         if (jntCmdSize > 0){
