@@ -1027,21 +1027,22 @@ double Coordination::increment_K_ah(double a_offset){
 /// \return
 ///
 double Coordination::increment_P_lc(double a_offset){
+    double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
         afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
         double _gain = sG->m_controller.getP_lin();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_lin(0.0);
-            a_offset = 0.0;
+            _temp = 0.0;
         }
         else{
             sG->m_controller.setP_lin( _gain + a_offset);
-            a_offset = _gain + a_offset;
+            _temp = _gain + a_offset;
         }
     }
 
-    g_btn_action_str = "P_lc = " + cStr(a_offset, 4);
-    return a_offset;
+    g_btn_action_str = "P_lc = " + cStr(_temp, 4);
+    return _temp;
 }
 
 
@@ -1051,21 +1052,22 @@ double Coordination::increment_P_lc(double a_offset){
 /// \return
 ///
 double Coordination::increment_P_ac(double a_offset){
+    double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
         afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
         double _gain = sG->m_controller.getP_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_ang(0.0);
-            a_offset = 0.0;
+            _temp = 0.0;
         }
         else{
             sG->m_controller.setP_ang( _gain + a_offset);
-            a_offset = _gain + a_offset;
+            _temp = _gain + a_offset;
         }
     }
 
-    g_btn_action_str = "P_ac = " + cStr(a_offset, 4);
-    return a_offset;
+    g_btn_action_str = "P_ac = " + cStr(_temp, 4);
+    return _temp;
 }
 
 
@@ -1075,22 +1077,23 @@ double Coordination::increment_P_ac(double a_offset){
 /// \return
 ///
 double Coordination::increment_D_lc(double a_offset){
+    double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
         afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
         double _gain = sG->m_controller.getD_lin();
         if (_gain + a_offset <=0){
             // Keep a small value of Angular gain to avoid controller singularity
             sG->m_controller.setD_lin(0.01);
-            a_offset = 0.01;
+            _temp = 0.01;
         }
         else{
             sG->m_controller.setP_lin( _gain + a_offset);
-            a_offset = _gain + a_offset;
+            _temp = _gain + a_offset;
         }
     }
 
-    g_btn_action_str = "D_lc = " + cStr(a_offset, 4);
-    return a_offset;
+    g_btn_action_str = "D_lc = " + cStr(_temp, 4);
+    return _temp;
 }
 
 
@@ -1100,21 +1103,22 @@ double Coordination::increment_D_lc(double a_offset){
 /// \return
 ///
 double Coordination::increment_D_ac(double a_offset){
+    double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
         afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
         double _gain = sG->m_controller.getD_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setD_ang(0.0);
-            a_offset = 0.0;
+            _temp = 0.0;
         }
         else{
             sG->m_controller.setD_ang( _gain + a_offset);
-            a_offset = _gain + a_offset;
+            _temp = _gain + a_offset;
         }
     }
 
-    g_btn_action_str = "D_ac = " + cStr(a_offset, 4);
-    return a_offset;
+    g_btn_action_str = "D_ac = " + cStr(_temp, 4);
+    return _temp;
 }
 
 ///
