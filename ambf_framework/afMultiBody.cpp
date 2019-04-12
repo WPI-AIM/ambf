@@ -322,6 +322,10 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bu
 
     m_last_daxis.setValue(0, 0, 1);
     m_last_ddaxis.setValue(0, 0, 1);
+
+    m_torque.setValue(0, 0, 0);
+    m_torque_prev.setValue(0, 0, 0);
+    m_dtorque.setValue(0, 0, 0);
 }
 
 ///
@@ -1188,10 +1192,11 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 m_bt_drot.getRotation(_bt_drot_quat);
                 m_bt_ddrot.getRotation(_bt_ddrot_quat);
 
-                torque = K_ang * _bt_drot_quat.getAxis() * _bt_drot_quat.getAngle() +
-                        (D_ang * _bt_ddrot_quat.getAxis() * _bt_ddrot_quat.getAngle() / dt);
+                m_torque_prev = m_torque;
+                m_torque = K_ang * _bt_drot_quat.getAxis() * _bt_drot_quat.getAngle();
+                m_dtorque = D_ang * ( ( m_torque - m_torque_prev ) / K_ang) / dt;
 
-                torque = cur_rot.transpose() * torque;
+                torque = cur_rot * (m_torque + m_dtorque);
             }
             else{
                 force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);

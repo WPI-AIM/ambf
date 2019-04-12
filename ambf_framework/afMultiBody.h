@@ -363,6 +363,9 @@ private:
     // Last Axes
     btVector3 m_last_daxis, m_last_ddaxis;
 
+    // Last torque
+    btVector3 m_torque_prev, m_torque, m_dtorque;
+
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
 };
