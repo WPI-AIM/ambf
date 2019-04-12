@@ -313,7 +313,9 @@ std::vector<double> afConfigHandler::getColorRGBA(std::string a_color_name){
 ///
 afCartesianController::afCartesianController(){
     m_dPos.setValue(0, 0, 0);
+    m_dPos_cvec.set(0, 0, 0);
     m_dRot.setIdentity();
+    m_dRot_cvec.identity();
 }
 
 
@@ -382,6 +384,56 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
     m_dRot = process_val.transpose() * set_point;
     m_dRot.getRotation(_dRotQuat);
     _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
+
+    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+
+    // Important to transform the torque in the world frame as its represented
+    // in the body frame from the above computation
+    _output = process_val * _output;
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput_cvec
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+    cVector3d _dPos_prev, _ddPos, _output;
+
+    _dPos_prev = m_dPos_cvec;
+    m_dPos_cvec = set_point - process_val;
+    _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
+
+    _output = P_lin * (m_dPos_cvec) + D_lin * (_ddPos);
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput_cvec
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+    cVector3d _error_cur, _error_prev;
+    cMatrix3d _dRot_prev;
+    cVector3d _e_axis, _e_axis_prev;
+    double _e_angle, _e_angle_prev;
+    cVector3d _output;
+
+    _dRot_prev = m_dRot_cvec;
+    _dRot_prev.toAxisAngle(_e_axis_prev, _e_angle_prev);
+    _error_prev = _e_axis_prev * _e_angle_prev;
+
+    m_dRot_cvec = cTranspose(process_val) * set_point;
+    m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
+    _error_cur = _e_axis * _e_angle;
 
     _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
 
