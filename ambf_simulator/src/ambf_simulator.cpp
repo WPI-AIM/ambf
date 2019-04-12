@@ -511,14 +511,12 @@ public:
     double m_workspaceScaleFactor;
     double K_lh;                    //Linear Haptic Stiffness Gain
     double K_ah;                    //Angular Haptic Stiffness Gain
-    double K_lh_ramp;               //Linear Haptic Stiffness Gain Ramped
-    double K_ah_ramp;               //Angular Haptic Stiffness Gain Ramped
-    double K_lc_ramp;               //Linear Haptic Stiffness Gain Ramped
-    double K_ac_ramp;               //Angular Haptic Stiffness Gain Ramped
-    double K_lc;                    //Linear Controller Stiffness Gain
-    double K_ac;                    //Angular Controller Stiffness Gain
-    double B_lc;                    //Linear Controller Damping Gain
-    double B_ac;                    //Angular Controller Damping Gain
+    // Gain Ramps are used to softly get towards the setpoint when the simulation starts
+    double K_lh_ramp;               //Linear Haptic Stiffness Gain Ramp
+    double K_ah_ramp;               //Angular Haptic Stiffness Gain Ramp
+    double P_lc_ramp;               //Linear Haptic Propotional Gain Ramp
+    double P_ac_ramp;               //Angular Haptic Propotional Gain Ramp
+
     int act_1_btn;
     int act_2_btn;
     int mode_next_btn;
@@ -537,14 +535,10 @@ SimulationParams::SimulationParams(){
     m_workspaceScaleFactor = 30.0;
     K_lh = 0.02;
     K_ah = 0.03;
-    K_lc = 200;
-    K_ac = 30;
-    B_lc = 5.0;
-    B_ac = 3.0;
     K_lh_ramp = 0.0;
     K_ah_ramp = 0.0;
-    K_lc_ramp = 0.0;
-    K_ac_ramp = 0.0;
+    P_lc_ramp = 0.0;
+    P_ac_ramp = 0.0;
     act_1_btn   = 0;
     act_2_btn   = 1;
     mode_next_btn = 2;
@@ -569,7 +563,7 @@ void SimulationParams::setSimParams(cHapticDeviceInfo &a_hInfo, PhysicalDevice* 
     double maxStiffness	= a_hInfo.m_maxLinearStiffness / m_workspaceScaleFactor;
 
     // clamp the force output gain to the max device stiffness
-    K_lh = cMin(K_lh, maxStiffness / K_lc);
+    K_lh = cMin(K_lh, maxStiffness);
     if (strcmp(a_hInfo.m_modelName.c_str(), "MTM-R") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTMR") == 0 ||
             strcmp(a_hInfo.m_modelName.c_str(), "MTM-L") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTML") == 0)
     {
@@ -776,10 +770,10 @@ public:
     // Increment gains (haptic mean physical device and controller means simulated gripper)
     double increment_K_lh(double a_offset); // Stifness linear haptic
     double increment_K_ah(double a_offset); // Stifness angular haptic
-    double increment_K_lc(double a_offset); // Stifness linear controller
-    double increment_K_ac(double a_offset); // Stifness angular controller
-    double increment_B_lc(double a_offset); // Damping linear controller
-    double increment_B_ac(double a_offset); // Damping angular controller
+    double increment_P_lc(double a_offset); // Stifness linear controller
+    double increment_P_ac(double a_offset); // Stifness angular controller
+    double increment_D_lc(double a_offset); // Damping linear controller
+    double increment_D_ac(double a_offset); // Damping angular controller
 
     void nextMode();
     void prevMode();
@@ -1028,90 +1022,98 @@ double Coordination::increment_K_ah(double a_offset){
 }
 
 ///
-/// \brief Coordination::increment_K_lc
+/// \brief Coordination::increment_P_lc
 /// \param a_offset
 /// \return
 ///
-double Coordination::increment_K_lc(double a_offset){
+double Coordination::increment_P_lc(double a_offset){
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
-        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc + a_offset <=0){
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc = 0.0;
+        afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
+        double _gain = sG->m_controller.getP_lin();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setP_lin(0.0);
+            a_offset = 0.0;
         }
         else{
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_lc += a_offset;
+            sG->m_controller.setP_lin( _gain + a_offset);
+            a_offset = _gain + a_offset;
         }
     }
-    //Set the return value to the stiffness of the last device
-    if(m_num_grippers > 0){
-        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_lc;
-        g_btn_action_str = "K_lc = " + cStr(a_offset, 4);
-    }
+
+    g_btn_action_str = "P_lc = " + cStr(a_offset, 4);
     return a_offset;
 }
 
+
 ///
-/// \brief Coordination::increment_K_ac
+/// \brief Coordination::increment_P_ac
 /// \param a_offset
 /// \return
 ///
-double Coordination::increment_K_ac(double a_offset){
+double Coordination::increment_P_ac(double a_offset){
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
-        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac + a_offset <=0){
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac = 0.0;
+        afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
+        double _gain = sG->m_controller.getP_ang();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setP_ang(0.0);
+            a_offset = 0.0;
         }
         else{
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->K_ac += a_offset;
+            sG->m_controller.setP_ang( _gain + a_offset);
+            a_offset = _gain + a_offset;
         }
     }
-    //Set the return value to the stiffness of the last device
-    if(m_num_grippers > 0){
-        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->K_ac;
-        g_btn_action_str = "K_ac = " + cStr(a_offset, 4);
-    }
+
+    g_btn_action_str = "P_ac = " + cStr(a_offset, 4);
     return a_offset;
 }
 
+
 ///
-/// \brief Coordination::increment_B_lc
+/// \brief Coordination::increment_D_lc
 /// \param a_offset
 /// \return
 ///
-double Coordination::increment_B_lc(double a_offset){
+double Coordination::increment_D_lc(double a_offset){
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
-        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc + a_offset <=0){
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc = 0.0;
+        afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
+        double _gain = sG->m_controller.getD_lin();
+        if (_gain + a_offset <=0){
+            // Keep a small value of Angular gain to avoid controller singularity
+            sG->m_controller.setD_lin(0.01);
+            a_offset = 0.01;
         }
         else{
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_lc += a_offset;
+            sG->m_controller.setP_lin( _gain + a_offset);
+            a_offset = _gain + a_offset;
         }
     }
-    //Set the return value to the stiffness of the last device
-    if(m_num_grippers > 0){
-        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->B_lc;
-        g_btn_action_str = "B_lc = " + cStr(a_offset, 4);
-    }
+
+    g_btn_action_str = "D_lc = " + cStr(a_offset, 4);
     return a_offset;
 }
 
+
 ///
-/// \brief Coordination::increment_B_ac
+/// \brief Coordination::increment_D_ac
 /// \param a_offset
 /// \return
 ///
-double Coordination::increment_B_ac(double a_offset){
+double Coordination::increment_D_ac(double a_offset){
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
-        if (m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac + a_offset <=0){
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac = 0.0;
+        afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
+        double _gain = sG->m_controller.getD_ang();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setD_ang(0.0);
+            a_offset = 0.0;
         }
         else{
-            m_deviceGripperPairs[devIdx].m_simulatedGripper->B_ac += a_offset;
+            sG->m_controller.setD_ang( _gain + a_offset);
+            a_offset = _gain + a_offset;
         }
     }
-    //Set the return value to the stiffness of the last device
-    if(m_num_grippers > 0){
-        a_offset = m_deviceGripperPairs[m_num_grippers-1].m_simulatedGripper->B_ac;
-        g_btn_action_str = "B_ac = " + cStr(a_offset, 4);
-    }
+
+    g_btn_action_str = "D_ac = " + cStr(a_offset, 4);
     return a_offset;
 }
 
@@ -1595,49 +1597,49 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     // option - decrease linear stiffness
     else if (a_key == GLFW_KEY_7)
     {
-        printf("linear stiffness:  %f\n", g_coordApp->increment_K_lc(-50));
+        printf("linear stiffness:  %f\n", g_coordApp->increment_P_lc(-50));
     }
 
     // option - increase linear stiffness
     else if (a_key == GLFW_KEY_8)
     {
-        printf("linear stiffness:  %f\n", g_coordApp->increment_K_lc(50));
+        printf("linear stiffness:  %f\n", g_coordApp->increment_P_lc(50));
     }
 
     // option - decrease angular stiffness
     else if (a_key == GLFW_KEY_9)
     {
-        printf("angular stiffness:  %f\n", g_coordApp->increment_K_ac(-1));
+        printf("angular stiffness:  %f\n", g_coordApp->increment_P_ac(-1));
     }
 
     // option - increase angular stiffness
     else if (a_key == GLFW_KEY_0)
     {
-        printf("angular stiffness:  %f\n", g_coordApp->increment_K_ac(1));
+        printf("angular stiffness:  %f\n", g_coordApp->increment_P_ac(1));
     }
 
     // option - decrease linear damping
     else if (a_key == GLFW_KEY_PAGE_DOWN)
     {
-        printf("linear damping:  %f\n", g_coordApp->increment_B_lc(-0.1));
+        printf("linear damping:  %f\n", g_coordApp->increment_D_lc(-0.1));
     }
 
     // option - increase linear damping
     else if (a_key == GLFW_KEY_PAGE_UP)
     {
-        printf("linear damping:  %f\n", g_coordApp->increment_B_lc(0.1));
+        printf("linear damping:  %f\n", g_coordApp->increment_D_lc(0.1));
     }
 
     // option - decrease angular damping
     else if (a_key == GLFW_KEY_END)
     {
-        printf("angular damping:  %f\n", g_coordApp->increment_B_ac(-0.1));
+        printf("angular damping:  %f\n", g_coordApp->increment_D_ac(-0.1));
     }
 
     // option - increase angular damping
     else if (a_key == GLFW_KEY_HOME)
     {
-        printf("angular damping:  %f\n", g_coordApp->increment_B_ac(0.1));
+        printf("angular damping:  %f\n", g_coordApp->increment_D_ac(0.1));
     }
 
     // option - grippers orientation w.r.t contextual camera
@@ -2064,18 +2066,7 @@ void updatePhysics(){
 
     // start haptic device
     g_clockWorld.start(true);
-    // main Bullet simulation loop
-    unsigned int n = g_coordApp->m_num_grippers;
-    std::vector<cVector3d> dpos, ddpos, dposPre;
-    std::vector<cMatrix3d> drot, ddrot, drotPre;
 
-    dpos.resize(n); ddpos.resize(n); dposPre.resize(n);
-    drot.resize(n); ddrot.resize(n); drotPre.resize(n);
-
-    for(unsigned int i = 0 ; i < n; i ++){
-        dpos[i].set(0,0,0); ddpos[i].set(0,0,0); dposPre[i].set(0,0,0);
-        drot[i].identity(); ddrot[i].identity(); drotPre[i].identity();
-    }
     double sleepHz;
     if (g_dt_fixed > 0.0)
         sleepHz = (1.0/g_dt_fixed);
@@ -2101,7 +2092,6 @@ void updatePhysics(){
             else{
                 g_afMultiBody->movePickedBody(g_pickFrom, g_pickTo);
             }
-
         }
         else{
             _bodyPicked = false;
@@ -2114,31 +2104,19 @@ void updatePhysics(){
         for (unsigned int devIdx = 0 ; devIdx < g_coordApp->m_num_grippers ; devIdx++){
             // update position of simulate gripper
             SimulatedGripper * simGripper = g_coordApp->m_deviceGripperPairs[devIdx].m_simulatedGripper;
+            afGripperLinkPtr rootLink = simGripper->m_rootLink;
             simGripper->updateMeasuredPose();
 
-            dposPre[devIdx] = dpos[devIdx];
-            dpos[devIdx] = simGripper->m_posRef - simGripper->m_pos;
-            ddpos[devIdx] = (dpos[devIdx] - dposPre[devIdx]) / dt;
-
-            drotPre[devIdx] = drot[devIdx];
-            drot[devIdx] = cTranspose(simGripper->m_rot) * simGripper->m_rotRef;
-            ddrot[devIdx] = (cTranspose(drot[devIdx]) * drotPre[devIdx]);
-
-            double angle, dangle;
-            cVector3d axis, daxis;
-            drot[devIdx].toAxisAngle(axis, angle);
-            ddrot[devIdx].toAxisAngle(daxis, dangle);
-
             if (g_enableGrippingAssist){
-                for (int sIdx = 0 ; sIdx < simGripper->m_rootLink->getSensors().size() ; sIdx++){
-                    afSensorPtr sensorPtr = simGripper->m_rootLink->getSensors()[sIdx];
+                for (int sIdx = 0 ; sIdx < rootLink->getSensors().size() ; sIdx++){
+                    afSensorPtr sensorPtr = rootLink->getSensors()[sIdx];
                     if (sensorPtr->m_sensorType == afSensorType::proximity){
                         afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                         if (proximitySensorPtr->isTriggered() && simGripper->m_gripper_angle < 0.5){
                             if (!simGripper->m_grippingConstraints[sIdx]){
                                 btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
                                 btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBody();
-                                if (!simGripper->m_rootLink->isChild(bodyBPtr)){
+                                if (!rootLink->isChild(bodyBPtr)){
                                     cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint();
                                     btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
                                     btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
@@ -2159,35 +2137,32 @@ void updatePhysics(){
                 }
             }
 
-            cVector3d force, d_torque, net_torque;
+            cVector3d force, torque;
 
-            force = simGripper->K_lc_ramp * (simGripper->K_lc * dpos[devIdx] + (simGripper->B_lc) * ddpos[devIdx]);
-            torque_prev = torque;
-            torque = simGripper->K_ac_ramp * ((simGripper->K_ac * angle) * axis);
-            d_torque = simGripper->B_ac * ((torque - torque_prev) / simGripper->K_ac) / dt;
-            net_torque = torque + d_torque;
-            simGripper->m_rot.mul(net_torque);
+            force = rootLink->m_controller.computeOutput_cvec(simGripper->m_pos, simGripper->m_posRef, dt);
+            force = simGripper->P_lc_ramp * force;
 
+            torque = rootLink->m_controller.computeOutput_cvec(simGripper->m_rot, simGripper->m_rotRef, dt);
             simGripper->applyForce(force);
-            simGripper->applyTorque(net_torque);
+            simGripper->applyTorque(torque);
             simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
 
-            if (simGripper->K_lc_ramp < 1.0)
+            if (simGripper->P_lc_ramp < 1.0)
             {
-                simGripper->K_lc_ramp = simGripper->K_lc_ramp + 0.5 * dt;
+                simGripper->P_lc_ramp = simGripper->P_lc_ramp + 0.5 * dt;
             }
             else
             {
-                simGripper->K_lc_ramp = 1.0;
+                simGripper->P_lc_ramp = 1.0;
             }
 
-            if (simGripper->K_ac_ramp < 1.0)
+            if (simGripper->P_ac_ramp < 1.0)
             {
-                simGripper->K_ac_ramp = simGripper->K_ac_ramp + 0.5 * dt;
+                simGripper->P_ac_ramp = simGripper->P_ac_ramp + 0.5 * dt;
             }
             else
             {
-                simGripper->K_ac_ramp = 1.0;
+                simGripper->P_ac_ramp = 1.0;
             }
         }
         g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_coordApp->m_num_grippers);
@@ -2226,10 +2201,10 @@ void updateHapticDevice(void* a_arg){
     dpos.set(0,0,0); ddpos.set(0,0,0); dposLast.set(0,0,0);
     drot.identity(); ddrot.identity(); drotLast.identity();
 
-    double K_lc_offset = 10;
-    double K_ac_offset = 1;
-    double B_lc_offset = 1;
-    double B_ac_offset = 1;
+    double P_lc_offset = 10;
+    double P_ac_offset = 1;
+    double D_lc_offset = 1;
+    double D_ac_offset = 1;
     double K_lh_offset = 5;
     double K_ah_offset = 1;
 
@@ -2288,20 +2263,20 @@ void updateHapticDevice(void* a_arg){
             simGripper->offsetGripperAngle(gripper_offset);
             break;
         case MODES::CHANGE_CONT_LIN_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_K_lc(K_lc_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_K_lc(-K_lc_offset);
+            if(btn_1_rising_edge) g_coordApp->increment_P_lc(P_lc_offset);
+            if(btn_2_rising_edge) g_coordApp->increment_P_lc(-P_lc_offset);
             break;
         case MODES::CHANGE_CONT_ANG_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_K_ac(K_ac_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_K_ac(-K_ac_offset);
+            if(btn_1_rising_edge) g_coordApp->increment_P_ac(P_ac_offset);
+            if(btn_2_rising_edge) g_coordApp->increment_P_ac(-P_ac_offset);
             break;
         case MODES::CHANGE_CONT_LIN_DAMP:
-            if(btn_1_rising_edge) g_coordApp->increment_B_lc(B_lc_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_B_lc(-B_lc_offset);
+            if(btn_1_rising_edge) g_coordApp->increment_D_lc(D_lc_offset);
+            if(btn_2_rising_edge) g_coordApp->increment_D_lc(-D_lc_offset);
             break;
         case MODES::CHANGE_CONT_ANG_DAMP:
-            if(btn_1_rising_edge) g_coordApp->increment_B_ac(B_ac_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_B_ac(-B_ac_offset);
+            if(btn_1_rising_edge) g_coordApp->increment_D_ac(D_ac_offset);
+            if(btn_2_rising_edge) g_coordApp->increment_D_ac(-D_ac_offset);
             break;
         case MODES::CHANGE_DEV_LIN_GAIN:
             if(btn_1_rising_edge) g_coordApp->increment_K_lh(K_lh_offset);
@@ -2372,6 +2347,12 @@ void updateHapticDevice(void* a_arg){
         // update position of simulated gripper
         simGripper->updateMeasuredPose();
 
+
+        double P_lin = simGripper->m_rootLink->m_controller.getP_lin();
+        double D_lin = simGripper->m_rootLink->m_controller.getD_lin();
+        double P_ang = simGripper->m_rootLink->m_controller.getP_ang();
+        double D_ang = simGripper->m_rootLink->m_controller.getD_ang();
+
         dposLast = dpos;
         dpos = simGripper->m_posRef - simGripper->m_pos;
         ddpos = (dpos - dposLast) / dt;
@@ -2387,8 +2368,8 @@ void updateHapticDevice(void* a_arg){
 
         cVector3d force, torque;
 
-        force  = - g_force_enable * simGripper->K_lh_ramp * (simGripper->K_lc * dpos + (simGripper->B_lc) * ddpos);
-        torque = - g_force_enable * simGripper->K_ah_ramp * ((simGripper->K_ac * angle) * axis);
+        force  = - g_force_enable * simGripper->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+        torque = - g_force_enable * simGripper->K_ah_ramp * (P_ang * angle * axis);
 
         pDev->applyWrench(force, torque);
 
