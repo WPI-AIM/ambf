@@ -344,27 +344,14 @@ private:
     afMultiBodyPtr m_mBPtr;
 
     // Counter for the times we have written to ambf_comm API
-    // This is only of internal use as it could be reset
+    // This is only for internal use as it could be reset
     unsigned short m_write_count = 0;
 
-    // Default body controller gains
-    double m_P=10;
-    double m_I=0;
-    double m_D=1;
+    // Last Position Error
+    btVector3 m_dpos;
 
-    // Variables for Cartesian PID Control
-
-    btVector3 m_pos, m_dpos, m_ddpos;
-    btVector3 m_dpos_prev;
-
-    btMatrix3x3 m_rot, m_drot, m_ddrot;
-    btMatrix3x3 m_drot_prev;
-
-    // Last Axes
-    btVector3 m_last_daxis, m_last_ddaxis;
-
-    // Last torque
-    btVector3 m_torque_prev, m_torque, m_dtorque;
+    // Last torque or Rotational Error with Kp multiplied
+    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
