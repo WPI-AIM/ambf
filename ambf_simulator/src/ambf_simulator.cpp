@@ -1081,13 +1081,13 @@ double Coordination::increment_D_lc(double a_offset){
     for (int devIdx = 0 ; devIdx < m_num_grippers ; devIdx++){
         afGripperLinkPtr sG = m_deviceGripperPairs[devIdx].m_simulatedGripper->m_rootLink;
         double _gain = sG->m_controller.getD_lin();
-        if (_gain + a_offset <=0){
+        if (_gain + a_offset <=0.01){
             // Keep a small value of Angular gain to avoid controller singularity
             sG->m_controller.setD_lin(0.01);
             _temp = 0.01;
         }
         else{
-            sG->m_controller.setP_lin( _gain + a_offset);
+            sG->m_controller.setD_lin( _gain + a_offset);
             _temp = _gain + a_offset;
         }
     }
