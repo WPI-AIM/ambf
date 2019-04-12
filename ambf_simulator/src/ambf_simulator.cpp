@@ -1534,11 +1534,15 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[7] - decrease linear stiffness" << endl;
         cout << "[8] - increase linear stiffness" << endl;
         cout << "[9] - decrease angular stiffness" << endl;
-        cout << "[0] - increase angular stiffness" << endl << endl;
+        cout << "[0] - increase angular stiffness" << endl;
+        cout << "[PgUp] - increase linear damping" << endl;
+        cout << "[PgDown] - decrease linear damping" << endl;
+        cout << "[Home] - increate angular damping" << endl;
+        cout << "[End] - decrease angular damping" << endl << endl;
         cout << "[v] - toggle frame/skeleton visualization" << endl;
         cout << "[s] - toggle sensors visibility" << endl;
         cout << "[w] - use world frame for orientation clutch" << endl;
-        cout << "[c] - use camera frame for orientation clutch" << endl;
+        cout << "[c] - use9999 camera frame for orientation clutch" << endl;
         cout << "[n] - next device mode" << endl << endl;
         cout << "[i] - toogle inverted y for camera control via mouse" << endl << endl;
         cout << "[t] - toogle gripper picking constraints" << endl << endl;
@@ -1610,6 +1614,30 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     else if (a_key == GLFW_KEY_0)
     {
         printf("angular stiffness:  %f\n", g_coordApp->increment_K_ac(1));
+    }
+
+    // option - decrease linear damping
+    else if (a_key == GLFW_KEY_PAGE_DOWN)
+    {
+        printf("linear damping:  %f\n", g_coordApp->increment_B_lc(-0.1));
+    }
+
+    // option - increase linear damping
+    else if (a_key == GLFW_KEY_PAGE_UP)
+    {
+        printf("linear damping:  %f\n", g_coordApp->increment_B_lc(0.1));
+    }
+
+    // option - decrease angular damping
+    else if (a_key == GLFW_KEY_END)
+    {
+        printf("angular damping:  %f\n", g_coordApp->increment_B_ac(-0.1));
+    }
+
+    // option - increase angular damping
+    else if (a_key == GLFW_KEY_HOME)
+    {
+        printf("angular damping:  %f\n", g_coordApp->increment_B_ac(0.1));
     }
 
     // option - grippers orientation w.r.t contextual camera
@@ -2056,6 +2084,10 @@ void updatePhysics(){
 
     RateSleep rateSleep(sleepHz);
     bool _bodyPicked = false;
+
+    cVector3d torque, torque_prev;
+    torque.set(0, 0, 0);
+    torque_prev.set(0, 0, 0);
     while(g_simulationRunning)
     {
         g_freqCounterHaptics.signal(1);
@@ -2127,14 +2159,17 @@ void updatePhysics(){
                 }
             }
 
-            cVector3d force, torque;
+            cVector3d force, d_torque, net_torque;
 
             force = simGripper->K_lc_ramp * (simGripper->K_lc * dpos[devIdx] + (simGripper->B_lc) * ddpos[devIdx]);
+            torque_prev = torque;
             torque = simGripper->K_ac_ramp * ((simGripper->K_ac * angle) * axis);
-            simGripper->m_rot.mul(torque);
+            d_torque = simGripper->B_ac * ((torque - torque_prev) / simGripper->K_ac) / dt;
+            net_torque = torque + d_torque;
+            simGripper->m_rot.mul(net_torque);
 
             simGripper->applyForce(force);
-            simGripper->applyTorque(torque);
+            simGripper->applyTorque(net_torque);
             simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
 
             if (simGripper->K_lc_ramp < 1.0)

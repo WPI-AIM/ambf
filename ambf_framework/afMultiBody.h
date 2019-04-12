@@ -183,6 +183,42 @@ enum GeometryType{
     invalid= 0, mesh = 1, shape = 2
 };
 
+
+///
+/// \brief The afCartesianController struct
+///
+struct afCartesianController{
+public:
+    afCartesianController();
+    void setLinearGains(double a_P, double a_I, double a_D);
+    void setAngularGains(double a_P, double a_I, double a_D);
+    // This function computes the output force from Position Data
+    btVector3 computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt);
+    // This function computes the output torque from Rotation Data
+    btVector3 computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt);
+    // Future use
+    btTransform computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt);
+
+    // Yet to be implemented
+    void boundImpulse(double effort_cmd);
+    // Yet to be implemented
+    void boundEffort(double effort_cmd);
+
+private:
+    // PID Controller Gains for Linear and Angular Controller
+    double P_lin, I_lin, D_lin;
+    double P_ang, I_ang, D_ang;
+
+
+private:
+    // Vector storing the current position error
+    btVector3 m_dPos;
+    // Matrix storing the current rotation error
+    // between commanded and current rotation
+    btMatrix3x3 m_dRot;
+};
+
+
 ///
 /// \brief The afBody class
 ///
@@ -252,8 +288,11 @@ public:
     inline std::vector<afSensorPtr> getSensors(){return m_afSensors;}
 
 public:
-    //! If the Position Controller is active, disable Position Controller from Haptic Device
+    // If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
+
+    // Instance of Cartesian Controller
+    afCartesianController m_controller;
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
