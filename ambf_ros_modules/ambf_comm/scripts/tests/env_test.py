@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-from ambf_comm import ChaiEnv
+from ambf_comm import AmbfEnv
 import time
 
 
-env = ChaiEnv()
+env = AmbfEnv()
 action = env.action_space
 env.make('Torus')
 env.skip_sim_steps(1)

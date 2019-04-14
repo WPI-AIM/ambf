@@ -306,6 +306,155 @@ std::vector<double> afConfigHandler::getColorRGBA(std::string a_color_name){
     return color_rgba;
 }
 
+
+
+///
+/// \brief afCartesianController::afCartesianController
+///
+afCartesianController::afCartesianController(){
+    m_dPos.setValue(0, 0, 0);
+    m_dPos_cvec.set(0, 0, 0);
+    m_dRot.setIdentity();
+    m_dRot_cvec.identity();
+}
+
+
+////
+/// \brief afCartesianController::setLinearGains
+/// \param a_P
+/// \param a_I
+/// \param a_D
+///
+void afCartesianController::setLinearGains(double a_P, double a_I, double a_D){
+    P_lin = a_P;
+    I_lin = a_I;
+    D_lin = a_D;
+}
+
+
+///
+/// \brief afCartesianController::setAngularGains
+/// \param a_P
+/// \param a_I
+/// \param a_D
+///
+void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
+    P_ang = a_P;
+    I_ang = a_I;
+    D_ang = a_D;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+btVector3 afCartesianController::computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+    btVector3 _dPos_prev, _ddPos, _output;
+
+    _dPos_prev = m_dPos;
+    m_dPos = set_point - process_val;
+    _ddPos = (m_dPos - _dPos_prev) / dt;
+
+    _output = P_lin * (m_dPos) + D_lin * (_ddPos);
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+    btVector3 _error_cur, _error_prev;
+    btMatrix3x3 _dRot_prev;
+    btQuaternion _dRotQuat, _dRotQuat_prev;
+    btVector3 _output;
+
+    _dRot_prev = m_dRot;
+    _dRot_prev.getRotation(_dRotQuat_prev);
+    _error_prev = _dRotQuat_prev.getAxis() * _dRotQuat_prev.getAngle();
+
+    m_dRot = process_val.transpose() * set_point;
+    m_dRot.getRotation(_dRotQuat);
+    _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
+
+    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+
+    // Important to transform the torque in the world frame as its represented
+    // in the body frame from the above computation
+    _output = process_val * _output;
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput_cvec
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+    cVector3d _dPos_prev, _ddPos, _output;
+
+    _dPos_prev = m_dPos_cvec;
+    m_dPos_cvec = set_point - process_val;
+    _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
+
+    _output = P_lin * (m_dPos_cvec) + D_lin * (_ddPos);
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutput_cvec
+/// \param process_val
+/// \param set_point
+/// \param dt
+/// \return
+///
+cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+    cVector3d _error_cur, _error_prev;
+    cMatrix3d _dRot_prev;
+    cVector3d _e_axis, _e_axis_prev;
+    double _e_angle, _e_angle_prev;
+    cVector3d _output;
+
+    _dRot_prev = m_dRot_cvec;
+    _dRot_prev.toAxisAngle(_e_axis_prev, _e_angle_prev);
+    _error_prev = _e_axis_prev * _e_angle_prev;
+
+    m_dRot_cvec = cTranspose(process_val) * set_point;
+    m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
+    _error_cur = _e_axis * _e_angle;
+
+    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+
+    // Important to transform the torque in the world frame as its represented
+    // in the body frame from the above computation
+    _output = process_val * _output;
+    return _output;
+}
+
+
+///
+/// \brief afCartesianController::computeOutputTransform
+/// \param process_val
+/// \param set_point
+/// \param current_time
+/// \return
+///
+btTransform afCartesianController::computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt){
+
+}
+
 ///
 /// \brief afBody::afBody
 /// \param a_world
@@ -316,9 +465,9 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bu
     m_mesh_name.clear();
     m_collision_mesh_name.clear();
     m_scale = 1.0;
-    m_dpos.set(0, 0, 0);
-    m_drot.identity();
-    m_drot_prev.identity();
+
+    m_dpos.setValue(0, 0, 0);
+    m_torque.setValue(0, 0, 0);
 }
 
 ///
@@ -892,14 +1041,23 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     m_mass = bodyMass.as<double>();
     if(bodyLinGain.IsDefined()){
-        K_lin = bodyLinGain["P"].as<double>();
-        D_lin = bodyLinGain["D"].as<double>();
+        double _P, _D;
+        _P = bodyLinGain["P"].as<double>();
+        _D = bodyLinGain["D"].as<double>();
+        m_controller.setLinearGains(_P, 0, _D);
         _lin_gains_computed = true;
     }
     if(bodyAngGain.IsDefined()){
-        K_ang = bodyAngGain["P"].as<double>();
-        D_ang = bodyAngGain["D"].as<double>();
+        double _P, _D;
+        _P = bodyAngGain["P"].as<double>();
+        _D = bodyAngGain["D"].as<double>();
+        m_controller.setAngularGains(_P, 0, _D);
         _ang_gains_computed = true;
+    }
+    // If no controller gains are defined, compute based on lumped mass
+    // and intertia
+    if(!bodyLinGain.IsDefined() || !bodyAngGain.IsDefined()){
+        computeControllerGains();
     }
 
     if(m_mass == 0.0){
@@ -1019,6 +1177,7 @@ void afRigidBody::computeControllerGains(){
         return;
     }
 
+    double P_lin, D_lin, P_ang, D_ang;
     double lumped_mass = m_mass;
     cVector3d lumped_intertia = m_inertia;
     for(m_bodyIt = m_childrenBodies.begin() ; m_bodyIt != m_childrenBodies.end() ; ++m_bodyIt){
@@ -1026,13 +1185,17 @@ void afRigidBody::computeControllerGains(){
         lumped_intertia += (*m_bodyIt)->getInertia();
     }
     if (!_lin_gains_computed){
-        K_lin = lumped_mass * 20;
-        D_lin = K_lin / 10;
+        P_lin = lumped_mass * 20;
+        D_lin = P_lin / 10;
+        m_controller.setLinearGains(P_lin, 0, D_lin);
         _lin_gains_computed = true;
     }
+    // TODO
+    // Need a better way of estimating angular gains
     if (!_ang_gains_computed){
-        K_ang = lumped_mass * 10;
-        D_ang = K_ang / 2;
+        P_ang = lumped_mass * 10;
+        D_ang = lumped_mass;
+        m_controller.setAngularGains(P_ang, 0, D_ang);
         _ang_gains_computed = true;
     }
 }
@@ -1110,6 +1273,7 @@ void afRigidBody::updatePositionFromDynamics()
 #endif
 }
 
+
 ///
 /// \brief afRigidBody::afCommandExecute
 /// \param dt
@@ -1118,7 +1282,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectPtr.get() != nullptr){
         m_afObjectPtr->update_af_cmd();
-        cVector3d force, torque, dtorque;
+        btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
@@ -1130,73 +1294,38 @@ void afRigidBody::afObjectCommandExecute(double dt){
         }
         else{
             if (m_afCommand.enable_position_controller){
-                // If the gains have not been defined for the body,
-                // they shall be computed for the first call
-                computeControllerGains();
-                cVector3d cur_pos, cmd_pos, rot_axis, rot_axix_w_gain;
-                cVector3d drot_axis;
-                cQuaternion cur_rot, cmd_rot;
-                cMatrix3d cur_rot_mat, cmd_rot_mat;
-                btTransform b_trans;
-                double rot_angle, drot_angle;
-                m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
-                cur_pos.set(b_trans.getOrigin().getX(),
-                            b_trans.getOrigin().getY(),
-                            b_trans.getOrigin().getZ());
+                btVector3 _cur_pos, _cmd_pos;
+                btQuaternion _cmd_rot_quat = btQuaternion(m_afCommand.qx, m_afCommand.qy, m_afCommand.qz, m_afCommand.qw);
+                btMatrix3x3 _cur_rot, _cmd_rot;
+                btTransform _b_trans;
+                m_bulletRigidBody->getMotionState()->getWorldTransform(_b_trans);
 
-                cur_rot.x = b_trans.getRotation().getX();
-                cur_rot.y = b_trans.getRotation().getY();
-                cur_rot.z = b_trans.getRotation().getZ();
-                cur_rot.w = b_trans.getRotation().getW();
-                cur_rot.toRotMat(cur_rot_mat);
-
-                cmd_pos.set(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
-
-                cmd_rot.x = m_afCommand.qx;
-                cmd_rot.y = m_afCommand.qy;
-                cmd_rot.z = m_afCommand.qz;
-                cmd_rot.w = m_afCommand.qw;
-
-                if( cmd_rot.length() < 0.9 || cmd_rot.length() > 1.1 ){
-                    // Invalid Quaternion
+                _cur_pos = _b_trans.getOrigin();
+                _cur_rot.setRotation(_b_trans.getRotation());
+                _cmd_pos.setValue(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
+                if( _cmd_rot_quat.length() < 0.9 || _cmd_rot_quat.length() > 1.1 ){
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
                                                           " not normalized" << std::endl;
-                    if (cmd_rot.length() < 0.1){
-                        // Invalid Quaternion
-                        cmd_rot.w = 1.0;
+                    if (_cmd_rot_quat.length() < 0.1){
+                        _cmd_rot_quat.setW(1.0); // Invalid Quaternion
                     }
-                    cmd_rot.normalize();
                 }
+                _cmd_rot.setRotation(_cmd_rot_quat);
 
-                cmd_rot.toRotMat(cmd_rot_mat);
-
-                m_dpos_prev = m_dpos;
-                m_dpos = cmd_pos - cur_pos;
-                m_ddpos = (m_dpos - m_dpos_prev)/dt;
-                m_drot_prev = m_drot;
-                m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
-                m_drot.toAxisAngle(rot_axis, rot_angle);
-
-                m_ddrot = cTranspose(m_drot_prev) * m_drot;
-                m_ddrot.toAxisAngle(drot_axis, drot_angle);
-
-                force = K_lin * m_dpos + D_lin * m_ddpos;
-
-                dtorque = cMul(D_ang * drot_angle, drot_axis);
-                m_ddrot.mul(dtorque);
-
-                torque = cMul(K_ang * rot_angle, rot_axis);
-                cur_rot_mat.mul(torque);
-
-                torque += dtorque;
-
+                // Use the internal Cartesian Position Controller
+                force = m_controller.computeOutput(_cur_pos, _cmd_pos, dt);
+                // Use the internal Cartesian Rotation Controller
+                torque = m_controller.computeOutput(_cur_rot, _cmd_rot, dt);
             }
             else{
-                force.set(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
-                torque.set(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
+                force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
+                torque.setValue(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
             }
-            addExternalForce(force);
-            addExternalTorque(torque);
+
+            if (m_bulletRigidBody){
+                m_bulletRigidBody->applyCentralForce(force);
+                m_bulletRigidBody->applyTorque(torque);
+            }
         }
         size_t jntCmdSize = m_afCommand.joint_commands_size;
         if (jntCmdSize > 0){
@@ -2227,8 +2356,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         frameB.setRotation( R_cINp.inverse() * offset_quat.inverse());
         frameB.setOrigin(m_pvtB);
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
-        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+//        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
+//        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }

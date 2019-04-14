@@ -35,6 +35,8 @@ BODY r_gripper_palm_link:
   publish joint names: true
   publish joint positions: true
   color rgba: {a: 1.0, b: 0.4818, g: 0.8, r: 0.0}
+  linear gain: {P: 200, D: 20}
+  angular gain: {P: 50, D: 1}
 BODY r_gripper_l_finger_link:
   name: r_gripper_l_finger_link
   mesh: r_gripper_l_finger_link.STL

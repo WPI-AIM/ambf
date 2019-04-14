@@ -183,6 +183,69 @@ enum GeometryType{
     invalid= 0, mesh = 1, shape = 2
 };
 
+
+///
+/// \brief The afCartesianController struct
+///
+struct afCartesianController{
+public:
+    afCartesianController();
+
+public:
+    // Get Controller Gains
+    inline double getP_lin(){return P_lin;}
+    inline double getD_lin(){return D_lin;}
+    inline double getP_ang(){return P_ang;}
+    inline double getD_ang(){return D_ang;}
+
+public:
+    void setLinearGains(double a_P, double a_I, double a_D);
+    void setAngularGains(double a_P, double a_I, double a_D);
+
+    // Set Controller Gains
+    inline void setP_lin(double a_P) {P_lin = a_P;}
+    inline void setD_lin(double a_D) {D_lin = a_D;}
+    inline void setP_ang(double a_P) {P_ang = a_P;}
+    inline void setD_ang(double a_D) {D_ang = a_D;}
+
+public:
+    // This function computes the output force from Position Data
+    btVector3 computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt);
+
+    // This function computes the output torque from Rotation Data
+    btVector3 computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt);
+
+    // This function computes the output force from Position Data
+    cVector3d computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt);
+
+    // This function computes the output torque from Rotation Data
+    cVector3d computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt);
+
+    // Future use
+    btTransform computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt);
+
+    // Yet to be implemented
+    void boundImpulse(double effort_cmd);
+    // Yet to be implemented
+    void boundEffort(double effort_cmd);
+
+private:
+    // PID Controller Gains for Linear and Angular Controller
+    double P_lin, I_lin, D_lin;
+    double P_ang, I_ang, D_ang;
+
+
+private:
+    // Vector storing the current position error
+    btVector3 m_dPos;
+    cVector3d m_dPos_cvec;
+    // Matrix storing the current rotation error
+    // between commanded and current rotation
+    btMatrix3x3 m_dRot;
+    cMatrix3d m_dRot_cvec;
+};
+
+
 ///
 /// \brief The afBody class
 ///
@@ -252,8 +315,11 @@ public:
     inline std::vector<afSensorPtr> getSensors(){return m_afSensors;}
 
 public:
-    //! If the Position Controller is active, disable Position Controller from Haptic Device
+    // If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
+
+    // Instance of Cartesian Controller
+    afCartesianController m_controller;
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
@@ -278,10 +344,6 @@ protected:
 
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
-    // Body controller linear gains
-    double K_lin, D_lin;
-    // Body controller angular gains
-    double K_ang, D_ang;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
     bool _lin_gains_computed = false;
@@ -294,6 +356,7 @@ protected:
 
     // Toggle publishing of children names
     bool _publish_children_names = false;
+
     // Toggle publishing of joint names
     bool _publish_joint_names = true;
 
@@ -344,13 +407,14 @@ private:
     afMultiBodyPtr m_mBPtr;
 
     // Counter for the times we have written to ambf_comm API
-    // This is only of internal use as it could be reset
+    // This is only for internal use as it could be reset
     unsigned short m_write_count = 0;
 
-    // Default body controller gains
-    double m_P=10;
-    double m_I=0;
-    double m_D=1;
+    // Last Position Error
+    btVector3 m_dpos;
+
+    // Last torque or Rotational Error with Kp multiplied
+    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;

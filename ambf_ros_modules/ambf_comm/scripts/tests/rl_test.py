@@ -1,5 +1,5 @@
 import numpy as np
-from ambf_comm import ChaiEnv
+from ambf_comm import AmbfEnv
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Concatenate
@@ -14,7 +14,7 @@ ENV_NAME = 'Torus'
 
 
 # Get the environment and extract the number of actions.
-env = ChaiEnv()
+env = AmbfEnv()
 env.make(ENV_NAME)
 env.reset()
 assert len(env.action_space.shape) == 1
