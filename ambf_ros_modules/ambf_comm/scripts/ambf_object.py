@@ -114,7 +114,7 @@ class Object(WatchDog):
     def get_num_joints(self):
         return len(self._state.joint_positions)
 
-    def get_num_of_children(self):
+    def get_num_children(self):
         return len(self._state.children_names)
 
     def get_joint_names(self):
@@ -142,7 +142,20 @@ class Object(WatchDog):
         self._pub.publish(self._cmd)
         self.acknowledge_wd()
 
+    def set_force(self, fx, fy, fz):
+        nx = self._cmd.wrench.torque.x
+        ny = self._cmd.wrench.torque.y
+        nz = self._cmd.wrench.torque.z
+        self.wrench_command(fx, fy, fz, nx, ny, nz)
+
+    def set_torque(self, nx, ny, nz):
+        fx = self._cmd.wrench.force.x
+        fy = self._cmd.wrench.force.y
+        fz = self._cmd.wrench.force.z
+        self.wrench_command(fx, fy, fz, nx, ny, nz)
+
     def wrench_command(self, fx, fy, fz, nx, ny, nz):
+        self._cmd.enable_position_controller = False
         self._cmd.wrench.force.x = fx
         self._cmd.wrench.force.y = fy
         self._cmd.wrench.force.z = fz
