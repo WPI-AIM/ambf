@@ -1,15 +1,18 @@
-from ambf_comm import ChaiClient
+from ambf_client import Client
+from ambf_msgs.msg import ObjectCmd
 import time
-import math
+oc = ObjectCmd()
 
-client = ChaiClient()
+oc.joint_cmds
+
+client = Client()
 client.create_objs_from_rostopics()
 client.start()
-obj = client.get_obj_handle('r_gripper_palm_link')
+obj = client.get_obj_handle('CenterPuzzle')
 obj.set_active()
 
-for i in range(1, 100000):
-    obj.pose_command(1 * math.sin(i/200.0), 1 * math.cos(i/200.0), 0, 0, 0, 0, 0, 0, 0)
-    time.sleep(0.001)
-
+for i in range(0, 2000):
+    obj.set_joint_pos(1, -1.2)
+    obj.set_joint_pos(0, -0.9)
+    time.sleep(0.01)
 
