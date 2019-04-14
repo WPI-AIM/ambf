@@ -106,7 +106,7 @@ cur_rot = torus_obj.get_rot() # Quaternion in parent frame
 cur_rpy = torus_obj.get_rpy() # Fixed RPY in parent frame
 
 # Similarly you can directly control the wrench acting on the obj by
-# The key difference is that it is the uses job to update the forces
+# The key difference is that it's the user's job to update the forces
 # and torques in a loop otherwise the wrench in cleared after an internal
 # watchdog timer expires if a new command is not set. This is for safety
 # reasons where a user shouldn't set a wrench and then forget about it.
