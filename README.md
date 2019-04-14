@@ -51,5 +51,7 @@ files to see how they work.
 ### Interacting with the Robots/Multi-Bodies in the Simulator:
 There are multiple way of interacting with the bodies in simulator. If you are using Linux, the best 
 and most convinient way is to use ros messages.
-\\ TODO : How to control the robots using message publishers
+
+## Wiki:
+Please checkout the Wiki for examples of how to interact with bodies and additional deatails of subcomponents
 
