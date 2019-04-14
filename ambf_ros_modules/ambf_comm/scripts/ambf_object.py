@@ -9,7 +9,6 @@ import rospy
 class Object(WatchDog):
     def __init__(self, a_name):
         super(Object, self).__init__()
-        self._sim_step = 0
         self._name = ''
         self._state = ObjectState()
         self._cmd = ObjectCmd()
@@ -73,7 +72,7 @@ class Object(WatchDog):
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0]*n_jnts
             for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = self._state.joint_positions[j_idx]
+                self._cmd.joint_cmds[j_idx] = 0.0
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = pos
@@ -91,7 +90,9 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = self._state.joint_positions
+            self._cmd.joint_cmds = [0] * n_jnts
+            for j_idx in range(0, n_jnts):
+                self._cmd.joint_cmds[j_idx] = 0.0
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
@@ -109,6 +110,14 @@ class Object(WatchDog):
             return
 
         return self._state.joint_positions[idx]
+
+    def get_joint_names(self):
+        jnt_names = self._state.joint_names
+        return jnt_names
+
+    def get_children_names(self):
+        chldrn_names = self._state.children_names
+        return chldrn_names
 
     def pose_command(self, px, py, pz, roll, pitch, yaw, *jnt_cmds):
         quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
@@ -139,7 +148,7 @@ class Object(WatchDog):
         self.acknowledge_wd()
 
     def get_sim_step(self):
-        return self._sim_step
+        return self._state.sim_step
 
     def clear_cmd(self):
         self._cmd.wrench.force.x = 0
