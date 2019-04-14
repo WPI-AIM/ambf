@@ -111,6 +111,12 @@ class Object(WatchDog):
 
         return self._state.joint_positions[idx]
 
+    def get_num_joints(self):
+        return len(self._state.joint_positions)
+
+    def get_num_of_children(self):
+        return len(self._state.children_names)
+
     def get_joint_names(self):
         jnt_names = self._state.joint_names
         return jnt_names
@@ -185,7 +191,7 @@ class Object(WatchDog):
         self._name = name
 
     def get_name(self):
-        return self._state.name.data
+        return self._name
 
     def run_publisher(self):
         if self.pub_flag:

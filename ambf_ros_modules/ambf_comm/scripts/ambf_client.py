@@ -43,11 +43,20 @@ class Client:
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=WorldCmd, queue_size=10)
                         else:
                             obj = Object(obj_name)
+                            obj.set_name(obj_name)
                             obj._sub = rospy.Subscriber(self._ros_topics[i][j], ObjectState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
 
                         self._objects_dict[obj_name] = obj
+
+    def connect(self):
+        self.create_objs_from_rostopics()
+        self.start()
+
+    def refresh(self):
+        self.clean_up()
+        self.connect()
 
     def start(self):
         self._start_pubs()
@@ -60,7 +69,10 @@ class Client:
 
     def get_obj_handle(self, a_name):
         obj = self._objects_dict.get(a_name)
-        obj.set_active()
+        if obj:
+            obj.set_active()
+        else:
+            print a_name, 'named object not found'
         return obj
 
     def get_obj_pose(self, a_name):
@@ -106,4 +118,5 @@ class Client:
         for key, val in self._objects_dict.iteritems():
             val.pub_flag = False
             print 'Closing publisher for: ', key
+        self._objects_dict.clear()
 
