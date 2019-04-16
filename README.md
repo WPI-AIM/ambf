@@ -56,7 +56,7 @@ files to see how they work.
 There are multiple way of interacting with the bodies in simulator. If you are using Linux, the best 
 and most convinient way is to use ros messages.
 
-## East to Use Python Client
+## Easy to Use Python Client
 For full feature set of the AMBF Simulator, it is advised that you install it on Linux (Ubuntu) 16,17 or 18. Other variants might be supported but have not yet been tested.
 
 ### The AMBF Python Client
