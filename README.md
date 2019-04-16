@@ -35,8 +35,8 @@ You can also permanently add the install location in your .bashrc with the follo
 `echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
 ### Running the Simulator:
-Having succesfully build the Simulator, running is easy. Depending
-on what OS you're using follow the commands below.
+Having succesfully completed the steps above running is Simulator is easy. Depending
+on what OS you're using follow the commands below:
 
 ```
 cd ~/ambf/bin/<os>
@@ -51,8 +51,8 @@ config files can be launched at the same time by uncommenting them. You can play
 files to see how they work. 
 
 ### Interacting with the Robots/Multi-Bodies in the Simulator:
-There are multiple way of interacting with the bodies in simulator. If you are using Linux, the best 
-and most convinient way is to use the Python client mentioned below or directly using ROS messages.
+There are multiple way of interacting with the bodies in simulator. If you are using Linux, the 
+provided Python client offers a convenient user interface and robust API.
 
 ## Easy to Use Python Client
 For full feature set of the AMBF Simulator, it is advised that you install it on Linux (Ubuntu) 16, 17 or 18. Other variants might be supported but have not yet been tested.

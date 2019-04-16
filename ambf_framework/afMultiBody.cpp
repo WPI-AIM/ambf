@@ -648,8 +648,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyMeshPathLR = bodyNode["low resolution path"];
     YAML::Node bodyNameSpace = bodyNode["namespace"];
     YAML::Node bodyMass = bodyNode["mass"];
-    YAML::Node bodyLinGain = bodyNode["linear gain"];
-    YAML::Node bodyAngGain = bodyNode["angular gain"];
+    YAML::Node bodyController = bodyNode["controller"];
     YAML::Node bodyInertia = bodyNode["inertia"];
     YAML::Node bodyPos = bodyNode["location"]["position"];
     YAML::Node bodyRot = bodyNode["location"]["orientation"];
@@ -1040,23 +1039,29 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     m_mass = bodyMass.as<double>();
-    if(bodyLinGain.IsDefined()){
-        double _P, _D;
-        _P = bodyLinGain["P"].as<double>();
-        _D = bodyLinGain["D"].as<double>();
-        m_controller.setLinearGains(_P, 0, _D);
-        _lin_gains_computed = true;
+    if(bodyController.IsDefined()){
+        // Check if the linear controller is defined
+        if (bodyController["linear"].IsDefined()){
+            double _P, _D;
+            _P = bodyController["linear"]["P"].as<double>();
+            _D = bodyController["linear"]["D"].as<double>();
+            m_controller.setLinearGains(_P, 0, _D);
+            _lin_gains_computed = true;
+        }
+
+        // Check if the angular controller is defined
+        if(bodyController["angular"].IsDefined()){
+            double _P, _D;
+            _P = bodyController["angular"]["P"].as<double>();
+            _D = bodyController["angular"]["D"].as<double>();
+            m_controller.setAngularGains(_P, 0, _D);
+            _ang_gains_computed = true;
+        }
     }
-    if(bodyAngGain.IsDefined()){
-        double _P, _D;
-        _P = bodyAngGain["P"].as<double>();
-        _D = bodyAngGain["D"].as<double>();
-        m_controller.setAngularGains(_P, 0, _D);
-        _ang_gains_computed = true;
-    }
+
     // If no controller gains are defined, compute based on lumped mass
     // and intertia
-    if(!bodyLinGain.IsDefined() || !bodyAngGain.IsDefined()){
+    if(!_lin_gains_computed || !_ang_gains_computed){
         computeControllerGains();
     }
 
