@@ -69,7 +69,7 @@ In your python application
 
 ```python
 # Import the Client from ambf_comm package
-# You might have to do pip install gym
+# You might have to do: pip install gym
 from ambf_comm import Client
 import time
 
