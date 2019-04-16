@@ -8,11 +8,10 @@ Please checkout the Wiki for examples on how to interact with bodies and additio
 
 ## Description:
 This multi-body framework offers real-time dynamic simulation of multi-bodies (robots, free
-bodies and multi-link puzzles) and real-time haptic interaction with multiple haptic devices
+bodies and multi-link puzzles) coupled with real-time haptic interaction via several haptic devices
 (CHAI-3D) (including dVRK Manipulators and Razer Hydras). It also provides a python client for training NN and
-RL Agents on real-time data from running simulation. This framework is built around several
-external tools that include an extended version of CHAI-3D (developed along-side AMBF), BULLET-Physics, Open-GL, GLFW and yaml-cpp, pyyaml and Eigen to
-name a few.
+RL Agents on real-time data with simulation in the loop. This framework is built around several
+external tools that include an extended version of CHAI-3D (developed along-side AMBF), BULLET-Physics, Open-GL, GLFW, yaml-cpp, pyyaml and Eigen to name a few. Each external library has it's own license that can be found in the corresponding subfolder.
 
 ## Usage:
 ### Building:
@@ -26,18 +25,18 @@ cmake ..
 make
 ```
 
-If you are using Linux, then after succesful build, source the devel to add the ros modules
-is the workspace using
+On Linux systems, please source the correct folder to achieve system wide availability of AMBF ROS modules.
+While in the build folder, you can run:
 
 `source ./devel/setup.bash`
 
-You can also set the source file in your .bashrc with the following command:
+You can also permanently add the install location in your .bashrc with the following command:
 
 `echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
 ### Running the Simulator:
-After successful build, running the simulator is easy. Follow the steps below. Depending
-on what OS you're using.
+Having succesfully build the Simulator, running is easy. Depending
+on what OS you're using follow the commands below.
 
 ```
 cd ~/ambf/bin/<os>
@@ -46,31 +45,30 @@ cd ~/ambf/bin/<os>
 
 ### Note:
 The AMBF Simulator uses the yaml file located in `ambf/ambf_models/descriptions/launch.yaml` to
-load all the runtime models, haptic device end-effectors and the world. You can see the contents
-of this file by opening it in the text editor of your choice. The most important thing to see is
-the field `multibody configs:`. The uncommented config file will be run at runtime and multiple
-config files can be run at the same time by uncommenting them. You can play around with a few config
+load robot/multi-body models, haptic device end-effectors and the world. You can see the contents
+of this file by launching it in your favourite text editor. For an initial overview, the most important thing is the field `multibody configs:`. The uncommented config file(s) will be launced at startup. Multiple
+config files can be launched at the same time by uncommenting them. You can play around with a few config
 files to see how they work. 
 
 ### Interacting with the Robots/Multi-Bodies in the Simulator:
 There are multiple way of interacting with the bodies in simulator. If you are using Linux, the best 
-and most convinient way is to use ros messages.
+and most convinient way is to use the Python client mentioned below or directly using ROS messages.
 
 ## Easy to Use Python Client
-For full feature set of the AMBF Simulator, it is advised that you install it on Linux (Ubuntu) 16,17 or 18. Other variants might be supported but have not yet been tested.
+For full feature set of the AMBF Simulator, it is advised that you install it on Linux (Ubuntu) 16, 17 or 18. Other variants might be supported but have not yet been tested.
 
 ### The AMBF Python Client
-This simplest way to interact with simulated bodies, robots/multi-bodies, kinematic and visual objects in the AMBF simulator is by using the high-speed Asynchronous Communication that is implemented via ROS-topics in the AMBF Framework Library. One can use either using C++ or Python for creating applications for this purpose. For ease of interaction we provide a convenient Python Client which can be used as follows:
+This simplest way to interact with simulated bodies, robots/multi-bodies, kinematic and visual objects in the AMBF simulator is by using the high-speed Asynchronous Communication that is implemented via ROS-topics in the AMBF Framework Library. One can use either C++ or Python for this purpose. For ease of interaction we provide a convenient Python Client which can be used as follows:
 
 ## 
-Start the AMBF Simulator with your choice of Multi-Body config file that can be directly set in the `ambf_models/launch.yaml` file.
+Start the AMBF Simulator with your choice of Multi-Body config file that (set in the `multi bodies` field in the `ambf_models/launch.yaml` file).
 
 In your python application
 
 ```python
 # Import the Client from ambf_comm package
 # You might have to do: pip install gym
-from ambf_comm import Client
+from ambf_client import Client
 import time
 
 # Create a instance of the client
