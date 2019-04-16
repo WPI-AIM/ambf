@@ -69,6 +69,7 @@ In your python application
 
 ```python
 # Import the Client from ambf_comm package
+# You might have to do pip install gym
 from ambf_comm import Client
 import time
 
@@ -119,8 +120,8 @@ for i in range(0, 5000):
 # torus_obj.wrench_command(fx, fy, fz, nx, ny, nz) in the parent frame
 
 # We can get the number of children and joints connected to this body as
-num_joints = torsus_obj.get_num_joints() # Get the number of joints of this object
-children_names = tosrus_obj.get_chilren_names # Get a list of children names belonging to this obj
+num_joints = torus_obj.get_num_joints() # Get the number of joints of this object
+children_names = torus_obj.get_children_names() # Get a list of children names belonging to this obj
 
 print(num_joints)
 print(children_names)
