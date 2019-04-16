@@ -89,8 +89,8 @@ torus_obj = _client.get_obj_handle('Torus')
 # Pose etc. If the object has joints, you can also control them
 # in either position control mode or open loop effort mode. You can even mix and
 # match the joints commands 
-torus_obj.set_pos(0, 0, 0) # Set the XYZ Pos in obj's parent frame
-torus_obj.set_rpy(1.5, 0.7, .0) # Set the Fixed RPY in parent frame
+torus_obj.set_pos(0, 0, 0) # Set the XYZ Pos in obj's World frame
+torus_obj.set_rpy(1.5, 0.7, .0) # Set the Fixed RPY in World frame
 time.sleep(5) # Sleep for a while to see the effect of the command before moving on
 
 # Other methods to control the obj position include
@@ -100,9 +100,9 @@ time.sleep(5) # Sleep for a while to see the effect of the command before moving
 # torus_obj.pose_command(px, py, pz, roll, pitch, yaw, *jnt_cmds)
 
 # We can just as easily get the pose information of the obj
-cur_pos = torus_obj.get_pos() # xyx position in parent frame
-cur_rot = torus_obj.get_rot() # Quaternion in parent frame
-cur_rpy = torus_obj.get_rpy() # Fixed RPY in parent frame
+cur_pos = torus_obj.get_pos() # xyx position in World frame
+cur_rot = torus_obj.get_rot() # Quaternion in World frame
+cur_rpy = torus_obj.get_rpy() # Fixed RPY in World frame
 
 # Similarly you can directly control the wrench acting on the obj by
 # The key difference is that it's the user's job to update the forces
@@ -110,12 +110,12 @@ cur_rpy = torus_obj.get_rpy() # Fixed RPY in parent frame
 # watchdog timer expires if a new command is not set. This is for safety
 # reasons where a user shouldn't set a wrench and then forget about it.
 for i in range(0, 5000):
-    torus_obj.set_force(5, -5, 10) # Set the force in the parent frame
-    torus_obj.set_torque(0, 0, 0.8) # Set the torque in the parent frame
+    torus_obj.set_force(5, -5, 10) # Set the force in the World frame
+    torus_obj.set_torque(0, 0, 0.8) # Set the torque in the World frame
     time.sleep(0.001) # Sleep for a while to see the effect of the command before moving on
 
 # Similar to the pose_command, one can assign the force in a single method call
-# torus_obj.wrench_command(fx, fy, fz, nx, ny, nz) in the parent frame
+# torus_obj.wrench_command(fx, fy, fz, nx, ny, nz) in the World frame
 
 # We can get the number of children and joints connected to this body as
 num_joints = torus_obj.get_num_joints() # Get the number of joints of this object
