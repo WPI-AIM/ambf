@@ -41,7 +41,12 @@
 # common settings required to build examples
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
-include_directories (${GLFW_INCLUDE_DIRS})
 
-add_executable (ambf_controller src/ambf_controller.cpp)
+include_directories (${GLFW_INCLUDE_DIRS}
+                     include )
+
+add_executable (ambf_controller include/ambf_controller.h
+                                src/ambf_controller.cpp 
+                                src/main.cpp )
+
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})

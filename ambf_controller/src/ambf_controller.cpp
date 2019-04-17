@@ -35,30 +35,83 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \courtesy:  Starting point CHAI3D-BULLET examples by Francois Conti from <www.chai3d.org>
+    \author:    Melody Su
+    \date:      April, 2019
     \version:   $
 */
 //===========================================================================
 
-//---------------------------------------------------------------------------
-#include "chai3d.h"
-#include "ambf.h"
-//---------------------------------------------------------------------------
-#include <GLFW/glfw3.h>
-#include <boost/program_options.hpp>
-#include <mutex>
-//---------------------------------------------------------------------------
-using namespace ambf;
-using namespace chai3d;
-using namespace std;
-//---------------------------------------------------------------------------
-#include "CBullet.h"
+# include "ambf_controller.h"
 
 
-int main(int argc, char* argv[])
+AMBFController::AMBFController(int argc, char** argv)
 {
-    ROS_INFO("Hello world!");
+	ROS_INFO("AMBF Controller Initializing...");
+
+	if(!init_ros(argc,argv)) // initialize ros
+	{	
+		ROS_ERROR("Initialization Error. System Shutting Down.");
+		exit(1);
+	}
+}
+
+
+
+bool AMBFController::init_ros(int argc, char** argv)
+{
+	while(!ros::ok())
+		ROS_ERROR("Something is wrong with ROS. Will keep trying...");
+
+	// setup rostopic communication
+	cmd_pub = nh_.advertise<std_msgs::String>("chatter", 1000);
+	// sta_sub = nh_.subscribe;
+	
+	// ros variables
+	lr_ = 500;
+
+	return true;	
+}
+
+
+
+bool AMBFController::sys_run()
+{
+	bool check = ros::ok();
+	
+	ros::Rate loop_rate(lr_);
+    while(check){
+
+        publish_command();
+
+        ros::spinOnce();
+        loop_rate.sleep();
+
+        check = ros::ok();
+    }
+
+    return check;
+}
+
+
+bool AMBFController::publish_command()
+{
+	static int count = 0;
+
+	std::stringstream ss;
+    ss << "Hello World!" << count;
+    std_msgs::String msg;
+    msg.data = ss.str();
+    ROS_INFO("%s",msg.data.c_str());
+
+    cmd_pub.publish(msg);
+    count ++;
+
+    return true;
+}
+
+
+
+AMBFController::~AMBFController()
+{
+	ROS_INFO("okay bye");
 }

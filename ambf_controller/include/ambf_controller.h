@@ -1,4 +1,4 @@
-//==============================================================================
+//===========================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2019, AMBF
@@ -35,24 +35,45 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author:    Melody Su
+    \date:      April, 2019
     \version:   $
 */
+//===========================================================================
 
-#ifndef AMBFH
-#define AMBFH
-
-//------------------------------------------------------------------------------
-#ifndef BT_USE_DOUBLE_PRECISION
-#define BT_USE_DOUBLE_PRECISION
-#endif
-
-#include "afSoftMultiMesh.h"
-#include "afGripper.h"
-#include "afMultiBody.h"
+#ifndef AMBFCONTROLLER_H
+#define AMBFCONTROLLER_H
 
 //---------------------------------------------------------------------------
-#endif
+#include "chai3d.h"
+#include "ambf.h"
 //---------------------------------------------------------------------------
+#include <GLFW/glfw3.h>
+#include <boost/program_options.hpp>
+#include <mutex>
+//---------------------------------------------------------------------------
+using namespace ambf;
+using namespace chai3d;
+using namespace std;
+//---------------------------------------------------------------------------
+#include "CBullet.h"
+
+class AMBFController{
+
+private:
+    int lr_;
+    ros::NodeHandle nh_; 
+    ros::Publisher  cmd_pub;
+    ros::Subscriber sta_sub;
+
+public:
+    AMBFController(int, char**);
+
+    bool init_ros(int, char**);
+    bool sys_run();
+    bool publish_command();
+
+    ~AMBFController();
+};
+
+#endif

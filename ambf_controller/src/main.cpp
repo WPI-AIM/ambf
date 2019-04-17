@@ -1,4 +1,4 @@
-//==============================================================================
+//===========================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2019, AMBF
@@ -35,24 +35,23 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author:    Melody Su
+    \date:      April, 2019
     \version:   $
 */
+//===========================================================================
 
-#ifndef AMBFH
-#define AMBFH
+#include "ambf_controller.h"
 
-//------------------------------------------------------------------------------
-#ifndef BT_USE_DOUBLE_PRECISION
-#define BT_USE_DOUBLE_PRECISION
-#endif
 
-#include "afSoftMultiMesh.h"
-#include "afGripper.h"
-#include "afMultiBody.h"
+int main(int argc, char* argv[])
+{
+    ;
 
-//---------------------------------------------------------------------------
-#endif
-//---------------------------------------------------------------------------
+    ros::init(argc, argv, "ambf_controller_node");
+
+    AMBFController ctrl(argc,argv);
+    ctrl.sys_run();
+     
+    
+}
