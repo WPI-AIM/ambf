@@ -5,7 +5,7 @@
 #
 # Enjoy!
 
-printf "\n Start Compileing the AMBF Code...\n"
+printf "\n Start Compiling the AMBF Code...\n"
 
 
 cd ~/ambf/build
@@ -17,7 +17,7 @@ printf "\n AMBF Code Finished Building!\n"
 
 
 printf "\n To run the code, make sure an external roscore is running.\n"
-printf " Press any key to continue"
+printf " Press any key to continue (ctrl-C to quit)"
 read -n 1 -s -r -p "..."
 
 

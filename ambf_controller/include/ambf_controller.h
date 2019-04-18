@@ -51,6 +51,7 @@
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
 #include <mutex>
+#include <map>
 //---------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -62,16 +63,26 @@ class AMBFController{
 
 private:
     int lr_;
+    int n_parts;
     ros::NodeHandle nh_; 
-    ros::Publisher  cmd_pub;
-    ros::Subscriber sta_sub;
+    vector<ros::Publisher>  command_pubs;
+    vector<ros::Subscriber> state_subs;
+    vector<geometry_msgs::Pose> raven_pose;
+
+    string sub_append;
+    string pub_append;
+    string raven_append;    
+    vector<string> raven_parts;
+    map <string,int> raven_parts_map;
 
 public:
     AMBFController(int, char**);
 
+    bool init_sys();
     bool init_ros(int, char**);
     bool sys_run();
     bool publish_command();
+    void state_callback(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
 
     ~AMBFController();
 };
