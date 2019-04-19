@@ -598,6 +598,9 @@ public:
 };
 
 
+///
+/// \brief The afProximitySensor class
+///
 class afProximitySensor: public afSensor{
 public:
 
@@ -607,8 +610,18 @@ public:
     virtual void updateSensor();
     inline bool isTriggered(){return m_triggered;}
     inline btRigidBody* getSensedBody(){return m_sensedBody;}
+    inline btSoftBody* getSensedSoftBody(){return m_sensedSoftBody;}
+    inline btSoftBody::Node* getSensedSoftBodyNode(){return m_sensedSoftBodyNode;}
+    inline int getSensedSoftBodyNodeIdx(){return m_sensedSoftBodyNodeIdx;}
+    inline cVector3d getSoftSensedPoint(){return m_sensedSoftPointInWorld;}
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
+public:
+    // Declare enum to find out later what type of body we sensed
+    enum SensedBodyType{
+        RIGID_BODY=0, SOFT_BODY=1};
+
+    SensedBodyType m_sensedBodyType;
 
 private:
     // Direction rel to parent that this sensor is looking at
@@ -623,11 +636,24 @@ private:
 
     // The body the this proximity sensor is sensing
     btRigidBody* m_sensedBody;
+
+    // Could also be sensing a softbody
+    btSoftBody* m_sensedSoftBody;
+
+    // The internal index of the node belonging to the sensed soft body
+    int m_sensedSoftBodyNodeIdx = 0;
+
+    // The node ptr to the sensed soft body
+    // For future we might need to sense a face rather just a node
+    btSoftBody::Node* m_sensedSoftBodyNode;
+
     // Boolean for sensor sensing something
     bool m_triggered;
     // Location of sensed point in World Frame
     // This is along of the sensor direction
     cVector3d m_sensedLocationWorld;
+
+    cVector3d m_sensedSoftPointInWorld;
 
 private:
     cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;

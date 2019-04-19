@@ -1586,7 +1586,9 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_piterations = softBodyConfigData["piterations"];
     YAML::Node cfg_diterations = softBodyConfigData["diterations"];
     YAML::Node cfg_citerations = softBodyConfigData["citerations"];
-    YAML::Node cfg_collisions = softBodyConfigData["collisions"];
+    YAML::Node cfg_flags = softBodyConfigData["flags"];
+    YAML::Node cfg_cutting = softBodyConfigData["cutting"];
+    YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
     if(softBodyName.IsDefined()){
         m_name = softBodyName.as<std::string>();
@@ -1752,15 +1754,23 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_piterations.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterations.as<double>();
         if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<double>();
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
-        if (cfg_collisions.IsDefined()) m_bulletSoftBody->m_cfg.collisions = cfg_collisions.as<double>();
+        if (cfg_flags.IsDefined()){
+            m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+        }
+        if (cfg_fixed_nodes.IsDefined()){
+            for (int i = 0 ; i < cfg_fixed_nodes.size() ; i++){
+                int nodeIdx = cfg_fixed_nodes[i].as<int>();
+                if (nodeIdx < m_bulletSoftBody->m_nodes.size()){
+                    m_bulletSoftBody->setMass(nodeIdx, 0);
+                }
+            }
+        }
     }
 
     if (softBodyRandomizeConstraints.IsDefined())
         if (softBodyRandomizeConstraints.as<bool>() == true)
             m_bulletSoftBody->randomizeConstraints();
 
-
-    m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
     m_afWorld->s_bulletWorld->addChild(this);
     return true;
 }
@@ -2555,10 +2565,31 @@ void afProximitySensor::updateSensor(){
         if (_rayCallBack.m_collisionObject->getInternalType()
                 == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
             m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+            m_sensedBodyType = RIGID_BODY;
         }
-        if (_rayCallBack.m_collisionObject->getInternalType()
+        else if (_rayCallBack.m_collisionObject->getInternalType()
                 == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
-//            std::cerr << "Soft Coll Object" << _rayCallBack.m_collisionObject
+            btSoftBody* _sensedSoftBody = (btSoftBody*)btSoftBody::upcast(_rayCallBack.m_collisionObject);
+            btSoftBody::Node* _sensedSoftBodyNode;
+            // Now get the node which is closest to the hit point;
+            btVector3 _hitPoint = _rayCallBack.m_hitPointWorld;
+            double _maxDistance = 0.1;
+            int _sensedSoftBodyNodeIdx = -1;
+            for (int nodeIdx = 0 ; nodeIdx < _sensedSoftBody->m_nodes.size() ; nodeIdx++){
+                if ( (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
+                    _sensedSoftBodyNodeIdx = nodeIdx;
+                    _maxDistance = (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length();
+                }
+            }
+            // If sensedBodyNodeIdx is not -1, we sensed some node
+            // Lets capture it
+            if (_sensedSoftBodyNodeIdx > -1){
+                m_sensedSoftBodyNodeIdx = _sensedSoftBodyNodeIdx;
+                m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
+                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBodyType = SOFT_BODY;
+                m_sensedSoftPointInWorld = btVec2cVec(_hitPoint);
+            }
         }
 
         m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
@@ -4146,6 +4177,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
         dir *= m_oldPickingDist;
 
         newPivotB = rayFromWorld + dir;
+        m_pickSphere->setLocalPos(newPivotB);
         m_pickedNodeGoal = newPivotB;
         return true;
     }

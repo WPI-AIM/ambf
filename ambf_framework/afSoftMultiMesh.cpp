@@ -509,39 +509,6 @@ void afSoftMultiMesh::createGELSkeleton(){
         }
     }
 
-//    m_afSoftLinks.resize(n_btLinks);
-//    for (int i = 0 ; i < n_btLinks ; i++){
-//        btSoftBody::Link btLink = m_bulletSoftBody->m_links[i];
-//        btSoftBody::Node* btNode0 = btLink.m_n[0];
-//        btSoftBody::Node* btNode1 = btLink.m_n[1];
-//        cGELSkeletonNode* gelNode0;
-//        cGELSkeletonNode* gelNode1;
-//        for (int j = 0 ; j < m_afSoftNodes.size() ; j++){
-//            if (btNode0 == m_afSoftNodes[j].m_btNode){
-//                gelNode0 = m_afSoftNodes[j].m_gelNode;
-//                break;
-//            }
-//        }
-
-//        for (int j = 0 ; j < m_afSoftNodes.size() ; j++){
-//            if (btNode1 == m_afSoftNodes[j].m_btNode){
-//                gelNode1 = m_afSoftNodes[j].m_gelNode;
-//                break;
-//            }
-//        }
-
-//        cGELSkeletonLink* gelLink = new cGELSkeletonLink(gelNode0, gelNode1);
-//        m_afSoftLinks[i].m_gelLink = gelLink;
-//        m_afSoftLinks[i].m_btLink = &btLink;
-
-//        m_gelMesh.m_links.push_back(gelLink);
-
-////        gelNode0->m_pos.set(btNode0->m_x.x(), btNode0->m_x.y(), btNode0->m_x.z());
-////        gelNode0->m_nextRot.identity();
-////        gelNode1->m_pos.set(btNode1->m_x.x(), btNode1->m_x.y(), btNode1->m_x.z());
-////        gelNode1->m_nextRot.identity();
-//    }
-
     for (int i = 0 ; i < m_trianglesPtr.size()/3 ; i++){
         int nodeIdx0 = m_trianglesPtr[3*i + 0];
         int nodeIdx1 = m_trianglesPtr[3*i + 1];
@@ -585,14 +552,18 @@ cVector3d bVec2cVec(btVector3 &bVec){
 void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 
     for (int i = 0 ; i < m_afSoftNodes.size() ; i++){
-        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[0];
-        cVector3d vPos =  bVec2cVec(m_bulletSoftBody->m_nodes[i].m_x);
+        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
+        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
+        cVector3d vPos =  bVec2cVec(m_afSoftNodes[i].m_btNode->m_x);
         btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
-        cVector3d vZ = bVec2cVec(m_bulletSoftBody->m_nodes[i].m_n);
+        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
+        vZ.normalize();
         cVector3d vX = bVec2cVec(dPos);
         vX.normalize();
         m_afSoftNodes[i].m_gelNode->m_nextPos.set(vPos.x(), vPos.y(), vPos.z());
         cVector3d vY = cCross(vZ, vX);
+        vY.normalize();
+        vX = cCross(vY, vZ);
         m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
         m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
         m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
@@ -638,8 +609,9 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr);
         m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
                                                                 m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
         // Set the default radius of the GEL Skeleton Node
-        cGELSkeletonNode::s_default_radius = a_margin;
+        cGELSkeletonNode::s_default_radius = m_bulletSoftBody->getCollisionShape()->getMargin();
         createGELSkeleton();
         m_gelMesh.connectVerticesToSkeleton(false);
         // add to compound object
