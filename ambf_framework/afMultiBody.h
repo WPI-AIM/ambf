@@ -870,6 +870,9 @@ private:
 
 };
 
+struct afPickingConstraintData{
+
+};
 
 ///
 /// \brief The afMultiBody class
@@ -941,9 +944,14 @@ protected:
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
-private:
+public:
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
+    class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
+    class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
+    int m_pickedNodeIdx = -1; // Picked SoftBody Node
+    double m_pickedNodeMass = 0;
+    cVector3d m_pickedNodeGoal;
     class btTypedConstraint* m_pickedConstraint=0;
     int m_savedState;
     cVector3d m_oldPickingPos;

@@ -2552,7 +2552,15 @@ void afProximitySensor::updateSensor(){
             m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
         }
         m_triggered = true;
-        m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+        if (_rayCallBack.m_collisionObject->getInternalType()
+                == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+            m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+        }
+        if (_rayCallBack.m_collisionObject->getInternalType()
+                == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
+//            std::cerr << "Soft Coll Object" << _rayCallBack.m_collisionObject
+        }
+
         m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
     }
     else{
@@ -3515,6 +3523,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     return _is_valid;
 }
 
+
 ///
 /// \brief afMultiBody::afMultiBody
 ///
@@ -4036,26 +4045,57 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
         cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
-        btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
-        if (body)
-        {
-            //other exclusions?
-            if (!(body->isStaticObject() || body->isKinematicObject()))
-            {
-                m_pickedBody = body;
-                m_savedState = m_pickedBody->getActivationState();
-                m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
-                //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
-                btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
-                m_dynamicsWorld->addConstraint(p2p, true);
-                m_pickedConstraint = p2p;
-                btScalar mousePickClamping = 30.f;
-                p2p->m_setting.m_impulseClamp = mousePickClamping;
-                //very weak constraint for picking
-                p2p->m_setting.m_tau = 0.001f;
+        const btCollisionObject* colObject = rayCallback.m_collisionObject;
+        if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
+            if (body){
+                //other exclusions?
+                if (!(body->isStaticObject() || body->isKinematicObject()))
+                {
+                    m_pickedBody = body;
+                    m_savedState = m_pickedBody->getActivationState();
+                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
+                    //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
+                    btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
+                    m_dynamicsWorld->addConstraint(p2p, true);
+                    m_pickedConstraint = p2p;
+                    btScalar mousePickClamping = 30.f;
+                    p2p->m_setting.m_impulseClamp = mousePickClamping;
+                    //very weak constraint for picking
+                    p2p->m_setting.m_tau = 0.001f;
+                }
             }
         }
+        else if((colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY)){
+            btSoftBody* sBody = (btSoftBody*)btSoftBody::upcast(colObject);
+            // Now find the closest node in the soft body so we can do
+            // something about it.
+            btVector3 _hitPoint = rayCallback.m_hitPointWorld;
+
+            // Max distance between the hit point softbody nodes to be considered
+            double _maxDistance = 0.1;
+
+            // Index of closest Node. Initialize to -1 so it can be used
+            // as boolean as well if a Node was Found
+            int _closestNodeIdx = -1;
+
+            for (int nodeIdx = 0 ; nodeIdx < sBody->m_nodes.size() ; nodeIdx++){
+                if ( (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
+                    _maxDistance = (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
+                    _closestNodeIdx = nodeIdx;
+                }
+            }
+
+            if(_closestNodeIdx >=0 ){
+                m_pickedNode = &sBody->m_nodes[_closestNodeIdx];
+                m_pickedNode->m_v.setZero();
+                m_pickedSoftBody = sBody;
+                m_pickedNodeIdx = _closestNodeIdx;
+                m_pickedNodeGoal = btVec2cVec(_hitPoint);
+            }
+        }
+
 
         m_oldPickingPos = rayToWorld;
         m_hitPos = pickPos;
@@ -4091,17 +4131,23 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
             newPivotB = rayFromWorld + dir;
             // Set the position of grab sphere
             m_pickSphere->setLocalPos(newPivotB);
-            // Set the vector properties of the grab velocity vector
-//            cVector3d vPos = newPivotB - m_pickSphere->getLocalPos();
-//            cVector3d vDir = vPos;
-//            m_pickDragVector->setShowEnabled(true);
-//            m_pickDragVector->clear();
-//            double scale = 5.0;
-//            cCreateArrow(m_pickDragVector, vPos.length() * scale, 0.01, 0.1, 0.03, 0, 32, vDir, cVector3d(0,0,0));
-
             pickCon->setPivotB(cVec2btVec(newPivotB));
             return true;
         }
+    }
+
+    if (m_pickedSoftBody){
+        //keep it at the same picking distance
+
+        cVector3d newPivotB;
+
+        cVector3d dir = rayToWorld - rayFromWorld;
+        dir.normalize();
+        dir *= m_oldPickingDist;
+
+        newPivotB = rayFromWorld + dir;
+        m_pickedNodeGoal = newPivotB;
+        return true;
     }
     return false;
 }
@@ -4123,6 +4169,13 @@ void afMultiBody::removePickingConstraint(){
         delete m_pickedConstraint;
         m_pickedConstraint = 0;
         m_pickedBody = 0;
+    }
+
+    if (m_pickedSoftBody){
+        m_pickSphere->setShowEnabled(false);
+        m_pickedSoftBody = 0;
+        m_pickedNodeIdx = -1;
+        m_pickedNodeMass = 0;
     }
 }
 

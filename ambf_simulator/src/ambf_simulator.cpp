@@ -193,6 +193,9 @@ void updateGraphics();
 // Function to update labels
 void updateLabels();
 
+// Bullet pretick callback
+void preTickCallBack(btDynamicsWorld* world, btScalar timeStep);
+
 ///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
 /// state/commands, button's state and grippers state if present
@@ -1259,6 +1262,8 @@ int main(int argc, char* argv[])
         g_afMultiBody->loadAllMultiBodies();
         g_afWorld->loadWorld();
         g_cameras = g_afWorld->getCameras();
+
+        g_bulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -1370,6 +1375,37 @@ int main(int argc, char* argv[])
             }
         }
     }
+
+
+    const btScalar s = 0.6;
+    const int r = 10;
+    btVector3 p1(-s, -s, 0);
+    btVector3 p2( s, -s, 0);
+    btVector3 p3(-s,  s, 0);
+    btVector3 p4( s,  s, 0);
+//    g_afWorld->s_bulletWorld->m_bulletSoftBodyWorldInfo
+    btSoftBody* btPatch = btSoftBodyHelpers::CreatePatch(*g_bulletWorld->m_bulletSoftBodyWorldInfo,
+                                                         p1,
+                                                         p2,
+                                                         p3,
+                                                         p4, r, r, 1 + 4 , true);
+    btPatch->getCollisionShape()->setMargin(0.02);
+    btSoftBody::Material* pm = btPatch->appendMaterial();
+    pm->m_kLST = 0.4;
+    pm->m_flags -= btSoftBody::fMaterial::DebugDraw;
+    btPatch->generateBendingConstraints(2, pm);
+
+    cGELSkeletonNode::s_default_radius = 0.02;
+
+    afSoftMultiMesh* cloth = new afSoftMultiMesh(g_bulletWorld);
+    cloth->setSoftBody(btPatch);
+    cloth->createGELSkeleton();
+    cloth->setMass(10);
+    cloth->m_gelMesh.connectVerticesToSkeleton(false);
+    cloth->buildDynamicModel();
+//    g_afWorld->addSoftBody(cloth, "cloth");
+    g_bulletWorld->addChild(cloth);
+
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
     //-----------------------------------------------------------------------------------------------------------
@@ -1907,6 +1943,28 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     rayTo -= btScalar(y) * dVert;
     cVector3d cRay = btVec2cVec(rayTo);
     return cRay;
+}
+
+
+///
+/// \brief preTickCallBack: This function is there to account for all the
+/// desired features of AMBF that we need from Bullet but are either not
+/// implemented or difficult to wrap around from AMBF
+/// \param world
+/// \param timeStep
+///
+void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
+    // Check if a softbody has been picked
+    if (g_afMultiBody->m_pickedSoftBody){
+        cVector3d delta = g_afMultiBody->m_pickedNodeGoal - btVec2cVec(g_afMultiBody->m_pickedNode->m_x);
+        static const double maxdrag = 10;
+        if (delta.length() > (maxdrag * maxdrag))
+        {
+            delta.normalize();
+            delta = delta * maxdrag;
+        }
+        g_afMultiBody->m_pickedNode->m_v += cVec2btVec(delta) / timeStep;
+    }
 }
 
 ///
