@@ -44,6 +44,11 @@
 # include "ambf_controller.h"
 
 
+/**
+ * @brief      Constructs the AMBFController object.
+ *
+ * @param[in]  arguements passed from main function
+ */
 AMBFController::AMBFController(int argc, char** argv)
 {
 	ROS_INFO("AMBF Controller Initializing...");
@@ -58,6 +63,11 @@ AMBFController::AMBFController(int argc, char** argv)
 }
 
 
+/**
+ * @brief      initialize system parameters
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool AMBFController::init_sys()
 {
 	// system variables
@@ -98,6 +108,14 @@ bool AMBFController::init_sys()
 
 
 
+/**
+ * @brief      initialize ROS published and subscribed topics
+ *
+ * @param[in]  arguements passed from main function
+ * @param      argv  The argv
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool AMBFController::init_ros(int argc, char** argv)
 {
 
@@ -142,6 +160,12 @@ bool AMBFController::init_ros(int argc, char** argv)
 
 
 
+/**
+ * @brief      callback function for all the state messages
+ *
+ * @param[in]  event       The ROS message event
+ * @param[in]  topic_name  The topic name
+ */
 void AMBFController::state_callback(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
 {
   int i = raven_parts_map.find(topic_name)->second;
@@ -154,6 +178,11 @@ void AMBFController::state_callback(const ros::MessageEvent<ambf_msgs::ObjectSta
 } 
 
 
+/**
+ * @brief      run the system process
+ *
+ * @return     check if ros is running fine
+ */
 bool AMBFController::sys_run()
 {
 	bool check = ros::ok();
@@ -173,6 +202,11 @@ bool AMBFController::sys_run()
 }
 
 
+/**
+ * @brief      the publish function for all the command ROS topics
+ *
+ * @return     { description_of_the_return_value }
+ */
 bool AMBFController::publish_command()
 {
 	/*
@@ -212,6 +246,9 @@ bool AMBFController::publish_command()
 
 
 
+/**
+ * @brief      Destroys the AMBFContreller object.
+ */
 AMBFController::~AMBFController()
 {
 	ROS_INFO("okay bye");

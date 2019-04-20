@@ -44,14 +44,20 @@
 #include "ambf_controller.h"
 
 
+/**
+ * @brief      the Main function
+ *
+ * @param[in]  argc  The argc
+ * @param      argv  The argv
+ *
+ * @return     { description_of_the_return_value }
+ */
 int main(int argc, char* argv[])
 {
-    ;
-
     ros::init(argc, argv, "ambf_controller_node");
 
     AMBFController ctrl(argc,argv);
     ctrl.sys_run();
      
-    
+    return 0;
 }
