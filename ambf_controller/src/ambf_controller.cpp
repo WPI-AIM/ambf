@@ -66,7 +66,7 @@ AMBFController::AMBFController(int argc, char** argv)
 /**
  * @brief      initialize system parameters
  *
- * @return     { description_of_the_return_value }
+ * @return     success
  */
 bool AMBFController::init_sys()
 {
@@ -75,34 +75,43 @@ bool AMBFController::init_sys()
 	sub_append = "/State";
 	pub_append = "/Command";
 
-	raven_parts.push_back("/0_link");					// 0
+	L_append = "/base_link_L";
+	R_append = "/base_link_R";
 
-	raven_parts.push_back("/base_link_L");				// 1
-	raven_parts.push_back("/link1_L");					// 2
-	raven_parts.push_back("/link2_L");					// 3
-	raven_parts.push_back("/link3_L");					// 4
-	raven_parts.push_back("/instrument_shaft_L");		// 5
-	raven_parts.push_back("/wrist_L");					// 6
-	raven_parts.push_back("/grasper1_L");				// 7
-	raven_parts.push_back("/grasper2_L");				// 8
+	lr_ = 2000;  // to match the loop rate of the simulator
+	n_joints = 7;
+	zero_vec = tf::Vector3(0,0,0);
 
-	raven_parts.push_back("/base_link_R");				// 9
-	raven_parts.push_back("/link1_R");					// 10
-	raven_parts.push_back("/link2_R");					// 11
-	raven_parts.push_back("/link3_R");					// 12
-	raven_parts.push_back("/instrument_shaft_R");		// 13
-	raven_parts.push_back("/wrist_R");					// 14
-	raven_parts.push_back("/grasper1_R");				// 15
-	raven_parts.push_back("/grasper2_R");				// 16
-
-	lr_ = 1000;  // TODO: figure out appropreate value
-	n_parts = raven_parts.size();
-
-	for(int i=0; i<n_parts; i++)
+	for(int i=0; i<n_joints; i++)
 	{
-		raven_parts_map.insert(pair<string,int>(raven_parts[i],i));
+		zero_joints.push_back(0);
+		true_joints.push_back(1);
+		false_joints.push_back(0);
 	}
-	
+
+	command_type = _jp;
+
+	// joint -: 0_link-base_link_L: 			fixed
+	// joint 0: base_link_L-link1_L: 			revolute		(shoulder)				range: -pi~pi
+	// joint 1: link1_L-link2_L: 				revolute		(elbow)					range: -pi~pi
+	// joint 2: link2_L-link3_L: 				prismatic 		(tool plate up/down)	range: -0.17~0.1
+	// joint 3: link3_L-instrument_shaft_L: 	continuous		(tool shaft roll)		range: no limit
+	// joint 4: instrument_shaft_L-wrist_L: 	revolute		(tool wrist)			range: -2~2
+	// joint 5: wrist_L-grasper1_L: 			revolute		(grasper left)			range: -2~2
+	// joint 6: wrist_L-grasper2_L: 			revolute		(grasper right)			range: -2~2
+
+	js_command_L.reserve(n_joints);
+	js_command_R.reserve(n_joints);
+	jp_state_L.reserve(n_joints);
+	jp_state_R.reserve(n_joints);
+
+	reset_commands();
+
+	state_L_updated = false;
+	state_R_updated = false;
+	command_L_updated = false;
+	command_R_updated = false;
+
 	return true;
 }
 
@@ -114,7 +123,7 @@ bool AMBFController::init_sys()
  * @param[in]  arguements passed from main function
  * @param      argv  The argv
  *
- * @return     { description_of_the_return_value }
+ * @return     success
  */
 bool AMBFController::init_ros(int argc, char** argv)
 {
@@ -139,21 +148,21 @@ bool AMBFController::init_ros(int argc, char** argv)
 	 * /light_2/Command [unknown type]
 	*/
 
-	string topic;
+	string topic_L, topic_R;
 
-	for(int i=0; i<n_parts; i++)
-	{
-		topic = raven_append + raven_parts[i] + sub_append;
+	topic_L = raven_append + L_append + sub_append;
+	topic_R = raven_append + R_append + sub_append;
 
-		state_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
-			               boost::bind(&AMBFController::state_callback, this, _1, raven_parts[i])));
+	raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic_L,1,
+			               boost::bind(&AMBFController::raven_state_cb, this, _1, L_append)));
+	raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic_R,1,
+			               boost::bind(&AMBFController::raven_state_cb, this, _1, R_append)));
 
-		topic = raven_append + raven_parts[i] + pub_append;
-		command_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
-	}
-	raven_pose.reserve(n_parts);
-	
+	topic_L = raven_append + L_append + pub_append;
+	topic_R = raven_append + R_append + pub_append;
 
+	raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic_L,1));
+	raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic_R,1));
 
 	return true;	
 }
@@ -166,16 +175,140 @@ bool AMBFController::init_ros(int argc, char** argv)
  * @param[in]  event       The ROS message event
  * @param[in]  topic_name  The topic name
  */
-void AMBFController::state_callback(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
+void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
 {
-  int i = raven_parts_map.find(topic_name)->second;
 
+  static int count_L = 0;
+  static int count_R = 0;
   const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
 
-  raven_pose[i] = msg->pose;
+  geometry_msgs::Pose cp = msg->pose;
 
-  ROS_INFO("received topic: %s, x=%f",  topic_name.c_str(), raven_pose[i].position.x);
+  if(topic_name == L_append)
+  {
+  	cp_state_L.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
+   	cp_state_L.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
+
+   	if(msg->joint_positions.size() == n_joints)
+   	{
+	  	for(int i = 0; i< n_joints; i++)
+	  		jp_state_L[i] = msg->joint_positions[i]; 
+
+  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count_L);
+	  	state_L_updated = true;	
+	  	count_L++;	
+   	}
+   	else
+   	{
+   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
+   		state_L_updated = false;
+   	}
+
+  	
+
+  }
+  else if(topic_name == R_append)
+  {
+  	cp_state_R.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
+  	cp_state_R.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
+   	
+   	if(msg->joint_positions.size() == n_joints)
+   	{
+	  	for(int i = 0; i< n_joints; i++)
+	  		jp_state_L[i] = msg->joint_positions[i];
+
+
+  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count_R);
+	  	state_R_updated = true;
+	  	count_R ++;
+	}
+   	else
+   	{
+   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
+   		state_R_updated = false;
+   	}
+  }
 } 
+
+
+/**
+ * @brief      AMBFController::Plans raven motion whenever a new raven state info is received
+ *
+ * @return     success
+ */
+bool AMBFController::raven_motion_planning()
+{
+
+	bool check = true;
+
+	if(command_type == _jp)
+	{
+		if(state_L_updated)
+		{
+			// TODO: update js_command_L
+			command_L_updated = true;
+		}
+		if(state_R_updated)
+		{
+			// TODO: update js_command_R
+			command_R_updated = true;
+		}
+	}
+	else if(command_type == _jw)
+	{
+		if(state_L_updated)
+		{
+			// TODO: update js_command_L
+
+			command_L_updated = true;
+		}
+		if(state_R_updated)
+		{
+			// TODO: update js_command_R
+
+			command_R_updated = true;
+		}	
+	}
+	else if(command_type == _cp)
+	{
+		if(state_L_updated)
+		{
+			// TODO: set desired cartesian position
+			//		 do inverse kinematics
+			//		 update js_command_L
+
+			command_L_updated = true;
+		}
+		if(state_R_updated)
+		{
+			// TODO: set desired cartesian position
+			//		 do inverse kinematics
+			//		 update js_command_R
+			
+			command_R_updated = true;
+		}		
+	}
+	else if(command_type == _cw)
+	{
+		if(state_L_updated)
+		{
+			// TODO: update cf_command_L
+			//       update ct_command_L
+			command_L_updated = true;
+		}
+		if(state_R_updated)
+		{
+			// TODO: update cf_command_R
+			//       update ct_command_R
+			command_R_updated = true;
+		}		
+	}
+	else
+		check = false;
+
+	return check;
+
+}
 
 
 /**
@@ -190,7 +323,9 @@ bool AMBFController::sys_run()
 	ros::Rate loop_rate(lr_);
     while(check){
 
-        publish_command();
+		raven_motion_planning();
+        raven_command_pb();
+        reset_commands();
 
         ros::spinOnce();
         loop_rate.sleep();
@@ -205,9 +340,9 @@ bool AMBFController::sys_run()
 /**
  * @brief      the publish function for all the command ROS topics
  *
- * @return     { description_of_the_return_value }
+ * @return     success
  */
-bool AMBFController::publish_command()
+bool AMBFController::raven_command_pb()
 {
 	/*
 	This is the ObjectCmd content:
@@ -220,31 +355,111 @@ bool AMBFController::publish_command()
 	bool[] position_controller_mask
 	*/
 
-	static int count = 0;
+	ambf_msgs::ObjectCmd msg_L, msg_R;
+	static int count_L = 0;
+	static int count_R = 0;
 
-    for(int i=0; i<n_parts; i++)   // TODO: try to make robot hold still
-    {
-    	ambf_msgs::ObjectCmd msg;
+	if(command_type == _jp || command_type == _cp || command_type == _jw)
+	{
+		if(command_L_updated)
+		{
+			msg_L.joint_cmds = js_command_L;
+			msg_L.position_controller_mask = false_joints;
+		}
+		if(command_R_updated)
+		{
+			msg_R.joint_cmds = js_command_R;
+			msg_R.position_controller_mask = false_joints;
+		}
+	}
+	else if (command_type == _cw)
+	{
+		if(command_L_updated)
+		{
+			msg_L.wrench.force.x = cf_command_L.x();
+			msg_L.wrench.force.y = cf_command_L.y();
+			msg_L.wrench.force.z = cf_command_L.z();
+			msg_L.wrench.torque.x = ct_command_L.x();
+			msg_L.wrench.torque.y = ct_command_L.y();
+			msg_L.wrench.torque.z = ct_command_L.z();
+			msg_L.enable_position_controller = false;
+		}
+		if(command_R_updated)
+		{
+			msg_R.wrench.force.x = cf_command_R.x();
+			msg_R.wrench.force.y = cf_command_R.y();
+			msg_R.wrench.force.z = cf_command_R.z();
+			msg_R.wrench.torque.x = ct_command_R.x();
+			msg_R.wrench.torque.y = ct_command_R.y();
+			msg_R.wrench.torque.z = ct_command_R.z();
+			msg_R.enable_position_controller = false;
+		}		
+	}
 
-    	msg.pose.position.x=raven_pose[i].position.x;
-    	msg.pose.position.y=raven_pose[i].position.y;
-    	msg.pose.position.z=raven_pose[i].position.z;
+	if(command_L_updated)
+	{
+		if(command_type == _jp || command_type == _cp)
+		{
+			for(int i=0; i<n_joints; i++)
+			{
+				msg_L.position_controller_mask = false_joints;
+				msg_L.position_controller_mask[i] = true; // need to publish one joint at a time
+				raven_pubs[0].publish(msg_L);
+			}
+		}
+		else
+		{
+			raven_pubs[0].publish(msg_L);
+		}
+		command_L_updated = false;
 
-    	msg.pose.orientation.x=raven_pose[i].orientation.x;
-    	msg.pose.orientation.y=raven_pose[i].orientation.y;
-    	msg.pose.orientation.z=raven_pose[i].orientation.z;
-    	msg.pose.orientation.w=raven_pose[i].orientation.w;
+		count_L ++;
+    	ROS_INFO("publish count: %s",to_string(count_L).c_str());
+	}
+	if(command_R_updated)
+	{
+		if(command_type == _jp || command_type == _cp)
+		{
+			for(int i=0; i<n_joints; i++)
+			{
+				msg_R.position_controller_mask = false_joints;
+				msg_R.position_controller_mask[i] = true;
+				raven_pubs[1].publish(msg_R); // need to publish one joint at a time
+			}
+		}
+		else
+		{
+			raven_pubs[0].publish(msg_R);
+		}
+		command_R_updated = false;
 
-    	command_pubs[i].publish(msg);
-    }
+		count_R ++;
+    	ROS_INFO("publish count: %s",to_string(count_R).c_str());
+	}
     
-    count ++;
-    ROS_INFO("publish count: %s",to_string(count).c_str());
+    
 
     return true;
 }
 
 
+/**
+ * @brief      reset all the commands to zero
+ *
+ * @return     success
+ */
+bool AMBFController::reset_commands()
+{
+	js_command_L = zero_joints;   	// raven joint space command
+	js_command_R = zero_joints;
+
+    cf_command_L = zero_vec;        // raven cartesian force command      
+    cf_command_R = zero_vec;
+    ct_command_L = zero_vec;        // raven cartesian torque command      
+    ct_command_R = zero_vec;
+
+	return true;
+}
 
 /**
  * @brief      Destroys the AMBFContreller object.
