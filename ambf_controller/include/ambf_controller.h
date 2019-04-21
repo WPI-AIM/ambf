@@ -79,7 +79,7 @@ private:
     tf::Vector3  ct_command_L;        // raven cartesian torque command      
     tf::Vector3  ct_command_R;
 
-    vector<float> jp_state_L;     // raven joint space position state
+    vector<float> jp_state_L;         // raven joint space position state
     vector<float> jp_state_R;
 
     tf::Transform cp_state_L;        // raven catesian space position state
@@ -90,7 +90,7 @@ private:
     tf::Vector3  ct_state_R;
 
     tf::Vector3      zero_vec;
-    vector<float>  zero_joints;
+    vector<float>    zero_joints;
     vector<unsigned char>   true_joints;
     vector<unsigned char>   false_joints;
 
@@ -107,7 +107,7 @@ private:
     bool command_R_updated;
 
     AMBFCmdType command_type;
-
+    mutex _mutex;
 
 public:
     AMBFController(int, char**);

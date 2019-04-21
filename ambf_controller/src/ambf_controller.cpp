@@ -78,7 +78,10 @@ bool AMBFController::init_sys()
 	L_append = "/base_link_L";
 	R_append = "/base_link_R";
 
-	lr_ = 2000;  // to match the loop rate of the simulator
+	// The loop rate of the AMBF simulator: 	2000 Hz
+	// The loop rate of the AMBF python client: 1000 Hz
+	// The loop rate of the Raven source code:  1000 Hz
+	lr_ = 1000;  // the loop rate (Hz)
 	n_joints = 7;
 	zero_vec = tf::Vector3(0,0,0);
 
@@ -177,6 +180,7 @@ bool AMBFController::init_ros(int argc, char** argv)
  */
 void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
 {
+  lock_guard<mutex> _mutexlg(_mutex);
 
   static int count_L = 0;
   static int count_R = 0;
@@ -238,7 +242,7 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
  */
 bool AMBFController::raven_motion_planning()
 {
-
+	lock_guard<mutex> _mutexlg(_mutex);
 	bool check = true;
 
 	if(command_type == _jp)
@@ -343,16 +347,18 @@ bool AMBFController::sys_run()
  * @return     success
  */
 bool AMBFController::raven_command_pb()
-{
+{ 
+	lock_guard<mutex> _mutexlg(_mutex);
+	
 	/*
 	This is the ObjectCmd content:
 
 	Header header
-	bool enable_position_controller
+	bool enable_position_controller  (default as false)
 	geometry_msgs/Pose pose
 	geometry_msgs/Wrench wrench
 	float32[] joint_cmds
-	bool[] position_controller_mask
+	bool[] position_controller_mask 
 	*/
 
 	ambf_msgs::ObjectCmd msg_L, msg_R;
@@ -382,7 +388,6 @@ bool AMBFController::raven_command_pb()
 			msg_L.wrench.torque.x = ct_command_L.x();
 			msg_L.wrench.torque.y = ct_command_L.y();
 			msg_L.wrench.torque.z = ct_command_L.z();
-			msg_L.enable_position_controller = false;
 		}
 		if(command_R_updated)
 		{
@@ -392,7 +397,6 @@ bool AMBFController::raven_command_pb()
 			msg_R.wrench.torque.x = ct_command_R.x();
 			msg_R.wrench.torque.y = ct_command_R.y();
 			msg_R.wrench.torque.z = ct_command_R.z();
-			msg_R.enable_position_controller = false;
 		}		
 	}
 
@@ -404,7 +408,10 @@ bool AMBFController::raven_command_pb()
 			{
 				msg_L.position_controller_mask = false_joints;
 				msg_L.position_controller_mask[i] = true; // need to publish one joint at a time
+				msg_L.enable_position_controller = true;
+
 				raven_pubs[0].publish(msg_L);
+				ros::Duration(0.001).sleep();
 			}
 		}
 		else
@@ -424,7 +431,11 @@ bool AMBFController::raven_command_pb()
 			{
 				msg_R.position_controller_mask = false_joints;
 				msg_R.position_controller_mask[i] = true;
+				msg_R.enable_position_controller = true;
+
 				raven_pubs[1].publish(msg_R); // need to publish one joint at a time
+
+				ros::Duration(0.001).sleep();
 			}
 		}
 		else
@@ -435,9 +446,7 @@ bool AMBFController::raven_command_pb()
 
 		count_R ++;
     	ROS_INFO("publish count: %s",to_string(count_R).c_str());
-	}
-    
-    
+	} 
 
     return true;
 }
@@ -450,6 +459,8 @@ bool AMBFController::raven_command_pb()
  */
 bool AMBFController::reset_commands()
 {
+    lock_guard<mutex> _mutexlg(_mutex);
+
 	js_command_L = zero_joints;   	// raven joint space command
 	js_command_R = zero_joints;
 
