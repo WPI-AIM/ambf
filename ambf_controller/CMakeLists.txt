@@ -45,7 +45,8 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS}
                      include )
 
-add_executable (ambf_controller include/ambf_controller.h
+add_executable (ambf_controller include/ambf_defines.h
+                                include/ambf_controller.h
                                 src/ambf_controller.cpp 
                                 src/main.cpp )
 

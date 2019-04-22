@@ -70,20 +70,20 @@ AMBFController::AMBFController(int argc, char** argv)
  */
 bool AMBFController::init_sys()
 {
-	// system variables
-	raven_append = "/ambf/env/raven_2";
-	sub_append = "/State";
-	pub_append = "/Command";
-
-	L_append = "/base_link_L";
-	R_append = "/base_link_R";
-
 	// The loop rate of the AMBF simulator: 	2000 Hz
 	// The loop rate of the AMBF python client: 1000 Hz
 	// The loop rate of the Raven source code:  1000 Hz
 	lr_ = 1000;  // the loop rate (Hz)
 	n_joints = 7;
-	zero_vec = tf::Vector3(0,0,0);
+	n_arms = 2;
+
+	// system variables
+	raven_append = "/ambf/env/raven_2";
+	sub_append = "/State";
+	pub_append = "/Command";
+
+	arm_append.push_back("/base_link_L");
+	arm_append.push_back("/base_link_R");
 
 	for(int i=0; i<n_joints; i++)
 	{
@@ -91,8 +91,7 @@ bool AMBFController::init_sys()
 		true_joints.push_back(1);
 		false_joints.push_back(0);
 	}
-
-	command_type = _jp;
+	zero_vec = tf::Vector3(0,0,0);
 
 	// joint -: 0_link-base_link_L: 			fixed
 	// joint 0: base_link_L-link1_L: 			revolute		(shoulder)				range: -pi~pi
@@ -103,18 +102,18 @@ bool AMBFController::init_sys()
 	// joint 5: wrist_L-grasper1_L: 			revolute		(grasper left)			range: -2~2
 	// joint 6: wrist_L-grasper2_L: 			revolute		(grasper right)			range: -2~2
 
-	js_command_L.reserve(n_joints);
-	js_command_R.reserve(n_joints);
-	jp_state_L.reserve(n_joints);
-	jp_state_R.reserve(n_joints);
+	raven_state.resize(n_arms);
+	raven_command.resize(n_arms);
+	for(int i=0; i<n_arms; i++)
+	{
+		raven_state[i].updated = false;
+		raven_command[i].updated = false;
+		raven_command[i].type = _jp; 		// _null
 
-	reset_commands();
-
-	state_L_updated = false;
-	state_R_updated = false;
-	command_L_updated = false;
-	command_R_updated = false;
-
+		raven_state[i].jp.resize(n_joints);
+		raven_command[i].js.resize(n_joints);
+	}
+	reset_command();
 	return true;
 }
 
@@ -150,22 +149,18 @@ bool AMBFController::init_ros(int argc, char** argv)
 	 * /light_1/Command [unknown type]
 	 * /light_2/Command [unknown type]
 	*/
+	string topic;
 
-	string topic_L, topic_R;
+	for(int i=0; i<n_arms; i++)
+	{
+		topic = raven_append + arm_append[i] + sub_append;
 
-	topic_L = raven_append + L_append + sub_append;
-	topic_R = raven_append + R_append + sub_append;
+		raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
+				               boost::bind(&AMBFController::raven_state_cb, this, _1, arm_append[i])));
 
-	raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic_L,1,
-			               boost::bind(&AMBFController::raven_state_cb, this, _1, L_append)));
-	raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic_R,1,
-			               boost::bind(&AMBFController::raven_state_cb, this, _1, R_append)));
-
-	topic_L = raven_append + L_append + pub_append;
-	topic_R = raven_append + R_append + pub_append;
-
-	raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic_L,1));
-	raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic_R,1));
+		topic = raven_append + arm_append[i] + pub_append;
+		raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
+	}
 
 	return true;	
 }
@@ -182,55 +177,37 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
-  static int count_L = 0;
-  static int count_R = 0;
-  const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
+  static int count = 0;
+  int i = -1;
 
-  geometry_msgs::Pose cp = msg->pose;
-
-  if(topic_name == L_append)
+  for(int i=0; i<n_arms; i++)
   {
-  	cp_state_L.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
-   	cp_state_L.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
+  	if(topic_name == arm_append[i])
+  	{
+  		const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
 
-   	if(msg->joint_positions.size() == n_joints)
-   	{
-	  	for(int i = 0; i< n_joints; i++)
-	  		jp_state_L[i] = msg->joint_positions[i]; 
+	  	geometry_msgs::Pose cp = msg->pose;
+	  	raven_state[i].cp.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
+	   	raven_state[i].cp.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
 
-  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count_L);
-	  	state_L_updated = true;	
-	  	count_L++;	
-   	}
-   	else
-   	{
-   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
-   		state_L_updated = false;
-   	}
+	   	geometry_msgs::Wrench wr = msg->wrench;
+	   	raven_state[i].ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
+	  	raven_state[i].cf = tf::Vector3(wr.force.x,wr.force.y,wr.force.z);
 
-  	
+	   	if(msg->joint_positions.size() == n_joints)
+	   	{
+		  	for(int j = 0; j< n_joints; j++)
+		  		raven_state[i].jp[j] = msg->joint_positions[j]; 
 
-  }
-  else if(topic_name == R_append)
-  {
-  	cp_state_R.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
-  	cp_state_R.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
-   	
-   	if(msg->joint_positions.size() == n_joints)
-   	{
-	  	for(int i = 0; i< n_joints; i++)
-	  		jp_state_L[i] = msg->joint_positions[i];
-
-
-  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count_R);
-	  	state_R_updated = true;
-	  	count_R ++;
-	}
-   	else
-   	{
-   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
-   		state_R_updated = false;
-   	}
+	  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count);
+		  	raven_state[i].updated = true;	
+		  	count++;	
+	   	}
+	   	else
+	   	{
+	   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
+	   	}
+  	}
   }
 } 
 
@@ -243,75 +220,37 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 bool AMBFController::raven_motion_planning()
 {
 	lock_guard<mutex> _mutexlg(_mutex);
-	bool check = true;
 
-	if(command_type == _jp)
+	for(int i=0; i<n_arms; i++)
 	{
-		if(state_L_updated)
+		if(raven_state[i].updated && raven_command[i].type != _null)
 		{
-			// TODO: update js_command_L
-			command_L_updated = true;
-		}
-		if(state_R_updated)
-		{
-			// TODO: update js_command_R
-			command_R_updated = true;
-		}
-	}
-	else if(command_type == _jw)
-	{
-		if(state_L_updated)
-		{
-			// TODO: update js_command_L
+			if(raven_command[i].type == _jp || raven_command[i].type == _jw)
+			{
+				// TODO: update raven_command[i].js
+				raven_command[i].updated = true;
+				raven_state[i].updated   = false;
+			}
+			else if(raven_command[i].type == _cp)
+			{
+				// TODO: set desired cartesian position
+				//		 do inverse kinematics
+				//		 update raven_command[i].js
 
-			command_L_updated = true;
-		}
-		if(state_R_updated)
-		{
-			// TODO: update js_command_R
-
-			command_R_updated = true;
-		}	
-	}
-	else if(command_type == _cp)
-	{
-		if(state_L_updated)
-		{
-			// TODO: set desired cartesian position
-			//		 do inverse kinematics
-			//		 update js_command_L
-
-			command_L_updated = true;
-		}
-		if(state_R_updated)
-		{
-			// TODO: set desired cartesian position
-			//		 do inverse kinematics
-			//		 update js_command_R
-			
-			command_R_updated = true;
+				raven_command[i].updated = true;
+				raven_state[i].updated   = false;
+			}
+			else if(raven_command[i].type == _cw)
+			{
+				// TODO: update raven_command[i].cf
+				//       update raven_command[i].ct
+				raven_command[i].updated = true;
+				raven_state[i].updated   = false;
+			}
 		}		
 	}
-	else if(command_type == _cw)
-	{
-		if(state_L_updated)
-		{
-			// TODO: update cf_command_L
-			//       update ct_command_L
-			command_L_updated = true;
-		}
-		if(state_R_updated)
-		{
-			// TODO: update cf_command_R
-			//       update ct_command_R
-			command_R_updated = true;
-		}		
-	}
-	else
-		check = false;
 
-	return check;
-
+	return true;
 }
 
 
@@ -329,7 +268,7 @@ bool AMBFController::sys_run()
 
 		raven_motion_planning();
         raven_command_pb();
-        reset_commands();
+        reset_command();
 
         ros::spinOnce();
         loop_rate.sleep();
@@ -360,94 +299,55 @@ bool AMBFController::raven_command_pb()
 	float32[] joint_cmds
 	bool[] position_controller_mask 
 	*/
+	
+	static int count = 0;
+	float sleep_time =  1/(float)lr_;
 
-	ambf_msgs::ObjectCmd msg_L, msg_R;
-	static int count_L = 0;
-	static int count_R = 0;
+	for(int i=0; i<n_arms; i++)
+	{
+		ambf_msgs::ObjectCmd msg;
 
-	if(command_type == _jp || command_type == _cp || command_type == _jw)
-	{
-		if(command_L_updated)
+		if(raven_command[i].updated && raven_command[i].type != _null)
 		{
-			msg_L.joint_cmds = js_command_L;
-			msg_L.position_controller_mask = false_joints;
-		}
-		if(command_R_updated)
-		{
-			msg_R.joint_cmds = js_command_R;
-			msg_R.position_controller_mask = false_joints;
-		}
-	}
-	else if (command_type == _cw)
-	{
-		if(command_L_updated)
-		{
-			msg_L.wrench.force.x = cf_command_L.x();
-			msg_L.wrench.force.y = cf_command_L.y();
-			msg_L.wrench.force.z = cf_command_L.z();
-			msg_L.wrench.torque.x = ct_command_L.x();
-			msg_L.wrench.torque.y = ct_command_L.y();
-			msg_L.wrench.torque.z = ct_command_L.z();
-		}
-		if(command_R_updated)
-		{
-			msg_R.wrench.force.x = cf_command_R.x();
-			msg_R.wrench.force.y = cf_command_R.y();
-			msg_R.wrench.force.z = cf_command_R.z();
-			msg_R.wrench.torque.x = ct_command_R.x();
-			msg_R.wrench.torque.y = ct_command_R.y();
-			msg_R.wrench.torque.z = ct_command_R.z();
-		}		
-	}
-
-	if(command_L_updated)
-	{
-		if(command_type == _jp || command_type == _cp)
-		{
-			for(int i=0; i<n_joints; i++)
+			if(raven_command[i].type == _jp || raven_command[i].type == _cp)
 			{
-				msg_L.position_controller_mask = false_joints;
-				msg_L.position_controller_mask[i] = true; // need to publish one joint at a time
-				msg_L.enable_position_controller = true;
+				msg.joint_cmds = raven_command[i].js;
+				msg.enable_position_controller = true;
 
-				raven_pubs[0].publish(msg_L);
-				ros::Duration(0.001).sleep();
+				for(int j=0; j<n_joints; j++)
+				{
+					msg.position_controller_mask = false_joints;
+					msg.position_controller_mask[j] = true; // need to publish one joint at a time
+
+					raven_pubs[i].publish(msg);
+					ros::Duration(sleep_time).sleep();  // wait for the topic to be published
+				}
 			}
-		}
-		else
-		{
-			raven_pubs[0].publish(msg_L);
-		}
-		command_L_updated = false;
-
-		count_L ++;
-    	ROS_INFO("publish count: %s",to_string(count_L).c_str());
-	}
-	if(command_R_updated)
-	{
-		if(command_type == _jp || command_type == _cp)
-		{
-			for(int i=0; i<n_joints; i++)
+			else if(raven_command[i].type == _jw)
 			{
-				msg_R.position_controller_mask = false_joints;
-				msg_R.position_controller_mask[i] = true;
-				msg_R.enable_position_controller = true;
+				msg.joint_cmds = raven_command[i].js;
+				msg.position_controller_mask = false_joints;
 
-				raven_pubs[1].publish(msg_R); // need to publish one joint at a time
-
-				ros::Duration(0.001).sleep();
+				raven_pubs[i].publish(msg);
 			}
-		}
-		else
-		{
-			raven_pubs[0].publish(msg_R);
-		}
-		command_R_updated = false;
+			else if (raven_command[i].type == _cw)
+			{
+				msg.wrench.force.x  = raven_command[i].cf.x();
+				msg.wrench.force.y  = raven_command[i].cf.y();
+				msg.wrench.force.z  = raven_command[i].cf.z();
+				msg.wrench.torque.x = raven_command[i].ct.x();
+				msg.wrench.torque.y = raven_command[i].ct.y();
+				msg.wrench.torque.z = raven_command[i].ct.z();
 
-		count_R ++;
-    	ROS_INFO("publish count: %s",to_string(count_R).c_str());
-	} 
+				raven_pubs[i].publish(msg);
+			}
 
+			count ++;
+			raven_command[i].updated = false;
+	    	ROS_INFO("publish count: %s",to_string(count).c_str());
+		}
+	}
+	
     return true;
 }
 
@@ -457,17 +357,16 @@ bool AMBFController::raven_command_pb()
  *
  * @return     success
  */
-bool AMBFController::reset_commands()
+bool AMBFController::reset_command()
 {
     lock_guard<mutex> _mutexlg(_mutex);
 
-	js_command_L = zero_joints;   	// raven joint space command
-	js_command_R = zero_joints;
-
-    cf_command_L = zero_vec;        // raven cartesian force command      
-    cf_command_R = zero_vec;
-    ct_command_L = zero_vec;        // raven cartesian torque command      
-    ct_command_R = zero_vec;
+    for(int i=0; i<n_arms; i++)
+    {
+	 	raven_command[i].js = zero_joints;   	// raven joint space command
+	    raven_command[i].cf = zero_vec;        // raven cartesian force command      
+	    raven_command[i].ct = zero_vec;        // raven cartesian torque command         	
+    }
 
 	return true;
 }

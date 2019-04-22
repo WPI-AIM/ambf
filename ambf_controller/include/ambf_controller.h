@@ -44,72 +44,36 @@
 #ifndef AMBFCONTROLLER_H
 #define AMBFCONTROLLER_H
 
-//---------------------------------------------------------------------------
-#include "chai3d.h"
-#include "ambf.h"
-//---------------------------------------------------------------------------
-#include <GLFW/glfw3.h>
-#include <boost/program_options.hpp>
-#include <mutex>
-#include <map>
-//---------------------------------------------------------------------------
-using namespace ambf;
-using namespace chai3d;
-using namespace std;
-//---------------------------------------------------------------------------
-#include "CBullet.h"
-
-enum AMBFCmdType {_jp, _jw, _cp, _cw};
+#include "ambf_defines.h"
 
 class AMBFController{
 
 private:
+
     int lr_;
+    int n_arms;
     int n_joints;
+    mutex _mutex;
     ros::NodeHandle nh_; 
 
-    vector<ros::Publisher>  raven_pubs; // command
-    vector<ros::Subscriber> raven_subs; // command
+    vector<ros::Publisher>  raven_pubs;  // command publisher
+    vector<ros::Subscriber> raven_subs;  // state subscriber
 
-    vector<float> js_command_L;   // raven joint space command (position or wrench: depending on AMBFCmdType)
-    vector<float> js_command_R;
+    vector<AMBFCmd> raven_command;       // raven command structure
+    vector<AMBFSta> raven_state;         // raven state structure
 
-    tf::Vector3  cf_command_L;        // raven cartesian force command      
-    tf::Vector3  cf_command_R;
-    tf::Vector3  ct_command_L;        // raven cartesian torque command      
-    tf::Vector3  ct_command_R;
+    string          sub_append;          // place holder for namescpace strings
+    string          pub_append;  
+    string          raven_append;
+    vector<string>  arm_append;          // left arm 0 & right arm 1
 
-    vector<float> jp_state_L;         // raven joint space position state
-    vector<float> jp_state_R;
-
-    tf::Transform cp_state_L;        // raven catesian space position state
-    tf::Transform cp_state_R;
-    tf::Vector3  cf_state_L;        // raven cartesian force state     
-    tf::Vector3  cf_state_R;
-    tf::Vector3  ct_state_L;        // raven cartesian torque state      
-    tf::Vector3  ct_state_R;
-
-    tf::Vector3      zero_vec;
-    vector<float>    zero_joints;
+    tf::Vector3             zero_vec;    // place holder for frequently used arrays
+    vector<float>           zero_joints;
     vector<unsigned char>   true_joints;
     vector<unsigned char>   false_joints;
 
-    string sub_append;
-    string pub_append;  
-    string raven_append;
-
-    string L_append;
-    string R_append;
-
-    bool state_L_updated;
-    bool state_R_updated;
-    bool command_L_updated;
-    bool command_R_updated;
-
-    AMBFCmdType command_type;
-    mutex _mutex;
-
 public:
+
     AMBFController(int, char**);
 
     bool init_sys();
@@ -118,7 +82,7 @@ public:
     bool raven_command_pb();
     bool raven_motion_planning();
     void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
-    bool reset_commands();
+    bool reset_command();
 
     ~AMBFController();
 };
