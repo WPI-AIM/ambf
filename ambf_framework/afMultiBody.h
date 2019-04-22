@@ -609,11 +609,10 @@ public:
     afProximitySensor(afWorldPtr a_afWorld);
     virtual void updateSensor();
     inline bool isTriggered(){return m_triggered;}
-    inline btRigidBody* getSensedBody(){return m_sensedBody;}
+    inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
     inline btSoftBody* getSensedSoftBody(){return m_sensedSoftBody;}
     inline btSoftBody::Node* getSensedSoftBodyNode(){return m_sensedSoftBodyNode;}
     inline int getSensedSoftBodyNodeIdx(){return m_sensedSoftBodyNodeIdx;}
-    inline cVector3d getSoftSensedPoint(){return m_sensedSoftPointInWorld;}
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
 public:
@@ -635,7 +634,7 @@ private:
     cVector3d m_rayToLocal;
 
     // The body the this proximity sensor is sensing
-    btRigidBody* m_sensedBody;
+    btRigidBody* m_sensedRigidBody;
 
     // Could also be sensing a softbody
     btSoftBody* m_sensedSoftBody;

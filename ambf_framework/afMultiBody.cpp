@@ -2564,13 +2564,13 @@ void afProximitySensor::updateSensor(){
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
                 == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
-            m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+            m_sensedRigidBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
             m_sensedBodyType = RIGID_BODY;
         }
         else if (_rayCallBack.m_collisionObject->getInternalType()
                 == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
             btSoftBody* _sensedSoftBody = (btSoftBody*)btSoftBody::upcast(_rayCallBack.m_collisionObject);
-            btSoftBody::Node* _sensedSoftBodyNode;
+
             // Now get the node which is closest to the hit point;
             btVector3 _hitPoint = _rayCallBack.m_hitPointWorld;
             double _maxDistance = 0.1;
@@ -2588,7 +2588,6 @@ void afProximitySensor::updateSensor(){
                 m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
                 m_sensedSoftBody = _sensedSoftBody;
                 m_sensedBodyType = SOFT_BODY;
-                m_sensedSoftPointInWorld = btVec2cVec(_hitPoint);
             }
         }
 
