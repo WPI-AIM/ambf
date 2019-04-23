@@ -610,8 +610,9 @@ void SimulationParams::setSimParams(cHapticDeviceInfo &a_hInfo, PhysicalDevice* 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct SoftBodyGrippingConstraint{
+    btRigidBody* m_rBody; // Ptr to the RigidBody that is going to be constrained to the softbody
     btSoftBody* m_sBody; // Ptr to SoftBody that the constraint is part of
-    std::vector<btSoftBody::Anchor*> m_anchors; // Index location of anchor's. Multiple anchors used for faces/tetras
+    std::vector<btSoftBody::Node*> m_nodePtrs; // Node Pointers that this constraint is holding on to
 };
 
 ///
@@ -2215,12 +2216,13 @@ void updatePhysics(){
                                     // soft body as we move the simulated end effector
 
                                     // Get the parent body that owns this sensor
-                                    btRigidBody* _pBody = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
+                                    btRigidBody* _rBody = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
                                     // Get the sensed softbody
                                     btSoftBody* _sBody = proximitySensorPtr->getSensedSoftBody();
 
                                     simGripper->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
                                     simGripper->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;
+                                    simGripper->m_softGrippingConstraints[sIdx]->m_rBody = _rBody;
 
                                     // If we get a sensedSoftBody, we should check if it has a detected face. If a face
                                     // is found, we can anchor all the connecting nodes.
@@ -2228,35 +2230,31 @@ void updatePhysics(){
                                         btSoftBody::Face* _sensedFace = proximitySensorPtr->getSensedSoftBodyFace();
                                         for (int nIdx = 0; nIdx < 3 ; nIdx++){
                                             btSoftBody::Node* _node = _sensedFace->m_n[nIdx];
-                                            btVector3 _localPivot = _pBody->getCenterOfMassTransform().inverse() * _node->m_x;
+                                            btVector3 _localPivot = _rBody->getCenterOfMassTransform().inverse() * _node->m_x;
 
                                             btSoftBody::Anchor _anchor;
                                             _node->m_battach = 1;
-                                            _anchor.m_body = _pBody;
+                                            _anchor.m_body = _rBody;
                                             _anchor.m_node = _node;
                                             _anchor.m_influence = 1;
                                             _anchor.m_local = _localPivot;
                                             _sBody->m_anchors.push_back(_anchor);
+                                            simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
                                         }
-                                        // Now store the addresses of the last 3 added Anchors.
-                                        for (int nIdx = 1; nIdx <= 3 ; nIdx++){
-                                            btSoftBody::Anchor* _anchor = &_sBody->m_anchors[_sBody->m_anchors.size() - nIdx];
-                                            // Get the pointer to the last added anchor and add it to the softGripping constranits anchors
-                                            // We shall use this later to remove anchors when the constraint needs to be released
-                                            simGripper->m_softGrippingConstraints[sIdx]->m_anchors.push_back(_anchor);
-                                        }
-
-
                                     }
                                     // Otherwise we shall directly anchor to nodes. This case
                                     // arises for ropes, suturing thread etc
                                     else{
-                                        int _nodeIdx = proximitySensorPtr->getSensedSoftBodyNodeIdx();
-                                        btVector3 _localPivot = _pBody->getCenterOfMassTransform().inverse() * _sBody->m_nodes[_nodeIdx].m_x;
-                                        _sBody->appendAnchor(_nodeIdx, _pBody, _localPivot, false, 0.5);
-                                        // Get the pointer to the last added anchor and add it to the softGripping constranits anchors
-                                        // We shall use this later to remove anchors when the constraint needs to be released
-                                        simGripper->m_softGrippingConstraints[sIdx]->m_anchors.push_back(&_sBody->m_anchors[_sBody->m_anchors.size() - 1]);
+                                        btSoftBody::Node* _node = proximitySensorPtr->getSensedSoftBodyNode();
+                                        btVector3 _localPivot = _rBody->getCenterOfMassTransform().inverse() * _node->m_x;
+                                        btSoftBody::Anchor _anchor;
+                                        _node->m_battach = 1;
+                                        _anchor.m_body = _rBody;
+                                        _anchor.m_node = _node;
+                                        _anchor.m_influence = 1;
+                                        _anchor.m_local = _localPivot;
+                                        _sBody->m_anchors.push_back(_anchor);
+                                        simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
 
                                     }
                                 }
@@ -2268,14 +2266,17 @@ void updatePhysics(){
                                 simGripper->m_rigidGrippingConstraints[sIdx] = 0;
                             }
                             if(simGripper->m_softGrippingConstraints[sIdx]){
-                                for (int gaIdx = 0 ; gaIdx < simGripper->m_softGrippingConstraints[sIdx]->m_anchors.size()  ; gaIdx++){
-                                    btSoftBody::Anchor* _anchor = simGripper->m_softGrippingConstraints[sIdx]->m_anchors[gaIdx];
+                                for (int nIdx = 0 ; nIdx < simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.size()  ; nIdx++){
+                                    btSoftBody::Node* _nodePtr = simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs[nIdx];
                                     btSoftBody* _sBody = simGripper->m_softGrippingConstraints[sIdx]->m_sBody;
-                                    for (int baIdx = 0 ; baIdx < _sBody->m_anchors.size() ; baIdx++){
-                                        btSoftBody::Anchor* _sbAnchor = &_sBody->m_anchors[baIdx];
-                                        if (_anchor == _sbAnchor){
-                                            _sBody->m_anchors.removeAtIndex(baIdx);
-                                            break;
+                                    btRigidBody* _rBody = simGripper->m_softGrippingConstraints[sIdx]->m_rBody;
+                                    for (int aIdx = 0 ; aIdx < _sBody->m_anchors.size() ; aIdx++){
+                                        if (_sBody->m_anchors[aIdx].m_body == _rBody){
+                                            btSoftBody::Anchor* _anchor = &_sBody->m_anchors[aIdx];
+                                            if (_anchor->m_node == _nodePtr){
+                                                _sBody->m_anchors.removeAtIndex(aIdx);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
