@@ -603,16 +603,40 @@ public:
 ///
 class afProximitySensor: public afSensor{
 public:
-
+    // Load the sensor from ambf format
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load the sensor from ambf format
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Constructor
     afProximitySensor(afWorldPtr a_afWorld);
+
+    // Update sensor is called on each update of positions of RBs and SBs
     virtual void updateSensor();
+
+    // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(){return m_triggered;}
+
+    // Return the sensed RigidBody's Ptr
     inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
+
+    // Get the sensed SoftBody's Ptr
     inline btSoftBody* getSensedSoftBody(){return m_sensedSoftBody;}
+
+    // Get the sensed SoftBody's Face
+    inline btSoftBody::Face* getSensedSoftBodyFace(){return m_sensedSoftBodyFace;}
+
+    // Get the sensed SofyBody's Closest node the sensed point Node if any
     inline btSoftBody::Node* getSensedSoftBodyNode(){return m_sensedSoftBodyNode;}
+
+    // Get the sensed SofyBody's Face's index if any
+    inline int getSensedSoftBodyFaceIdx(){return m_sensedSoftBodyFaceIdx;}
+
+    // Get the sensed SofyBody's Node's Idx
     inline int getSensedSoftBodyNodeIdx(){return m_sensedSoftBodyNodeIdx;}
+
+    // Get the sensed point in world frame
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
 public:
@@ -620,11 +644,13 @@ public:
     enum SensedBodyType{
         RIGID_BODY=0, SOFT_BODY=1};
 
+    // Type of sensed body, could be a rigid body or a soft body
     SensedBodyType m_sensedBodyType;
 
 private:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
+
     // Range of this sensor, i.e. how far can it sense
     double m_range;
 
@@ -639,23 +665,29 @@ private:
     // Could also be sensing a softbody
     btSoftBody* m_sensedSoftBody;
 
-    // The internal index of the node belonging to the sensed soft body
-    int m_sensedSoftBodyNodeIdx = 0;
+    // The internal index of the face belonging to the sensed soft body
+    int m_sensedSoftBodyFaceIdx = -1;
 
-    // The node ptr to the sensed soft body
-    // For future we might need to sense a face rather just a node
+    // The internal index of the node belonging to the sensed soft body
+    int m_sensedSoftBodyNodeIdx = -1;
+
+    // The node ptr to the sensed soft body's face
+    btSoftBody::Face* m_sensedSoftBodyFace;
+
+    // The node ptr to the sensed soft body's node
     btSoftBody::Node* m_sensedSoftBodyNode;
 
     // Boolean for sensor sensing something
     bool m_triggered;
-    // Location of sensed point in World Frame
-    // This is along of the sensor direction
+
+    // Location of sensed point in World Frame. This is along of the sensor direction
     cVector3d m_sensedLocationWorld;
 
-    cVector3d m_sensedSoftPointInWorld;
-
 private:
+    // Visual markers to show the hit point and the sensor start and end points
     cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;
+
+    // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
 };
 

@@ -2573,16 +2573,42 @@ void afProximitySensor::updateSensor(){
 
             // Now get the node which is closest to the hit point;
             btVector3 _hitPoint = _rayCallBack.m_hitPointWorld;
-            double _maxDistance = 0.1;
             int _sensedSoftBodyNodeIdx = -1;
+            int _sensedSoftBodyFaceIdx = -1;
+
+            double _maxDistance = 0.1;
+            for (int faceIdx = 0 ; faceIdx < _sensedSoftBody->m_faces.size() ; faceIdx++){
+                btVector3 _faceCenter(0, 0, 0);
+                // Iterate over all the three nodes of the face to find the this centroid to the hit 
+                // point in world to store this face as the closest face
+                for (int nIdx = 0 ; nIdx < 3 ; nIdx++){
+                    _faceCenter += _sensedSoftBody->m_faces[faceIdx].m_n[nIdx]->m_x;
+                }
+                _faceCenter /= 3;
+                if ( (_hitPoint - _faceCenter).length() < _maxDistance ){
+                    _sensedSoftBodyFaceIdx = faceIdx;
+                    _maxDistance = (_hitPoint - _faceCenter).length();
+                }
+
+            }
+            // If sensedBodyFaceIdx is not -1, we sensed some face. Lets capture it
+            if (_sensedSoftBodyFaceIdx > -1){
+                m_sensedSoftBodyFaceIdx = _sensedSoftBodyFaceIdx;
+                m_sensedSoftBodyFace = &_sensedSoftBody->m_faces[_sensedSoftBodyFaceIdx];
+                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBodyType = SOFT_BODY;
+            }
+            // Reset the maxDistance for node checking
+            _maxDistance = 0.1;
+            // Iterate over all the softbody nodes to figure out which node is closest to the
+            // hit point in world
             for (int nodeIdx = 0 ; nodeIdx < _sensedSoftBody->m_nodes.size() ; nodeIdx++){
                 if ( (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
                     _sensedSoftBodyNodeIdx = nodeIdx;
                     _maxDistance = (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length();
                 }
             }
-            // If sensedBodyNodeIdx is not -1, we sensed some node
-            // Lets capture it
+            // If sensedBodyNodeIdx is not -1, we sensed some node. Lets capture it
             if (_sensedSoftBodyNodeIdx > -1){
                 m_sensedSoftBodyNodeIdx = _sensedSoftBodyNodeIdx;
                 m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
