@@ -306,22 +306,19 @@ bool AMBFController::raven_command_pb()
 	for(int i=0; i<n_arms; i++)
 	{
 		ambf_msgs::ObjectCmd msg;
+		msg.header.stamp = ros::Time::now();
+		msg.enable_position_controller = false; // always the case for serial link mechanism
 
 		if(raven_command[i].updated && raven_command[i].type != _null)
 		{
 			if(raven_command[i].type == _jp || raven_command[i].type == _cp)
 			{
+				raven_command[i].js[0] = 0.3*sin(count*0.01/M_PI);
+				raven_command[i].js[1] = 0.3*sin(count*0.01/M_PI+i*M_PI/2);
 				msg.joint_cmds = raven_command[i].js;
-				msg.enable_position_controller = true;
+				msg.position_controller_mask = true_joints;
 
-				for(int j=0; j<n_joints; j++)
-				{
-					msg.position_controller_mask = false_joints;
-					msg.position_controller_mask[j] = true; // need to publish one joint at a time
-
-					raven_pubs[i].publish(msg);
-					ros::Duration(sleep_time).sleep();  // wait for the topic to be published
-				}
+				raven_pubs[i].publish(msg);
 			}
 			else if(raven_command[i].type == _jw)
 			{
