@@ -1255,13 +1255,23 @@ void afRigidBody::updatePositionFromDynamics()
         cQuaternion q;
         q.fromRotMat(m_localRot);
         m_afObjectPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        // Since the mass and inertia aren't going to change that often, write them
+        // out intermittently
+        if (m_write_count % 2000 == 0){
+            m_afObjectPtr->set_mass(getMass());
+            m_afObjectPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
+        }
+
         if (_publish_joint_positions){
             afObjectSetJointPositions();
         }
+
         if (_publish_children_names){
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
+
                 afObjectStateSetChildrenNames();
                 m_write_count = 0;
             }
