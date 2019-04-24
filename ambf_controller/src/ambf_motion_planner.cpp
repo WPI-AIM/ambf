@@ -41,36 +41,20 @@
 */
 //===========================================================================
 
-#ifndef AMBFCONTROLLER_H
-#define AMBFCONTROLLER_H
 
 #include "ambf_motion_planner.h"
 
-class AMBFController{
+AMBFPlanner::AMBFPlanner()
+{
+	state.updated = false;
+	command.updated = false;
+	command.type = _jp;
 
-private:
+	state.jp.resize(AMBFDef::raven_joints);
+	command.js.resize(AMBFDef::raven_joints);
+}
 
-    mutex _mutex;
-    ros::NodeHandle nh_; 
+AMBFPlanner::~AMBFPlanner()
+{
 
-    vector<ros::Publisher>  raven_pubs;      // raven command publisher
-    vector<ros::Subscriber> raven_subs;      // raven state subscriber
-    vector<AMBFPlanner>     raven_planner;   // raven motion planner
-
-public:
-
-    AMBFController(int, char**);
-
-    bool init_sys();
-    bool init_ros(int, char**);
-    bool sys_run();
-    bool raven_first_pb();
-    bool raven_command_pb();
-    bool raven_motion_planning();
-    void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
-    bool reset_command();
-
-    ~AMBFController();
-};
-
-#endif
+}

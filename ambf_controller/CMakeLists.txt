@@ -47,7 +47,10 @@ include_directories (${GLFW_INCLUDE_DIRS}
 
 add_executable (ambf_controller include/ambf_defines.h
                                 include/ambf_controller.h
+                                include/ambf_motion_planner.h
+                                src/ambf_motion_planner.cpp
                                 src/ambf_controller.cpp 
+                                src/ambf_defines.cpp
                                 src/main.cpp )
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})

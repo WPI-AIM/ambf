@@ -70,28 +70,6 @@ AMBFController::AMBFController(int argc, char** argv)
  */
 bool AMBFController::init_sys()
 {
-	// The loop rate of the AMBF simulator: 	2000 Hz
-	// The loop rate of the AMBF python client: 1000 Hz
-	// The loop rate of the Raven source code:  1000 Hz
-	lr_ = 1000;  // the loop rate (Hz)
-	n_joints = 7;
-	n_arms = 2;
-
-	// system variables
-	raven_append = "/ambf/env/raven_2";
-	sub_append = "/State";
-	pub_append = "/Command";
-
-	arm_append.push_back("/base_link_L");
-	arm_append.push_back("/base_link_R");
-
-	for(int i=0; i<n_joints; i++)
-	{
-		zero_joints.push_back(0);
-		true_joints.push_back(1);
-		false_joints.push_back(0);
-	}
-	zero_vec = tf::Vector3(0,0,0);
 
 	// joint -: 0_link-base_link_L: 			fixed
 	// joint 0: base_link_L-link1_L: 			revolute		(shoulder)				range: -pi~pi
@@ -102,18 +80,9 @@ bool AMBFController::init_sys()
 	// joint 5: wrist_L-grasper1_L: 			revolute		(grasper left)			range: -2~2
 	// joint 6: wrist_L-grasper2_L: 			revolute		(grasper right)			range: -2~2
 
-	raven_state.resize(n_arms);
-	raven_command.resize(n_arms);
-	for(int i=0; i<n_arms; i++)
-	{
-		raven_state[i].updated = false;
-		raven_command[i].updated = false;
-		raven_command[i].type = _jp; 		// _null
-
-		raven_state[i].jp.resize(n_joints);
-		raven_command[i].js.resize(n_joints);
-	}
+	raven_planner.resize(AMBFDef::raven_arms);
 	reset_command();
+
 	return true;
 }
 
@@ -151,20 +120,20 @@ bool AMBFController::init_ros(int argc, char** argv)
 	*/
 	string topic;
 
-	for(int i=0; i<n_arms; i++)
+	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
-		topic = raven_append + arm_append[i] + sub_append;
+		topic = AMBFDef::raven_append + AMBFDef::arm_append[i] + AMBFDef::sub_append;
 
 		raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
-				               boost::bind(&AMBFController::raven_state_cb, this, _1, arm_append[i])));
+				               boost::bind(&AMBFController::raven_state_cb, this, _1, AMBFDef::arm_append[i])));
 
-		topic = raven_append + arm_append[i] + pub_append;
+		topic = AMBFDef::raven_append + AMBFDef::arm_append[i] + AMBFDef::pub_append;
+
 		raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
 	}
 
 	return true;	
 }
-
 
 
 /**
@@ -179,27 +148,27 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 
   static int count = 0;
 
-  for(int i=0; i<n_arms; i++)
+  for(int i=0; i<AMBFDef::raven_arms; i++)
   {
-  	if(topic_name == arm_append[i])
+  	if(topic_name == AMBFDef::arm_append[i])
   	{
   		const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
 
 	  	geometry_msgs::Pose cp = msg->pose;
-	  	raven_state[i].cp.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
-	   	raven_state[i].cp.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
+	  	raven_planner[i].state.cp.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
+	   	raven_planner[i].state.cp.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
 
 	   	geometry_msgs::Wrench wr = msg->wrench;
-	   	raven_state[i].ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
-	  	raven_state[i].cf = tf::Vector3(wr.force.x,wr.force.y,wr.force.z);
+	   	raven_planner[i].state.ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
+	  	raven_planner[i].state.cf = tf::Vector3(wr.force.x,wr.force.y,wr.force.z);
 
-		if(msg->joint_positions.size() == n_joints)
+		if(msg->joint_positions.size() == AMBFDef::raven_joints)
 	   	{
-		  	for(int j = 0; j< n_joints; j++)
-		  		raven_state[i].jp[j] = msg->joint_positions[j]; 
+		  	for(int j = 0; j< AMBFDef::raven_joints; j++)
+		  		raven_planner[i].state.jp[j] = msg->joint_positions[j]; 
 
 	  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count);
-		  	raven_state[i].updated = true;	
+		  	raven_planner[i].state.updated = true;	
 		  	count++;	
 	   	}
 	   	else if(msg->joint_positions.size() == 0)
@@ -224,31 +193,38 @@ bool AMBFController::raven_motion_planning()
 {
 	lock_guard<mutex> _mutexlg(_mutex);
 
-	for(int i=0; i<n_arms; i++)
+	static int count = 0;
+
+	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
-		if(raven_state[i].updated && raven_command[i].type != _null)
+		if(raven_planner[i].state.updated && raven_planner[i].command.type != _null)
 		{
-			if(raven_command[i].type == _jp || raven_command[i].type == _jw)
+			if(raven_planner[i].command.type == _jp || raven_planner[i].command.type == _jw)
 			{
-				// TODO: update raven_command[i].js
-				raven_command[i].updated = true;
-				raven_state[i].updated   = false;
+				// TODO: update raven_planner[i].command.js
+				raven_planner[i].command.js[0] = 0.3*sin(count*0.01/M_PI);
+				raven_planner[i].command.js[1] = 0.3*sin(count*0.01/M_PI+i*M_PI/2);
+
+				raven_planner[i].command.updated = true;
+				raven_planner[i].state.updated   = false;
+
+				count ++;
 			}
-			else if(raven_command[i].type == _cp)
+			else if(raven_planner[i].command.type == _cp)
 			{
 				// TODO: set desired cartesian position
 				//		 do inverse kinematics
-				//		 update raven_command[i].js
+				//		 update raven_planner[i].command.js
 
-				raven_command[i].updated = true;
-				raven_state[i].updated   = false;
+				raven_planner[i].command.updated = true;
+				raven_planner[i].state.updated   = false;
 			}
-			else if(raven_command[i].type == _cw)
+			else if(raven_planner[i].command.type == _cw)
 			{
-				// TODO: update raven_command[i].cf
-				//       update raven_command[i].ct
-				raven_command[i].updated = true;
-				raven_state[i].updated   = false;
+				// TODO: update raven_planner[i].command.cf
+				//       update raven_planner[i].command.ct
+				raven_planner[i].command.updated = true;
+				raven_planner[i].state.updated   = false;
 			}
 		}		
 	}
@@ -266,7 +242,7 @@ bool AMBFController::sys_run()
 {
 	bool check = ros::ok();
 	
-	ros::Rate loop_rate(lr_);
+	ros::Rate loop_rate(AMBFDef::loop_rate);
     while(check){
 
 		raven_motion_planning();
@@ -291,13 +267,13 @@ bool AMBFController::sys_run()
  */
 bool AMBFController::raven_first_pb()
 {
-	for(int i=0; i<n_arms; i++)
+	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
 		ambf_msgs::ObjectCmd msg;
 		msg.header.stamp = ros::Time::now();
-		msg.publish_children_names  = raven_command[i].cn_flag;
-		msg.publish_joint_names	    = raven_command[i].jn_flag;
-	    msg.publish_joint_positions = raven_command[i].jp_flag;
+		msg.publish_children_names  = raven_planner[i].command.cn_flag;
+		msg.publish_joint_names	    = raven_planner[i].command.jn_flag;
+	    msg.publish_joint_positions = raven_planner[i].command.jp_flag;
 		raven_pubs[i].publish(msg);	
 	}
 	return true;
@@ -325,48 +301,46 @@ bool AMBFController::raven_command_pb()
 	*/
 	
 	static int count = 0;
-	float sleep_time =  1/(float)lr_;
+	float sleep_time =  1.0/AMBFDef::loop_rate;
 
-	for(int i=0; i<n_arms; i++)
+	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
 		ambf_msgs::ObjectCmd msg;
 		msg.header.stamp = ros::Time::now();
-		msg.publish_children_names  = raven_command[i].cn_flag;
-		msg.publish_joint_names	    = raven_command[i].jn_flag;
-	    msg.publish_joint_positions = raven_command[i].jp_flag;
+		msg.publish_children_names  = raven_planner[i].command.cn_flag;
+		msg.publish_joint_names	    = raven_planner[i].command.jn_flag;
+	    msg.publish_joint_positions = raven_planner[i].command.jp_flag;
 
-		if(raven_command[i].updated && raven_command[i].type != _null)
+		if(raven_planner[i].command.updated && raven_planner[i].command.type != _null)
 		{
-			if(raven_command[i].type == _jp || raven_command[i].type == _cp)
+			if(raven_planner[i].command.type == _jp || raven_planner[i].command.type == _cp)
 			{
-				raven_command[i].js[0] = 0.3*sin(count*0.01/M_PI);
-				raven_command[i].js[1] = 0.3*sin(count*0.01/M_PI+i*M_PI/2);
-				msg.joint_cmds = raven_command[i].js;
-				msg.position_controller_mask = true_joints;
+				msg.joint_cmds = raven_planner[i].command.js;
+				msg.position_controller_mask = AMBFDef::true_joints;
 
 				raven_pubs[i].publish(msg);
 			}
-			else if(raven_command[i].type == _jw)
+			else if(raven_planner[i].command.type == _jw)
 			{
-				msg.joint_cmds = raven_command[i].js;
-				msg.position_controller_mask = false_joints;
+				msg.joint_cmds = raven_planner[i].command.js;
+				msg.position_controller_mask = AMBFDef::false_joints;
 
 				raven_pubs[i].publish(msg);
 			}
-			else if (raven_command[i].type == _cw)
+			else if (raven_planner[i].command.type == _cw)
 			{
-				msg.wrench.force.x  = raven_command[i].cf.x();
-				msg.wrench.force.y  = raven_command[i].cf.y();
-				msg.wrench.force.z  = raven_command[i].cf.z();
-				msg.wrench.torque.x = raven_command[i].ct.x();
-				msg.wrench.torque.y = raven_command[i].ct.y();
-				msg.wrench.torque.z = raven_command[i].ct.z();
+				msg.wrench.force.x  = raven_planner[i].command.cf.x();
+				msg.wrench.force.y  = raven_planner[i].command.cf.y();
+				msg.wrench.force.z  = raven_planner[i].command.cf.z();
+				msg.wrench.torque.x = raven_planner[i].command.ct.x();
+				msg.wrench.torque.y = raven_planner[i].command.ct.y();
+				msg.wrench.torque.z = raven_planner[i].command.ct.z();
 
 				raven_pubs[i].publish(msg);
 			}
 
 			count ++;
-			raven_command[i].updated = false;
+			raven_planner[i].command.updated = false;
 	    	ROS_INFO("publish count: %s",to_string(count).c_str());
 		}
 	}
@@ -384,15 +358,15 @@ bool AMBFController::reset_command()
 {
     lock_guard<mutex> _mutexlg(_mutex);
 
-    for(int i=0; i<n_arms; i++)
+    for(int i=0; i<AMBFDef::raven_arms; i++)
     {
-	 	raven_command[i].js = zero_joints;   	// raven joint space command
-	    raven_command[i].cf = zero_vec;         // raven cartesian force command      
-	    raven_command[i].ct = zero_vec;         // raven cartesian torque command   
+	 	raven_planner[i].command.js = AMBFDef::zero_joints;   	// raven joint space command
+	    raven_planner[i].command.cf = AMBFDef::zero_vec;         // raven cartesian force command      
+	    raven_planner[i].command.ct = AMBFDef::zero_vec;         // raven cartesian torque command   
 
-	    raven_command[i].cn_flag = false;		// raven state: children name flag
-	    raven_command[i].jn_flag = false;		// raven state: joint name flag
-	    raven_command[i].jp_flag = true;		// raven state: joint position flag
+	    raven_planner[i].command.cn_flag = false;		// raven state: children name flag
+	    raven_planner[i].command.jn_flag = false;		// raven state: joint name flag
+	    raven_planner[i].command.jp_flag = true;		// raven state: joint position flag
 
     }
 

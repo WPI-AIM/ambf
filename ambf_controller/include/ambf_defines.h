@@ -41,4 +41,23 @@ struct AMBFSta
     tf::Vector3   ct;        // raven cartesian torque state      
 };
 
+
+class AMBFDef {
+public:
+
+  static const int 			   raven_joints;
+  static const int 			   raven_arms;
+  static const int 			   loop_rate;
+  static const string          sub_append;          // place holder for namescpace strings
+  static const string          pub_append;  
+  static const string          raven_append;
+  static const vector<string>  arm_append;          // left arm 0 & right arm 1
+
+  static const tf::Vector3             zero_vec;    // place holder for frequently used arrays
+  static const vector<float>           zero_joints;
+  static const vector<unsigned char>   true_joints;
+  static const vector<unsigned char>   false_joints;
+
+};
+
 #endif

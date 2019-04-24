@@ -41,36 +41,22 @@
 */
 //===========================================================================
 
-#ifndef AMBFCONTROLLER_H
-#define AMBFCONTROLLER_H
+#include "ambf_defines.h"
 
-#include "ambf_motion_planner.h"
+const int             AMBFDef::raven_joints           = 7;
+const int             AMBFDef::raven_arms             = 2;
+const int             AMBFDef::loop_rate              = 1000; // Hz
+// The loop rate of the AMBF simulator:     2000 Hz
+// The loop rate of the AMBF python client: 1000 Hz
+// The loop rate of the Raven source code:  1000 Hz
+                                                     
+const string          AMBFDef::sub_append             = "/State";                           // place holder for namescpace strings
+const string          AMBFDef::pub_append             = "/Command";  
+const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
+const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};     // left arm 0 & right arm 1
 
-class AMBFController{
+const tf::Vector3             AMBFDef::zero_vec       = tf::Vector3(0,0,0);           // place holder for frequently used arrays
+const vector<float>           AMBFDef::zero_joints    = {0,0,0,0,0,0,0};
+const vector<unsigned char>   AMBFDef::true_joints    = {1,1,1,1,1,1,1};
+const vector<unsigned char>   AMBFDef::false_joints   = {0,0,0,0,0,0,0};
 
-private:
-
-    mutex _mutex;
-    ros::NodeHandle nh_; 
-
-    vector<ros::Publisher>  raven_pubs;      // raven command publisher
-    vector<ros::Subscriber> raven_subs;      // raven state subscriber
-    vector<AMBFPlanner>     raven_planner;   // raven motion planner
-
-public:
-
-    AMBFController(int, char**);
-
-    bool init_sys();
-    bool init_ros(int, char**);
-    bool sys_run();
-    bool raven_first_pb();
-    bool raven_command_pb();
-    bool raven_motion_planning();
-    void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
-    bool reset_command();
-
-    ~AMBFController();
-};
-
-#endif
