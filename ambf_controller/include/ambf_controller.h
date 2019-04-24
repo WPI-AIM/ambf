@@ -79,6 +79,7 @@ public:
     bool init_sys();
     bool init_ros(int, char**);
     bool sys_run();
+    bool raven_first_pb();
     bool raven_command_pb();
     bool raven_motion_planning();
     void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );

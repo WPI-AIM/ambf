@@ -178,7 +178,6 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
   lock_guard<mutex> _mutexlg(_mutex);
 
   static int count = 0;
-  int i = -1;
 
   for(int i=0; i<n_arms; i++)
   {
@@ -194,7 +193,7 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 	   	raven_state[i].ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
 	  	raven_state[i].cf = tf::Vector3(wr.force.x,wr.force.y,wr.force.z);
 
-	   	if(msg->joint_positions.size() == n_joints)
+		if(msg->joint_positions.size() == n_joints)
 	   	{
 		  	for(int j = 0; j< n_joints; j++)
 		  		raven_state[i].jp[j] = msg->joint_positions[j]; 
@@ -203,9 +202,13 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 		  	raven_state[i].updated = true;	
 		  	count++;	
 	   	}
+	   	else if(msg->joint_positions.size() == 0)
+	   	{
+	   		raven_first_pb(); // first time
+	   	}
 	   	else
 	   	{
-	   		ROS_ERROR("Received a corrupted raven topic: %s.",topic_name.c_str());
+	   		ROS_ERROR("Received a corrupted raven topic: %s. ",topic_name.c_str());
 	   	}
   	}
   }
@@ -280,6 +283,27 @@ bool AMBFController::sys_run()
 }
 
 
+
+/**
+ * @brief      Publish the first command to set state message preferences
+ *
+ * @return     success
+ */
+bool AMBFController::raven_first_pb()
+{
+	for(int i=0; i<n_arms; i++)
+	{
+		ambf_msgs::ObjectCmd msg;
+		msg.header.stamp = ros::Time::now();
+		msg.publish_children_names  = raven_command[i].cn_flag;
+		msg.publish_joint_names	    = raven_command[i].jn_flag;
+	    msg.publish_joint_positions = raven_command[i].jp_flag;
+		raven_pubs[i].publish(msg);	
+	}
+	return true;
+}
+
+
 /**
  * @brief      the publish function for all the command ROS topics
  *
@@ -307,7 +331,9 @@ bool AMBFController::raven_command_pb()
 	{
 		ambf_msgs::ObjectCmd msg;
 		msg.header.stamp = ros::Time::now();
-		msg.enable_position_controller = false; // always the case for serial link mechanism
+		msg.publish_children_names  = raven_command[i].cn_flag;
+		msg.publish_joint_names	    = raven_command[i].jn_flag;
+	    msg.publish_joint_positions = raven_command[i].jp_flag;
 
 		if(raven_command[i].updated && raven_command[i].type != _null)
 		{
@@ -361,8 +387,13 @@ bool AMBFController::reset_command()
     for(int i=0; i<n_arms; i++)
     {
 	 	raven_command[i].js = zero_joints;   	// raven joint space command
-	    raven_command[i].cf = zero_vec;        // raven cartesian force command      
-	    raven_command[i].ct = zero_vec;        // raven cartesian torque command         	
+	    raven_command[i].cf = zero_vec;         // raven cartesian force command      
+	    raven_command[i].ct = zero_vec;         // raven cartesian torque command   
+
+	    raven_command[i].cn_flag = false;		// raven state: children name flag
+	    raven_command[i].jn_flag = false;		// raven state: joint name flag
+	    raven_command[i].jp_flag = true;		// raven state: joint position flag
+
     }
 
 	return true;
