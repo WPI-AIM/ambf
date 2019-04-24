@@ -1263,11 +1263,25 @@ void afRigidBody::updatePositionFromDynamics()
             m_afObjectPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
 
-        if (_publish_joint_positions){
+        // We can set this body to publish it's children joint names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_names || m_afObjectPtr->m_objectCommand.publish_joint_names){
+            // Since joint names aren't going to change that often
+            // change the field less so often
+            if (m_write_count % 2000 == 0){
+                afObjectStateSetJointNames();
+            }
+        }
+
+        // We can set this body to publish joint positions in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_positions || m_afObjectPtr->m_objectCommand.publish_joint_positions){
             afObjectSetJointPositions();
         }
 
-        if (_publish_children_names){
+        // We can set this body to publish it's children names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_children_names || m_afObjectPtr->m_objectCommand.publish_children_names){
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -1276,13 +1290,8 @@ void afRigidBody::updatePositionFromDynamics()
                 m_write_count = 0;
             }
         }
-        if (_publish_joint_names){
-            // Since joint names aren't going to change that often
-            // change the field less so often
-            if (m_write_count % 2000 == 0){
-                afObjectStateSetJointNames();
-            }
-        }
+
+
         m_write_count++;
     }
 #endif
@@ -1300,6 +1309,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
         btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
+        _publish_children_names = m_afCommand.publish_children_names;
+        _publish_joint_names = m_afCommand.publish_joint_names;
+        _publish_joint_positions = m_afCommand.publish_joint_positions;
         // If the body is kinematic, we just want to control the position
         if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
             btTransform _Td;
