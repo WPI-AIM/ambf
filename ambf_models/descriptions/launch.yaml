@@ -1,10 +1,11 @@
 # This is the base file for Coordination Application
 world config: ./world/world.yaml
 color config: ./color/colors.yaml
+input devices config: ./input_devices/input_devices.yaml
 multibody configs:
   # - "./multi-bodies/robots/blender-toy-car.yaml"
   - "./multi-bodies/robots/blender-toy-car2.yaml"
-  # - "./multi-bodies/robots/blender-neuro-robot.yaml"
+  - "./multi-bodies/robots/blender-neuro-robot.yaml"
   # - "./multi-bodies/robots/blender-raven2.yaml"
   # - "./multi-bodies/robots/blender-mtm.yaml"
   # - "./multi-bodies/robots/blender-psm.yaml"
@@ -14,7 +15,7 @@ multibody configs:
   # - "./multi-bodies/robots/blender-pr2.yaml"
   # - "./multi-bodies/puzzles/parallel_structure.yaml"
   # - "./multi-bodies/puzzles/puzzle1.yaml"
-  - "./multi-bodies/puzzles/puzzle2.yaml"
+  # - "./multi-bodies/puzzles/puzzle2.yaml"
 gripper configs:
   - Default
   - MTMR

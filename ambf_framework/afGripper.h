@@ -98,7 +98,7 @@ public:
     virtual bool loadMultiBody(std::string a_file,
                                                std::string a_gripper_name,
                                                std::string a_suffix_name);
-    virtual afGripperLinkPtr getRootRigidBody();
+    virtual afGripperLinkPtr getAFRootRigidBody();
 private:
 
 //    cGripperBodyMap m_gripperBodyMap;

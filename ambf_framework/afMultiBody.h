@@ -115,6 +115,39 @@ btVector3 cVec2btVec(const cVector3d &cVec);
 ///
 cVector3d btVec2cVec(const btVector3 &bVec);
 
+
+///
+/// \brief assignXYZ
+/// \param node
+/// \param v
+///
+void assignXYZ(YAML::Node* node, btVector3 *v);
+
+
+///
+/// \brief assignXYZ
+/// \param node
+/// \param v
+///
+void assignXYZ(YAML::Node* node, cVector3d *v);
+
+
+///
+/// \brief assignRPY
+/// \param node
+/// \param v
+///
+void assignRPY(YAML::Node* node, cVector3d *v);
+
+
+///
+/// \brief assignRPY
+/// \param node
+/// \param v
+///
+void assignRPY(YAML::Node* node, btVector3 *v);
+
+
 ///
 /// \brief The afConfigHandler class
 ///
@@ -128,6 +161,7 @@ public:
     std::string getMultiBodyConfig(int i=0);
     std::string getColorConfig();
     std::string getWorldConfig();
+    std::string getInputDevicesConfig();
     std::vector<double> getColorRGBA(std::string a_color_name);
     std::string getGripperConfig(std::string a_gripper_name);
     bool loadBaseConfig(std::string file);
@@ -139,6 +173,7 @@ private:
     static std::string s_color_config;
     static std::vector<std::string> s_multiBody_configs;
     static std::string s_world_config;
+    static std::string s_input_devices_config;
     YAML::Node configNode;
     static std::map<std::string, std::string> s_gripperConfigFiles;
 
@@ -874,37 +909,37 @@ public:
 
 public:
 
-    bool addLight(afLightPtr a_rb, std::string a_name);
-    bool addCamera(afCameraPtr a_rb, std::string a_name);
-    bool addRigidBody(afRigidBodyPtr a_rb, std::string a_name);
-    bool addSoftBody(afSoftBodyPtr a_sb, std::string a_name);
-    bool addJoint(afJointPtr a_jnt, std::string a_name);
-    bool addSensor(afSensorPtr a_sensor, std::string a_name);
+    bool addAFLight(afLightPtr a_rb, std::string a_name);
+    bool addAFCamera(afCameraPtr a_rb, std::string a_name);
+    bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+    bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+    bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+    bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
 
-    afLightPtr getLight(std::string a_name);
-    afCameraPtr getCamera(std::string a_name);
-    afRigidBodyPtr getRidigBody(std::string a_name, bool suppress_warning=false);
-    afSoftBodyPtr getSoftBody(std::string a_name);
-    afJointPtr getJoint(std::string a_name);
-    afSensorPtr getSensor(std::string a_name);
+    afLightPtr getAFLight(std::string a_name);
+    afCameraPtr getAFCamera(std::string a_name);
+    afRigidBodyPtr getAFRidigBody(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBody(std::string a_name);
+    afJointPtr getAFJoint(std::string a_name);
+    afSensorPtr getAFSensor(std::string a_name);
 
-    inline afLightMap* getLightMap(){return &m_afLightMap;}
-    inline afCameraMap* getCameraMap(){return &m_afCameraMap;}
-    inline afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMap;}
-    inline afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
-    inline afJointMap* getJointMap(){return &m_afJointMap;}
-    inline afSensorMap* getSensorMap(){return &m_afSensorMap;}
+    inline afLightMap* getAFLightMap(){return &m_afLightMap;}
+    inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
+    inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
+    inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
+    inline afJointMap* getAFJointMap(){return &m_afJointMap;}
+    inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
 
-    afLightVec  getLighs();
-    afCameraVec getCameras();
-    afRigidBodyVec getRigidBodies();
-    afSoftBodyVec getSoftBodies();
-    afJointVec getJoints();
-    afSensorVec getSensors();
+    afLightVec  getAFLighs();
+    afCameraVec getAFCameras();
+    afRigidBodyVec getAFRigidBodies();
+    afSoftBodyVec getAFSoftBodies();
+    afJointVec getAFJoints();
+    afSensorVec getAFSensors();
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
-    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
+    afRigidBodyPtr getAFRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
 
 protected:
 
@@ -971,6 +1006,10 @@ public:
     bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
     void removePickingConstraint();
 
+    // Get Rigid Body or Soft Body belonging to this Specific Multibody
+    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBody(std::string a_name);
+
     cPrecisionClock m_wallClock;
 
     // Global Constraint ERP and CFM
@@ -1000,6 +1039,13 @@ protected:
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
+private:
+    // The world has a list of all the bodies and joints belonging to all multibodies
+    // The multibody has list of bodies and joints defined for this specific multibody
+    afRigidBodyMap m_afRigidBodyMapLocal;
+    afSoftBodyMap m_afSoftBodyMapLocal;
+    afJointMap m_afJointMapLocal;
 
 public:
     //data for picking objects

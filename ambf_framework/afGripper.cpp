@@ -158,7 +158,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
 //        printf("Loading body: %s \n", body_name .c_str());
         YAML::Node rb_node = multiBodyNode[rb_name];
         if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
-            m_afWorld->addRigidBody(rBodyPtr, m_multibody_namespace + rb_name);
+            m_afWorld->addAFRigidBody(rBodyPtr, m_multibody_namespace + rb_name);
         }
     }
 
@@ -181,7 +181,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
             // Finally load the sensor from afmb config data
             if (sensorPtr){
                 if (sensorPtr->loadSensor(&sensor_node, sensor_name, this)){
-                    m_afWorld->addSensor(sensorPtr, m_multibody_namespace + sensor_name+remap_str);
+                    m_afWorld->addAFSensor(sensorPtr, m_multibody_namespace + sensor_name+remap_str);
                 }
             }
         }
@@ -198,13 +198,13 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         //        printf("Loading body: %s \n", jnt_name.c_str());
         YAML::Node jnt_node = multiBodyNode[jnt_name];
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this)){
-            m_afWorld->addJoint(jntPtr, m_multibody_namespace + jnt_name);
+            m_afWorld->addAFJoint(jntPtr, m_multibody_namespace + jnt_name);
         }
     }
 
     // Pass the tmpBody, which is any link in the loaded gripper to get the root
     // parent
-    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getRootRigidBody(rBodyPtr));
+    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getAFRootRigidBody(rBodyPtr));
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
@@ -221,7 +221,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
 /// \brief afGripper::getRootRigidBody
 /// \return
 ///
-afGripperLinkPtr afGripper::getRootRigidBody(){
+afGripperLinkPtr afGripper::getAFRootRigidBody(){
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
@@ -232,12 +232,12 @@ afGripperLinkPtr afGripper::getRootRigidBody(){
 /// \brief afGripper::~afGripper
 ///
 afGripper::~afGripper(){
-    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
+    afRigidBodyMap* _rbMap = m_afWorld->getAFRigidBodyMap();
     afRigidBodyMap::const_iterator lIt = _rbMap->begin();
     for ( ; lIt != _rbMap->end() ; ++lIt){
         delete lIt->second;
     }
-    afJointMap* _jntMap =  m_afWorld->getJointMap();
+    afJointMap* _jntMap =  m_afWorld->getAFJointMap();
     afJointMap::const_iterator jIt = _jntMap->begin();
     for (; jIt != _jntMap->end() ; ++jIt){
         delete jIt->second;
