@@ -87,6 +87,9 @@ struct ObjectCommand{
                 position_controller_mask[idx] = 0;
             }
         }
+        publish_children_names = cmd->publish_children_names;
+        publish_joint_names = cmd->publish_joint_names;
+        publish_joint_positions = cmd->publish_joint_positions;
     }
     double px, py, pz;
     double qx, qy, qz, qw;
@@ -97,6 +100,13 @@ struct ObjectCommand{
     size_t joint_commands_size;
     // By default, always consider force control, unless pos_ctrl is set to true
     bool enable_position_controller;
+
+    // Flags to enable/disable publishing of children and joint names
+    bool publish_children_names;
+    bool publish_joint_names;
+
+    // Flag to publish joint positions
+    bool publish_joint_positions;
 };
 
 namespace ambf_comm{

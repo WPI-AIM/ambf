@@ -67,6 +67,34 @@ struct VertexTree{
     std::vector<int> vertexIdx;
 };
 
+// A struct to store relevant data collection for a softbody node
+struct afSoftNode{
+  cGELSkeletonNode* m_gelNode;
+  btSoftBody::Node* m_btNode;
+  std::vector<btSoftBody::Link*> m_btLinks;
+  std::vector<cGELSkeletonLink*> m_gelLinks;
+
+  // Get number of links attached to this node
+  int getNumLinks(){
+      if (!_link_size_computed){
+          m_link_size = m_btLinks.size();
+          _link_size_computed = true;
+      }
+      return m_link_size;
+  }
+
+private:
+  // Boolean to compute the size of links only on the first call
+  bool _link_size_computed = false;
+  int m_link_size = 0;
+};
+
+// A struct to store relevant data collection for a softbody node
+struct afSoftLink{
+    cGELSkeletonLink* m_gelLink;
+    btSoftBody::Link* m_btLink;
+};
+
 ///
 /// \brief The afSoftMultiMesh class
 ///
@@ -172,7 +200,12 @@ private:
 
     unsigned int m_counter = 0;
 
+public:
+
     cGELMesh m_gelMesh;
+
+    std::vector<afSoftNode> m_afSoftNodes;
+    std::vector<afSoftLink> m_afSoftLinks;
 
 };
 

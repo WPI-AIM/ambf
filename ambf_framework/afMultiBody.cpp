@@ -1255,24 +1255,43 @@ void afRigidBody::updatePositionFromDynamics()
         cQuaternion q;
         q.fromRotMat(m_localRot);
         m_afObjectPtr->cur_orientation(q.x, q.y, q.z, q.w);
-        if (_publish_joint_positions){
-            afObjectSetJointPositions();
+
+        // Since the mass and inertia aren't going to change that often, write them
+        // out intermittently
+        if (m_write_count % 2000 == 0){
+            m_afObjectPtr->set_mass(getMass());
+            m_afObjectPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
-        if (_publish_children_names){
-            // Since children names aren't going to change that often
-            // change the field less so often
-            if (m_write_count % 2000 == 0){
-                afObjectStateSetChildrenNames();
-                m_write_count = 0;
-            }
-        }
-        if (_publish_joint_names){
+
+        // We can set this body to publish it's children joint names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_names || m_afObjectPtr->m_objectCommand.publish_joint_names){
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
                 afObjectStateSetJointNames();
             }
         }
+
+        // We can set this body to publish joint positions in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_positions || m_afObjectPtr->m_objectCommand.publish_joint_positions){
+            afObjectSetJointPositions();
+        }
+
+        // We can set this body to publish it's children names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_children_names || m_afObjectPtr->m_objectCommand.publish_children_names){
+            // Since children names aren't going to change that often
+            // change the field less so often
+            if (m_write_count % 2000 == 0){
+
+                afObjectStateSetChildrenNames();
+                m_write_count = 0;
+            }
+        }
+
+
         m_write_count++;
     }
 #endif
@@ -1290,6 +1309,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
         btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
+        _publish_children_names = m_afCommand.publish_children_names;
+        _publish_joint_names = m_afCommand.publish_joint_names;
+        _publish_joint_positions = m_afCommand.publish_joint_positions;
         // If the body is kinematic, we just want to control the position
         if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
             btTransform _Td;
@@ -1586,7 +1608,9 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_piterations = softBodyConfigData["piterations"];
     YAML::Node cfg_diterations = softBodyConfigData["diterations"];
     YAML::Node cfg_citerations = softBodyConfigData["citerations"];
-    YAML::Node cfg_collisions = softBodyConfigData["collisions"];
+    YAML::Node cfg_flags = softBodyConfigData["flags"];
+    YAML::Node cfg_cutting = softBodyConfigData["cutting"];
+    YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
     if(softBodyName.IsDefined()){
         m_name = softBodyName.as<std::string>();
@@ -1752,15 +1776,23 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_piterations.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterations.as<double>();
         if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<double>();
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
-        if (cfg_collisions.IsDefined()) m_bulletSoftBody->m_cfg.collisions = cfg_collisions.as<double>();
+        if (cfg_flags.IsDefined()){
+            m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+        }
+        if (cfg_fixed_nodes.IsDefined()){
+            for (int i = 0 ; i < cfg_fixed_nodes.size() ; i++){
+                int nodeIdx = cfg_fixed_nodes[i].as<int>();
+                if (nodeIdx < m_bulletSoftBody->m_nodes.size()){
+                    m_bulletSoftBody->setMass(nodeIdx, 0);
+                }
+            }
+        }
     }
 
     if (softBodyRandomizeConstraints.IsDefined())
         if (softBodyRandomizeConstraints.as<bool>() == true)
             m_bulletSoftBody->randomizeConstraints();
 
-
-    m_bulletSoftBody->getCollisionShape()->setMargin(_collision_margin);
     m_afWorld->s_bulletWorld->addChild(this);
     return true;
 }
@@ -2552,7 +2584,61 @@ void afProximitySensor::updateSensor(){
             m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
         }
         m_triggered = true;
-        m_sensedBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+        if (_rayCallBack.m_collisionObject->getInternalType()
+                == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+            m_sensedRigidBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+            m_sensedBodyType = RIGID_BODY;
+        }
+        else if (_rayCallBack.m_collisionObject->getInternalType()
+                == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
+            btSoftBody* _sensedSoftBody = (btSoftBody*)btSoftBody::upcast(_rayCallBack.m_collisionObject);
+
+            // Now get the node which is closest to the hit point;
+            btVector3 _hitPoint = _rayCallBack.m_hitPointWorld;
+            int _sensedSoftBodyNodeIdx = -1;
+            int _sensedSoftBodyFaceIdx = -1;
+
+            double _maxDistance = 0.1;
+            for (int faceIdx = 0 ; faceIdx < _sensedSoftBody->m_faces.size() ; faceIdx++){
+                btVector3 _faceCenter(0, 0, 0);
+                // Iterate over all the three nodes of the face to find the this centroid to the hit 
+                // point in world to store this face as the closest face
+                for (int nIdx = 0 ; nIdx < 3 ; nIdx++){
+                    _faceCenter += _sensedSoftBody->m_faces[faceIdx].m_n[nIdx]->m_x;
+                }
+                _faceCenter /= 3;
+                if ( (_hitPoint - _faceCenter).length() < _maxDistance ){
+                    _sensedSoftBodyFaceIdx = faceIdx;
+                    _maxDistance = (_hitPoint - _faceCenter).length();
+                }
+
+            }
+            // If sensedBodyFaceIdx is not -1, we sensed some face. Lets capture it
+            if (_sensedSoftBodyFaceIdx > -1){
+                m_sensedSoftBodyFaceIdx = _sensedSoftBodyFaceIdx;
+                m_sensedSoftBodyFace = &_sensedSoftBody->m_faces[_sensedSoftBodyFaceIdx];
+                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBodyType = SOFT_BODY;
+            }
+            // Reset the maxDistance for node checking
+            _maxDistance = 0.1;
+            // Iterate over all the softbody nodes to figure out which node is closest to the
+            // hit point in world
+            for (int nodeIdx = 0 ; nodeIdx < _sensedSoftBody->m_nodes.size() ; nodeIdx++){
+                if ( (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
+                    _sensedSoftBodyNodeIdx = nodeIdx;
+                    _maxDistance = (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length();
+                }
+            }
+            // If sensedBodyNodeIdx is not -1, we sensed some node. Lets capture it
+            if (_sensedSoftBodyNodeIdx > -1){
+                m_sensedSoftBodyNodeIdx = _sensedSoftBodyNodeIdx;
+                m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
+                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBodyType = SOFT_BODY;
+            }
+        }
+
         m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
     }
     else{
@@ -3515,6 +3601,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     return _is_valid;
 }
 
+
 ///
 /// \brief afMultiBody::afMultiBody
 ///
@@ -4036,26 +4123,57 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
         cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
-        btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);
-        if (body)
-        {
-            //other exclusions?
-            if (!(body->isStaticObject() || body->isKinematicObject()))
-            {
-                m_pickedBody = body;
-                m_savedState = m_pickedBody->getActivationState();
-                m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
-                //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
-                btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
-                m_dynamicsWorld->addConstraint(p2p, true);
-                m_pickedConstraint = p2p;
-                btScalar mousePickClamping = 30.f;
-                p2p->m_setting.m_impulseClamp = mousePickClamping;
-                //very weak constraint for picking
-                p2p->m_setting.m_tau = 0.001f;
+        const btCollisionObject* colObject = rayCallback.m_collisionObject;
+        if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
+            if (body){
+                //other exclusions?
+                if (!(body->isStaticObject() || body->isKinematicObject()))
+                {
+                    m_pickedBody = body;
+                    m_savedState = m_pickedBody->getActivationState();
+                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
+                    //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
+                    btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
+                    m_dynamicsWorld->addConstraint(p2p, true);
+                    m_pickedConstraint = p2p;
+                    btScalar mousePickClamping = 30.f;
+                    p2p->m_setting.m_impulseClamp = mousePickClamping;
+                    //very weak constraint for picking
+                    p2p->m_setting.m_tau = 0.001f;
+                }
             }
         }
+        else if((colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY)){
+            btSoftBody* sBody = (btSoftBody*)btSoftBody::upcast(colObject);
+            // Now find the closest node in the soft body so we can do
+            // something about it.
+            btVector3 _hitPoint = rayCallback.m_hitPointWorld;
+
+            // Max distance between the hit point softbody nodes to be considered
+            double _maxDistance = 0.1;
+
+            // Index of closest Node. Initialize to -1 so it can be used
+            // as boolean as well if a Node was Found
+            int _closestNodeIdx = -1;
+
+            for (int nodeIdx = 0 ; nodeIdx < sBody->m_nodes.size() ; nodeIdx++){
+                if ( (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
+                    _maxDistance = (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
+                    _closestNodeIdx = nodeIdx;
+                }
+            }
+
+            if(_closestNodeIdx >=0 ){
+                m_pickedNode = &sBody->m_nodes[_closestNodeIdx];
+                m_pickedNode->m_v.setZero();
+                m_pickedSoftBody = sBody;
+                m_pickedNodeIdx = _closestNodeIdx;
+                m_pickedNodeGoal = btVec2cVec(_hitPoint);
+            }
+        }
+
 
         m_oldPickingPos = rayToWorld;
         m_hitPos = pickPos;
@@ -4091,17 +4209,24 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
             newPivotB = rayFromWorld + dir;
             // Set the position of grab sphere
             m_pickSphere->setLocalPos(newPivotB);
-            // Set the vector properties of the grab velocity vector
-//            cVector3d vPos = newPivotB - m_pickSphere->getLocalPos();
-//            cVector3d vDir = vPos;
-//            m_pickDragVector->setShowEnabled(true);
-//            m_pickDragVector->clear();
-//            double scale = 5.0;
-//            cCreateArrow(m_pickDragVector, vPos.length() * scale, 0.01, 0.1, 0.03, 0, 32, vDir, cVector3d(0,0,0));
-
             pickCon->setPivotB(cVec2btVec(newPivotB));
             return true;
         }
+    }
+
+    if (m_pickedSoftBody){
+        //keep it at the same picking distance
+
+        cVector3d newPivotB;
+
+        cVector3d dir = rayToWorld - rayFromWorld;
+        dir.normalize();
+        dir *= m_oldPickingDist;
+
+        newPivotB = rayFromWorld + dir;
+        m_pickSphere->setLocalPos(newPivotB);
+        m_pickedNodeGoal = newPivotB;
+        return true;
     }
     return false;
 }
@@ -4123,6 +4248,13 @@ void afMultiBody::removePickingConstraint(){
         delete m_pickedConstraint;
         m_pickedConstraint = 0;
         m_pickedBody = 0;
+    }
+
+    if (m_pickedSoftBody){
+        m_pickSphere->setShowEnabled(false);
+        m_pickedSoftBody = 0;
+        m_pickedNodeIdx = -1;
+        m_pickedNodeMass = 0;
     }
 }
 

@@ -531,7 +531,11 @@ JOINT instrument_shaft_R-wrist_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
+<<<<<<< HEAD
   controller: {D: 0.00003, I: 0, P: 0.1}
+=======
+  controller: {D: 0.0003, I: 0, P: 0.1}
+>>>>>>> 4082ca1839bfb404a18d627a469b55e8b76149ab
   type: revolute
   offset: 1.173
 JOINT wrist_R-grasper1_R:
@@ -543,7 +547,11 @@ JOINT wrist_R-grasper1_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
+<<<<<<< HEAD
   controller: {D: 0.00003, I: 0, P: 0.1}
+=======
+  controller: {D: 0.0003, I: 0, P: 0.1}
+>>>>>>> 4082ca1839bfb404a18d627a469b55e8b76149ab
   type: revolute
   offset: -0.354
 JOINT wrist_R-grasper2_R:
@@ -555,6 +563,10 @@ JOINT wrist_R-grasper2_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
+<<<<<<< HEAD
   controller: {D: 0.00003, I: 0, P: 0.1}
+=======
+  controller: {D: 0.0003, I: 0, P: 0.1}
+>>>>>>> 4082ca1839bfb404a18d627a469b55e8b76149ab
   type: revolute
   offset: 0.786
