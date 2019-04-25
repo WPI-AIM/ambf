@@ -3953,12 +3953,15 @@ afRigidBodyPtr afMultiBody::getAFRigidBody(std::string a_name, bool suppress_war
 /// \brief afMultiBody::removeCollisionChecking
 ///
 void afMultiBody::ignoreCollisionChecking(){
-    afRigidBodyMap* _rbMap = m_afWorld->getAFRigidBodyMap();
-    afRigidBodyMap::iterator rBodyItA = _rbMap->begin();
+
+    /// Only ignore collision checking between the bodies
+    /// defined in the specific multibody config file
+    /// and not all the bodies in the world
+    afRigidBodyMap::iterator rBodyItA = m_afRigidBodyMapLocal.begin();
     std::vector<btRigidBody*> rBodiesVec;
-    rBodiesVec.resize(_rbMap->size());
+    rBodiesVec.resize(m_afRigidBodyMapLocal.size());
     int i=0;
-    for ( ; rBodyItA != _rbMap->end() ; ++rBodyItA){
+    for ( ; rBodyItA != m_afRigidBodyMapLocal.end() ; ++rBodyItA){
         rBodiesVec[i] = rBodyItA->second->m_bulletRigidBody;
         i++;
     }
