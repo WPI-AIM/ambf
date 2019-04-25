@@ -49,7 +49,6 @@
 
 //------------------------------------------------------------------------------
 #include "afLibrary.h"
-#include "afGripper.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -99,7 +98,7 @@ public:
 ///
 /// \brief The SimulatedGripper class
 ///
-class SimulatedInputDevice: public AsynchronousDataStructure, public afGripper{
+class SimulatedInputDevice: public AsynchronousDataStructure, public afMultiBody{
 public:
     SimulatedInputDevice(afWorldPtr a_afWorld);
     ~SimulatedInputDevice(){}
@@ -129,6 +128,9 @@ public:
     // Softbody achors seems a good fit for now. This map stores
     // a pair
     std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
+
+    // Root link for this simulated device hhhhhhh
+    afRigidBodyPtr m_rootLink;
 
 private:
     std::mutex m_mutex;

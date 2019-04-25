@@ -4082,10 +4082,59 @@ afRigidBodyPtr afWorld::getAFRidigBody(std::string a_name, bool suppress_warning
 /// \param a_bodyPtr
 /// \return
 ///
-afRigidBodyPtr afWorld::getAFRootRigidBody(afRigidBodyPtr a_bodyPtr){
+afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
+    if (!a_bodyPtr){
+        std::cerr << "ERROR, BODY PTR IS NULL, CAN\'T LOOK UP ROOT BODIES" << std::endl;
+        return 0;
+    }
+
     /// Find Root Body
     afRigidBodyPtr rootParentBody;
-    std::vector<int> lineageSize;
+    std::vector<int> bodyParentsCount;
+    size_t rootParents = 0;
+    if (a_bodyPtr->m_parentBodies.size() == 0){
+        rootParentBody = a_bodyPtr;
+        rootParents++;
+    }
+    else{
+        bodyParentsCount.resize(a_bodyPtr->m_parentBodies.size());
+        std::vector<afRigidBodyPtr>::const_iterator rIt = a_bodyPtr->m_parentBodies.begin();
+        for (int parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
+            if ((*rIt)->m_parentBodies.size() == 0){
+                rootParentBody = (*rIt);
+                rootParents++;
+            }
+            bodyParentsCount[parentNum] = (*rIt)->m_parentBodies.size();
+        }
+    }
+
+    // In case no root parent is found, it is understood that
+    // the multibody chain is cyclical, perhaps return
+    // the body with least number of parents
+    if (rootParents == 0){
+        auto minLineage = std::min_element(bodyParentsCount.begin(), bodyParentsCount.end());
+        int idx = std::distance(bodyParentsCount.begin(), minLineage);
+        rootParentBody = a_bodyPtr->m_parentBodies[idx];
+        rootParents++;
+        std::cerr << "WARNING! CYCLICAL CHAIN OF BODIES FOUND WITH NO UNIQUE PARENT, RETURING THE BODY WITH LEAST PARENTS";
+    }
+
+    if (rootParents > 1)
+        std::cerr << "WARNING! " << rootParents << " ROOT PARENTS FOUND, RETURNING THE LAST ONE\n";
+
+    return rootParentBody;
+}
+
+
+///
+/// \brief afMultiBody::getRootAFRigidBody
+/// \param a_bodyPtr
+/// \return
+///
+afRigidBodyPtr afMultiBody::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
+    /// Find Root Body
+    afRigidBodyPtr rootParentBody;
+    std::vector<int> bodyParentsCount;
     size_t rootParents = 0;
     if (a_bodyPtr){
         if (a_bodyPtr->m_parentBodies.size() == 0){
@@ -4093,38 +4142,28 @@ afRigidBodyPtr afWorld::getAFRootRigidBody(afRigidBodyPtr a_bodyPtr){
             rootParents++;
         }
         else{
-            lineageSize.resize(a_bodyPtr->m_parentBodies.size());
+            bodyParentsCount.resize(a_bodyPtr->m_parentBodies.size());
             std::vector<afRigidBodyPtr>::const_iterator rIt = a_bodyPtr->m_parentBodies.begin();
             for (int parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
                 if ((*rIt)->m_parentBodies.size() == 0){
                     rootParentBody = (*rIt);
                     rootParents++;
                 }
-                lineageSize[parentNum] = (*rIt)->m_parentBodies.size();
+                bodyParentsCount[parentNum] = (*rIt)->m_parentBodies.size();
             }
         }
     }
     else{
-        lineageSize.resize(m_afRigidBodyMap.size());
-        afRigidBodyMap::const_iterator mIt = m_afRigidBodyMap.begin();
-        for(int bodyNum=0; mIt != m_afRigidBodyMap.end() ; bodyNum++, ++mIt){
+        bodyParentsCount.resize(m_afRigidBodyMapLocal.size());
+        afRigidBodyMap::const_iterator mIt = m_afRigidBodyMapLocal.begin();
+        for(int bodyNum=0; mIt != m_afRigidBodyMapLocal.end() ; bodyNum++, ++mIt){
             if ((*mIt).second->m_parentBodies.size() == 0){
                 rootParentBody = (*mIt).second;
                 ++rootParents;
             }
-            lineageSize[bodyNum] = (*mIt).second->m_parentBodies.size();
+            bodyParentsCount[bodyNum] = (*mIt).second->m_parentBodies.size();
         }
 
-    }
-    // In case no root parent is found, it is understood that
-    // the multibody chain is cyclical, perhaps return
-    // the body with least number of parents
-    if (rootParents == 0){
-        auto minLineage = std::min_element(lineageSize.begin(), lineageSize.end());
-        int idx = std::distance(lineageSize.begin(), minLineage);
-        rootParentBody = a_bodyPtr->m_parentBodies[idx];
-        rootParents++;
-        std::cerr << "WARNING! CYCLICAL CHAIN OF BODIES FOUND WITH NO UNIQUE PARENT, RETURING THE BODY WITH LEAST PARENTS";
     }
 
     if (rootParents > 1)

@@ -939,7 +939,7 @@ public:
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
-    afRigidBodyPtr getAFRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
+    afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
 
 protected:
 
@@ -1009,6 +1009,11 @@ public:
     // Get Rigid Body or Soft Body belonging to this Specific Multibody
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
     afSoftBodyPtr getAFSoftBody(std::string a_name);
+
+    // Get the root parent of a body, if null is provided, returns the parent body
+    // with most children. This method is similar to the corresponding afWorld
+    // method however it searches in the local multibody space than the world space
+    afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
 
     cPrecisionClock m_wallClock;
 

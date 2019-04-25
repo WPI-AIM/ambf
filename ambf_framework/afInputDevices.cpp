@@ -259,7 +259,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
             simDevice->m_rootLink = simDevice->getAFRigidBody(_rootLinkName);
         }
         else{
-            simDevice->m_rootLink = simDevice->getAFRootRigidBody();
+            simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
         }
     }
 
@@ -521,7 +521,7 @@ void PhysicalInputDevice::applyWrench(cVector3d force, cVector3d torque){
 /// \brief SimulatedGripper::SimulatedGripper
 /// \param a_chaiWorld
 ///
-SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afGripper (a_afWorld){
+SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afMultiBody (a_afWorld){
     m_gripper_angle = 0.5;
     P_lc_ramp = 0;
     P_ac_ramp = 0;
@@ -534,8 +534,8 @@ SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afGripper (a_a
 /// \return
 ///
 bool SimulatedInputDevice::loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name, std::string a_device_name){
-    bool res = loadMultiBody(a_config_filename, a_gripper_name, a_device_name);
-    m_rootLink = getAFRootRigidBody();
+    bool res = loadMultiBody(a_config_filename);
+    m_rootLink = getRootAFRigidBodyLocal();
 
     m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
     m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
