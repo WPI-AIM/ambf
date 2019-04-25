@@ -58,30 +58,10 @@ namespace ambf {
 using namespace chai3d;
 
 class afGripper;
-class afGripperLink;
 
 typedef afGripper* afGripperPtr;
-typedef afGripperLink* afGripperLinkPtr;
-typedef std::map<std::string, afGripperLinkPtr> afGripperBodyMap;
+typedef std::map<std::string, afRigidBodyPtr> afGripperBodyMap;
 //------------------------------------------------------------------------------
-
-///
-/// \brief The afGripperBody class
-///
-class afGripperLink : public afRigidBody{
-    friend class afGripper;
-public:
-
-    afGripperLink(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
-        m_surfaceProps.m_linear_damping = 0.5;
-        m_surfaceProps.m_angular_damping = 1.0;
-        m_surfaceProps.m_static_friction = 0.5;
-        m_surfaceProps.m_rolling_friction = 0.5;
-    }
-    ~afGripperLink(){}
-    virtual void setAngle(double &angle, double dt);
-    virtual void setAngle(std::vector<double> &angle, double dt);
-};
 
 ///
 /// \brief The afGripper class
@@ -89,7 +69,7 @@ public:
 class afGripper: public afMultiBody
 {
 
-    friend class afGripperLink;
+    friend class afRigidBody;
 
 public:
 
@@ -98,14 +78,14 @@ public:
     virtual bool loadMultiBody(std::string a_file,
                                                std::string a_gripper_name,
                                                std::string a_suffix_name);
-    virtual afGripperLinkPtr getAFRootRigidBody();
+    virtual afRigidBodyPtr getAFRootRigidBody();
 private:
 
 //    cGripperBodyMap m_gripperBodyMap;
     std::string m_gripper_name, m_suffix_name;
 
 public:
-    afGripperLinkPtr m_rootLink;
+    afRigidBodyPtr m_rootLink;
 };
 
 }

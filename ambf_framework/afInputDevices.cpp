@@ -256,7 +256,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
 
     if (_rootLinkDefined){
         if (simDevice->getAFRigidBody(_rootLinkName, false)){
-            simDevice->m_rootLink = (afGripperLinkPtr)simDevice->getAFRigidBody(_rootLinkName);
+            simDevice->m_rootLink = simDevice->getAFRigidBody(_rootLinkName);
         }
         else{
             simDevice->m_rootLink = simDevice->getAFRootRigidBody();
@@ -536,6 +536,7 @@ SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afGripper (a_a
 bool SimulatedInputDevice::loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name, std::string a_device_name){
     bool res = loadMultiBody(a_config_filename, a_gripper_name, a_device_name);
     m_rootLink = getAFRootRigidBody();
+
     m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
     m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
     // Initialize all the constraint to null ptr
@@ -579,7 +580,16 @@ void SimulatedInputDevice::updateMeasuredPose(){
 /// \param dt
 ///
 void SimulatedInputDevice::setGripperAngle(double angle, double dt){
-    m_rootLink->setAngle(angle, dt);
+    // Since it's not desireable to control the exact angle of multiple joints in the gripper.
+    // We override the set angle method for grippers to simplify the angle bound. 0 for closed
+    // and 1 for open and everything in between is scaled.
+    if (m_rootLink->m_parentBodies.size() == 0){
+        double clipped_angle = cClamp(angle, 0.0, 1.0);
+        for (size_t jnt = 0 ; jnt < m_rootLink->m_joints.size() ; jnt++){
+            double ang = m_rootLink->m_joints[jnt]->getLowerLimit() + clipped_angle * (m_rootLink->m_joints[jnt]->getUpperLimit()  - m_rootLink->m_joints[jnt]->getLowerLimit());
+            m_rootLink->m_joints[jnt]->commandPosition(ang);
+        }
+    }
 }
 
 ///
@@ -839,7 +849,7 @@ double InputDevices::increment_K_ah(double a_offset){
 double InputDevices::increment_P_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afGripperLinkPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
         double _gain = sG->m_controller.getP_lin();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_lin(0.0);
@@ -864,7 +874,7 @@ double InputDevices::increment_P_lc(double a_offset){
 double InputDevices::increment_P_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afGripperLinkPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
         double _gain = sG->m_controller.getP_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_ang(0.0);
@@ -889,7 +899,7 @@ double InputDevices::increment_P_ac(double a_offset){
 double InputDevices::increment_D_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afGripperLinkPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
         double _gain = sG->m_controller.getD_lin();
         if (_gain + a_offset <=0.01){
             // Keep a small value of Angular gain to avoid controller singularity
@@ -915,7 +925,7 @@ double InputDevices::increment_D_lc(double a_offset){
 double InputDevices::increment_D_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afGripperLinkPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
         double _gain = sG->m_controller.getD_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setD_ang(0.0);

@@ -57,43 +57,6 @@ using namespace chai3d;
 //------------------------------------------------------------------------------
 
 ///
-/// \brief afBody::set_angle
-/// \param angle
-/// \param dt
-///
-void afGripperLink::setAngle(double &angle, double dt){
-    // Since it's not desireable to control the exact angle of multiple joints in the gripper.
-    // We override the set angle method for grippers to simplify the angle bound. 0 for closed
-    // and 1 for open and everything in between is scaled.
-    if (m_parentBodies.size() == 0){
-        double clipped_angle = cClamp(angle, 0.0, 1.0);
-        for (size_t jnt = 0 ; jnt < m_joints.size() ; jnt++){
-            double ang = m_joints[jnt]->m_lower_limit + clipped_angle * (m_joints[jnt]->m_higher_limit - m_joints[jnt]->m_lower_limit);
-            m_joints[jnt]->commandPosition(ang);
-        }
-    }
-}
-
-///
-/// \brief afBody::set_angle
-/// \param angles
-/// \param dt
-///
-void afGripperLink::setAngle(std::vector<double> &angles, double dt){
-    // Since it's not desireable to control the exact angle of multiple joints in the gripper.
-    // We override the set angle method for grippers to simplify the angle bound. 0 for closed
-    // and 1 for open and everything in between is scaled.
-    if (m_parentBodies.size() == 0){
-        double jntCmdSize = m_joints.size() < angles.size() ? m_joints.size() : angles.size();
-        for (size_t jnt = 0 ; jnt < jntCmdSize ; jnt++){
-            double clipped_angle = cClamp(angles[jnt], 0.0, 1.0);
-            m_joints[jnt]->commandPosition(clipped_angle);
-        }
-
-    }
-}
-
-///
 /// \brief afGripper::loadMultiBody
 /// \param a_file
 /// \param a_gripper_name
@@ -150,10 +113,10 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         m_multibody_namespace = "/ambf/env/";
     }
 
-    afGripperLinkPtr rBodyPtr;
+    afRigidBodyPtr rBodyPtr;
     size_t totalBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalBodies; ++i) {
-        rBodyPtr = new afGripperLink(m_afWorld);
+        rBodyPtr = new afRigidBody(m_afWorld);
         std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
 //        printf("Loading body: %s \n", body_name .c_str());
         YAML::Node rb_node = multiBodyNode[rb_name];
@@ -204,7 +167,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
 
     // Pass the tmpBody, which is any link in the loaded gripper to get the root
     // parent
-    m_rootLink = static_cast<afGripperLinkPtr>(m_afWorld->getAFRootRigidBody(rBodyPtr));
+    m_rootLink = m_afWorld->getAFRootRigidBody(rBodyPtr);
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
@@ -223,7 +186,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
 /// \brief afGripper::getRootRigidBody
 /// \return
 ///
-afGripperLinkPtr afGripper::getAFRootRigidBody(){
+afRigidBodyPtr afGripper::getAFRootRigidBody(){
     if (m_rootLink == NULL){
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }

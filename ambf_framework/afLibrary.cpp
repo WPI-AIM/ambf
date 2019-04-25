@@ -1956,7 +1956,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
     m_joint_offset = 0.0;
     m_lower_limit = -100;
-    m_higher_limit = 100;
+    m_upper_limit = 100;
     //Default joint type is revolute if not type is specified
     m_jointType = JointType::revolute;
 
@@ -2084,7 +2084,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if (jointLimits["low"].IsDefined())
             m_lower_limit = jointLimits["low"].as<double>();
         if (jointLimits["high"].IsDefined())
-            m_higher_limit = jointLimits["high"].as<double>();
+            m_upper_limit = jointLimits["high"].as<double>();
     }
 
     if (jointController.IsDefined()){
@@ -2214,7 +2214,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if(jointLimits.IsDefined()){
-            m_hinge->setLimit(m_lower_limit, m_higher_limit);
+            m_hinge->setLimit(m_lower_limit, m_upper_limit);
         }
 
         m_btConstraint = m_hinge;
@@ -2237,7 +2237,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         if(jointLimits.IsDefined()){
             m_slider->setLowerLinLimit(m_lower_limit);
-            m_slider->setUpperLinLimit(m_higher_limit);
+            m_slider->setUpperLinLimit(m_upper_limit);
         }
 
         m_btConstraint = m_slider;

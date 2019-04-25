@@ -1230,7 +1230,7 @@ void updatePhysics(){
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
             SimulatedInputDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
-            afGripperLinkPtr rootLink = simGripper->m_rootLink;
+            afRigidBodyPtr rootLink = simGripper->m_rootLink;
             simGripper->updateMeasuredPose();
 
             if (g_enableGrippingAssist){

@@ -556,6 +556,8 @@ public:
     void commandEffort(double &effort_cmd);
     void commandPosition(double &position_cmd);
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
+    inline double getLowerLimit(){return m_lower_limit;}
+    inline double getUpperLimit(){return m_upper_limit;}
     double getPosition();
     JointType m_jointType;
 
@@ -569,7 +571,7 @@ protected:
     double m_joint_damping;
     double m_max_effort;
     bool m_enable_actuator;
-    double m_lower_limit, m_higher_limit;
+    double m_lower_limit, m_upper_limit;
     double m_joint_offset;
     btRigidBody *m_rbodyA, *m_rbodyB;
     void printVec(std::string name, btVector3* v);
