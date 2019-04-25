@@ -302,6 +302,8 @@ public:
     virtual void addChildBody(afRigidBodyPtr childBody, afJointPtr jnt);
     // This method update the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
 
     // A vector of joints that this bodies is a parent off. Includes joints of all the
     // connected children all the way down to the last child
@@ -356,7 +358,7 @@ public:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
-    std::string m_body_namespace;
+    std::string m_namespace;
 
 protected:
 
@@ -467,6 +469,8 @@ public:
     virtual bool loadSoftBody(std::string sb_config_file, std::string node_name, afMultiBodyPtr mB);
     virtual bool loadSoftBody(YAML::Node* sb_node, std::string node_name, afMultiBodyPtr mB);
     virtual void addChildBody(afSoftBodyPtr childBody, afJointPtr jnt){}
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
 
     std::vector<afJointPtr> m_joints;
     std::vector<afSoftBodyPtr> m_childrenBodies;
@@ -475,6 +479,9 @@ public:
     void setAngle(double &angle, double dt);
     void setAngle(std::vector<double> &angle, double dt);
     static void setConfigProperties(const afSoftBodyPtr a_body, const afSoftBodyConfigPropertiesPtr a_configProps);
+
+public:
+    std::string m_namespace;
 
 protected:
 
@@ -918,7 +925,7 @@ public:
 
     afLightPtr getAFLight(std::string a_name);
     afCameraPtr getAFCamera(std::string a_name);
-    afRigidBodyPtr getAFRidigBody(std::string a_name, bool suppress_warning=false);
+    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
     afSoftBodyPtr getAFSoftBody(std::string a_name);
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
@@ -987,7 +994,7 @@ public:
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
     inline std::string getMultiBodyPath(){return m_multibody_path;}
-    inline std::string getNameSpace(){return m_multibody_namespace;}
+    inline std::string getNameSpace(){return m_mb_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -1007,8 +1014,8 @@ public:
     void removePickingConstraint();
 
     // Get Rigid Body or Soft Body belonging to this Specific Multibody
-    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
-    afSoftBodyPtr getAFSoftBody(std::string a_name);
+    afRigidBodyPtr getAFRigidBodyLocal(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBodyLocal(std::string a_name);
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children. This method is similar to the corresponding afWorld
@@ -1026,7 +1033,7 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_multibody_namespace;
+    std::string m_mb_namespace;
     std::string m_multibody_path;
 
 protected:

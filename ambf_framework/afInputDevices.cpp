@@ -252,14 +252,19 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
         if (!simDevice->loadSimulatedGripper(_simulatedMBConfig, m_hInfo.m_modelName, m_hInfo.m_modelName)){
             return 0;
         }
-    }
 
-    if (_rootLinkDefined){
-        if (simDevice->getAFRigidBody(_rootLinkName, false)){
-            simDevice->m_rootLink = simDevice->getAFRigidBody(_rootLinkName);
+        // If multibody is defined, then the root link has to be searched in the defined multibody
+        if (_rootLinkDefined){
+            simDevice->m_rootLink = simDevice->getAFRigidBodyLocal(_rootLinkName);
         }
         else{
             simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
+        }
+    }
+    // If only root link is defined, we are going to look for it in the global space
+    else if (_rootLinkDefined){
+        if (a_iD->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
+            simDevice->m_rootLink = a_iD->getAFWorld()->getAFRigidBody(_rootLinkName);
         }
     }
 
