@@ -50,14 +50,18 @@
  * @param[in]  argc  The argc
  * @param      argv  The argv
  *
- * @return     { description_of_the_return_value }
+ * @return     success
  */
 int main(int argc, char* argv[])
 {
     ros::init(argc, argv, "ambf_controller_node");
-
     AMBFController ctrl(argc,argv);
-    ctrl.sys_run();
-     
+
+    thread system_thread  (&AMBFController::sys_run,&ctrl);
+    thread console_thread (&AMBFController::csl_run,&ctrl);
+
+    system_thread.join();
+    console_thread.join();
+
     return 0;
 }

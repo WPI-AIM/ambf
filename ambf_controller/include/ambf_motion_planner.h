@@ -49,16 +49,18 @@
 class AMBFPlanner{
 
 private:
-
-
+	bool homed;
 
 public:
 
 	AMBFCmd command;       // raven command structure
     AMBFSta state;  	   // raven state structure
+ 	AMBFCmdMode mode;      // Raven command mode
+
     AMBFPlanner();
     ~AMBFPlanner();
-
+    bool go_home();		   // jp command will be used
+    bool sine_dance(int);     // jp command will be used
 };
 
 #endif

@@ -8,7 +8,9 @@
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
 #include <mutex>
+#include <thread>
 #include <map>
+#include <termios.h>
 //---------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -17,6 +19,7 @@ using namespace std;
 #include "CBullet.h"
 
 enum AMBFCmdType {_jp, _jw, _cp, _cw, _null};
+enum AMBFCmdMode {homing, dancing};
 
 struct AMBFCmd
 {
@@ -55,6 +58,7 @@ public:
 
   static const tf::Vector3             zero_vec;    // place holder for frequently used arrays
   static const vector<float>           zero_joints;
+  static const vector<float>           home_joints;
   static const vector<unsigned char>   true_joints;
   static const vector<unsigned char>   false_joints;
 

@@ -44,8 +44,13 @@
 
 #include "ambf_motion_planner.h"
 
+/**
+ * @brief      Constructs the AMBFPLanner object.
+ */
 AMBFPlanner::AMBFPlanner()
 {
+	homed = false;
+	mode  = AMBFCmdMode::homing;
 	state.updated = false;
 	command.updated = false;
 	command.type = _jp;
@@ -54,7 +59,76 @@ AMBFPlanner::AMBFPlanner()
 	command.js.resize(AMBFDef::raven_joints);
 }
 
+
+/**
+ * @brief      Destroys the AMBFPlanner object.
+ */
 AMBFPlanner::~AMBFPlanner()
 {
+
+}
+
+
+
+/**
+ * @brief      Go back to home pose.
+ *
+ * @return     homed check.
+ */
+bool AMBFPlanner::go_home()
+{
+	float homed_i = 0;
+
+	for(int i=0; i<AMBFDef::raven_joints; i++)
+	{
+		float step_i;
+		float diff_i = AMBFDef::home_joints[i] - state.jp[i];
+
+		if(fabs(diff_i < 0.01))	homed_i ++;
+		else
+		{
+			if(i == 2) 	step_i = min(0.1*diff_i/AMBFDef::loop_rate,(double)fabs(diff_i));
+			else		step_i = min(1.0*diff_i/AMBFDef::loop_rate,(double)fabs(diff_i));
+			command.js[i] = step_i * signbit(diff_i) + state.jp[i];
+		}
+	}
+
+	if(homed_i == AMBFDef::raven_joints)
+	{
+		homed = true;
+	}
+	else
+	{
+		homed = false;
+		command.type 	= _jp;
+		command.updated = true;
+		state.updated   = false;
+	}	
+
+	return homed;
+}
+
+
+
+/**
+ * @brief      Do a little sinosoidal dance move.
+ *
+ * @param[in]  arm   The arm
+ *
+ * @return     success
+ */
+bool AMBFPlanner::sine_dance(int arm)
+{
+	static int count = 0;
+
+	command.js[0] = 0.3*sin(count*0.01/M_PI);
+	command.js[1] = 0.3*sin(count*0.01/M_PI+arm*M_PI/2);
+
+	count ++;
+	command.type 	= _jp;
+	command.updated = true;
+	state.updated   = false;
+
+	return true;
 
 }

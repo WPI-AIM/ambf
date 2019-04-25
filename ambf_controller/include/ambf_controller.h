@@ -51,6 +51,7 @@ class AMBFController{
 private:
 
     mutex _mutex;
+    bool print_menu;
     ros::NodeHandle nh_; 
 
     vector<ros::Publisher>  raven_pubs;      // raven command publisher
@@ -63,12 +64,15 @@ public:
 
     bool init_sys();
     bool init_ros(int, char**);
-    bool sys_run();
+    void sys_run(); // the system process function
+    void csl_run(); // the console process function
     bool raven_first_pb();
     bool raven_command_pb();
     bool raven_motion_planning();
     void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
     bool reset_command();
+    int get_key();
+    bool show_menu();
 
     ~AMBFController();
 };

@@ -70,18 +70,9 @@ AMBFController::AMBFController(int argc, char** argv)
  */
 bool AMBFController::init_sys()
 {
-
-	// joint -: 0_link-base_link_L: 			fixed
-	// joint 0: base_link_L-link1_L: 			revolute		(shoulder)				range: -pi~pi
-	// joint 1: link1_L-link2_L: 				revolute		(elbow)					range: -pi~pi
-	// joint 2: link2_L-link3_L: 				prismatic 		(tool plate up/down)	range: -0.17~0.1
-	// joint 3: link3_L-instrument_shaft_L: 	continuous		(tool shaft roll)		range: no limit
-	// joint 4: instrument_shaft_L-wrist_L: 	revolute		(tool wrist)			range: -2~2
-	// joint 5: wrist_L-grasper1_L: 			revolute		(grasper left)			range: -2~2
-	// joint 6: wrist_L-grasper2_L: 			revolute		(grasper right)			range: -2~2
-
 	raven_planner.resize(AMBFDef::raven_arms);
 	reset_command();
+	print_menu = true;
 
 	return true;
 }
@@ -146,7 +137,7 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
-  static int count = 0;
+  // static int count = 0;
 
   for(int i=0; i<AMBFDef::raven_arms; i++)
   {
@@ -167,9 +158,9 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 		  	for(int j = 0; j< AMBFDef::raven_joints; j++)
 		  		raven_planner[i].state.jp[j] = msg->joint_positions[j]; 
 
-	  		ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count);
 		  	raven_planner[i].state.updated = true;	
-		  	count++;	
+		  	// count++;	
+	  		// ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count);
 	   	}
 	   	else if(msg->joint_positions.size() == 0)
 	   	{
@@ -201,14 +192,16 @@ bool AMBFController::raven_motion_planning()
 		{
 			if(raven_planner[i].command.type == _jp || raven_planner[i].command.type == _jw)
 			{
-				// TODO: update raven_planner[i].command.js
-				raven_planner[i].command.js[0] = 0.3*sin(count*0.01/M_PI);
-				raven_planner[i].command.js[1] = 0.3*sin(count*0.01/M_PI+i*M_PI/2);
-
-				raven_planner[i].command.updated = true;
-				raven_planner[i].state.updated   = false;
-
-				count ++;
+				// update raven_planner[i].command.js
+				switch(raven_planner[i].mode)
+				{
+					case AMBFCmdMode::homing:
+						raven_planner[i].go_home();
+						break;
+					case AMBFCmdMode::dancing:
+						raven_planner[i].sine_dance(i);
+						break;
+				}
 			}
 			else if(raven_planner[i].command.type == _cp)
 			{
@@ -234,11 +227,10 @@ bool AMBFController::raven_motion_planning()
 
 
 /**
- * @brief      run the system process
+ * @brief      run the system process (for system thread)
  *
- * @return     check if ros is running fine
  */
-bool AMBFController::sys_run()
+void AMBFController::sys_run()
 {
 	bool check = ros::ok();
 	
@@ -254,8 +246,49 @@ bool AMBFController::sys_run()
 
         check = ros::ok();
     }
+    ROS_ERROR("System thread is shutting down.");
+}
 
-    return check;
+
+
+/**
+ * @brief      run the console process (for console thread)
+ *
+ */
+void AMBFController::csl_run()
+{
+
+	int key;
+	bool check = ros::ok();
+	
+	ros::Rate loop_rate(AMBFDef::loop_rate);
+    while(check){
+
+    	show_menu();
+		key = get_key();
+		switch(key)
+		{
+			case '1':
+				ROS_INFO("1: Enter homing mode. Both arms moving to home.");
+				raven_planner[0].mode = AMBFCmdMode::homing;
+				raven_planner[1].mode = AMBFCmdMode::homing;
+				print_menu = true;
+				break;
+
+			case '2':
+				ROS_INFO("1: Enter dancing mode. Enjoy a little dance!");
+				raven_planner[0].mode = AMBFCmdMode::dancing;
+				raven_planner[1].mode = AMBFCmdMode::dancing;
+				print_menu = true;
+				break;
+
+		}
+        ros::spinOnce();
+        loop_rate.sleep();
+
+        check = ros::ok();
+    }
+    ROS_ERROR("Console thread is shutting down.");
 }
 
 
@@ -299,8 +332,7 @@ bool AMBFController::raven_command_pb()
 	float32[] joint_cmds
 	bool[] position_controller_mask 
 	*/
-	
-	static int count = 0;
+
 	float sleep_time =  1.0/AMBFDef::loop_rate;
 
 	for(int i=0; i<AMBFDef::raven_arms; i++)
@@ -339,9 +371,11 @@ bool AMBFController::raven_command_pb()
 				raven_pubs[i].publish(msg);
 			}
 
-			count ++;
 			raven_planner[i].command.updated = false;
-	    	ROS_INFO("publish count: %s",to_string(count).c_str());
+
+			// static int count = 0;
+			// count ++;
+	    	// ROS_INFO("publish count: %s",to_string(count).c_str());
 		}
 	}
 	
@@ -379,4 +413,68 @@ bool AMBFController::reset_command()
 AMBFController::~AMBFController()
 {
 	ROS_INFO("okay bye");
+}
+
+
+
+/**
+ * @brief      Gets the keyboard input.
+ *
+ * @return     The key.
+ */
+int AMBFController::get_key() 
+{
+    	int character;
+    	struct termios orig_term_attr;
+    	struct termios new_term_attr;
+
+    	// set the terminal to raw mode 
+    	tcgetattr(fileno(stdin), &orig_term_attr);
+    	memcpy(&new_term_attr, &orig_term_attr, sizeof(struct termios));
+    	new_term_attr.c_lflag &= ~(ECHO|ICANON);
+    	new_term_attr.c_cc[VTIME] = 0;
+    	new_term_attr.c_cc[VMIN] = 0;
+    	tcsetattr(fileno(stdin), TCSANOW, &new_term_attr);
+
+    	// read a character from the stdin stream without blocking 
+    	//   returns EOF (-1) if no character is available 
+    	character = fgetc(stdin);
+
+   	// restore the original terminal attributes 
+    	tcsetattr(fileno(stdin), TCSANOW, &orig_term_attr);
+
+    	return character;
+}
+
+
+/**
+ * @brief      Shows the menu.
+ *
+ * @return     success
+ */
+bool AMBFController::show_menu()
+{
+	string s;
+	string s_false = "    ";
+	string s_true  = " (v)";
+
+	if(print_menu)
+	{
+		ROS_INFO("\n\nWelcome to the AMBF Raven Simulator");
+		ROS_INFO("-----------------------------------------------------");
+		ROS_INFO("Please choose a mode:");
+
+		if(raven_planner[0].mode == AMBFCmdMode::homing) s = s_true;
+		else											 s = s_false;
+		ROS_INFO("%s1: homing mode",s.c_str());
+
+		if(raven_planner[0].mode == AMBFCmdMode::dancing) s = s_true;
+		else											  s = s_false;
+		ROS_INFO("%s2: dancing mode",s.c_str());
+
+		ROS_INFO("-----------------------------------------------------\n\n");
+	}
+
+	print_menu = false;
+	return true;
 }

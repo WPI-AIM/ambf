@@ -56,7 +56,17 @@ const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
 const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};     // left arm 0 & right arm 1
 
 const tf::Vector3             AMBFDef::zero_vec       = tf::Vector3(0,0,0);           // place holder for frequently used arrays
-const vector<float>           AMBFDef::zero_joints    = {0,0,0,0,0,0,0};
-const vector<unsigned char>   AMBFDef::true_joints    = {1,1,1,1,1,1,1};
-const vector<unsigned char>   AMBFDef::false_joints   = {0,0,0,0,0,0,0};
+const vector<float>           AMBFDef::zero_joints    = {0,     0,0,0,0,0,0};
+const vector<float>           AMBFDef::home_joints    = {0,  0,0,0,0,0,0};;
+const vector<unsigned char>   AMBFDef::true_joints    = {1,     1,1,1,1,1,1};
+const vector<unsigned char>   AMBFDef::false_joints   = {0,     0,0,0,0,0,0};
 
+// Raven joints:
+// joint -: 0_link-base_link_L:             fixed
+// joint 0: base_link_L-link1_L:            revolute        (shoulder)              range: -pi~pi
+// joint 1: link1_L-link2_L:                revolute        (elbow)                 range: -pi~pi
+// joint 2: link2_L-link3_L:                prismatic       (tool plate up/down)    range: -0.17~0.1
+// joint 3: link3_L-instrument_shaft_L:     continuous      (tool shaft roll)       range: no limit
+// joint 4: instrument_shaft_L-wrist_L:     revolute        (tool wrist)            range: -2~2
+// joint 5: wrist_L-grasper1_L:             revolute        (grasper left)          range: -2~2
+// joint 6: wrist_L-grasper2_L:             revolute        (grasper right)         range: -2~2
