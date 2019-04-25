@@ -163,7 +163,6 @@ public:
     std::string getWorldConfig();
     std::string getInputDevicesConfig();
     std::vector<double> getColorRGBA(std::string a_color_name);
-    std::string getGripperConfig(std::string a_gripper_name);
     bool loadBaseConfig(std::string file);
     inline int numMultiBodyConfig(){return s_multiBody_configs.size();}
 
@@ -175,7 +174,6 @@ private:
     static std::string s_world_config;
     static std::string s_input_devices_config;
     YAML::Node configNode;
-    static std::map<std::string, std::string> s_gripperConfigFiles;
 
 protected:
 
@@ -344,10 +342,10 @@ public:
     bool isChild(btRigidBody* a_body);
 
     // Add sensor to this body
-    bool addSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+    bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
 
     // Get the sensors for this body
-    inline std::vector<afSensorPtr> getSensors(){return m_afSensors;}
+    inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
 public:
     // If the Position Controller is active, disable Position Controller from Haptic Device

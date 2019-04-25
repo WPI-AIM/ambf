@@ -142,6 +142,7 @@ bool g_mousePickingEnabled = false;
 //---------------------------------------------------------------------------
 class PhysicalInputDevice;
 class SimulatedInputDevice;
+class InputDevices;
 struct PhySimDevicePair;
 
 //---------------------------------------------------------------------------
@@ -206,6 +207,154 @@ struct SoftBodyGrippingConstraint{
 };
 
 ///
+/// \brief This class encapsulates Simulation Parameters that deal with the interaction between a single haptic device
+/// and the related Gripper simulated in Bullet. These Parameters include mapping the device buttons to
+/// action/mode buttons, capturing button triggers in addition to presses, mapping the workspace scale factors
+/// for a device and so on.
+///
+class SimulatedDeviceParams{
+public:
+    SimulatedDeviceParams();
+    void setParams(cHapticDeviceInfo &a_hInfo);
+    inline double getWorkspaceScaleFactor(){return m_workspaceScaleFactor;}
+
+public:
+    cVector3d m_posRef, m_posRefOrigin;
+    cMatrix3d m_rotRef, m_rotRefOrigin;
+    double m_workspaceScaleFactor;
+    double K_lh;                    //Linear Haptic Stiffness Gain
+    double K_ah;                    //Angular Haptic Stiffness Gain
+    // Gain Ramps are used to softly get towards the setpoint when the simulation starts
+    double K_lh_ramp;               //Linear Haptic Stiffness Gain Ramp
+    double K_ah_ramp;               //Angular Haptic Stiffness Gain Ramp
+    double P_lc_ramp;               //Linear Haptic Propotional Gain Ramp
+    double P_ac_ramp;               //Angular Haptic Propotional Gain Ramp
+
+    int act_1_btn;
+    int act_2_btn;
+    int mode_next_btn;
+    int mode_prev_btn;
+    int m_gripper_pinch_btn = -1;
+    bool btn_cam_rising_edge;
+    bool btn_clutch_rising_edge;
+    bool m_loop_exec_flag;
+};
+
+
+///
+/// \brief SimulationParams::SimulationParams
+///
+SimulatedDeviceParams::SimulatedDeviceParams(){
+    m_workspaceScaleFactor = 30.0;
+    K_lh = 0.02;
+    K_ah = 0.03;
+    K_lh_ramp = 0.0;
+    K_ah_ramp = 0.0;
+    P_lc_ramp = 0.0;
+    P_ac_ramp = 0.0;
+    act_1_btn   = 0;
+    act_2_btn   = 1;
+    mode_next_btn = 2;
+    mode_prev_btn= 3;
+
+    m_posRef.set(0,0,0);
+    m_posRefOrigin.set(0, 0, 0);
+    m_rotRef.identity();
+    m_rotRefOrigin.identity();
+
+    btn_cam_rising_edge = false;
+    btn_clutch_rising_edge = false;
+    m_loop_exec_flag = false;
+}
+
+///
+/// \brief SimulationParams::set_sim_params
+/// \param a_hInfo
+/// \param a_dev
+///
+void SimulatedDeviceParams::setParams(cHapticDeviceInfo &a_hInfo){
+    double maxStiffness	= a_hInfo.m_maxLinearStiffness / m_workspaceScaleFactor;
+
+    // clamp the force output gain to the max device stiffness
+    K_lh = cMin(K_lh, maxStiffness);
+    if (strcmp(a_hInfo.m_modelName.c_str(), "MTM-R") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTMR") == 0 ||
+            strcmp(a_hInfo.m_modelName.c_str(), "MTM-L") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTML") == 0)
+    {
+        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
+        m_workspaceScaleFactor = 10.0;
+        K_lh = K_lh/3;
+        act_1_btn     =  1;
+        act_2_btn     =  2;
+        mode_next_btn =  3;
+        mode_prev_btn =  4;
+        K_lh = 0.04;
+        K_ah = 0.0;
+        m_gripper_pinch_btn = 0;
+    }
+
+    if (strcmp(a_hInfo.m_modelName.c_str(), "Falcon") == 0)
+    {
+        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
+        act_1_btn     = 0;
+        act_2_btn     = 2;
+        mode_next_btn = 3;
+        mode_prev_btn = 1;
+        K_lh = 0.05;
+        K_ah = 0.0;
+    }
+
+    if (strcmp(a_hInfo.m_modelName.c_str(), "PHANTOM Omni") == 0)
+    {
+        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
+        K_lh = 0.01;
+        K_ah = 0.0;
+    }
+
+    if (strcmp(a_hInfo.m_modelName.c_str(), "Razer Hydra") == 0)
+    {
+        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
+        m_workspaceScaleFactor = 10.0;
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///
+/// \brief The SimulatedGripper class
+///
+class SimulatedInputDevice: public SimulatedDeviceParams, public afGripper{
+public:
+    SimulatedInputDevice(afWorldPtr a_afWorld);
+    ~SimulatedInputDevice(){}
+    bool loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name ,std::string a_device_name);
+    cVector3d measuredPos();
+    cMatrix3d measuredRot();
+    void updateMeasuredPose();
+    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
+    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+    bool isWrenchSet();
+    void clearWrench();
+    void offsetGripperAngle(double offset);
+    void setGripperAngle(double angle, double dt=0.001);
+
+public:
+    cVector3d m_pos;
+    cMatrix3d m_rot;
+    double m_gripper_angle;
+    // Gripping constraints, the number is the same as the total
+    // number of sensors attached to the gripper. Not all sensors
+    // are proximity sensors and necessary for gripping.
+    std::vector<btPoint2PointConstraint*> m_rigidGrippingConstraints;
+
+    // We need different constraint for softBody picking
+    // Softbody achors seems a good fit for now. This map stores
+    // a pair
+    std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
+
+private:
+    std::mutex m_mutex;
+};
+
+///
 /// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
 /// state/commands, button's state and grippers state if present
 ///
@@ -213,8 +362,8 @@ class PhysicalInputDevice{
 public:
     PhysicalInputDevice(){}
     ~PhysicalInputDevice();
-    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice);
-    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice);
+    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
+    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     cVector3d measuredPosPreclutch();
@@ -255,6 +404,106 @@ private:
     std::mutex m_mutex;
     void updateCursorPose();
     bool m_dev_force_enabled = true;
+
+private:
+    InputDevices* m_iDPtr;
+};
+
+///
+/// \brief These are the currently availble modes for each device
+///
+enum MODES{ CAM_CLUTCH_CONTROL,
+            GRIPPER_JAW_CONTROL,
+            CHANGE_CONT_LIN_GAIN,
+            CHANGE_CONT_ANG_GAIN,
+            CHANGE_CONT_LIN_DAMP,
+            CHANGE_CONT_ANG_DAMP,
+            CHANGE_DEV_LIN_GAIN,
+            CHANGE_DEV_ANG_GAIN
+          };
+
+///
+/// \brief The DeviceGripperPair struct
+///
+struct PhySimDevicePair{
+    PhysicalInputDevice* m_physicalDevice = NULL;
+    SimulatedInputDevice* m_simulatedDevice = NULL;
+    // The cameras that this particular device Gripper Pair control
+    std::vector<afCameraPtr> m_cameras;
+
+    // Label handed by the camera for updating info
+    cLabel* m_devFreqLabel = NULL;
+
+    std::string m_name;
+};
+
+///
+/// \brief This is a higher level class that queries the number of haptics devices available on the sytem
+/// and on the Network for dVRK devices and creates a single Bullet Gripper and a Device Handle for
+/// each device.
+///
+class InputDevices{
+public:
+    InputDevices(afWorldPtr a_afWorld);
+    ~InputDevices();
+
+    virtual bool loadInputDevices(std::string a_inputdevice_config, int a_max_load_devs = MAX_DEVICES);
+
+    boost::filesystem::path getBasePath(){return m_basePath;}
+
+    SimulatedInputDevice* createSimulatedGripper(uint dev_num, PhysicalInputDevice* a_physicalDevice);
+    void closeDevices();
+
+    // Increment gains (haptic mean physical device and controller means simulated gripper)
+    double increment_K_lh(double a_offset); // Stifness linear haptic
+    double increment_K_ah(double a_offset); // Stifness angular haptic
+    double increment_P_lc(double a_offset); // Stifness linear controller
+    double increment_P_ac(double a_offset); // Stifness angular controller
+    double increment_D_lc(double a_offset); // Damping linear controller
+    double increment_D_ac(double a_offset); // Damping angular controller
+
+    void nextMode();
+    void prevMode();
+
+    std::vector<PhySimDevicePair*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
+    std::vector<PhySimDevicePair*> getAllDeviceGripperPairs();
+
+public:
+    std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
+    std::vector<PhySimDevicePair> m_psDevicePairs;
+
+    uint m_numDevices;
+
+    // bool to enable the rotation of simulated gripper be in camera frame. i.e. Orienting the camera
+    // re-orients the simulate gripper.
+    bool m_use_cam_frame_rot;
+    MODES m_simModes;
+    std::string m_mode_str;
+    std::vector<MODES> m_modes_enum_vec {MODES::CAM_CLUTCH_CONTROL,
+                MODES::GRIPPER_JAW_CONTROL,
+                MODES::CHANGE_CONT_LIN_GAIN,
+                MODES::CHANGE_CONT_ANG_GAIN,
+                MODES::CHANGE_CONT_LIN_DAMP,
+                MODES::CHANGE_CONT_ANG_DAMP,
+                MODES::CHANGE_DEV_LIN_GAIN,
+                MODES::CHANGE_DEV_ANG_GAIN};
+
+    std::vector<std::string> m_modes_enum_str {"CAM_CLUTCH_CONTROL  ",
+                                               "GRIPPER_JAW_CONTROL ",
+                                               "CHANGE_CONT_LIN_GAIN",
+                                               "CHANGE_CONT_ANG_GAIN",
+                                               "CHANGE_CONT_LIN_DAMP",
+                                               "CHANGE_CONT_ANG_DAMP",
+                                               "CHANGE_DEV_LIN_GAIN ",
+                                               "CHANGE_DEV_ANG_GAIN "};
+    int m_mode_idx;
+
+
+
+private:
+    // Base of the config file location of this Input Device Handler
+    boost::filesystem::path m_basePath;
+    afWorldPtr m_afWorld;
 };
 
 ///
@@ -289,7 +538,7 @@ PhysicalInputDevice::~PhysicalInputDevice(){
 /// \param name_remapping_idx
 /// \return
 ///
-bool PhysicalInputDevice::loadPhysicalDevice(string pd_config_file, string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice){
+bool PhysicalInputDevice::loadPhysicalDevice(string pd_config_file, string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(pd_config_file);
@@ -301,7 +550,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(string pd_config_file, string node_
     if (baseNode.IsNull()) return false;
 
     YAML::Node basePDNode = baseNode[node_name];
-    return loadPhysicalDevice(&basePDNode, node_name, hDevHandler, simDevice);
+    return loadPhysicalDevice(&basePDNode, node_name, hDevHandler, simDevice, a_iD);
 }
 
 ///
@@ -312,7 +561,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(string pd_config_file, string node_
 /// \param name_remapping_idx
 /// \return
 ///
-bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice){
+bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD){
     YAML::Node physicaDeviceNode = *pd_node;
     if (physicaDeviceNode.IsNull()){
         std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -330,6 +579,9 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
     double _KLgain = 0;
     double _KAgain = 0;
     double _workspaceScale = 10;
+    std::string _simulatedMBConfig = "";
+    std::string _rootLinkName = "";
+    cVector3d _locationPos, _locationRot;
 
     // For the simulated gripper, the user can specify a MultiBody config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
@@ -348,9 +600,6 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
 
     bool _simulatedMBDefined = false;
     bool _rootLinkDefined = false;
-    std::string _simulatedMBFileName = "";
-    std::string _rootLinkName = "";
-    cVector3d _locationPos, _locationRot;
 
     if (pDHardwareName.IsDefined()){
         _hardwareName = pDHardwareName.as<std::string>();
@@ -376,7 +625,15 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
     }
 
     if (pDSimulatedGripper.IsDefined()){
-        _simulatedMBFileName = pDSimulatedGripper.as<std::string>();
+        boost::filesystem::path _mb_filename = _simulatedMBConfig;
+        _mb_filename = pDSimulatedGripper.as<std::string>();
+
+        if (_mb_filename.is_relative()){
+            _mb_filename = a_iD->getBasePath() / _mb_filename;
+        }
+
+        _simulatedMBConfig = _mb_filename.c_str();
+
         _simulatedMBDefined = true;
     }
     else{
@@ -413,27 +670,28 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
         if (m_hInfo.m_modelName.compare(_hardwareName) == 0){
             // This is our device. Let's load it up
             hDevHandler->getDevice(m_hDevice, dIdx);
+            m_hDevice->open();
             break;
         }
     }
 
     if (_simulatedMBDefined){
-        if (!simDevice->loadSimulatedGripper(_simulatedMBFileName, m_hInfo.m_modelName)){
+        if (!simDevice->loadSimulatedGripper(_simulatedMBConfig, m_hInfo.m_modelName, m_hInfo.m_modelName)){
             return 0;
         }
     }
 
     if (_rootLinkDefined){
         if (simDevice->getAFRigidBody(_rootLinkName, false)){
-            simDevice->m_rootLink = simDevice->getAFRigidBody(_rootLinkName);
+            simDevice->m_rootLink = (afGripperLinkPtr)simDevice->getAFRigidBody(_rootLinkName);
         }
         else{
             simDevice->m_rootLink = simDevice->getAFRootRigidBody();
         }
     }
 
-
-
+    createAfCursor(g_bulletWorld, "Tracker");
+    return 1;
 }
 
 ///
@@ -663,154 +921,7 @@ void PhysicalInputDevice::applyWrench(cVector3d force, cVector3d torque){
     m_hDevice->setForceAndTorqueAndGripperForce(force, torque, 0.0);
 }
 
-///
-/// \brief This class encapsulates Simulation Parameters that deal with the interaction between a single haptic device
-/// and the related Gripper simulated in Bullet. These Parameters include mapping the device buttons to
-/// action/mode buttons, capturing button triggers in addition to presses, mapping the workspace scale factors
-/// for a device and so on.
-///
-class SimulatedDeviceParams{
-public:
-    SimulatedDeviceParams();
-    void setParams(cHapticDeviceInfo &a_hInfo, PhysicalInputDevice* a_dev);
-    inline double getWorkspaceScaleFactor(){return m_workspaceScaleFactor;}
-
-public:
-    cVector3d m_posRef, m_posRefOrigin;
-    cMatrix3d m_rotRef, m_rotRefOrigin;
-    double m_workspaceScaleFactor;
-    double K_lh;                    //Linear Haptic Stiffness Gain
-    double K_ah;                    //Angular Haptic Stiffness Gain
-    // Gain Ramps are used to softly get towards the setpoint when the simulation starts
-    double K_lh_ramp;               //Linear Haptic Stiffness Gain Ramp
-    double K_ah_ramp;               //Angular Haptic Stiffness Gain Ramp
-    double P_lc_ramp;               //Linear Haptic Propotional Gain Ramp
-    double P_ac_ramp;               //Angular Haptic Propotional Gain Ramp
-
-    int act_1_btn;
-    int act_2_btn;
-    int mode_next_btn;
-    int mode_prev_btn;
-    int m_gripper_pinch_btn = -1;
-    bool btn_cam_rising_edge;
-    bool btn_clutch_rising_edge;
-    bool m_loop_exec_flag;
-};
-
-
-///
-/// \brief SimulationParams::SimulationParams
-///
-SimulatedDeviceParams::SimulatedDeviceParams(){
-    m_workspaceScaleFactor = 30.0;
-    K_lh = 0.02;
-    K_ah = 0.03;
-    K_lh_ramp = 0.0;
-    K_ah_ramp = 0.0;
-    P_lc_ramp = 0.0;
-    P_ac_ramp = 0.0;
-    act_1_btn   = 0;
-    act_2_btn   = 1;
-    mode_next_btn = 2;
-    mode_prev_btn= 3;
-
-    m_posRef.set(0,0,0);
-    m_posRefOrigin.set(0, 0, 0);
-    m_rotRef.identity();
-    m_rotRefOrigin.identity();
-
-    btn_cam_rising_edge = false;
-    btn_clutch_rising_edge = false;
-    m_loop_exec_flag = false;
-}
-
-///
-/// \brief SimulationParams::set_sim_params
-/// \param a_hInfo
-/// \param a_dev
-///
-void SimulatedDeviceParams::setParams(cHapticDeviceInfo &a_hInfo, PhysicalInputDevice* a_dev){
-    double maxStiffness	= a_hInfo.m_maxLinearStiffness / m_workspaceScaleFactor;
-
-    // clamp the force output gain to the max device stiffness
-    K_lh = cMin(K_lh, maxStiffness);
-    if (strcmp(a_hInfo.m_modelName.c_str(), "MTM-R") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTMR") == 0 ||
-            strcmp(a_hInfo.m_modelName.c_str(), "MTM-L") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTML") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        m_workspaceScaleFactor = 10.0;
-        K_lh = K_lh/3;
-        act_1_btn     =  1;
-        act_2_btn     =  2;
-        mode_next_btn =  3;
-        mode_prev_btn =  4;
-        K_lh = 0.04;
-        K_ah = 0.0;
-        m_gripper_pinch_btn = 0;
-        a_dev->enableForceFeedback(false);
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "Falcon") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        act_1_btn     = 0;
-        act_2_btn     = 2;
-        mode_next_btn = 3;
-        mode_prev_btn = 1;
-        K_lh = 0.05;
-        K_ah = 0.0;
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "PHANTOM Omni") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        K_lh = 0.01;
-        K_ah = 0.0;
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "Razer Hydra") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        m_workspaceScaleFactor = 10.0;
-    }
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///
-/// \brief The SimulatedGripper class
-///
-class SimulatedInputDevice: public SimulatedDeviceParams, public afGripper{
-public:
-    SimulatedInputDevice(afWorldPtr a_afWorld);
-    ~SimulatedInputDevice(){}
-    bool loadSimulatedGripper(std::string a_gripper_name, std::string a_device_name);
-    cVector3d measuredPos();
-    cMatrix3d measuredRot();
-    void updateMeasuredPose();
-    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
-    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
-    bool isWrenchSet();
-    void clearWrench();
-    void offsetGripperAngle(double offset);
-    void setGripperAngle(double angle, double dt=0.001);
-
-public:
-    cVector3d m_pos;
-    cMatrix3d m_rot;
-    double m_gripper_angle;
-    // Gripping constraints, the number is the same as the total
-    // number of sensors attached to the gripper. Not all sensors
-    // are proximity sensors and necessary for gripping.
-    std::vector<btPoint2PointConstraint*> m_rigidGrippingConstraints;
-
-    // We need different constraint for softBody picking
-    // Softbody achors seems a good fit for now. This map stores
-    // a pair
-    std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
-
-private:
-    std::mutex m_mutex;
-};
+///////////////////////////////////////////////////////////////////////////////////////////
 
 ///
 /// \brief SimulatedGripper::SimulatedGripper
@@ -826,12 +937,11 @@ SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afGripper (a_a
 /// \param a_device_name
 /// \return
 ///
-bool SimulatedInputDevice::loadSimulatedGripper(std::string a_gripper_name, std::string a_device_name){
-    std::string config = m_afWorld->getGripperConfig(a_device_name);
-    bool res = loadMultiBody(config, a_gripper_name, a_device_name);
+bool SimulatedInputDevice::loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name, std::string a_device_name){
+    bool res = loadMultiBody(a_config_filename, a_gripper_name, a_device_name);
     m_rootLink = getAFRootRigidBody();
-    m_rigidGrippingConstraints.resize(m_rootLink->getSensors().size());
-    m_softGrippingConstraints.resize(m_rootLink->getSensors().size());
+    m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
+    m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
     // Initialize all the constraint to null ptr
     for (int sIdx = 0 ; sIdx < m_rigidGrippingConstraints.size() ; sIdx++){
         m_rigidGrippingConstraints[sIdx] = 0;
@@ -904,96 +1014,6 @@ void SimulatedInputDevice::clearWrench(){
     m_rootLink->m_bulletRigidBody->clearForces();
 }
 
-///
-/// \brief These are the currently availble modes for each device
-///
-enum MODES{ CAM_CLUTCH_CONTROL,
-            GRIPPER_JAW_CONTROL,
-            CHANGE_CONT_LIN_GAIN,
-            CHANGE_CONT_ANG_GAIN,
-            CHANGE_CONT_LIN_DAMP,
-            CHANGE_CONT_ANG_DAMP,
-            CHANGE_DEV_LIN_GAIN,
-            CHANGE_DEV_ANG_GAIN
-          };
-
-///
-/// \brief The DeviceGripperPair struct
-///
-struct PhySimDevicePair{
-    PhysicalInputDevice* m_physicalDevice = NULL;
-    SimulatedInputDevice* m_simulatedDevice = NULL;
-    // The cameras that this particular device Gripper Pair control
-    std::vector<afCameraPtr> m_cameras;
-
-    // Label handed by the camera for updating info
-    cLabel* m_devFreqLabel = NULL;
-
-    std::string m_name;
-};
-
-///
-/// \brief This is a higher level class that queries the number of haptics devices available on the sytem
-/// and on the Network for dVRK devices and creates a single Bullet Gripper and a Device Handle for
-/// each device.
-///
-class InputDevices{
-public:
-    InputDevices(afWorldPtr a_afWorld);
-    ~InputDevices();
-
-    virtual bool loadInputDevices(std::string a_inputdevice_config, int a_max_load_devs = MAX_DEVICES);
-
-    SimulatedInputDevice* createSimulatedGripper(uint dev_num, PhysicalInputDevice* a_physicalDevice);
-    void closeDevices();
-
-    // Increment gains (haptic mean physical device and controller means simulated gripper)
-    double increment_K_lh(double a_offset); // Stifness linear haptic
-    double increment_K_ah(double a_offset); // Stifness angular haptic
-    double increment_P_lc(double a_offset); // Stifness linear controller
-    double increment_P_ac(double a_offset); // Stifness angular controller
-    double increment_D_lc(double a_offset); // Damping linear controller
-    double increment_D_ac(double a_offset); // Damping angular controller
-
-    void nextMode();
-    void prevMode();
-
-    std::vector<PhySimDevicePair*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
-    std::vector<PhySimDevicePair*> getAllDeviceGripperPairs();
-
-public:
-    std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
-    std::vector<PhySimDevicePair> m_psDevicePairs;
-
-    uint m_numDevices;
-
-    // bool to enable the rotation of simulated gripper be in camera frame. i.e. Orienting the camera
-    // re-orients the simulate gripper.
-    bool m_use_cam_frame_rot;
-    MODES m_simModes;
-    std::string m_mode_str;
-    std::vector<MODES> m_modes_enum_vec {MODES::CAM_CLUTCH_CONTROL,
-                MODES::GRIPPER_JAW_CONTROL,
-                MODES::CHANGE_CONT_LIN_GAIN,
-                MODES::CHANGE_CONT_ANG_GAIN,
-                MODES::CHANGE_CONT_LIN_DAMP,
-                MODES::CHANGE_CONT_ANG_DAMP,
-                MODES::CHANGE_DEV_LIN_GAIN,
-                MODES::CHANGE_DEV_ANG_GAIN};
-
-    std::vector<std::string> m_modes_enum_str {"CAM_CLUTCH_CONTROL  ",
-                                               "GRIPPER_JAW_CONTROL ",
-                                               "CHANGE_CONT_LIN_GAIN",
-                                               "CHANGE_CONT_ANG_GAIN",
-                                               "CHANGE_CONT_LIN_DAMP",
-                                               "CHANGE_CONT_ANG_DAMP",
-                                               "CHANGE_DEV_LIN_GAIN ",
-                                               "CHANGE_DEV_ANG_GAIN "};
-    int m_mode_idx;
-
-private:
-    afWorldPtr m_afWorld;
-};
 
 ///
 /// \brief InputDevices::InputDevices
@@ -1032,6 +1052,8 @@ bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_ma
 
     YAML::Node inputDevices = inputDevicesNode["input devices"];
 
+    m_basePath = boost::filesystem::path(a_input_devices_config).parent_path();
+
     if (!inputDevices.IsDefined()){
         return 0;
     }
@@ -1048,7 +1070,7 @@ bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_ma
             std::string devKey = inputDevices[devIdx].as<std::string>();
             YAML::Node devNode = inputDevicesNode[devKey];
 
-            if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD)){
+            if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
                     PhySimDevicePair dgPair;
                     dgPair.m_physicalDevice = pD;
                     dgPair.m_simulatedDevice = sD;
@@ -1144,8 +1166,8 @@ SimulatedInputDevice* InputDevices::createSimulatedGripper(uint dev_num, Physica
     dev_str << (dev_num + 1);
     std::string gripper_name = "Gripper" + dev_str.str();
     SimulatedInputDevice* simulatedGripper = new SimulatedInputDevice(g_afWorld);
-    if(simulatedGripper->loadSimulatedGripper(gripper_name, a_physicalDevice->m_hInfo.m_modelName)){
-        simulatedGripper->setParams(a_physicalDevice->m_hInfo, a_physicalDevice);
+    if(simulatedGripper->loadSimulatedGripper(gripper_name, a_physicalDevice->m_hInfo.m_modelName, a_physicalDevice->m_hInfo.m_modelName)){
+        simulatedGripper->setParams(a_physicalDevice->m_hInfo);
         a_physicalDevice->m_workspace_scale_factor = simulatedGripper->getWorkspaceScaleFactor();
         cVector3d localGripperPos = simulatedGripper->m_rootLink->getLocalPos();
         double l,w,h;
@@ -1350,7 +1372,7 @@ private:
 };
 
 
-std::shared_ptr<InputDevices> g_coordApp;
+std::shared_ptr<InputDevices> g_inputDevices;
 double g_margin = 0.02;
 bool g_showPatch = false;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1525,7 +1547,8 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
-    g_coordApp = std::make_shared<InputDevices>(g_bulletWorld, num_devices_to_load);
+    g_inputDevices = std::make_shared<InputDevices>(g_afWorld);
+    g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), num_devices_to_load);
 
     //-----------------------------------------------------------------------------------------------------------
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
@@ -1538,7 +1561,7 @@ int main(int argc, char* argv[])
         // If no controlling devices are defined for the camera context, add all
         // the current haptics devices specified for the simulation to each Window-Camera pair
         if(n_controlling_devs == 0){
-            std::vector<PhySimDevicePair*> dgPairs = g_coordApp->getAllDeviceGripperPairs();
+            std::vector<PhySimDevicePair*> dgPairs = g_inputDevices->getAllDeviceGripperPairs();
             for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
                 dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
 
@@ -1558,7 +1581,7 @@ int main(int argc, char* argv[])
         else{
             // Pass the names of the controlling devices to only get the controlling devices
             // defined for the window camera pair in the context
-            std::vector<PhySimDevicePair*> dgPairs  = g_coordApp->getDeviceGripperPairs(_controllingDevices);
+            std::vector<PhySimDevicePair*> dgPairs  = g_inputDevices->getDeviceGripperPairs(_controllingDevices);
             for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
                 dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
                 // Create labels for the contextual controlling devices for each Window-Camera Pair
@@ -1614,7 +1637,7 @@ int main(int argc, char* argv[])
 
     // create a thread which starts the main haptics rendering loop
     int dev_num[10] = {0,1,2,3,4,5,6,7,8,9};
-    for (int gIdx = 0 ; gIdx < g_coordApp->m_numDevices; gIdx++){
+    for (int gIdx = 0 ; gIdx < g_inputDevices->m_numDevices; gIdx++){
         g_hapticsThreads.push_back(new cThread());
         g_hapticsThreads[gIdx]->start(updateHapticDevice, CTHREAD_PRIORITY_HAPTICS, &dev_num[gIdx]);
     }
@@ -1815,90 +1838,90 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     // option - decrease linear haptic gain
     else if (a_key == GLFW_KEY_3)
     {
-        printf("linear haptic gain:  %f\n", g_coordApp->increment_K_lh(-0.05));
+        printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(-0.05));
     }
 
     // option - increase linear haptic gain
     else if (a_key == GLFW_KEY_4)
     {
-        printf("linear haptic gain:  %f\n", g_coordApp->increment_K_lh(0.05));
+        printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(0.05));
     }
 
     // option - decrease angular haptic gain
     else if (a_key == GLFW_KEY_5)
     {
-        printf("angular haptic gain:  %f\n", g_coordApp->increment_K_ah(-0.05));
+        printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(-0.05));
     }
 
     // option - increase angular haptic gain
     else if (a_key == GLFW_KEY_6)
     {
-        printf("angular haptic gain:  %f\n", g_coordApp->increment_K_ah(0.05));
+        printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(0.05));
     }
 
     // option - decrease linear stiffness
     else if (a_key == GLFW_KEY_7)
     {
-        printf("linear stiffness:  %f\n", g_coordApp->increment_P_lc(-50));
+        printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(-50));
     }
 
     // option - increase linear stiffness
     else if (a_key == GLFW_KEY_8)
     {
-        printf("linear stiffness:  %f\n", g_coordApp->increment_P_lc(50));
+        printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(50));
     }
 
     // option - decrease angular stiffness
     else if (a_key == GLFW_KEY_9)
     {
-        printf("angular stiffness:  %f\n", g_coordApp->increment_P_ac(-1));
+        printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(-1));
     }
 
     // option - increase angular stiffness
     else if (a_key == GLFW_KEY_0)
     {
-        printf("angular stiffness:  %f\n", g_coordApp->increment_P_ac(1));
+        printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(1));
     }
 
     // option - decrease linear damping
     else if (a_key == GLFW_KEY_PAGE_DOWN)
     {
-        printf("linear damping:  %f\n", g_coordApp->increment_D_lc(-0.1));
+        printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(-0.1));
     }
 
     // option - increase linear damping
     else if (a_key == GLFW_KEY_PAGE_UP)
     {
-        printf("linear damping:  %f\n", g_coordApp->increment_D_lc(0.1));
+        printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(0.1));
     }
 
     // option - decrease angular damping
     else if (a_key == GLFW_KEY_END)
     {
-        printf("angular damping:  %f\n", g_coordApp->increment_D_ac(-0.1));
+        printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(-0.1));
     }
 
     // option - increase angular damping
     else if (a_key == GLFW_KEY_HOME)
     {
-        printf("angular damping:  %f\n", g_coordApp->increment_D_ac(0.1));
+        printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(0.1));
     }
 
     // option - grippers orientation w.r.t contextual camera
     else if (a_key == GLFW_KEY_C){
-        g_coordApp->m_use_cam_frame_rot = true;
+        g_inputDevices->m_use_cam_frame_rot = true;
         printf("Gripper Rotation w.r.t Camera Frame:\n");
     }
 
     // option - grippers orientation w.r.t world
     else if (a_key == GLFW_KEY_W){
-        g_coordApp->m_use_cam_frame_rot = false;
+        g_inputDevices->m_use_cam_frame_rot = false;
         printf("Gripper Rotation w.r.t World Frame:\n");
     }
 
     // option - Change to next device mode
     else if (a_key == GLFW_KEY_N){
-        g_coordApp->nextMode();
+        g_inputDevices->nextMode();
         printf("Changing to next device mode:\n");
     }
 
@@ -2180,13 +2203,13 @@ void close(void)
     // wait for graphics and haptics loops to terminate
     while (!g_simulationFinished) { cSleepMs(100); }
     g_bulletSimThread->stop();
-    for(int i = 0 ; i < g_coordApp->m_numDevices ; i ++){
+    for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         g_hapticsThreads[i]->stop();
     }
 
     // delete resources
-    g_coordApp->closeDevices();
-    for(int i = 0 ; i < g_coordApp->m_numDevices ; i ++){
+    g_inputDevices->closeDevices();
+    for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         delete g_hapticsThreads[i];
     }
     delete g_bulletWorld;
@@ -2274,7 +2297,7 @@ void updateLabels(){
 
         std::string timeLabelStr = wallTimeStr + " / " + simTimeStr;
         std::string dynHapticFreqLabelStr = graphicsFreqStr + " / " + hapticFreqStr;
-        std::string modeLabelStr = "MODE: " + g_coordApp->m_mode_str;
+        std::string modeLabelStr = "MODE: " + g_inputDevices->m_mode_str;
         std::string btnLabelStr = " : " + g_btn_action_str;
 
         timesLabel->setText(timeLabelStr);
@@ -2365,15 +2388,15 @@ void updatePhysics(){
         double dt;
         if (g_dt_fixed > 0.0) dt = g_dt_fixed;
         else dt = compute_dt(true);
-        for (unsigned int devIdx = 0 ; devIdx < g_coordApp->m_numDevices ; devIdx++){
+        for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
-            SimulatedInputDevice * simGripper = g_coordApp->m_psDevicePairs[devIdx].m_simulatedDevice;
+            SimulatedInputDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
             afGripperLinkPtr rootLink = simGripper->m_rootLink;
             simGripper->updateMeasuredPose();
 
             if (g_enableGrippingAssist){
-                for (int sIdx = 0 ; sIdx < rootLink->getSensors().size() ; sIdx++){
-                    afSensorPtr sensorPtr = rootLink->getSensors()[sIdx];
+                for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
+                    afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
                     if (sensorPtr->m_sensorType == afSensorType::proximity){
                         afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                         if (proximitySensorPtr->isTriggered() && simGripper->m_gripper_angle < 0.5){
@@ -2498,7 +2521,7 @@ void updatePhysics(){
                 simGripper->P_ac_ramp = 1.0;
             }
         }
-        g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_coordApp->m_numDevices);
+        g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
         rateSleep.sleep();
     }
     g_simulationFinished = true;
@@ -2515,11 +2538,11 @@ void updateHapticDevice(void* a_arg){
     g_simulationFinished = false;
 
     // update position and orientation of simulated gripper
-    PhysicalInputDevice *pDev = g_coordApp->m_psDevicePairs[devIdx].m_physicalDevice;
-    SimulatedInputDevice* simGripper = g_coordApp->m_psDevicePairs[devIdx].m_simulatedDevice;
-    std::vector<afCameraPtr> devCams = g_coordApp->m_psDevicePairs[devIdx].m_cameras;
-    cLabel* devFreqLabel = g_coordApp->m_psDevicePairs[devIdx].m_devFreqLabel;
-    if (g_coordApp->m_psDevicePairs[devIdx].m_cameras.size() == 0){
+    PhysicalInputDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
+    SimulatedInputDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+    std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
+    cLabel* devFreqLabel = g_inputDevices->m_psDevicePairs[devIdx].m_devFreqLabel;
+    if (g_inputDevices->m_psDevicePairs[devIdx].m_cameras.size() == 0){
         cerr << "WARNING: DEVICE HAPTIC LOOP \"" << pDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
         devCams = g_cameras;
     }
@@ -2573,8 +2596,8 @@ void updateHapticDevice(void* a_arg){
             simGripper->m_gripper_angle = 0.5;
         }
 
-        if(pDev->isButtonPressRisingEdge(simGripper->mode_next_btn)) g_coordApp->nextMode();
-        if(pDev->isButtonPressRisingEdge(simGripper->mode_prev_btn)) g_coordApp->prevMode();
+        if(pDev->isButtonPressRisingEdge(simGripper->mode_next_btn)) g_inputDevices->nextMode();
+        if(pDev->isButtonPressRisingEdge(simGripper->mode_prev_btn)) g_inputDevices->prevMode();
 
         bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(simGripper->act_1_btn);
         bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(simGripper->act_1_btn);
@@ -2582,7 +2605,7 @@ void updateHapticDevice(void* a_arg){
         bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(simGripper->act_2_btn);
 
         double gripper_offset = 0;
-        switch (g_coordApp->m_simModes){
+        switch (g_inputDevices->m_simModes){
         case MODES::CAM_CLUTCH_CONTROL:
             g_clutch_btn_pressed  = pDev->isButtonPressed(simGripper->act_1_btn);
             g_cam_btn_pressed     = pDev->isButtonPressed(simGripper->act_2_btn);
@@ -2596,33 +2619,33 @@ void updateHapticDevice(void* a_arg){
             simGripper->offsetGripperAngle(gripper_offset);
             break;
         case MODES::CHANGE_CONT_LIN_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_P_lc(P_lc_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_P_lc(-P_lc_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_P_lc(P_lc_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_P_lc(-P_lc_offset);
             break;
         case MODES::CHANGE_CONT_ANG_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_P_ac(P_ac_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_P_ac(-P_ac_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_P_ac(P_ac_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_P_ac(-P_ac_offset);
             break;
         case MODES::CHANGE_CONT_LIN_DAMP:
-            if(btn_1_rising_edge) g_coordApp->increment_D_lc(D_lc_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_D_lc(-D_lc_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_D_lc(D_lc_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_D_lc(-D_lc_offset);
             break;
         case MODES::CHANGE_CONT_ANG_DAMP:
-            if(btn_1_rising_edge) g_coordApp->increment_D_ac(D_ac_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_D_ac(-D_ac_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_D_ac(D_ac_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_D_ac(-D_ac_offset);
             break;
         case MODES::CHANGE_DEV_LIN_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_K_lh(K_lh_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_K_lh(-K_lh_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_K_lh(K_lh_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_K_lh(-K_lh_offset);
             break;
         case MODES::CHANGE_DEV_ANG_GAIN:
-            if(btn_1_rising_edge) g_coordApp->increment_K_ah(K_ah_offset);
-            if(btn_2_rising_edge) g_coordApp->increment_K_ah(-K_ah_offset);
+            if(btn_1_rising_edge) g_inputDevices->increment_K_ah(K_ah_offset);
+            if(btn_2_rising_edge) g_inputDevices->increment_K_ah(-K_ah_offset);
             break;
         }
 
         pDev->m_hDevice->getUserSwitch(simGripper->act_2_btn, devCams[0]->m_cam_pressed);
-        if(devCams[0]->m_cam_pressed && g_coordApp->m_simModes == MODES::CAM_CLUTCH_CONTROL){
+        if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.1;
             for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
                 devCams[dcIdx]->setLocalPos(devCams[dcIdx]->measuredPos() + cMul(scale, devCams[dcIdx]->measuredRot() * pDev->measuredVelLin() ) );
@@ -2667,7 +2690,7 @@ void updateHapticDevice(void* a_arg){
 
         simGripper->m_posRef = simGripper->m_posRefOrigin +
                 (devCams[0]->getLocalRot() * (pDev->m_pos - pDev->m_posClutched));
-        if (!g_coordApp->m_use_cam_frame_rot){
+        if (!g_inputDevices->m_use_cam_frame_rot){
             simGripper->m_rotRef = simGripper->m_rotRefOrigin * devCams[0]->getLocalRot() *
                     cTranspose(pDev->m_rotClutched) * pDev->m_rot *
                     cTranspose(devCams[0]->getLocalRot());

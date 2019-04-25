@@ -209,9 +209,11 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         std::cerr << "WARNING, NO ROOT PARENT EXISTS \n";
     }
     else{
+        std::string grpr_name = m_gripper_name;
+        grpr_name.erase(remove_if(grpr_name.begin(), grpr_name.end(), isspace), grpr_name.end());
         std::string sfx = m_suffix_name;
         sfx.erase(remove_if(sfx.begin(), sfx.end(), isspace), sfx.end());
-        m_rootLink->afObjectCreate(m_gripper_name + sfx, m_multibody_namespace);
+        m_rootLink->afObjectCreate(grpr_name + sfx, m_multibody_namespace);
     }
 
     return true;

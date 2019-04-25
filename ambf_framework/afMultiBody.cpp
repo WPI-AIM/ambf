@@ -68,7 +68,6 @@ std::vector<std::string> afConfigHandler::s_multiBody_configs;
 std::string afConfigHandler::s_world_config;
 std::string afConfigHandler::s_input_devices_config;
 YAML::Node afConfigHandler::s_colorsNode;
-std::map<std::string, std::string> afConfigHandler::s_gripperConfigFiles;
 
 cBulletWorld* afWorld::s_bulletWorld;
 double afWorld::m_encl_length;
@@ -183,7 +182,6 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     YAML::Node cfgColorFile = configNode["color config"];
     YAML::Node cfgInputDevicesFile = configNode["input devices config"];
     YAML::Node cfgMultiBodyFiles = configNode["multibody configs"];
-    YAML::Node cfgGripperConfigs = configNode["gripper configs"];
 
 
     s_boostBaseDir = boost::filesystem::path(a_config_file).parent_path();
@@ -241,21 +239,6 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
         return 0;
     }
 
-    if(cfgGripperConfigs.IsDefined()){
-        for(size_t i = 0 ; i < cfgGripperConfigs.size(); ++i){
-            std::string gripper_name = cfgGripperConfigs[i].as<std::string>();
-            boost::filesystem::path gripper_cfg_filename =  configNode[gripper_name].as<std::string>();
-            if (gripper_cfg_filename.is_relative()){
-                gripper_cfg_filename = s_boostBaseDir / gripper_cfg_filename;
-            }
-            s_gripperConfigFiles[gripper_name] = std::string(gripper_cfg_filename.c_str());
-        }
-    }
-    else{
-        std::cerr << "ERROR! GRIPPER CONFIGS NOT DEFINED \n";
-        return 0;
-    }
-
     return 1;
 }
 
@@ -297,21 +280,6 @@ std::string afConfigHandler::getColorConfig(){
     return s_color_config;
 }
 
-///
-/// \brief afConfigHandler::get_gripper_config
-/// \param a_gripper_name
-/// \return
-///
-std::string afConfigHandler::getGripperConfig(std::string a_gripper_name){
-    if(s_gripperConfigFiles.find(a_gripper_name) != s_gripperConfigFiles.end()){
-        return s_gripperConfigFiles[a_gripper_name];
-    }
-    else{
-        std::cerr << "WARNING! GRIPPER CONFIG FOR \"" << a_gripper_name
-                  << "\" NOT FOUND, RETURNING DEFAULT \n";
-        return s_gripperConfigFiles["Default"];
-    }
-}
 
 ///
 /// \brief afConfigHandler::get_color_rgba
@@ -2577,7 +2545,7 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         return 0;
     }
     else{
-        m_parentBody->addSensor(this);
+        m_parentBody->addAFSensor(this);
     }
 
     m_rayFromLocal = m_location;
