@@ -1,4 +1,4 @@
-input devices: [Razer Hydra]
+input devices: [Razer Hydra0, Razer Hydra1]
 # input devices: [MTMR, MTML, Geomagic Touch, Phantom Omni, Razer Hydra, Novint Falcon]
 
 MTMR:
@@ -23,10 +23,16 @@ Geomagic Touch:
     workspace scaling: 10
     simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
 
-Razer Hydra:
+Razer Hydra0:
     hardware name: Razer Hydra
     haptic gain: {linear: 10.0, angular: 0.0}
-    workspace scaling: 10
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+
+Razer Hydra1:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    workspace scaling: 5
     simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
 
 Novint Falcon:

@@ -402,6 +402,12 @@ public:
     std::vector<PhySimDevicePair*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
     std::vector<PhySimDevicePair*> getAllDeviceGripperPairs();
 
+    // Add the index of a claimed device
+    void addClaimedDeviceIndex(int a_idx);
+
+    // Check if a specific index is already claimed or not
+    bool checkClaimedDeviceIdx(int a_idx);
+
 public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
     std::vector<PhySimDevicePair> m_psDevicePairs;
@@ -433,11 +439,13 @@ public:
     int m_mode_idx;
 
 
-
 private:
     // Base of the config file location of this Input Device Handler
     boost::filesystem::path m_basePath;
     afWorldPtr m_afWorld;
+    // Integer index to keep track of device indexes that have already been
+    // claimed so that we dont mistakenly claim and already claimed device
+    std::vector<int> m_devicesClaimed;
 };
 
 ///
@@ -609,13 +617,19 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
     int nDevs = hDevHandler->getNumDevices();
 
     for (int dIdx = 0 ; dIdx < nDevs ; dIdx++){
-        hDevHandler->getDeviceSpecifications(m_hInfo, dIdx);
+        // First check if this index has already been claimed or not.
+        if (!a_iD->checkClaimedDeviceIdx(dIdx)){
+            hDevHandler->getDeviceSpecifications(m_hInfo, dIdx);
 
-        if (m_hInfo.m_modelName.compare(_hardwareName) == 0){
-            // This is our device. Let's load it up
-            hDevHandler->getDevice(m_hDevice, dIdx);
-            m_hDevice->open();
-            break;
+            if (m_hInfo.m_modelName.compare(_hardwareName) == 0){
+                // This is our device. Let's load it up
+                hDevHandler->getDevice(m_hDevice, dIdx);
+                m_hDevice->open();
+                // Now add the device index in a comman place
+                // to help devices that are loaded afterwards
+                a_iD->addClaimedDeviceIndex(dIdx);
+                break;
+            }
         }
     }
 
@@ -983,6 +997,31 @@ InputDevices::~InputDevices(){
 }
 
 
+void InputDevices::addClaimedDeviceIndex(int a_devIdx){
+    if (!checkClaimedDeviceIdx(a_devIdx)){
+        m_devicesClaimed.push_back(a_devIdx);
+    }
+}
+
+
+bool InputDevices::checkClaimedDeviceIdx(int a_devIdx){
+    bool _claimed = false;
+    for (int idx = 0 ; idx < m_devicesClaimed.size() ; idx++){
+        if (a_devIdx == m_devicesClaimed[idx]){
+            _claimed = true;
+            break;
+        }
+    }
+    return _claimed;
+}
+
+
+///
+/// \brief InputDevices::loadInputDevices
+/// \param a_input_devices_config
+/// \param a_max_load_devs
+/// \return
+///
 bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
     if (a_input_devices_config.empty()){
         a_input_devices_config = m_afWorld->getInputDevicesConfig();
