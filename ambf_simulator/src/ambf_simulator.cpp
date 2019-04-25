@@ -529,7 +529,9 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
     m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
     std::string _rootLinkName = "";
-    cVector3d _locationPos, _locationRot;
+    cVector3d _position(0, 0, 0);
+    cMatrix3d _orientation;
+    _orientation.identity();
 
     // For the simulated gripper, the user can specify a MultiBody config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
@@ -600,13 +602,6 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
     }
 
-    if (pDLocation.IsDefined()){
-        assignXYZ(&pDLocation, &_locationPos);
-        assignRPY(&pDLocation, &_locationRot);
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
-    }
 
     if (!_rootLinkDefined && !_simulatedMBDefined){
         std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
@@ -647,6 +642,27 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
             simDevice->m_rootLink = simDevice->getAFRootRigidBody();
         }
     }
+
+    if (pDLocation.IsDefined()){
+        YAML::Node posNode = pDLocation["position"];
+        YAML::Node rpyNode = pDLocation["orientation"];
+        assignXYZ(&posNode, &_position);
+        cVector3d _rpy;
+        assignRPY(&rpyNode, &_rpy);
+        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_ZYX);
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
+        // In this case, take the current position of the root link and set it as initial
+        // reference pose
+        _position = simDevice->m_rootLink->getLocalPos();
+        _orientation = simDevice->m_rootLink->getLocalRot();
+    }
+
+    simDevice->m_posRef = _position/ m_workspaceScale;
+    simDevice->m_posRefOrigin = _position / m_workspaceScale;
+    simDevice->m_rotRef = _orientation;
+    simDevice->m_rotRefOrigin = _orientation;
 
     createAfCursor(g_bulletWorld, "Tracker");
     return 1;
