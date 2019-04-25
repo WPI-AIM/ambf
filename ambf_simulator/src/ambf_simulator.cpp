@@ -212,116 +212,35 @@ struct SoftBodyGrippingConstraint{
 /// action/mode buttons, capturing button triggers in addition to presses, mapping the workspace scale factors
 /// for a device and so on.
 ///
-class SimulatedDeviceParams{
+struct AsynchronousDataStructure{
 public:
-    SimulatedDeviceParams();
-    void setParams(cHapticDeviceInfo &a_hInfo);
-    inline double getWorkspaceScaleFactor(){return m_workspaceScaleFactor;}
+    AsynchronousDataStructure();
 
 public:
-    cVector3d m_posRef, m_posRefOrigin;
-    cMatrix3d m_rotRef, m_rotRefOrigin;
-    double m_workspaceScaleFactor;
-    double K_lh;                    //Linear Haptic Stiffness Gain
-    double K_ah;                    //Angular Haptic Stiffness Gain
-    // Gain Ramps are used to softly get towards the setpoint when the simulation starts
-    double K_lh_ramp;               //Linear Haptic Stiffness Gain Ramp
-    double K_ah_ramp;               //Angular Haptic Stiffness Gain Ramp
-    double P_lc_ramp;               //Linear Haptic Propotional Gain Ramp
-    double P_ac_ramp;               //Angular Haptic Propotional Gain Ramp
-
-    int act_1_btn;
-    int act_2_btn;
-    int mode_next_btn;
-    int mode_prev_btn;
-    int m_gripper_pinch_btn = -1;
-    bool btn_cam_rising_edge;
-    bool btn_clutch_rising_edge;
-    bool m_loop_exec_flag;
+    cVector3d m_posRef;
+    cVector3d m_posRefOrigin;
+    cMatrix3d m_rotRef;
+    cMatrix3d m_rotRefOrigin;
 };
 
 
 ///
 /// \brief SimulationParams::SimulationParams
 ///
-SimulatedDeviceParams::SimulatedDeviceParams(){
-    m_workspaceScaleFactor = 30.0;
-    K_lh = 0.02;
-    K_ah = 0.03;
-    K_lh_ramp = 0.0;
-    K_ah_ramp = 0.0;
-    P_lc_ramp = 0.0;
-    P_ac_ramp = 0.0;
-    act_1_btn   = 0;
-    act_2_btn   = 1;
-    mode_next_btn = 2;
-    mode_prev_btn= 3;
-
+AsynchronousDataStructure::AsynchronousDataStructure(){
     m_posRef.set(0,0,0);
     m_posRefOrigin.set(0, 0, 0);
     m_rotRef.identity();
     m_rotRefOrigin.identity();
-
-    btn_cam_rising_edge = false;
-    btn_clutch_rising_edge = false;
-    m_loop_exec_flag = false;
 }
 
-///
-/// \brief SimulationParams::set_sim_params
-/// \param a_hInfo
-/// \param a_dev
-///
-void SimulatedDeviceParams::setParams(cHapticDeviceInfo &a_hInfo){
-    double maxStiffness	= a_hInfo.m_maxLinearStiffness / m_workspaceScaleFactor;
 
-    // clamp the force output gain to the max device stiffness
-    K_lh = cMin(K_lh, maxStiffness);
-    if (strcmp(a_hInfo.m_modelName.c_str(), "MTM-R") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTMR") == 0 ||
-            strcmp(a_hInfo.m_modelName.c_str(), "MTM-L") == 0 || strcmp(a_hInfo.m_modelName.c_str(), "MTML") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        m_workspaceScaleFactor = 10.0;
-        K_lh = K_lh/3;
-        act_1_btn     =  1;
-        act_2_btn     =  2;
-        mode_next_btn =  3;
-        mode_prev_btn =  4;
-        K_lh = 0.04;
-        K_ah = 0.0;
-        m_gripper_pinch_btn = 0;
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "Falcon") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        act_1_btn     = 0;
-        act_2_btn     = 2;
-        mode_next_btn = 3;
-        mode_prev_btn = 1;
-        K_lh = 0.05;
-        K_ah = 0.0;
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "PHANTOM Omni") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        K_lh = 0.01;
-        K_ah = 0.0;
-    }
-
-    if (strcmp(a_hInfo.m_modelName.c_str(), "Razer Hydra") == 0)
-    {
-        std::cout << "Device " << a_hInfo.m_modelName << " DETECTED, CHANGING BUTTON AND WORKSPACE MAPPING" << std::endl;
-        m_workspaceScaleFactor = 10.0;
-    }
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///
 /// \brief The SimulatedGripper class
 ///
-class SimulatedInputDevice: public SimulatedDeviceParams, public afGripper{
+class SimulatedInputDevice: public AsynchronousDataStructure, public afGripper{
 public:
     SimulatedInputDevice(afWorldPtr a_afWorld);
     ~SimulatedInputDevice(){}
@@ -340,6 +259,8 @@ public:
     cVector3d m_pos;
     cMatrix3d m_rot;
     double m_gripper_angle;
+    double P_lc_ramp;        //Linear Haptic Propotional Gain Ramp
+    double P_ac_ramp;        //Angular Haptic Propotional Gain Ramp
     // Gripping constraints, the number is the same as the total
     // number of sensors attached to the gripper. Not all sensors
     // are proximity sensors and necessary for gripping.
@@ -393,13 +314,27 @@ public:
     cVector3d m_posCamPreClutch;
     cMatrix3d m_rotCamPreClutch;
     cVector3d m_vel, m_avel;
-    double m_workspace_scale_factor;
+    double m_workspaceScale;
     cShapeSphere* m_cursor = NULL;
     cBulletSphere* m_af_cursor = NULL;
     bool m_btn_prev_state_rising[10] = {false};
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;
 
+public:
+    double K_lh;                    //Linear Haptic Stiffness Gain
+    double K_ah;                    //Angular Haptic Stiffness Gain
+
+    double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
+    double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
+
+    int act_1_btn;
+    int act_2_btn;
+    int mode_next_btn;
+    int mode_prev_btn;
+    int m_gripper_pinch_btn = -1;
+    bool btn_cam_rising_edge;
+    bool btn_clutch_rising_edge;
 private:
     std::mutex m_mutex;
     void updateCursorPose();
@@ -451,7 +386,6 @@ public:
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 
-    SimulatedInputDevice* createSimulatedGripper(uint dev_num, PhysicalInputDevice* a_physicalDevice);
     void closeDevices();
 
     // Increment gains (haptic mean physical device and controller means simulated gripper)
@@ -576,9 +510,15 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
     YAML::Node pDLocation = physicaDeviceNode["location"];
 
     std::string _hardwareName = "";
-    double _KLgain = 0;
-    double _KAgain = 0;
-    double _workspaceScale = 10;
+    K_lh = 0;
+    K_ah = 0;
+    // Initialize Default Buttons
+    act_1_btn = 0;
+    act_2_btn = 1;
+    mode_next_btn = 2;
+    mode_prev_btn = 3;
+
+    m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
     std::string _rootLinkName = "";
     cVector3d _locationPos, _locationRot;
@@ -609,19 +549,23 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, string node_na
         return 0;
     }
 
-    if (pDHapticGain.IsDefined()){
-        _KLgain = pDHapticGain["linear"].as<double>();
-        _KAgain = pDHapticGain["angular"].as<double>();
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
-    }
-
     if (pDWorkspaceScaling.IsDefined()){
-        _workspaceScale = pDWorkspaceScaling.as<double>();
+        m_workspaceScale = pDWorkspaceScaling.as<double>();
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" WORKSPACE SCALE NOT DEFINED \n";
+    }
+
+    if (pDHapticGain.IsDefined()){
+        K_lh = pDHapticGain["linear"].as<double>();
+        K_ah = pDHapticGain["angular"].as<double>();
+
+        // clamp the force output gain to the max device stiffness
+        double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
+        K_lh = cMin(K_lh, _maxStiffness);
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
     }
 
     if (pDSimulatedGripper.IsDefined()){
@@ -811,11 +755,11 @@ void PhysicalInputDevice::setRotCamPreclutch(cMatrix3d a_rot){
 ///
 void PhysicalInputDevice::updateCursorPose(){
     if(m_cursor){
-        m_cursor->setLocalPos(m_pos * m_workspace_scale_factor);
+        m_cursor->setLocalPos(m_pos * m_workspaceScale);
         m_cursor->setLocalRot(m_rot);
     }
     if(m_af_cursor){
-        m_af_cursor->setLocalPos(m_pos * m_workspace_scale_factor);
+        m_af_cursor->setLocalPos(m_pos * m_workspaceScale);
         m_af_cursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
         m_af_cursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
@@ -929,6 +873,8 @@ void PhysicalInputDevice::applyWrench(cVector3d force, cVector3d torque){
 ///
 SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afGripper (a_afWorld){
     m_gripper_angle = 0.5;
+    P_lc_ramp = 0;
+    P_ac_ramp = 0;
 }
 
 ///
@@ -1156,38 +1102,6 @@ void InputDevices::prevMode(){
 }
 
 ///
-/// \brief InputDevices::create_simulated_gripper
-/// \param dev_num
-/// \param a_physicalDevice
-/// \return
-///
-SimulatedInputDevice* InputDevices::createSimulatedGripper(uint dev_num, PhysicalInputDevice* a_physicalDevice){
-    std::ostringstream dev_str;
-    dev_str << (dev_num + 1);
-    std::string gripper_name = "Gripper" + dev_str.str();
-    SimulatedInputDevice* simulatedGripper = new SimulatedInputDevice(g_afWorld);
-    if(simulatedGripper->loadSimulatedGripper(gripper_name, a_physicalDevice->m_hInfo.m_modelName, a_physicalDevice->m_hInfo.m_modelName)){
-        simulatedGripper->setParams(a_physicalDevice->m_hInfo);
-        a_physicalDevice->m_workspace_scale_factor = simulatedGripper->getWorkspaceScaleFactor();
-        cVector3d localGripperPos = simulatedGripper->m_rootLink->getLocalPos();
-        double l,w,h;
-        g_afWorld->getEnclosureExtents(l,w,h);
-        if (localGripperPos.length() == 0.0){
-            double x = (int(dev_num / 2.0) * 0.8);
-            double y = (dev_num % 2) ? +0.4 : -0.4;
-            x /= simulatedGripper->m_workspaceScaleFactor;
-            y /= simulatedGripper->m_workspaceScaleFactor;
-            simulatedGripper->m_posRefOrigin.set(x, y, 0);
-        }
-        return simulatedGripper;
-    }
-    else{
-        delete simulatedGripper;
-        return NULL;
-    }
-}
-
-///
 /// \brief InputDevices::close_devices
 ///
 void InputDevices::closeDevices(){
@@ -1204,17 +1118,17 @@ void InputDevices::closeDevices(){
 ///
 double InputDevices::increment_K_lh(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_psDevicePairs[devIdx].m_simulatedDevice->K_lh + a_offset <= 0)
+        if (m_psDevicePairs[devIdx].m_physicalDevice->K_lh + a_offset <= 0)
         {
-            m_psDevicePairs[devIdx].m_simulatedDevice->K_lh = 0.0;
+            m_psDevicePairs[devIdx].m_physicalDevice->K_lh = 0.0;
         }
         else{
-            m_psDevicePairs[devIdx].m_simulatedDevice->K_lh += a_offset;
+            m_psDevicePairs[devIdx].m_physicalDevice->K_lh += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_psDevicePairs[m_numDevices-1].m_simulatedDevice->K_lh;
+        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_lh;
         g_btn_action_str = "K_lh = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -1227,16 +1141,16 @@ double InputDevices::increment_K_lh(double a_offset){
 ///
 double InputDevices::increment_K_ah(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_psDevicePairs[devIdx].m_simulatedDevice->K_ah + a_offset <=0){
-            m_psDevicePairs[devIdx].m_simulatedDevice->K_ah = 0.0;
+        if (m_psDevicePairs[devIdx].m_physicalDevice->K_ah + a_offset <=0){
+            m_psDevicePairs[devIdx].m_physicalDevice->K_ah = 0.0;
         }
         else{
-            m_psDevicePairs[devIdx].m_simulatedDevice->K_ah += a_offset;
+            m_psDevicePairs[devIdx].m_physicalDevice->K_ah += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_psDevicePairs[m_numDevices-1].m_simulatedDevice->K_ah;
+        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_ah;
         g_btn_action_str = "K_ah = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -2584,8 +2498,8 @@ void updateHapticDevice(void* a_arg){
         pDev->m_pos = pDev->measuredPos();
         pDev->m_rot = pDev->measuredRot();
 
-        if(simGripper->m_gripper_pinch_btn >= 0){
-            if(pDev->isButtonPressed(simGripper->m_gripper_pinch_btn)){
+        if(pDev->m_gripper_pinch_btn >= 0){
+            if(pDev->isButtonPressed(pDev->m_gripper_pinch_btn)){
                 pDev->enableForceFeedback(true);
             }
         }
@@ -2596,19 +2510,19 @@ void updateHapticDevice(void* a_arg){
             simGripper->m_gripper_angle = 0.5;
         }
 
-        if(pDev->isButtonPressRisingEdge(simGripper->mode_next_btn)) g_inputDevices->nextMode();
-        if(pDev->isButtonPressRisingEdge(simGripper->mode_prev_btn)) g_inputDevices->prevMode();
+        if(pDev->isButtonPressRisingEdge(pDev->mode_next_btn)) g_inputDevices->nextMode();
+        if(pDev->isButtonPressRisingEdge(pDev->mode_prev_btn)) g_inputDevices->prevMode();
 
-        bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(simGripper->act_1_btn);
-        bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(simGripper->act_1_btn);
-        bool btn_2_rising_edge = pDev->isButtonPressRisingEdge(simGripper->act_2_btn);
-        bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(simGripper->act_2_btn);
+        bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(pDev->act_1_btn);
+        bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(pDev->act_1_btn);
+        bool btn_2_rising_edge = pDev->isButtonPressRisingEdge(pDev->act_2_btn);
+        bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(pDev->act_2_btn);
 
         double gripper_offset = 0;
         switch (g_inputDevices->m_simModes){
         case MODES::CAM_CLUTCH_CONTROL:
-            g_clutch_btn_pressed  = pDev->isButtonPressed(simGripper->act_1_btn);
-            g_cam_btn_pressed     = pDev->isButtonPressed(simGripper->act_2_btn);
+            g_clutch_btn_pressed  = pDev->isButtonPressed(pDev->act_1_btn);
+            g_cam_btn_pressed     = pDev->isButtonPressed(pDev->act_2_btn);
             if(g_clutch_btn_pressed) g_btn_action_str = "Clutch Pressed";
             if(g_cam_btn_pressed)   {g_btn_action_str = "Cam Pressed";}
             if(btn_1_falling_edge || btn_2_falling_edge) g_btn_action_str = "";
@@ -2644,7 +2558,7 @@ void updateHapticDevice(void* a_arg){
             break;
         }
 
-        pDev->m_hDevice->getUserSwitch(simGripper->act_2_btn, devCams[0]->m_cam_pressed);
+        pDev->m_hDevice->getUserSwitch(pDev->act_2_btn, devCams[0]->m_cam_pressed);
         if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.1;
             for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
@@ -2664,28 +2578,28 @@ void updateHapticDevice(void* a_arg){
         }
 
         if(g_cam_btn_pressed){
-            if(simGripper->btn_cam_rising_edge){
-                simGripper->btn_cam_rising_edge = false;
-                simGripper->m_posRefOrigin = simGripper->m_posRef / simGripper->m_workspaceScaleFactor;
+            if(pDev->btn_cam_rising_edge){
+                pDev->btn_cam_rising_edge = false;
+                simGripper->m_posRefOrigin = simGripper->m_posRef / pDev->m_workspaceScale;
                 simGripper->m_rotRefOrigin = simGripper->m_rotRef;
             }
             pDev->m_posClutched = pDev->m_pos;
             pDev->m_rotClutched = pDev->m_rot;
         }
         else{
-            simGripper->btn_cam_rising_edge = true;
+            pDev->btn_cam_rising_edge = true;
         }
         if(g_clutch_btn_pressed){
-            if(simGripper->btn_clutch_rising_edge){
-                simGripper->btn_clutch_rising_edge = false;
-                simGripper->m_posRefOrigin = simGripper->m_posRef / simGripper->m_workspaceScaleFactor;
+            if(pDev->btn_clutch_rising_edge){
+                pDev->btn_clutch_rising_edge = false;
+                simGripper->m_posRefOrigin = simGripper->m_posRef / pDev->m_workspaceScale;
                 simGripper->m_rotRefOrigin = simGripper->m_rotRef;
             }
             pDev->m_posClutched = pDev->m_pos;
             pDev->m_rotClutched = pDev->m_rot;
         }
         else{
-            simGripper->btn_clutch_rising_edge = true;
+            pDev->btn_clutch_rising_edge = true;
         }
 
         simGripper->m_posRef = simGripper->m_posRefOrigin +
@@ -2698,7 +2612,7 @@ void updateHapticDevice(void* a_arg){
         else{
             simGripper->m_rotRef = pDev->m_rot;
         }
-        simGripper->m_posRef.mul(simGripper->m_workspaceScaleFactor);
+        simGripper->m_posRef.mul(pDev->m_workspaceScale);
 
         // update position of simulated gripper
         simGripper->updateMeasuredPose();
@@ -2724,27 +2638,27 @@ void updateHapticDevice(void* a_arg){
 
         cVector3d force, torque;
 
-        force  = - g_force_enable * simGripper->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-        torque = - g_force_enable * simGripper->K_ah_ramp * (P_ang * angle * axis);
+        force  = - g_force_enable * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+        torque = - g_force_enable * pDev->K_ah_ramp * (P_ang * angle * axis);
 
         pDev->applyWrench(force, torque);
 
-        if (simGripper->K_lh_ramp < simGripper->K_lh)
+        if (pDev->K_lh_ramp < pDev->K_lh)
         {
-            simGripper->K_lh_ramp = simGripper->K_lh_ramp + 0.1 * dt * simGripper->K_lh;
+            pDev->K_lh_ramp = pDev->K_lh_ramp + 0.1 * dt * pDev->K_lh;
         }
         else
         {
-            simGripper->K_lh_ramp = simGripper->K_lh;
+            pDev->K_lh_ramp = pDev->K_lh;
         }
 
-        if (simGripper->K_ah_ramp < simGripper->K_ah)
+        if (pDev->K_ah_ramp < pDev->K_ah)
         {
-            simGripper->K_ah_ramp = simGripper->K_ah_ramp + 0.1 * dt * simGripper->K_ah;
+            pDev->K_ah_ramp = pDev->K_ah_ramp + 0.1 * dt * pDev->K_ah;
         }
         else
         {
-            simGripper->K_ah_ramp = simGripper->K_ah;
+            pDev->K_ah_ramp = pDev->K_ah;
         }
 
     }
