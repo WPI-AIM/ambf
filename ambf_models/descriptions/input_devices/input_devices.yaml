@@ -16,12 +16,18 @@ MTML:
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
     simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
     simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
 
 Razer Hydra0:
     hardware name: Razer Hydra
@@ -47,3 +53,6 @@ Novint Falcon:
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
     simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
