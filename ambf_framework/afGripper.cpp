@@ -169,7 +169,7 @@ bool afGripper::loadMultiBody(std::string a_gripper_config_file, std::string a_g
         std::string sensor_name = multiBodySensors[i].as<std::string>();
         std::string remap_str = remapSensorName(sensor_name);
         YAML::Node sensor_node = multiBodyNode[sensor_name];
-        // Check which type of sensor is this so we can cast appropriately beforehand
+        // Check which type of sensor is this so we can cast appropriately assign it beforehand
         if (sensor_node["type"].IsDefined()){
             std::string _sensor_type = sensor_node["type"].as<std::string>();
             // Check if this is a proximity sensor
@@ -244,6 +244,6 @@ afGripper::~afGripper(){
     for (; jIt != _jntMap->end() ; ++jIt){
         delete jIt->second;
     }
-    }
+}
 }
 //------------------------------------------------------------------------------

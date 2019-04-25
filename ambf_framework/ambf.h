@@ -51,7 +51,7 @@
 #include "afSoftMultiMesh.h"
 #include "afGripper.h"
 #include "afInputDevices.h"
-#include "afMultiBody.h"
+#include "afLibrary.h"
 
 //---------------------------------------------------------------------------
 #endif
