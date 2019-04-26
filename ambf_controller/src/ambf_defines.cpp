@@ -56,10 +56,10 @@ const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
 const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};     // left arm 0 & right arm 1
 
 const tf::Vector3             AMBFDef::zero_vec       = tf::Vector3(0,0,0);           // place holder for frequently used arrays
-const vector<float>           AMBFDef::zero_joints    = {0,     0,0,0,0,0,0};
-const vector<float>           AMBFDef::home_joints    = {0,  0,0,0,0,0,0};;
-const vector<unsigned char>   AMBFDef::true_joints    = {1,     1,1,1,1,1,1};
-const vector<unsigned char>   AMBFDef::false_joints   = {0,     0,0,0,0,0,0};
+const vector<float>           AMBFDef::zero_joints    = {          0,        0,     0,       0,   0,      0,      0};
+const vector<float>           AMBFDef::home_joints    = {   M_PI*1/3, M_PI*3/5, -0.09, -M_PI/4,   0, M_PI/6, M_PI/6};
+const vector<unsigned char>   AMBFDef::true_joints    = {          1,        1,     1,       1,   1,      1,      1};
+const vector<unsigned char>   AMBFDef::false_joints   = {          0,        0,     0,       0,   0,      0,      0};
 
 // Raven joints:
 // joint -: 0_link-base_link_L:             fixed

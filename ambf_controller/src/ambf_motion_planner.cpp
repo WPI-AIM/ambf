@@ -50,7 +50,7 @@
 AMBFPlanner::AMBFPlanner()
 {
 	homed = false;
-	mode  = AMBFCmdMode::homing;
+	mode  = AMBFCmdMode::freefall;
 	state.updated = false;
 	command.updated = false;
 	command.type = _jp;
@@ -75,35 +75,41 @@ AMBFPlanner::~AMBFPlanner()
  *
  * @return     homed check.
  */
-bool AMBFPlanner::go_home()
+bool AMBFPlanner::go_home(bool first_entry, int arm)
 {
-	float homed_i = 0;
+	static int count = 0;
+	static vector<vector<float>> start_jp(AMBFDef::raven_arms, vector<float>(AMBFDef::raven_joints));
+	static vector<vector<float>> delta_jp(AMBFDef::raven_arms, vector<float>(AMBFDef::raven_joints));
 
+	if(first_entry)
+	{
+		for(int i=0; i<AMBFDef::raven_joints; i++)
+		{
+			start_jp[arm][i] = state.jp[i];
+			delta_jp[arm][i] = AMBFDef::home_joints[i] - state.jp[i];
+		}
+		count = 0;
+	}
+
+	float duration = 10;  // seconds
+	int iterations = duration * AMBFDef::raven_arms * AMBFDef::loop_rate;
+	float scale = min((double)(1.0*count/iterations),(double)1.0);
+
+	vector<float> diff_jp(AMBFDef::raven_joints);
 	for(int i=0; i<AMBFDef::raven_joints; i++)
 	{
-		float step_i;
-		float diff_i = AMBFDef::home_joints[i] - state.jp[i];
-
-		if(fabs(diff_i < 0.01))	homed_i ++;
-		else
-		{
-			if(i == 2) 	step_i = min(0.1*diff_i/AMBFDef::loop_rate,(double)fabs(diff_i));
-			else		step_i = min(1.0*diff_i/AMBFDef::loop_rate,(double)fabs(diff_i));
-			command.js[i] = step_i * signbit(diff_i) + state.jp[i];
-		}
+		command.js[i] = scale * delta_jp[arm][i] + start_jp[arm][i];
+		diff_jp[i] = fabs(AMBFDef::home_joints[i] - state.jp[i]);
 	}
 
-	if(homed_i == AMBFDef::raven_joints)
-	{
-		homed = true;
-	}
-	else
-	{
-		homed = false;
-		command.type 	= _jp;
-		command.updated = true;
-		state.updated   = false;
-	}	
+	float max_value = *max_element(diff_jp.begin(), diff_jp.end());
+	if(max_value < 0.1) homed = true;
+	else				homed = false;
+
+	command.type 	= _jp;
+	command.updated = true;
+	state.updated   = false;	
+	count ++;
 
 	return homed;
 }

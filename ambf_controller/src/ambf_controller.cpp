@@ -137,8 +137,6 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
-  // static int count = 0;
-
   for(int i=0; i<AMBFDef::raven_arms; i++)
   {
   	if(topic_name == AMBFDef::arm_append[i])
@@ -159,8 +157,6 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 		  		raven_planner[i].state.jp[j] = msg->joint_positions[j]; 
 
 		  	raven_planner[i].state.updated = true;	
-		  	// count++;	
-	  		// ROS_INFO("Received raven topic: %s count=%d",topic_name.c_str(),count);
 	   	}
 	   	else if(msg->joint_positions.size() == 0)
 	   	{
@@ -195,8 +191,11 @@ bool AMBFController::raven_motion_planning()
 				// update raven_planner[i].command.js
 				switch(raven_planner[i].mode)
 				{
+					case AMBFCmdMode::freefall:
+						// do nothing
+						break;
 					case AMBFCmdMode::homing:
-						raven_planner[i].go_home();
+						raven_planner[i].go_home(false,i);
 						break;
 					case AMBFCmdMode::dancing:
 						raven_planner[i].sine_dance(i);
@@ -268,10 +267,21 @@ void AMBFController::csl_run()
 		key = get_key();
 		switch(key)
 		{
+			case '0':
+				ROS_INFO("0: Enter freefall mode. No commands sent to either arm.");
+				raven_planner[0].mode = AMBFCmdMode::freefall;
+				raven_planner[1].mode = AMBFCmdMode::freefall;
+				print_menu = true;
+				break;
 			case '1':
 				ROS_INFO("1: Enter homing mode. Both arms moving to home.");
-				raven_planner[0].mode = AMBFCmdMode::homing;
-				raven_planner[1].mode = AMBFCmdMode::homing;
+
+				for(int i=0;i<AMBFDef::raven_arms; i++)
+				{
+					raven_planner[i].mode = AMBFCmdMode::homing;
+					raven_planner[i].go_home(true,i);
+				}
+				
 				print_menu = true;
 				break;
 
@@ -349,7 +359,7 @@ bool AMBFController::raven_command_pb()
 			{
 				msg.joint_cmds = raven_planner[i].command.js;
 				msg.position_controller_mask = AMBFDef::true_joints;
-
+				
 				raven_pubs[i].publish(msg);
 			}
 			else if(raven_planner[i].command.type == _jw)
@@ -463,6 +473,10 @@ bool AMBFController::show_menu()
 		ROS_INFO("\n\nWelcome to the AMBF Raven Simulator");
 		ROS_INFO("-----------------------------------------------------");
 		ROS_INFO("Please choose a mode:");
+
+		if(raven_planner[0].mode == AMBFCmdMode::freefall) s = s_true;
+		else											   s = s_false;
+		ROS_INFO("%s0: freefall mode",s.c_str());
 
 		if(raven_planner[0].mode == AMBFCmdMode::homing) s = s_true;
 		else											 s = s_false;

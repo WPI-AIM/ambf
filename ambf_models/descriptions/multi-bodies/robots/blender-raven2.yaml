@@ -114,7 +114,7 @@ BODY link3_L:
   collision groups: [0]
   color components:
     ambient: {level: 1.0}
-    diffuse: {b: 0.0698, g: 0.1981, r: 0.5382}
+    diffuse: {b:  0.1, g: 0.6, r: 0.6} #original color:{b: 0.0698, g: 0.1981, r: 0.5382}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
 BODY instrument_shaft_L:
@@ -284,7 +284,7 @@ BODY link3_R:
   collision groups: [0]
   color components:
     ambient: {level: 1.0}
-    diffuse: {b: 0.0658, g: 0.6334, r: 0.6618}
+    diffuse: {b: 0.1, g: 0.4, r: 0.2} #original color:{b: 0.0658, g: 0.6334, r: 0.6618}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
 BODY instrument_shaft_R:

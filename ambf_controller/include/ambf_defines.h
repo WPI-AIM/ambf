@@ -19,7 +19,7 @@ using namespace std;
 #include "CBullet.h"
 
 enum AMBFCmdType {_jp, _jw, _cp, _cw, _null};
-enum AMBFCmdMode {homing, dancing};
+enum AMBFCmdMode {freefall, homing, dancing};
 
 struct AMBFCmd
 {
