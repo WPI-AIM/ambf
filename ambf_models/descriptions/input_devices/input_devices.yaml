@@ -1,5 +1,5 @@
-input devices: [Razer Hydra0, Razer Hydra1]
-# input devices: [MTMR, MTML, Geomagic Touch, Phantom Omni, Razer Hydra, Novint Falcon]
+input devices: [MTMR, MTML, Razer Hydra0, Razer Hydra1, Geomagic Touch,
+ Novint Falcon]
 
 MTMR:
   hardware name: MTM-R
@@ -15,7 +15,7 @@ MTML:
     hardware name: MTM-L
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
-    simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
@@ -24,7 +24,7 @@ Geomagic Touch:
     hardware name: PHANTOM Omni
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
-    simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
@@ -53,7 +53,7 @@ Novint Falcon:
     hardware name: Falcon
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
-    simulated gripper: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}

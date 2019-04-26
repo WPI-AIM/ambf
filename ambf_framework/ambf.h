@@ -50,7 +50,7 @@
 
 #include "afSoftMultiMesh.h"
 #include "afInputDevices.h"
-#include "afLibrary.h"
+#include "afFramework.h"
 
 //---------------------------------------------------------------------------
 #endif
