@@ -211,7 +211,7 @@ private:
 };
 
 
-std::shared_ptr<InputDevices> g_inputDevices;
+std::shared_ptr<afInputDevices> g_inputDevices;
 double g_margin = 0.02;
 bool g_showPatch = false;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
-    g_inputDevices = std::make_shared<InputDevices>(g_afWorld);
+    g_inputDevices = std::make_shared<afInputDevices>(g_afWorld);
     g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), num_devices_to_load);
 
     //-----------------------------------------------------------------------------------------------------------
@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
         // If no controlling devices are defined for the camera context, add all
         // the current haptics devices specified for the simulation to each Window-Camera pair
         if(n_controlling_devs == 0){
-            std::vector<PhySimDevicePair*> dgPairs = g_inputDevices->getAllDeviceGripperPairs();
+            std::vector<InputControlUnit*> dgPairs = g_inputDevices->getAllDeviceGripperPairs();
             for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
                 dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
 
@@ -420,7 +420,7 @@ int main(int argc, char* argv[])
         else{
             // Pass the names of the controlling devices to only get the controlling devices
             // defined for the window camera pair in the context
-            std::vector<PhySimDevicePair*> dgPairs  = g_inputDevices->getDeviceGripperPairs(_controllingDevices);
+            std::vector<InputControlUnit*> dgPairs  = g_inputDevices->getDeviceGripperPairs(_controllingDevices);
             for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
                 dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
                 // Create labels for the contextual controlling devices for each Window-Camera Pair
@@ -1229,7 +1229,7 @@ void updatePhysics(){
         else dt = compute_dt(true);
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
-            SimulatedInputDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+            afSimulatedDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
             afRigidBodyPtr rootLink = simGripper->m_rootLink;
             simGripper->updateMeasuredPose();
 
@@ -1377,8 +1377,8 @@ void updateHapticDevice(void* a_arg){
     g_simulationFinished = false;
 
     // update position and orientation of simulated gripper
-    PhysicalInputDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
-    SimulatedInputDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+    afPhysicalDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
+    afSimulatedDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
     std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
     cLabel* devFreqLabel = g_inputDevices->m_psDevicePairs[devIdx].m_devFreqLabel;
     if (g_inputDevices->m_psDevicePairs[devIdx].m_cameras.size() == 0){

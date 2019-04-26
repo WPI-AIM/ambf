@@ -61,10 +61,10 @@ const int MAX_DEVICES = 10;
 //---------------------------------------------------------------------------
 // FORWARD DECLARATIONS
 //---------------------------------------------------------------------------
-class PhysicalInputDevice;
-class SimulatedInputDevice;
-class InputDevices;
-struct PhySimDevicePair;
+class afPhysicalDevice;
+class afSimulatedDevice;
+class afInputDevices;
+struct InputControlUnit;
 
 ///
 /// \brief The SoftBodyGrippingConstraint struct
@@ -81,9 +81,9 @@ struct SoftBodyGrippingConstraint{
 /// action/mode buttons, capturing button triggers in addition to presses, mapping the workspace scale factors
 /// for a device and so on.
 ///
-struct AsynchronousDataStructure{
+struct afSharedDataStructure{
 public:
-    AsynchronousDataStructure();
+    afSharedDataStructure();
 
 public:
     cVector3d m_posRef;
@@ -92,16 +92,13 @@ public:
     cMatrix3d m_rotRefOrigin;
 };
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 ///
-/// \brief The SimulatedGripper class
+/// \brief The afSimulatedDevice class
 ///
-class SimulatedInputDevice: public AsynchronousDataStructure, public afMultiBody{
+class afSimulatedDevice: public afSharedDataStructure, public afMultiBody{
 public:
-    SimulatedInputDevice(afWorldPtr a_afWorld);
-    ~SimulatedInputDevice(){}
+    afSimulatedDevice(afWorldPtr a_afWorld);
+    ~afSimulatedDevice(){}
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     void updateMeasuredPose();
@@ -136,15 +133,15 @@ private:
 };
 
 ///
-/// \brief This class encapsulates each haptic device in isolation and provides methods to get/set device
+/// \brief The afPhysicalDevice class: This class encapsulates each haptic device in isolation and provides methods to get/set device
 /// state/commands, button's state and grippers state if present
 ///
-class PhysicalInputDevice{
+class afPhysicalDevice{
 public:
-    PhysicalInputDevice(){}
-    ~PhysicalInputDevice();
-    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
-    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
+    afPhysicalDevice(){}
+    ~afPhysicalDevice();
+    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
+    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
     cVector3d measuredPos();
     cMatrix3d measuredRot();
@@ -199,11 +196,11 @@ private:
     bool m_dev_force_enabled = true;
 
 private:
-    InputDevices* m_iDPtr;
+    afInputDevices* m_iDPtr;
 };
 
 ///
-/// \brief These are the currently availble modes for each device
+/// \brief The MODES enum
 ///
 enum MODES{ CAM_CLUTCH_CONTROL,
             GRIPPER_JAW_CONTROL,
@@ -216,11 +213,11 @@ enum MODES{ CAM_CLUTCH_CONTROL,
           };
 
 ///
-/// \brief The DeviceGripperPair struct
+/// \brief The InputControlUnit struct
 ///
-struct PhySimDevicePair{
-    PhysicalInputDevice* m_physicalDevice = NULL;
-    SimulatedInputDevice* m_simulatedDevice = NULL;
+struct InputControlUnit{
+    afPhysicalDevice* m_physicalDevice = NULL;
+    afSimulatedDevice* m_simulatedDevice = NULL;
     // The cameras that this particular device Gripper Pair control
     std::vector<afCameraPtr> m_cameras;
 
@@ -232,13 +229,12 @@ struct PhySimDevicePair{
 
 ///
 /// \brief This is a higher level class that queries the number of haptics devices available on the sytem
-/// and on the Network for dVRK devices and creates a single Bullet Gripper and a Device Handle for
-/// each device.
+/// and on the Network for dVRK devices and creates a Simulated and Physical Device Handle
 ///
-class InputDevices{
+class afInputDevices{
 public:
-    InputDevices(afWorldPtr a_afWorld);
-    ~InputDevices();
+    afInputDevices(afWorldPtr a_afWorld);
+    ~afInputDevices();
 
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
@@ -260,8 +256,8 @@ public:
     void nextMode();
     void prevMode();
 
-    std::vector<PhySimDevicePair*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
-    std::vector<PhySimDevicePair*> getAllDeviceGripperPairs();
+    std::vector<InputControlUnit*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
+    std::vector<InputControlUnit*> getAllDeviceGripperPairs();
 
     // Add the index of a claimed device
     void addClaimedDeviceIndex(int a_idx);
@@ -271,7 +267,7 @@ public:
 
 public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
-    std::vector<PhySimDevicePair> m_psDevicePairs;
+    std::vector<InputControlUnit> m_psDevicePairs;
 
     uint m_numDevices;
 

@@ -56,12 +56,12 @@ namespace ambf {
 using namespace chai3d;
 //------------------------------------------------------------------------------
 
-int InputDevices::s_inputDeviceCount = 0;
+int afInputDevices::s_inputDeviceCount = 0;
 
 ///
-/// \brief SimulationParams::SimulationParams
+/// \brief afSharedDataStructure::afSharedDataStructure
 ///
-AsynchronousDataStructure::AsynchronousDataStructure(){
+afSharedDataStructure::afSharedDataStructure(){
     m_posRef.set(0,0,0);
     m_posRefOrigin.set(0, 0, 0);
     m_rotRef.identity();
@@ -69,20 +69,21 @@ AsynchronousDataStructure::AsynchronousDataStructure(){
 }
 
 ///
-/// \brief PhysicalDevice::~PhysicalDevice
+/// \brief afPhysicalDevice::~afPhysicalDevice
 ///
-PhysicalInputDevice::~PhysicalInputDevice(){
+afPhysicalDevice::~afPhysicalDevice(){
 }
 
 ///
-/// \brief PhysicalDevice::loadPhysicalDevice
-/// \param pd_node
+/// \brief afPhysicalDevice::loadPhysicalDevice
+/// \param pd_config_file
 /// \param node_name
-/// \param mB
-/// \param name_remapping_idx
+/// \param hDevHandler
+/// \param simDevice
+/// \param a_iD
 /// \return
 ///
-bool PhysicalInputDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD){
+bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(pd_config_file);
@@ -98,14 +99,15 @@ bool PhysicalInputDevice::loadPhysicalDevice(std::string pd_config_file, std::st
 }
 
 ///
-/// \brief PhysicalDevice::loadPhysicalDevice
+/// \brief afPhysicalDevice::loadPhysicalDevice
 /// \param pd_node
 /// \param node_name
-/// \param mB
-/// \param name_remapping_idx
+/// \param hDevHandler
+/// \param simDevice
+/// \param a_iD
 /// \return
 ///
-bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD){
+bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
     YAML::Node physicaDeviceNode = *pd_node;
     if (physicaDeviceNode.IsNull()){
         std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -312,14 +314,14 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
 
 
 ///
-/// \brief PhysicalInputDevice::createAfCursor
+/// \brief afPhysicalDevice::createAfCursor
 /// \param a_afWorld
 /// \param a_name
-/// \param name_space
+/// \param a_namespace
 /// \param minPF
 /// \param maxPF
 ///
-void PhysicalInputDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
+void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
     m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
     m_afCursor->setShowEnabled(true);
     m_afCursor->setShowFrame(true);
@@ -332,10 +334,10 @@ void PhysicalInputDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_nam
 }
 
 ///
-/// \brief PhysicalDevice::measured_pos
+/// \brief afPhysicalDevice::measuredPos
 /// \return
 ///
-cVector3d PhysicalInputDevice::measuredPos(){
+cVector3d afPhysicalDevice::measuredPos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getPosition(m_pos);
     updateCursorPose();
@@ -343,92 +345,92 @@ cVector3d PhysicalInputDevice::measuredPos(){
 }
 
 ///
-/// \brief PhysicalDevice::measured_pos_last
+/// \brief afPhysicalDevice::measuredPosPreclutch
 /// \return
 ///
-cVector3d PhysicalInputDevice::measuredPosPreclutch(){
+cVector3d afPhysicalDevice::measuredPosPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_posPreClutch;
 }
 
 ///
-/// \brief PhysicalDevice::set_pos_preclutch
+/// \brief afPhysicalDevice::setPosPreclutch
 /// \param a_pos
 ///
-void PhysicalInputDevice::setPosPreclutch(cVector3d a_pos){
+void afPhysicalDevice::setPosPreclutch(cVector3d a_pos){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_posPreClutch = a_pos;
 }
 
 ///
-/// \brief PhysicalDevice::measured_rot
+/// \brief afPhysicalDevice::measuredRot
 /// \return
 ///
-cMatrix3d PhysicalInputDevice::measuredRot(){
+cMatrix3d afPhysicalDevice::measuredRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getRotation(m_rot);
     return m_rot;
 }
 
 ///
-/// \brief PhysicalDevice::measured_rot_last
+/// \brief afPhysicalDevice::measuredRotPreclutch
 /// \return
 ///
-cMatrix3d PhysicalInputDevice::measuredRotPreclutch(){
+cMatrix3d afPhysicalDevice::measuredRotPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotPreClutch;
 }
 
 ///
-/// \brief PhysicalDevice::set_rot_preclutch
+/// \brief afPhysicalDevice::setRotPreclutch
 /// \param a_rot
 ///
-void PhysicalInputDevice::setRotPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRotPreclutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotPreClutch = a_rot;
 }
 
 
 ///
-/// \brief PhysicalDevice::measuredPosCamPreclutch
+/// \brief afPhysicalDevice::measuredPosCamPreclutch
 /// \return
 ///
-cVector3d PhysicalInputDevice::measuredPosCamPreclutch(){
+cVector3d afPhysicalDevice::measuredPosCamPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_posCamPreClutch;
 }
 
 ///
-/// \brief PhysicalDevice::setPosCamPreclutch
+/// \brief afPhysicalDevice::setPosCamPreclutch
 /// \param a_pos
 ///
-void PhysicalInputDevice::setPosCamPreclutch(cVector3d a_pos){
+void afPhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_posCamPreClutch = a_pos;
 }
 
 ///
-/// \brief PhysicalDevice::measuredRotCamPreclutch
+/// \brief afPhysicalDevice::measuredRotCamPreclutch
 /// \return
 ///
-cMatrix3d PhysicalInputDevice::measuredRotCamPreclutch(){
+cMatrix3d afPhysicalDevice::measuredRotCamPreclutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotCamPreClutch;
 }
 
 ///
-/// \brief PhysicalDevice::setRotCamPreclutch
+/// \brief afPhysicalDevice::setRotCamPreclutch
 /// \param a_rot
 ///
-void PhysicalInputDevice::setRotCamPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRotCamPreclutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotCamPreClutch = a_rot;
 }
 
 ///
-/// \brief PhysicalDevice::update_cursor_pose
+/// \brief afPhysicalDevice::updateCursorPose
 ///
-void PhysicalInputDevice::updateCursorPose(){
+void afPhysicalDevice::updateCursorPose(){
     if(m_afCursor){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
@@ -440,30 +442,30 @@ void PhysicalInputDevice::updateCursorPose(){
 }
 
 ///
-/// \brief PhysicalDevice::measured_lin_vel
+/// \brief afPhysicalDevice::measuredVelLin
 /// \return
 ///
-cVector3d PhysicalInputDevice::measuredVelLin(){
+cVector3d afPhysicalDevice::measuredVelLin(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getLinearVelocity(m_vel);
     return m_vel;
 }
 
 ///
-/// \brief PhysicalDevice::mearured_ang_vel
+/// \brief afPhysicalDevice::mearuredVelAng
 /// \return
 ///
-cVector3d PhysicalInputDevice::mearuredVelAng(){
+cVector3d afPhysicalDevice::mearuredVelAng(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getAngularVelocity(m_avel);
     return m_avel;
 }
 
 ///
-/// \brief PhysicalDevice::measured_gripper_angle
+/// \brief afPhysicalDevice::measuredGripperAngle
 /// \return
 ///
-double PhysicalInputDevice::measuredGripperAngle(){
+double afPhysicalDevice::measuredGripperAngle(){
     std::lock_guard<std::mutex> lock(m_mutex);
     double angle;
     m_hDevice->getGripperAngleRad(angle);
@@ -471,11 +473,11 @@ double PhysicalInputDevice::measuredGripperAngle(){
 }
 
 ///
-/// \brief PhysicalDevice::is_button_pressed
+/// \brief afPhysicalDevice::isButtonPressed
 /// \param button_index
 /// \return
 ///
-bool PhysicalInputDevice::isButtonPressed(int button_index){
+bool afPhysicalDevice::isButtonPressed(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -483,11 +485,11 @@ bool PhysicalInputDevice::isButtonPressed(int button_index){
 }
 
 ///
-/// \brief PhysicalDevice::is_button_press_rising_edge
+/// \brief afPhysicalDevice::isButtonPressRisingEdge
 /// \param button_index
 /// \return
 ///
-bool PhysicalInputDevice::isButtonPressRisingEdge(int button_index){
+bool afPhysicalDevice::isButtonPressRisingEdge(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -504,11 +506,11 @@ bool PhysicalInputDevice::isButtonPressRisingEdge(int button_index){
 }
 
 ///
-/// \brief PhysicalDevice::is_button_press_falling_edge
+/// \brief afPhysicalDevice::isButtonPressFallingEdge
 /// \param button_index
 /// \return
 ///
-bool PhysicalInputDevice::isButtonPressFallingEdge(int button_index){
+bool afPhysicalDevice::isButtonPressFallingEdge(int button_index){
     std::lock_guard<std::mutex> lock(m_mutex);
     bool status;
     m_hDevice->getUserSwitch(button_index, status);
@@ -524,63 +526,62 @@ bool PhysicalInputDevice::isButtonPressFallingEdge(int button_index){
     return false;
 }
 
+
 ///
-/// \brief PhysicalDevice::apply_wrench
+/// \brief afPhysicalDevice::applyWrench
 /// \param force
 /// \param torque
 ///
-void PhysicalInputDevice::applyWrench(cVector3d force, cVector3d torque){
+void afPhysicalDevice::applyWrench(cVector3d force, cVector3d torque){
     std::lock_guard<std::mutex> lock(m_mutex);
     force = force * m_dev_force_enabled;
     torque = torque * m_dev_force_enabled;
     m_hDevice->setForceAndTorqueAndGripperForce(force, torque, 0.0);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////
-
 ///
-/// \brief SimulatedGripper::SimulatedGripper
-/// \param a_chaiWorld
+/// \brief afSimulatedDevice::afSimulatedDevice
+/// \param a_afWorld
 ///
-SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afMultiBody (a_afWorld){
+afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afMultiBody (a_afWorld){
     m_gripper_angle = 0.5;
     P_lc_ramp = 0;
     P_ac_ramp = 0;
 }
 
 ///
-/// \brief SimulatedGripper::measured_pos
+/// \brief afSimulatedDevice::measuredPos
 /// \return
 ///
-cVector3d SimulatedInputDevice::measuredPos(){
+cVector3d afSimulatedDevice::measuredPos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalPos();
 }
 
 ///
-/// \brief SimulatedGripper::measured_rot
+/// \brief afSimulatedDevice::measuredRot
 /// \return
 ///
-cMatrix3d SimulatedInputDevice::measuredRot(){
+cMatrix3d afSimulatedDevice::measuredRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalRot();
 }
 
 ///
-/// \brief SimulatedGripper::update_measured_pose
+/// \brief afSimulatedDevice::updateMeasuredPose
 ///
-void SimulatedInputDevice::updateMeasuredPose(){
+void afSimulatedDevice::updateMeasuredPose(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pos  = m_rootLink->getLocalPos();
     m_rot = m_rootLink->getLocalRot();
 }
 
 ///
-/// \brief SimulatedGripper::setGripperAngle
+/// \brief afSimulatedDevice::setGripperAngle
 /// \param angle
 /// \param dt
 ///
-void SimulatedInputDevice::setGripperAngle(double angle, double dt){
+void afSimulatedDevice::setGripperAngle(double angle, double dt){
     // Since it's not desireable to control the exact angle of multiple joints in the gripper.
     // We override the set angle method for grippers to simplify the angle bound. 0 for closed
     // and 1 for open and everything in between is scaled.
@@ -594,20 +595,20 @@ void SimulatedInputDevice::setGripperAngle(double angle, double dt){
 }
 
 ///
-/// \brief SimulatedGripper::offset_gripper_angle
+/// \brief afSimulatedDevice::offsetGripperAngle
 /// \param offset
 ///
-void SimulatedInputDevice::offsetGripperAngle(double offset){
+void afSimulatedDevice::offsetGripperAngle(double offset){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_gripper_angle += offset;
     m_gripper_angle = cClamp(m_gripper_angle, 0.0, 1.0);
 }
 
 ///
-/// \brief SimulatedGripper::is_wrench_set
+/// \brief afSimulatedDevice::isWrenchSet
 /// \return
 ///
-bool SimulatedInputDevice::isWrenchSet(){
+bool afSimulatedDevice::isWrenchSet(){
     btVector3 f = m_rootLink->m_bulletRigidBody->getTotalForce();
     btVector3 n = m_rootLink->m_bulletRigidBody->getTotalTorque();
     if (f.isZero()) return false;
@@ -615,19 +616,18 @@ bool SimulatedInputDevice::isWrenchSet(){
 }
 
 ///
-/// \brief SimulatedGripper::clear_wrench
+/// \brief afSimulatedDevice::clearWrench
 ///
-void SimulatedInputDevice::clearWrench(){
+void afSimulatedDevice::clearWrench(){
     m_rootLink->m_bulletRigidBody->clearForces();
 }
 
 
 ///
-/// \brief InputDevices::InputDevices
-/// \param a_bullet_world
-/// \param a_max_load_devs
+/// \brief afInputDevices::afInputDevices
+/// \param a_afWorld
 ///
-InputDevices::InputDevices(afWorldPtr a_afWorld){
+afInputDevices::afInputDevices(afWorldPtr a_afWorld){
     m_deviceHandler = NULL;
     m_afWorld = a_afWorld;
 
@@ -638,20 +638,24 @@ InputDevices::InputDevices(afWorldPtr a_afWorld){
 }
 
 ///
-/// \brief InputDevices::~InputDevices
+/// \brief afInputDevices::~afInputDevices
 ///
-InputDevices::~InputDevices(){
+afInputDevices::~afInputDevices(){
 }
 
 
-void InputDevices::addClaimedDeviceIndex(int a_devIdx){
+void afInputDevices::addClaimedDeviceIndex(int a_devIdx){
     if (!checkClaimedDeviceIdx(a_devIdx)){
         m_devicesClaimed.push_back(a_devIdx);
     }
 }
 
-
-bool InputDevices::checkClaimedDeviceIdx(int a_devIdx){
+///
+/// \brief afInputDevices::checkClaimedDeviceIdx
+/// \param a_devIdx
+/// \return
+///
+bool afInputDevices::checkClaimedDeviceIdx(int a_devIdx){
     bool _claimed = false;
     for (int idx = 0 ; idx < m_devicesClaimed.size() ; idx++){
         if (a_devIdx == m_devicesClaimed[idx]){
@@ -664,12 +668,12 @@ bool InputDevices::checkClaimedDeviceIdx(int a_devIdx){
 
 
 ///
-/// \brief InputDevices::loadInputDevices
+/// \brief afInputDevices::loadInputDevices
 /// \param a_input_devices_config
 /// \param a_max_load_devs
 /// \return
 ///
-bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
+bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
     if (a_input_devices_config.empty()){
         a_input_devices_config = m_afWorld->getInputDevicesConfig();
     }
@@ -696,14 +700,14 @@ bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_ma
         //        std::cerr << "Num of devices " << m_num_devices << std::endl;
         for (uint devIdx = 0; devIdx < a_max_load_devs; devIdx++){
 
-            PhysicalInputDevice* pD = new PhysicalInputDevice();
-            SimulatedInputDevice* sD = new SimulatedInputDevice(m_afWorld);
+            afPhysicalDevice* pD = new afPhysicalDevice();
+            afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
 
             std::string devKey = inputDevices[devIdx].as<std::string>();
             YAML::Node devNode = inputDevicesNode[devKey];
 
             if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
-                PhySimDevicePair dgPair;
+                InputControlUnit dgPair;
                 dgPair.m_physicalDevice = pD;
                 dgPair.m_simulatedDevice = sD;
                 dgPair.m_name = pD->m_hInfo.m_modelName;
@@ -722,12 +726,13 @@ bool InputDevices::loadInputDevices(std::string a_input_devices_config, int a_ma
 }
 
 ///
-/// \brief InputDevices::get_device_gripper_pairs
+/// \brief afInputDevices::getDeviceGripperPairs
+/// \param a_device_names
 /// \return
 ///
-std::vector<PhySimDevicePair*> InputDevices::getDeviceGripperPairs(std::vector<std::string> a_device_names){
-    std::vector<PhySimDevicePair*> req_dg_Pairs;
-    std::vector<PhySimDevicePair>::iterator dgIt;
+std::vector<InputControlUnit*> afInputDevices::getDeviceGripperPairs(std::vector<std::string> a_device_names){
+    std::vector<InputControlUnit*> req_dg_Pairs;
+    std::vector<InputControlUnit>::iterator dgIt;
     for(int req_name_Idx = 0 ; req_name_Idx < a_device_names.size() ; req_name_Idx++){
         std::string req_dev_name = a_device_names[req_name_Idx];
         bool _found_req_device = false;
@@ -748,23 +753,22 @@ std::vector<PhySimDevicePair*> InputDevices::getDeviceGripperPairs(std::vector<s
 }
 
 ///
-/// \brief InputDevices::get_all_device_gripper_pairs
+/// \brief afInputDevices::getAllDeviceGripperPairs
 /// \return
 ///
-std::vector<PhySimDevicePair*> InputDevices::getAllDeviceGripperPairs(){
-    std::vector<PhySimDevicePair*> req_dg_Pairs;
-    std::vector<PhySimDevicePair>::iterator dgIt;
+std::vector<InputControlUnit*> afInputDevices::getAllDeviceGripperPairs(){
+    std::vector<InputControlUnit*> req_dg_Pairs;
+    std::vector<InputControlUnit>::iterator dgIt;
     for(dgIt = m_psDevicePairs.begin(); dgIt != m_psDevicePairs.end() ; ++dgIt){
         req_dg_Pairs.push_back(&(*dgIt));
     }
     return req_dg_Pairs;
 }
 
-
 ///
-/// \brief InputDevices::next_mode
+/// \brief afInputDevices::nextMode
 ///
-void InputDevices::nextMode(){
+void afInputDevices::nextMode(){
     m_mode_idx = (m_mode_idx + 1) % m_modes_enum_vec.size();
     m_simModes = m_modes_enum_vec[m_mode_idx];
     m_mode_str = m_modes_enum_str[m_mode_idx];
@@ -775,9 +779,9 @@ void InputDevices::nextMode(){
 }
 
 ///
-/// \brief InputDevices::prev_mode
+/// \brief afInputDevices::prevMode
 ///
-void InputDevices::prevMode(){
+void afInputDevices::prevMode(){
     m_mode_idx = (m_mode_idx - 1) % m_modes_enum_vec.size();
     m_simModes = m_modes_enum_vec[m_mode_idx];
     m_mode_str = m_modes_enum_str[m_mode_idx];
@@ -788,9 +792,9 @@ void InputDevices::prevMode(){
 }
 
 ///
-/// \brief InputDevices::close_devices
+/// \brief afInputDevices::closeDevices
 ///
-void InputDevices::closeDevices(){
+void afInputDevices::closeDevices(){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         m_psDevicePairs[devIdx].m_physicalDevice->m_hDevice->close();
     }
@@ -798,11 +802,11 @@ void InputDevices::closeDevices(){
 
 
 ///
-/// \brief InputDevices::increment_K_lh
+/// \brief afInputDevices::increment_K_lh
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_K_lh(double a_offset){
+double afInputDevices::increment_K_lh(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         if (m_psDevicePairs[devIdx].m_physicalDevice->K_lh + a_offset <= 0)
         {
@@ -821,11 +825,11 @@ double InputDevices::increment_K_lh(double a_offset){
 }
 
 ///
-/// \brief InputDevices::increment_K_ah
+/// \brief afInputDevices::increment_K_ah
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_K_ah(double a_offset){
+double afInputDevices::increment_K_ah(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         if (m_psDevicePairs[devIdx].m_physicalDevice->K_ah + a_offset <=0){
             m_psDevicePairs[devIdx].m_physicalDevice->K_ah = 0.0;
@@ -843,11 +847,11 @@ double InputDevices::increment_K_ah(double a_offset){
 }
 
 ///
-/// \brief InputDevices::increment_P_lc
+/// \brief afInputDevices::increment_P_lc
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_P_lc(double a_offset){
+double afInputDevices::increment_P_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
@@ -866,13 +870,12 @@ double InputDevices::increment_P_lc(double a_offset){
     return _temp;
 }
 
-
 ///
-/// \brief InputDevices::increment_P_ac
+/// \brief afInputDevices::increment_P_ac
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_P_ac(double a_offset){
+double afInputDevices::increment_P_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
@@ -891,13 +894,12 @@ double InputDevices::increment_P_ac(double a_offset){
     return _temp;
 }
 
-
 ///
-/// \brief InputDevices::increment_D_lc
+/// \brief afInputDevices::increment_D_lc
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_D_lc(double a_offset){
+double afInputDevices::increment_D_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
@@ -917,13 +919,12 @@ double InputDevices::increment_D_lc(double a_offset){
     return _temp;
 }
 
-
 ///
-/// \brief InputDevices::increment_D_ac
+/// \brief afInputDevices::increment_D_ac
 /// \param a_offset
 /// \return
 ///
-double InputDevices::increment_D_ac(double a_offset){
+double afInputDevices::increment_D_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;

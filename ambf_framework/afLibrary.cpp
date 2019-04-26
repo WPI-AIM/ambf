@@ -62,11 +62,11 @@ using namespace chai3d;
 /// Declare Static Variables
 afRigidBodySurfaceProperties afRigidBody::m_surfaceProps;
 
-boost::filesystem::path afConfigHandler::s_boostBaseDir;
-std::string afConfigHandler::s_color_config;
-std::vector<std::string> afConfigHandler::s_multiBody_configs;
-std::string afConfigHandler::s_world_config;
-std::string afConfigHandler::s_input_devices_config;
+boost::filesystem::path afConfigHandler::s_basePath;
+std::string afConfigHandler::s_colorConfigFileName;
+std::vector<std::string> afConfigHandler::s_multiBodyConfigFileNames;
+std::string afConfigHandler::s_worldConfigFileName;
+std::string afConfigHandler::s_inputDevicesConfigFileName;
 YAML::Node afConfigHandler::s_colorsNode;
 
 cBulletWorld* afWorld::s_bulletWorld;
@@ -184,14 +184,14 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     YAML::Node cfgMultiBodyFiles = configNode["multibody configs"];
 
 
-    s_boostBaseDir = boost::filesystem::path(a_config_file).parent_path();
+    s_basePath = boost::filesystem::path(a_config_file).parent_path();
 
     if(cfgWorldFiles.IsDefined()){
         boost::filesystem::path world_cfg_filename = cfgWorldFiles.as<std::string>();
         if (world_cfg_filename.is_relative()){
-            world_cfg_filename = s_boostBaseDir / world_cfg_filename;
+            world_cfg_filename = s_basePath / world_cfg_filename;
         }
-        s_world_config = world_cfg_filename.c_str();
+        s_worldConfigFileName = world_cfg_filename.c_str();
     }
     else{
         std::cerr << "ERROR! WORLD CONFIG NOT DEFINED \n";
@@ -201,9 +201,9 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     if(cfgInputDevicesFile.IsDefined()){
         boost::filesystem::path input_devices_cfg_filename = cfgInputDevicesFile.as<std::string>();
         if (input_devices_cfg_filename.is_relative()){
-            input_devices_cfg_filename = s_boostBaseDir / input_devices_cfg_filename;
+            input_devices_cfg_filename = s_basePath / input_devices_cfg_filename;
         }
-        s_input_devices_config = input_devices_cfg_filename.c_str();
+        s_inputDevicesConfigFileName = input_devices_cfg_filename.c_str();
     }
     else{
         std::cerr << "ERROR! INPUT DEVICES CONFIG NOT DEFINED \n";
@@ -213,10 +213,10 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     if(cfgColorFile.IsDefined()){
         boost::filesystem::path color_cfg_filename = cfgColorFile.as<std::string>();
         if (color_cfg_filename.is_relative()){
-            color_cfg_filename = s_boostBaseDir / color_cfg_filename;
+            color_cfg_filename = s_basePath / color_cfg_filename;
         }
-        s_color_config = color_cfg_filename.c_str();
-        s_colorsNode = YAML::LoadFile(s_color_config.c_str());
+        s_colorConfigFileName = color_cfg_filename.c_str();
+        s_colorsNode = YAML::LoadFile(s_colorConfigFileName.c_str());
         if (!s_colorsNode){
             std::cerr << "ERROR! COLOR CONFIG NOT FOUND \n";
         }
@@ -229,9 +229,9 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
         for (size_t i = 0 ; i < cfgMultiBodyFiles.size() ; i++){
             boost::filesystem::path mb_cfg_filename =  cfgMultiBodyFiles[i].as<std::string>();
             if (mb_cfg_filename.is_relative()){
-                mb_cfg_filename = s_boostBaseDir / mb_cfg_filename;
+                mb_cfg_filename = s_basePath / mb_cfg_filename;
             }
-            s_multiBody_configs.push_back(std::string(mb_cfg_filename.c_str()));
+            s_multiBodyConfigFileNames.push_back(std::string(mb_cfg_filename.c_str()));
         }
     }
     else{
@@ -247,7 +247,7 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
 /// \return
 ///
 std::string afConfigHandler::getWorldConfig(){
-    return s_world_config;
+    return s_worldConfigFileName;
 }
 
 ///
@@ -255,7 +255,7 @@ std::string afConfigHandler::getWorldConfig(){
 /// \return
 ///
 std::string afConfigHandler::getInputDevicesConfig(){
-    return s_input_devices_config;
+    return s_inputDevicesConfigFileName;
 }
 
 ///
@@ -264,10 +264,10 @@ std::string afConfigHandler::getInputDevicesConfig(){
 ///
 std::string afConfigHandler::getMultiBodyConfig(int i){
     if (i <= numMultiBodyConfig()){
-        return s_multiBody_configs[i];
+        return s_multiBodyConfigFileNames[i];
     }
     else{
-        printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBody_configs.size());
+        printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBodyConfigFileNames.size());
         return "";
     }
 }
@@ -277,7 +277,7 @@ std::string afConfigHandler::getMultiBodyConfig(int i){
 /// \return
 ///
 std::string afConfigHandler::getColorConfig(){
-    return s_color_config;
+    return s_colorConfigFileName;
 }
 
 
@@ -1826,7 +1826,7 @@ void afSoftBody::setConfigProperties(const afSoftBodyPtr a_body, const afSoftBod
 /// \param current_time
 /// \return
 ///
-double afController::computeOutput(double process_val, double set_point, double current_time){
+double afJointController::computeOutput(double process_val, double set_point, double current_time){
         for (size_t i = n-1 ; i >= 1 ; i--){
             t[i] = t[i-1];
             e[i] = e[i-1];
@@ -1852,7 +1852,7 @@ double afController::computeOutput(double process_val, double set_point, double 
 /// \param effort_cmd
 /// \param effort_time
 ///
-void afController::boundImpulse(double &effort_cmd){
+void afJointController::boundImpulse(double &effort_cmd){
     double impulse = ( effort_cmd - m_last_cmd ) / (t[0]- t[1]);
 //    std::cerr << "Before " << effort_cmd ;
     int sign = 1;
