@@ -3758,22 +3758,22 @@ std::string afMultiBody::remapSensorName(std::string a_sensor_name){
 }
 
 ///
+/// \brief afMultiBody::loadAllMultiBodies
+///
+void afMultiBody::loadAllMultiBodies(bool enable_comm){
+    for (int i = 0 ; i < m_afWorld->numMultiBodyConfig(); i++){
+        loadMultiBody(i, enable_comm);
+    }
+}
+
+///
 /// \brief afMultiBody::loadMultiBody
 /// \param i
 /// \return
 ///
-bool afMultiBody::loadMultiBody(int i){
+bool afMultiBody::loadMultiBody(int i, bool enable_comm){
     std::string multibody_config = m_afWorld->getMultiBodyConfig(i);
-    return loadMultiBody(multibody_config);
-}
-
-///
-/// \brief afMultiBody::loadAllMultiBodies
-///
-void afMultiBody::loadAllMultiBodies(){
-    for (int i = 0 ; i < m_afWorld->numMultiBodyConfig(); i++){
-        loadMultiBody(i);
-    }
+    return loadMultiBody(multibody_config, enable_comm);
 }
 
 ///
@@ -3781,7 +3781,7 @@ void afMultiBody::loadAllMultiBodies(){
 /// \param a_multibody_config
 /// \return
 ///
-bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
+bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable_comm){
     if (a_multibody_config_file.empty()){
         a_multibody_config_file = m_afWorld->getMultiBodyConfig();
     }
@@ -3846,17 +3846,19 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
             std::string remap_str = remapBodyName(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
             m_afWorld->addAFRigidBody(rBodyPtr, rBodyPtr->getNamespace() + rb_name + remap_str);
             m_afRigidBodyMapLocal[rBodyPtr->getNamespace()+ rb_name] = rBodyPtr;
-            std::string af_name = rBodyPtr->m_name;
-            if ((strcmp(af_name.c_str(), "world") == 0) ||
-                    (strcmp(af_name.c_str(), "World") == 0) ||
-                    (strcmp(af_name.c_str(), "WORLD") == 0)){
-                continue;
-            }
-            else{
-                rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
-                                             rBodyPtr->getNamespace(),
-                                             rBodyPtr->getMinPublishFrequency(),
-                                             rBodyPtr->getMaxPublishFrequency());
+            if (enable_comm){
+                std::string af_name = rBodyPtr->m_name;
+                if ((strcmp(af_name.c_str(), "world") == 0) ||
+                        (strcmp(af_name.c_str(), "World") == 0) ||
+                        (strcmp(af_name.c_str(), "WORLD") == 0)){
+                    continue;
+                }
+                else{
+                    rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
+                                                 rBodyPtr->getNamespace(),
+                                                 rBodyPtr->getMinPublishFrequency(),
+                                                 rBodyPtr->getMaxPublishFrequency());
+                }
             }
         }
     }

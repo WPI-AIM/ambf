@@ -987,9 +987,9 @@ public:
     afMultiBody();
     afMultiBody(afWorldPtr a_afWorld);
     virtual ~afMultiBody();
-    virtual bool loadMultiBody(int i);
-    virtual bool loadMultiBody(std::string a_multibody_config);
-    void loadAllMultiBodies();
+    virtual bool loadMultiBody(int i, bool enable_comm);
+    virtual bool loadMultiBody(std::string a_multibody_config, bool enable_comm);
+    void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}

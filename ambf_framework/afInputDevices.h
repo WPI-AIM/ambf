@@ -102,7 +102,6 @@ class SimulatedInputDevice: public AsynchronousDataStructure, public afMultiBody
 public:
     SimulatedInputDevice(afWorldPtr a_afWorld);
     ~SimulatedInputDevice(){}
-    bool loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name ,std::string a_device_name);
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     void updateMeasuredPose();
@@ -146,6 +145,7 @@ public:
     ~PhysicalInputDevice();
     virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
     virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, SimulatedInputDevice* simDevice, InputDevices* a_iD);
+    void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     cVector3d measuredPosPreclutch();
@@ -166,8 +166,6 @@ public:
     void enableForceFeedback(bool enable){m_dev_force_enabled = enable;}
 
 public:
-    cShapeSphere* createCursor(cBulletWorld* a_world);
-    cBulletSphere* createAfCursor(cBulletWorld* a_world, std::string a_name);
     cGenericHapticDevicePtr m_hDevice;
     cHapticDeviceInfo m_hInfo;
     cVector3d m_pos, m_posClutched, m_posPreClutch;
@@ -176,8 +174,7 @@ public:
     cMatrix3d m_rotCamPreClutch;
     cVector3d m_vel, m_avel;
     double m_workspaceScale;
-    cShapeSphere* m_cursor = NULL;
-    cBulletSphere* m_af_cursor = NULL;
+    cBulletSphere* m_afCursor = NULL;
     bool m_btn_prev_state_rising[10] = {false};
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;
@@ -307,6 +304,9 @@ public:
     bool g_cam_btn_pressed = false;
     bool g_clutch_btn_pressed = false;
 
+    // Number of input devices loaded. To be used by the devices while launching
+    // thier afCommunication
+    static int s_inputDeviceCount;
 
 private:
     // Base of the config file location of this Input Device Handler

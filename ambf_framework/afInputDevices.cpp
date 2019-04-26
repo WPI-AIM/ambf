@@ -56,6 +56,8 @@ namespace ambf {
 using namespace chai3d;
 //------------------------------------------------------------------------------
 
+int InputDevices::s_inputDeviceCount = 0;
+
 ///
 /// \brief SimulationParams::SimulationParams
 ///
@@ -65,26 +67,6 @@ AsynchronousDataStructure::AsynchronousDataStructure(){
     m_rotRef.identity();
     m_rotRefOrigin.identity();
 }
-
-
-
-///
-/// \brief PhysicalDevice::create_cursor
-/// \param a_world
-/// \return
-///
-cShapeSphere* PhysicalInputDevice::createCursor(cBulletWorld* a_world){
-    m_cursor = new cShapeSphere(0.05);
-    m_cursor->setShowEnabled(true);
-    m_cursor->setShowFrame(true);
-    m_cursor->setFrameSize(0.1);
-    cMaterial mat;
-    mat.setGreenLightSea();
-    m_cursor->setMaterial(mat);
-    a_world->addChild(m_cursor);
-    return m_cursor;
-}
-
 
 ///
 /// \brief PhysicalDevice::~PhysicalDevice
@@ -219,7 +201,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
         _rootLinkDefined = true;
     }
     else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
+//        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
     }
 
 
@@ -249,7 +231,7 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
     }
 
     if (_simulatedMBDefined){
-        if (!simDevice->loadSimulatedGripper(_simulatedMBConfig, m_hInfo.m_modelName, m_hInfo.m_modelName)){
+        if (!simDevice->loadMultiBody(_simulatedMBConfig, false)){
             return 0;
         }
 
@@ -266,6 +248,42 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
         if (a_iD->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
             simDevice->m_rootLink = a_iD->getAFWorld()->getAFRigidBody(_rootLinkName);
         }
+    }
+
+    // If we cannot find any root link, return failure
+    if (simDevice->m_rootLink){
+        simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        // Initialize all the constraint to null ptr
+        for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
+            simDevice->m_rigidGrippingConstraints[sIdx] = 0;
+            simDevice->m_softGrippingConstraints[sIdx] = 0;
+        }
+
+        std::string _modelName = '/' + m_hInfo.m_modelName;
+        std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
+
+        a_iD->s_inputDeviceCount++;
+        std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+        createAfCursor(a_iD->getAFWorld(),
+                       _pDevName,
+                       simDevice->getNameSpace(),
+                       simDevice->m_rootLink->getMinPublishFrequency(),
+                       simDevice->m_rootLink->getMaxPublishFrequency());
+
+        // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
+        // Since an existing root body is bound to the physical device whose afComm should already be
+        // running
+        if(_simulatedMBDefined){
+            std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+            simDevice->m_rootLink->afObjectCreate(_sDevName,
+                                                  simDevice->getNameSpace(),
+                                                  simDevice->m_rootLink->getMinPublishFrequency(),
+                                                  simDevice->m_rootLink->getMaxPublishFrequency());
+        }
+    }
+    else{
+        return 0;
     }
 
     if (pDLocation.IsDefined()){
@@ -289,26 +307,28 @@ bool PhysicalInputDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string no
     simDevice->m_rotRef = _orientation;
     simDevice->m_rotRefOrigin = _orientation;
 
-    createAfCursor(a_iD->getAFWorld()->s_bulletWorld, "Tracker");
     return 1;
 }
 
+
 ///
-/// \brief PhysicalDevice::create_af_cursor
-/// \param a_world
+/// \brief PhysicalInputDevice::createAfCursor
+/// \param a_afWorld
 /// \param a_name
-/// \return
+/// \param name_space
+/// \param minPF
+/// \param maxPF
 ///
-cBulletSphere* PhysicalInputDevice::createAfCursor(cBulletWorld *a_world, std::string a_name){
-    m_af_cursor = new cBulletSphere(a_world, 0.05, a_name);
-    m_af_cursor->setShowEnabled(true);
-    m_af_cursor->setShowFrame(true);
-    m_af_cursor->setFrameSize(0.1);
+void PhysicalInputDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
+    m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
+    m_afCursor->setShowEnabled(true);
+    m_afCursor->setShowFrame(true);
+    m_afCursor->setFrameSize(0.1);
     cMaterial mat;
     mat.setGreenLightSea();
-    m_af_cursor->setMaterial(mat);
-    a_world->addChild(m_af_cursor);
-    return m_af_cursor;
+    m_afCursor->setMaterial(mat);
+    a_afWorld->s_bulletWorld->addChild(m_afCursor);
+    m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
 }
 
 ///
@@ -409,16 +429,12 @@ void PhysicalInputDevice::setRotCamPreclutch(cMatrix3d a_rot){
 /// \brief PhysicalDevice::update_cursor_pose
 ///
 void PhysicalInputDevice::updateCursorPose(){
-    if(m_cursor){
-        m_cursor->setLocalPos(m_pos * m_workspaceScale);
-        m_cursor->setLocalRot(m_rot);
-    }
-    if(m_af_cursor){
-        m_af_cursor->setLocalPos(m_pos * m_workspaceScale);
-        m_af_cursor->setLocalRot(m_rot);
+    if(m_afCursor){
+        m_afCursor->setLocalPos(m_pos * m_workspaceScale);
+        m_afCursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        m_af_cursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
-        m_af_cursor->m_afObjectPtr->set_userdata(m_freq_ctr.getFrequency());
+        m_afCursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
+        m_afCursor->m_afObjectPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
     }
 }
@@ -530,26 +546,6 @@ SimulatedInputDevice::SimulatedInputDevice(afWorldPtr a_afWorld): afMultiBody (a
     m_gripper_angle = 0.5;
     P_lc_ramp = 0;
     P_ac_ramp = 0;
-}
-
-///
-/// \brief SimulatedGripper::loadFromAMBF
-/// \param a_gripper_name
-/// \param a_device_name
-/// \return
-///
-bool SimulatedInputDevice::loadSimulatedGripper(std::string a_config_filename, std::string a_gripper_name, std::string a_device_name){
-    bool res = loadMultiBody(a_config_filename);
-    m_rootLink = getRootAFRigidBodyLocal();
-
-    m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
-    m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
-    // Initialize all the constraint to null ptr
-    for (int sIdx = 0 ; sIdx < m_rigidGrippingConstraints.size() ; sIdx++){
-        m_rigidGrippingConstraints[sIdx] = 0;
-        m_softGrippingConstraints[sIdx] = 0;
-    }
-    return res;
 }
 
 ///
