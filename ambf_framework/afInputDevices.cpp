@@ -214,6 +214,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
 
     int nDevs = hDevHandler->getNumDevices();
+    bool _devFound = false;
 
     for (int dIdx = 0 ; dIdx < nDevs ; dIdx++){
         // First check if this index has already been claimed or not.
@@ -227,9 +228,14 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 // Now add the device index in a comman place
                 // to help devices that are loaded afterwards
                 a_iD->addClaimedDeviceIndex(dIdx);
+                _devFound = true;
                 break;
             }
         }
+    }
+
+    if(!_devFound){
+        return 0;
     }
 
     if (_simulatedMBDefined){
