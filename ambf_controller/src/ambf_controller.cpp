@@ -196,7 +196,7 @@ bool AMBFController::raven_motion_planning()
 					break;
 
 				case AMBFCmdMode::dancing:
-					raven_planner[i].sine_dance(i);
+					raven_planner[i].sine_dance(false,i);
 					break;
 			}
 		}		
@@ -257,6 +257,7 @@ void AMBFController::csl_run()
 					raven_planner[i].command.type = _null;
 					print_menu = true;
 					break;
+
 				case '1':
 					ROS_INFO("1: Enter homing mode. Both arms moving to home.");
 					raven_planner[i].mode = AMBFCmdMode::homing;
@@ -266,9 +267,10 @@ void AMBFController::csl_run()
 					break;
 
 				case '2':
-					ROS_INFO("1: Enter dancing mode. Enjoy a little dance!");
+					ROS_INFO("2: Enter dancing mode. Enjoy a little dance!");
 					raven_planner[i].mode = AMBFCmdMode::dancing;
 					raven_planner[i].command.type = _jp;
+					raven_planner[i].sine_dance(true,i);
 					print_menu = true;
 					break;
 
@@ -337,37 +339,31 @@ bool AMBFController::raven_command_pb()
 
 		if(raven_planner[i].command.updated && raven_planner[i].command.type != _null)
 		{
-			if(raven_planner[i].command.type == _jp || raven_planner[i].command.type == _cp)
+			switch(raven_planner[i].command.type)
 			{
-				msg.joint_cmds = raven_planner[i].command.js;
-				msg.position_controller_mask = AMBFDef::true_joints;
-				
-				raven_pubs[i].publish(msg);
-			}
-			else if(raven_planner[i].command.type == _jw)
-			{
-				msg.joint_cmds = raven_planner[i].command.js;
-				msg.position_controller_mask = AMBFDef::false_joints;
+				case AMBFCmdType::_jp:
+				case AMBFCmdType::_cp:
+					msg.joint_cmds = raven_planner[i].command.js;
+					msg.position_controller_mask = AMBFDef::true_joints;
+					break;
 
-				raven_pubs[i].publish(msg);
-			}
-			else if (raven_planner[i].command.type == _cw)
-			{
-				msg.wrench.force.x  = raven_planner[i].command.cf.x();
-				msg.wrench.force.y  = raven_planner[i].command.cf.y();
-				msg.wrench.force.z  = raven_planner[i].command.cf.z();
-				msg.wrench.torque.x = raven_planner[i].command.ct.x();
-				msg.wrench.torque.y = raven_planner[i].command.ct.y();
-				msg.wrench.torque.z = raven_planner[i].command.ct.z();
+				case AMBFCmdType::_jw:
+					msg.joint_cmds = raven_planner[i].command.js;
+					msg.position_controller_mask = AMBFDef::false_joints;
+					break;
 
-				raven_pubs[i].publish(msg);
+				case AMBFCmdType::_cw:
+					msg.wrench.force.x  = raven_planner[i].command.cf.x();
+					msg.wrench.force.y  = raven_planner[i].command.cf.y();
+					msg.wrench.force.z  = raven_planner[i].command.cf.z();
+					msg.wrench.torque.x = raven_planner[i].command.ct.x();
+					msg.wrench.torque.y = raven_planner[i].command.ct.y();
+					msg.wrench.torque.z = raven_planner[i].command.ct.z();
+					break;
 			}
 
+			raven_pubs[i].publish(msg);
 			raven_planner[i].command.updated = false;
-
-			// static int count = 0;
-			// count ++;
-	    	// ROS_INFO("publish count: %s",to_string(count).c_str());
 		}
 	}
 	

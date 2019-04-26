@@ -58,6 +58,8 @@ public:
 
   static const tf::Vector3             zero_vec;    // place holder for frequently used arrays
   static const vector<float>           zero_joints;
+  static const vector<float>           max_joints;
+  static const vector<float>           min_joints;
   static const vector<float>           home_joints;
   static const vector<unsigned char>   true_joints;
   static const vector<unsigned char>   false_joints;

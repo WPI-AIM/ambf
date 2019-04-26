@@ -60,7 +60,7 @@ public:
     AMBFPlanner();
     ~AMBFPlanner();
     bool go_home(bool,int);   // jp command will be used
-    bool sine_dance(int);     // jp command will be used
+    bool sine_dance(bool, int);     // jp command will be used
 };
 
 
