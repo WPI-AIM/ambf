@@ -53,7 +53,7 @@ AMBFPlanner::AMBFPlanner()
 	mode  = AMBFCmdMode::freefall;
 	state.updated = false;
 	command.updated = false;
-	command.type = _jp;
+	command.type = _null;
 
 	state.jp.resize(AMBFDef::raven_joints);
 	command.js.resize(AMBFDef::raven_joints);

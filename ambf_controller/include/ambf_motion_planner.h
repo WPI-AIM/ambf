@@ -59,8 +59,27 @@ public:
 
     AMBFPlanner();
     ~AMBFPlanner();
-    bool go_home(bool,int);		   // jp command will be used
+    bool go_home(bool,int);   // jp command will be used
     bool sine_dance(int);     // jp command will be used
 };
+
+
+// Note: 
+// 
+// if(command.type == _jp || command.type == _jw)
+// update command.js
+// 
+// if(command.type == _cp)
+// do inverse kinematics
+// update command.js
+// 
+// if(command.type == _cw)
+// update command.cf
+// update command.ct
+// 
+// Remember to set:
+// command.type 	= _???;
+// command.updated = true;
+// state.updated   = false;
 
 #endif

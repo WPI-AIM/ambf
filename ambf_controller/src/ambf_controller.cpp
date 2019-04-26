@@ -186,41 +186,22 @@ bool AMBFController::raven_motion_planning()
 	{
 		if(raven_planner[i].state.updated && raven_planner[i].command.type != _null)
 		{
-			if(raven_planner[i].command.type == _jp || raven_planner[i].command.type == _jw)
+			switch(raven_planner[i].mode)
 			{
-				// update raven_planner[i].command.js
-				switch(raven_planner[i].mode)
-				{
-					case AMBFCmdMode::freefall:
-						// do nothing
-						break;
-					case AMBFCmdMode::homing:
-						raven_planner[i].go_home(false,i);
-						break;
-					case AMBFCmdMode::dancing:
-						raven_planner[i].sine_dance(i);
-						break;
-				}
-			}
-			else if(raven_planner[i].command.type == _cp)
-			{
-				// TODO: set desired cartesian position
-				//		 do inverse kinematics
-				//		 update raven_planner[i].command.js
+				case AMBFCmdMode::freefall:	// do nothing
+					break;
 
-				raven_planner[i].command.updated = true;
-				raven_planner[i].state.updated   = false;
-			}
-			else if(raven_planner[i].command.type == _cw)
-			{
-				// TODO: update raven_planner[i].command.cf
-				//       update raven_planner[i].command.ct
-				raven_planner[i].command.updated = true;
-				raven_planner[i].state.updated   = false;
+				case AMBFCmdMode::homing:
+					raven_planner[i].go_home(false,i);
+					break;
+
+				case AMBFCmdMode::dancing:
+					raven_planner[i].sine_dance(i);
+					break;
 			}
 		}		
 	}
-
+	
 	return true;
 }
 
@@ -265,34 +246,35 @@ void AMBFController::csl_run()
 
     	show_menu();
 		key = get_key();
-		switch(key)
+
+		for(int i=0;i<AMBFDef::raven_arms; i++)
 		{
-			case '0':
-				ROS_INFO("0: Enter freefall mode. No commands sent to either arm.");
-				raven_planner[0].mode = AMBFCmdMode::freefall;
-				raven_planner[1].mode = AMBFCmdMode::freefall;
-				print_menu = true;
-				break;
-			case '1':
-				ROS_INFO("1: Enter homing mode. Both arms moving to home.");
-
-				for(int i=0;i<AMBFDef::raven_arms; i++)
-				{
+			switch(key)
+			{
+				case '0':
+					ROS_INFO("0: Enter freefall mode. No commands sent to either arm.");
+					raven_planner[i].mode = AMBFCmdMode::freefall;
+					raven_planner[i].command.type = _null;
+					print_menu = true;
+					break;
+				case '1':
+					ROS_INFO("1: Enter homing mode. Both arms moving to home.");
 					raven_planner[i].mode = AMBFCmdMode::homing;
-					raven_planner[i].go_home(true,i);
-				}
-				
-				print_menu = true;
-				break;
+					raven_planner[i].command.type = _jp;
+					raven_planner[i].go_home(true,i);				
+					print_menu = true;
+					break;
 
-			case '2':
-				ROS_INFO("1: Enter dancing mode. Enjoy a little dance!");
-				raven_planner[0].mode = AMBFCmdMode::dancing;
-				raven_planner[1].mode = AMBFCmdMode::dancing;
-				print_menu = true;
-				break;
+				case '2':
+					ROS_INFO("1: Enter dancing mode. Enjoy a little dance!");
+					raven_planner[i].mode = AMBFCmdMode::dancing;
+					raven_planner[i].command.type = _jp;
+					print_menu = true;
+					break;
 
+			}
 		}
+
         ros::spinOnce();
         loop_rate.sleep();
 
