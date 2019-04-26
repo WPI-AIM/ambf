@@ -45,8 +45,8 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
-#ifndef CBulletMultiBody_H
-#define CBulletMultiBody_H
+#ifndef AF_LIBRARY_H
+#define AF_LIBRARY_H
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -115,6 +115,39 @@ btVector3 cVec2btVec(const cVector3d &cVec);
 ///
 cVector3d btVec2cVec(const btVector3 &bVec);
 
+
+///
+/// \brief assignXYZ
+/// \param node
+/// \param v
+///
+void assignXYZ(YAML::Node* node, btVector3 *v);
+
+
+///
+/// \brief assignXYZ
+/// \param node
+/// \param v
+///
+void assignXYZ(YAML::Node* node, cVector3d *v);
+
+
+///
+/// \brief assignRPY
+/// \param node
+/// \param v
+///
+void assignRPY(YAML::Node* node, cVector3d *v);
+
+
+///
+/// \brief assignRPY
+/// \param node
+/// \param v
+///
+void assignRPY(YAML::Node* node, btVector3 *v);
+
+
 ///
 /// \brief The afConfigHandler class
 ///
@@ -125,22 +158,30 @@ public:
     afConfigHandler();
     virtual ~afConfigHandler(){}
     std::string getConfigFile(std::string a_config_name);
+    // The the multibody config file name at specifc index
     std::string getMultiBodyConfig(int i=0);
+    // Get the filename of the color config file
     std::string getColorConfig();
+    // Get the world config filename
     std::string getWorldConfig();
+    // Get the config file for input devices
+    std::string getInputDevicesConfig();
+    // Get color's rgba values from the name of the color. Color names are defined
+    // in the color config file
     std::vector<double> getColorRGBA(std::string a_color_name);
-    std::string getGripperConfig(std::string a_gripper_name);
+    // Load the base config file
     bool loadBaseConfig(std::string file);
-    inline int numMultiBodyConfig(){return s_multiBody_configs.size();}
+    // Get the nuber of multibody config files defined in launch config file
+    inline int numMultiBodyConfig(){return s_multiBodyConfigFileNames.size();}
 
 private:
 
-    static boost::filesystem::path s_boostBaseDir;
-    static std::string s_color_config;
-    static std::vector<std::string> s_multiBody_configs;
-    static std::string s_world_config;
+    static boost::filesystem::path s_basePath;
+    static std::string s_colorConfigFileName;
+    static std::vector<std::string> s_multiBodyConfigFileNames;
+    static std::string s_worldConfigFileName;
+    static std::string s_inputDevicesConfigFileName;
     YAML::Node configNode;
-    static std::map<std::string, std::string> s_gripperConfigFiles;
 
 protected:
 
@@ -269,6 +310,8 @@ public:
     virtual void addChildBody(afRigidBodyPtr childBody, afJointPtr jnt);
     // This method update the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
 
     // A vector of joints that this bodies is a parent off. Includes joints of all the
     // connected children all the way down to the last child
@@ -309,10 +352,10 @@ public:
     bool isChild(btRigidBody* a_body);
 
     // Add sensor to this body
-    bool addSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+    bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
 
     // Get the sensors for this body
-    inline std::vector<afSensorPtr> getSensors(){return m_afSensors;}
+    inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
 public:
     // If the Position Controller is active, disable Position Controller from Haptic Device
@@ -323,7 +366,7 @@ public:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
-    std::string m_body_namespace;
+    std::string m_namespace;
 
 protected:
 
@@ -430,18 +473,32 @@ class afSoftBody: public afSoftMultiMesh{
 public:
 
     afSoftBody(afWorldPtr a_afWorld);
+    // Execute the commands incomming of afObjectCmd handle
     virtual void afObjectCommandExecute(double dt){}
+    // Load the softbody from filename
     virtual bool loadSoftBody(std::string sb_config_file, std::string node_name, afMultiBodyPtr mB);
+    // Load the softbody from YAML Node data
     virtual bool loadSoftBody(YAML::Node* sb_node, std::string node_name, afMultiBodyPtr mB);
+    // Add child a softbody
     virtual void addChildBody(afSoftBodyPtr childBody, afJointPtr jnt){}
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
 
     std::vector<afJointPtr> m_joints;
     std::vector<afSoftBodyPtr> m_childrenBodies;
     std::vector<afSoftBodyPtr> m_parentBodies;
 
+    // Set angle of connected joint
     void setAngle(double &angle, double dt);
+
+    // Set angles of connected joints
     void setAngle(std::vector<double> &angle, double dt);
+
+    // Set softbody config properties
     static void setConfigProperties(const afSoftBodyPtr a_body, const afSoftBodyConfigPropertiesPtr a_configProps);
+
+public:
+    std::string m_namespace;
 
 protected:
 
@@ -460,7 +517,9 @@ protected:
 
 protected:
 
+    // Add a parent body
     void addParentBody(afSoftBodyPtr a_body);
+    // Populate the parent tree
     void populateParentsTree(afSoftBodyPtr a_body, afJointPtr a_jnt);
     static afSoftBodyConfigProperties m_configProps;
 
@@ -470,9 +529,9 @@ protected:
 
 
 ///
-/// \brief The PID struct
+/// \brief The afJointController class
 ///
-class afController{
+class afJointController{
 public:
     // Set some default values of PID
     // TODO: Maybe set PID's to 0 so the
@@ -497,6 +556,9 @@ public:
     void boundEffort(double& effort_cmd);
 };
 
+///
+/// \brief The JointType enum
+///
 enum JointType{
     revolute = 0,
     prismatic = 1,
@@ -518,12 +580,30 @@ public:
 
     afJoint(afWorldPtr a_afWorld);
     virtual ~afJoint();
+    // Load joint from config filename
     virtual bool loadJoint(std::string jnt_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load joint from YAML Node data
     virtual bool loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Set open loop effort for this joint
     void commandEffort(double &effort_cmd);
+
+    // Set position target for this joint that is handeled by it's joint controller
     void commandPosition(double &position_cmd);
+
+    // Get the internal bullet constraint
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
+
+    // Get lower joint limit
+    inline double getLowerLimit(){return m_lower_limit;}
+
+    // Get upper joint limit
+    inline double getUpperLimit(){return m_upper_limit;}
+
+    // Get the position of this joint
     double getPosition();
+
     JointType m_jointType;
 
 protected:
@@ -536,7 +616,7 @@ protected:
     double m_joint_damping;
     double m_max_effort;
     bool m_enable_actuator;
-    double m_lower_limit, m_higher_limit;
+    double m_lower_limit, m_upper_limit;
     double m_joint_offset;
     btRigidBody *m_rbodyA, *m_rbodyB;
     void printVec(std::string name, btVector3* v);
@@ -557,7 +637,7 @@ private:
     btGeneric6DofSpringConstraint* m_spring;
     btPoint2PointConstraint* m_p2p;
     afMultiBodyPtr m_mB;
-    afController m_controller;
+    afJointController m_controller;
 };
 
 //-----------------------------------------------------------------------------
@@ -572,11 +652,20 @@ class afSensor{
     friend class afRigidBody;
 public:
     afSensor(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
+
+    // Load sensor from filename
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    // Load sensor form YAML node data
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
 
+    // Upate the sensor, usually called at each dynamic tick update of the physics engine
     virtual void updateSensor()=0;
+
+    // Toggle the debug display of the sensor
     inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
+
+    // Get the body this sensor is a child of
     inline afRigidBodyPtr getParentBody(){return m_parentBody;}
 
 public:
@@ -700,7 +789,16 @@ class afCamera: public afRigidBody{
 public:
 
     afCamera(afWorld* a_afWorld);
+
+
+    // Initialize
+    bool init();
+
+    // Create the default camera. Implemented in case not additional cameras
+    // are define in the AMBF config file
     bool createDefaultCamera();
+
+    // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name);
 
     // Method similar to cCamera but providing a layer of abstraction
@@ -743,8 +841,10 @@ public:
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
+    // Get the pos of camera
     cVector3d measuredPos();
 
+    // Get the Rotation of the camera
     cMatrix3d measuredRot();
 
     // Get the Target or the lookAt point
@@ -755,8 +855,6 @@ public:
 
     // Show a visual marker representing the position of CameraTaregetPosition
     void showTargetPos(bool a_show);
-
-    bool init();
 
     cMesh* m_targetVisualMarker;
 
@@ -840,7 +938,11 @@ enum ShadowQuality{
 class afLight: public afRigidBody{
 public:
     afLight(afWorld* a_afWorld);
+
+    // Load light from YAML Node data
     bool loadLight(YAML::Node* light_node, std::string light_name);
+
+    // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
 
 protected:
@@ -874,37 +976,37 @@ public:
 
 public:
 
-    bool addLight(afLightPtr a_rb, std::string a_name);
-    bool addCamera(afCameraPtr a_rb, std::string a_name);
-    bool addRigidBody(afRigidBodyPtr a_rb, std::string a_name);
-    bool addSoftBody(afSoftBodyPtr a_sb, std::string a_name);
-    bool addJoint(afJointPtr a_jnt, std::string a_name);
-    bool addSensor(afSensorPtr a_sensor, std::string a_name);
+    bool addAFLight(afLightPtr a_rb, std::string a_name);
+    bool addAFCamera(afCameraPtr a_rb, std::string a_name);
+    bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+    bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+    bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+    bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
 
-    afLightPtr getLight(std::string a_name);
-    afCameraPtr getCamera(std::string a_name);
-    afRigidBodyPtr getRidigBody(std::string a_name, bool suppress_warning=false);
-    afSoftBodyPtr getSoftBody(std::string a_name);
-    afJointPtr getJoint(std::string a_name);
-    afSensorPtr getSensor(std::string a_name);
+    afLightPtr getAFLight(std::string a_name);
+    afCameraPtr getAFCamera(std::string a_name);
+    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBody(std::string a_name);
+    afJointPtr getAFJoint(std::string a_name);
+    afSensorPtr getAFSensor(std::string a_name);
 
-    inline afLightMap* getLightMap(){return &m_afLightMap;}
-    inline afCameraMap* getCameraMap(){return &m_afCameraMap;}
-    inline afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMap;}
-    inline afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMap;}
-    inline afJointMap* getJointMap(){return &m_afJointMap;}
-    inline afSensorMap* getSensorMap(){return &m_afSensorMap;}
+    inline afLightMap* getAFLightMap(){return &m_afLightMap;}
+    inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
+    inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
+    inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
+    inline afJointMap* getAFJointMap(){return &m_afJointMap;}
+    inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
 
-    afLightVec  getLighs();
-    afCameraVec getCameras();
-    afRigidBodyVec getRigidBodies();
-    afSoftBodyVec getSoftBodies();
-    afJointVec getJoints();
-    afSensorVec getSensors();
+    afLightVec  getAFLighs();
+    afCameraVec getAFCameras();
+    afRigidBodyVec getAFRigidBodies();
+    afSoftBodyVec getAFSoftBodies();
+    afJointVec getAFJoints();
+    afSensorVec getAFSensors();
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
-    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
+    afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
 
 protected:
 
@@ -945,14 +1047,14 @@ public:
     afMultiBody();
     afMultiBody(afWorldPtr a_afWorld);
     virtual ~afMultiBody();
-    virtual bool loadMultiBody(int i);
-    virtual bool loadMultiBody(std::string a_multibody_config);
-    void loadAllMultiBodies();
+    virtual bool loadMultiBody(int i, bool enable_comm);
+    virtual bool loadMultiBody(std::string a_multibody_config, bool enable_comm);
+    void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
     inline std::string getMultiBodyPath(){return m_multibody_path;}
-    inline std::string getNameSpace(){return m_multibody_namespace;}
+    inline std::string getNameSpace(){return m_mb_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -971,6 +1073,15 @@ public:
     bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
     void removePickingConstraint();
 
+    // Get Rigid Body or Soft Body belonging to this Specific Multibody
+    afRigidBodyPtr getAFRigidBodyLocal(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBodyLocal(std::string a_name);
+
+    // Get the root parent of a body, if null is provided, returns the parent body
+    // with most children. This method is similar to the corresponding afWorld
+    // method however it searches in the local multibody space than the world space
+    afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
+
     cPrecisionClock m_wallClock;
 
     // Global Constraint ERP and CFM
@@ -982,7 +1093,7 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_multibody_namespace;
+    std::string m_mb_namespace;
     std::string m_multibody_path;
 
 protected:
@@ -1000,6 +1111,13 @@ protected:
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
     std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
+private:
+    // The world has a list of all the bodies and joints belonging to all multibodies
+    // The multibody has list of bodies and joints defined for this specific multibody
+    afRigidBodyMap m_afRigidBodyMapLocal;
+    afSoftBodyMap m_afSoftBodyMapLocal;
+    afJointMap m_afJointMapLocal;
 
 public:
     //data for picking objects

@@ -26,6 +26,8 @@ BODY r_gripper_palm_link:
   mesh: r_gripper_palm_link.STL
   mass: 0.58
   scale: 1.0
+  damping: {linear: 0.5, angular: 1.0}
+  friction: {static: 0.5, rolling: 0.5}
   location:
     orientation: {p: -0.0, r: 0.0, y: 0.0}
     position: {x: 0.5, y: 0.0, z: -0.5}
@@ -43,6 +45,8 @@ BODY r_gripper_l_finger_link:
   mesh: r_gripper_l_finger_link.STL
   mass: 0.171
   scale: 1.0
+  damping: {linear: 0.5, angular: 1.0}
+  friction: {static: 0.5, rolling: 0.5}
   location:
     orientation: {p: -0.0, r: 0.0, y: -2.851}
     position: {x: -0.189, y: -0.026, z: 0.0}
@@ -55,6 +59,8 @@ BODY r_gripper_l_finger_tip_link:
   mesh: r_gripper_l_finger_tip_link.STL
   mass: 0.044
   scale: 1.0
+  damping: {linear: 0.5, angular: 1.0}
+  friction: {static: 0.5, rolling: 0.5}
   location:
     orientation: {p: 0.0, r: -3.142, y: 0.291}
     position: {x: -0.348, y: -0.082, z: 0.0}
@@ -67,6 +73,8 @@ BODY r_gripper_r_finger_link:
   mesh: r_gripper_r_finger_link.STL
   mass: 0.174
   scale: 1.0
+  damping: {linear: 0.5, angular: 1.0}
+  friction: {static: 0.5, rolling: 0.5}
   location:
     orientation: {p: 3.142, r: -0.0, y: -0.123}
     position: {x: -0.187, y: 0.032, z: -0.0}
@@ -79,6 +87,8 @@ BODY r_gripper_r_finger_tip_link:
   mesh: r_gripper_r_finger_tip_link.STL
   mass: 0.044
   scale: 1.0
+  damping: {linear: 0.5, angular: 1.0}
+  friction: {static: 0.5, rolling: 0.5}
   location:
     orientation: {p: -0.0, r: 0.0, y: -0.123}
     position: {x: -0.352, y: 0.061, z: -0.0}

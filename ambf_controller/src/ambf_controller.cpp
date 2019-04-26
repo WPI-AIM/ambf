@@ -252,14 +252,14 @@ void AMBFController::csl_run()
 			switch(key)
 			{
 				case '0':
-					ROS_INFO("0: Enter freefall mode. No commands sent to either arm.");
+					if(i == 0) ROS_INFO("0: Enter freefall mode. No commands sent to either arm.");
 					raven_planner[i].mode = AMBFCmdMode::freefall;
 					raven_planner[i].command.type = _null;
 					print_menu = true;
 					break;
 
 				case '1':
-					ROS_INFO("1: Enter homing mode. Both arms moving to home.");
+					if(i == 0) ROS_INFO("1: Enter homing mode. Both arms moving to home.");
 					raven_planner[i].mode = AMBFCmdMode::homing;
 					raven_planner[i].command.type = _jp;
 					raven_planner[i].go_home(true,i);				
@@ -267,7 +267,7 @@ void AMBFController::csl_run()
 					break;
 
 				case '2':
-					ROS_INFO("2: Enter dancing mode. Enjoy a little dance!");
+					if(i == 0) ROS_INFO("2: Enter dancing mode. Enjoy a little dance!");
 					raven_planner[i].mode = AMBFCmdMode::dancing;
 					raven_planner[i].command.type = _jp;
 					raven_planner[i].sine_dance(true,i);

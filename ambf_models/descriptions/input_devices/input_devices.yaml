@@ -1,0 +1,59 @@
+input devices: [MTMR, MTML, Razer Hydra0, Razer Hydra1, Geomagic Touch,
+ Novint Falcon]
+
+MTMR:
+  hardware name: MTM-R
+  haptic gain: {linear: 0.0, angular: 0.0}
+  workspace scaling: 10
+  simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+  # root link:
+  location: {
+    position: {x: 0, y: 0, z: 0},
+    orientation: {r: 0, p: 0, y: 0}}
+
+MTML:
+    hardware name: MTM-L
+    haptic gain: {linear: 0.0, angular: 0.0}
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+Geomagic Touch:
+    hardware name: PHANTOM Omni
+    haptic gain: {linear: 0.0, angular: 0.0}
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+Razer Hydra0:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    # root link: "/ambf/env/BODY r_wrist_roll_link"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+Razer Hydra1:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    location: {
+      position: {x: 0.0, y: -0.5, z: 0},
+      orientation: {r: 0, p: 0, y: 0}
+      }
+
+Novint Falcon:
+    hardware name: Falcon
+    haptic gain: {linear: 0.0, angular: 0.0}
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
