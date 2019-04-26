@@ -809,6 +809,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     else if (m_visualGeometryType == GeometryType::shape){
+        int dx = 32; // Default x resolution for shape
+        int dy = 32; // Default y resolution for shape
+        int dz = 5; // Default z resolution for shape
+        if (bodyGeometry["dx"].IsDefined()){
+            dx = bodyGeometry["dx"].as<int>();
+        }
+        if (bodyGeometry["dy"].IsDefined()){
+            dy = bodyGeometry["dy"].as<int>();
+        }
+        if (bodyGeometry["dz"].IsDefined()){
+            dz = bodyGeometry["dZ"].as<int>();
+        }
         cMesh* tempMesh = new cMesh();
             if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
                 double x = bodyGeometry["x"].as<double>();
@@ -817,29 +829,20 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 cCreateBox(tempMesh, x, y, z);
             }
             else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 cCreateSphere(tempMesh, radius, dx, dy);
             }
             else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-                int x_count = bodyGeometry["dx"].as<int>();
-                int y_count = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
-                cCreateCylinder(tempMesh, height, radius, x_count, y_count, 1, true, true, cVector3d(0.0, 0.0,-0.5 * height));
+                cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
             }
             else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
             }
             else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
-                int dz = bodyGeometry["dz"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
