@@ -25,7 +25,7 @@ struct AMBFCmd
 {
 	bool updated;		// raven command updated
 	AMBFCmdType type;	// raven command type
-
+  tf::Transform cp;
 	vector<float> js;  	// raven joint space command (position or wrench: depending on AMBFCmdType)
 	tf::Vector3   cf;	// raven cartesian force command
 	tf::Vector3   ct;	// raven cartesian torque command
@@ -48,13 +48,16 @@ struct AMBFSta
 class AMBFDef {
 public:
 
+  static const int         camera_count;
   static const int 			   raven_joints;
   static const int 			   raven_arms;
   static const int 			   loop_rate;
   static const string          sub_append;          // place holder for namescpace strings
   static const string          pub_append;  
   static const string          raven_append;
+  static const string          cameras_append;
   static const vector<string>  arm_append;          // left arm 0 & right arm 1
+  static const vector<string>  cam_append;          // each camera name
 
   static const tf::Vector3             zero_vec;    // place holder for frequently used arrays
   static const vector<float>           zero_joints;

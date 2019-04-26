@@ -46,7 +46,28 @@
 
 #include "ambf_defines.h"
 
-class AMBFPlanner{
+class AMBFCameraPlanner{
+
+private:
+	bool           homed;
+	bool 		   found_home;
+	tf::Transform  home_pose;
+
+public:
+
+	AMBFCmd command;       // raven command structure
+    AMBFSta state;  	   // raven state structure
+ 	AMBFCmdMode mode;      // camera command mode
+
+    AMBFCameraPlanner();
+    ~AMBFCameraPlanner();
+    bool set_home();
+    bool go_home(bool,int);   		 		// jp command will be used
+    bool wander_dance(bool, int);     // jp command will be used
+};
+
+
+class AMBFRavenPlanner{
 
 private:
 	bool homed;
@@ -57,14 +78,14 @@ public:
     AMBFSta state;  	   // raven state structure
  	AMBFCmdMode mode;      // Raven command mode
 
-    AMBFPlanner();
-    ~AMBFPlanner();
-    bool go_home(bool,int);   // jp command will be used
+    AMBFRavenPlanner();
+    ~AMBFRavenPlanner();
+    bool go_home(bool,int);   		// jp command will be used
     bool sine_dance(bool, int);     // jp command will be used
 };
 
 
-// Note: 
+// Raven Note: 
 // 
 // if(command.type == _jp || command.type == _jw)
 // update command.js

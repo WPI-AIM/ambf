@@ -45,15 +45,15 @@
 #include "ambf_motion_planner.h"
 
 /**
- * @brief      Constructs the AMBFPLanner object.
+ * @brief      Constructs the AMBFRavenPlanner object.
  */
-AMBFPlanner::AMBFPlanner()
+AMBFRavenPlanner::AMBFRavenPlanner()
 {
 	homed = false;
 	mode  = AMBFCmdMode::freefall;
 	state.updated = false;
 	command.updated = false;
-	command.type = _null;
+	command.type = AMBFCmdType::_null;
 
 	state.jp.resize(AMBFDef::raven_joints);
 	command.js.resize(AMBFDef::raven_joints);
@@ -61,9 +61,9 @@ AMBFPlanner::AMBFPlanner()
 
 
 /**
- * @brief      Destroys the AMBFPlanner object.
+ * @brief      Destroys the AMBFRavenPlanner object.
  */
-AMBFPlanner::~AMBFPlanner()
+AMBFRavenPlanner::~AMBFRavenPlanner()
 {
 
 }
@@ -75,7 +75,7 @@ AMBFPlanner::~AMBFPlanner()
  *
  * @return     homed check.
  */
-bool AMBFPlanner::go_home(bool first_entry, int arm)
+bool AMBFRavenPlanner::go_home(bool first_entry, int arm)
 {
 	static int count = 0;
 	static vector<vector<float>> start_jp(AMBFDef::raven_arms, vector<float>(AMBFDef::raven_joints));
@@ -106,7 +106,7 @@ bool AMBFPlanner::go_home(bool first_entry, int arm)
 	if(max_value < 0.1) homed = true;
 	else				homed = false;
 
-	command.type 	= _jp;
+	command.type 	= AMBFCmdType::_jp;
 	command.updated = true;
 	state.updated   = false;	
 	count ++;
@@ -123,9 +123,149 @@ bool AMBFPlanner::go_home(bool first_entry, int arm)
  *
  * @return     success
  */
-bool AMBFPlanner::sine_dance(bool first_entry, int arm)
+bool AMBFRavenPlanner::sine_dance(bool first_entry, int arm)
 {
 	static int count = 0;
+	static vector<int> rampup_count = {0,0};
+
+	float speed        = 1.00/AMBFDef::loop_rate;
+	float rampup_speed = 0.05/AMBFDef::loop_rate;
+
+	if(first_entry || !homed)
+	{
+		if(first_entry)
+		{
+			count = 0;
+			rampup_count[arm] = 0;
+		}
+		go_home(first_entry,arm);
+	}
+	else
+	{
+		// start actual sinosoid dance
+		for(int i=0; i<AMBFDef::raven_joints; i++)
+		{
+			float offset = (i+arm)*M_PI/2;
+			float rampup = min((double)rampup_speed*rampup_count[arm],(double)1.0);
+			command.js[i] = rampup*AMBFDef::dance_scale_joints[i]*sin(speed*count+offset)+AMBFDef::home_joints[i];
+			rampup_count[arm] ++;
+		}
+
+		count ++;
+		command.type 	= AMBFCmdType::_jp;
+		command.updated = true;
+		state.updated   = false;
+	}
+
+	return true;
+
+}
+
+//===========================================================================
+
+/**
+ * @brief      Constructs the AMBFCameraPlanner object.
+ */
+AMBFCameraPlanner::AMBFCameraPlanner()
+{
+	homed = false;
+	found_home = false;
+	mode  = AMBFCmdMode::freefall;
+	state.updated = false;
+	command.updated = false;
+	command.type = AMBFCmdType::_null;
+}
+
+
+
+/**
+ * @brief      Sets the home pose for the camera.
+ *
+ * @return     success
+ */
+bool AMBFCameraPlanner::set_home()
+{
+	if(!found_home)
+	{
+		home_pose.setOrigin(state.cp.getOrigin());
+	   	home_pose.setRotation(state.cp.getRotation());
+		found_home = true;
+	}
+	return found_home;
+}
+
+
+/**
+ * @brief      Destroys the AMBFCameraPlanner object.
+ */
+AMBFCameraPlanner::~AMBFCameraPlanner()
+{
+
+}
+
+
+
+/**
+ * @brief      Go back to home pose.
+ *
+ * @return     homed check.
+ */
+bool AMBFCameraPlanner::go_home(bool first_entry, int cam)
+{
+	static int count = 0;
+	static vector<tf::Transform> start_cp(AMBFDef::camera_count);
+
+	if(first_entry)
+	{
+		start_cp[cam].setOrigin(state.cp.getOrigin());
+		start_cp[cam].setRotation(state.cp.getRotation());
+		count = 0;
+	}
+
+	float duration = 10;  // seconds
+	int iterations = duration * AMBFDef::camera_count * AMBFDef::loop_rate;
+	float scale = min((double)(1.0*count/iterations),(double)1.0);
+
+	command.cp.setOrigin((1-scale)*start_cp[cam].getOrigin() + scale*home_pose.getOrigin());
+	command.cp.setRotation(start_cp[cam].getRotation().slerp(home_pose.getRotation(),scale));
+
+
+	float pos_diff = (state.cp.getOrigin() - home_pose.getOrigin()).length();
+	float ori_diff = fabs(state.cp.getRotation().angleShortestPath(home_pose.getRotation()));
+
+	if(pos_diff < 0.1 && ori_diff < 0.1) 
+	{
+		homed = true;
+		mode = AMBFCmdMode::freefall; // change back to static mode
+		command.type 	= AMBFCmdType::_null;
+		command.updated = false;
+		state.updated   = false;
+		ROS_INFO("Camera%d back to home. (Stopped sending motion commands!)",cam+1);
+	}
+	else
+	{
+		homed = false;
+		command.type 	= AMBFCmdType::_cp;
+		command.updated = true;
+		state.updated   = false;	
+		count ++;
+	}
+
+	return homed;
+}
+
+
+
+/**
+ * @brief      Do a little randomly wandering dance move.
+ *
+ * @param[in]  arm   The arm
+ *
+ * @return     success
+ */
+bool AMBFCameraPlanner::wander_dance(bool first_entry, int cam)
+{
+/*	static int count = 0;
 	static vector<int> rampup_count = {0,0};
 
 	float speed        = 1.00/AMBFDef::loop_rate;
@@ -156,7 +296,7 @@ bool AMBFPlanner::sine_dance(bool first_entry, int arm)
 		command.updated = true;
 		state.updated   = false;
 	}
-
+*/
 	return true;
 
 }

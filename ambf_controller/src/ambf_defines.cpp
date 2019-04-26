@@ -43,6 +43,7 @@
 
 #include "ambf_defines.h"
 
+const int             AMBFDef::camera_count           = 3;
 const int             AMBFDef::raven_joints           = 7;
 const int             AMBFDef::raven_arms             = 2;
 const int             AMBFDef::loop_rate              = 1000; // Hz
@@ -53,7 +54,9 @@ const int             AMBFDef::loop_rate              = 1000; // Hz
 const string          AMBFDef::sub_append             = "/State";                           // place holder for namescpace strings
 const string          AMBFDef::pub_append             = "/Command";  
 const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
-const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};     // left arm 0 & right arm 1
+const string          AMBFDef::cameras_append         = "/ambf/env/cameras";
+const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};   // left arm 0 & right arm 1
+const vector<string>  AMBFDef::cam_append             = {"/c1", "/c2", "/c3"};                 // each camera name
 
 const tf::Vector3             AMBFDef::zero_vec             = tf::Vector3(0,0,0);           // place holder for frequently used arrays
 const vector<float>           AMBFDef::zero_joints          = {          0,        0,     0,        0,   0,      0,      0};
