@@ -15,23 +15,4 @@ multibody configs:
   # - "./multi-bodies/robots/blender-pr2.yaml"
   # - "./multi-bodies/puzzles/parallel_structure.yaml"
   # - "./multi-bodies/puzzles/puzzle1.yaml"
-<<<<<<< HEAD
   # - "./multi-bodies/puzzles/puzzle2.yaml"
-gripper configs:
-  - Default
-  - MTMR
-  - MTML
-  - Falcon
-  - Geomagic Touch
-  - PHANTOM Omni
-  - Razer Hydra
-Default: "./multi-bodies/grippers/single joint1.yaml"
-MTMR: "./multi-bodies/grippers/multi joint2.yaml"
-MTML: "./multi-bodies/grippers/multi joint2.yaml"
-Falcon: "./multi-bodies/grippers/single joint2.yaml"
-Geomagic Touch: "./multi-bodies/grippers/single joint1.yaml"
-PHANTOM Omni: "./multi-bodies/grippers/pr2 gripper.yaml"
-Razer Hydra: "./multi-bodies/grippers/pr2 gripper.yaml"
-=======
-  - "./multi-bodies/puzzles/puzzle2.yaml"
->>>>>>> 601f3ad2d976a37126532d91dcf3c82997c328d9
