@@ -49,8 +49,8 @@
 #define BT_USE_DOUBLE_PRECISION
 
 #include "afSoftMultiMesh.h"
-#include "afGripper.h"
-#include "afMultiBody.h"
+#include "afInputDevices.h"
+#include "afFramework.h"
 
 //---------------------------------------------------------------------------
 #endif
