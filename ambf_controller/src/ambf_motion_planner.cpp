@@ -125,80 +125,37 @@ bool AMBFPlanner::go_home(bool first_entry, int arm)
  */
 bool AMBFPlanner::sine_dance(bool first_entry, int arm)
 {
-	// approach 1: (best performed)
 	static int count = 0;
-	float scale = 0.3;
-	float speed = 1.0/AMBFDef::loop_rate;
+	static vector<int> rampup_count = {0,0};
 
-	for(int i=0; i<AMBFDef::raven_joints; i++)
+	float speed        = 1.00/AMBFDef::loop_rate;
+	float rampup_speed = 0.05/AMBFDef::loop_rate;
+
+	if(first_entry || !homed)
 	{
-		float offset = (i+arm)*M_PI/2;
-			
-		if(i == 2)
+		if(first_entry)
 		{
-			command.js[i] = 0.2*scale*sin(count*speed+offset)+AMBFDef::home_joints[i];
+			count = 0;
+			rampup_count[arm] = 0;
 		}
-		else if(i == 4)
-		{
-			command.js[i] = 3.0*scale*sin(count*speed+offset)+AMBFDef::home_joints[i];	
-		}
-		else
-		{
-			command.js[i] = scale*sin(count*speed+offset)+AMBFDef::home_joints[i];
-		}
+		go_home(first_entry,arm);
 	}
-
-	/* approach 2: (stable but not practical under joint limit constraints)
-	static int count = 0;
-	static vector<vector<int>> offset(AMBFDef::raven_arms, vector<int>(AMBFDef::raven_joints));
-	static vector<float> delta_jp(AMBFDef::raven_joints);
-
-	int sign = arm * 2 - 1;
-	float scale = 0.1/AMBFDef::loop_rate;
-
-	if(first_entry)
+	else
 	{
+		// start actual sinosoid dance
 		for(int i=0; i<AMBFDef::raven_joints; i++)
 		{
-			delta_jp[i] = AMBFDef::max_joints[i] - AMBFDef::min_joints[i];
-			offset[arm][i] = asin(((state.jp[i]-AMBFDef::min_joints[i])*2/delta_jp[i])-1)/scale;
+			float offset = (i+arm)*M_PI/2;
+			float rampup = min((double)rampup_speed*rampup_count[arm],(double)1.0);
+			command.js[i] = rampup*AMBFDef::dance_scale_joints[i]*sin(speed*count+offset)+AMBFDef::home_joints[i];
+			rampup_count[arm] ++;
 		}
-		count = 0;
+
+		count ++;
+		command.type 	= _jp;
+		command.updated = true;
+		state.updated   = false;
 	}
-
-	for(int i=0; i<2; i++)
-	{
-		command.js[i] = (sin((count*sign+offset[arm][i])*scale)+1)*delta_jp[i]/2 + AMBFDef::min_joints[i];
-		command.js[i] = min((double)command.js[i],(double)0.9*AMBFDef::max_joints[i]);
-		command.js[i] = max((double)command.js[i],(double)0.9*AMBFDef::min_joints[i]);
-	}*/
-
-	/* approach 3: (not great, sometimes unstable)	
-	float scale = 1.0;
-	float duration = 10;  // seconds
-	int iterations = duration * AMBFDef::raven_arms * AMBFDef::loop_rate;
-	static int count = 0;
-	static vector<vector<float>> start_jp(AMBFDef::raven_arms, vector<float>(AMBFDef::raven_joints));
-	if(first_entry)
-	{
-		for(int i=0; i<AMBFDef::raven_joints; i++)
-		{
-			start_jp[arm][i] = state.jp[i];
-		}
-		count = 0;
-	}
-
-	for(int i=0; i<AMBFDef::raven_joints; i++)
-	{
-		command.js[i] = sin(count/iterations)*scale + start_jp[arm][i];
-		command.js[i] = min((double)command.js[i],(double)AMBFDef::max_joints[i]);
-		command.js[i] = max((double)command.js[i],(double)AMBFDef::min_joints[i]);
-	}*/
-
-	count ++;
-	command.type 	= _jp;
-	command.updated = true;
-	state.updated   = false;
 
 	return true;
 

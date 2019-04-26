@@ -61,6 +61,7 @@ public:
   static const vector<float>           max_joints;
   static const vector<float>           min_joints;
   static const vector<float>           home_joints;
+  static const vector<float>           dance_scale_joints;
   static const vector<unsigned char>   true_joints;
   static const vector<unsigned char>   false_joints;
 

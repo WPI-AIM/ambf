@@ -520,7 +520,7 @@ JOINT link3_R-instrument_shaft_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   controller: {D: 0.0008, I: 0, P: 3.0}
-  type: fixed
+  type: continuous
   offset: 1.032
 JOINT instrument_shaft_R-wrist_R:
   name: instrument_shaft_R-wrist_R
