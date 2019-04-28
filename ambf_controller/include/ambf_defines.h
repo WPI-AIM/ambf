@@ -18,6 +18,10 @@ using namespace std;
 //---------------------------------------------------------------------------
 #include "CBullet.h"
 
+#define Deg2Rad   * M_PI/180
+#define Rad2Deg   *180/M_PI
+#define Eps       1.0e-05
+
 enum AMBFCmdType {_jp, _jw, _cp, _cw, _null};
 enum AMBFCmdMode {freefall, homing, dancing};
 
@@ -48,9 +52,11 @@ struct AMBFSta
 class AMBFDef {
 public:
 
+  static const int         V;
   static const int         camera_count;
   static const int 			   raven_joints;
   static const int 			   raven_arms;
+  static const int         raven_iksols;
   static const int 			   loop_rate;
   static const string          sub_append;          // place holder for namescpace strings
   static const string          pub_append;  
@@ -67,6 +73,14 @@ public:
   static const vector<float>           dance_scale_joints;
   static const vector<unsigned char>   true_joints;
   static const vector<unsigned char>   false_joints;
+
+  static const vector<vector<float>>   raven_joint_limit;
+  static const vector<vector<float>>   raven_dh_alpha;
+  static const vector<vector<float>>   raven_dh_a;
+  static const vector<vector<float>>   raven_dh_d;
+  static const vector<vector<float>>   raven_dh_theta;
+  static const vector<vector<float>>   raven_kin_offset;
+  static const vector<float>           raven_ikin_param;
 
 };
 

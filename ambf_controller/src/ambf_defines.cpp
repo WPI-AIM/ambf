@@ -43,9 +43,11 @@
 
 #include "ambf_defines.h"
 
+const int             AMBFDef::V                      = -1;
 const int             AMBFDef::camera_count           = 3;
 const int             AMBFDef::raven_joints           = 7;
 const int             AMBFDef::raven_arms             = 2;
+const int             AMBFDef::raven_iksols           = 8;
 const int             AMBFDef::loop_rate              = 1000; // Hz
 // The loop rate of the AMBF simulator:     2000 Hz
 // The loop rate of the AMBF python client: 1000 Hz
@@ -59,13 +61,33 @@ const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_
 const vector<string>  AMBFDef::cam_append             = {"/c1", "/c2", "/c3"};                 // each camera name
 
 const tf::Vector3             AMBFDef::zero_vec             = tf::Vector3(0,0,0);           // place holder for frequently used arrays
-const vector<float>           AMBFDef::zero_joints          = {          0,        0,     0,        0,   0,      0,      0};
-const vector<float>           AMBFDef::max_joints           = {       M_PI,     M_PI,  0.10,     M_PI,   2,      2,      2};
-const vector<float>           AMBFDef::min_joints           = {      -M_PI,    -M_PI, -0.17,    -M_PI,  -2,     -2,     -2};
-const vector<float>           AMBFDef::home_joints          = {   M_PI*1/3, M_PI*3/5, -0.09, M_PI*3/4,   0, M_PI/6, M_PI/6};
-const vector<float>           AMBFDef::dance_scale_joints   = {        0.3,      0.3,  0.06,      0.3, 1.2, M_PI/6, M_PI/6};
-const vector<unsigned char>   AMBFDef::true_joints          = {          1,        1,     1,        1,   1,      1,      1};
-const vector<unsigned char>   AMBFDef::false_joints         = {          0,        0,     0,        0,   0,      0,      0};
+const vector<float>           AMBFDef::zero_joints          = {          0,        0,     0,        0,    0,      0,      0};
+const vector<float>           AMBFDef::max_joints           = {       M_PI,     M_PI,  0.10,     M_PI,    2,      2,      2};
+const vector<float>           AMBFDef::min_joints           = {      -M_PI,    -M_PI, -0.17,    -M_PI,   -2,     -2,     -2};
+const vector<float>           AMBFDef::home_joints          = {   M_PI*1/3, M_PI*3/5, -0.09, M_PI*3/4,    0, M_PI/6, M_PI/6};
+const vector<float>           AMBFDef::dance_scale_joints   = {        0.3,      0.3,  0.06,      0.3,  1.2, M_PI/6, M_PI/6};
+const vector<unsigned char>   AMBFDef::true_joints          = {          1,        1,     1,        1,    1,      1,      1};
+const vector<unsigned char>   AMBFDef::false_joints         = {          0,        0,     0,        0,    0,      0,      0};
+
+const vector<vector<float>>   AMBFDef::raven_joint_limit    = {{         0,   M_PI/4, -0.17,  -M_PI*2,   -2,     -2,     -2},
+                                                               {  M_PI*1/2, M_PI*3/4,  0.10,   M_PI*2,    2,      2,      2}};  // TODO: finalize this
+const vector<vector<float>>   AMBFDef::raven_dh_alpha       = {{         0,       75,   128,        0,   90,     90,      0},
+                                                               {       180,       75,    52,        0,   90,     90,      0}};
+const vector<vector<float>>   AMBFDef::raven_dh_a           = {{         0,        0,     0,        0,    0,  0.013,      0},
+                                                               {         0,        0,     0,        0,    0,  0.013,      0}};
+const vector<vector<float>>   AMBFDef::raven_dh_d           = {{         0,        0,     V,    -0.47,    0,      0,      0},
+                                                               {         0,        0,     V,    -0.47,    0,      0,      0}};
+const vector<vector<float>>   AMBFDef::raven_dh_theta       = {{         V,        V,    90,        V,    V,      V,      0},
+                                                               {         V,        V,   -90,        V,    V,      V,      0}};
+const vector<vector<float>>   AMBFDef::raven_kin_offset     = {{       205,      180,     0,        0,  -90,      0,      0},
+                                                               {        25,        0,     0,        0,  -90,      0,      0}};
+
+const vector<float>           AMBFDef::raven_ikin_param     = { sin(AMBFDef::raven_dh_alpha[0][1] Deg2Rad),     // 0: GM1
+                                                                cos(AMBFDef::raven_dh_alpha[0][1] Deg2Rad),     // 1: GM2
+                                                                sin(AMBFDef::raven_dh_alpha[1][2] Deg2Rad),     // 2: GM3
+                                                                cos(AMBFDef::raven_dh_alpha[1][2] Deg2Rad),     // 3: GM4
+                                                                -0.47,                                          // 4: d4
+                                                                0.013                                    };     // 5: Lw 
 
 // Raven joints:
 // joint -: 0_link-base_link_L:             fixed

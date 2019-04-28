@@ -131,15 +131,12 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
+  static int count=0;
   for(int i=0; i<AMBFDef::raven_arms; i++)
   {
   	if(topic_name == AMBFDef::arm_append[i])
   	{
   		const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
-
-	  	geometry_msgs::Pose cp = msg->pose;
-	  	raven_planner[i].state.cp.setOrigin(tf::Vector3(cp.position.x,cp.position.y,cp.position.z));
-	   	raven_planner[i].state.cp.setRotation(tf::Quaternion(cp.orientation.x,cp.orientation.y,cp.orientation.z,cp.orientation.w));
 
 	   	geometry_msgs::Wrench wr = msg->wrench;
 	   	raven_planner[i].state.ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
@@ -149,6 +146,18 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 	   	{
 		  	for(int j = 0; j< AMBFDef::raven_joints; j++)
 		  		raven_planner[i].state.jp[j] = msg->joint_positions[j]; 
+
+		  	// set the carteisian end effector pose
+		  	raven_planner[i].fwd_kinematics(i, raven_planner[i].state.jp, raven_planner[i].state.cp);  
+
+		  	tf::Vector3 cp_pos = raven_planner[i].state.cp.getOrigin();
+		  	tf::Quaternion cp_ori = raven_planner[i].state.cp.getRotation();
+		  	if(count % 1000 == 0)
+		  	{
+		  		ROS_INFO("cp = (%f,%f,%f) arm%d",
+		  		cp_pos.x(),cp_pos.y(),cp_pos.z(),i);		  		
+		  	}
+		  	count ++;
 
 		  	raven_planner[i].state.updated = true;	
 	   	}

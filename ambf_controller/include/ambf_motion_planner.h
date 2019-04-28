@@ -67,6 +67,7 @@ public:
 };
 
 
+//===========================================================================
 class AMBFRavenPlanner{
 
 private:
@@ -80,6 +81,13 @@ public:
 
     AMBFRavenPlanner();
     ~AMBFRavenPlanner();
+
+    bool fwd_kinematics(int, vector<float>, tf::Transform&);
+    tf::Transform fwd_trans(int, int, vector<float>, vector<float>, vector<float>, vector<float>);
+    bool inv_kinematics(int, tf::Transform&, float, vector<float>&);
+    bool apply_joint_limits(vector<float>& , bool&);
+    bool find_best_solution(vector<float>,vector<vector<float>>,vector<bool>,int&,float&);
+
     bool go_home(bool,int);   		// jp command will be used
     bool sine_dance(bool, int);     // jp command will be used
 };
