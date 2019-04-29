@@ -88,9 +88,20 @@ cBulletWorld* g_bulletWorld;
 afMultiBody *g_afMultiBody;
 afWorld *g_afWorld;
 
-double g_dt_fixed = 0;
-bool g_force_enable = true;
-// Default switch index for clutches
+struct CommandLineOptions{
+    bool useFixedPhxTimeStep = 0;
+    bool useFixedHtxTimeStep = 0;
+    int phxFrequency = 1000; // Physics Update Frequency
+    int htxFrequency = 1000; // Physics Update Frequency
+    bool enableForceFeedback = true; // Enable Force Feedback
+    int numDevicesToLoad; // Number of Devices to Load
+//////////////////////////////////////////////////////////////////////////
+    double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
+    bool showSoftPatch = false; // Show Soft Patch
+};
+
+// Global struct for command line options
+CommandLineOptions g_cmdOpts;
 
 cPrecisionClock g_clockWorld;
 
@@ -212,8 +223,7 @@ private:
 
 
 std::shared_ptr<afInputDevices> g_inputDevices;
-double g_margin = 0.02;
-bool g_showPatch = false;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -237,21 +247,29 @@ int main(int argc, char* argv[])
     cmd_opts.add_options()
             ("help,h", "Show help")
             ("ndevs,n", p_opt::value<int>(), "Number of Haptic Devices to Load")
-            ("timestep,t", p_opt::value<double>(), "Value in secs for fixed Simulation time step(dt)")
-            ("enableforces,f", p_opt::value<bool>(), "Enable Force Feedback on Devices")
-            ("margin,m", p_opt::value<double>(), "Cloth Collision Margin")
-            ("show_patch,s", p_opt::value<bool>(), "Show Cloth Patch");
+            ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
+            ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
+            ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
+            ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
+            ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
+/////////////////////////////////////////////////////////////////////////////////////////
+//        Only for debugging, shall be deprecated later in later Revisions
+            ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
+            ("show_patch,s", p_opt::value<bool>(), "Show Soft Cloth Patch");
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
     p_opt::notify(var_map);
 
-    int num_devices_to_load = MAX_DEVICES;
+    g_cmdOpts.numDevicesToLoad = MAX_DEVICES;
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
-    if(var_map.count("ndevs")){ num_devices_to_load = var_map["ndevs"].as<int>();}
-    if (var_map.count("timestep")){ g_dt_fixed = var_map["timestep"].as<double>();}
-    if (var_map.count("enableforces")){ g_force_enable = var_map["enableforces"].as<bool>();}
-    if (var_map.count("margin")){ g_margin = var_map["margin"].as<double>();}
-    if (var_map.count("show_patch")){ g_showPatch = var_map["show_patch"].as<bool>();}
+    if(var_map.count("ndevs")){ g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();}
+    if(var_map.count("phx_frequency")){ g_cmdOpts.phxFrequency = var_map["phx_frequency"].as<int>();}
+    if(var_map.count("htx_frequency")){ g_cmdOpts.htxFrequency = var_map["htx_frequency"].as<int>();}
+    if(var_map.count("fixed_phx_timestep")){ g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();}
+    if(var_map.count("fixed_htx_timestep")){ g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();}
+    if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
+    if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
+    if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
 
     cout << endl;
     cout << "____________________________________________________________" << endl << endl;
@@ -261,9 +279,7 @@ int main(int argc, char* argv[])
     cout << "\t\t  (Copyright 2019)" << endl;
     cout << "____________________________________________________________" << endl << endl;
     cout << "STARTUP COMMAND LINE OPTIONS: " << endl << endl;
-    cout << "-t <float> simulation dt in seconds, (default: Dynamic RT)" << endl;
-    cout << "-f <bool> enable haptic feedback, (default: True)" << endl;
-    cout << "-n <int> max devices to load, (default: All Available)" << endl;
+    cout << cmd_opts << std::endl << std::endl;
     cout << "------------------------------------------------------------" << endl << endl << endl;
     cout << endl;
 
@@ -387,7 +403,7 @@ int main(int argc, char* argv[])
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
     g_inputDevices = std::make_shared<afInputDevices>(g_afWorld);
-    g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), num_devices_to_load);
+    g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
 
     //-----------------------------------------------------------------------------------------------------------
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
@@ -440,7 +456,7 @@ int main(int argc, char* argv[])
     }
 
 
-    if (g_showPatch){
+    if (g_cmdOpts.showSoftPatch){
         const btScalar s = 0.6;
         const int r = 5;
         btVector3 p1(-s, -s, 0);
@@ -452,13 +468,13 @@ int main(int argc, char* argv[])
                                                              p2,
                                                              p3,
                                                              p4, r, r, 1+4, true);
-        btPatch->getCollisionShape()->setMargin(g_margin);
+        btPatch->getCollisionShape()->setMargin(g_cmdOpts.softPatchMargin);
         btSoftBody::Material* pm = btPatch->appendMaterial();
         pm->m_kLST = 0.001;
         //    btPatch->m_cfg.collisions |= btSoftBody::fCollision::VF_SS;
         btPatch->generateBendingConstraints(2, pm);
 
-        cGELSkeletonNode::s_default_radius = g_margin;
+        cGELSkeletonNode::s_default_radius = g_cmdOpts.softPatchMargin;
 
         afSoftMultiMesh* cloth = new afSoftMultiMesh(g_bulletWorld);
         cloth->setSoftBody(btPatch);
@@ -1193,13 +1209,7 @@ void updatePhysics(){
     // start haptic device
     g_clockWorld.start(true);
 
-    double sleepHz;
-    if (g_dt_fixed > 0.0)
-        sleepHz = (1.0/g_dt_fixed);
-    else
-        sleepHz= 1000;
-
-    RateSleep rateSleep(sleepHz);
+    RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool _bodyPicked = false;
 
     cVector3d torque, torque_prev;
@@ -1225,8 +1235,12 @@ void updatePhysics(){
         }
 
         double dt;
-        if (g_dt_fixed > 0.0) dt = g_dt_fixed;
-        else dt = compute_dt(true);
+        if (g_cmdOpts.useFixedPhxTimeStep){
+            dt = 1/g_cmdOpts.phxFrequency;
+        }
+        else{
+            dt = compute_dt(true);
+        }
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
             afSimulatedDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
@@ -1376,6 +1390,8 @@ void updateHapticDevice(void* a_arg){
     g_simulationRunning = true;
     g_simulationFinished = false;
 
+    RateSleep rateSleep(g_cmdOpts.htxFrequency);
+
     // update position and orientation of simulated gripper
     afPhysicalDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
     afSimulatedDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
@@ -1417,9 +1433,13 @@ void updateHapticDevice(void* a_arg){
         }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
-        if (g_dt_fixed > 0.0) dt = g_dt_fixed;
-        else dt = compute_dt();
+        if (g_cmdOpts.useFixedHtxTimeStep){
 
+            dt = 1/g_cmdOpts.htxFrequency;
+        }
+        else{
+            dt = compute_dt();
+        }
         pDev->m_pos = pDev->measuredPos();
         pDev->m_rot = pDev->measuredRot();
 
@@ -1563,10 +1583,11 @@ void updateHapticDevice(void* a_arg){
 
         cVector3d force, torque;
 
-        force  = - g_force_enable * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-        torque = - g_force_enable * pDev->K_ah_ramp * (P_ang * angle * axis);
+        force  = - g_cmdOpts.enableForceFeedback * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+        torque = - g_cmdOpts.enableForceFeedback * pDev->K_ah_ramp * (P_ang * angle * axis);
 
         pDev->applyWrench(force, torque);
+        rateSleep.sleep();
 
         if (pDev->K_lh_ramp < pDev->K_lh)
         {
