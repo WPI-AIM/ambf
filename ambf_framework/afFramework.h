@@ -250,20 +250,9 @@ public:
     inline void setD_ang(double a_D) {D_ang = a_D;}
 
 public:
-    // This function computes the output force from Position Data
-    btVector3 computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt);
-
+    template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
-    btVector3 computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt);
-
-    // This function computes the output force from Position Data
-    cVector3d computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt);
-
-    // This function computes the output torque from Rotation Data
-    cVector3d computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt);
-
-    // Future use
-    btTransform computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt);
+    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt);
 
     // Yet to be implemented
     void boundImpulse(double effort_cmd);

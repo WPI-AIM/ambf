@@ -1348,10 +1348,10 @@ void updatePhysics(){
 
             cVector3d force, torque;
 
-            force = rootLink->m_controller.computeOutput_cvec(simGripper->m_pos, simGripper->m_posRef, dt);
+            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt);
             force = simGripper->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput_cvec(simGripper->m_rot, simGripper->m_rotRef, dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt);
             simGripper->applyForce(force);
             simGripper->applyTorque(torque);
             simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);

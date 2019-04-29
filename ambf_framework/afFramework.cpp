@@ -346,7 +346,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     D_ang = a_D;
 }
 
-
+template <>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -354,7 +354,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
@@ -366,6 +366,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 }
 
 
+template<>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -373,7 +374,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -395,7 +396,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -403,7 +404,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
@@ -414,7 +415,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -422,7 +423,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -445,7 +446,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutputTransform
 /// \param process_val
@@ -453,7 +454,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
 /// \param current_time
 /// \return
 ///
-btTransform afCartesianController::computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt){
+btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt){
 
 }
 
@@ -1346,9 +1347,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 _cmd_rot.setRotation(_cmd_rot_quat);
 
                 // Use the internal Cartesian Position Controller
-                force = m_controller.computeOutput(_cur_pos, _cmd_pos, dt);
+                force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
                 // Use the internal Cartesian Rotation Controller
-                torque = m_controller.computeOutput(_cur_rot, _cmd_rot, dt);
+                torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
             }
             else{
                 force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
