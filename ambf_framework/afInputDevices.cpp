@@ -147,10 +147,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     // the bodies base link.
 
     // A second use case arises, in which the user doesnt want to provide a config file
-    // but want to bind the physical input device to an existing multibody in the simulation.
-    // In this case, the user should specify the root link only and we shall try to find a
-    // body in simulation by that name. Following on, the use shall then be able to control
-    // that link in Position control and control all the joints lower in heirarchy.
+    // but wants to bind the physical input device to an existing multibody in the simulation.
+    // In this case, the user should specify just the root link and we shall try to find a
+    // body in simulation matching that name. Once succesful we shall then be able to control
+    // that link/body in Position control mode and control all the joints lower in heirarchy.
 
     bool _simulatedMBDefined = false;
     bool _rootLinkDefined = false;
@@ -297,10 +297,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     if (pDLocation.IsDefined()){
         YAML::Node posNode = pDLocation["position"];
         YAML::Node rpyNode = pDLocation["orientation"];
-        assignXYZ(&posNode, &_position);
+        _position = toXYZ<cVector3d>(&posNode);
         cVector3d _rpy;
-        assignRPY(&rpyNode, &_rpy);
-        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_ZYX);
+        _rpy = toRPY<cVector3d>(&rpyNode);
+        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";

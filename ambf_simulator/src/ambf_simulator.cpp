@@ -981,8 +981,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     btVector3 camPos, camTarget;
 
-    camPos = cVec2btVec(a_cameraPtr->getLocalPos() );
-    camTarget = cVec2btVec(a_cameraPtr->getTargetPos() );
+    camPos = toBTvec(a_cameraPtr->getLocalPos() );
+    camTarget = toBTvec(a_cameraPtr->getTargetPos() );
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);
@@ -1021,7 +1021,7 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
     rayTo += btScalar(x) * dHor;
     rayTo -= btScalar(y) * dVert;
-    cVector3d cRay = btVec2cVec(rayTo);
+    cVector3d cRay = toCvec(rayTo);
     return cRay;
 }
 
@@ -1036,14 +1036,14 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
     // Check if a softbody has been picked
     if (g_afMultiBody->m_pickedSoftBody){
-        cVector3d delta = g_afMultiBody->m_pickedNodeGoal - btVec2cVec(g_afMultiBody->m_pickedNode->m_x);
+        cVector3d delta = g_afMultiBody->m_pickedNodeGoal - toCvec(g_afMultiBody->m_pickedNode->m_x);
         static const double maxdrag = 10;
         if (delta.length() > (maxdrag * maxdrag))
         {
             delta.normalize();
             delta = delta * maxdrag;
         }
-        g_afMultiBody->m_pickedNode->m_v += cVec2btVec(delta) / timeStep;
+        g_afMultiBody->m_pickedNode->m_v += toBTvec(delta) / timeStep;
     }
 }
 
@@ -1259,8 +1259,8 @@ void updatePhysics(){
                                     btRigidBody* bodyBPtr = proximitySensorPtr->getSensedRigidBody();
                                     if (!rootLink->isChild(bodyBPtr)){
                                         cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint();
-                                        btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
-                                        btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * cVec2btVec(hitPointInWorld);
+                                        btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
+                                        btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
                                         simGripper->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
                                         simGripper->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
                                         simGripper->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;

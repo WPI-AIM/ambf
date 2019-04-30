@@ -102,50 +102,36 @@ typedef std::vector<afSensorPtr> afSensorVec;
 //------------------------------------------------------------------------------
 
 ///
-/// \brief cVec2btVec
+/// \brief toBTvec
 /// \param cVec
 /// \return
 ///
-btVector3 cVec2btVec(const cVector3d &cVec);
+btVector3 toBTvec(const cVector3d &cVec);
 
 ///
-/// \brief btVec2cVec
+/// \brief toCvec
 /// \param bVec
 /// \return
 ///
-cVector3d btVec2cVec(const btVector3 &bVec);
+cVector3d toCvec(const btVector3 &bVec);
 
-
+template <typename T>
 ///
-/// \brief assignXYZ
+/// \brief toXYZ
+/// \param node
+/// \return
+///
+T toXYZ(YAML::Node* node);
+
+
+template <typename T>
+///
+/// \brief toRPY
 /// \param node
 /// \param v
+/// \return
 ///
-void assignXYZ(YAML::Node* node, btVector3 *v);
-
-
-///
-/// \brief assignXYZ
-/// \param node
-/// \param v
-///
-void assignXYZ(YAML::Node* node, cVector3d *v);
-
-
-///
-/// \brief assignRPY
-/// \param node
-/// \param v
-///
-void assignRPY(YAML::Node* node, cVector3d *v);
-
-
-///
-/// \brief assignRPY
-/// \param node
-/// \param v
-///
-void assignRPY(YAML::Node* node, btVector3 *v);
+T toRPY(YAML::Node* node);
 
 
 ///
