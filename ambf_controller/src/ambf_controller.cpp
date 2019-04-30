@@ -597,6 +597,30 @@ bool AMBFController::show_menu()
 	string s_false = "    ";
 	string s_true  = " (v)";
 
+	// detect if camera mode has changed.
+	static AMBFCmdMode last_cam_mode = AMBFCmdMode::freefall;
+
+	AMBFCmdMode cam_mode = AMBFCmdMode::freefall;
+
+	for(int i=0; i<AMBFDef::camera_count; i++)
+	{
+		if(camera_planner[i].mode == AMBFCmdMode::homing)
+		{
+			cam_mode = AMBFCmdMode::homing;
+			break;
+		}
+		else if(camera_planner[i].mode == AMBFCmdMode::dancing)
+		{
+			cam_mode = AMBFCmdMode::dancing;
+			break;
+		}
+	}
+	if(last_cam_mode != cam_mode)
+		print_menu = true;
+	
+	last_cam_mode = cam_mode;
+
+	// print the user menu
 	if(print_menu)
 	{
 		ROS_INFO("\n\nWelcome to the AMBF Raven Simulator");
@@ -617,21 +641,22 @@ bool AMBFController::show_menu()
 		ROS_INFO("%s2: Raven dancing mode",s.c_str());
 
 		// for camera
-		if(camera_planner[0].mode == AMBFCmdMode::freefall) s = s_true;
-		else											    s = s_false;
+		if(cam_mode == AMBFCmdMode::freefall) 	s = s_true;
+		else									s = s_false;
 		ROS_INFO("%sa: Camera static mode",s.c_str());
 
-		if(camera_planner[0].mode == AMBFCmdMode::dancing) s = s_true;
-		else											   s = s_false;
+		if(cam_mode == AMBFCmdMode::dancing) 	s = s_true;
+		else									s = s_false;
 		ROS_INFO("%sb: Camera wandering mode",s.c_str());
 
-		if(camera_planner[0].mode == AMBFCmdMode::homing) s = s_true;
-		else								  			  s = s_false;
+		if(cam_mode == AMBFCmdMode::homing) 	s = s_true;
+		else									s = s_false;
 		ROS_INFO("%sc: Camera homing mode",s.c_str());
 
 		ROS_INFO("-----------------------------------------------------\n\n");
+
+		print_menu = false;
 	}
 
-	print_menu = false;
 	return true;
 }

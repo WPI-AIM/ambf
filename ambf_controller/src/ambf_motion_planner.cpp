@@ -711,38 +711,39 @@ bool AMBFCameraPlanner::go_home(bool first_entry, int cam)
  */
 bool AMBFCameraPlanner::wander_dance(bool first_entry, int cam)
 {
-/*	static int count = 0;
-	static vector<int> rampup_count = {0,0};
+	static int count = 0;
+	static float duration = rand() % 6 + 5; // 5-10 seconds
+	static vector<tf::Transform> start_cp(AMBFDef::camera_count);
+	static vector<tf::Transform> goal_cp(AMBFDef::camera_count);
 
-	float speed        = 1.00/AMBFDef::loop_rate;
-	float rampup_speed = 0.05/AMBFDef::loop_rate;
-
-	if(first_entry || !homed)
+	if(first_entry)
 	{
-		if(first_entry)
-		{
-			count = 0;
-			rampup_count[arm] = 0;
-		}
-		go_home(first_entry,arm);
-	}
-	else
-	{
-		// start actual sinosoid dance
-		for(int i=0; i<AMBFDef::raven_joints; i++)
-		{
-			float offset = (i+arm)*M_PI/2;
-			float rampup = min((double)rampup_speed*rampup_count[arm],(double)1.0);
-			command.js[i] = rampup*AMBFDef::dance_scale_joints[i]*sin(speed*count+offset)+AMBFDef::home_joints[i];
-			rampup_count[arm] ++;
-		}
+		start_cp[cam].setOrigin(state.cp.getOrigin());
+		start_cp[cam].setRotation(state.cp.getRotation());
 
-		count ++;
-		command.type 	= _jp;
-		command.updated = true;
-		state.updated   = false;
+		tf::Vector3 move_vec = tf::Vector3(rand()%3-1,rand()%3-1,rand()%3-1);
+		while(move_vec.length() == 0.0) move_vec = tf::Vector3(rand()%3-1,rand()%3-1,rand()%3-1);
+
+		tf::Vector3 goal_pos = start_cp[cam].getOrigin()+move_vec;
+		tf::Quaternion goal_oir = start_cp[cam].getRotation()*tf::Quaternion(move_vec,M_PI/6);
+		goal_cp[cam].setOrigin(goal_pos);
+		goal_cp[cam].setRotation(state.cp.getRotation());
+
+		count = 0;
 	}
-*/
+
+	float iterations = duration * AMBFDef::camera_count * AMBFDef::loop_rate;
+	float scale = 0.5*cos(1.0*count/iterations)-0.5;
+
+	command.cp.setOrigin((1-scale)*start_cp[cam].getOrigin() + scale*goal_cp[cam].getOrigin());
+	command.cp.setRotation(start_cp[cam].getRotation().slerp(goal_cp[cam].getRotation(),scale));
+
+
+	command.type 	= AMBFCmdType::_cp;
+	command.updated = true;
+	state.updated   = false;	
+	count ++;
+
 	return true;
 
 }
