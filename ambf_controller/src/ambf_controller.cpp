@@ -131,7 +131,6 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
-  static int count=0;
   for(int i=0; i<AMBFDef::raven_arms; i++)
   {
   	if(topic_name == AMBFDef::arm_append[i])
@@ -149,16 +148,6 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
 
 		  	// set the carteisian end effector pose
 		  	raven_planner[i].fwd_kinematics(i, raven_planner[i].state.jp, raven_planner[i].state.cp);  
-
-		  	tf::Vector3 cp_pos = raven_planner[i].state.cp.getOrigin();
-		  	tf::Quaternion cp_ori = raven_planner[i].state.cp.getRotation();
-		  	if(count % 1000 == 0)
-		  	{
-		  		ROS_INFO("cp = (%f,%f,%f) arm%d",
-		  		cp_pos.x(),cp_pos.y(),cp_pos.z(),i);		  		
-		  	}
-		  	count ++;
-
 		  	raven_planner[i].state.updated = true;	
 	   	}
 	   	else if(msg->joint_positions.size() == 0)
@@ -237,7 +226,12 @@ bool AMBFController::motion_planning()
 				case AMBFCmdMode::dancing:
 					raven_planner[i].sine_dance(false,i);
 					break;
+
+				case AMBFCmdMode::cube_tracing:
+					raven_planner[i].trace_cube(false,i);
+					break;
 			}
+			raven_planner[i].kinematics_test(i);
 		}		
 	}
 	
@@ -334,6 +328,14 @@ void AMBFController::csl_run()
 					raven_planner[i].mode = AMBFCmdMode::dancing;
 					raven_planner[i].command.type = _jp;
 					raven_planner[i].sine_dance(true,i);
+					print_menu = true;
+					break;
+
+				case '3':
+					if(i == 0) ROS_INFO("3: Entered Raven cube_tracing mode. Enjoy a little dance!");
+					raven_planner[i].mode = AMBFCmdMode::cube_tracing;
+					raven_planner[i].command.type = _cp;
+					raven_planner[i].trace_cube(true,i);
 					print_menu = true;
 					break;
 			}
@@ -628,20 +630,24 @@ bool AMBFController::show_menu()
 		ROS_INFO("Please choose a mode:");
 
 		// for raven
-		if(raven_planner[0].mode == AMBFCmdMode::freefall) s = s_true;
-		else											   s = s_false;
+		if(raven_planner[0].mode == AMBFCmdMode::freefall) 		s = s_true;
+		else											   		s = s_false;
 		ROS_INFO("%s0: Raven freefall mode",s.c_str());
 
-		if(raven_planner[0].mode == AMBFCmdMode::homing) s = s_true;
-		else											 s = s_false;
+		if(raven_planner[0].mode == AMBFCmdMode::homing) 		s = s_true;
+		else											 		s = s_false;
 		ROS_INFO("%s1: Raven homing mode",s.c_str());
 
-		if(raven_planner[0].mode == AMBFCmdMode::dancing) s = s_true;
-		else											  s = s_false;
+		if(raven_planner[0].mode == AMBFCmdMode::dancing) 		s = s_true;
+		else											  		s = s_false;
 		ROS_INFO("%s2: Raven dancing mode",s.c_str());
 
+		if(raven_planner[0].mode == AMBFCmdMode::cube_tracing) 	s = s_true;
+		else											       	s = s_false;
+		ROS_INFO("%s3: Raven cube_tracing mode",s.c_str());
+
 		// for camera
-		if(cam_mode == AMBFCmdMode::freefall) 	s = s_true;
+		if(cam_mode == AMBFCmdMode::freefall) 	s = s_true;		
 		else									s = s_false;
 		ROS_INFO("%sa: Camera static mode",s.c_str());
 

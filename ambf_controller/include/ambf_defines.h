@@ -23,7 +23,7 @@ using namespace std;
 #define Eps       1.0e-05
 
 enum AMBFCmdType {_jp, _jw, _cp, _cw, _null};
-enum AMBFCmdMode {freefall, homing, dancing};
+enum AMBFCmdMode {freefall, homing, dancing, cube_tracing}; // cube_tracing: only for raven
 
 struct AMBFCmd
 {

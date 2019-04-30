@@ -607,6 +607,76 @@ bool AMBFRavenPlanner::sine_dance(bool first_entry, int arm)
 
 }
 
+
+
+
+/**
+ * @brief      Commands Raven to trace a random cube in Cartesian space)
+ *
+ * @param[in]  first_entry  The first entry
+ * @param[in]  arm          The arm
+ *
+ * @return     success
+ */
+bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm)
+{
+	bool success = false;
+	// TODO:
+
+	command.type 	= AMBFCmdType::_cp;
+	command.updated = true;
+	state.updated   = false;
+
+	success = true;
+	return success;
+}
+
+
+
+/**
+ * @brief      A test cript for inverse kinematics
+ *
+ * @param[in]  arm   The arm
+ *
+ * @return     success
+ */
+bool AMBFRavenPlanner::kinematics_test(int arm)
+{
+	static vector<int> count = {0,0};
+	bool success = false;
+
+	tf::Transform 	cp_trn = state.cp;
+	tf::Vector3 	cp_pos = cp_trn.getOrigin();
+	tf::Quaternion 	cp_ori = cp_trn.getRotation();
+
+	if(count[arm] % 1000 == 0)
+	{
+		ROS_INFO("arm%d:",arm);
+		ROS_INFO(" cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
+
+		ROS_INFO(" jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+			state.jp[0],state.jp[1],state.jp[2],state.jp[3],state.jp[4],state.jp[5],state.jp[6]);
+		
+		vector<float> new_jp = {0,0,0,0,0,0,0};
+		inv_kinematics(arm, cp_trn, M_PI/4, new_jp);
+		cp_pos = cp_trn.getOrigin();
+		cp_ori = cp_trn.getRotation();
+
+		ROS_INFO("after IK:");
+		ROS_INFO(" cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
+
+		ROS_INFO(" jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)\n\n", 
+			new_jp[0],new_jp[1],new_jp[2],new_jp[3],new_jp[4],new_jp[5],new_jp[6]);
+	}
+
+	count[arm] ++;
+	success = true;
+	return success;
+}
+
+
 //===========================================================================
 
 /**

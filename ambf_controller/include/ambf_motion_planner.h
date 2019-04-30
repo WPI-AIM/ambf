@@ -55,15 +55,15 @@ private:
 
 public:
 
-	AMBFCmd command;       // raven command structure
-    AMBFSta state;  	   // raven state structure
+	AMBFCmd command;       // camera command structure
+    AMBFSta state;  	   // camera state structure
  	AMBFCmdMode mode;      // camera command mode
 
     AMBFCameraPlanner();
     ~AMBFCameraPlanner();
     bool set_home();
-    bool go_home(bool,int);   		 		// jp command will be used
-    bool wander_dance(bool, int);     // jp command will be used
+    bool go_home(bool,int);   		// cp command will be used
+    bool wander_dance(bool, int);  	// cp command will be used
 };
 
 
@@ -87,9 +87,12 @@ public:
     bool inv_kinematics(int, tf::Transform&, float, vector<float>&);
     bool apply_joint_limits(vector<float>& , bool&);
     bool find_best_solution(vector<float>,vector<vector<float>>,vector<bool>,int&,float&);
-
+	bool kinematics_test(int);
+	
     bool go_home(bool,int);   		// jp command will be used
     bool sine_dance(bool, int);     // jp command will be used
+    bool trace_cube(bool, int);     // cp command will be used
+
 };
 
 
