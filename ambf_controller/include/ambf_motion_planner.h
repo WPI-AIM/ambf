@@ -88,7 +88,9 @@ public:
     bool apply_joint_limits(vector<float>& , bool&);
     bool find_best_solution(vector<float>,vector<vector<float>>,vector<bool>,int&,float&);
 	bool kinematics_test(int);
-	
+	bool joint_to_dhvalue(vector<float>, vector<float>&, int);
+	bool dhvalue_to_joint(vector<float>, vector<float>&, float, int);
+
     bool go_home(bool,int);   		// jp command will be used
     bool sine_dance(bool, int);     // jp command will be used
     bool trace_cube(bool, int);     // cp command will be used

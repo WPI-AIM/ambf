@@ -69,6 +69,90 @@ AMBFRavenPlanner::~AMBFRavenPlanner()
 }
 
 
+
+/**
+ * @brief      change raw joint values to dh convension
+ *
+ * @param[in]  joint    The joint   (length 7)
+ * @param      dhvalue  The dhvalue (length 6)
+ * @param[in]  arm      The arm  
+ *
+ * @return     success
+ */
+bool AMBFRavenPlanner::joint_to_dhvalue(vector<float> joint, vector<float>& dhvalue, int arm)
+{
+	bool success = false;
+	if(arm < 0 || arm >= AMBFDef::raven_arms || joint.size() != AMBFDef::raven_joints)
+	{
+		ROS_ERROR("Invalid input to function joint to dhvalue.");
+		return success;
+	}
+
+	for(int i=0; i<AMBFDef::raven_joints-1; i++)
+	{
+		if(i != 2)
+		{
+			if(i == 5)
+				dhvalue[i] = (joint[i+1] - joint[i])/2 + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+			else
+				dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+
+			while(dhvalue[i] > M_PI)   dhvalue[i] -= 2*M_PI;
+			while(dhvalue[i] < -M_PI)  dhvalue[i] += 2*M_PI;
+		}
+		else
+			dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i];
+	}
+
+	success = true;
+	return success;
+}
+
+
+
+
+/**
+ * @brief      change dh convension to raw joint values
+ *
+ * @param[in]  dhvalue  The dhvalue (length 6)
+ * @param      joint    The joint   (length 7)
+ * @param[in]  gangle   The gangle
+ * @param[in]  arm      The arm
+ *
+ * @return     limited  The joint values were saturated
+ */
+bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& joint, float gangle, int arm)
+{
+	bool limited;
+
+	// set desired joint positions
+	for(int i=0; i<AMBFDef::raven_joints-1; i++)
+	{
+		if(i != 2)
+		{
+			if(i == 5)
+			{
+				joint[i] =   -(dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad) + gangle / 2;
+				joint[i+1] =  (dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad) + gangle / 2;
+			}
+			else
+				joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+
+			while(joint[i] > M_PI)   joint[i] -= 2*M_PI;
+			while(joint[i] < -M_PI)  joint[i] += 2*M_PI;
+		}
+		else
+			joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i];
+	}
+
+	// check joint limits for saturating
+	apply_joint_limits(joint, limited);
+
+	return limited;
+}
+
+
+
 /**
  * @brief      Raven forward kinematics calculation
  *
@@ -82,29 +166,22 @@ bool AMBFRavenPlanner::fwd_kinematics(int arm, vector<float> input_jp, tf::Trans
 {
 	bool success = false;
 
-	vector<float> jp_dh(6);
 	vector<float> dh_alpha(6);
 	vector<float> dh_theta(6);
 	vector<float> dh_a(6);
 	vector<float> dh_d(6);
 
 	// convert the joint angles to DH theta convention
+	vector<float> jp_dh(6);
+
+	if(!joint_to_dhvalue(input_jp, jp_dh, arm))
+	{
+		ROS_ERROR("Something went wrong in joint to dhvalue conversion.");
+		return success;
+	}
+
 	for(int i=0; i<AMBFDef::raven_joints-1; i++)
 	{
-		if(i != 2)
-		{
-			if(i == 5)
-				jp_dh[i] = (state.jp[i+1] - state.jp[i])/2 + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
-			else
-				jp_dh[i] = state.jp[i] + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
-
-			while(jp_dh[i] > M_PI)  jp_dh[i] -= 2*M_PI;
-			while(jp_dh[i] < -M_PI)  jp_dh[i] += 2*M_PI;
-		}
-		else
-			jp_dh[i] = state.jp[i] + AMBFDef::raven_kin_offset[arm][i];
-
-
 		if(i == 2)
 		{
 			dh_d[i] = jp_dh[i];
@@ -147,11 +224,17 @@ tf::Transform AMBFRavenPlanner::fwd_trans(int a, int b, vector<float> dh_alpha, 
 	if ((b <= a) || b == 0) 
 		ROS_ERROR("Invalid start/end indices.");
 
-	double xx = cos(dh_theta[a]), xy = -sin(dh_theta[a]), xz = 0;
-	double yx = sin(dh_theta[a]) * cos(dh_alpha[a]), yy = cos(dh_theta[a]) * cos(dh_alpha[a]),
-	     yz = -sin(dh_alpha[a]);
-	double zx = sin(dh_theta[a]) * sin(dh_alpha[a]), zy = cos(dh_theta[a]) * sin(dh_alpha[a]),
-	     zz = cos(dh_alpha[a]);
+	double xx = cos(dh_theta[a]), 
+	       xy = -sin(dh_theta[a]), 
+	       xz = 0;
+
+	double yx = sin(dh_theta[a]) * cos(dh_alpha[a]), 
+	       yy = cos(dh_theta[a]) * cos(dh_alpha[a]),
+	       yz = -sin(dh_alpha[a]);
+
+	double zx = sin(dh_theta[a]) * sin(dh_alpha[a]), 
+	       zy = cos(dh_theta[a]) * sin(dh_alpha[a]),
+	       zz = cos(dh_alpha[a]);
 
 	double px = dh_a[a];
 	double py = -sin(dh_alpha[a]) * dh_d[a];
@@ -351,20 +434,11 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 	}
 
 	vector<float> jp_dh(6); // current joint angles
-	for(int i=0; i<AMBFDef::raven_joints-1; i++)
-	{
-		if(i != 2)
-		{
-			if(i == 5)
-				jp_dh[i] = (state.jp[i+1] - state.jp[i])/2 + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
-			else
-				jp_dh[i] = state.jp[i] + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
 
-			while(jp_dh[i] > M_PI)  jp_dh[i] -= 2*M_PI;
-			while(jp_dh[i] < -M_PI)  jp_dh[i] += 2*M_PI;
-		}
-		else
-			jp_dh[i] = state.jp[i] + AMBFDef::raven_kin_offset[arm][i];
+	if(!joint_to_dhvalue(state.jp, jp_dh, arm))
+	{
+		ROS_ERROR("Something went wrong in joint to dhvalue conversion.");
+		return success;
 	}
 
 	int sol_idx;
@@ -372,39 +446,12 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 
 	if(find_best_solution(jp_dh, iksol, ikcheck, sol_idx, sol_err)) 
 	{
-		vector<float> Js(6);
-		for(int i=0; i<AMBFDef::raven_joints-1; i++)
-		{
-			if(i != 2)
-			{
-				Js[i] = iksol[sol_idx][i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
-				while(Js[i] > M_PI)  Js[i] -= 2*M_PI;
-				while(Js[i] < -M_PI)  Js[i] += 2*M_PI;
-			}
-			else
-				Js[i] = iksol[sol_idx][i] - AMBFDef::raven_kin_offset[arm][i];
-		}
-
-		// check joint limits for saturating
-		bool limited;
-		apply_joint_limits(Js, limited);
-
-		// set desired joint positions
-		for(int i=0; i<AMBFDef::raven_joints-1;i++)
-		{
-			if(i == 5)
-			{
-				output_jp[i] = -Js[i] + input_gangle / 2;   // TODO: figure this out
-				output_jp[i+1] =  Js[i] + input_gangle / 2;
-			}
-			else
-				output_jp[i] = Js[i];
-		}
+		bool limited = dhvalue_to_joint(iksol[sol_idx], output_jp, input_gangle, arm);
 
 		// adjust desired cartesian positions if necessary
 		if(limited) 
 		{
-		  fwd_kinematics(arm, Js, xf);
+		  fwd_kinematics(arm, output_jp, xf);
 		  input_cp = xf;
 		} 
 
@@ -421,37 +468,37 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 /**
  * @brief      Apply Raven joint limit constraints.
  *
- * @param      theta_vec  The input theta vector
+ * @param      joint  The input joint value vector
  *
  * @return     success
  */
-bool AMBFRavenPlanner::apply_joint_limits(vector<float>& theta_vec, bool& changed)
+bool AMBFRavenPlanner::apply_joint_limits(vector<float>& joint, bool& changed)
 {
 	bool success = false;
 	changed = false;
 
-	if(theta_vec.size() != AMBFDef::raven_joints-1)
+	if(joint.size() != AMBFDef::raven_joints)
 	{
 		ROS_ERROR("Wrong input vector length to apply joint limit check.");
 		return success;
 	}
 
-	for(int i=0; i<AMBFDef::raven_joints-1; i++)
+	for(int i=0; i<AMBFDef::raven_joints; i++)
 	{
 		if(i != 2)
 		{
-			while(theta_vec[i] >  M_PI)  theta_vec[i] -= 2*M_PI;
-			while(theta_vec[i] < -M_PI)  theta_vec[i] += 2*M_PI;
+			while(joint[i] >  M_PI)  joint[i] -= 2*M_PI;
+			while(joint[i] < -M_PI)  joint[i] += 2*M_PI;
 		}
 		
-		if(theta_vec[i] < AMBFDef::raven_joint_limit[0][i])
+		if(joint[i] < AMBFDef::raven_joint_limit[0][i])
 		{
-			theta_vec[i] = AMBFDef::raven_joint_limit[0][i];
+			joint[i] = AMBFDef::raven_joint_limit[0][i];
 			changed = true;
 		}
-		else if(theta_vec[i] > AMBFDef::raven_joint_limit[1][i])
+		else if(joint[i] > AMBFDef::raven_joint_limit[1][i])
 		{
-			theta_vec[i] = AMBFDef::raven_joint_limit[1][i];
+			joint[i] = AMBFDef::raven_joint_limit[1][i];
 			changed = true;
 		}
 	}
@@ -652,23 +699,30 @@ bool AMBFRavenPlanner::kinematics_test(int arm)
 	if(count[arm] % 1000 == 0)
 	{
 		ROS_INFO("arm%d:",arm);
-		ROS_INFO(" cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("          jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+			state.jp[0],state.jp[1],state.jp[2],state.jp[3],state.jp[4],state.jp[5],state.jp[6]);
+
+		ROS_INFO("after FK: cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 
-		ROS_INFO(" jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
-			state.jp[0],state.jp[1],state.jp[2],state.jp[3],state.jp[4],state.jp[5],state.jp[6]);
+
 		
-		vector<float> new_jp = {0,0,0,0,0,0,0};
+		vector<float> new_jp = AMBFDef::zero_joints;
 		inv_kinematics(arm, cp_trn, M_PI/4, new_jp);
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
-		ROS_INFO("after IK:");
-		ROS_INFO(" cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
-			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
-
-		ROS_INFO(" jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)\n\n", 
+		ROS_INFO("after IK: jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
 			new_jp[0],new_jp[1],new_jp[2],new_jp[3],new_jp[4],new_jp[5],new_jp[6]);
+/*		ROS_INFO("          cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());*/
+
+		fwd_kinematics(arm, new_jp, cp_trn);
+		cp_pos = cp_trn.getOrigin();
+		cp_ori = cp_trn.getRotation();
+
+		ROS_INFO("again FK: cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)\n\n", 
+			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 	}
 
 	count[arm] ++;
