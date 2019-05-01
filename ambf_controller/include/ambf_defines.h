@@ -42,7 +42,7 @@ struct AMBFSta
 {
 	bool updated;			 // raven state updated
 
-	vector<float> jp;        // raven joint space position state
+	vector<float>   jp;        // raven joint space position state
     tf::Transform cp;        // raven catesian space position state
     tf::Vector3   cf;        // raven cartesian force state     
     tf::Vector3   ct;        // raven cartesian torque state      
@@ -79,7 +79,6 @@ public:
   static const vector<vector<float>>   raven_dh_a;
   static const vector<vector<float>>   raven_dh_d;
   static const vector<vector<float>>   raven_dh_theta;
-  static const vector<vector<float>>   raven_kin_offset;
   static const vector<float>           raven_ikin_param;
   static const vector<tf::Transform>   raven_T_B0;  // raven base frame to raven zero frame (have seperate ones for each arm)
   static const tf::Transform           raven_T_CB;  // raven crtk frame to base frame (have seperate ones for each arm)

@@ -93,15 +93,15 @@ bool AMBFRavenPlanner::joint_to_dhvalue(vector<float> joint, vector<float>& dhva
 		if(i != 2)
 		{
 			if(i == 5)
-				dhvalue[i] = (joint[i+1] - joint[i])/2 + AMBFDef::raven_kin_offset[arm][i];
+				dhvalue[i] = (joint[i+1] - joint[i]);
 			else
-				dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i];
+				dhvalue[i] = joint[i];
 
 			while(dhvalue[i] > M_PI)   dhvalue[i] -= 2*M_PI;
 			while(dhvalue[i] < -M_PI)  dhvalue[i] += 2*M_PI;
 		}
 		else
-			dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i];
+			dhvalue[i] = joint[i];
 	}
 
 	success = true;
@@ -132,17 +132,17 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 		{
 			if(i == 5)
 			{
-				joint[i] =   -(dhvalue[i] - AMBFDef::raven_kin_offset[arm][i]) + gangle / 2;
-				joint[i+1] =  (dhvalue[i] - AMBFDef::raven_kin_offset[arm][i]) + gangle / 2;
+				joint[i+1] =    dhvalue[i] + gangle / 2;
+				joint[i] =     -dhvalue[i] + gangle / 2;
 			}
 			else
-				joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i];
+				joint[i] = dhvalue[i];
 
 			while(joint[i] > M_PI)   joint[i] -= 2*M_PI;
 			while(joint[i] < -M_PI)  joint[i] += 2*M_PI;
 		}
 		else
-			joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i];
+			joint[i] = dhvalue[i];
 	}
 
 	// check joint limits for saturating
@@ -699,7 +699,7 @@ bool AMBFRavenPlanner::kinematics_test(int arm)
 
 		
 		vector<float> new_jp = AMBFDef::zero_joints;
-		inv_kinematics(arm, cp_trn, M_PI/4, new_jp);
+		inv_kinematics(arm, cp_trn, state.jp[5]+state.jp[6], new_jp);
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
