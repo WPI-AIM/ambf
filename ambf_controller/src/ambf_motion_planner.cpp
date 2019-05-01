@@ -93,9 +93,9 @@ bool AMBFRavenPlanner::joint_to_dhvalue(vector<float> joint, vector<float>& dhva
 		if(i != 2)
 		{
 			if(i == 5)
-				dhvalue[i] = (joint[i+1] - joint[i])/2 + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+				dhvalue[i] = (joint[i+1] - joint[i])/2 + AMBFDef::raven_kin_offset[arm][i];
 			else
-				dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+				dhvalue[i] = joint[i] + AMBFDef::raven_kin_offset[arm][i];
 
 			while(dhvalue[i] > M_PI)   dhvalue[i] -= 2*M_PI;
 			while(dhvalue[i] < -M_PI)  dhvalue[i] += 2*M_PI;
@@ -132,11 +132,11 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 		{
 			if(i == 5)
 			{
-				joint[i] =   -(dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad) + gangle / 2;
-				joint[i+1] =  (dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad) + gangle / 2;
+				joint[i] =   -(dhvalue[i] - AMBFDef::raven_kin_offset[arm][i]) + gangle / 2;
+				joint[i+1] =  (dhvalue[i] - AMBFDef::raven_kin_offset[arm][i]) + gangle / 2;
 			}
 			else
-				joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i] Deg2Rad;
+				joint[i] = dhvalue[i] - AMBFDef::raven_kin_offset[arm][i];
 
 			while(joint[i] > M_PI)   joint[i] -= 2*M_PI;
 			while(joint[i] < -M_PI)  joint[i] += 2*M_PI;
@@ -194,7 +194,7 @@ bool AMBFRavenPlanner::fwd_kinematics(int arm, vector<float> input_jp, tf::Trans
 		}
 
 		dh_alpha[i] = AMBFDef::raven_dh_alpha[arm][i];
-		dh_a[i] = AMBFDef::raven_dh_alpha[arm][i];
+		dh_a[i] = AMBFDef::raven_dh_a[arm][i];
 	}
 
 	// computes forward kinematics
@@ -305,7 +305,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 
 		if (insertion <= AMBFDef::raven_ikin_param[5]) 
 		{
-		  ROS_ERROR("WARNING: Raven mechanism at RCM singularity(Lw: %f, ins: %f). IK failing.",
+		  ROS_ERROR("WARNING: Raven mechanism at RCM singularity (Lw: %f, ins: %f). IK failing.",
 		            AMBFDef::raven_ikin_param[5], insertion);
 
 		  ikcheck[4 * i + 0] = ikcheck[4 * i + 1] = false;
@@ -327,11 +327,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 		float cth2_nom = (( z0p5 / d) + AMBFDef::raven_ikin_param[1] * AMBFDef::raven_ikin_param[3]);
 		float cth2_den = (AMBFDef::raven_ikin_param[0] * AMBFDef::raven_ikin_param[2]);
 
-		if (arm == 0)
-		  cth2 = -cth2_nom / cth2_den;
-		else
-		  cth2 =  cth2_nom / cth2_den;
-
+		cth2 = -cth2_nom / cth2_den;
 
 		// Smooth roundoff errors at +/- 1.
 		if (cth2 > 1 && cth2 < 1 + Eps)
@@ -364,18 +360,13 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 		tf::Vector3 xyp05(p05[i]);
 		xyp05[2] = 0;
 
-		if (arm == 0) 
-		{
-		  BB2 = cth2 * AMBFDef::raven_ikin_param[1]*AMBFDef::raven_ikin_param[2]
+		BB2 = cth2 * AMBFDef::raven_ikin_param[1]*AMBFDef::raven_ikin_param[2]
 		      - AMBFDef::raven_ikin_param[0]*AMBFDef::raven_ikin_param[3];
+
+		if (arm == 0) 
 		  Bmx.setValue(BB1, BB2, 0, -BB2, BB1, 0, 0, 0, 1);
-		} 
 		else 
-		{
-		  BB2 = cth2 * AMBFDef::raven_ikin_param[1]*AMBFDef::raven_ikin_param[2]
-		      + AMBFDef::raven_ikin_param[0]*AMBFDef::raven_ikin_param[3];
-		  Bmx.setValue(BB1, BB2, 0, BB2, -BB1, 0, 0, 0, 1);
-		}
+		  Bmx.setValue(BB1, BB2, 0,  BB2, -BB1, 0, 0, 0, 1);
 
 		tf::Vector3 scth1 = Bmx.inverse() * xyp05 * (1 / d);
 		iksol[i][0] = atan2(scth1[1], scth1[0]);
