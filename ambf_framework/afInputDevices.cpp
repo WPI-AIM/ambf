@@ -72,8 +72,6 @@ afSharedDataStructure::afSharedDataStructure(){
 /// \brief afPhysicalDevice::~afPhysicalDevice
 ///
 afPhysicalDevice::~afPhysicalDevice(){
-    m_simRotOffset.setAxisAngleRotationRad(0, 0, 0, C_EULER_ORDER_XYZ);
-    m_simRotInitial.setAxisAngleRotationRad(0, 0, 0, C_EULER_ORDER_XYZ);
 }
 
 ///
@@ -336,12 +334,16 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // reference pose
         _position = simDevice->m_rootLink->getLocalPos();
         _orientation = simDevice->m_rootLink->getLocalRot();
+        m_simRotInitial.identity();
     }
 
     if (pDOrientationOffset.IsDefined()){
             cVector3d rpy_offset;
             rpy_offset = toRPY<cVector3d>(&pDOrientationOffset);
             m_simRotOffset.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
+    }
+    else{
+        m_simRotOffset.identity();
     }
 
     simDevice->m_posRef = _position/ m_workspaceScale;

@@ -36,24 +36,23 @@ Razer Hydra0:
     #   linear: {P: 0.0, D: 0.0},
     #   angular: {P: 0.0, D: 0.0}}
     workspace scaling: 5
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper2.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
     # root link: "/ambf/env/BODY l_wrist_roll_link"
     location: {
       position: {x: 0.0, y: -1.0, z: 0},
       orientation: {r: 0.0, p: 0.0, y: 0.0}}
-    orientation offset: {r: 0.0, p: 1.5, y: 0}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
 
 Razer Hydra1:
     hardware name: Razer Hydra
     haptic gain: {linear: 10.0, angular: 0.0}
     workspace scaling: 5
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper2.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
     # root link: "/ambf/env/BODY r_wrist_roll_link"
     location: {
       position: {x: 0.0, y: 0.5, z: 0},
       orientation: {r: 0, p: 0, y: 0}}
-    # pose offset: {
-      # orientation: {r: 0, p: -1.57, y: 0.0}}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
 
 Novint Falcon:
     hardware name: Falcon
