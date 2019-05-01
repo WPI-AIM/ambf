@@ -1424,6 +1424,13 @@ void updateHapticDevice(void* a_arg){
         wait_time = 5.0;
     }
 
+    cMesh* _refSphere = new cMesh();
+    cCreateSphere(_refSphere, 0.05);
+    _refSphere->m_material->setRed();
+    _refSphere->setShowFrame(true);
+    _refSphere->setFrameSize(0.3);
+    g_bulletWorld->addChild(_refSphere);
+
     // main haptic simulation loop
     while(g_simulationRunning)
     {
@@ -1555,8 +1562,10 @@ void updateHapticDevice(void* a_arg){
                     cTranspose(devCams[0]->getLocalRot());
         }
         else{
-            simGripper->m_rotRef = pDev->m_rot;
+            simGripper->m_rotRef = pDev->m_simRotInitial * pDev->m_rot * pDev->m_simRotOffset;
         }
+        _refSphere->setLocalPos(simGripper->m_posRef*pDev->m_workspaceScale);
+        _refSphere->setLocalRot(simGripper->m_rotRef);
         simGripper->m_posRef.mul(pDev->m_workspaceScale);
 
         // update position of simulated gripper

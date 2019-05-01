@@ -195,8 +195,16 @@ private:
     void updateCursorPose();
     bool m_dev_force_enabled = true;
 
+public:
+    // Initial offset between the simulated end effector and the
+    // physical device
+    cMatrix3d m_simRotInitial;
+    // A transform between simulated and pyhsical devices' frame
+    // to store any intended offset
+    cMatrix3d m_simRotOffset;
+
 private:
-    afInputDevices* m_iDPtr;
+    afInputDevices* m_iDPtr; // Ptr to the Device Handler class
 };
 
 ///
