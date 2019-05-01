@@ -81,7 +81,8 @@ public:
   static const vector<vector<float>>   raven_dh_theta;
   static const vector<vector<float>>   raven_kin_offset;
   static const vector<float>           raven_ikin_param;
-
+  static const vector<tf::Transform>   raven_T_B0;  // raven base frame to raven zero frame (have seperate ones for each arm)
+  static const tf::Transform           raven_T_CB;  // raven crtk frame to base frame (have seperate ones for each arm)
 };
 
 #endif

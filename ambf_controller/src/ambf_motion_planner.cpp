@@ -198,7 +198,7 @@ bool AMBFRavenPlanner::fwd_kinematics(int arm, vector<float> input_jp, tf::Trans
 	}
 
 	// computes forward kinematics
-	output_cp = fwd_trans(0, 6, dh_alpha, dh_theta, dh_a, dh_d);
+	output_cp = AMBFDef::raven_T_CB * AMBFDef::raven_T_B0[arm] * fwd_trans(0, 6, dh_alpha, dh_theta, dh_a, dh_d);
 
 	success = true;
 	return success;
@@ -261,7 +261,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 {
 	bool success = false;
 
-	tf::Transform xf = input_cp;
+	tf::Transform xf =  (AMBFDef::raven_T_CB * AMBFDef::raven_T_B0[arm]).inverse() * input_cp;
 
 	vector<vector<float>> iksol(AMBFDef::raven_iksols, vector<float>(AMBFDef::raven_joints-1));
 	vector<bool>ikcheck(AMBFDef::raven_iksols);

@@ -79,15 +79,31 @@ const vector<vector<float>>   AMBFDef::raven_dh_d           = {{         0,     
                                                                {         0,        0,     V,    -0.47,    0,        0,         0}};
 const vector<vector<float>>   AMBFDef::raven_dh_theta       = {{         V,        V,    90,        V,    V,        V,         0},
                                                                {         V,        V,   -90,        V,    V,        V,         0}};
+const vector<vector<float>>   AMBFDef::raven_kin_offset     = {{         0,        0,     0,        0,  -90,        0,         0},
+                                                               {         0,        0,     0,        0,  -90,        0,         0}};
+
+/*
+const vector<vector<float>>   AMBFDef::raven_dh_alpha       = {{         0,       75,   128,        0,   90,       90,         0},
+                                                               {       180,       75,    52,        0,   90,       90,         0}};
+const vector<vector<float>>   AMBFDef::raven_dh_a           = {{         0,        0,     0,        0,    0,    0.013,         0},
+                                                               {         0,        0,     0,        0,    0,    0.013,         0}};
+const vector<vector<float>>   AMBFDef::raven_dh_d           = {{         0,        0,     V,    -0.47,    0,        0,         0},
+                                                               {         0,        0,     V,    -0.47,    0,        0,         0}};
+const vector<vector<float>>   AMBFDef::raven_dh_theta       = {{         V,        V,    90,        V,    V,        V,         0},
+                                                               {         V,        V,   -90,        V,    V,        V,         0}};
 const vector<vector<float>>   AMBFDef::raven_kin_offset     = {{       205,      180,     0,        0,  -90,        0,         0},
-                                                               {        25,        0,     0,        0,  -90,        0,         0}};
+                                                               {        25,        0,     0,        0,  -90,        0,         0}};*/
 
 const vector<float>           AMBFDef::raven_ikin_param     = { (float)sin(AMBFDef::raven_dh_alpha[0][1] Deg2Rad),     // 0: GM1
                                                                 (float)cos(AMBFDef::raven_dh_alpha[0][1] Deg2Rad),     // 1: GM2
                                                                 (float)sin(AMBFDef::raven_dh_alpha[1][2] Deg2Rad),     // 2: GM3
                                                                 (float)cos(AMBFDef::raven_dh_alpha[1][2] Deg2Rad),     // 3: GM4
-                                                                -0.47,                                          // 4: d4
-                                                                0.013                                    };     // 5: Lw 
+                                                                -0.47,                                                 // 4: d4
+                                                                0.013                                    };            // 5: Lw 
+
+const vector<tf::Transform>   AMBFDef::raven_T_B0           = { tf::Transform(tf::Matrix3x3(0,0,1,0,-1,0,1,0,0),tf::Vector3(0.30071, 0.061, -0.007)),
+                                                                tf::Transform(tf::Matrix3x3(0,0,-1,0,1,0,1,0,0),tf::Vector3(-0.30071, 0.061, -0.007))};
+const tf::Transform           AMBFDef::raven_T_CB           =   tf::Transform(tf::Quaternion(tf::Vector3(0,0,1),-M_PI/2),tf::Vector3(0,0,0));
 
 // Raven joints:
 // joint -: 0_link-base_link_L:             fixed
