@@ -546,6 +546,9 @@ BODY l_wrist_roll_link:
     diffuse: {b: 0.6963, g: 0.8, r: 0.0}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
+  controller: {
+    linear: {P: 1000, D: 10},
+    angular: {P: 50, D: 1}}
 BODY l_gripper_l_finger_link:
   name: l_gripper_l_finger_link
   mesh: l_gripper_l_finger_link.STL
@@ -808,6 +811,9 @@ BODY r_wrist_roll_link:
     diffuse: {b: 0.4818, g: 0.8, r: 0.0}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
+  controller: {
+    linear: {P: 1000, D: 10},
+    angular: {P: 50, D: 1}}
 BODY r_gripper_l_finger_link:
   name: r_gripper_l_finger_link
   mesh: r_gripper_l_finger_link.STL
@@ -1148,7 +1154,7 @@ JOINT l_wrist_roll_link-l_gripper_l_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: 0.0}
-  controller: {D: 0.027, I: 0, P: 271.0}
+  controller: {D: 0.022, I: 0, P: 2.0}
   type: revolute
 JOINT l_gripper_l_finger_link-l_gripper_l_finger_tip_link:
   name: l_gripper_l_finger_link-l_gripper_l_finger_tip_link
@@ -1159,7 +1165,7 @@ JOINT l_gripper_l_finger_link-l_gripper_l_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: 0.0}
-  controller: {D: 0.022, I: 0, P: 215.0}
+  controller: {D: 0.0022, I: 0, P: 1.0}
   type: revolute
 JOINT l_wrist_roll_link-l_gripper_r_finger_link:
   name: l_wrist_roll_link-l_gripper_r_finger_link
@@ -1170,7 +1176,7 @@ JOINT l_wrist_roll_link-l_gripper_r_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: 0.0}
-  controller: {D: 0.027, I: 0, P: 274.0}
+  controller: {D: 0.022, I: 0, P: 2.0}
   type: revolute
   offset: 3.142
 JOINT l_gripper_r_finger_link-l_gripper_r_finger_tip_link:
@@ -1182,7 +1188,7 @@ JOINT l_gripper_r_finger_link-l_gripper_r_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: 0.0}
-  controller: {D: 0.022, I: 0, P: 218.0}
+  controller: {D: 0.0022, I: 0, P: 1.0}
   type: revolute
 JOINT torso_lift_link-laser_tilt_mount_link:
   name: torso_lift_link-laser_tilt_mount_link
@@ -1287,7 +1293,7 @@ JOINT r_wrist_roll_link-r_gripper_l_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: 0.0}
-  controller: {D: 0.027, I: 0, P: 271.0}
+  controller: {D: 0.022, I: 0, P: 2.0}
   type: revolute
 JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link:
   name: r_gripper_l_finger_link-r_gripper_l_finger_tip_link
@@ -1298,7 +1304,7 @@ JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: 0.0}
-  controller: {D: 0.022, I: 0, P: 215.0}
+  controller: {D: 0.0022, I: 0, P: 1.0}
   type: revolute
 JOINT r_wrist_roll_link-r_gripper_r_finger_link:
   name: r_wrist_roll_link-r_gripper_r_finger_link
@@ -1309,7 +1315,7 @@ JOINT r_wrist_roll_link-r_gripper_r_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: 0.0}
-  controller: {D: 0.027, I: 0, P: 274.0}
+  controller: {D: 0.022, I: 0, P: 2.0}
   type: revolute
   offset: 3.142
 JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link:
@@ -1321,5 +1327,5 @@ JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: 0.0}
-  controller: {D: 0.022, I: 0, P: 218.0}
+  controller: {D: 0.0022, I: 0, P: 1.0}
   type: revolute

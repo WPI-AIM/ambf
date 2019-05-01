@@ -85,49 +85,60 @@ int afCamera::s_windowIdx = 0;
 
 /// Utility Functions
 
+template <>
 ///
-/// \brief assignXYZ
-/// \param v
+/// \brief toXYZ<btVector3>
+/// \param node
+/// \return
 ///
-void assignXYZ(YAML::Node* node, btVector3 *v){
-    v->setX((*node)["x"].as<double>());
-    v->setY((*node)["y"].as<double>());
-    v->setZ((*node)["z"].as<double>());
+btVector3 toXYZ<btVector3>(YAML::Node* node){
+    btVector3 v;
+    v.setX((*node)["x"].as<double>());
+    v.setY((*node)["y"].as<double>());
+    v.setZ((*node)["z"].as<double>());
+    return v;
 }
 
+template <>
 ///
-/// \brief assignXYZ
+/// \brief toXYZ<cVector3d>
 /// \param node
-/// \param v
+/// \return
 ///
-void assignXYZ(YAML::Node* node, cVector3d *v){
-    v->x((*node)["x"].as<double>());
-    v->y((*node)["y"].as<double>());
-    v->z((*node)["z"].as<double>());
+cVector3d toXYZ<cVector3d>(YAML::Node* node){
+    cVector3d v;
+    v.x((*node)["x"].as<double>());
+    v.y((*node)["y"].as<double>());
+    v.z((*node)["z"].as<double>());
+    return v;
 }
 
-
+template<>
 ///
-/// \brief assignRPY
-/// \param v
+/// \brief toRPY<btVector3>
 /// \param node
+/// \return
 ///
-void assignRPY(YAML::Node* node, btVector3 *v){
-    v->setX((*node)["r"].as<double>());
-    v->setY((*node)["p"].as<double>());
-    v->setZ((*node)["y"].as<double>());
+btVector3 toRPY<btVector3>(YAML::Node* node){
+    btVector3 v;
+    v.setX((*node)["r"].as<double>());
+    v.setY((*node)["p"].as<double>());
+    v.setZ((*node)["y"].as<double>());
+    return v;
 }
 
-
+template<>
 ///
-/// \brief assignRPY
+/// \brief toRPY<cVector3>
 /// \param node
-/// \param v
+/// \return
 ///
-void assignRPY(YAML::Node *node, cVector3d *v){
-    v->x((*node)["r"].as<double>());
-    v->y((*node)["p"].as<double>());
-    v->z((*node)["y"].as<double>());
+cVector3d toRPY<cVector3d>(YAML::Node *node){
+    cVector3d v;
+    v.x((*node)["r"].as<double>());
+    v.y((*node)["p"].as<double>());
+    v.z((*node)["y"].as<double>());
+    return v;
 }
 
 
@@ -136,7 +147,7 @@ void assignRPY(YAML::Node *node, cVector3d *v){
 /// \param cVec
 /// \return
 ///
-btVector3 cVec2btVec(const cVector3d &cVec){
+btVector3 toBTvec(const cVector3d &cVec){
     btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
     return bVec;
 }
@@ -146,7 +157,7 @@ btVector3 cVec2btVec(const cVector3d &cVec){
 /// \param bVec
 /// \return
 ///
-cVector3d btVec2cVec(const btVector3 &bVec){
+cVector3d toCvec(const btVector3 &bVec){
     cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
     return cVec;
 }
@@ -346,7 +357,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     D_ang = a_D;
 }
 
-
+template <>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -354,7 +365,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
@@ -366,6 +377,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 }
 
 
+template<>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -373,7 +385,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -395,7 +407,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -403,7 +415,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
@@ -414,7 +426,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -422,7 +434,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -445,7 +457,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutputTransform
 /// \param process_val
@@ -453,7 +465,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
 /// \param current_time
 /// \return
 ///
-btTransform afCartesianController::computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt){
+btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt){
 
 }
 
@@ -1012,7 +1024,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     iOffPos.setValue(0,0,0);
 
     if(bodyInertialOffsetPos.IsDefined()){
-        assignXYZ( &bodyInertialOffsetPos, &iOffPos);
+        iOffPos = toXYZ<btVector3>(&bodyInertialOffsetPos);
         if(bodyInertialOffsetRot.IsDefined()){
             double r = bodyInertialOffsetRot["r"].as<double>();
             double p = bodyInertialOffsetRot["p"].as<double>();
@@ -1091,7 +1103,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     buildDynamicModel();
 
     if(bodyPos.IsDefined()){
-        assignXYZ( &bodyPos, &m_initialPos);
+        m_initialPos = toXYZ<cVector3d>(&bodyPos);
         setLocalPos(m_initialPos);
     }
 
@@ -1346,9 +1358,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 _cmd_rot.setRotation(_cmd_rot_quat);
 
                 // Use the internal Cartesian Position Controller
-                force = m_controller.computeOutput(_cur_pos, _cmd_pos, dt);
+                force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
                 // Use the internal Cartesian Rotation Controller
-                torque = m_controller.computeOutput(_cur_rot, _cmd_rot, dt);
+                torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
             }
             else{
                 force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
@@ -1641,7 +1653,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             double y = softBodyInertialOffsetRot["y"].as<double>();
             quat.setEulerZYX(y, p, r);
         }
-        assignXYZ( &softBodyInertialOffsetPos, &pos);
+        pos = toXYZ<btVector3>(&softBodyInertialOffsetPos);
         trans.setRotation(quat);
         trans.setOrigin(pos);
         setInertialOffsetTransform(trans);
@@ -1702,7 +1714,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     buildDynamicModel();
 
     if(softBodyPos.IsDefined()){
-        assignXYZ( &softBodyPos, &pos);
+        pos = toXYZ<cVector3d>(&softBodyPos);
         setLocalPos(pos);
     }
 
@@ -2033,10 +2045,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
 
     if (jointParentPivot.IsDefined() & jointParentAxis.IsDefined() & jointChildPivot.IsDefined() & jointChildAxis.IsDefined()){
-        assignXYZ( &jointParentPivot, &m_pvtA);
-        assignXYZ( &jointParentAxis, &m_axisA);
-        assignXYZ( &jointChildPivot, &m_pvtB);
-        assignXYZ( &jointChildAxis, &m_axisB);
+        m_pvtA = toXYZ<btVector3>( &jointParentPivot);
+        m_axisA = toXYZ<btVector3>( &jointParentAxis);
+        m_pvtB = toXYZ<btVector3>( &jointChildPivot);
+        m_axisB = toXYZ<btVector3>( &jointChildAxis);
 
         if (m_axisA.length() < 0.9 || m_axisA.length() > 1.1 ){
             std::cerr << "WARNING: Joint " << m_name << "'s parent axis is not normalized\n";
@@ -2076,7 +2088,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         YAML::Node jointXYZ = jointOrigin['position'];
         YAML::Node jointRPY = jointOrigin['orientation'];
         if (jointXYZ.IsDefined()){
-            assignXYZ(&jointXYZ, &pos);
+            pos = toXYZ<btVector3>(&jointXYZ);
             T_j_p.setOrigin(pos);
         }
         if (jointRPY.IsDefined()){
@@ -2087,7 +2099,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if (jointAxis.IsDefined()){
-            assignXYZ(&jointAxis, &joint_axis);
+            joint_axis = toXYZ<btVector3>(&jointAxis);
         }
     }
     else{
@@ -2554,8 +2566,8 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     m_name = sensorName.as<std::string>();
-    assignXYZ(&sensorLocation, &m_location);
-    assignXYZ(&sensorDirection, &m_direction);
+    m_location = toXYZ<cVector3d>(&sensorLocation);
+    m_direction = toXYZ<cVector3d>(&sensorDirection);
     m_range = sensorRange.as<double>();
 
     // First search in the local space.
@@ -2588,16 +2600,16 @@ void afProximitySensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
     cTransform T_bInw = m_parentBody->getLocalTransform();
-    _rayFromWorld = cVec2btVec(T_bInw *  m_rayFromLocal);
-    _rayToWorld = cVec2btVec(T_bInw *  m_rayToLocal);
+    _rayFromWorld = toBTvec(T_bInw *  m_rayFromLocal);
+    _rayToWorld = toBTvec(T_bInw *  m_rayToLocal);
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
         m_fromSphere->setShowEnabled(true);
         m_toSphere->setShowEnabled(true);
 
-        m_fromSphere->setLocalPos(btVec2cVec(_rayFromWorld) );
-        m_toSphere->setLocalPos(btVec2cVec(_rayToWorld) );
+        m_fromSphere->setLocalPos(toCvec(_rayFromWorld) );
+        m_toSphere->setLocalPos(toCvec(_rayToWorld) );
     }
     else{
         m_fromSphere->setShowEnabled(false);
@@ -2610,7 +2622,7 @@ void afProximitySensor::updateSensor(){
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
             m_hitSphere->setShowEnabled(true);
-            m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
+            m_hitSphere->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
         }
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
@@ -2668,7 +2680,7 @@ void afProximitySensor::updateSensor(){
             }
         }
 
-        m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
+        m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
     }
     else{
         m_hitSphere->setShowEnabled(false);
@@ -3277,21 +3289,21 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         m_name = "camera_" + std::to_string(m_afWorld->getAFCameras().size() + 1);
     }
     if (cameraLocationData.IsDefined()){
-        assignXYZ(&cameraLocationData, &_location);
+        _location = toXYZ<cVector3d>(&cameraLocationData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
          _is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
-        assignXYZ(&cameraLookAtData, &_look_at);
+        _look_at = toXYZ<cVector3d>(&cameraLookAtData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraUpData.IsDefined()){
-        assignXYZ(&cameraUpData, &_up);
+        _up = toXYZ<cVector3d>(&cameraUpData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
@@ -3538,14 +3550,14 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     }
 
     if (lightLocationData.IsDefined()){
-        assignXYZ(&lightLocationData, &_location);
+        _location = toXYZ<cVector3d>(&lightLocationData);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightDirectionData.IsDefined()){
-        assignXYZ(&lightDirectionData, &_direction);
+        _direction = toXYZ<cVector3d>(&lightDirectionData);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
@@ -4212,13 +4224,13 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
     if (m_dynamicsWorld == 0)
         return false;
 
-    btCollisionWorld::ClosestRayResultCallback rayCallback(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld));
+    btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
 
     rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-    m_dynamicsWorld->rayTest(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld), rayCallback);
+    m_dynamicsWorld->rayTest(toBTvec(rayFromWorld), toBTvec(rayToWorld), rayCallback);
     if (rayCallback.hasHit())
     {
-        cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
+        cVector3d pickPos = toCvec(rayCallback.m_hitPointWorld);
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
         const btCollisionObject* colObject = rayCallback.m_collisionObject;
@@ -4232,7 +4244,7 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
                     m_savedState = m_pickedBody->getActivationState();
                     m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
                     m_dynamicsWorld->addConstraint(p2p, true);
                     m_pickedConstraint = p2p;
@@ -4268,7 +4280,7 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
                 m_pickedNode->m_v.setZero();
                 m_pickedSoftBody = sBody;
                 m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal = btVec2cVec(_hitPoint);
+                m_pickedNodeGoal = toCvec(_hitPoint);
             }
         }
 
@@ -4307,7 +4319,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
             newPivotB = rayFromWorld + dir;
             // Set the position of grab sphere
             m_pickSphere->setLocalPos(newPivotB);
-            pickCon->setPivotB(cVec2btVec(newPivotB));
+            pickCon->setPivotB(toBTvec(newPivotB));
             return true;
         }
     }
