@@ -122,15 +122,16 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDRootLink = physicaDeviceNode["root link"];
     YAML::Node pDLocation = physicaDeviceNode["location"];
     YAML::Node pDOrientationOffset = physicaDeviceNode["orientation offset"];
+    YAML::Node pDButtonMapping = physicaDeviceNode["button mapping"];
 
     std::string _hardwareName = "";
     K_lh = 0;
     K_ah = 0;
     // Initialize Default Buttons
-    act_1_btn = 0;
-    act_2_btn = 1;
-    mode_next_btn = 2;
-    mode_prev_btn = 3;
+    m_buttons.A1 = 0;
+    m_buttons.A2 = 1;
+    m_buttons.NEXT_MODE = 2;
+    m_buttons.PREV_MODE = 3;
 
     m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
@@ -337,6 +338,11 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_simRotInitial.identity();
     }
 
+    simDevice->m_posRef = _position/ m_workspaceScale;
+    simDevice->m_posRefOrigin = _position / m_workspaceScale;
+    simDevice->m_rotRef = _orientation;
+    simDevice->m_rotRefOrigin = _orientation;
+
     if (pDOrientationOffset.IsDefined()){
             cVector3d rpy_offset;
             rpy_offset = toRPY<cVector3d>(&pDOrientationOffset);
@@ -346,10 +352,20 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_simRotOffset.identity();
     }
 
-    simDevice->m_posRef = _position/ m_workspaceScale;
-    simDevice->m_posRefOrigin = _position / m_workspaceScale;
-    simDevice->m_rotRef = _orientation;
-    simDevice->m_rotRefOrigin = _orientation;
+    if (pDButtonMapping.IsDefined()){
+        if (pDButtonMapping["a1"].IsDefined()){
+            m_buttons.A1 = pDButtonMapping["a1"].as<int>();
+        }
+        if (pDButtonMapping["a2"].IsDefined()){
+            m_buttons.A2 = pDButtonMapping["a2"].as<int>();
+        }
+        if (pDButtonMapping["next mode"].IsDefined()){
+            m_buttons.NEXT_MODE = pDButtonMapping["next mode"].as<int>();
+        }
+        if (pDButtonMapping["prev mode"].IsDefined()){
+            m_buttons.PREV_MODE = pDButtonMapping["prev mode"].as<int>();
+        }
+    }
 
     return 1;
 }
@@ -722,7 +738,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
         inputDevicesNode = YAML::LoadFile(a_input_devices_config);
     }catch (std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << a_input_devices_config << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
         return 0;
     }
 
