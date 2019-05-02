@@ -10,6 +10,11 @@ MTMR:
   location: {
     position: {x: 0, y: 0, z: 0},
     orientation: {r: 0, p: 0, y: 0}}
+  button mapping: {
+    a1: 1,
+    a2: 2,
+    next mode: 3,
+    prev mode: 4}
 
 MTML:
     hardware name: MTML
@@ -19,6 +24,11 @@ MTML:
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
+    button mapping: {
+      a1: 1,
+      a2: 2,
+      next mode: 3,
+      prev mode: 4}
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
@@ -42,6 +52,11 @@ Razer Hydra0:
       position: {x: 0.0, y: -1.0, z: 0},
       orientation: {r: 0.0, p: 0.0, y: 0.0}}
     # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
 
 Razer Hydra1:
     hardware name: Razer Hydra
@@ -53,6 +68,11 @@ Razer Hydra1:
       position: {x: 0.0, y: 0.5, z: 0},
       orientation: {r: 0, p: 0, y: 0}}
     # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
 
 Novint Falcon:
     hardware name: Falcon
@@ -62,3 +82,9 @@ Novint Falcon:
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}

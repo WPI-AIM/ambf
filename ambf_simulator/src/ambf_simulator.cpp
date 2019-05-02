@@ -1462,19 +1462,19 @@ void updateHapticDevice(void* a_arg){
             simGripper->m_gripper_angle = 0.5;
         }
 
-        if(pDev->isButtonPressRisingEdge(pDev->mode_next_btn)) g_inputDevices->nextMode();
-        if(pDev->isButtonPressRisingEdge(pDev->mode_prev_btn)) g_inputDevices->prevMode();
+        if(pDev->isButtonPressRisingEdge(pDev->m_buttons.NEXT_MODE)) g_inputDevices->nextMode();
+        if(pDev->isButtonPressRisingEdge(pDev->m_buttons.PREV_MODE)) g_inputDevices->prevMode();
 
-        bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(pDev->act_1_btn);
-        bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(pDev->act_1_btn);
-        bool btn_2_rising_edge = pDev->isButtonPressRisingEdge(pDev->act_2_btn);
-        bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(pDev->act_2_btn);
+        bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(pDev->m_buttons.A1);
+        bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(pDev->m_buttons.A1);
+        bool btn_2_rising_edge = pDev->isButtonPressRisingEdge(pDev->m_buttons.A2);
+        bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(pDev->m_buttons.A2);
 
         double gripper_offset = 0;
         switch (g_inputDevices->m_simModes){
         case MODES::CAM_CLUTCH_CONTROL:
-            g_inputDevices->g_clutch_btn_pressed  = pDev->isButtonPressed(pDev->act_1_btn);
-            g_inputDevices->g_cam_btn_pressed     = pDev->isButtonPressed(pDev->act_2_btn);
+            g_inputDevices->g_clutch_btn_pressed  = pDev->isButtonPressed(pDev->m_buttons.A1);
+            g_inputDevices->g_cam_btn_pressed     = pDev->isButtonPressed(pDev->m_buttons.A2);
             if(g_inputDevices->g_clutch_btn_pressed) g_inputDevices->g_btn_action_str = "Clutch Pressed";
             if(g_inputDevices->g_cam_btn_pressed)   {g_inputDevices->g_btn_action_str = "Cam Pressed";}
             if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->g_btn_action_str = "";
@@ -1510,7 +1510,7 @@ void updateHapticDevice(void* a_arg){
             break;
         }
 
-        pDev->m_hDevice->getUserSwitch(pDev->act_2_btn, devCams[0]->m_cam_pressed);
+        pDev->m_hDevice->getUserSwitch(pDev->m_buttons.A2, devCams[0]->m_cam_pressed);
         if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.1;
             for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
