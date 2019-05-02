@@ -52,6 +52,7 @@ private:
 
     mutex _mutex;
     bool print_menu;
+    bool debug_mode;
     ros::NodeHandle nh_; 
 
     vector<ros::Publisher>     raven_pubs;      // raven command publisher

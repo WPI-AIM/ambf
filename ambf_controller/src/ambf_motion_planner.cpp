@@ -93,7 +93,12 @@ bool AMBFRavenPlanner::joint_to_dhvalue(vector<float> joint, vector<float>& dhva
 		if(i != 2)
 		{
 			if(i == 5)
-				dhvalue[i] = (joint[i+1] - joint[i]);
+			{
+				if(arm == 0)
+					dhvalue[i] =  (joint[i] - joint[i+1]);  // red(left) - black(right)
+				else 
+					dhvalue[i] = -(joint[i] - joint[i+1]);  // black(left) - red(right)		
+			}
 			else
 				dhvalue[i] = joint[i];
 
@@ -131,9 +136,18 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 		if(i != 2)
 		{
 			if(i == 5)
-			{
-				joint[i+1] =    dhvalue[i] + gangle / 2;
-				joint[i] =     -dhvalue[i] + gangle / 2;
+			{	
+				if(arm == 0)
+				{
+					joint[i+1] =  (-dhvalue[i] + gangle) / 2;  // black (right)
+					joint[i] =    (dhvalue[i] + gangle) / 2;  // red (left)
+				}
+				else
+				{
+					joint[i] =    (-dhvalue[i] + gangle) / 2; // red (right)
+					joint[i+1] =  (dhvalue[i] + gangle) / 2;  // black (left)
+				}
+				
 			}
 			else
 				joint[i] = dhvalue[i];
@@ -678,7 +692,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm)
  *
  * @return     success
  */
-bool AMBFRavenPlanner::kinematics_test(int arm)
+bool AMBFRavenPlanner::kinematics_show(int arm)
 {
 	static vector<int> count = {0,0};
 	bool success = false;
@@ -690,10 +704,10 @@ bool AMBFRavenPlanner::kinematics_test(int arm)
 	if(count[arm] % 1000 == 0)
 	{
 		ROS_INFO("arm%d:",arm);
-		ROS_INFO("          jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("          jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
 			state.jp[0],state.jp[1],state.jp[2],state.jp[3],state.jp[4],state.jp[5],state.jp[6]);
 
-		ROS_INFO("after FK: cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("after FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)", 
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 
 
@@ -703,7 +717,7 @@ bool AMBFRavenPlanner::kinematics_test(int arm)
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
-		ROS_INFO("after IK: jp = (\t%f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("after IK: jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
 			new_jp[0],new_jp[1],new_jp[2],new_jp[3],new_jp[4],new_jp[5],new_jp[6]);
 /*		ROS_INFO("          cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());*/
@@ -712,7 +726,7 @@ bool AMBFRavenPlanner::kinematics_test(int arm)
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
-		ROS_INFO("again FK: cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)\n\n", 
+		ROS_INFO("again FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)\n\n", 
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 	}
 

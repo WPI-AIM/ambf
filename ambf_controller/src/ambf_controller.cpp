@@ -75,7 +75,7 @@ bool AMBFController::init_sys()
 	
 	reset_command();
 	print_menu = true;
-
+	debug_mode = false;
 	return true;
 }
 
@@ -212,26 +212,34 @@ bool AMBFController::motion_planning()
 	// raven motion planning
 	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
-		if(raven_planner[i].state.updated && raven_planner[i].command.type != _null)
+		if(raven_planner[i].state.updated)
 		{
-			switch(raven_planner[i].mode)
+			if(raven_planner[i].command.type != _null)
 			{
-				case AMBFCmdMode::freefall:	// do nothing
-					break;
+				switch(raven_planner[i].mode)
+				{
+					case AMBFCmdMode::freefall:	// do nothing
+						break;
 
-				case AMBFCmdMode::homing:
-					raven_planner[i].go_home(false,i);
-					break;
+					case AMBFCmdMode::homing:
+						raven_planner[i].go_home(false,i);
+						break;
 
-				case AMBFCmdMode::dancing:
-					raven_planner[i].sine_dance(false,i);
-					break;
+					case AMBFCmdMode::dancing:
+						raven_planner[i].sine_dance(false,i);
+						break;
 
-				case AMBFCmdMode::cube_tracing:
-					raven_planner[i].trace_cube(false,i);
-					break;
+					case AMBFCmdMode::cube_tracing:
+						raven_planner[i].trace_cube(false,i);
+						break;
+				}
 			}
-			raven_planner[i].kinematics_test(i);
+			
+			// show kinematics status
+			if(debug_mode)
+			{
+				raven_planner[i].kinematics_show(i);
+			}
 		}		
 	}
 	
@@ -371,6 +379,13 @@ void AMBFController::csl_run()
 					print_menu = true;
 					break;
 			}
+		}
+
+		if(key == 'x' || key == 'X')
+		{
+			debug_mode = !debug_mode;
+			ROS_INFO("x: Entered Toggle console debug mode. Setting changed.");
+			print_menu = true;
 		}
 
         ros::spinOnce();
@@ -658,6 +673,10 @@ bool AMBFController::show_menu()
 		if(cam_mode == AMBFCmdMode::homing) 	s = s_true;
 		else									s = s_false;
 		ROS_INFO("%sc: Camera homing mode",s.c_str());
+
+		if(debug_mode)							s = s_true;
+		else									s = s_false;
+		ROS_INFO("%sx: Toggle console debug mode",s.c_str());
 
 		ROS_INFO("-----------------------------------------------------\n\n");
 
