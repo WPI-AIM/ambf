@@ -347,9 +347,30 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     int vyKey;
     int vzKey;
     cVector3d vPos;
-    double xCoeff = (double) (numVertices - 1) / vBounds.x();
-    double yCoeff = (double) (numVertices - 1) / vBounds.y();
-    double zCoeff = (double) (numVertices - 1) / vBounds.z();
+    double xCoeff;
+    double yCoeff;
+    double zCoeff;
+    if(vBounds.x() == 0){
+        xCoeff = 0;
+    }
+    else{
+
+        xCoeff = (double) (numVertices - 1) / vBounds.x();
+    }
+    if(vBounds.y() == 0){
+        yCoeff = 0;
+    }
+    else{
+
+        yCoeff = (double) (numVertices - 1) / vBounds.y();
+    }
+    if(vBounds.z() == 0){
+        zCoeff = 0;
+    }
+    else{
+
+        zCoeff = (double) (numVertices - 1) / vBounds.z();
+    }
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
         xblockLowerBound = xblockNum * blockSize;
         xblockUpperBound = xblockLowerBound + blockSize;
@@ -532,7 +553,7 @@ void afSoftMultiMesh::createGELSkeleton(){
             m_afSoftNodes[nodeIdx2].m_gelLinks.push_back(link);
         }
     }
-    m_gelMesh.m_showSkeletonModel = true;
+    m_gelMesh.m_showSkeletonModel = false;
     m_gelMesh.m_useSkeletonModel = true;
 }
 
