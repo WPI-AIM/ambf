@@ -59,6 +59,8 @@ const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
 const string          AMBFDef::cameras_append         = "/ambf/env/cameras";
 const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};   // left arm 0 & right arm 1
 const vector<string>  AMBFDef::cam_append             = {"/c1", "/c2", "/c3"};                 // each camera name
+const vector<string>  AMBFDef::axes_name              = {"X", "Y", "Z"};
+const vector<string>  AMBFDef::sign_name              = {"-", "+"};
 
 const tf::Vector3             AMBFDef::zero_vec             = tf::Vector3(0,0,0);           // place holder for frequently used arrays
 const vector<float>           AMBFDef::zero_joints          = {          0,           0,           0,        0,       0,        0,         0};

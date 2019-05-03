@@ -64,6 +64,8 @@ public:
   static const string          cameras_append;
   static const vector<string>  arm_append;          // left arm 0 & right arm 1
   static const vector<string>  cam_append;          // each camera name
+  static const vector<string>  axes_name;
+  static const vector<string>  sign_name;
 
   static const tf::Vector3             zero_vec;    // place holder for frequently used arrays
   static const vector<float>           zero_joints;

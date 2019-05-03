@@ -670,11 +670,62 @@ bool AMBFRavenPlanner::sine_dance(bool first_entry, int arm)
  *
  * @return     success
  */
-bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm)
+bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm, bool debug_mode)
 {
+	int idx;
 	bool success = false;
-	// TODO:
+	int duration_count = 2 * AMBFDef::loop_rate;
+	float motion_scale = 0.10;  // (m)
 
+	static vector<int> last_idx(AMBFDef::raven_arms);
+	static vector<int> count(AMBFDef::raven_arms);
+
+	static vector<tf::Transform> start_pose(AMBFDef::raven_arms);
+	static vector<tf::Vector3>   next_loc(AMBFDef::raven_arms);
+	static vector<tf::Vector3>   prev_loc(AMBFDef::raven_arms);
+
+	if(first_entry || !homed)
+	{
+		last_idx[arm] = -1;
+		count[arm] = 0;
+		next_loc[arm] = (arm == 0) ? tf::Vector3(1,1,0):tf::Vector3(1,0,0);
+		start_pose[arm].setRotation(state.cp.getRotation());
+		start_pose[arm].setOrigin(state.cp.getOrigin() - motion_scale*next_loc[arm]);
+
+		go_home(first_entry,arm);
+		kinematics_show(arm,debug_mode);
+		
+		success = true;
+		return success;
+	}
+
+	if(count[arm] % duration_count == 0)
+	{
+		count[arm] = 0;
+		
+		do idx = rand() % 3; while(idx == last_idx[arm]);
+
+		prev_loc[arm] = next_loc[arm];
+		next_loc[arm][idx] = ((int)next_loc[arm][idx]+1) % 2;
+
+		last_idx[arm] = idx;
+
+		if(debug_mode)
+		{
+			ROS_INFO("Cube tracing update: arm%d start moving in %s%s direction. (x,y,z = %f,%f,%f)", 
+				arm, AMBFDef::sign_name[int(next_loc[arm][idx])].c_str(), AMBFDef::axes_name[idx].c_str(),
+				state.cp.getOrigin().x(),state.cp.getOrigin().y(),state.cp.getOrigin().z());
+		}
+	}
+
+	float ratio = 1.0*count[arm]/duration_count;
+
+	command.cp = start_pose[arm];
+	command.cp.setOrigin(command.cp.getOrigin() + motion_scale*(prev_loc[arm]*(1-ratio)+next_loc[arm]*ratio));
+
+	inv_kinematics(arm, command.cp, state.jp[5]+state.jp[6], command.js);
+
+	count[arm] ++;
 	command.type 	= AMBFCmdType::_cp;
 	command.updated = true;
 	state.updated   = false;
@@ -685,6 +736,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm)
 
 
 
+
 /**
  * @brief      A test cript for inverse kinematics
  *
@@ -692,7 +744,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm)
  *
  * @return     success
  */
-bool AMBFRavenPlanner::kinematics_show(int arm)
+bool AMBFRavenPlanner::kinematics_show(int arm, bool debug_mode)
 {
 	static vector<int> count = {0,0};
 	bool success = false;
@@ -701,7 +753,7 @@ bool AMBFRavenPlanner::kinematics_show(int arm)
 	tf::Vector3 	cp_pos = cp_trn.getOrigin();
 	tf::Quaternion 	cp_ori = cp_trn.getRotation();
 
-	if(count[arm] % 1000 == 0)
+	if(debug_mode && count[arm] % 1000 == 0)
 	{
 		ROS_INFO("arm%d:",arm);
 		ROS_INFO("          jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
@@ -728,9 +780,12 @@ bool AMBFRavenPlanner::kinematics_show(int arm)
 
 		ROS_INFO("again FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)\n\n", 
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
+
+		count[arm] = 0;
 	}
 
 	count[arm] ++;
+
 	success = true;
 	return success;
 }

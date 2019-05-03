@@ -87,13 +87,13 @@ public:
     bool inv_kinematics(int, tf::Transform&, float, vector<float>&);
     bool apply_joint_limits(vector<float>& , bool&);
     bool find_best_solution(vector<float>,vector<vector<float>>,vector<bool>,int&,float&);
-	bool kinematics_show(int);
+	bool kinematics_show(int, bool);
 	bool joint_to_dhvalue(vector<float>, vector<float>&, int);
 	bool dhvalue_to_joint(vector<float>, vector<float>&, float, int);
 
-    bool go_home(bool,int);   		// jp command will be used
-    bool sine_dance(bool, int);     // jp command will be used
-    bool trace_cube(bool, int);     // cp command will be used
+    bool go_home(bool,int);   			// jp command will be used
+    bool sine_dance(bool, int);     	// jp command will be used
+    bool trace_cube(bool, int, bool);   // cp command will be used
 
 };
 

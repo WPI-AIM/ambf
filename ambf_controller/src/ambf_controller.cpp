@@ -214,32 +214,26 @@ bool AMBFController::motion_planning()
 	{
 		if(raven_planner[i].state.updated)
 		{
-			if(raven_planner[i].command.type != _null)
+			switch(raven_planner[i].mode)
 			{
-				switch(raven_planner[i].mode)
-				{
-					case AMBFCmdMode::freefall:	// do nothing
-						break;
+				case AMBFCmdMode::freefall:	// do nothing
+					raven_planner[i].kinematics_show(i,debug_mode);
+					break;
 
-					case AMBFCmdMode::homing:
-						raven_planner[i].go_home(false,i);
-						break;
+				case AMBFCmdMode::homing:
+					raven_planner[i].go_home(false,i);
+					raven_planner[i].kinematics_show(i,debug_mode);
+					break;
 
-					case AMBFCmdMode::dancing:
-						raven_planner[i].sine_dance(false,i);
-						break;
+				case AMBFCmdMode::dancing:
+					raven_planner[i].sine_dance(false,i);
+					raven_planner[i].kinematics_show(i,debug_mode);
+					break;
 
-					case AMBFCmdMode::cube_tracing:
-						raven_planner[i].trace_cube(false,i);
-						break;
-				}
-			}
-			
-			// show kinematics status
-			if(debug_mode)
-			{
-				raven_planner[i].kinematics_show(i);
-			}
+				case AMBFCmdMode::cube_tracing:
+					raven_planner[i].trace_cube(false,i,debug_mode);
+					break;
+			}			
 		}		
 	}
 	
@@ -343,7 +337,7 @@ void AMBFController::csl_run()
 					if(i == 0) ROS_INFO("3: Entered Raven cube_tracing mode. Enjoy a little dance!");
 					raven_planner[i].mode = AMBFCmdMode::cube_tracing;
 					raven_planner[i].command.type = _cp;
-					raven_planner[i].trace_cube(true,i);
+					raven_planner[i].trace_cube(true,i,debug_mode);
 					print_menu = true;
 					break;
 			}
