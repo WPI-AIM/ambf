@@ -1602,6 +1602,8 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node softBodyRandomizeConstraints = softBodyNode["randomize constraints"];
 
     YAML::Node cfg_kLST = softBodyConfigData["kLST"];
+    YAML::Node cfg_kAST = softBodyConfigData["kAST"];
+    YAML::Node cfg_kVST = softBodyConfigData["kVST"];
     YAML::Node cfg_kVCF = softBodyConfigData["kVCF"];
     YAML::Node cfg_kDP = softBodyConfigData["kDP"];
     YAML::Node cfg_kDG = softBodyConfigData["kDG"];
@@ -1627,6 +1629,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_diterations = softBodyConfigData["diterations"];
     YAML::Node cfg_citerations = softBodyConfigData["citerations"];
     YAML::Node cfg_flags = softBodyConfigData["flags"];
+    YAML::Node cfg_bendingConstraint = softBodyConfigData["bending constraint"];
     YAML::Node cfg_cutting = softBodyConfigData["cutting"];
     YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
@@ -1777,6 +1780,16 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             pm->m_kLST = cfg_kLST.as<double>();
             m_bulletSoftBody->m_materials[0]->m_kLST = cfg_kLST.as<double>();
         }
+        if (cfg_kAST.IsDefined()){
+            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kAST = cfg_kAST.as<double>();
+            m_bulletSoftBody->m_materials[0]->m_kAST = cfg_kAST.as<double>();
+        }
+        if (cfg_kVST.IsDefined()){
+            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kVST = cfg_kVST.as<double>();
+            m_bulletSoftBody->m_materials[0]->m_kVST = cfg_kVST.as<double>();
+        }
         if (cfg_kVCF.IsDefined()) m_bulletSoftBody->m_cfg.kVCF = cfg_kVCF.as<double>();
         if (cfg_kDP.IsDefined()) m_bulletSoftBody->m_cfg.kDP = cfg_kDP.as<double>();
         if (cfg_kDG.IsDefined()) m_bulletSoftBody->m_cfg.kDG = cfg_kDG.as<double>();
@@ -1803,6 +1816,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
         if (cfg_flags.IsDefined()){
             m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+        }
+        if (cfg_bendingConstraint.IsDefined()){
+            int _bending = cfg_bendingConstraint.as<int>();
+            m_bulletSoftBody->generateBendingConstraints(_bending);
         }
         if (cfg_fixed_nodes.IsDefined()){
             for (int i = 0 ; i < cfg_fixed_nodes.size() ; i++){
