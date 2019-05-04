@@ -167,6 +167,78 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 
 
 
+
+/**
+ * @brief      Check safety constraints for joint level increments
+ *
+ * @param[in]  curr_raw  The curr raw joint position
+ * @param      next_raw  The next raw joint position
+ *
+ * @return     success
+ */
+bool AMBFRavenPlanner::check_incr_safety(vector<float> curr_raw, vector<float>& next_raw, int length)
+{
+	bool success = false;
+	vector<float> curr_jp(AMBFDef::raven_joints);
+	vector<float> next_jp(AMBFDef::raven_joints);
+
+	if(length == AMBFDef::raven_joints-1)
+	{
+		dhvalue_to_joint(curr_raw, curr_jp, 0, 0);
+		dhvalue_to_joint(next_raw, next_jp, 0, 0);
+	}
+	else if(length == AMBFDef::raven_joints)
+	{
+		for(int i=0;i<AMBFDef::raven_joints;i++)
+		{
+			curr_jp[i] = curr_raw[i];
+			next_jp[i] = next_raw[i];
+		}
+	}
+
+	for(int i=0; i<length; i++)
+	{
+		if(i == 2)
+		{
+			if(next_jp[i] > curr_jp[i])
+			{
+				next_jp[i] = curr_jp[i] + min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_pos_incr);
+			}
+			else
+			{
+				next_jp[i] = curr_jp[i] - min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_pos_incr);
+			}		
+		}
+		else
+		{
+			if(next_jp[i] > curr_jp[i])
+			{
+				next_jp[i] = curr_jp[i] + min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_ori_incr);
+			}
+			else
+			{
+				next_jp[i] = curr_jp[i] - min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_ori_incr);
+			}		
+		}
+
+	}
+
+	if(length == AMBFDef::raven_joints-1)
+	{
+		joint_to_dhvalue(next_jp, next_raw, 0);
+		success = true;
+	}
+	else if(length == AMBFDef::raven_joints)
+	{
+		success = true;
+	}
+
+	return success;
+}
+
+
+
+
 /**
  * @brief      Raven forward kinematics calculation
  *
@@ -718,12 +790,12 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm, bool debug_mode)
 		}
 	}
 
-	float ratio = 1.0*count[arm]/duration_count;
+	float ratio = 0.5-0.5*cos(M_PI*count[arm]/duration_count);
 
 	command.cp = start_pose[arm];
 	command.cp.setOrigin(command.cp.getOrigin() + motion_scale*(prev_loc[arm]*(1-ratio)+next_loc[arm]*ratio));
 
-	inv_kinematics(arm, command.cp, state.jp[5]+state.jp[6], command.js);
+	inv_kinematics(arm, command.cp, 0, command.js);
 
 	count[arm] ++;
 	command.type 	= AMBFCmdType::_cp;

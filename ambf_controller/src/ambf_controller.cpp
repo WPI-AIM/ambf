@@ -448,8 +448,10 @@ bool AMBFController::raven_command_pb()
 			{
 				case AMBFCmdType::_jp:
 				case AMBFCmdType::_cp:
+					raven_planner[i].check_incr_safety(raven_planner[i].state.jp, raven_planner[i].command.js, AMBFDef::raven_joints);
 					msg.joint_cmds = raven_planner[i].command.js;
 					msg.position_controller_mask = AMBFDef::true_joints;
+
 					break;
 
 				case AMBFCmdType::_jw:

@@ -57,7 +57,7 @@ BODY base_link_L:
 BODY link1_L:
   name: link1_L
   mesh: link1_L.STL
-  mass: 0.6
+  mass: 0.50307                                       ## original values: 0.6
   collision margin: 0.001
   scale: 1.0
   location:
@@ -65,7 +65,7 @@ BODY link1_L:
     position: {x: -0.0, y: 0.68, z: 0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: 0.023, y: -0.092, z: -0.122}
+    position: {x: 0.00691, y: -0.09869, z: -0.13755}  ## original values: {x: 0.023, y: -0.092, z: -0.122}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
@@ -78,7 +78,7 @@ BODY link1_L:
 BODY link2_L:
   name: link2_L
   mesh: link2_L.STL
-  mass: 0.3
+  mass: 0.75034                                       ## original values: 0.3
   collision margin: 0.001
   scale: 1.0
   location:
@@ -86,7 +86,7 @@ BODY link2_L:
     position: {x: -0.0, y: 0.68, z: -0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: -0.206, y: -0.075, z: -0.25}
+    position: {x: -0.17909, y: -0.00120, z: -0.23388} ## original values: {x: -0.206, y: -0.075, z: -0.25}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
@@ -99,7 +99,7 @@ BODY link2_L:
 BODY link3_L:
   name: link3_L
   mesh: link3_L.STL
-  mass: 0.05
+  mass: 0.40658                                       ## original values: 0.05
   collision margin: 0.001
   scale: 1.0
   location:
@@ -107,14 +107,14 @@ BODY link3_L:
     position: {x: -0.0, y: 0.68, z: 0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: 0.463, y: 0.02, z: -0.013}
+    position: {x: 0.02001, y: 0.00019, z: -0.01297}   ## original values: {x: 0.463, y: 0.02, z: -0.013}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
   collision groups: [0]
   color components:
     ambient: {level: 1.0}
-    diffuse: {b:  0.1, g: 0.5, r: 0.5} #original color:{b: 0.0698, g: 0.1981, r: 0.5382}
+    diffuse: {b:  0.1, g: 0.5, r: 0.5}                ## original color: {b: 0.0698, g: 0.1981, r: 0.5382}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
 BODY instrument_shaft_L:
@@ -227,7 +227,7 @@ BODY base_link_R:
 BODY link1_R:
   name: link1_R
   mesh: link1_R.STL
-  mass: 0.6
+  mass: 0.50307                                       ## original values: 0.6
   collision margin: 0.001
   scale: 1.0
   location:
@@ -235,7 +235,7 @@ BODY link1_R:
     position: {x: 0.0, y: -0.703, z: -0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: 0.023, y: -0.092, z: 0.122}
+    position: {x: 0.00691, y: -0.09869, z: 0.13755}   ## original values: {x: 0.023, y: -0.092, z: 0.122}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
@@ -248,7 +248,7 @@ BODY link1_R:
 BODY link2_R:
   name: link2_R
   mesh: link2_R.STL
-  mass: 0.3
+  mass: 0.75034                                       ## original values: 0.3
   collision margin: 0.001
   scale: 1.0
   location:
@@ -256,7 +256,7 @@ BODY link2_R:
     position: {x: 0.0, y: -0.703, z: -0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: 0.206, y: -0.047, z: 0.25}
+    position: {x: 0.17909, y: -0.00120, z: 0.23388}   ## original values: {x: 0.206, y: -0.047, z: 0.25}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
@@ -269,7 +269,7 @@ BODY link2_R:
 BODY link3_R:
   name: link3_R
   mesh: link3_R.STL
-  mass: 0.05
+  mass: 0.40658 ## 0.05
   collision margin: 0.001
   scale: 1.0
   location:
@@ -277,14 +277,14 @@ BODY link3_R:
     position: {x: 0.0, y: -0.703, z: 0.0}
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
-    position: {x: 0.463, y: -0.02, z: 0.013}
+    position: {x: 0.02001, y: -0.00019, z: 0.01297}   ## original values: {x: 0.463, y: -0.02, z: 0.013}
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.99, linear: 0.99}
   restitution: 0
   collision groups: [0]
   color components:
     ambient: {level: 1.0}
-    diffuse: {b: 0.2, g: 0.4, r: 0.1} #original color:{b: 0.0658, g: 0.6334, r: 0.6618}
+    diffuse: {b: 0.2, g: 0.4, r: 0.1}                 ## original color:{b: 0.0658, g: 0.6334, r: 0.6618}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
 BODY instrument_shaft_R:
@@ -426,7 +426,7 @@ JOINT link3_L-instrument_shaft_L:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {}
-  controller: {D: 0.0008, I: 0, P: 3.0}
+  controller: {D: 0.0003, I: 0, P: 0.05}
   type: continuous
   offset: 1.656
 JOINT instrument_shaft_L-wrist_L:
@@ -438,7 +438,7 @@ JOINT instrument_shaft_L-wrist_L:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.05}
   type: revolute
   offset: 0.852
 JOINT wrist_L-grasper1_L:
@@ -450,7 +450,7 @@ JOINT wrist_L-grasper1_L:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.03}
   type: revolute
   offset: -0.786
 JOINT wrist_L-grasper2_L:
@@ -462,7 +462,7 @@ JOINT wrist_L-grasper2_L:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.03}
   type: revolute
   offset: 0.247
 JOINT 0_link-base_link_R:
@@ -519,7 +519,7 @@ JOINT link3_R-instrument_shaft_R:
   parent pivot: {x: 0.0, y: 0.0, z: -0.0}
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  controller: {D: 0.0008, I: 0, P: 3.0}
+  controller: {D: 0.0003, I: 0, P: 0.05}
   type: continuous
   offset: 1.032
 JOINT instrument_shaft_R-wrist_R:
@@ -531,7 +531,7 @@ JOINT instrument_shaft_R-wrist_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.05}
   type: revolute
   offset: 1.173
 JOINT wrist_R-grasper1_R:
@@ -543,7 +543,7 @@ JOINT wrist_R-grasper1_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.03}
   type: revolute
   offset: -0.354
 JOINT wrist_R-grasper2_R:
@@ -555,6 +555,6 @@ JOINT wrist_R-grasper2_R:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.0, low: -2.0}
-  controller: {D: 0.00003, I: 0, P: 0.1}
+  controller: {D: 0.00003, I: 0, P: 0.03}
   type: revolute
   offset: 0.786

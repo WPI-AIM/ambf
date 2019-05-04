@@ -90,7 +90,8 @@ public:
 	bool kinematics_show(int, bool);
 	bool joint_to_dhvalue(vector<float>, vector<float>&, int);
 	bool dhvalue_to_joint(vector<float>, vector<float>&, float, int);
-
+	bool check_incr_safety(vector<float>, vector<float>&, int);
+	
     bool go_home(bool,int);   			// jp command will be used
     bool sine_dance(bool, int);     	// jp command will be used
     bool trace_cube(bool, int, bool);   // cp command will be used

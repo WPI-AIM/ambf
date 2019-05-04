@@ -50,6 +50,7 @@ struct AMBFSta
 
 
 class AMBFDef {
+  
 public:
 
   static const int         V;
@@ -58,6 +59,8 @@ public:
   static const int 			   raven_arms;
   static const int         raven_iksols;
   static const int 			   loop_rate;
+  static const float       safe_ori_incr;
+  static const float       safe_pos_incr;
   static const string          sub_append;          // place holder for namescpace strings
   static const string          pub_append;  
   static const string          raven_append;
