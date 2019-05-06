@@ -573,21 +573,21 @@ cVector3d bVec2cVec(btVector3 &bVec){
 void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 
     for (int i = 0 ; i < m_afSoftNodes.size() ; i++){
-        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
-        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
+//        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
+//        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
         cVector3d vPos =  bVec2cVec(m_afSoftNodes[i].m_btNode->m_x);
-        btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
-        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
-        vZ.normalize();
-        cVector3d vX = bVec2cVec(dPos);
-        vX.normalize();
+//        btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
+//        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
+//        vZ.normalize();
+//        cVector3d vX = bVec2cVec(dPos);
+//        vX.normalize();
         m_afSoftNodes[i].m_gelNode->m_nextPos.set(vPos.x(), vPos.y(), vPos.z());
-        cVector3d vY = cCross(vZ, vX);
-        vY.normalize();
-        vX = cCross(vY, vZ);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
+//        cVector3d vY = cCross(vZ, vX);
+//        vY.normalize();
+//        vX = cCross(vY, vZ);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
 
     }
 
