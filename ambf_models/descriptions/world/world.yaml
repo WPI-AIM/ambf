@@ -25,29 +25,36 @@ light3:
   parent: /ambf/env/BODY LightCone
 
 camera1:
-  name: /ambf/env/cameras/c1
+  name: cam_1
   location: {x: -2.5, y: 1.0, z: 1.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
+  publish image: true 
 
 camera2:
-  name: /ambf/env/cameras/c2
+  name: cam_2
   location: {x: -3.0, y: 0.0, z: 1.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
+  publish image: true 
 
 camera3:
-  name: /ambf/env/cameras/c3
+  name: cam_3
   location: {x: -2.5, y: -1.0, z: 1.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
+  publish image: true 
 
+
+# See function: bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name)
+# for all the possible settings for cameras.
+# 
 # camera1:
 #   name: /ambf/env/openhmd
 #   location: {x: 3.0, y: 0.0, z: 2.0}

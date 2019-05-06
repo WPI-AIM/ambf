@@ -8,7 +8,7 @@
 printf "\n Start Compiling the AMBF Code...\n"
 
 
-cd ~/ambf/build
+cd ./build
 cmake ..
 make
 source ./devel/setup.bash
@@ -23,7 +23,7 @@ read -n 1 -s -r -p "..."
 
 
 printf "\n Run the AMBF Simulator.  (On a new terminal)"
-cd ~/ambf/bin/lin-x86_64/
+cd ../bin/lin-x86_64/
 gnome-terminal -e "./ambf_simulator"
 
 

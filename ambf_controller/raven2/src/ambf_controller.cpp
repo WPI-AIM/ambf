@@ -109,11 +109,11 @@ bool AMBFController::init_ros(int argc, char** argv)
 
 	for(int i=0; i<AMBFDef::camera_count; i++)
 	{
-		topic = AMBFDef::cameras_append + AMBFDef::cam_append[i] + AMBFDef::sub_append;
+		topic = AMBFDef::cam_append[i] + AMBFDef::sub_append;
 		camera_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
 				               boost::bind(&AMBFController::camera_state_cb, this, _1, AMBFDef::cam_append[i])));
 
-		topic = AMBFDef::cameras_append + AMBFDef::cam_append[i] + AMBFDef::pub_append;
+		topic = AMBFDef::cam_append[i] + AMBFDef::pub_append;
 		camera_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
 	}
 

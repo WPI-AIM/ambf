@@ -43,14 +43,14 @@ find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 
 include_directories (${GLFW_INCLUDE_DIRS}
-                     include )
+                     raven2/include )
 
-add_executable (ambf_controller include/ambf_defines.h
-                                include/ambf_controller.h
-                                include/ambf_motion_planner.h
-                                src/ambf_motion_planner.cpp
-                                src/ambf_controller.cpp 
-                                src/ambf_defines.cpp
-                                src/main.cpp )
+add_executable (ambf_controller raven2/include/ambf_defines.h
+                                raven2/include/ambf_controller.h
+                                raven2/include/ambf_motion_planner.h
+                                raven2/src/ambf_motion_planner.cpp
+                                raven2/src/ambf_controller.cpp 
+                                raven2/src/ambf_defines.cpp
+                                raven2/src/main.cpp )
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
