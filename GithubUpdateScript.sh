@@ -7,7 +7,6 @@
 
 printf "\n Start Github Update...\n"
 
-cd ~/ambf
 git fetch upstream
 git pull upstream master
 git push

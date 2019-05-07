@@ -31,7 +31,6 @@ camera1:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  publish image: true 
 
 camera2:
   name: cam_2
@@ -40,7 +39,6 @@ camera2:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  publish image: true 
 
 camera3:
   name: cam_3
@@ -49,7 +47,6 @@ camera3:
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  publish image: true 
 
 
 # See function: bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name)
