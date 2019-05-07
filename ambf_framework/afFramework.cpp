@@ -273,7 +273,7 @@ std::string afConfigHandler::getInputDevicesConfig(){
 /// \return
 ///
 std::string afConfigHandler::getMultiBodyConfig(int i){
-    if (i <= numMultiBodyConfig()){
+    if (i <= getNumMBConfigs()){
         return s_multiBodyConfigFileNames[i];
     }
     else{
@@ -3818,7 +3818,7 @@ std::string afMultiBody::remapSensorName(std::string a_sensor_name){
 /// \brief afMultiBody::loadAllMultiBodies
 ///
 void afMultiBody::loadAllMultiBodies(bool enable_comm){
-    for (int i = 0 ; i < m_afWorld->numMultiBodyConfig(); i++){
+    for (int i = 0 ; i < m_afWorld->getNumMBConfigs(); i++){
         loadMultiBody(i, enable_comm);
     }
 }
@@ -3829,6 +3829,11 @@ void afMultiBody::loadAllMultiBodies(bool enable_comm){
 /// \return
 ///
 bool afMultiBody::loadMultiBody(int i, bool enable_comm){
+    if (i >= m_afWorld->getNumMBConfigs()){
+        std::cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
+                     m_afWorld->getNumMBConfigs() - 1 << " INDEXED MULTI-BODIES DEFINED" << std::endl;
+        return 0;
+    }
     std::string multibody_config = m_afWorld->getMultiBodyConfig(i);
     return loadMultiBody(multibody_config, enable_comm);
 }

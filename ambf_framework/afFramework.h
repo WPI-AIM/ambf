@@ -158,7 +158,7 @@ public:
     // Load the base config file
     bool loadBaseConfig(std::string file);
     // Get the nuber of multibody config files defined in launch config file
-    inline int numMultiBodyConfig(){return s_multiBodyConfigFileNames.size();}
+    inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
 
 private:
 
