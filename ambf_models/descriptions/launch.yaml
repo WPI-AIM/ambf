@@ -3,16 +3,16 @@ world config: ./world/world.yaml
 color config: ./color/colors.yaml
 input devices config: ./input_devices/input_devices.yaml
 multibody configs:
-  # - "./multi-bodies/robots/blender-toy-car.yaml"
-  - "./multi-bodies/robots/blender-toy-car2.yaml"
-  # - "./multi-bodies/robots/blender-neuro-robot.yaml"
-  # - "./multi-bodies/robots/blender-raven2.yaml"
-  # - "./multi-bodies/robots/blender-mtm.yaml"
-  # - "./multi-bodies/robots/blender-psm.yaml"
-  # - "./multi-bodies/robots/blender-ecm.yaml"
-  # - "./multi-bodies/robots/blender-suj.yaml"
-  # - "./multi-bodies/robots/blender-kuka.yaml"
-  # - "./multi-bodies/robots/blender-pr2.yaml"
-  # - "./multi-bodies/puzzles/parallel_structure.yaml"
-  # - "./multi-bodies/puzzles/puzzle1.yaml"
-  - "./multi-bodies/puzzles/puzzle2.yaml"
+  - "./multi-bodies/robots/blender-toy-car.yaml" #0
+  - "./multi-bodies/robots/blender-toy-car2.yaml" #1
+  - "./multi-bodies/robots/blender-neuro-robot.yaml" #2
+  - "./multi-bodies/robots/blender-raven2.yaml" #3
+  - "./multi-bodies/robots/blender-mtm.yaml" #4
+  - "./multi-bodies/robots/blender-psm.yaml" #5
+  - "./multi-bodies/robots/blender-ecm.yaml" #6
+  - "./multi-bodies/robots/blender-suj.yaml" #7
+  - "./multi-bodies/robots/blender-kuka.yaml" #8
+  - "./multi-bodies/robots/blender-pr2.yaml" #9
+  - "./multi-bodies/puzzles/parallel_structure.yaml" #10
+  - "./multi-bodies/puzzles/puzzle1.yaml" #11
+  - "./multi-bodies/puzzles/puzzle2.yaml" #12
