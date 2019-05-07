@@ -660,7 +660,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyInertialOffsetRot = bodyNode["inertial offset"]["orientation"];
     YAML::Node bodyMeshPathHR = bodyNode["high resolution path"];
     YAML::Node bodyMeshPathLR = bodyNode["low resolution path"];
-    YAML::Node bodyNameSpace = bodyNode["namespace"];
+    YAML::Node bodyNamespace = bodyNode["namespace"];
     YAML::Node bodyMass = bodyNode["mass"];
     YAML::Node bodyController = bodyNode["controller"];
     YAML::Node bodyInertia = bodyNode["inertia"];
@@ -1010,11 +1010,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
     }
 
-    if (bodyNameSpace.IsDefined()){
-        m_namespace = bodyNameSpace.as<std::string>();
+    if (bodyNamespace.IsDefined()){
+        m_namespace = bodyNamespace.as<std::string>();
     }
     else{
-        m_namespace = mB->getNameSpace();
+        m_namespace = mB->getNamespace();
     }
 
     btTransform iOffTrans;
@@ -1697,7 +1697,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         m_namespace = softBodyNameSpace.as<std::string>();
     }
     else{
-        m_namespace = mB->getNameSpace();
+        m_namespace = mB->getNamespace();
     }
 
     if(softBodyMass.IsDefined()){
@@ -2005,14 +2005,14 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // First we should search in the local MultiBody space and if we don't find the body.
     // On then we find the world space
 
-    afBodyA = mB->getAFRigidBodyLocal(mB->getNameSpace() + m_parent_name, true);
-    afBodyB = mB->getAFRigidBodyLocal(mB->getNameSpace() + m_child_name, true);
+    afBodyA = mB->getAFRigidBodyLocal(mB->getNamespace() + m_parent_name, true);
+    afBodyB = mB->getAFRigidBodyLocal(mB->getNamespace() + m_child_name, true);
 
     if (!afBodyA){
-        afBodyA = m_afWorld->getAFRigidBody(mB->getNameSpace() + m_parent_name + name_remapping, true);
+        afBodyA = m_afWorld->getAFRigidBody(mB->getNamespace() + m_parent_name + name_remapping, true);
     }
     if (!afBodyB){
-        afBodyB = m_afWorld->getAFRigidBody(mB->getNameSpace() + m_child_name + name_remapping, true);
+        afBodyB = m_afWorld->getAFRigidBody(mB->getNamespace() + m_child_name + name_remapping, true);
     }
 
     bool _ignore_inter_collision = true;
@@ -2848,6 +2848,15 @@ bool afWorld::loadWorld(std::string a_world_config){
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
+    YAML::Node worldNamespace = worldNode["namespace"];
+
+    if (worldNamespace.IsDefined()){
+        m_world_namespace = worldNamespace.as<std::string>();
+    }
+    else{
+        // Use the default namespace
+        m_world_namespace = "/ambf/env/";
+    }
 
     if (worldEnclosureData.IsDefined()){
         m_encl_length = worldEnclosureData["length"].as<double>();
@@ -2863,10 +2872,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             std::string light_name = worldLightsData[idx].as<std::string>();
             afLightPtr lightPtr = new afLight(this);
             YAML::Node lightNode = worldNode[light_name];
-            if (lightPtr->loadLight(&lightNode, light_name)){
+            if (lightPtr->loadLight(&lightNode, light_name, this)){
                 addAFLight(lightPtr, light_name);
                 lightPtr->afObjectCreate(lightPtr->m_name,
-                                         lightPtr->m_namespace,
+                                         lightPtr->getNamespace(),
                                          lightPtr->getMinPublishFrequency(),
                                          lightPtr->getMaxPublishFrequency());
             }
@@ -2879,7 +2888,7 @@ bool afWorld::loadWorld(std::string a_world_config){
         if (lightPtr->createDefaultLight()){
             addAFLight(lightPtr, "default_light");
             lightPtr->afObjectCreate(lightPtr->m_name,
-                                     lightPtr->m_namespace,
+                                     lightPtr->getNamespace(),
                                      lightPtr->getMinPublishFrequency(),
                                      lightPtr->getMaxPublishFrequency());
         }
@@ -2890,10 +2899,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
             afCameraPtr cameraPtr = new afCamera(this);
             YAML::Node cameraNode = worldNode[camera_name];
-            if (cameraPtr->loadCamera(&cameraNode, camera_name)){
+            if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                 addAFCamera(cameraPtr, camera_name);
                 cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                          cameraPtr->m_namespace,
+                                          cameraPtr->getNamespace(),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
@@ -2907,7 +2916,7 @@ bool afWorld::loadWorld(std::string a_world_config){
         if (cameraPtr->createDefaultCamera()){
             addAFCamera(cameraPtr, "default_camera");
             cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                      cameraPtr->m_namespace,
+                                      cameraPtr->getNamespace(),
                                       cameraPtr->getMinPublishFrequency(),
                                       cameraPtr->getMaxPublishFrequency());
         }
@@ -3271,9 +3280,10 @@ bool afCamera::createDefaultCamera(){
 /// \param camera_name
 /// \return
 ///
-bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
+bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, afWorldPtr a_world){
     YAML::Node cameraNode = *a_camera_node;
     YAML::Node cameraName = cameraNode["name"];
+    YAML::Node cameraNamespace = cameraNode["namespace"];
     YAML::Node cameraLocationData = cameraNode["location"];
     YAML::Node cameraLookAtData = cameraNode["look at"];
     YAML::Node cameraUpData = cameraNode["up"];
@@ -3303,8 +3313,16 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         m_name = cameraName.as<std::string>();
     }
     else{
-        m_name = "camera_" + std::to_string(m_afWorld->getAFCameras().size() + 1);
+        m_name = "camera_" + std::to_string(a_world->getAFCameras().size() + 1);
     }
+
+    if (cameraNamespace.IsDefined()){
+        m_namespace = cameraNamespace.as<std::string>();
+    }
+    else{
+        m_namespace = a_world->getNamespace();
+    }
+
     if (cameraLocationData.IsDefined()){
         _location = toXYZ<cVector3d>(&cameraLocationData);
     }
@@ -3372,7 +3390,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
 
     if(_is_valid){
-        m_camera = new cCamera(m_afWorld->s_bulletWorld);
+        m_camera = new cCamera(a_world->s_bulletWorld);
         addChild(m_camera);
 
         bool _overrideParent = false;
@@ -3380,7 +3398,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         if (cameraParent.IsDefined()){
             _overrideParent = true;
             std::string parent_name = cameraParent.as<std::string>();
-            afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(parent_name);
+            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
             if (pBody){
                 pBody->addChild(this);
             }
@@ -3390,7 +3408,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
             }
         }
         if (! _overrideParent){
-            m_afWorld->s_bulletWorld->addChild(this);
+            a_world->s_bulletWorld->addChild(this);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -3543,10 +3561,11 @@ bool afLight::createDefaultLight(){
 /// \param light_node
 /// \return
 ///
-bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
+bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWorldPtr a_world){
     m_name = a_light_name;
     YAML::Node lightNode = *a_light_node;
     YAML::Node lightName = lightNode["name"];
+    YAML::Node lightNamespace = lightNode["namespace"];
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -3563,7 +3582,14 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
         m_name = lightName.as<std::string>();
     }
     else{
-        m_name = "light_" + std::to_string(m_afWorld->getAFLighs().size() + 1);
+        m_name = "light_" + std::to_string(a_world->getAFLighs().size() + 1);
+    }
+
+    if (lightNamespace.IsDefined()){
+        m_namespace = lightNamespace.as<std::string>();
+    }
+    else{
+        m_namespace = a_world->getNamespace();
     }
 
     if (lightLocationData.IsDefined()){
@@ -3603,16 +3629,16 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     }
 
     if (_is_valid){
-        m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
-        addChild(this);
+        m_spotLight = new cSpotLight(a_world->s_bulletWorld);
+        addChild(m_spotLight);
 
         bool _overrideDefaultParenting = false;
         if (lightParent.IsDefined()){
             _overrideDefaultParenting = true;
             std::string parent_name = lightParent.as<std::string>();
-            afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(parent_name);
+            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
             if (pBody){
-                pBody->addChild(m_spotLight);
+                pBody->addChild(this);
             }
             else{
                 std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
@@ -3620,7 +3646,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
             }
         }
         if (! _overrideDefaultParenting){
-            m_afWorld->s_bulletWorld->addChild(m_spotLight);
+            a_world->s_bulletWorld->addChild(this);
         }
 
         m_spotLight->setLocalPos(_location);
@@ -3876,7 +3902,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
             std::string remap_str = remapBodyName(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
             m_afWorld->addAFRigidBody(rBodyPtr, rBodyPtr->getNamespace() + rb_name + remap_str);
-            m_afRigidBodyMapLocal[rBodyPtr->getNamespace()+ rb_name] = rBodyPtr;
+            m_afRigidBodyMapLocal[rBodyPtr->getNamespace() + rb_name] = rBodyPtr;
             if (enable_comm){
                 std::string af_name = rBodyPtr->m_name;
                 if ((strcmp(af_name.c_str(), "world") == 0) ||

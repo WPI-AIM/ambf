@@ -298,7 +298,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
         createAfCursor(a_iD->getAFWorld(),
                        _pDevName,
-                       simDevice->getNameSpace(),
+                       simDevice->getNamespace(),
                        simDevice->m_rootLink->getMinPublishFrequency(),
                        simDevice->m_rootLink->getMaxPublishFrequency());
 
@@ -308,7 +308,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
             simDevice->m_rootLink->afObjectCreate(_sDevName,
-                                                  simDevice->getNameSpace(),
+                                                  simDevice->getNamespace(),
                                                   simDevice->m_rootLink->getMinPublishFrequency(),
                                                   simDevice->m_rootLink->getMaxPublishFrequency());
         }
