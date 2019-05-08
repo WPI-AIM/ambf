@@ -17,6 +17,8 @@ printf "\n AMBF Code Finished Building!\n"
 
 
 printf "\n To run the code, make sure an external roscore is running.\n"
+printf " To run the AMBF Controller, change the world settings in the \n"
+printf " launch.yaml file to enable raven_world.yaml.\n"
 printf " Press any key to continue (ctrl-C to quit)"
 read -n 1 -s -r -p "..."
 

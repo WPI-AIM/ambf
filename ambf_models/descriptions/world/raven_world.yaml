@@ -1,0 +1,79 @@
+enclosure size: {length: 10.0, width: 10.0, height: 3.0}
+lights: [light1, light2]
+cameras: [camera1, camera2, camera3]
+
+light1:
+  location: {x: 0.0, y: 0.5, z: 2.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+
+light2:
+  location: {x: 0.5, y: -1, z: 2.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 5
+  cutoff angle: 0.7
+
+light3:
+  location: {x: 0.5, y: 0.0, z: -0.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+  parent: /ambf/env/BODY LightCone
+
+camera1:
+  name: cam_1
+  location: {x: -2.5, y: 1.0, z: 1.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+
+camera2:
+  name: cam_2
+  location: {x: -3.0, y: 0.0, z: 1.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+
+camera3:
+  name: cam_3
+  location: {x: -2.5, y: -1.0, z: 1.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+
+
+# See function: bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name)
+# for all the possible settings for cameras.
+# 
+# camera1:
+#   name: /ambf/env/openhmd
+#   location: {x: 3.0, y: 0.0, z: 2.0}
+#   look at: {x: 0.0, y: 0.0, z: -1.0}
+#   up: {x: 0.0, y: 0.0, z: 1.0}
+#   clipping plane: {near: 0.01, far: 10.0}
+#   field view angle: 0.8
+#   stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
+#   monitor: 3
+#   controlling devices: [Falcon]
+#   # parent: /ambf/env/BODY Occulus
+#   # orthographic view width: 6
+#   # device: Razer Hydra
+
+# camera2:
+#   location: {x: 3.0, y: 0.0, z: 2.0}
+#   look at: {x: 0.0, y: 0.0, z: -0.5}
+#   up: {x: 0.0, y: 0.0, z: 1.0}
+#   clipping plane: {near: 0.01, far: 10.0}
+#   field view angle: 0.8
+#   monitor: 2
+#   controlling devices: [PHANTOM Omni]
+#   # parent: /ambf/env/BODY Occulus
+#   # orthographic view width: 6
+#   # device: Razer Hydra

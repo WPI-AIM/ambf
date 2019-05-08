@@ -42,10 +42,6 @@ on what OS you're using follow the commands below:
 cd ~/ambf/bin/<os>
 ./ambf_simulator
 ```
-```
-cd ~/ambf/bin/<os>
-./ambf_controller
-```
 
 ### Note:
 The AMBF Simulator uses the yaml file located in `ambf/ambf_models/descriptions/launch.yaml` to
@@ -139,3 +135,5 @@ if num_joints > 1:
 _client.clean_up()
 ```
 
+### The AMBF Controller Client
+See [here](/ambf_controller/README.md) for more information.
