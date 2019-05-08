@@ -2,9 +2,13 @@
 ### Author: Adnan Munawar
 #### Email: amunawar@wpi.edu
 
+### Contributors:
+1. **Melody Su (Email: --)**
 
-# Wiki:
-Please checkout the Wiki for examples on how to interact with bodies and additional deatails of subcomponents
+
+## [Wiki](https://github.com/WPI-AIM/ambf/wiki):
+Please checkout the Wiki for indepth details about AMBF, it's components, examples and concepts.
+
 
 ## Description:
 This multi-body framework offers real-time dynamic simulation of multi-bodies (robots, free
