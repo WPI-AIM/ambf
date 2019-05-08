@@ -1,6 +1,6 @@
 # Asynchronous Multi-Body Framework (AMBF)
-### Author: Adnan Munawar
-#### Email: amunawar@wpi.edu
+### Author:
+**Adnan Munawar (amunawar@wpi.edu)**
 
 ### Contributors:
 1. **Melody Su (Email: --)**
