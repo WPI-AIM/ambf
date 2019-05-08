@@ -1,8 +1,8 @@
 # Asynchronous Multi-Body Framework (AMBF)
-### Author: Adnan Munawar (amunawar@wpi.edu)
+### Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
 #### Contributors:
-1. Melody Su (Email: --)
+1. [Melody Su](https://github.com/melodysu83) (Email: --)
 
 
 ## [Wiki](https://github.com/WPI-AIM/ambf/wiki):
@@ -46,7 +46,7 @@ cd ~/ambf/bin/<os>
 ./ambf_simulator
 ```
 
-#### Launching Spefic Multibodies:
+#### Launching Specific Multibodies:
 The -l command line argument can be used to launch a specific multibody at launch. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the -l command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the -l flag with the integer index of the multi-body as follows:
 
 ```
