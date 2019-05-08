@@ -135,3 +135,5 @@ if num_joints > 1:
 _client.clean_up()
 ```
 
+### The AMBF Controller Client
+See [here](/ambf_controller/README.md) for more information.

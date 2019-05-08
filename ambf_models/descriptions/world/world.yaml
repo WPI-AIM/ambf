@@ -55,4 +55,4 @@ camera2:
   controlling devices: [PHANTOM Omni]
   # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
-  # device: Razer Hydra
+# device: Razer Hydra

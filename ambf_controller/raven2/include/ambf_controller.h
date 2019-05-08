@@ -1,4 +1,4 @@
-//==============================================================================
+//===========================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2019, AMBF
@@ -35,24 +35,56 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author:    Melody Su
+    \date:      April, 2019
     \version:   $
 */
+//===========================================================================
 
-#ifndef AMBFH
-#define AMBFH
+#ifndef AMBFCONTROLLER_H
+#define AMBFCONTROLLER_H
 
-//------------------------------------------------------------------------------
-#ifndef BT_USE_DOUBLE_PRECISION
-#define BT_USE_DOUBLE_PRECISION
+#include "ambf_motion_planner.h"
+
+class AMBFController{
+
+private:
+
+    mutex _mutex;
+    bool print_menu;
+    bool debug_mode;
+    ros::NodeHandle nh_; 
+
+    vector<ros::Publisher>     raven_pubs;      // raven command publisher
+    vector<ros::Subscriber>    raven_subs;      // raven state subscriber
+    vector<AMBFRavenPlanner>   raven_planner;   // raven motion planner
+
+    vector<ros::Publisher>     camera_pubs;     // camera command publisher
+    vector<ros::Subscriber>    camera_subs;     // camera state subscriber
+    vector<AMBFCameraPlanner>  camera_planner;  // camera motion planner
+
+public:
+
+    AMBFController(int, char**);
+
+    bool init_sys();
+    bool init_ros(int, char**);
+    void sys_run(); // the system process function
+    void csl_run(); // the console process function
+
+    bool raven_first_pb();
+    bool raven_command_pb();
+    bool camera_command_pb();
+    void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
+    void camera_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
+
+    bool motion_planning();
+    bool reset_command();
+
+    int get_key();
+    bool show_menu();
+
+    ~AMBFController();
+};
+
 #endif
-
-#include "afSoftMultiMesh.h"
-#include "afInputDevices.h"
-#include "afFramework.h"
-
-//---------------------------------------------------------------------------
-#endif
-//---------------------------------------------------------------------------
