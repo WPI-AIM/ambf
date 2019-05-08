@@ -40,12 +40,21 @@ You can also permanently add the install location in your .bashrc with the follo
 
 ### Running the Simulator:
 Having succesfully completed the steps above running is Simulator is easy. Depending
-on what OS you're using follow the commands below:
+on what OS you're using simply follow the commands below:
 
 ```
 cd ~/ambf/bin/<os>
 ./ambf_simulator
 ```
+
+#### Launching Spefic Multibodies:
+The -l command line argument can be used to launch a specific multibody at launch. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the -l command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the -l flag with the integer index of the multi-body as follows:
+
+```
+cd ~/ambf/bin/<os>
+./ambf_simulator -l 4
+```
+This command will launch the 4th body defined in the `launch.yaml` file. To launch multiple multi-bodies, you can use a comma separated list (without spaces in between) of integers indices e.g.`./ambf_simulator -l 1,6,10`. This in turn would load the multi-bodies defined at 1, 6 and the 10th index in the `launch.yaml` file. 
 
 ### Note:
 The AMBF Simulator uses the yaml file located in `ambf/ambf_models/descriptions/launch.yaml` to
