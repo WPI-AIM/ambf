@@ -158,7 +158,7 @@ public:
     // Load the base config file
     bool loadBaseConfig(std::string file);
     // Get the nuber of multibody config files defined in launch config file
-    inline int numMultiBodyConfig(){return s_multiBodyConfigFileNames.size();}
+    inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
 
 private:
 
@@ -774,7 +774,7 @@ public:
     bool createDefaultCamera();
 
     // Load camera from YAML Node data
-    bool loadCamera(YAML::Node* camera_node, std::string camera_name);
+    bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -915,7 +915,7 @@ public:
     afLight(afWorld* a_afWorld);
 
     // Load light from YAML Node data
-    bool loadLight(YAML::Node* light_node, std::string light_name);
+    bool loadLight(YAML::Node* light_node, std::string light_name, afWorldPtr a_world);
 
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
@@ -964,6 +964,7 @@ public:
     afSoftBodyPtr getAFSoftBody(std::string a_name);
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
+    std::string getNamespace(){return m_world_namespace;}
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
@@ -995,6 +996,7 @@ protected:
 protected:
 
     afWorld(){}
+    std::string m_world_namespace;
 
 private:
 
@@ -1029,7 +1031,7 @@ public:
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
     inline std::string getMultiBodyPath(){return m_multibody_path;}
-    inline std::string getNameSpace(){return m_mb_namespace;}
+    inline std::string getNamespace(){return m_mb_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision

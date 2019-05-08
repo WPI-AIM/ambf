@@ -54,12 +54,13 @@ const float           AMBFDef::safe_pos_incr          = 0.5 / AMBFDef::loop_rate
 // The loop rate of the AMBF simulator:     2000 Hz
 // The loop rate of the AMBF python client: 1000 Hz
 // The loop rate of the Raven source code:  1000 Hz
-                                                     
+
+const string          AMBFDef::env_append             = "/ambf/env/";                                              
 const string          AMBFDef::sub_append             = "/State";                           // place holder for namescpace strings
 const string          AMBFDef::pub_append             = "/Command";  
-const string          AMBFDef::raven_append           = "/ambf/env/raven_2";
+const string          AMBFDef::raven_append           = "raven_2";
 const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};   // left arm 0 & right arm 1
-const vector<string>  AMBFDef::cam_append             = {"cam_1", "cam_2", "cam_3"};                 // each camera name
+const vector<string>  AMBFDef::cam_append             = {"cam_1", "cam_2", "cam_3"};        // each camera name
 const vector<string>  AMBFDef::axes_name              = {"X", "Y", "Z"};
 const vector<string>  AMBFDef::sign_name              = {"-", "+"};
 

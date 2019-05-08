@@ -15,9 +15,9 @@ it is automatically built when compiling the AMBF framework. See instructions
 ### Setting up for Raven2 Demo:
 Currently, a Raven2 test module is developed in the AMBF Controller. To launch 
 it correctly, change the settings in [launch.yaml](../ambf_models/descriptions/launch.yaml) by:
-(1) Uncomment (line 3):          world config: ./world/raven_world.yaml
-(2) Comment out (line 2):        world config: ./world/world.yaml
-(3) Make sure Raven2 is enabled: ./multi-bodies/robots/blender-raven2.yaml
+1. Uncomment (line 3):          world config: ./world/raven_world.yaml
+2. Comment out (line 2):        world config: ./world/world.yaml
+3. Make sure Raven2 is enabled: ./multi-bodies/robots/blender-raven2.yaml
 
 ### Running the AMBF Controller:
 Having succesfully completed the steps to build and run the Simulator, one can

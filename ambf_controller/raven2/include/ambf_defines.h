@@ -64,6 +64,7 @@ public:
   static const string          sub_append;          // place holder for namescpace strings
   static const string          pub_append;  
   static const string          raven_append;
+  static const string          env_append;
   static const vector<string>  arm_append;          // left arm 0 & right arm 1
   static const vector<string>  cam_append;          // each camera name
   static const vector<string>  axes_name;

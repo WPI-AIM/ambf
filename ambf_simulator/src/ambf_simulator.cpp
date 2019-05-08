@@ -98,6 +98,7 @@ struct CommandLineOptions{
 //////////////////////////////////////////////////////////////////////////
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
+    std::string multiBodiesToLoad; // A string list of multibody indexes to load
 };
 
 // Global struct for command line options
@@ -252,6 +253,7 @@ int main(int argc, char* argv[])
             ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
             ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
+            ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. -l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
 /////////////////////////////////////////////////////////////////////////////////////////
 //        Only for debugging, shall be deprecated later in later Revisions
             ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
@@ -270,6 +272,12 @@ int main(int argc, char* argv[])
     if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
     if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
     if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
+    if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
+    else{
+        g_cmdOpts.multiBodiesToLoad = "0";
+    }
+
+    // Process the loadMultiBodies string
 
     cout << endl;
     cout << "____________________________________________________________" << endl << endl;
@@ -337,7 +345,26 @@ int main(int argc, char* argv[])
     if (g_afWorld->loadBaseConfig("../../ambf_models/descriptions/launch.yaml")){
         // The world loads the lights and cameras + windows
         g_afMultiBody = new afMultiBody(g_afWorld);
-        g_afMultiBody->loadAllMultiBodies();
+        // Process the loadMultiBody string
+        if (g_cmdOpts.multiBodiesToLoad.compare("a") == 0){
+            g_afMultiBody->loadAllMultiBodies();
+        }
+        else{
+            std::vector<int> mbIndexes;
+            std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
+            loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
+            std::stringstream ss(loadMBs);
+            while(ss.good() )
+            {
+                string mbIdx;
+                getline( ss, mbIdx, ',' );
+                mbIndexes.push_back(std::stoi(mbIdx));
+            }
+            for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
+                g_afMultiBody->loadMultiBody(mbIndexes[idx], true);
+            }
+        }
+
         g_afWorld->loadWorld();
         g_cameras = g_afWorld->getAFCameras();
 
