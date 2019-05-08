@@ -3206,7 +3206,7 @@ bool afCamera::createDefaultCamera(){
     m_name = "default_camera";
 
     // position and orient the camera
-    setView(cVector3d(-3.0, 0.0, 1.0),  // camera position (eye)
+    setView(cVector3d(4.0, 0.0, 2.0),  // camera position (eye)
         cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
         cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
 

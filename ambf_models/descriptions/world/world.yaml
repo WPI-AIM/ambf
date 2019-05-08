@@ -1,6 +1,6 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
 lights: [light1, light2]
-# cameras: [camera1, camera2]
+cameras: [camera1]
 namespace: /ambf/env/
 
 light1:
@@ -30,6 +30,15 @@ light3:
   parent: /ambf/env/BODY LightCone
 
 camera1:
+  name: default_camera
+  location: {x: 4.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.7
+  monitor: 1
+
+camera2:
   namespace: /ambf/env/cameras/
   name: openhmd
   location: {x: 3.0, y: 0.0, z: 2.0}
@@ -44,7 +53,7 @@ camera1:
   # orthographic view width: 6
   # device: Razer Hydra
 
-camera2:
+camera3:
   name: normal_camera
   location: {x: 3.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
