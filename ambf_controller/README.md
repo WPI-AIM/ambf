@@ -1,16 +1,15 @@
 
 ## Description:
 The AMBF Controller is a C++ client that controls the simulated objects in the
-AMBF Simulator. It is an alternative to the python client described [here](../README.md).
+AMBF Simulator. It is an alternative to the python client described [here](https://github.com/WPI-AIM/ambf/wiki/The-Python-Client).
 The Raven2 control is imeplemented and well tested in the AMBF Controller. Robot 
 kinematics is implemented in the module so both cartesian and joint space commands 
 for Raven2 is supported.
 
 ## Usage:
 ### Building:
-The AMBF Controller module supports Linux OS only. If a Linux machine is used, 
-it is automatically built when compiling the AMBF framework. See instructions 
-[here](../README.md).
+The AMBF Controller module currently supports only Linux and is built automatically with the AMBF framework. See instructions 
+[here](https://github.com/WPI-AIM/ambf/wiki/Installing-AMBF).
 
 ### Setting up for Raven2 Demo:
 Currently, a Raven2 test module is developed in the AMBF Controller. To launch 
@@ -33,8 +32,8 @@ cd ~/ambf/bin/<os>
 ./ambf_controller
 ```
 
-Or there is an automatic compile and run script using the following command on 
-a terminal:
+Optionally, there is a convenient bash script to automate the two steps above, the script can 
+be execute as follows:
 
 ```
 ./CompileAndRunScript.sh
