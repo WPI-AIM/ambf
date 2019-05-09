@@ -26,7 +26,7 @@ read -n 1 -s -r -p "..."
 
 printf "\n Run the AMBF Simulator.  (On a new terminal)"
 cd ../bin/lin-x86_64/
-gnome-terminal -e "./ambf_simulator"
+gnome-terminal -e "./ambf_simulator -l 3"
 
 
 
