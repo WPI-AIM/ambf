@@ -253,8 +253,8 @@ void afSoftMultiMesh::updatePositionFromDynamics()
 ///
 void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize){
     int s = blockSize*blockSize*blockSize;
-    memset(vtxChkBlock, false, s*sizeof(bool));
-    memset(vtxIdxBlock, -1, s*sizeof(int));
+    memset(vtxChkBlock, false, s*sizeof(bool)); // Initialize all the vtx check blocks to 0
+    memset(vtxIdxBlock, -1, s*sizeof(int)); // Initialize all the vtx index blocks to -1
 }
 
 ///
@@ -278,26 +278,32 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();
     int numVertices = mesh->m_vertices->getNumElements();
+    int vtRatio = numVertices / numTriangles;
 
     if (print_debug_info){
         printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
     }
 
+    if (print_debug_info){
+        printf("# Vertex Triangle Ratio %d, \n", vtRatio);
+    }
+
     // The max number of vertices to check per block
-    int blockSize = 60;
+    int vtxBlockSize = 60;
     // Number of default blocks
     int numBlocks = 1;
     //Define bound for lowest value of vertices
     cVector3d vMin(9999,9999,9999);
     //Define bound for max value of vertices
     cVector3d vMax(-9999,-9999,-9999);
+    // Length of the bounds (max - min) for each x,y,z
     cVector3d vBounds;
 
-    // Update the min and max value x,y,z value of vertices to get bounds
+    // Update the min and max value (x,y,z) of vertices to get bounds
     for (int x = 0 ; x < numVertices ; x++){
         cVector3d v = mesh->m_vertices->getLocalPos(x);
-        updateMins(vMin, v);
-        updateMaxs(vMax, v);
+        updateMins(vMin, v); // Iterative search to get the min distance
+        updateMaxs(vMax, v); // Iterative search to get the max distance
     }
     // Update magnitude of bound
     vBounds = vMax - vMin;
@@ -314,8 +320,8 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 
     // If number of vertices is greater the vertices per block, increase no of blocks
     // This is to prevent memory exhaustion
-    if (numVertices > blockSize){
-        numBlocks = std::ceil((float)numVertices / (float)blockSize);
+    if (numVertices > vtxBlockSize){
+        numBlocks = std::ceil((float)numVertices / (float)vtxBlockSize);
     }
 
     if (print_debug_info){
@@ -331,65 +337,73 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     int vtxIdxTriPair [numVertices][3];
     memset(vtxIdxTriPair, -1, numVertices*3*sizeof(int));
 
-    // This forms a 3D block with all value init to false
-    // If we visit a specific 3D idx, its set to true to know that we have been there
-    bool vtxChkBlock[blockSize][blockSize][blockSize];
+    // This forms a 3D block with all value initiazlied to false
+    // If we visit a specific 3D idx, it's set to true to know that we have been there
+    bool vtxChkBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
     // This forms a 3D block with all values init to -1
     // What ever 3D idx we visited we set the corresponding corrected idx value in this 3D block
-    int vtxIdxBlock[blockSize][blockSize][blockSize];
+    int vtxIdxBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
     // To reduce computational cost, if we have already checked a vertex, we can mark it
     bool vtxAlreadyChkd[numVertices];
+    // Initialize all the vertex check index to false
     memset(vtxAlreadyChkd, false, numVertices*sizeof(bool));
-    int xblockLowerBound; int xblockUpperBound;
-    int yblockLowerBound; int yblockUpperBound;
-    int zblockLowerBound; int zblockUpperBound;
+    // Upper a lower bound for block in x direction
+    int xblockLowerBound;
+    int xblockUpperBound;
+    // Upper a lower bound for block in y direction
+    int yblockLowerBound;
+    int yblockUpperBound;
+    // Upper a lower bound for block in z direction
+    int zblockLowerBound;
+    int zblockUpperBound;
+
     int vxKey;
     int vyKey;
     int vzKey;
     cVector3d vPos;
-    double xCoeff;
-    double yCoeff;
-    double zCoeff;
+    double xRes; // X Resolution
+    double yRes; // Y Resolution
+    double zRes; // X Resolution
     if(vBounds.x() == 0){
-        xCoeff = 0;
+        xRes = 0;
     }
     else{
 
-        xCoeff = (double) (numVertices - 1) / vBounds.x();
+        xRes = (double) (numVertices - 1) / vBounds.x();
     }
     if(vBounds.y() == 0){
-        yCoeff = 0;
+        yRes = 0;
     }
     else{
 
-        yCoeff = (double) (numVertices - 1) / vBounds.y();
+        yRes = (double) (numVertices - 1) / vBounds.y();
     }
     if(vBounds.z() == 0){
-        zCoeff = 0;
+        zRes = 0;
     }
     else{
 
-        zCoeff = (double) (numVertices - 1) / vBounds.z();
+        zRes = (double) (numVertices - 1) / vBounds.z();
     }
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
-        xblockLowerBound = xblockNum * blockSize;
-        xblockUpperBound = xblockLowerBound + blockSize;
+        xblockLowerBound = xblockNum * vtxBlockSize;
+        xblockUpperBound = xblockLowerBound + vtxBlockSize;
         for (int yblockNum = 0 ; yblockNum < numBlocks ; yblockNum ++){
-            yblockLowerBound = yblockNum * blockSize;
-            yblockUpperBound = yblockLowerBound + blockSize;
+            yblockLowerBound = yblockNum * vtxBlockSize;
+            yblockUpperBound = yblockLowerBound + vtxBlockSize;
             for (int zblockNum = 0 ; zblockNum < numBlocks ; zblockNum ++){
-                zblockLowerBound = zblockNum * blockSize;
-                zblockUpperBound = zblockLowerBound + blockSize;
+                zblockLowerBound = zblockNum * vtxBlockSize;
+                zblockUpperBound = zblockLowerBound + vtxBlockSize;
                 if (print_debug_info) {printf("Block Num [%d, %d, %d] \n", xblockNum, yblockNum, zblockNum);}
                 // Clear the 3D idx and chk arrays to be reused for the new block
-                clearArrays(&vtxChkBlock[0][0][0], &vtxIdxBlock[0][0][0], blockSize);
+                clearArrays(&vtxChkBlock[0][0][0], &vtxIdxBlock[0][0][0], vtxBlockSize);
                 for(int idx = 0; idx < numVertices ; idx++){
                     if (!vtxAlreadyChkd[idx]){
                         vPos = vtxArrCopy->getLocalPos(idx);
                         // Generate keys to parse the 3D idx and chk block
-                        vxKey = xCoeff * (vPos.x() - vMin.x());
-                        vyKey = yCoeff * (vPos.y() - vMin.y());
-                        vzKey = zCoeff * (vPos.z() - vMin.z());
+                        vxKey = xRes * (vPos.x() - vMin.x());
+                        vyKey = yRes * (vPos.y() - vMin.y());
+                        vzKey = zRes * (vPos.z() - vMin.z());
                         // Check if the generated keys are in the bounds of the current block
                         if (vxKey >= xblockLowerBound && vyKey >= yblockLowerBound && vzKey >= zblockLowerBound){
                             if (vxKey <= xblockUpperBound && vyKey <= yblockUpperBound && vzKey <= zblockUpperBound){
@@ -397,21 +411,20 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
                                 vxKey -= xblockLowerBound; vyKey -= yblockLowerBound; vzKey -= zblockLowerBound;
                                 // Mark that we already checked this vertex, so we don't have to check it again
                                 vtxAlreadyChkd[idx] = true;
+                                // Set the vertexIdx Pair value
+                                vtxIdxTriPair[idx][0] = idx;
                                 // Check if the key is already set in the chk block
                                 if (vtxChkBlock[vxKey][vyKey][vzKey] == false){
                                     // Unique vertex, so mark it as such in the corresponding blocks
                                     vtxChkBlock[vxKey][vyKey][vzKey] = true;
                                     // Set the idx block to the original idx
                                     vtxIdxBlock[vxKey][vyKey][vzKey] = idx;
-                                    // Set the vertexIdx Pair value
-                                    vtxIdxTriPair[idx][0] = idx;
                                     vtxIdxTriPair[idx][1] = idx;
                                     uniqueVtxCount ++;
                                 }
                                 else{
                                     // This is not a unique vertex, so get the original idx
                                     // and set it in the corresponding blocks
-                                    vtxIdxTriPair[idx][0] = idx;
                                     vtxIdxTriPair[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
                                     duplicateVtxCount++;
                                 }
@@ -427,43 +440,54 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     outputTriangles->resize(numTriangles*3);
     m_vertexTree.resize(uniqueVtxCount);
 
-    // This loop uses a logic that appends the index of the new resized array containing
+    // In this loop we append the index of the newly resized array containing
     // the unique vertices to the index of the original array of duplicated vertices.
-    int vtxCounted = -1;
-    for (int i = 0 ; i < numVertices ; i++){
-        if (vtxIdxTriPair[i][1] == vtxIdxTriPair[i][0] && vtxIdxTriPair[i][2] == -1){
-            vPos = mesh->m_vertices->getLocalPos(i);
-            vtxCounted++;
+    // This is an example of the vtxIdxTriPair might look like for usual run
+    // After above steps
+    // vtxIdxTriPair[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
+    // vtxIdxTriPair[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
+    // vtxIdxTriPair[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // And we want:
+    // vtxIdxTriPair[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
+    // vtxIdxTriPair[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
+    // vtxIdxTriPair[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
+    int vtxCounted = 0;
+    for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
+        if (vtxIdxTriPair[aIdx][1] == vtxIdxTriPair[aIdx][0] && vtxIdxTriPair[aIdx][2] == -1){ // A unique vertex
+            vPos = mesh->m_vertices->getLocalPos(aIdx);
             (*outputVertices)[3*vtxCounted + 0] = vPos.x();
             (*outputVertices)[3*vtxCounted + 1] = vPos.y();
             (*outputVertices)[3*vtxCounted + 2] = vPos.z();
 
-            vtxIdxTriPair[i][2] = vtxCounted;
-            m_vertexTree[vtxCounted].vertexIdx.push_back(i);
+            vtxIdxTriPair[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
+            vtxCounted++; // Increase the queue idx by 1
         }
-        else if(vtxIdxTriPair[i][1] < vtxIdxTriPair[i][0]){
-            int bi = vtxIdxTriPair[i][1];
-            int ci = vtxIdxTriPair[bi][2];
-            if (vtxIdxTriPair[bi][1] != vtxIdxTriPair[bi][0] || ci == -1){
-                throw 'Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1';
+        else if(vtxIdxTriPair[aIdx][1] < vtxIdxTriPair[aIdx][0]){ // Not a unique vertex
+            int bIdx = vtxIdxTriPair[aIdx][1];
+            int cIdx = vtxIdxTriPair[bIdx][2];
+            if (vtxIdxTriPair[bIdx][1] != vtxIdxTriPair[bIdx][0] || cIdx == -1){
+                // This shouldn't happend. This means that we haven't assigned the third row
+                // and row 1 is greater than row 2
+                throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1";
             }
-            vtxIdxTriPair[i][2] = ci;
-            m_vertexTree[ci].vertexIdx.push_back(i);
+            vtxIdxTriPair[aIdx][2] = cIdx;
+            m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
         }
-        else if(vtxIdxTriPair[i][1] > vtxIdxTriPair[i][0]){
-            int bi = vtxIdxTriPair[i][1];
-            if (vtxIdxTriPair[bi][1] != vtxIdxTriPair[bi][0]){
-                throw 'Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d';
+        else if(vtxIdxTriPair[aIdx][1] > vtxIdxTriPair[aIdx][0]){
+            int bIdx = vtxIdxTriPair[aIdx][1];
+            if (vtxIdxTriPair[bIdx][1] != vtxIdxTriPair[bIdx][0]){
+                throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
             }
-            if (vtxIdxTriPair[bi][2] == -1){
-                vPos = mesh->m_vertices->getLocalPos(bi);
+            if (vtxIdxTriPair[bIdx][2] == -1){
+                vPos = mesh->m_vertices->getLocalPos(bIdx);
                 vtxCounted++;
                 (*outputVertices)[3*vtxCounted + 0] = vPos.x();
                 (*outputVertices)[3*vtxCounted + 1] = vPos.y();
                 (*outputVertices)[3*vtxCounted + 2] = vPos.z();
-                vtxIdxTriPair[bi][2] = vtxCounted;
+                vtxIdxTriPair[bIdx][2] = vtxCounted;
             }
-            vtxIdxTriPair[i][2] = vtxIdxTriPair[bi][2];
+            vtxIdxTriPair[aIdx][2] = vtxIdxTriPair[bIdx][2];
         }
     }
 
