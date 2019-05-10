@@ -278,7 +278,7 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();
     int numVertices = mesh->m_vertices->getNumElements();
-    int vtRatio = numVertices / numTriangles;
+    int vtRatio = numVertices / numTriangles; // Vertex Triangle Ratio
 
     if (print_debug_info){
         printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
@@ -286,6 +286,26 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 
     if (print_debug_info){
         printf("# Vertex Triangle Ratio %d, \n", vtRatio);
+    }
+
+    // If the vertex to triangle ratio is 2, then most probably we have loaded and .obj mesh.
+    // The obj mesh by default treat
+    if (vtRatio == 2){
+        cVertexArrayPtr newVtxArray = cVertexArray::create(true, true, true, true, true, false);
+        newVtxArray->newVertices(numTriangles*3);
+        for(int vIdx = 0 ; vIdx < numTriangles*3 ; vIdx++){
+            newVtxArray->setLocalPos(vIdx, mesh->m_vertices->getLocalPos(mesh->m_triangles->m_indices[vIdx]));
+        }
+        mesh->m_vertices.reset();
+        mesh->m_vertices = newVtxArray;
+        mesh->m_triangles->m_vertices.reset();
+        mesh->m_triangles->m_vertices = newVtxArray;
+        for(int tIdx = 0 ; tIdx < numTriangles ; tIdx++){
+            mesh->m_triangles->setVertices(tIdx, 3*tIdx + 0, 3*tIdx + 1, 3*tIdx + 2);
+        }
+        mesh->computeAllEdges();
+        mesh->computeAllNormals();
+        numVertices = mesh->m_vertices->getNumElements();
     }
 
     // The max number of vertices to check per block
