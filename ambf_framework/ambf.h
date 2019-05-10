@@ -45,12 +45,13 @@
 #define AMBFH
 
 //------------------------------------------------------------------------------
-
+#ifndef BT_USE_DOUBLE_PRECISION
 #define BT_USE_DOUBLE_PRECISION
+#endif
 
 #include "afSoftMultiMesh.h"
-#include "afGripper.h"
-#include "afMultiBody.h"
+#include "afInputDevices.h"
+#include "afFramework.h"
 
 //---------------------------------------------------------------------------
 #endif

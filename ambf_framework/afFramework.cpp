@@ -1,4 +1,3 @@
-
 //==============================================================================
 /*
     Software License Agreement (BSD License)
@@ -46,7 +45,7 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
-#include "afMultiBody.h"
+#include "afFramework.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -62,12 +61,12 @@ using namespace chai3d;
 /// Declare Static Variables
 afRigidBodySurfaceProperties afRigidBody::m_surfaceProps;
 
-boost::filesystem::path afConfigHandler::s_boostBaseDir;
-std::string afConfigHandler::s_color_config;
-std::vector<std::string> afConfigHandler::s_multiBody_configs;
-std::string afConfigHandler::s_world_config;
+boost::filesystem::path afConfigHandler::s_basePath;
+std::string afConfigHandler::s_colorConfigFileName;
+std::vector<std::string> afConfigHandler::s_multiBodyConfigFileNames;
+std::string afConfigHandler::s_worldConfigFileName;
+std::string afConfigHandler::s_inputDevicesConfigFileName;
 YAML::Node afConfigHandler::s_colorsNode;
-std::map<std::string, std::string> afConfigHandler::s_gripperConfigFiles;
 
 cBulletWorld* afWorld::s_bulletWorld;
 double afWorld::m_encl_length;
@@ -86,45 +85,69 @@ int afCamera::s_windowIdx = 0;
 
 /// Utility Functions
 
+template <>
 ///
-/// \brief assignXYZ
-/// \param v
-///
-void assignXYZ(YAML::Node* node, btVector3 *v){
-    v->setX((*node)["x"].as<double>());
-    v->setY((*node)["y"].as<double>());
-    v->setZ((*node)["z"].as<double>());
-}
-
-///
-/// \brief assignXYZ
+/// \brief toXYZ<btVector3>
 /// \param node
-/// \param v
+/// \return
 ///
-void assignXYZ(YAML::Node* node, cVector3d *v){
-    v->x((*node)["x"].as<double>());
-    v->y((*node)["y"].as<double>());
-    v->z((*node)["z"].as<double>());
+btVector3 toXYZ<btVector3>(YAML::Node* node){
+    btVector3 v;
+    v.setX((*node)["x"].as<double>());
+    v.setY((*node)["y"].as<double>());
+    v.setZ((*node)["z"].as<double>());
+    return v;
 }
 
-
+template <>
 ///
-/// \brief assignRPY
-/// \param v
+/// \brief toXYZ<cVector3d>
 /// \param node
+/// \return
 ///
-void assignRPY(YAML::Node* node, btVector3 *v){
-    v->setX((*node)["r"].as<double>());
-    v->setY((*node)["p"].as<double>());
-    v->setZ((*node)["y"].as<double>());
+cVector3d toXYZ<cVector3d>(YAML::Node* node){
+    cVector3d v;
+    v.x((*node)["x"].as<double>());
+    v.y((*node)["y"].as<double>());
+    v.z((*node)["z"].as<double>());
+    return v;
 }
+
+template<>
+///
+/// \brief toRPY<btVector3>
+/// \param node
+/// \return
+///
+btVector3 toRPY<btVector3>(YAML::Node* node){
+    btVector3 v;
+    v.setX((*node)["r"].as<double>());
+    v.setY((*node)["p"].as<double>());
+    v.setZ((*node)["y"].as<double>());
+    return v;
+}
+
+template<>
+///
+/// \brief toRPY<cVector3>
+/// \param node
+/// \return
+///
+cVector3d toRPY<cVector3d>(YAML::Node *node){
+    cVector3d v;
+    v.x((*node)["r"].as<double>());
+    v.y((*node)["p"].as<double>());
+    v.z((*node)["y"].as<double>());
+    return v;
+}
+
 
 ///
 /// \brief cVec2btVec
 /// \param cVec
 /// \return
 ///
-btVector3 cVec2btVec(const cVector3d &cVec){
+btVector3 toBTvec(const cVector3d &cVec){
     btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
     return bVec;
 }
@@ -134,7 +157,7 @@ btVector3 cVec2btVec(const cVector3d &cVec){
 /// \param bVec
 /// \return
 ///
-cVector3d btVec2cVec(const btVector3 &bVec){
+cVector3d toCvec(const btVector3 &bVec){
     cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
     return cVec;
 }
@@ -167,31 +190,43 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     //Declare all the YAML Params that we want to look for
     YAML::Node cfgWorldFiles = configNode["world config"];
     YAML::Node cfgColorFile = configNode["color config"];
+    YAML::Node cfgInputDevicesFile = configNode["input devices config"];
     YAML::Node cfgMultiBodyFiles = configNode["multibody configs"];
-    YAML::Node cfgGripperConfigs = configNode["gripper configs"];
 
 
-    s_boostBaseDir = boost::filesystem::path(a_config_file).parent_path();
+    s_basePath = boost::filesystem::path(a_config_file).parent_path();
 
     if(cfgWorldFiles.IsDefined()){
         boost::filesystem::path world_cfg_filename = cfgWorldFiles.as<std::string>();
         if (world_cfg_filename.is_relative()){
-            world_cfg_filename = s_boostBaseDir / world_cfg_filename;
+            world_cfg_filename = s_basePath / world_cfg_filename;
         }
-        s_world_config = world_cfg_filename.c_str();
+        s_worldConfigFileName = world_cfg_filename.c_str();
     }
     else{
         std::cerr << "ERROR! WORLD CONFIG NOT DEFINED \n";
         return 0;
     }
 
+    if(cfgInputDevicesFile.IsDefined()){
+        boost::filesystem::path input_devices_cfg_filename = cfgInputDevicesFile.as<std::string>();
+        if (input_devices_cfg_filename.is_relative()){
+            input_devices_cfg_filename = s_basePath / input_devices_cfg_filename;
+        }
+        s_inputDevicesConfigFileName = input_devices_cfg_filename.c_str();
+    }
+    else{
+        std::cerr << "ERROR! INPUT DEVICES CONFIG NOT DEFINED \n";
+        return 0;
+    }
+
     if(cfgColorFile.IsDefined()){
         boost::filesystem::path color_cfg_filename = cfgColorFile.as<std::string>();
         if (color_cfg_filename.is_relative()){
-            color_cfg_filename = s_boostBaseDir / color_cfg_filename;
+            color_cfg_filename = s_basePath / color_cfg_filename;
         }
-        s_color_config = color_cfg_filename.c_str();
-        s_colorsNode = YAML::LoadFile(s_color_config.c_str());
+        s_colorConfigFileName = color_cfg_filename.c_str();
+        s_colorsNode = YAML::LoadFile(s_colorConfigFileName.c_str());
         if (!s_colorsNode){
             std::cerr << "ERROR! COLOR CONFIG NOT FOUND \n";
         }
@@ -204,28 +239,13 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
         for (size_t i = 0 ; i < cfgMultiBodyFiles.size() ; i++){
             boost::filesystem::path mb_cfg_filename =  cfgMultiBodyFiles[i].as<std::string>();
             if (mb_cfg_filename.is_relative()){
-                mb_cfg_filename = s_boostBaseDir / mb_cfg_filename;
+                mb_cfg_filename = s_basePath / mb_cfg_filename;
             }
-            s_multiBody_configs.push_back(std::string(mb_cfg_filename.c_str()));
+            s_multiBodyConfigFileNames.push_back(std::string(mb_cfg_filename.c_str()));
         }
     }
     else{
         std::cerr << "PATH AND MULTIBODY CONFIG NOT DEFINED \n";
-        return 0;
-    }
-
-    if(cfgGripperConfigs.IsDefined()){
-        for(size_t i = 0 ; i < cfgGripperConfigs.size(); ++i){
-            std::string gripper_name = cfgGripperConfigs[i].as<std::string>();
-            boost::filesystem::path gripper_cfg_filename =  configNode[gripper_name].as<std::string>();
-            if (gripper_cfg_filename.is_relative()){
-                gripper_cfg_filename = s_boostBaseDir / gripper_cfg_filename;
-            }
-            s_gripperConfigFiles[gripper_name] = std::string(gripper_cfg_filename.c_str());
-        }
-    }
-    else{
-        std::cerr << "ERROR! GRIPPER CONFIGS NOT DEFINED \n";
         return 0;
     }
 
@@ -237,7 +257,15 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
 /// \return
 ///
 std::string afConfigHandler::getWorldConfig(){
-    return s_world_config;
+    return s_worldConfigFileName;
+}
+
+///
+/// \brief afConfigHandler::getInputDevicesConfig
+/// \return
+///
+std::string afConfigHandler::getInputDevicesConfig(){
+    return s_inputDevicesConfigFileName;
 }
 
 ///
@@ -245,11 +273,11 @@ std::string afConfigHandler::getWorldConfig(){
 /// \return
 ///
 std::string afConfigHandler::getMultiBodyConfig(int i){
-    if (i <= numMultiBodyConfig()){
-        return s_multiBody_configs[i];
+    if (i <= getNumMBConfigs()){
+        return s_multiBodyConfigFileNames[i];
     }
     else{
-        printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBody_configs.size());
+        printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBodyConfigFileNames.size());
         return "";
     }
 }
@@ -259,24 +287,9 @@ std::string afConfigHandler::getMultiBodyConfig(int i){
 /// \return
 ///
 std::string afConfigHandler::getColorConfig(){
-    return s_color_config;
+    return s_colorConfigFileName;
 }
 
-///
-/// \brief afConfigHandler::get_gripper_config
-/// \param a_gripper_name
-/// \return
-///
-std::string afConfigHandler::getGripperConfig(std::string a_gripper_name){
-    if(s_gripperConfigFiles.find(a_gripper_name) != s_gripperConfigFiles.end()){
-        return s_gripperConfigFiles[a_gripper_name];
-    }
-    else{
-        std::cerr << "WARNING! GRIPPER CONFIG FOR \"" << a_gripper_name
-                  << "\" NOT FOUND, RETURNING DEFAULT \n";
-        return s_gripperConfigFiles["Default"];
-    }
-}
 
 ///
 /// \brief afConfigHandler::get_color_rgba
@@ -344,7 +357,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     D_ang = a_D;
 }
 
-
+template <>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -352,7 +365,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
@@ -364,6 +377,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 }
 
 
+template<>
 ///
 /// \brief afCartesianController::computeOutput
 /// \param process_val
@@ -371,7 +385,7 @@ btVector3 afCartesianController::computeOutput(const btVector3 &process_val, con
 /// \param dt
 /// \return
 ///
-btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -393,7 +407,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -401,7 +415,7 @@ btVector3 afCartesianController::computeOutput(const btMatrix3x3 &process_val, c
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
@@ -412,7 +426,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutput_cvec
 /// \param process_val
@@ -420,7 +434,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cVector3d &process_val
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -443,7 +457,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
     return _output;
 }
 
-
+template<>
 ///
 /// \brief afCartesianController::computeOutputTransform
 /// \param process_val
@@ -451,7 +465,7 @@ cVector3d afCartesianController::computeOutput_cvec(const cMatrix3d &process_val
 /// \param current_time
 /// \return
 ///
-btTransform afCartesianController::computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt){
+btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt){
 
 }
 
@@ -646,7 +660,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyInertialOffsetRot = bodyNode["inertial offset"]["orientation"];
     YAML::Node bodyMeshPathHR = bodyNode["high resolution path"];
     YAML::Node bodyMeshPathLR = bodyNode["low resolution path"];
-    YAML::Node bodyNameSpace = bodyNode["namespace"];
+    YAML::Node bodyNamespace = bodyNode["namespace"];
     YAML::Node bodyMass = bodyNode["mass"];
     YAML::Node bodyController = bodyNode["controller"];
     YAML::Node bodyInertia = bodyNode["inertia"];
@@ -672,7 +686,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     // Check if the name is world and if it has already been defined.
     if (strcmp(m_name.c_str(), "world") == 0 || strcmp(m_name.c_str(), "World") == 0 || strcmp(m_name.c_str(), "WORLD") == 0){
-        if(m_afWorld->getRidigBody(node_name, true)){
+        if(m_afWorld->getAFRigidBody(node_name, true)){
             // Since we already found a world body/frame, we can skip adding another
             return 0;
         }
@@ -807,6 +821,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     else if (m_visualGeometryType == GeometryType::shape){
+        int dx = 32; // Default x resolution for shape
+        int dy = 32; // Default y resolution for shape
+        int dz = 5; // Default z resolution for shape
+        if (bodyGeometry["dx"].IsDefined()){
+            dx = bodyGeometry["dx"].as<int>();
+        }
+        if (bodyGeometry["dy"].IsDefined()){
+            dy = bodyGeometry["dy"].as<int>();
+        }
+        if (bodyGeometry["dz"].IsDefined()){
+            dz = bodyGeometry["dZ"].as<int>();
+        }
         cMesh* tempMesh = new cMesh();
             if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
                 double x = bodyGeometry["x"].as<double>();
@@ -815,29 +841,20 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 cCreateBox(tempMesh, x, y, z);
             }
             else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 cCreateSphere(tempMesh, radius, dx, dy);
             }
             else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-                int x_count = bodyGeometry["dx"].as<int>();
-                int y_count = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
-                cCreateCylinder(tempMesh, height, radius, x_count, y_count, 1, true, true, cVector3d(0.0, 0.0,-0.5 * height));
+                cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
             }
             else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
             }
             else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
-                int dx = bodyGeometry["dx"].as<int>();
-                int dy = bodyGeometry["dy"].as<int>();
-                int dz = bodyGeometry["dz"].as<int>();
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
@@ -993,11 +1010,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
     }
 
-    if (bodyNameSpace.IsDefined()){
-        m_body_namespace = bodyNameSpace.as<std::string>();
+    if (bodyNamespace.IsDefined()){
+        m_namespace = bodyNamespace.as<std::string>();
     }
     else{
-        m_body_namespace = mB->getNameSpace();
+        m_namespace = mB->getNamespace();
     }
 
     btTransform iOffTrans;
@@ -1007,7 +1024,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     iOffPos.setValue(0,0,0);
 
     if(bodyInertialOffsetPos.IsDefined()){
-        assignXYZ( &bodyInertialOffsetPos, &iOffPos);
+        iOffPos = toXYZ<btVector3>(&bodyInertialOffsetPos);
         if(bodyInertialOffsetRot.IsDefined()){
             double r = bodyInertialOffsetRot["r"].as<double>();
             double p = bodyInertialOffsetRot["p"].as<double>();
@@ -1086,7 +1103,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     buildDynamicModel();
 
     if(bodyPos.IsDefined()){
-        assignXYZ( &bodyPos, &m_initialPos);
+        m_initialPos = toXYZ<cVector3d>(&bodyPos);
         setLocalPos(m_initialPos);
     }
 
@@ -1217,6 +1234,7 @@ void afRigidBody::setConfigProperties(const afRigidBodyPtr a_body, const afRigid
     a_body->m_bulletRigidBody->setRestitution(a_props->m_restitution);
 }
 
+
 ///
 /// \brief afRigidBody::updatePositionFromDynamics
 ///
@@ -1255,24 +1273,43 @@ void afRigidBody::updatePositionFromDynamics()
         cQuaternion q;
         q.fromRotMat(m_localRot);
         m_afObjectPtr->cur_orientation(q.x, q.y, q.z, q.w);
-        if (_publish_joint_positions){
-            afObjectSetJointPositions();
+
+        // Since the mass and inertia aren't going to change that often, write them
+        // out intermittently
+        if (m_write_count % 2000 == 0){
+            m_afObjectPtr->set_mass(getMass());
+            m_afObjectPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
-        if (_publish_children_names){
-            // Since children names aren't going to change that often
-            // change the field less so often
-            if (m_write_count % 2000 == 0){
-                afObjectStateSetChildrenNames();
-                m_write_count = 0;
-            }
-        }
-        if (_publish_joint_names){
+
+        // We can set this body to publish it's children joint names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_names || m_afObjectPtr->m_objectCommand.publish_joint_names){
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
                 afObjectStateSetJointNames();
             }
         }
+
+        // We can set this body to publish joint positions in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_joint_positions || m_afObjectPtr->m_objectCommand.publish_joint_positions){
+            afObjectSetJointPositions();
+        }
+
+        // We can set this body to publish it's children names in either its AMBF Description file or
+        // via it's afCommand using ROS Message
+        if (_publish_children_names || m_afObjectPtr->m_objectCommand.publish_children_names){
+            // Since children names aren't going to change that often
+            // change the field less so often
+            if (m_write_count % 2000 == 0){
+
+                afObjectStateSetChildrenNames();
+                m_write_count = 0;
+            }
+        }
+
+
         m_write_count++;
     }
 #endif
@@ -1290,6 +1327,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
         btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
+        _publish_children_names = m_afCommand.publish_children_names;
+        _publish_joint_names = m_afCommand.publish_joint_names;
+        _publish_joint_positions = m_afCommand.publish_joint_positions;
         // If the body is kinematic, we just want to control the position
         if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
             btTransform _Td;
@@ -1318,9 +1358,9 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 _cmd_rot.setRotation(_cmd_rot_quat);
 
                 // Use the internal Cartesian Position Controller
-                force = m_controller.computeOutput(_cur_pos, _cmd_pos, dt);
+                force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
                 // Use the internal Cartesian Rotation Controller
-                torque = m_controller.computeOutput(_cur_rot, _cmd_rot, dt);
+                torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
             }
             else{
                 force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
@@ -1562,6 +1602,8 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node softBodyRandomizeConstraints = softBodyNode["randomize constraints"];
 
     YAML::Node cfg_kLST = softBodyConfigData["kLST"];
+    YAML::Node cfg_kAST = softBodyConfigData["kAST"];
+    YAML::Node cfg_kVST = softBodyConfigData["kVST"];
     YAML::Node cfg_kVCF = softBodyConfigData["kVCF"];
     YAML::Node cfg_kDP = softBodyConfigData["kDP"];
     YAML::Node cfg_kDG = softBodyConfigData["kDG"];
@@ -1587,6 +1629,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_diterations = softBodyConfigData["diterations"];
     YAML::Node cfg_citerations = softBodyConfigData["citerations"];
     YAML::Node cfg_flags = softBodyConfigData["flags"];
+    YAML::Node cfg_bendingConstraint = softBodyConfigData["bending constraint"];
     YAML::Node cfg_cutting = softBodyConfigData["cutting"];
     YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
@@ -1613,7 +1656,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             double y = softBodyInertialOffsetRot["y"].as<double>();
             quat.setEulerZYX(y, p, r);
         }
-        assignXYZ( &softBodyInertialOffsetPos, &pos);
+        pos = toXYZ<btVector3>(&softBodyInertialOffsetPos);
         trans.setRotation(quat);
         trans.setOrigin(pos);
         setInertialOffsetTransform(trans);
@@ -1650,6 +1693,13 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     m_lowResMesh.scale(m_scale);
     buildContactTriangles(_collision_margin, &m_lowResMesh);
 
+    if(softBodyNameSpace.IsDefined()){
+        m_namespace = softBodyNameSpace.as<std::string>();
+    }
+    else{
+        m_namespace = mB->getNamespace();
+    }
+
     if(softBodyMass.IsDefined()){
         m_mass = softBodyMass.as<double>();
         if(softBodyLinGain.IsDefined()){
@@ -1667,7 +1717,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     buildDynamicModel();
 
     if(softBodyPos.IsDefined()){
-        assignXYZ( &softBodyPos, &pos);
+        pos = toXYZ<cVector3d>(&softBodyPos);
         setLocalPos(pos);
     }
 
@@ -1730,6 +1780,16 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             pm->m_kLST = cfg_kLST.as<double>();
             m_bulletSoftBody->m_materials[0]->m_kLST = cfg_kLST.as<double>();
         }
+        if (cfg_kAST.IsDefined()){
+            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kAST = cfg_kAST.as<double>();
+            m_bulletSoftBody->m_materials[0]->m_kAST = cfg_kAST.as<double>();
+        }
+        if (cfg_kVST.IsDefined()){
+            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kVST = cfg_kVST.as<double>();
+            m_bulletSoftBody->m_materials[0]->m_kVST = cfg_kVST.as<double>();
+        }
         if (cfg_kVCF.IsDefined()) m_bulletSoftBody->m_cfg.kVCF = cfg_kVCF.as<double>();
         if (cfg_kDP.IsDefined()) m_bulletSoftBody->m_cfg.kDP = cfg_kDP.as<double>();
         if (cfg_kDG.IsDefined()) m_bulletSoftBody->m_cfg.kDG = cfg_kDG.as<double>();
@@ -1756,6 +1816,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
         if (cfg_flags.IsDefined()){
             m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+        }
+        if (cfg_bendingConstraint.IsDefined()){
+            int _bending = cfg_bendingConstraint.as<int>();
+            m_bulletSoftBody->generateBendingConstraints(_bending);
         }
         if (cfg_fixed_nodes.IsDefined()){
             for (int i = 0 ; i < cfg_fixed_nodes.size() ; i++){
@@ -1793,7 +1857,7 @@ void afSoftBody::setConfigProperties(const afSoftBodyPtr a_body, const afSoftBod
 /// \param current_time
 /// \return
 ///
-double afController::computeOutput(double process_val, double set_point, double current_time){
+double afJointController::computeOutput(double process_val, double set_point, double current_time){
         for (size_t i = n-1 ; i >= 1 ; i--){
             t[i] = t[i-1];
             e[i] = e[i-1];
@@ -1819,7 +1883,7 @@ double afController::computeOutput(double process_val, double set_point, double 
 /// \param effort_cmd
 /// \param effort_time
 ///
-void afController::boundImpulse(double &effort_cmd){
+void afJointController::boundImpulse(double &effort_cmd){
     double impulse = ( effort_cmd - m_last_cmd ) / (t[0]- t[1]);
 //    std::cerr << "Before " << effort_cmd ;
     int sign = 1;
@@ -1930,7 +1994,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
     m_joint_offset = 0.0;
     m_lower_limit = -100;
-    m_higher_limit = 100;
+    m_upper_limit = 100;
     //Default joint type is revolute if not type is specified
     m_jointType = JointType::revolute;
 
@@ -1938,15 +2002,25 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     m_mB = mB;
 
-    afBodyA = m_afWorld->getRidigBody(mB->getNameSpace() + m_parent_name + name_remapping, true);
-    afBodyB = m_afWorld->getRidigBody(mB->getNameSpace() + m_child_name + name_remapping, true);
+    // First we should search in the local MultiBody space and if we don't find the body.
+    // On then we find the world space
+
+    afBodyA = mB->getAFRigidBodyLocal(mB->getNamespace() + m_parent_name, true);
+    afBodyB = mB->getAFRigidBodyLocal(mB->getNamespace() + m_child_name, true);
+
+    if (!afBodyA){
+        afBodyA = m_afWorld->getAFRigidBody(mB->getNamespace() + m_parent_name + name_remapping, true);
+    }
+    if (!afBodyB){
+        afBodyB = m_afWorld->getAFRigidBody(mB->getNamespace() + m_child_name + name_remapping, true);
+    }
 
     bool _ignore_inter_collision = true;
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
     if(afBodyA == NULL){
-        afBodyA = m_afWorld->getRidigBody(m_parent_name, true);
+        afBodyA = m_afWorld->getAFRigidBody(m_parent_name, true);
         // If any body is still not found, print error and ignore joint
         if (afBodyA == NULL){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
@@ -1964,7 +2038,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
     }
     if(afBodyB == NULL){
-        afBodyB = m_afWorld->getRidigBody(m_child_name, true);
+        afBodyB = m_afWorld->getAFRigidBody(m_child_name, true);
         // If any body is still not found, print error and ignore joint
         if (afBodyB == NULL){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
@@ -1988,10 +2062,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
 
     if (jointParentPivot.IsDefined() & jointParentAxis.IsDefined() & jointChildPivot.IsDefined() & jointChildAxis.IsDefined()){
-        assignXYZ( &jointParentPivot, &m_pvtA);
-        assignXYZ( &jointParentAxis, &m_axisA);
-        assignXYZ( &jointChildPivot, &m_pvtB);
-        assignXYZ( &jointChildAxis, &m_axisB);
+        m_pvtA = toXYZ<btVector3>( &jointParentPivot);
+        m_axisA = toXYZ<btVector3>( &jointParentAxis);
+        m_pvtB = toXYZ<btVector3>( &jointChildPivot);
+        m_axisB = toXYZ<btVector3>( &jointChildAxis);
 
         if (m_axisA.length() < 0.9 || m_axisA.length() > 1.1 ){
             std::cerr << "WARNING: Joint " << m_name << "'s parent axis is not normalized\n";
@@ -2031,7 +2105,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         YAML::Node jointXYZ = jointOrigin['position'];
         YAML::Node jointRPY = jointOrigin['orientation'];
         if (jointXYZ.IsDefined()){
-            assignXYZ(&jointXYZ, &pos);
+            pos = toXYZ<btVector3>(&jointXYZ);
             T_j_p.setOrigin(pos);
         }
         if (jointRPY.IsDefined()){
@@ -2042,7 +2116,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if (jointAxis.IsDefined()){
-            assignXYZ(&jointAxis, &joint_axis);
+            joint_axis = toXYZ<btVector3>(&jointAxis);
         }
     }
     else{
@@ -2058,7 +2132,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if (jointLimits["low"].IsDefined())
             m_lower_limit = jointLimits["low"].as<double>();
         if (jointLimits["high"].IsDefined())
-            m_higher_limit = jointLimits["high"].as<double>();
+            m_upper_limit = jointLimits["high"].as<double>();
     }
 
     if (jointController.IsDefined()){
@@ -2188,7 +2262,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if(jointLimits.IsDefined()){
-            m_hinge->setLimit(m_lower_limit, m_higher_limit);
+            m_hinge->setLimit(m_lower_limit, m_upper_limit);
         }
 
         m_btConstraint = m_hinge;
@@ -2211,7 +2285,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         if(jointLimits.IsDefined()){
             m_slider->setLowerLinLimit(m_lower_limit);
-            m_slider->setUpperLinLimit(m_higher_limit);
+            m_slider->setUpperLinLimit(m_upper_limit);
         }
 
         m_btConstraint = m_slider;
@@ -2463,7 +2537,7 @@ afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(sensor_config_file);
@@ -2475,7 +2549,7 @@ bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string n
     if (baseNode.IsNull()) return false;
 
     YAML::Node baseSensorNode = baseNode[node_name];
-    return loadSensor(&baseSensorNode, node_name, mB, name_remapping_idx);
+    return loadSensor(&baseSensorNode, node_name, mB, name_remapping);
 }
 
 ///
@@ -2485,7 +2559,7 @@ bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string n
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node sensorNode = *sensor_node;
     if (sensorNode.IsNull()){
         std::cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -2509,17 +2583,23 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     m_name = sensorName.as<std::string>();
-    assignXYZ(&sensorLocation, &m_location);
-    assignXYZ(&sensorDirection, &m_direction);
+    m_location = toXYZ<cVector3d>(&sensorLocation);
+    m_direction = toXYZ<cVector3d>(&sensorDirection);
     m_range = sensorRange.as<double>();
 
-    m_parentBody = m_afWorld->getRidigBody(_parent_name);
+    // First search in the local space.
+    m_parentBody = mB->getAFRigidBodyLocal(_parent_name);
+
+    if(!m_parentBody){
+        m_parentBody = m_afWorld->getAFRigidBody(_parent_name + name_remapping);
+    }
+
     if (m_parentBody == NULL){
-        std::cerr << "ERROR: SENSOR'S "<< _parent_name << " NOT FOUND, IGNORING SENSOR\n";
+        std::cerr << "ERROR: SENSOR'S "<< _parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }
     else{
-        m_parentBody->addSensor(this);
+        m_parentBody->addAFSensor(this);
     }
 
     m_rayFromLocal = m_location;
@@ -2537,16 +2617,16 @@ void afProximitySensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
     cTransform T_bInw = m_parentBody->getLocalTransform();
-    _rayFromWorld = cVec2btVec(T_bInw *  m_rayFromLocal);
-    _rayToWorld = cVec2btVec(T_bInw *  m_rayToLocal);
+    _rayFromWorld = toBTvec(T_bInw *  m_rayFromLocal);
+    _rayToWorld = toBTvec(T_bInw *  m_rayToLocal);
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
         m_fromSphere->setShowEnabled(true);
         m_toSphere->setShowEnabled(true);
 
-        m_fromSphere->setLocalPos(btVec2cVec(_rayFromWorld) );
-        m_toSphere->setLocalPos(btVec2cVec(_rayToWorld) );
+        m_fromSphere->setLocalPos(toCvec(_rayFromWorld) );
+        m_toSphere->setLocalPos(toCvec(_rayToWorld) );
     }
     else{
         m_fromSphere->setShowEnabled(false);
@@ -2559,7 +2639,7 @@ void afProximitySensor::updateSensor(){
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
             m_hitSphere->setShowEnabled(true);
-            m_hitSphere->setLocalPos(btVec2cVec(_rayCallBack.m_hitPointWorld));
+            m_hitSphere->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
         }
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
@@ -2617,7 +2697,7 @@ void afProximitySensor::updateSensor(){
             }
         }
 
-        m_sensedLocationWorld = btVec2cVec(_rayCallBack.m_hitPointWorld);
+        m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
     }
     else{
         m_hitSphere->setShowEnabled(false);
@@ -2768,6 +2848,15 @@ bool afWorld::loadWorld(std::string a_world_config){
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
+    YAML::Node worldNamespace = worldNode["namespace"];
+
+    if (worldNamespace.IsDefined()){
+        m_world_namespace = worldNamespace.as<std::string>();
+    }
+    else{
+        // Use the default namespace
+        m_world_namespace = "/ambf/env/";
+    }
 
     if (worldEnclosureData.IsDefined()){
         m_encl_length = worldEnclosureData["length"].as<double>();
@@ -2783,10 +2872,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             std::string light_name = worldLightsData[idx].as<std::string>();
             afLightPtr lightPtr = new afLight(this);
             YAML::Node lightNode = worldNode[light_name];
-            if (lightPtr->loadLight(&lightNode, light_name)){
-                addLight(lightPtr, light_name);
+            if (lightPtr->loadLight(&lightNode, light_name, this)){
+                addAFLight(lightPtr, light_name);
                 lightPtr->afObjectCreate(lightPtr->m_name,
-                                         lightPtr->m_body_namespace,
+                                         lightPtr->getNamespace(),
                                          lightPtr->getMinPublishFrequency(),
                                          lightPtr->getMaxPublishFrequency());
             }
@@ -2797,9 +2886,9 @@ bool afWorld::loadWorld(std::string a_world_config){
         // No Valid Lights defined, so use the default light
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createDefaultLight()){
-            addLight(lightPtr, "default_light");
+            addAFLight(lightPtr, "default_light");
             lightPtr->afObjectCreate(lightPtr->m_name,
-                                     lightPtr->m_body_namespace,
+                                     lightPtr->getNamespace(),
                                      lightPtr->getMinPublishFrequency(),
                                      lightPtr->getMaxPublishFrequency());
         }
@@ -2810,10 +2899,10 @@ bool afWorld::loadWorld(std::string a_world_config){
             std::string camera_name = worldCamerasData[idx].as<std::string>();
             afCameraPtr cameraPtr = new afCamera(this);
             YAML::Node cameraNode = worldNode[camera_name];
-            if (cameraPtr->loadCamera(&cameraNode, camera_name)){
-                addCamera(cameraPtr, camera_name);
+            if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
+                addAFCamera(cameraPtr, camera_name);
                 cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                          cameraPtr->m_body_namespace,
+                                          cameraPtr->getNamespace(),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
@@ -2825,9 +2914,9 @@ bool afWorld::loadWorld(std::string a_world_config){
         // hence create a default camera
         afCameraPtr cameraPtr = new afCamera(this);
         if (cameraPtr->createDefaultCamera()){
-            addCamera(cameraPtr, "default_camera");
+            addAFCamera(cameraPtr, "default_camera");
             cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                      cameraPtr->m_body_namespace,
+                                      cameraPtr->getNamespace(),
                                       cameraPtr->getMinPublishFrequency(),
                                       cameraPtr->getMaxPublishFrequency());
         }
@@ -2844,7 +2933,7 @@ bool afWorld::loadWorld(std::string a_world_config){
 /// \param a_light
 /// \return
 ///
-bool afWorld::addLight(afLightPtr a_light, std::string a_name){
+bool afWorld::addAFLight(afLightPtr a_light, std::string a_name){
     m_afLightMap[a_name] = a_light;
     return true;
 }
@@ -2855,7 +2944,7 @@ bool afWorld::addLight(afLightPtr a_light, std::string a_name){
 /// \param a_cam
 /// \return
 ///
-bool afWorld::addCamera(afCameraPtr a_cam, std::string a_name){
+bool afWorld::addAFCamera(afCameraPtr a_cam, std::string a_name){
     m_afCameraMap[a_name] = a_cam;
     return true;
 }
@@ -2866,7 +2955,7 @@ bool afWorld::addCamera(afCameraPtr a_cam, std::string a_name){
 /// \param a_rb
 /// \return
 ///
-bool afWorld::addRigidBody(afRigidBodyPtr a_rb, std::string a_name){
+bool afWorld::addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name){
     m_afRigidBodyMap[a_name] = a_rb;
     return true;
 }
@@ -2877,7 +2966,7 @@ bool afWorld::addRigidBody(afRigidBodyPtr a_rb, std::string a_name){
 /// \param a_sb
 /// \return
 ///
-bool afWorld::addSoftBody(afSoftBodyPtr a_sb, std::string a_name){
+bool afWorld::addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name){
     m_afSoftBodyMap[a_name] = a_sb;
     return true;
 }
@@ -2888,7 +2977,7 @@ bool afWorld::addSoftBody(afSoftBodyPtr a_sb, std::string a_name){
 /// \param a_jnt
 /// \return
 ///
-bool afWorld::addJoint(afJointPtr a_jnt, std::string a_name){
+bool afWorld::addAFJoint(afJointPtr a_jnt, std::string a_name){
     m_afJointMap[a_name] = a_jnt;
     return true;
 }
@@ -2899,7 +2988,7 @@ bool afWorld::addJoint(afJointPtr a_jnt, std::string a_name){
 /// \param a_name
 /// \return
 ///
-bool afWorld::addSensor(afSensorPtr a_sensor, std::string a_name){
+bool afWorld::addAFSensor(afSensorPtr a_sensor, std::string a_name){
     m_afSensorMap[a_name] = a_sensor;
     return true;
 }
@@ -2908,7 +2997,7 @@ bool afWorld::addSensor(afSensorPtr a_sensor, std::string a_name){
 /// \brief afWorld::getLighs
 /// \return
 ///
-afLightVec  afWorld::getLighs(){
+afLightVec  afWorld::getAFLighs(){
     afLightVec _lights;
     afLightMap::iterator _lIt;
 
@@ -2923,7 +3012,7 @@ afLightVec  afWorld::getLighs(){
 /// \brief afWorld::getCameras
 /// \return
 ///
-afCameraVec afWorld::getCameras(){
+afCameraVec afWorld::getAFCameras(){
     afCameraVec _cams;
     afCameraMap::iterator _cIt;
 
@@ -2938,7 +3027,7 @@ afCameraVec afWorld::getCameras(){
 /// \brief afWorld::getRigidBodies
 /// \return
 ///
-afRigidBodyVec afWorld::getRigidBodies(){
+afRigidBodyVec afWorld::getAFRigidBodies(){
     afRigidBodyVec _rbs;
     afRigidBodyMap::iterator _rbIt;
 
@@ -2953,7 +3042,7 @@ afRigidBodyVec afWorld::getRigidBodies(){
 /// \brief afWorld::getSoftBodies
 /// \return
 ///
-afSoftBodyVec afWorld::getSoftBodies(){
+afSoftBodyVec afWorld::getAFSoftBodies(){
     afSoftBodyVec _sbs;
     afSoftBodyMap::iterator _sbIt;
 
@@ -2968,7 +3057,7 @@ afSoftBodyVec afWorld::getSoftBodies(){
 /// \brief afWorld::getJoints
 /// \return
 ///
-afJointVec afWorld::getJoints(){
+afJointVec afWorld::getAFJoints(){
     afJointVec _jnts;
     afJointMap::iterator _jIt;
 
@@ -2983,7 +3072,7 @@ afJointVec afWorld::getJoints(){
 /// \brief afWorld::getSensors
 /// \return
 ///
-afSensorVec afWorld::getSensors(){
+afSensorVec afWorld::getAFSensors(){
     afSensorVec _sensors;
     afSensorMap::iterator _sIt;
 
@@ -3117,9 +3206,9 @@ bool afCamera::createDefaultCamera(){
     m_name = "default_camera";
 
     // position and orient the camera
-    setView(cVector3d(4.0, 0.0, 2.0),    // camera position (eye)
-        cVector3d(0.0, 0.0,-0.5),    // lookat position (target)
-        cVector3d(0.0, 0.0, 1.0));   // direction of the "up" vector
+    setView(cVector3d(4.0, 0.0, 2.0),  // camera position (eye)
+        cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
+        cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
 
     // set the near and far clipping planes of the camera
     m_camera->setClippingPlanes(0.01, 10.0);
@@ -3191,9 +3280,10 @@ bool afCamera::createDefaultCamera(){
 /// \param camera_name
 /// \return
 ///
-bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
+bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, afWorldPtr a_world){
     YAML::Node cameraNode = *a_camera_node;
     YAML::Node cameraName = cameraNode["name"];
+    YAML::Node cameraNamespace = cameraNode["namespace"];
     YAML::Node cameraLocationData = cameraNode["location"];
     YAML::Node cameraLookAtData = cameraNode["look at"];
     YAML::Node cameraUpData = cameraNode["up"];
@@ -3223,24 +3313,32 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         m_name = cameraName.as<std::string>();
     }
     else{
-        m_name = "camera_" + std::to_string(m_afWorld->getCameras().size() + 1);
+        m_name = "camera_" + std::to_string(a_world->getAFCameras().size() + 1);
     }
+
+    if (cameraNamespace.IsDefined()){
+        m_namespace = cameraNamespace.as<std::string>();
+    }
+    else{
+        m_namespace = a_world->getNamespace();
+    }
+
     if (cameraLocationData.IsDefined()){
-        assignXYZ(&cameraLocationData, &_location);
+        _location = toXYZ<cVector3d>(&cameraLocationData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
          _is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
-        assignXYZ(&cameraLookAtData, &_look_at);
+        _look_at = toXYZ<cVector3d>(&cameraLookAtData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraUpData.IsDefined()){
-        assignXYZ(&cameraUpData, &_up);
+        _up = toXYZ<cVector3d>(&cameraUpData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
@@ -3292,7 +3390,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
     }
 
     if(_is_valid){
-        m_camera = new cCamera(m_afWorld->s_bulletWorld);
+        m_camera = new cCamera(a_world->s_bulletWorld);
         addChild(m_camera);
 
         bool _overrideParent = false;
@@ -3300,7 +3398,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
         if (cameraParent.IsDefined()){
             _overrideParent = true;
             std::string parent_name = cameraParent.as<std::string>();
-            afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
+            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
             if (pBody){
                 pBody->addChild(this);
             }
@@ -3310,7 +3408,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name){
             }
         }
         if (! _overrideParent){
-            m_afWorld->s_bulletWorld->addChild(this);
+            a_world->s_bulletWorld->addChild(this);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -3463,10 +3561,11 @@ bool afLight::createDefaultLight(){
 /// \param light_node
 /// \return
 ///
-bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
+bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWorldPtr a_world){
     m_name = a_light_name;
     YAML::Node lightNode = *a_light_node;
     YAML::Node lightName = lightNode["name"];
+    YAML::Node lightNamespace = lightNode["namespace"];
     YAML::Node lightLocationData = lightNode["location"];
     YAML::Node lightDirectionData = lightNode["direction"];
     YAML::Node lightSpotExponentData = lightNode["spot exponent"];
@@ -3483,18 +3582,25 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
         m_name = lightName.as<std::string>();
     }
     else{
-        m_name = "light_" + std::to_string(m_afWorld->getLighs().size() + 1);
+        m_name = "light_" + std::to_string(a_world->getAFLighs().size() + 1);
+    }
+
+    if (lightNamespace.IsDefined()){
+        m_namespace = lightNamespace.as<std::string>();
+    }
+    else{
+        m_namespace = a_world->getNamespace();
     }
 
     if (lightLocationData.IsDefined()){
-        assignXYZ(&lightLocationData, &_location);
+        _location = toXYZ<cVector3d>(&lightLocationData);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (lightDirectionData.IsDefined()){
-        assignXYZ(&lightDirectionData, &_direction);
+        _direction = toXYZ<cVector3d>(&lightDirectionData);
     }
     else{
         std::cerr << "INFO: LIGHT \"" << a_light_name << "\" LIGHT DIRECTION NOT DEFINED, IGNORING " << std::endl;
@@ -3523,16 +3629,16 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
     }
 
     if (_is_valid){
-        m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
-        addChild(this);
+        m_spotLight = new cSpotLight(a_world->s_bulletWorld);
+        addChild(m_spotLight);
 
         bool _overrideDefaultParenting = false;
         if (lightParent.IsDefined()){
             _overrideDefaultParenting = true;
             std::string parent_name = lightParent.as<std::string>();
-            afRigidBodyPtr pBody = m_afWorld->getRidigBody(parent_name);
+            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
             if (pBody){
-                pBody->addChild(m_spotLight);
+                pBody->addChild(this);
             }
             else{
                 std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
@@ -3540,7 +3646,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name){
             }
         }
         if (! _overrideDefaultParenting){
-            m_afWorld->s_bulletWorld->addChild(m_spotLight);
+            a_world->s_bulletWorld->addChild(this);
         }
 
         m_spotLight->setLocalPos(_location);
@@ -3669,7 +3775,7 @@ std::string afMultiBody::remapJointName(std::string a_joint_name){
     int occurances = 0;
     std::string remap_string = "" ;
     std::stringstream ss;
-    afJointMap _jntMap = *(m_afWorld->getJointMap());
+    afJointMap _jntMap = *(m_afWorld->getAFJointMap());
     if (_jntMap.find(a_joint_name) == _jntMap.end()){
         return remap_string;
     }
@@ -3693,7 +3799,7 @@ std::string afMultiBody::remapSensorName(std::string a_sensor_name){
     int occurances = 0;
     std::string remap_string = "" ;
     std::stringstream ss;
-    afSensorMap _sensorMap = *(m_afWorld->getSensorMap());
+    afSensorMap _sensorMap = *(m_afWorld->getAFSensorMap());
     if (_sensorMap.find(a_sensor_name) == _sensorMap.end()){
         return remap_string;
     }
@@ -3709,22 +3815,27 @@ std::string afMultiBody::remapSensorName(std::string a_sensor_name){
 }
 
 ///
+/// \brief afMultiBody::loadAllMultiBodies
+///
+void afMultiBody::loadAllMultiBodies(bool enable_comm){
+    for (int i = 0 ; i < m_afWorld->getNumMBConfigs(); i++){
+        loadMultiBody(i, enable_comm);
+    }
+}
+
+///
 /// \brief afMultiBody::loadMultiBody
 /// \param i
 /// \return
 ///
-bool afMultiBody::loadMultiBody(int i){
-    std::string multibody_config = m_afWorld->getMultiBodyConfig(i);
-    return loadMultiBody(multibody_config);
-}
-
-///
-/// \brief afMultiBody::loadAllMultiBodies
-///
-void afMultiBody::loadAllMultiBodies(){
-    for (int i = 0 ; i < m_afWorld->numMultiBodyConfig(); i++){
-        loadMultiBody(i);
+bool afMultiBody::loadMultiBody(int i, bool enable_comm){
+    if (i >= m_afWorld->getNumMBConfigs()){
+        std::cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
+                     m_afWorld->getNumMBConfigs() - 1 << " INDEXED MULTI-BODIES DEFINED" << std::endl;
+        return 0;
     }
+    std::string multibody_config = m_afWorld->getMultiBodyConfig(i);
+    return loadMultiBody(multibody_config, enable_comm);
 }
 
 ///
@@ -3732,7 +3843,7 @@ void afMultiBody::loadAllMultiBodies(){
 /// \param a_multibody_config
 /// \return
 ///
-bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
+bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable_comm){
     if (a_multibody_config_file.empty()){
         a_multibody_config_file = m_afWorld->getMultiBodyConfig();
     }
@@ -3782,32 +3893,34 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
         m_multibody_low_res_meshes_path = "../resources/models/puzzle/low_res/";
     }
     if (multiBodyNameSpace.IsDefined()){
-        m_multibody_namespace = multiBodyNameSpace.as<std::string>();
+        m_mb_namespace = multiBodyNameSpace.as<std::string>();
     }
     else{
-        m_multibody_namespace = "/ambf/env/";
+        m_mb_namespace = "/ambf/env/";
     }
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
         rBodyPtr = new afRigidBody(m_afWorld);
         std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
-        std::string remap_str = remapBodyName(rb_name, m_afWorld->getRigidBodyMap());
-        //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
         YAML::Node rb_node = multiBodyNode[rb_name];
         if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
-            m_afWorld->addRigidBody(rBodyPtr, m_multibody_namespace + rb_name + remap_str);
-            std::string af_name = rBodyPtr->m_name;
-            if ((strcmp(af_name.c_str(), "world") == 0) ||
-                    (strcmp(af_name.c_str(), "World") == 0) ||
-                    (strcmp(af_name.c_str(), "WORLD") == 0)){
-                continue;
-            }
-            else{
-                rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
-                                             rBodyPtr->m_body_namespace,
-                                             rBodyPtr->getMinPublishFrequency(),
-                                             rBodyPtr->getMaxPublishFrequency());
+            std::string remap_str = remapBodyName(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
+            m_afWorld->addAFRigidBody(rBodyPtr, rBodyPtr->getNamespace() + rb_name + remap_str);
+            m_afRigidBodyMapLocal[rBodyPtr->getNamespace() + rb_name] = rBodyPtr;
+            if (enable_comm){
+                std::string af_name = rBodyPtr->m_name;
+                if ((strcmp(af_name.c_str(), "world") == 0) ||
+                        (strcmp(af_name.c_str(), "World") == 0) ||
+                        (strcmp(af_name.c_str(), "WORLD") == 0)){
+                    continue;
+                }
+                else{
+                    rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
+                                                 rBodyPtr->getNamespace(),
+                                                 rBodyPtr->getMinPublishFrequency(),
+                                                 rBodyPtr->getMaxPublishFrequency());
+                }
             }
         }
     }
@@ -3818,11 +3931,11 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     for (size_t i = 0; i < totalSoftBodies; ++i) {
         sBodyPtr = new afSoftBody(m_afWorld);
         std::string sb_name = multiBodySoftBodies[i].as<std::string>();
-        std::string remap_str = remapBodyName(sb_name, m_afWorld->getSoftBodyMap());
-        //        printf("Loading body: %s \n", (body_name + remap_str).c_str());
         YAML::Node sb_node = multiBodyNode[sb_name];
         if (sBodyPtr->loadSoftBody(&sb_node, sb_name, this)){
-            m_afWorld->addSoftBody(sBodyPtr, m_multibody_namespace + sb_name + remap_str);
+            std::string remap_str = remapBodyName(sb_name, m_afWorld->getAFSoftBodyMap());
+            m_afWorld->addAFSoftBody(sBodyPtr, sBodyPtr->getNamespace() + sb_name + remap_str);
+            m_afSoftBodyMapLocal[sBodyPtr->getNamespace() + sb_name] = sBodyPtr;
             //            tmpSoftBody->createAFObject(tmpSoftBody->m_name + remap_str);
         }
     }
@@ -3832,7 +3945,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
         std::string sensor_name = multiBodySensors[i].as<std::string>();
-        std::string remap_str = remapSensorName(sensor_name);
+        std::string remap_str = remapSensorName(m_mb_namespace + sensor_name);
         YAML::Node sensor_node = multiBodyNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
@@ -3845,8 +3958,8 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
 
             // Finally load the sensor from afmb config data
             if (sensorPtr){
-                if (sensorPtr->loadSensor(&sensor_node, sensor_name, this)){
-                    m_afWorld->addSensor(sensorPtr, m_multibody_namespace + sensor_name+remap_str);
+                if (sensorPtr->loadSensor(&sensor_node, sensor_name, this, remap_str)){
+                    m_afWorld->addAFSensor(sensorPtr, m_mb_namespace + sensor_name + remap_str);
                 }
             }
         }
@@ -3868,11 +3981,11 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     for (size_t i = 0; i < totalJoints; ++i) {
         jntPtr = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
-        std::string remap_str = remapJointName(jnt_name);
-        //        printf("Loading body: %s \n", (jnt_name + remap_str).c_str());
         YAML::Node jnt_node = multiBodyNode[jnt_name];
+        std::string remap_str = remapJointName(m_mb_namespace + jnt_name);
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
-            m_afWorld->addJoint(jntPtr, m_multibody_namespace + jnt_name+remap_str);
+            m_afWorld->addAFJoint(jntPtr, m_mb_namespace + jnt_name + remap_str);
+            m_afJointMapLocal[m_mb_namespace + jnt_name] = jntPtr;
         }
     }
 
@@ -3895,16 +4008,44 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file){
     return true;
 }
 
+
+///
+/// \brief afMultiBody::getRigidBody
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afRigidBodyPtr afMultiBody::getAFRigidBodyLocal(std::string a_name, bool suppress_warning){
+    if (m_afRigidBodyMapLocal.find(a_name) != m_afRigidBodyMapLocal.end()){
+        return m_afRigidBodyMapLocal[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: " << a_name << std::endl;
+
+            std::cerr <<"Existing Bodies in Map: " << m_afRigidBodyMapLocal.size() << std::endl;
+            afRigidBodyMap::iterator rbIt = m_afRigidBodyMapLocal.begin();
+            for (; rbIt != m_afRigidBodyMapLocal.end() ; ++rbIt){
+                std::cerr << rbIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
 ///
 /// \brief afMultiBody::removeCollisionChecking
 ///
 void afMultiBody::ignoreCollisionChecking(){
-    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
-    afRigidBodyMap::iterator rBodyItA = _rbMap->begin();
+
+    /// Only ignore collision checking between the bodies
+    /// defined in the specific multibody config file
+    /// and not all the bodies in the world
+    afRigidBodyMap::iterator rBodyItA = m_afRigidBodyMapLocal.begin();
     std::vector<btRigidBody*> rBodiesVec;
-    rBodiesVec.resize(_rbMap->size());
+    rBodiesVec.resize(m_afRigidBodyMapLocal.size());
     int i=0;
-    for ( ; rBodyItA != _rbMap->end() ; ++rBodyItA){
+    for ( ; rBodyItA != m_afRigidBodyMapLocal.end() ; ++rBodyItA){
         rBodiesVec[i] = rBodyItA->second->m_bulletRigidBody;
         i++;
     }
@@ -3957,7 +4098,7 @@ void afMultiBody::removeOverlappingCollisionChecking(){
     // if there are more than 1, it means that multiple bodies share each other
     // In this case, iteratively go over all the shared bodies and ignore their
     // collision if their common body has the same pivot
-    afRigidBodyMap* _rbMap = m_afWorld->getRigidBodyMap();
+    afRigidBodyMap* _rbMap = m_afWorld->getAFRigidBodyMap();
     afRigidBodyMap::iterator rBodyIt = _rbMap->begin();
     std::vector<btRigidBody*> bodyFamily;
     std::pair<btVector3, btRigidBody*> pvtAandConnectedBody;
@@ -4005,7 +4146,7 @@ void afMultiBody::removeOverlappingCollisionChecking(){
 /// \param a_name
 /// \return
 ///
-afRigidBodyPtr afWorld::getRidigBody(std::string a_name, bool suppress_warning){
+afRigidBodyPtr afWorld::getAFRigidBody(std::string a_name, bool suppress_warning){
     if (m_afRigidBodyMap.find(a_name) != m_afRigidBodyMap.end()){
         return m_afRigidBodyMap[a_name];
     }
@@ -4028,10 +4169,59 @@ afRigidBodyPtr afWorld::getRidigBody(std::string a_name, bool suppress_warning){
 /// \param a_bodyPtr
 /// \return
 ///
-afRigidBodyPtr afWorld::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
+afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
+    if (!a_bodyPtr){
+        std::cerr << "ERROR, BODY PTR IS NULL, CAN\'T LOOK UP ROOT BODIES" << std::endl;
+        return 0;
+    }
+
     /// Find Root Body
     afRigidBodyPtr rootParentBody;
-    std::vector<int> lineageSize;
+    std::vector<int> bodyParentsCount;
+    size_t rootParents = 0;
+    if (a_bodyPtr->m_parentBodies.size() == 0){
+        rootParentBody = a_bodyPtr;
+        rootParents++;
+    }
+    else{
+        bodyParentsCount.resize(a_bodyPtr->m_parentBodies.size());
+        std::vector<afRigidBodyPtr>::const_iterator rIt = a_bodyPtr->m_parentBodies.begin();
+        for (int parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
+            if ((*rIt)->m_parentBodies.size() == 0){
+                rootParentBody = (*rIt);
+                rootParents++;
+            }
+            bodyParentsCount[parentNum] = (*rIt)->m_parentBodies.size();
+        }
+    }
+
+    // In case no root parent is found, it is understood that
+    // the multibody chain is cyclical, perhaps return
+    // the body with least number of parents
+    if (rootParents == 0){
+        auto minLineage = std::min_element(bodyParentsCount.begin(), bodyParentsCount.end());
+        int idx = std::distance(bodyParentsCount.begin(), minLineage);
+        rootParentBody = a_bodyPtr->m_parentBodies[idx];
+        rootParents++;
+        std::cerr << "WARNING! CYCLICAL CHAIN OF BODIES FOUND WITH NO UNIQUE PARENT, RETURING THE BODY WITH LEAST PARENTS";
+    }
+
+    if (rootParents > 1)
+        std::cerr << "WARNING! " << rootParents << " ROOT PARENTS FOUND, RETURNING THE LAST ONE\n";
+
+    return rootParentBody;
+}
+
+
+///
+/// \brief afMultiBody::getRootAFRigidBody
+/// \param a_bodyPtr
+/// \return
+///
+afRigidBodyPtr afMultiBody::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
+    /// Find Root Body
+    afRigidBodyPtr rootParentBody;
+    std::vector<int> bodyParentsCount;
     size_t rootParents = 0;
     if (a_bodyPtr){
         if (a_bodyPtr->m_parentBodies.size() == 0){
@@ -4039,38 +4229,28 @@ afRigidBodyPtr afWorld::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
             rootParents++;
         }
         else{
-            lineageSize.resize(a_bodyPtr->m_parentBodies.size());
+            bodyParentsCount.resize(a_bodyPtr->m_parentBodies.size());
             std::vector<afRigidBodyPtr>::const_iterator rIt = a_bodyPtr->m_parentBodies.begin();
             for (int parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
                 if ((*rIt)->m_parentBodies.size() == 0){
                     rootParentBody = (*rIt);
                     rootParents++;
                 }
-                lineageSize[parentNum] = (*rIt)->m_parentBodies.size();
+                bodyParentsCount[parentNum] = (*rIt)->m_parentBodies.size();
             }
         }
     }
     else{
-        lineageSize.resize(m_afRigidBodyMap.size());
-        afRigidBodyMap::const_iterator mIt = m_afRigidBodyMap.begin();
-        for(int bodyNum=0; mIt != m_afRigidBodyMap.end() ; bodyNum++, ++mIt){
+        bodyParentsCount.resize(m_afRigidBodyMapLocal.size());
+        afRigidBodyMap::const_iterator mIt = m_afRigidBodyMapLocal.begin();
+        for(int bodyNum=0; mIt != m_afRigidBodyMapLocal.end() ; bodyNum++, ++mIt){
             if ((*mIt).second->m_parentBodies.size() == 0){
                 rootParentBody = (*mIt).second;
                 ++rootParents;
             }
-            lineageSize[bodyNum] = (*mIt).second->m_parentBodies.size();
+            bodyParentsCount[bodyNum] = (*mIt).second->m_parentBodies.size();
         }
 
-    }
-    // In case no root parent is found, it is understood that
-    // the multibody chain is cyclical, perhaps return
-    // the body with least number of parents
-    if (rootParents == 0){
-        auto minLineage = std::min_element(lineageSize.begin(), lineageSize.end());
-        int idx = std::distance(lineageSize.begin(), minLineage);
-        rootParentBody = a_bodyPtr->m_parentBodies[idx];
-        rootParents++;
-        std::cerr << "WARNING! CYCLICAL CHAIN OF BODIES FOUND WITH NO UNIQUE PARENT, RETURING THE BODY WITH LEAST PARENTS";
     }
 
     if (rootParents > 1)
@@ -4092,13 +4272,13 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
     if (m_dynamicsWorld == 0)
         return false;
 
-    btCollisionWorld::ClosestRayResultCallback rayCallback(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld));
+    btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
 
     rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-    m_dynamicsWorld->rayTest(cVec2btVec(rayFromWorld), cVec2btVec(rayToWorld), rayCallback);
+    m_dynamicsWorld->rayTest(toBTvec(rayFromWorld), toBTvec(rayToWorld), rayCallback);
     if (rayCallback.hasHit())
     {
-        cVector3d pickPos = btVec2cVec(rayCallback.m_hitPointWorld);
+        cVector3d pickPos = toCvec(rayCallback.m_hitPointWorld);
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
         const btCollisionObject* colObject = rayCallback.m_collisionObject;
@@ -4112,7 +4292,7 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
                     m_savedState = m_pickedBody->getActivationState();
                     m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * cVec2btVec(pickPos);
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
                     m_dynamicsWorld->addConstraint(p2p, true);
                     m_pickedConstraint = p2p;
@@ -4148,7 +4328,7 @@ bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayTo
                 m_pickedNode->m_v.setZero();
                 m_pickedSoftBody = sBody;
                 m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal = btVec2cVec(_hitPoint);
+                m_pickedNodeGoal = toCvec(_hitPoint);
             }
         }
 
@@ -4187,7 +4367,7 @@ bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d 
             newPivotB = rayFromWorld + dir;
             // Set the position of grab sphere
             m_pickSphere->setLocalPos(newPivotB);
-            pickCon->setPivotB(cVec2btVec(newPivotB));
+            pickCon->setPivotB(toBTvec(newPivotB));
             return true;
         }
     }

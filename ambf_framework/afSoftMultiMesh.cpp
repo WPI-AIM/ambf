@@ -347,9 +347,30 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     int vyKey;
     int vzKey;
     cVector3d vPos;
-    double xCoeff = (double) (numVertices - 1) / vBounds.x();
-    double yCoeff = (double) (numVertices - 1) / vBounds.y();
-    double zCoeff = (double) (numVertices - 1) / vBounds.z();
+    double xCoeff;
+    double yCoeff;
+    double zCoeff;
+    if(vBounds.x() == 0){
+        xCoeff = 0;
+    }
+    else{
+
+        xCoeff = (double) (numVertices - 1) / vBounds.x();
+    }
+    if(vBounds.y() == 0){
+        yCoeff = 0;
+    }
+    else{
+
+        yCoeff = (double) (numVertices - 1) / vBounds.y();
+    }
+    if(vBounds.z() == 0){
+        zCoeff = 0;
+    }
+    else{
+
+        zCoeff = (double) (numVertices - 1) / vBounds.z();
+    }
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
         xblockLowerBound = xblockNum * blockSize;
         xblockUpperBound = xblockLowerBound + blockSize;
@@ -532,7 +553,7 @@ void afSoftMultiMesh::createGELSkeleton(){
             m_afSoftNodes[nodeIdx2].m_gelLinks.push_back(link);
         }
     }
-    m_gelMesh.m_showSkeletonModel = true;
+    m_gelMesh.m_showSkeletonModel = false;
     m_gelMesh.m_useSkeletonModel = true;
 }
 
@@ -552,21 +573,21 @@ cVector3d bVec2cVec(btVector3 &bVec){
 void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 
     for (int i = 0 ; i < m_afSoftNodes.size() ; i++){
-        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
-        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
+//        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
+//        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
         cVector3d vPos =  bVec2cVec(m_afSoftNodes[i].m_btNode->m_x);
-        btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
-        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
-        vZ.normalize();
-        cVector3d vX = bVec2cVec(dPos);
-        vX.normalize();
+//        btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
+//        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
+//        vZ.normalize();
+//        cVector3d vX = bVec2cVec(dPos);
+//        vX.normalize();
         m_afSoftNodes[i].m_gelNode->m_nextPos.set(vPos.x(), vPos.y(), vPos.z());
-        cVector3d vY = cCross(vZ, vX);
-        vY.normalize();
-        vX = cCross(vY, vZ);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
-        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
+//        cVector3d vY = cCross(vZ, vX);
+//        vY.normalize();
+//        vX = cCross(vY, vZ);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
 
     }
 

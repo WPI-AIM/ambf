@@ -35,7 +35,8 @@
 #
 #  $Author: seb $
 #  $Author: Adnan Munawar $
-#  $Date:  $
+#  $Author: Melody Su $
+#  $Date:  April, 2019 $
 #  $Rev: $
 
 
@@ -305,6 +306,17 @@ set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 
 # AMBF Simulator
 add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
+
+# AMBF Controller
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+  find_package(catkin COMPONENTS
+    roscpp
+  )
+  if (${catkin_FOUND})
+    add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
+  endif()
+endif()
+
 
 #
 # export package

@@ -1,0 +1,1003 @@
+//==============================================================================
+/*
+    Software License Agreement (BSD License)
+    Copyright (c) 2019, AMBF
+    (www.aimlab.wpi.edu)
+
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+
+    * Neither the name of authors nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
+
+    \author:    <http://www.aimlab.wpi.edu>
+    \author:    <amunawar@wpi.edu>
+    \author:    Adnan Munawar
+    \version:   $
+*/
+//==============================================================================
+
+//------------------------------------------------------------------------------
+#include "afInputDevices.h"
+#include <string.h>
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+#define PI 3.14159
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+namespace ambf {
+using namespace chai3d;
+//------------------------------------------------------------------------------
+
+int afInputDevices::s_inputDeviceCount = 0;
+
+///
+/// \brief afSharedDataStructure::afSharedDataStructure
+///
+afSharedDataStructure::afSharedDataStructure(){
+    m_posRef.set(0,0,0);
+    m_posRefOrigin.set(0, 0, 0);
+    m_rotRef.identity();
+    m_rotRefOrigin.identity();
+}
+
+///
+/// \brief afPhysicalDevice::~afPhysicalDevice
+///
+afPhysicalDevice::~afPhysicalDevice(){
+}
+
+///
+/// \brief afPhysicalDevice::loadPhysicalDevice
+/// \param pd_config_file
+/// \param node_name
+/// \param hDevHandler
+/// \param simDevice
+/// \param a_iD
+/// \return
+///
+bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(pd_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO PHYSICAL DEVICE CONFIG: " << pd_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node basePDNode = baseNode[node_name];
+    return loadPhysicalDevice(&basePDNode, node_name, hDevHandler, simDevice, a_iD);
+}
+
+///
+/// \brief afPhysicalDevice::loadPhysicalDevice
+/// \param pd_node
+/// \param node_name
+/// \param hDevHandler
+/// \param simDevice
+/// \param a_iD
+/// \return
+///
+bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
+    YAML::Node physicaDeviceNode = *pd_node;
+    if (physicaDeviceNode.IsNull()){
+        std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
+    YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
+    YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
+    YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
+    YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
+    YAML::Node pDRootLink = physicaDeviceNode["root link"];
+    YAML::Node pDLocation = physicaDeviceNode["location"];
+    YAML::Node pDOrientationOffset = physicaDeviceNode["orientation offset"];
+    YAML::Node pDButtonMapping = physicaDeviceNode["button mapping"];
+
+    std::string _hardwareName = "";
+    K_lh = 0;
+    K_ah = 0;
+    // Initialize Default Buttons
+    m_buttons.A1 = 0;
+    m_buttons.A2 = 1;
+    m_buttons.NEXT_MODE = 2;
+    m_buttons.PREV_MODE = 3;
+
+    m_workspaceScale = 10;
+    std::string _simulatedMBConfig = "";
+    std::string _rootLinkName = "";
+    cVector3d _position(0, 0, 0);
+    cMatrix3d _orientation;
+    _orientation.identity();
+
+    // For the simulated gripper, the user can specify a MultiBody config to load.
+    // We shall load this file as a proxy for Physical Input device in the simulation.
+    // We shall get the root link of this multibody (baselink) and set Cartesian Position
+    // control on this body.
+
+    // Further, the user can sepcify a root link for the MultiBody config file. If this
+    // is defined we shall infact use the specific link which can be different from
+    // the bodies base link.
+
+    // A second use case arises, in which the user doesnt want to provide a config file
+    // but wants to bind the physical input device to an existing multibody in the simulation.
+    // In this case, the user should specify just the root link and we shall try to find a
+    // body in simulation matching that name. Once succesful we shall then be able to control
+    // that link/body in Position control mode and control all the joints lower in heirarchy.
+
+    bool _simulatedMBDefined = false;
+    bool _rootLinkDefined = false;
+
+    if (pDHardwareName.IsDefined()){
+        _hardwareName = pDHardwareName.as<std::string>();
+    }
+    else{
+        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" HARDWARE NAME NOT DEFINED, IGNORING \n";
+        return 0;
+    }
+
+    if (pDWorkspaceScaling.IsDefined()){
+        m_workspaceScale = pDWorkspaceScaling.as<double>();
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" WORKSPACE SCALE NOT DEFINED \n";
+    }
+
+    if (pDHapticGain.IsDefined()){
+        K_lh = pDHapticGain["linear"].as<double>();
+        K_ah = pDHapticGain["angular"].as<double>();
+
+        // clamp the force output gain to the max device stiffness
+        double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
+        K_lh = cMin(K_lh, _maxStiffness);
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
+    }
+
+    if (pDSimulatedGripper.IsDefined()){
+        boost::filesystem::path _mb_filename = _simulatedMBConfig;
+        _mb_filename = pDSimulatedGripper.as<std::string>();
+
+        if (_mb_filename.is_relative()){
+            _mb_filename = a_iD->getBasePath() / _mb_filename;
+        }
+
+        _simulatedMBConfig = _mb_filename.c_str();
+
+        _simulatedMBDefined = true;
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
+    }
+
+    if (pDRootLink.IsDefined()){
+        _rootLinkName = pDRootLink.as<std::string>();
+        _rootLinkDefined = true;
+    }
+    else{
+//        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
+    }
+
+
+    if (!_rootLinkDefined && !_simulatedMBDefined){
+        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
+                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
+        return 0;
+    }
+
+    int nDevs = hDevHandler->getNumDevices();
+    bool _devFound = false;
+
+    for (int dIdx = 0 ; dIdx < nDevs ; dIdx++){
+        // First check if this index has already been claimed or not.
+        if (!a_iD->checkClaimedDeviceIdx(dIdx)){
+            hDevHandler->getDeviceSpecifications(m_hInfo, dIdx);
+
+            if (m_hInfo.m_modelName.compare(_hardwareName) == 0){
+                // This is our device. Let's load it up
+                hDevHandler->getDevice(m_hDevice, dIdx);
+                m_hDevice->open();
+                // Now add the device index in a comman place
+                // to help devices that are loaded afterwards
+                a_iD->addClaimedDeviceIndex(dIdx);
+                _devFound = true;
+                break;
+            }
+        }
+    }
+
+    if(!_devFound){
+        return 0;
+    }
+
+    if (_simulatedMBDefined){
+        if (!simDevice->loadMultiBody(_simulatedMBConfig, false)){
+            return 0;
+        }
+
+        // If multibody is defined, then the root link has to be searched in the defined multibody
+        if (_rootLinkDefined){
+            simDevice->m_rootLink = simDevice->getAFRigidBodyLocal(_rootLinkName);
+        }
+        else{
+            simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
+        }
+    }
+    // If only root link is defined, we are going to look for it in the global space
+    else if (_rootLinkDefined){
+        if (a_iD->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
+            simDevice->m_rootLink = a_iD->getAFWorld()->getAFRigidBody(_rootLinkName);
+        }
+    }
+
+    // If we cannot find any root link, return failure
+    if (simDevice->m_rootLink){
+        // Now check if the controller gains have been defined. If so, override the controller gains
+        // defined for the rootlink of simulate end effector
+        if (pDControllerGain.IsDefined()){
+            // Check if the linear controller is defined
+            if (pDControllerGain["linear"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["linear"]["P"].as<double>();
+                _D = pDControllerGain["linear"]["D"].as<double>();
+                simDevice->m_rootLink->m_controller.setLinearGains(_P, 0, _D);
+            }
+
+            // Check if the angular controller is defined
+            if(pDControllerGain["angular"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["angular"]["P"].as<double>();
+                _D = pDControllerGain["angular"]["D"].as<double>();
+                simDevice->m_rootLink->m_controller.setAngularGains(_P, 0, _D);
+            }
+        }
+
+        simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        // Initialize all the constraint to null ptr
+        for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
+            simDevice->m_rigidGrippingConstraints[sIdx] = 0;
+            simDevice->m_softGrippingConstraints[sIdx] = 0;
+        }
+
+        std::string _modelName = '/' + m_hInfo.m_modelName;
+        std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
+
+        a_iD->s_inputDeviceCount++;
+        std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+        createAfCursor(a_iD->getAFWorld(),
+                       _pDevName,
+                       simDevice->getNamespace(),
+                       simDevice->m_rootLink->getMinPublishFrequency(),
+                       simDevice->m_rootLink->getMaxPublishFrequency());
+
+        // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
+        // Since an existing root body is bound to the physical device whose afComm should already be
+        // running
+        if(_simulatedMBDefined){
+            std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+            simDevice->m_rootLink->afObjectCreate(_sDevName,
+                                                  simDevice->getNamespace(),
+                                                  simDevice->m_rootLink->getMinPublishFrequency(),
+                                                  simDevice->m_rootLink->getMaxPublishFrequency());
+        }
+    }
+    else{
+        return 0;
+    }
+
+    if (pDLocation.IsDefined()){
+        YAML::Node posNode = pDLocation["position"];
+        YAML::Node rpyNode = pDLocation["orientation"];
+        _position = toXYZ<cVector3d>(&posNode);
+        cVector3d _rpy;
+        _rpy = toRPY<cVector3d>(&rpyNode);
+        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
+
+        simDevice->m_rootLink->setLocalPos(_position);
+        simDevice->m_rootLink->setLocalRot(_orientation);
+        m_simRotInitial = _orientation;
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
+        // In this case, take the current position of the root link and set it as initial
+        // reference pose
+        _position = simDevice->m_rootLink->getLocalPos();
+        _orientation = simDevice->m_rootLink->getLocalRot();
+        m_simRotInitial.identity();
+    }
+
+    simDevice->m_posRef = _position/ m_workspaceScale;
+    simDevice->m_posRefOrigin = _position / m_workspaceScale;
+    simDevice->m_rotRef = _orientation;
+    simDevice->m_rotRefOrigin = _orientation;
+
+    if (pDOrientationOffset.IsDefined()){
+            cVector3d rpy_offset;
+            rpy_offset = toRPY<cVector3d>(&pDOrientationOffset);
+            m_simRotOffset.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
+    }
+    else{
+        m_simRotOffset.identity();
+    }
+
+    if (pDButtonMapping.IsDefined()){
+        if (pDButtonMapping["a1"].IsDefined()){
+            m_buttons.A1 = pDButtonMapping["a1"].as<int>();
+        }
+        if (pDButtonMapping["a2"].IsDefined()){
+            m_buttons.A2 = pDButtonMapping["a2"].as<int>();
+        }
+        if (pDButtonMapping["next mode"].IsDefined()){
+            m_buttons.NEXT_MODE = pDButtonMapping["next mode"].as<int>();
+        }
+        if (pDButtonMapping["prev mode"].IsDefined()){
+            m_buttons.PREV_MODE = pDButtonMapping["prev mode"].as<int>();
+        }
+    }
+
+    return 1;
+}
+
+
+///
+/// \brief afPhysicalDevice::createAfCursor
+/// \param a_afWorld
+/// \param a_name
+/// \param a_namespace
+/// \param minPF
+/// \param maxPF
+///
+void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
+    m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
+    m_afCursor->setShowEnabled(true);
+    m_afCursor->setShowFrame(true);
+    m_afCursor->setFrameSize(0.1);
+    cMaterial mat;
+    mat.setGreenLightSea();
+    m_afCursor->setMaterial(mat);
+    a_afWorld->s_bulletWorld->addChild(m_afCursor);
+    m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
+}
+
+///
+/// \brief afPhysicalDevice::measuredPos
+/// \return
+///
+cVector3d afPhysicalDevice::measuredPos(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_hDevice->getPosition(m_pos);
+    updateCursorPose();
+    return m_pos;
+}
+
+///
+/// \brief afPhysicalDevice::measuredPosPreclutch
+/// \return
+///
+cVector3d afPhysicalDevice::measuredPosPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posPreClutch;
+}
+
+///
+/// \brief afPhysicalDevice::setPosPreclutch
+/// \param a_pos
+///
+void afPhysicalDevice::setPosPreclutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posPreClutch = a_pos;
+}
+
+///
+/// \brief afPhysicalDevice::measuredRot
+/// \return
+///
+cMatrix3d afPhysicalDevice::measuredRot(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_hDevice->getRotation(m_rot);
+    return m_rot;
+}
+
+///
+/// \brief afPhysicalDevice::measuredRotPreclutch
+/// \return
+///
+cMatrix3d afPhysicalDevice::measuredRotPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotPreClutch;
+}
+
+///
+/// \brief afPhysicalDevice::setRotPreclutch
+/// \param a_rot
+///
+void afPhysicalDevice::setRotPreclutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotPreClutch = a_rot;
+}
+
+
+///
+/// \brief afPhysicalDevice::measuredPosCamPreclutch
+/// \return
+///
+cVector3d afPhysicalDevice::measuredPosCamPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posCamPreClutch;
+}
+
+///
+/// \brief afPhysicalDevice::setPosCamPreclutch
+/// \param a_pos
+///
+void afPhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posCamPreClutch = a_pos;
+}
+
+///
+/// \brief afPhysicalDevice::measuredRotCamPreclutch
+/// \return
+///
+cMatrix3d afPhysicalDevice::measuredRotCamPreclutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotCamPreClutch;
+}
+
+///
+/// \brief afPhysicalDevice::setRotCamPreclutch
+/// \param a_rot
+///
+void afPhysicalDevice::setRotCamPreclutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotCamPreClutch = a_rot;
+}
+
+///
+/// \brief afPhysicalDevice::updateCursorPose
+///
+void afPhysicalDevice::updateCursorPose(){
+    if(m_afCursor){
+        m_afCursor->setLocalPos(m_pos * m_workspaceScale);
+        m_afCursor->setLocalRot(m_rot);
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+        m_afCursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
+        m_afCursor->m_afObjectPtr->set_userdata(m_freq_ctr.getFrequency());
+#endif
+    }
+}
+
+///
+/// \brief afPhysicalDevice::measuredVelLin
+/// \return
+///
+cVector3d afPhysicalDevice::measuredVelLin(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_hDevice->getLinearVelocity(m_vel);
+    return m_vel;
+}
+
+///
+/// \brief afPhysicalDevice::mearuredVelAng
+/// \return
+///
+cVector3d afPhysicalDevice::mearuredVelAng(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_hDevice->getAngularVelocity(m_avel);
+    return m_avel;
+}
+
+///
+/// \brief afPhysicalDevice::measuredGripperAngle
+/// \return
+///
+double afPhysicalDevice::measuredGripperAngle(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    double angle;
+    m_hDevice->getGripperAngleRad(angle);
+    return angle;
+}
+
+///
+/// \brief afPhysicalDevice::isButtonPressed
+/// \param button_index
+/// \return
+///
+bool afPhysicalDevice::isButtonPressed(int button_index){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    bool status;
+    m_hDevice->getUserSwitch(button_index, status);
+    return status;
+}
+
+///
+/// \brief afPhysicalDevice::isButtonPressRisingEdge
+/// \param button_index
+/// \return
+///
+bool afPhysicalDevice::isButtonPressRisingEdge(int button_index){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    bool status;
+    m_hDevice->getUserSwitch(button_index, status);
+    if (m_btn_prev_state_rising[button_index] ^ status){
+        if (!m_btn_prev_state_rising[button_index]){
+            m_btn_prev_state_rising[button_index] = true;
+            return true;
+        }
+        else{
+            m_btn_prev_state_rising[button_index] = false;
+        }
+    }
+    return false;
+}
+
+///
+/// \brief afPhysicalDevice::isButtonPressFallingEdge
+/// \param button_index
+/// \return
+///
+bool afPhysicalDevice::isButtonPressFallingEdge(int button_index){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    bool status;
+    m_hDevice->getUserSwitch(button_index, status);
+    if (m_btn_prev_state_falling[button_index] ^ status){
+        if (m_btn_prev_state_falling[button_index]){
+            m_btn_prev_state_falling[button_index] = false;
+            return true;
+        }
+        else{
+            m_btn_prev_state_falling[button_index] = true;
+        }
+    }
+    return false;
+}
+
+
+///
+/// \brief afPhysicalDevice::applyWrench
+/// \param force
+/// \param torque
+///
+void afPhysicalDevice::applyWrench(cVector3d force, cVector3d torque){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    force = force * m_dev_force_enabled;
+    torque = torque * m_dev_force_enabled;
+    m_hDevice->setForceAndTorqueAndGripperForce(force, torque, 0.0);
+}
+
+///
+/// \brief afSimulatedDevice::afSimulatedDevice
+/// \param a_afWorld
+///
+afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afMultiBody (a_afWorld){
+    m_gripper_angle = 0.5;
+    P_lc_ramp = 0;
+    P_ac_ramp = 0;
+}
+
+///
+/// \brief afSimulatedDevice::measuredPos
+/// \return
+///
+cVector3d afSimulatedDevice::measuredPos(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rootLink->getLocalPos();
+}
+
+///
+/// \brief afSimulatedDevice::measuredRot
+/// \return
+///
+cMatrix3d afSimulatedDevice::measuredRot(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rootLink->getLocalRot();
+}
+
+///
+/// \brief afSimulatedDevice::updateMeasuredPose
+///
+void afSimulatedDevice::updateMeasuredPose(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_pos  = m_rootLink->getLocalPos();
+    m_rot = m_rootLink->getLocalRot();
+}
+
+///
+/// \brief afSimulatedDevice::setGripperAngle
+/// \param angle
+/// \param dt
+///
+void afSimulatedDevice::setGripperAngle(double angle, double dt){
+    // Since it's not desireable to control the exact angle of multiple joints in the gripper.
+    // We override the set angle method for grippers to simplify the angle bound. 0 for closed
+    // and 1 for open and everything in between is scaled.
+    double clipped_angle = cClamp(angle, 0.0, 1.0);
+    for (size_t jnt = 0 ; jnt < m_rootLink->m_joints.size() ; jnt++){
+        double ang = m_rootLink->m_joints[jnt]->getLowerLimit() + clipped_angle * (m_rootLink->m_joints[jnt]->getUpperLimit()  - m_rootLink->m_joints[jnt]->getLowerLimit());
+        m_rootLink->m_joints[jnt]->commandPosition(ang);
+    }
+}
+
+///
+/// \brief afSimulatedDevice::offsetGripperAngle
+/// \param offset
+///
+void afSimulatedDevice::offsetGripperAngle(double offset){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_gripper_angle += offset;
+    m_gripper_angle = cClamp(m_gripper_angle, 0.0, 1.0);
+}
+
+///
+/// \brief afSimulatedDevice::isWrenchSet
+/// \return
+///
+bool afSimulatedDevice::isWrenchSet(){
+    btVector3 f = m_rootLink->m_bulletRigidBody->getTotalForce();
+    btVector3 n = m_rootLink->m_bulletRigidBody->getTotalTorque();
+    if (f.isZero()) return false;
+    else return true;
+}
+
+///
+/// \brief afSimulatedDevice::clearWrench
+///
+void afSimulatedDevice::clearWrench(){
+    m_rootLink->m_bulletRigidBody->clearForces();
+}
+
+
+///
+/// \brief afInputDevices::afInputDevices
+/// \param a_afWorld
+///
+afInputDevices::afInputDevices(afWorldPtr a_afWorld){
+    m_deviceHandler = NULL;
+    m_afWorld = a_afWorld;
+
+    m_use_cam_frame_rot = true;
+    m_simModes = CAM_CLUTCH_CONTROL;
+    m_mode_str = "CAM_CLUTCH_CONTROL";
+    m_mode_idx = 0;
+}
+
+///
+/// \brief afInputDevices::~afInputDevices
+///
+afInputDevices::~afInputDevices(){
+}
+
+
+void afInputDevices::addClaimedDeviceIndex(int a_devIdx){
+    if (!checkClaimedDeviceIdx(a_devIdx)){
+        m_devicesClaimed.push_back(a_devIdx);
+    }
+}
+
+///
+/// \brief afInputDevices::checkClaimedDeviceIdx
+/// \param a_devIdx
+/// \return
+///
+bool afInputDevices::checkClaimedDeviceIdx(int a_devIdx){
+    bool _claimed = false;
+    for (int idx = 0 ; idx < m_devicesClaimed.size() ; idx++){
+        if (a_devIdx == m_devicesClaimed[idx]){
+            _claimed = true;
+            break;
+        }
+    }
+    return _claimed;
+}
+
+
+///
+/// \brief afInputDevices::loadInputDevices
+/// \param a_input_devices_config
+/// \param a_max_load_devs
+/// \return
+///
+bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
+    if (a_input_devices_config.empty()){
+        a_input_devices_config = m_afWorld->getInputDevicesConfig();
+    }
+    YAML::Node inputDevicesNode;
+    try{
+        inputDevicesNode = YAML::LoadFile(a_input_devices_config);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
+        return 0;
+    }
+
+    YAML::Node inputDevices = inputDevicesNode["input devices"];
+
+    m_basePath = boost::filesystem::path(a_input_devices_config).parent_path();
+
+    if (!inputDevices.IsDefined()){
+        return 0;
+    }
+
+    if (a_max_load_devs > 0){
+        m_deviceHandler.reset(new cHapticDeviceHandler());
+        a_max_load_devs = a_max_load_devs < inputDevices.size() ? a_max_load_devs : inputDevices.size();
+        //        std::cerr << "Num of devices " << m_num_devices << std::endl;
+        for (uint devIdx = 0; devIdx < a_max_load_devs; devIdx++){
+
+            afPhysicalDevice* pD = new afPhysicalDevice();
+            afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
+
+            std::string devKey = inputDevices[devIdx].as<std::string>();
+            YAML::Node devNode = inputDevicesNode[devKey];
+
+            if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
+                InputControlUnit dgPair;
+                dgPair.m_physicalDevice = pD;
+                dgPair.m_simulatedDevice = sD;
+                dgPair.m_name = pD->m_hInfo.m_modelName;
+                m_psDevicePairs.push_back(dgPair);
+            }
+        }
+        m_numDevices = m_psDevicePairs.size();
+    }
+    else{
+        m_numDevices = 0;
+    }
+    m_use_cam_frame_rot = true;
+    m_simModes = CAM_CLUTCH_CONTROL;
+    m_mode_str = "CAM_CLUTCH_CONTROL";
+    m_mode_idx = 0;
+}
+
+///
+/// \brief afInputDevices::getDeviceGripperPairs
+/// \param a_device_names
+/// \return
+///
+std::vector<InputControlUnit*> afInputDevices::getDeviceGripperPairs(std::vector<std::string> a_device_names){
+    std::vector<InputControlUnit*> req_dg_Pairs;
+    std::vector<InputControlUnit>::iterator dgIt;
+    for(int req_name_Idx = 0 ; req_name_Idx < a_device_names.size() ; req_name_Idx++){
+        std::string req_dev_name = a_device_names[req_name_Idx];
+        bool _found_req_device = false;
+        for(dgIt = m_psDevicePairs.begin(); dgIt != m_psDevicePairs.end() ; ++dgIt){
+            if( dgIt->m_name.compare(req_dev_name) == 0 ){
+                req_dg_Pairs.push_back(&(*dgIt));
+                _found_req_device = true;
+                //                cerr << "INFO, DEVICE GRIPPER PAIR FOUND DEVICE \"" << req_dev_name << "\"" << endl;
+            }
+        }
+        if (!_found_req_device){
+            std::cerr << "INFO, DEVICE GRIPPER PAIR: \"" << req_dev_name << "\" NOT FOUND" << std::endl;
+        }
+    }
+
+    return req_dg_Pairs;
+
+}
+
+///
+/// \brief afInputDevices::getAllDeviceGripperPairs
+/// \return
+///
+std::vector<InputControlUnit*> afInputDevices::getAllDeviceGripperPairs(){
+    std::vector<InputControlUnit*> req_dg_Pairs;
+    std::vector<InputControlUnit>::iterator dgIt;
+    for(dgIt = m_psDevicePairs.begin(); dgIt != m_psDevicePairs.end() ; ++dgIt){
+        req_dg_Pairs.push_back(&(*dgIt));
+    }
+    return req_dg_Pairs;
+}
+
+///
+/// \brief afInputDevices::nextMode
+///
+void afInputDevices::nextMode(){
+    m_mode_idx = (m_mode_idx + 1) % m_modes_enum_vec.size();
+    m_simModes = m_modes_enum_vec[m_mode_idx];
+    m_mode_str = m_modes_enum_str[m_mode_idx];
+    g_btn_action_str = "";
+    g_cam_btn_pressed = false;
+    g_clutch_btn_pressed = false;
+    std::cout << m_mode_str << std::endl;
+}
+
+///
+/// \brief afInputDevices::prevMode
+///
+void afInputDevices::prevMode(){
+    m_mode_idx = (m_mode_idx - 1) % m_modes_enum_vec.size();
+    m_simModes = m_modes_enum_vec[m_mode_idx];
+    m_mode_str = m_modes_enum_str[m_mode_idx];
+    g_btn_action_str = "";
+    g_cam_btn_pressed = false;
+    g_clutch_btn_pressed = false;
+    std::cout << m_mode_str << std::endl;
+}
+
+///
+/// \brief afInputDevices::closeDevices
+///
+void afInputDevices::closeDevices(){
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        m_psDevicePairs[devIdx].m_physicalDevice->m_hDevice->close();
+    }
+}
+
+
+///
+/// \brief afInputDevices::increment_K_lh
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_K_lh(double a_offset){
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        if (m_psDevicePairs[devIdx].m_physicalDevice->K_lh + a_offset <= 0)
+        {
+            m_psDevicePairs[devIdx].m_physicalDevice->K_lh = 0.0;
+        }
+        else{
+            m_psDevicePairs[devIdx].m_physicalDevice->K_lh += a_offset;
+        }
+    }
+    //Set the return value to the gain of the last device
+    if(m_numDevices > 0){
+        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_lh;
+        g_btn_action_str = "K_lh = " + cStr(a_offset, 4);
+    }
+    return a_offset;
+}
+
+///
+/// \brief afInputDevices::increment_K_ah
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_K_ah(double a_offset){
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        if (m_psDevicePairs[devIdx].m_physicalDevice->K_ah + a_offset <=0){
+            m_psDevicePairs[devIdx].m_physicalDevice->K_ah = 0.0;
+        }
+        else{
+            m_psDevicePairs[devIdx].m_physicalDevice->K_ah += a_offset;
+        }
+    }
+    //Set the return value to the gain of the last device
+    if(m_numDevices > 0){
+        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_ah;
+        g_btn_action_str = "K_ah = " + cStr(a_offset, 4);
+    }
+    return a_offset;
+}
+
+///
+/// \brief afInputDevices::increment_P_lc
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_P_lc(double a_offset){
+    double _temp = a_offset;
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        double _gain = sG->m_controller.getP_lin();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setP_lin(0.0);
+            _temp = 0.0;
+        }
+        else{
+            sG->m_controller.setP_lin( _gain + a_offset);
+            _temp = _gain + a_offset;
+        }
+    }
+
+    g_btn_action_str = "P_lc = " + cStr(_temp, 4);
+    return _temp;
+}
+
+///
+/// \brief afInputDevices::increment_P_ac
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_P_ac(double a_offset){
+    double _temp = a_offset;
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        double _gain = sG->m_controller.getP_ang();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setP_ang(0.0);
+            _temp = 0.0;
+        }
+        else{
+            sG->m_controller.setP_ang( _gain + a_offset);
+            _temp = _gain + a_offset;
+        }
+    }
+
+    g_btn_action_str = "P_ac = " + cStr(_temp, 4);
+    return _temp;
+}
+
+///
+/// \brief afInputDevices::increment_D_lc
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_D_lc(double a_offset){
+    double _temp = a_offset;
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        double _gain = sG->m_controller.getD_lin();
+        if (_gain + a_offset <=0.01){
+            // Keep a small value of Angular gain to avoid controller singularity
+            sG->m_controller.setD_lin(0.01);
+            _temp = 0.01;
+        }
+        else{
+            sG->m_controller.setD_lin( _gain + a_offset);
+            _temp = _gain + a_offset;
+        }
+    }
+
+    g_btn_action_str = "D_lc = " + cStr(_temp, 4);
+    return _temp;
+}
+
+///
+/// \brief afInputDevices::increment_D_ac
+/// \param a_offset
+/// \return
+///
+double afInputDevices::increment_D_ac(double a_offset){
+    double _temp = a_offset;
+    for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
+        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        double _gain = sG->m_controller.getD_ang();
+        if (_gain + a_offset <=0){
+            sG->m_controller.setD_ang(0.0);
+            _temp = 0.0;
+        }
+        else{
+            sG->m_controller.setD_ang( _gain + a_offset);
+            _temp = _gain + a_offset;
+        }
+    }
+
+    g_btn_action_str = "D_ac = " + cStr(_temp, 4);
+    return _temp;
+}
+
+}
+//------------------------------------------------------------------------------
