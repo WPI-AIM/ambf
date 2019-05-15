@@ -1687,11 +1687,23 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
          _collision_margin = softBodyCollisionMargin.as<double>();
      }
 
-    loadFromFile(high_res_filepath.c_str());
-    m_lowResMesh.loadFromFile(low_res_filepath.c_str());
-    scale(m_scale);
-    m_lowResMesh.scale(m_scale);
-    buildContactTriangles(_collision_margin, &m_lowResMesh);
+     if (loadFromFile(high_res_filepath.c_str())){
+         scale(m_scale);
+         if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
+             buildContactTriangles(_collision_margin, &m_lowResMesh);
+             m_lowResMesh.scale(m_scale);
+         }
+         else{
+             std::cerr << "WARNING: Soft Body " << m_name
+                       << "'s mesh " << low_res_filepath << " not found\n";
+             return 0;
+         }
+     }
+     else{
+         std::cerr << "WARNING: Soft Body " << m_name
+                   << "'s mesh " << high_res_filepath << " not found\n";
+         return 0;
+     }
 
     if(softBodyNameSpace.IsDefined()){
         m_namespace = softBodyNameSpace.as<std::string>();
