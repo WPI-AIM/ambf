@@ -278,34 +278,9 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();
     int numVertices = mesh->m_vertices->getNumElements();
-    int vtRatio = numVertices / numTriangles; // Vertex Triangle Ratio
 
     if (print_debug_info){
         printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
-    }
-
-    if (print_debug_info){
-        printf("# Vertex Triangle Ratio %d, \n", vtRatio);
-    }
-
-    // If the vertex to triangle ratio is 2, then most probably we have loaded and .obj mesh.
-    // The obj mesh by default treat
-    if (vtRatio == 2){
-        cVertexArrayPtr newVtxArray = cVertexArray::create(true, true, true, true, true, false);
-        newVtxArray->newVertices(numTriangles*3);
-        for(int vIdx = 0 ; vIdx < numTriangles*3 ; vIdx++){
-            newVtxArray->setLocalPos(vIdx, mesh->m_vertices->getLocalPos(mesh->m_triangles->m_indices[vIdx]));
-        }
-        mesh->m_vertices.reset();
-        mesh->m_vertices = newVtxArray;
-        mesh->m_triangles->m_vertices.reset();
-        mesh->m_triangles->m_vertices = newVtxArray;
-        for(int tIdx = 0 ; tIdx < numTriangles ; tIdx++){
-            mesh->m_triangles->setVertices(tIdx, 3*tIdx + 0, 3*tIdx + 1, 3*tIdx + 2);
-        }
-        mesh->computeAllEdges();
-        mesh->computeAllNormals();
-        numVertices = mesh->m_vertices->getNumElements();
     }
 
     // The max number of vertices to check per block
@@ -349,13 +324,13 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     }
     // Copy over the vertices to process without altering the original data
     auto vtxArrCopy = mesh->m_vertices->copy();
-    // This tri vector is to store the unaltered indices in the first row vertices referring to their
-    // original copy in the second row. The third row contains the index to the vertices after
-    // the unique vertices have been place in the outputVertices array
-    // . E.g. if a vertex at idx 5 was a repeat of vtx at idx 3, vtxIdxPair[5][0] = 5 ; vtxIdxPair[5][1] = 3;
-    // and if the vertex was added to the array of unique vertices at Idx 2 then vtxIdxPair[5][2] = 2;
-    int vtxIdxTriPair [numVertices][3];
-    memset(vtxIdxTriPair, -1, numVertices*3*sizeof(int));
+    // This data-structure is to store the unaltered indices in the first row vertices referring to their
+    // original copy in the second row. The third row contains the indexes to the vertices after
+    // the unique vertices have been placed in the outputVertices array
+    // . E.g. if a vertex at idx 5 was a repeat of vtx at idx 3, orderedVtxList[5][0] = 5 ; orderedVtxList[5][1] = 3;
+    // and if the vertex was added to the array of unique vertices at Idx 2 then orderedVtxList[5][2] = 2;
+    int orderedVtxList [numVertices][3];
+    memset(orderedVtxList, -1, numVertices*3*sizeof(int));
 
     // This forms a 3D block with all value initiazlied to false
     // If we visit a specific 3D idx, it's set to true to know that we have been there
@@ -377,34 +352,37 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     int zblockLowerBound;
     int zblockUpperBound;
 
-    int vxKey;
-    int vyKey;
-    int vzKey;
-    cVector3d vPos;
+    int vxKey; // X key to look up in the block
+    int vyKey; // Y key to look up in the block
+    int vzKey; // Z ket to look up in the block
+
     double xRes; // X Resolution
     double yRes; // Y Resolution
     double zRes; // X Resolution
+
+    cVector3d vPos; // The position of a vertex
     if(vBounds.x() == 0){
-        xRes = 0;
+        xRes = 0; // If planar in x direction, set x res to 0
     }
     else{
 
         xRes = (double) (numVertices - 1) / vBounds.x();
     }
     if(vBounds.y() == 0){
-        yRes = 0;
+        yRes = 0; // If planar in y direction, set x res to 0
     }
     else{
 
         yRes = (double) (numVertices - 1) / vBounds.y();
     }
     if(vBounds.z() == 0){
-        zRes = 0;
+        zRes = 0; // If planar in z direction, set x res to 0
     }
     else{
-
         zRes = (double) (numVertices - 1) / vBounds.z();
     }
+
+    // Begin the loop to create a hash grid and check for unique vertices
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
         xblockLowerBound = xblockNum * vtxBlockSize;
         xblockUpperBound = xblockLowerBound + vtxBlockSize;
@@ -432,20 +410,20 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
                                 // Mark that we already checked this vertex, so we don't have to check it again
                                 vtxAlreadyChkd[idx] = true;
                                 // Set the vertexIdx Pair value
-                                vtxIdxTriPair[idx][0] = idx;
+                                orderedVtxList[idx][0] = idx;
                                 // Check if the key is already set in the chk block
                                 if (vtxChkBlock[vxKey][vyKey][vzKey] == false){
                                     // Unique vertex, so mark it as such in the corresponding blocks
                                     vtxChkBlock[vxKey][vyKey][vzKey] = true;
                                     // Set the idx block to the original idx
                                     vtxIdxBlock[vxKey][vyKey][vzKey] = idx;
-                                    vtxIdxTriPair[idx][1] = idx;
+                                    orderedVtxList[idx][1] = idx;
                                     uniqueVtxCount ++;
                                 }
                                 else{
                                     // This is not a unique vertex, so get the original idx
                                     // and set it in the corresponding blocks
-                                    vtxIdxTriPair[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
+                                    orderedVtxList[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
                                     duplicateVtxCount++;
                                 }
                             }
@@ -455,6 +433,7 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
             }
         }
     }
+
     //Resize once to save on iterative push/pop time
     outputVertices->resize(uniqueVtxCount*3);
     outputTriangles->resize(numTriangles*3);
@@ -462,59 +441,60 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 
     // In this loop we append the index of the newly resized array containing
     // the unique vertices to the index of the original array of duplicated vertices.
-    // This is an example of the vtxIdxTriPair might look like for usual run
+    // This is an example of the orderedVtxList might look like for usual run
     // After above steps
-    // vtxIdxTriPair[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // vtxIdxTriPair[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
-    // vtxIdxTriPair[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
+    // orderedVtxList[:][1] = { 0,  1,  2,  3,  4,  1,  6,  7,  4}
+    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
     // And we want:
-    // vtxIdxTriPair[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // vtxIdxTriPair[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
-    // vtxIdxTriPair[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  3,  5,  1,  5,  6,  4}
     int vtxCounted = 0;
     for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
-        if (vtxIdxTriPair[aIdx][1] == vtxIdxTriPair[aIdx][0] && vtxIdxTriPair[aIdx][2] == -1){ // A unique vertex
+        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
             vPos = mesh->m_vertices->getLocalPos(aIdx);
             (*outputVertices)[3*vtxCounted + 0] = vPos.x();
             (*outputVertices)[3*vtxCounted + 1] = vPos.y();
             (*outputVertices)[3*vtxCounted + 2] = vPos.z();
 
-            vtxIdxTriPair[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
             m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
             vtxCounted++; // Increase the queue idx by 1
         }
-        else if(vtxIdxTriPair[aIdx][1] < vtxIdxTriPair[aIdx][0]){ // Not a unique vertex
-            int bIdx = vtxIdxTriPair[aIdx][1];
-            int cIdx = vtxIdxTriPair[bIdx][2];
-            if (vtxIdxTriPair[bIdx][1] != vtxIdxTriPair[bIdx][0] || cIdx == -1){
+        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
+            int bIdx = orderedVtxList[aIdx][1];
+            int cIdx = orderedVtxList[bIdx][2];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
                 // This shouldn't happend. This means that we haven't assigned the third row
                 // and row 1 is greater than row 2
                 throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1";
             }
-            vtxIdxTriPair[aIdx][2] = cIdx;
+            orderedVtxList[aIdx][2] = cIdx;
             m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
         }
-        else if(vtxIdxTriPair[aIdx][1] > vtxIdxTriPair[aIdx][0]){
-            int bIdx = vtxIdxTriPair[aIdx][1];
-            if (vtxIdxTriPair[bIdx][1] != vtxIdxTriPair[bIdx][0]){
+        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
+            int bIdx = orderedVtxList[aIdx][1];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
                 throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
             }
-            if (vtxIdxTriPair[bIdx][2] == -1){
+            if (orderedVtxList[bIdx][2] == -1){
                 vPos = mesh->m_vertices->getLocalPos(bIdx);
                 vtxCounted++;
                 (*outputVertices)[3*vtxCounted + 0] = vPos.x();
                 (*outputVertices)[3*vtxCounted + 1] = vPos.y();
                 (*outputVertices)[3*vtxCounted + 2] = vPos.z();
-                vtxIdxTriPair[bIdx][2] = vtxCounted;
+                orderedVtxList[bIdx][2] = vtxCounted;
             }
-            vtxIdxTriPair[aIdx][2] = vtxIdxTriPair[bIdx][2];
+            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
         }
     }
 
     // This last loop iterates over the triangle idxes and assigns the re-idxd vertices from the
-    // third row of vtxIdxTriPair
-    for (int i = 0 ; i < numTriangles*3 ; i++){
-        (*outputTriangles)[i] = vtxIdxTriPair[i][2];
+    // third row of orderedVtxList
+    for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
+        int triIdx = mesh->m_triangles->m_indices[i];
+        (*outputTriangles)[i] = orderedVtxList[triIdx][2];
     }
 
     if (print_debug_info){
@@ -535,7 +515,7 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
         }
 
         for (int i = 0 ; i < numTriangles*3 ; i++){
-            printf("v[0] = %d \t v[1] = %d \t v[2] = %d \n", vtxIdxTriPair[i][0], vtxIdxTriPair[i][1], vtxIdxTriPair[i][2]);
+            printf("v[0] = %d \t v[1] = %d \t v[2] = %d \n", orderedVtxList[i][0], orderedVtxList[i][1], orderedVtxList[i][2]);
         }
     }
 
