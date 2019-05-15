@@ -444,12 +444,12 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // This is an example of the orderedVtxList might look like for usual run
     // After above steps
     // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // orderedVtxList[:][1] = { 0,  1,  2,  3,  4,  1,  6,  7,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  6,  7,  7}
     // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
     // And we want:
     // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  2,  3,  4}
-    // orderedVtxList[:][1] = { 0,  1,  2,  3,  5,  1,  5,  6,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  6,  7,  7}
+    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  4,  5,  5}
     int vtxCounted = 0;
     for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
         if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
