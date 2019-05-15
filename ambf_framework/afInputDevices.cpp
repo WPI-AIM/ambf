@@ -116,19 +116,22 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
+    YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
     YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
     YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
     YAML::Node pDRootLink = physicaDeviceNode["root link"];
     YAML::Node pDLocation = physicaDeviceNode["location"];
+    YAML::Node pDOrientationOffset = physicaDeviceNode["orientation offset"];
+    YAML::Node pDButtonMapping = physicaDeviceNode["button mapping"];
 
     std::string _hardwareName = "";
     K_lh = 0;
     K_ah = 0;
     // Initialize Default Buttons
-    act_1_btn = 0;
-    act_2_btn = 1;
-    mode_next_btn = 2;
-    mode_prev_btn = 3;
+    m_buttons.A1 = 0;
+    m_buttons.A2 = 1;
+    m_buttons.NEXT_MODE = 2;
+    m_buttons.PREV_MODE = 3;
 
     m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
@@ -147,10 +150,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     // the bodies base link.
 
     // A second use case arises, in which the user doesnt want to provide a config file
-    // but want to bind the physical input device to an existing multibody in the simulation.
-    // In this case, the user should specify the root link only and we shall try to find a
-    // body in simulation by that name. Following on, the use shall then be able to control
-    // that link in Position control and control all the joints lower in heirarchy.
+    // but wants to bind the physical input device to an existing multibody in the simulation.
+    // In this case, the user should specify just the root link and we shall try to find a
+    // body in simulation matching that name. Once succesful we shall then be able to control
+    // that link/body in Position control mode and control all the joints lower in heirarchy.
 
     bool _simulatedMBDefined = false;
     bool _rootLinkDefined = false;
@@ -260,6 +263,26 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     // If we cannot find any root link, return failure
     if (simDevice->m_rootLink){
+        // Now check if the controller gains have been defined. If so, override the controller gains
+        // defined for the rootlink of simulate end effector
+        if (pDControllerGain.IsDefined()){
+            // Check if the linear controller is defined
+            if (pDControllerGain["linear"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["linear"]["P"].as<double>();
+                _D = pDControllerGain["linear"]["D"].as<double>();
+                simDevice->m_rootLink->m_controller.setLinearGains(_P, 0, _D);
+            }
+
+            // Check if the angular controller is defined
+            if(pDControllerGain["angular"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["angular"]["P"].as<double>();
+                _D = pDControllerGain["angular"]["D"].as<double>();
+                simDevice->m_rootLink->m_controller.setAngularGains(_P, 0, _D);
+            }
+        }
+
         simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
         simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
         // Initialize all the constraint to null ptr
@@ -275,7 +298,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
         createAfCursor(a_iD->getAFWorld(),
                        _pDevName,
-                       simDevice->getNameSpace(),
+                       simDevice->getNamespace(),
                        simDevice->m_rootLink->getMinPublishFrequency(),
                        simDevice->m_rootLink->getMaxPublishFrequency());
 
@@ -285,7 +308,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
             simDevice->m_rootLink->afObjectCreate(_sDevName,
-                                                  simDevice->getNameSpace(),
+                                                  simDevice->getNamespace(),
                                                   simDevice->m_rootLink->getMinPublishFrequency(),
                                                   simDevice->m_rootLink->getMaxPublishFrequency());
         }
@@ -297,10 +320,14 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     if (pDLocation.IsDefined()){
         YAML::Node posNode = pDLocation["position"];
         YAML::Node rpyNode = pDLocation["orientation"];
-        assignXYZ(&posNode, &_position);
+        _position = toXYZ<cVector3d>(&posNode);
         cVector3d _rpy;
-        assignRPY(&rpyNode, &_rpy);
-        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_ZYX);
+        _rpy = toRPY<cVector3d>(&rpyNode);
+        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
+
+        simDevice->m_rootLink->setLocalPos(_position);
+        simDevice->m_rootLink->setLocalRot(_orientation);
+        m_simRotInitial = _orientation;
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
@@ -308,12 +335,37 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // reference pose
         _position = simDevice->m_rootLink->getLocalPos();
         _orientation = simDevice->m_rootLink->getLocalRot();
+        m_simRotInitial.identity();
     }
 
     simDevice->m_posRef = _position/ m_workspaceScale;
     simDevice->m_posRefOrigin = _position / m_workspaceScale;
     simDevice->m_rotRef = _orientation;
     simDevice->m_rotRefOrigin = _orientation;
+
+    if (pDOrientationOffset.IsDefined()){
+            cVector3d rpy_offset;
+            rpy_offset = toRPY<cVector3d>(&pDOrientationOffset);
+            m_simRotOffset.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
+    }
+    else{
+        m_simRotOffset.identity();
+    }
+
+    if (pDButtonMapping.IsDefined()){
+        if (pDButtonMapping["a1"].IsDefined()){
+            m_buttons.A1 = pDButtonMapping["a1"].as<int>();
+        }
+        if (pDButtonMapping["a2"].IsDefined()){
+            m_buttons.A2 = pDButtonMapping["a2"].as<int>();
+        }
+        if (pDButtonMapping["next mode"].IsDefined()){
+            m_buttons.NEXT_MODE = pDButtonMapping["next mode"].as<int>();
+        }
+        if (pDButtonMapping["prev mode"].IsDefined()){
+            m_buttons.PREV_MODE = pDButtonMapping["prev mode"].as<int>();
+        }
+    }
 
     return 1;
 }
@@ -591,12 +643,10 @@ void afSimulatedDevice::setGripperAngle(double angle, double dt){
     // Since it's not desireable to control the exact angle of multiple joints in the gripper.
     // We override the set angle method for grippers to simplify the angle bound. 0 for closed
     // and 1 for open and everything in between is scaled.
-    if (m_rootLink->m_parentBodies.size() == 0){
-        double clipped_angle = cClamp(angle, 0.0, 1.0);
-        for (size_t jnt = 0 ; jnt < m_rootLink->m_joints.size() ; jnt++){
-            double ang = m_rootLink->m_joints[jnt]->getLowerLimit() + clipped_angle * (m_rootLink->m_joints[jnt]->getUpperLimit()  - m_rootLink->m_joints[jnt]->getLowerLimit());
-            m_rootLink->m_joints[jnt]->commandPosition(ang);
-        }
+    double clipped_angle = cClamp(angle, 0.0, 1.0);
+    for (size_t jnt = 0 ; jnt < m_rootLink->m_joints.size() ; jnt++){
+        double ang = m_rootLink->m_joints[jnt]->getLowerLimit() + clipped_angle * (m_rootLink->m_joints[jnt]->getUpperLimit()  - m_rootLink->m_joints[jnt]->getLowerLimit());
+        m_rootLink->m_joints[jnt]->commandPosition(ang);
     }
 }
 
@@ -688,7 +738,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
         inputDevicesNode = YAML::LoadFile(a_input_devices_config);
     }catch (std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << a_input_devices_config << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
         return 0;
     }
 

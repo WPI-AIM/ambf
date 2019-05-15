@@ -102,50 +102,36 @@ typedef std::vector<afSensorPtr> afSensorVec;
 //------------------------------------------------------------------------------
 
 ///
-/// \brief cVec2btVec
+/// \brief toBTvec
 /// \param cVec
 /// \return
 ///
-btVector3 cVec2btVec(const cVector3d &cVec);
+btVector3 toBTvec(const cVector3d &cVec);
 
 ///
-/// \brief btVec2cVec
+/// \brief toCvec
 /// \param bVec
 /// \return
 ///
-cVector3d btVec2cVec(const btVector3 &bVec);
+cVector3d toCvec(const btVector3 &bVec);
 
-
+template <typename T>
 ///
-/// \brief assignXYZ
+/// \brief toXYZ
+/// \param node
+/// \return
+///
+T toXYZ(YAML::Node* node);
+
+
+template <typename T>
+///
+/// \brief toRPY
 /// \param node
 /// \param v
+/// \return
 ///
-void assignXYZ(YAML::Node* node, btVector3 *v);
-
-
-///
-/// \brief assignXYZ
-/// \param node
-/// \param v
-///
-void assignXYZ(YAML::Node* node, cVector3d *v);
-
-
-///
-/// \brief assignRPY
-/// \param node
-/// \param v
-///
-void assignRPY(YAML::Node* node, cVector3d *v);
-
-
-///
-/// \brief assignRPY
-/// \param node
-/// \param v
-///
-void assignRPY(YAML::Node* node, btVector3 *v);
+T toRPY(YAML::Node* node);
 
 
 ///
@@ -172,7 +158,7 @@ public:
     // Load the base config file
     bool loadBaseConfig(std::string file);
     // Get the nuber of multibody config files defined in launch config file
-    inline int numMultiBodyConfig(){return s_multiBodyConfigFileNames.size();}
+    inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
 
 private:
 
@@ -250,20 +236,9 @@ public:
     inline void setD_ang(double a_D) {D_ang = a_D;}
 
 public:
-    // This function computes the output force from Position Data
-    btVector3 computeOutput(const btVector3 &process_val, const btVector3 &set_point, const double &dt);
-
+    template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
-    btVector3 computeOutput(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt);
-
-    // This function computes the output force from Position Data
-    cVector3d computeOutput_cvec(const cVector3d &process_val, const cVector3d &set_point, const double &dt);
-
-    // This function computes the output torque from Rotation Data
-    cVector3d computeOutput_cvec(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt);
-
-    // Future use
-    btTransform computeOutputTransform(const btTransform &process_val, const btTransform &set_point, const double &dt);
+    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt);
 
     // Yet to be implemented
     void boundImpulse(double effort_cmd);
@@ -799,7 +774,7 @@ public:
     bool createDefaultCamera();
 
     // Load camera from YAML Node data
-    bool loadCamera(YAML::Node* camera_node, std::string camera_name);
+    bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -940,7 +915,7 @@ public:
     afLight(afWorld* a_afWorld);
 
     // Load light from YAML Node data
-    bool loadLight(YAML::Node* light_node, std::string light_name);
+    bool loadLight(YAML::Node* light_node, std::string light_name, afWorldPtr a_world);
 
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
@@ -989,6 +964,7 @@ public:
     afSoftBodyPtr getAFSoftBody(std::string a_name);
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
+    std::string getNamespace(){return m_world_namespace;}
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
@@ -1020,6 +996,7 @@ protected:
 protected:
 
     afWorld(){}
+    std::string m_world_namespace;
 
 private:
 
@@ -1054,7 +1031,7 @@ public:
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
     inline std::string getMultiBodyPath(){return m_multibody_path;}
-    inline std::string getNameSpace(){return m_mb_namespace;}
+    inline std::string getNamespace(){return m_mb_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision

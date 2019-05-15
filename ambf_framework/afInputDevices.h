@@ -132,6 +132,17 @@ private:
     std::mutex m_mutex;
 };
 
+
+///
+/// \brief The afButtons struct
+///
+struct afButtons{
+    int A1; // Action 1 Button
+    int A2; // Action 2 Button
+    int NEXT_MODE; // Next Mode Button
+    int PREV_MODE; // Prev Mode Button
+};
+
 ///
 /// \brief The afPhysicalDevice class: This class encapsulates each haptic device in isolation and provides methods to get/set device
 /// state/commands, button's state and grippers state if present
@@ -183,10 +194,7 @@ public:
     double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
     double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
 
-    int act_1_btn;
-    int act_2_btn;
-    int mode_next_btn;
-    int mode_prev_btn;
+    afButtons m_buttons;
     int m_gripper_pinch_btn = -1;
     bool btn_cam_rising_edge;
     bool btn_clutch_rising_edge;
@@ -195,8 +203,16 @@ private:
     void updateCursorPose();
     bool m_dev_force_enabled = true;
 
+public:
+    // Initial offset between the simulated end effector and the
+    // physical device
+    cMatrix3d m_simRotInitial;
+    // A transform between simulated and pyhsical devices' frame
+    // to store any intended offset
+    cMatrix3d m_simRotOffset;
+
 private:
-    afInputDevices* m_iDPtr;
+    afInputDevices* m_iDPtr; // Ptr to the Device Handler class
 };
 
 ///
