@@ -528,14 +528,12 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 ///  based on the underlying bullet softbody
 ///
 void afSoftMultiMesh::createGELSkeleton(){
-    int n_btLinks = m_bulletSoftBody->m_links.size();
     int n_btNodes = m_bulletSoftBody->m_nodes.size();
     std::vector<cGELSkeletonNode*> gelNodes;
     gelNodes.resize(n_btNodes);
     m_afSoftNodes.resize(n_btNodes);
     for (int i = 0 ; i < n_btNodes ; i++){
         btSoftBody::Node* btNode = &m_bulletSoftBody->m_nodes[i];
-        btSoftBody::Link btLink = m_bulletSoftBody->m_links[i];
 
         cGELSkeletonNode* gelNode = new cGELSkeletonNode;
         gelNode->m_pos.set(btNode->m_x.x(), btNode->m_x.y(), btNode->m_x.z());
@@ -624,6 +622,39 @@ void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 
 
 ///
+/// \brief afSoftMultiMesh::createRope
+/// \param m_sb
+/// \param m_edges
+/// \param m_vertices
+/// \return
+///
+bool afSoftMultiMesh::createRope(btSoftBody *a_sb, std::vector<int> *a_line, const cMesh *a_mesh){
+    if (a_sb){
+        a_sb->m_nodes.resize(a_mesh->m_vertices->getNumElements());
+        for(int nIdx = 0 ; nIdx < a_sb->m_nodes.size() ; nIdx++){
+            cVector3d pos = a_mesh->m_vertices->getLocalPos(nIdx);
+            btVector3 vPos = cVec2bVec(pos);
+            btSoftBody::Node& n = a_sb->m_nodes[nIdx];
+            n.m_im = 1;
+            n.m_im = 1 / n.m_im;
+            n.m_x = vPos;
+            n.m_q = n.m_x;
+            n.m_n = btVector3(0, 0, 1);
+            n.m_leaf = a_sb->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+            n.m_material = a_sb->m_materials[0];
+        }
+
+        for(int pIdx = 0 ; pIdx < a_line->size() - 1 ; pIdx++){
+            // The indexes start at zero, correct this
+            int node0Idx = (*a_line)[pIdx] - 1;
+            int node1Idx = (*a_line)[pIdx+1] - 1;
+            a_sb->appendLink(node0Idx, node1Idx);
+        }
+    }
+}
+
+
+///
 /// \brief afSoftMultiMesh::buildContactTriangles: This method creates a Bullet collision model for this object.
 /// \param a_margin
 /// \param lowResMesh
@@ -652,8 +683,22 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
         computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr);
-        m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
-                                                                m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        if (m_trianglesPtr.size() > 0){
+            m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
+                                                                    m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        }
+        else{
+            m_bulletSoftBody = new btSoftBody(m_dynamicWorld->m_bulletSoftBodyWorldInfo);
+            /* Default material	*/
+            btSoftBody::Material* pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kLST = 1;
+            pm->m_kAST = 1;
+            pm->m_kVST = 1;
+            pm->m_flags = btSoftBody::fMaterial::Default;
+            for (int lIdx = 0 ; lIdx < mesh->m_lines.size() ; lIdx++){
+                createRope(m_bulletSoftBody, &mesh->m_lines[lIdx], mesh);
+            }
+        }
         m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
         // Set the default radius of the GEL Skeleton Node
         cGELSkeletonNode::s_default_radius = m_bulletSoftBody->getCollisionShape()->getMargin();

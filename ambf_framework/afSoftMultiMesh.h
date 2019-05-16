@@ -161,6 +161,9 @@ public:
     //! Create CGEL Bodys and Nodes based on bulletSoftBody
     virtual void createGELSkeleton();
 
+    //! Helper Function to Create ROPE From 1 D .obj meshes
+    bool createRope(btSoftBody* a_sb, std::vector<int>* a_line, const cMesh* a_mesh);
+
     //! Overrride the loadFromFile Method.
     virtual bool loadFromFile(std::string a_filename);
 

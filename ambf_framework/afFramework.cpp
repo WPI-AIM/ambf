@@ -1689,19 +1689,23 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
 
      if (loadFromFile(high_res_filepath.c_str())){
          scale(m_scale);
-         if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
-             buildContactTriangles(_collision_margin, &m_lowResMesh);
-             m_lowResMesh.scale(m_scale);
-         }
-         else{
-             std::cerr << "WARNING: Soft Body " << m_name
-                       << "'s mesh " << low_res_filepath << " not found\n";
-             return 0;
-         }
      }
      else{
+         // If we can't find the visual mesh, we can proceed with
+         // printing just a warning
          std::cerr << "WARNING: Soft Body " << m_name
                    << "'s mesh " << high_res_filepath << " not found\n";
+     }
+
+     if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
+         buildContactTriangles(_collision_margin, &m_lowResMesh);
+         m_lowResMesh.scale(m_scale);
+     }
+     else{
+         // If we can't find the collision mesh, then we have a problem,
+         // stop loading this softbody and return with 0
+         std::cerr << "WARNING: Soft Body " << m_name
+                   << "'s mesh " << low_res_filepath << " not found\n";
          return 0;
      }
 
