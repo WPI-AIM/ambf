@@ -158,6 +158,7 @@ typedef std::map<vertexIndexSet,unsigned int,ltVertexIndexSet> vertexIndexSet_ui
 #define C_OBJ_VERTEX_ID    "v"
 #define C_OBJ_TEXCOORD_ID  "vt"
 #define C_OBJ_NORMAL_ID    "vn"
+#define C_OBJ_LINE_ID      "l"
 #define C_OBJ_FACE_ID      "f"
 #define C_OBJ_COMMENT_ID   "#"
 #define C_OBJ_MTL_LIB_ID   "mtllib"
@@ -191,6 +192,7 @@ struct cOBJFileInfo
     void init()
     {
         m_vertexCount = 0;
+        m_lineCount = 0;
         m_texCoordCount = 0;
         m_normalCount = 0;
         m_faceCount = 0;
@@ -198,6 +200,7 @@ struct cOBJFileInfo
     }
 
     unsigned int m_vertexCount;
+    unsigned int m_lineCount;
     unsigned int m_texCoordCount;
     unsigned int m_normalCount;
     unsigned int m_faceCount;
@@ -305,9 +308,12 @@ class cOBJModel
     //--------------------------------------------------------------------------
     // MEMBERS:
     //--------------------------------------------------------------------------
-    
+
     //! List of vertices.
     cVector3d* m_pVertices;
+
+    //! List of lines.
+    std::vector< std::vector<int> > m_pLines;
 
     //! List of colors.
     cColorf* m_pColors;
@@ -349,6 +355,10 @@ class cOBJModel
     //! Load material file [mtl].
     bool loadMaterialLib(const char a_fFileName[], cMaterialInfo *a_pMaterials,
         unsigned int *a_curMaterialIndex, char a_basePath[]);
+
+    //! Parse information about line.
+    void  parseLineString(char a_lineString[], std::vector<int> *a_lineOut,
+                          const cVector3d *a_pVertices);
 
     //! Parse information about face.
     void  parseFaceString(char a_faceString[], cFace *a_faceOut, const cVector3d *a_pVertices,

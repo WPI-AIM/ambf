@@ -410,6 +410,9 @@ public:
     //! Array of vertices.
     cVertexArrayPtr m_vertices;
 
+    //! Array of lines.
+    std::vector< std::vector<int> > m_lines;
+
     //! Array of triangles.
     cTriangleArrayPtr m_triangles;
 

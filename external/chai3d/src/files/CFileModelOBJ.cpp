@@ -318,6 +318,8 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
             {
                 // get number of vertices
                 int numVertices = fileObj.m_OBJInfo.m_vertexCount;
+                // get number of edges
+                int numLines = fileObj.m_OBJInfo.m_lineCount;
                 int j = 0;
 
                 // get main mesh
@@ -343,6 +345,11 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     {
                         mesh->setUseVertexColors(false);
                     }
+                }
+
+                // Add line data
+                for(int lIdx = 0 ; lIdx < fileObj.m_pLines.size() ; lIdx++){
+                    mesh->m_lines.push_back(fileObj.m_pLines[lIdx]);
                 }
             }
         }
@@ -673,6 +680,7 @@ bool cOBJModel::LoadModel(const char a_fileName[])
     if (m_pColors) delete [] m_pColors;
     if (m_pFaces) delete [] m_pFaces;
     m_pVertices = new cVector3d[m_OBJInfo.m_vertexCount];
+    m_pLines.resize(m_OBJInfo.m_lineCount);
     m_pColors = new cColorf[m_OBJInfo.m_vertexCount];
     m_pFaces = new cFace[m_OBJInfo.m_faceCount];
 
@@ -761,6 +769,19 @@ bool cOBJModel::LoadModel(const char a_fileName[])
             currentIndex.m_normalCount++;
         }
 
+        // check if this is a line Identifier
+        else if (!strncmp(str, C_OBJ_LINE_ID, sizeof(C_OBJ_LINE_ID)))
+        {
+            // read the rest of the line (the complete face)
+            getTokenParameter(str, sizeof(str) ,hFile);
+
+            // convert string into a face structure
+            parseLineString(str, &m_pLines[currentIndex.m_lineCount], m_pVertices);
+
+            // next face
+            currentIndex.m_lineCount++;
+        }
+
         // rest of the line contains face information
         else if (!strncmp(str, C_OBJ_FACE_ID, sizeof(C_OBJ_FACE_ID)))
         {
@@ -770,7 +791,7 @@ bool cOBJModel::LoadModel(const char a_fileName[])
             // convert string into a face structure
             parseFaceString(str, &m_pFaces[currentIndex.m_faceCount],
             m_pVertices, m_pNormals, m_pTexCoords, curMaterial);
-            
+
             // next face
             currentIndex.m_faceCount++;
         }
@@ -840,6 +861,83 @@ bool cOBJModel::LoadModel(const char a_fileName[])
 
 //------------------------------------------------------------------------------
 
+void cOBJModel::parseLineString(char a_lineString[], std::vector<int> *a_lineOut, const cVector3d *a_pVertices)
+{
+    /////////////////////////////////////////////////////////////////////////
+    // CONVERT LINE STRING FROM THE OBJ FILE INTO A LINE STRUCTURE
+    /////////////////////////////////////////////////////////////////////////
+
+    unsigned int i;
+    int iVertex = 0;
+
+    // pointer to the line string
+    char *pLineString = a_lineString;
+
+    // save the string positions of vertex indices
+    int iVtxIdxPos[C_OBJ_MAX_VERTICES];
+    int iCurVtxIdx = 0;
+
+    // the first vertex always starts at position 0 in the string
+    iVtxIdxPos[0] = 0;
+    int _numVertices = 1;
+    iCurVtxIdx++;
+
+    /////////////////////////////////////////////////////////////////////////
+    // GET NUMBER OF VERTICES IN THE LINE
+    /////////////////////////////////////////////////////////////////////////
+
+    // loop trough the whole string
+    bool detectedSpace = false;
+    for (i=0; i<strlen(a_lineString); i++)
+    {
+        if (!detectedSpace)
+        {
+            // each line vtx index element is separated by spaces
+            if (a_lineString[i] == ' ')
+            {
+                detectedSpace = true;
+            }
+        }
+        else
+        {
+            if (a_lineString[i] != ' ')
+            {
+                // one more vertex
+                _numVertices++;
+
+                // save position of triplet
+                iVtxIdxPos[iCurVtxIdx] = i;
+
+                // next triplet
+                iCurVtxIdx++;
+
+                // reset for next group of spaces
+                detectedSpace = false;
+            }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // COPY VERTEX INDICES THAT MAKE UP THIS LINE
+    /////////////////////////////////////////////////////////////////////////
+
+    // add vertices to the line
+    for (i=0; i<(unsigned int) _numVertices; i++)
+    {
+        // only vertices
+        sscanf(pLineString, "%i", &iVertex);
+
+        // copy vertex into the face. Also check for normals and texture
+        // coordinates and copy them if present.
+        a_lineOut->push_back(iVertex);
+
+        // set string pointer to the next vertex index
+        pLineString = &a_lineString[iVtxIdxPos[i+1]];
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
                 const cVector3d *a_pVertices,
                 const cVector3d *a_pNormals,
@@ -870,7 +968,7 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
     iTripletPos[0] = 0;
     a_faceOut->m_numVertices = 1;
     iCurTriplet++;
-      
+
     if (m_groupNames.size() > 0) a_faceOut->m_groupIndex = (int)(m_groupNames.size() - 1);
     else a_faceOut->m_groupIndex = -1;
 
@@ -896,10 +994,10 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
             {
                 // one more vertex
                 a_faceOut->m_numVertices++;
-                
+
                 // save position of triplet
                 iTripletPos[iCurTriplet] = i;
-                
+
                 // next triplet
                 iCurTriplet++;
 
@@ -972,12 +1070,12 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
     }
 
     // allocate space for texture coordinates
-    if ((mode == 2) || (mode == 4)) 
-    {  
+    if ((mode == 2) || (mode == 4))
+    {
         a_faceOut->m_pTexCoords = new cVector3d[a_faceOut->m_numVertices];
         a_faceOut->m_pTextureIndices = new int[a_faceOut->m_numVertices];
     }
-    else 
+    else
     {
         a_faceOut->m_pTexCoords = NULL;
         a_faceOut->m_pTextureIndices = NULL;
@@ -1023,13 +1121,13 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
         sizeof(cVector3d));
         a_faceOut->m_pVertexIndices[i] = iVertex-1;
 
-        if ((mode == 2) || (mode == 4)) 
-        {    
+        if ((mode == 2) || (mode == 4))
+        {
             memcpy(&a_faceOut->m_pTexCoords[i],
             &m_pTexCoords[iTextureCoord - 1], sizeof(cVector3d));
             a_faceOut->m_pTextureIndices[i] = iTextureCoord-1;
         }
-        if ((mode == 3) || (mode == 4)) 
+        if ((mode == 3) || (mode == 4))
         {
             memcpy(&a_faceOut->m_pNormals[i],
             &m_pNormals[iNormal - 1], sizeof(cVector3d));
@@ -1211,6 +1309,10 @@ void cOBJModel::getFileInfo(FILE *a_hStream, cOBJFileInfo *a_info, const char a_
         // vertex?
         if (!strncmp(str, C_OBJ_VERTEX_ID, sizeof(C_OBJ_VERTEX_ID)))
         a_info->m_vertexCount++;
+
+        // line?
+        if (!strncmp(str, C_OBJ_LINE_ID, sizeof(C_OBJ_LINE_ID)))
+        a_info->m_lineCount++;
 
         // texture coordinate?
         if (!strncmp(str, C_OBJ_TEXCOORD_ID, sizeof(C_OBJ_TEXCOORD_ID)))
