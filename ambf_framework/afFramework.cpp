@@ -1753,8 +1753,8 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         _b = softBodyColorRGBA["b"].as<float>();
         _a = softBodyColorRGBA["a"].as<float>();
         _mat.setColorf(_r, _g, _b, _a);
-        setMaterial(_mat);
-        setTransparencyLevel(softBodyColorRGBA["a"].as<float>());
+        m_gelMesh.setMaterial(_mat);
+        m_gelMesh.setTransparencyLevel(softBodyColorRGBA["a"].as<float>());
     }
     else if(softBodyColorComponents.IsDefined()){
         if (softBodyColorComponents["diffuse"].IsDefined()){
@@ -1777,14 +1777,14 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _b = softBodyColorComponents["specular"]["b"].as<float>();
             _mat.m_specular.set(_r, _g, _b);
         }
-        setMaterial(_mat);
-        setTransparencyLevel(softBodyColorComponents["transparency"].as<float>());
+        m_gelMesh.setMaterial(_mat);
+        m_gelMesh.setTransparencyLevel(softBodyColorComponents["transparency"].as<float>());
     }
     else if(softBodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<std::string>());
         _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-        setMaterial(_mat);
-        setTransparencyLevel(rgba[3]);
+        m_gelMesh.setMaterial(_mat);
+        m_gelMesh.setTransparencyLevel(rgba[3]);
     }
 
     if (softBodyConfigData.IsNull()){
@@ -3228,6 +3228,9 @@ bool afCamera::createDefaultCamera(){
 
     // set the near and far clipping planes of the camera
     m_camera->setClippingPlanes(0.01, 10.0);
+
+    // Set the Field of View
+    m_camera->setFieldViewAngleRad(0.7);
 
     // set stereo mode
     m_camera->setStereoMode(cStereoMode::C_STEREO_DISABLED);
