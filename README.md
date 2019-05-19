@@ -18,6 +18,12 @@ external tools that include an extended version of CHAI-3D (developed along-side
 
 ## Usage:
 ### Building:
+On Linux machines, you might need to install the `libasound2-dev` package
+
+```
+sudo apt install libasound2-dev
+```
+
 To build the framework (Linux and Mac-OS):
 ```
 cd ~
