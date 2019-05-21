@@ -795,6 +795,9 @@ public:
     // This method returns the "right direction" vector for this camera.
     inline cVector3d getRightVector() const { return (m_localRot.getCol1()); }
 
+    // This method returns the field view angle in Radians.
+    inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
+
     // This method enables or disables output image mirroring vertically.
     inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
 

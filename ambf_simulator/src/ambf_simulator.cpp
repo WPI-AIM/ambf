@@ -1004,7 +1004,7 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     float bottom = -1.0f;
     float nearPlane = 1.f;
     float tanFov = (top - bottom) * 0.5f / nearPlane;
-    float fov = btScalar(1.0) * btAtan(tanFov);
+    float fov = (a_cameraPtr->getFieldViewAngle() * 2 / 1.57079) * btAtan(tanFov);
 
     btVector3 camPos, camTarget;
 
