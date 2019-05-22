@@ -892,6 +892,12 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
     }
 }
 
+
+///
+/// \brief mousePosCallback
+/// \param a_window
+/// \param a_xpos
+/// \param a_ypos
 ///
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
@@ -925,21 +931,21 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_r_clicked ){
                 cMatrix3d camRot;
                 double scale = 0.3;
-                double z_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                double y_vel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                double yawVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
+                double pitchVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
                 if (g_mouse_inverted_y){
-                    y_vel = -y_vel;
+                    pitchVel = -pitchVel;
                 }
 
-                cVector3d camStrafe = cCross(devCam->getLookVector(), devCam->getUpVector());
                 cVector3d nz(0, 0, 1);
                 cVector3d ny(0, 1, 0);
 
-                cMatrix3d camViewWithoutPitch(cCross(camStrafe, nz), camStrafe ,nz);
+                cMatrix3d camViewWithoutPitch(cCross(devCam->getRightVector(), nz), devCam->getRightVector() ,nz);
                 cMatrix3d camViewPitchOnly;
-                double pitchAngle = -cAngle(nz, devCam->getUpVector());
-                camViewPitchOnly.setAxisAngleRotationRad(ny, pitchAngle);
-                camRot.setIntrinsicEulerRotationDeg(0, y_vel, z_vel, cEulerOrder::C_EULER_ORDER_XYZ);
+                // Use the look vector to avoid locking view at horizon
+                double pitchAngle = cAngle(nz, devCam->getLookVector()) - (C_PI/2);
+                camViewPitchOnly.setAxisAngleRotationRad(ny, -pitchAngle);
+                camRot.setIntrinsicEulerRotationDeg(0, pitchVel, yawVel, cEulerOrder::C_EULER_ORDER_XYZ);
                 (*g_cameraIt)->camRot = camRot;
 
                 devCam->setLocalRot( camViewWithoutPitch * (*g_cameraIt)->camRot * camViewPitchOnly );
@@ -968,6 +974,13 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     }
 }
 
+
+///
+/// \brief mouseScrollCallback
+/// \param a_window
+/// \param a_xpos
+/// \param a_ypos
+///
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
