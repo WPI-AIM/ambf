@@ -957,13 +957,28 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_scroll_clicked){
 //                devCam->showTargetPos(true);
                 double scale = 0.03;
-                double x_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                double y_vel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                double horizontalVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
+                double verticalVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                 if (g_mouse_inverted_y){
-                    y_vel = -y_vel;
+                    verticalVel = -verticalVel;
                 }
-                cVector3d dVel(0, -x_vel, y_vel);
-                cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * dVel;
+                cVector3d nz(0, 0, 1);
+
+                // Use the look vector to avoid locking view at horizon
+                double pitchAngle = cAngle(nz, devCam->getLookVector()) - (C_PI/2);
+
+                // Clamp the +ve vertical arc ball to 1.5 Radians
+                if (pitchAngle >= 1.5 && verticalVel > 0.0){
+                    verticalVel = 0.0;
+                }
+                // Clamp the -ve vertical arc ball to -1.5 Radians
+                if (pitchAngle <= -1.5 && verticalVel < 0.0){
+                    verticalVel = 0.0;
+                }
+
+                cVector3d deltaVel(0, -horizontalVel, verticalVel);
+
+                cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * deltaVel;
                 devCam->setView(newPos, devCam->getTargetPos(), cVector3d(0,0,1));
             }
 //            else{
