@@ -561,6 +561,9 @@ public:
     // Load joint from YAML Node data
     virtual bool loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
+    // Apply damping to this joint
+    void applyDamping(const double &dt=0.001);
+
     // Set open loop effort for this joint
     void commandEffort(double &effort_cmd);
 
@@ -579,6 +582,7 @@ public:
     // Get the position of this joint
     double getPosition();
 
+    // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
 protected:
@@ -613,6 +617,10 @@ private:
     btPoint2PointConstraint* m_p2p;
     afMultiBodyPtr m_mB;
     afJointController m_controller;
+
+    // Previous Joint Position. This value is used for explicit damping
+    double m_prevPos;
+    double m_curPos;
 };
 
 //-----------------------------------------------------------------------------

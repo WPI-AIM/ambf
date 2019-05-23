@@ -1100,6 +1100,12 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         }
         g_afMultiBody->m_pickedNode->m_v += toBTvec(delta) / timeStep;
     }
+    std::vector<afJointPtr>::const_iterator jIt;
+    std::vector<afJointPtr> afJoints = g_afWorld->getAFJoints();
+    for (jIt = afJoints.begin() ; jIt != afJoints.end() ; ++jIt){
+        afJointPtr jnt = (*jIt);
+        jnt->applyDamping(timeStep);
+    }
 }
 
 ///

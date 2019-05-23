@@ -625,7 +625,7 @@ bool afRigidBody::loadRigidBody(std::string rb_config_file, std::string node_nam
         baseNode = YAML::LoadFile(rb_config_file);
     }catch(std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << rb_config_file << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << rb_config_file << std::endl;
         return 0;
     }
     YAML::Node bodyNode = baseNode[node_name];
@@ -1559,7 +1559,7 @@ bool afSoftBody::loadSoftBody(std::string sb_config_file, std::string node_name,
         baseNode = YAML::LoadFile(sb_config_file);
     }catch(std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << sb_config_file << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << sb_config_file << std::endl;
         return 0;
     }
 
@@ -1919,6 +1919,8 @@ void afJointController::boundImpulse(double &effort_cmd){
 ///
 afJoint::afJoint(afWorldPtr a_afWorld){
     m_afWorld = a_afWorld;
+    m_curPos = 0.0; // Initialize Cur Joint position to 0
+    m_prevPos = 0.0; // Initialize Prev Joint position to 0
 }
 
 ///
@@ -2013,6 +2015,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_upper_limit = 100;
     //Default joint type is revolute if not type is specified
     m_jointType = JointType::revolute;
+    m_joint_damping = 0.0; // Initialize damping to 0
 
     afRigidBodyPtr afBodyA, afBodyB;
 
@@ -2142,6 +2145,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     if(jointOffset.IsDefined()){
         m_joint_offset = jointOffset.as<double>();
+    }
+
+    if (jointDamping.IsDefined()){
+        m_joint_damping = jointDamping.as<double>();
     }
 
     if(jointLimits.IsDefined()){
@@ -2380,11 +2387,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
         m_spring->setStiffness(_axisNumber, _stiffness);
 
-        double _damping = 0.1;
-        if (jointDamping.IsDefined()){
-            _damping = jointDamping.as<double>();
-        }
-        m_spring->setDamping(_axisNumber, _damping);
+        m_spring->setDamping(_axisNumber, m_joint_damping);
 
         m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
         m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
@@ -2456,6 +2459,18 @@ btQuaternion afJoint::getRotationBetweenVectors(btVector3 &v1, btVector3 &v2){
     return quat;
 }
 
+
+///
+/// \brief afJoint::applyDamping
+///
+void afJoint::applyDamping(const double &dt){
+    // First lets configure what type of joint is this.
+    m_prevPos = m_curPos;
+    m_curPos = getPosition();
+    double effort = - m_joint_damping * (m_curPos - m_prevPos)/dt;
+    commandEffort(effort);
+}
+
 ///
 /// \brief afJoint::command_position
 /// \param cmd
@@ -2490,13 +2505,13 @@ void afJoint::commandPosition(double &position_cmd){
 /// \param cmd
 ///
 void afJoint::commandEffort(double &cmd){
-    if (m_jointType == JointType::revolute){
+    if (m_jointType == JointType::revolute || m_jointType == JointType::torsion_spring){
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
         m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * cmd);
         m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * cmd);
     }
-    else if (m_jointType == JointType::prismatic){
+    else if (m_jointType == JointType::prismatic || m_jointType == JointType::linear_spring){
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
         const btVector3 relPos(0,0,0);
@@ -2516,6 +2531,31 @@ double afJoint::getPosition(){
         return m_slider->getLinearPos();
     else if (m_jointType == JointType::fixed)
         return 0;
+    else if (m_jointType == JointType::linear_spring){
+        // Adapted form btSlider Constraint
+        btGeneric6DofSpringConstraint* springConstraint = (btGeneric6DofSpringConstraint*) m_btConstraint;
+        btTransform transA, transB;
+        transA = m_btConstraint->getRigidBodyA().getCenterOfMassTransform();
+        transB = m_btConstraint->getRigidBodyB().getCenterOfMassTransform();
+        const btTransform tAINW = transA * springConstraint->getFrameOffsetA();
+        const btTransform tBINW = transB * springConstraint->getFrameOffsetB();
+        const btVector3 deltaPivot = tBINW.getOrigin() - tAINW.getOrigin();
+        btScalar angle = deltaPivot.dot(tAINW.getBasis().getColumn(2));
+        return 1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
+    }
+    else if (m_jointType == JointType::torsion_spring){
+        // Adapted from btHingeConstraint with slight modifications for spring constraint
+        btGeneric6DofSpringConstraint* springConstraint = (btGeneric6DofSpringConstraint*) m_btConstraint;
+        btTransform transA, transB;
+        transA = m_btConstraint->getRigidBodyA().getCenterOfMassTransform();
+        transB = m_btConstraint->getRigidBodyB().getCenterOfMassTransform();
+        const btVector3 refAxis0 = transA.getBasis() * springConstraint->getFrameOffsetA().getBasis().getColumn(0);
+        const btVector3 refAxis1 = transA.getBasis() * springConstraint->getFrameOffsetA().getBasis().getColumn(1);
+        const btVector3 swingAxis = transB.getBasis() * springConstraint->getFrameOffsetB().getBasis().getColumn(1);
+        //	btScalar angle = btAtan2Fast(swingAxis.dot(refAxis0), swingAxis.dot(refAxis1));
+        btScalar angle = btAtan2(swingAxis.dot(refAxis0), swingAxis.dot(refAxis1));
+        return -1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
+    }
 }
 
 ///
@@ -2857,7 +2897,7 @@ bool afWorld::loadWorld(std::string a_world_config){
         worldNode = YAML::LoadFile(a_world_config);
     }catch(std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << a_world_config << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_world_config << std::endl;
         return 0;
     }
 
@@ -3871,7 +3911,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         multiBodyNode = YAML::LoadFile(a_multibody_config_file);
     }catch (std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO CONFIG FILE: " << a_multibody_config_file << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_multibody_config_file << std::endl;
         return 0;
     }
 
