@@ -6,7 +6,7 @@ bodies: [BODY r_gripper_palm_link, BODY r_gripper_l_finger_link, BODY r_gripper_
   BODY r_gripper_r_finger_link, BODY r_gripper_r_finger_tip_link]
 joints: [JOINT r_gripper_palm_link-r_gripper_l_finger_link, JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link,
   JOINT r_gripper_palm_link-r_gripper_r_finger_link, JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link]
-sensors: [SENSOR Proximity0, SENSOR Proximity1, SENSOR Proximity2]
+sensors: [SENSOR Proximity0]
 high resolution path: ../../../meshes/grippers/pr2_gripper/high_res/
 low resolution path: ../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true

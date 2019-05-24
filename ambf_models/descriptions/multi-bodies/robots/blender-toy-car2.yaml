@@ -221,7 +221,7 @@ JOINT Chassis-ShockBL:
   joint limits: {high: 0.2, low: -0.2}
   controller: {D: 20.4, I: 0, P: 10200.0}
   type: linear spring
-  damping: 10
+  damping: 100
   stiffness: 1000.0
 JOINT ShockBL-WheelBR:
   name: ShockBL-WheelBR
@@ -246,7 +246,7 @@ JOINT Chassis-ShockBR:
   joint limits: {high: 0.2, low: -0.2}
   controller: {D: 20.4, I: 0, P: 10200.0}
   type: linear spring
-  damping: 10
+  damping: 100
   stiffness: 1000.0
 JOINT ShockBR-WheelBL:
   name: ShockBR-WheelBL
@@ -271,7 +271,7 @@ JOINT Chassis-ShockFL:
   joint limits: {high: 0.2, low: -0.2}
   controller: {D: 20.6, I: 0, P: 10300.0}
   type: linear spring
-  damping: 10
+  damping: 100
   stiffness: 600.0
   offset: 0.087
 JOINT ShockFL-WheelFR:
@@ -297,8 +297,8 @@ JOINT Chassis-ShockFR:
   joint limits: {high: 0.2, low: -0.2}
   controller: {D: 20.6, I: 0, P: 10300.0}
   type: linear spring
-  damping: 10
-  stiffness: 600.0
+  damping: 100
+  stiffness: 600
   offset: -0.087
 JOINT ShockFR-WheelFL:
   name: ShockFR-WheelFL
