@@ -296,11 +296,11 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
         a_iD->s_inputDeviceCount++;
         std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-        createAfCursor(a_iD->getAFWorld(),
-                       _pDevName,
-                       simDevice->getNamespace(),
-                       simDevice->m_rootLink->getMinPublishFrequency(),
-                       simDevice->m_rootLink->getMaxPublishFrequency());
+//        createAfCursor(a_iD->getAFWorld(),
+//                       _pDevName,
+//                       simDevice->getNamespace(),
+//                       simDevice->m_rootLink->getMinPublishFrequency(),
+//                       simDevice->m_rootLink->getMaxPublishFrequency());
 
         // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
         // Since an existing root body is bound to the physical device whose afComm should already be
