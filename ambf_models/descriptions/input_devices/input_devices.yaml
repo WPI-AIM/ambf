@@ -3,12 +3,12 @@ input devices: [MTMR, MTML, Razer Hydra0, Razer Hydra1, Geomagic Touch,
 
 MTMR:
   hardware name: MTMR
-  haptic gain: {linear: 0.0, angular: 0.0}
+  haptic gain: {linear: 0.03, angular: 1}
   workspace scaling: 10
-  simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+  simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
   # root link:
   location: {
-    position: {x: 0, y: 0, z: 0},
+    position: {x: 0.3, y: 0, z: -1.0},
     orientation: {r: 0, p: 0, y: 0}}
   button mapping: {
     a1: 1,
@@ -18,15 +18,15 @@ MTMR:
 
 MTML:
     hardware name: MTML
-    haptic gain: {linear: 0.0, angular: 0.0}
+    haptic gain: {linear: 0.03, angular: 0.0}
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
     location: {
-      position: {x: 0.0, y: 0.5, z: 0.0},
+      position: {x: 0.3, y: 0.0, z: -1.0},
       orientation: {r: 0, p: 0, y: 0}}
     button mapping: {
       a1: 1,
-      a2: 2,
+      a2: 6,
       next mode: 3,
       prev mode: 4}
 

@@ -201,7 +201,7 @@ public:
 private:
     std::mutex m_mutex;
     void updateCursorPose();
-    bool m_dev_force_enabled = true;
+    bool m_dev_force_enabled = false;
 
 public:
     // Initial offset between the simulated end effector and the

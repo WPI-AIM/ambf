@@ -173,18 +173,6 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" WORKSPACE SCALE NOT DEFINED \n";
     }
 
-    if (pDHapticGain.IsDefined()){
-        K_lh = pDHapticGain["linear"].as<double>();
-        K_ah = pDHapticGain["angular"].as<double>();
-
-        // clamp the force output gain to the max device stiffness
-        double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
-        K_lh = cMin(K_lh, _maxStiffness);
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
-    }
-
     if (pDSimulatedGripper.IsDefined()){
         boost::filesystem::path _mb_filename = _simulatedMBConfig;
         _mb_filename = pDSimulatedGripper.as<std::string>();
@@ -239,6 +227,18 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     if(!_devFound){
         return 0;
+    }
+
+    if (pDHapticGain.IsDefined()){
+        K_lh = pDHapticGain["linear"].as<double>();
+        K_ah = pDHapticGain["angular"].as<double>();
+
+        // clamp the force output gain to the max device stiffness
+        double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
+        K_lh = cMin(K_lh, _maxStiffness);
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
     }
 
     if (_simulatedMBDefined){
@@ -342,6 +342,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     simDevice->m_posRefOrigin = _position / m_workspaceScale;
     simDevice->m_rotRef = _orientation;
     simDevice->m_rotRefOrigin = _orientation;
+    m_gripper_pinch_btn = 0;
 
     if (pDOrientationOffset.IsDefined()){
             cVector3d rpy_offset;
