@@ -1573,7 +1573,7 @@ void updateHapticDevice(void* a_arg){
 
         pDev->m_hDevice->getUserSwitch(pDev->m_buttons.A2, devCams[0]->m_cam_pressed);
         if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
-            double scale = 0.1;
+            double scale = 0.01;
             for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
                 devCams[dcIdx]->setLocalPos(devCams[dcIdx]->measuredPos() + cMul(scale, devCams[dcIdx]->measuredRot() * pDev->measuredVelLin() ) );
                 devCams[dcIdx]->setLocalRot(pDev->measuredRotCamPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
