@@ -24,6 +24,20 @@ On Linux machines, you might need to install the `libasound2-dev` package
 sudo apt install libasound2-dev
 ```
 
+Boost libraires ship with Ubuntu systems, but on Mac OS, you might need to install them explicitly.
+
+For this purpose, on **Mac OS**, if you don't have Boost
+
+1. Install **Xcode** from App Store
+2. Install **command line tools** by running in terminal 
+`xcode-select --install`
+3. Install **Homebrew** view running this in terminal 
+`/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+
+4. Install **boost** by running the following in the terminal
+`brew install boost`
+
+
 To build the framework (Linux and Mac-OS):
 ```
 cd ~
