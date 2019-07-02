@@ -8,7 +8,7 @@
 ## [Wiki](https://github.com/WPI-AIM/ambf/wiki):
 Please checkout the [Wiki](https://github.com/WPI-AIM/ambf/wiki) for indepth details about AMBF, it's components, examples and concepts. You can also checkout the video below for a brief run down of some of the features of AMBF
 
-[![AMBF Simulator](https://img.youtube.com/vi/9REJVK1mwEU/maxresdefault.jpg)](https://www.youtube.com/watch?v=9REJVK1mwEU&t=41s)
+[![AMBF Simulator](https://img.youtube.com/vi/9REJVK1mwEU/maxresdefault.jpg)](https://www.youtube.com/watch?v=9REJVK1mwEU&t=0s)
 
 
 ## Description:
