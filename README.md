@@ -19,8 +19,13 @@ RL Agents on real-time data with simulation in the loop. This framework is built
 external tools that include an extended version of CHAI-3D (developed along-side AMBF), BULLET-Physics, Open-GL, GLFW, yaml-cpp, pyyaml and Eigen to name a few. Each external library has it's own license that can be found in the corresponding subfolder.
 
 ## Usage:
+### Tested Platforms:
+AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few extra steps on **Ubuntu 14.04**, please create an issue if you would like to get instructions for that. 
+
+Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support. 
+
 ### Building:
-On Linux machines, you might need to install the `libasound2-dev` package
+On Linux machines, you might need to install the `libasound2-dev` package.
 
 ```
 sudo apt install libasound2-dev
