@@ -90,9 +90,12 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${O
 
 # find dependencies
 find_package(yaml-cpp REQUIRED)
-find_package (OpenGL REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(Boost REQUIRED)
+
 include_directories(${YAML_CPP_INCLUDE_DIR})
-include_directories (OPENGL_INCLUDE_DIR)
+include_directories (${OPENGL_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # ROS Dependency
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
