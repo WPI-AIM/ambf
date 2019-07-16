@@ -2874,11 +2874,10 @@ void afResistanceSensor::updateSensor(){
                 cVector3d pointACur = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform() * toBTvec(m_bodyAContactPoint));
                 cVector3d pointBCur = toCvec(getSensedRigidBody()->getWorldTransform() * toBTvec(m_bodyBContactPoint));
                 cVector3d deltaContactPoints = pointACur - pointBCur;
-                double deltaContactsMag = deltaContactPoints.length();
-                deltaContactPoints = cCross(dirInWorld, deltaContactPoints);
-                deltaContactPoints = cCross(deltaContactPoints, dirInWorld);
-                deltaContactPoints.normalize();
-                deltaContactPoints *= deltaContactsMag;
+                cVector3d offPlaneNormal = cCross(dirInWorld, deltaContactPoints);
+                cVector3d inPlaneNormal = cCross(offPlaneNormal, dirInWorld);
+                inPlaneNormal.normalize();
+                deltaContactPoints = cDot(inPlaneNormal, deltaContactPoints) * inPlaneNormal;
 
                 if (deltaContactPoints.lengthsq() <= m_contactTolerance){
                     staticForce = m_staticFriction * deltaContactPoints;
@@ -2899,18 +2898,18 @@ void afResistanceSensor::updateSensor(){
             cVector3d deltaPos = m_curContactPos - m_lastContactPos;
 
             // Check if the error is along the direction of sensor
-            double mag = deltaPos.length();
-            deltaPos = cCross(dirInWorld, deltaPos);
-            deltaPos = cCross(deltaPos, dirInWorld);
-            deltaPos.normalize();
-            deltaPos *= mag;
+            cVector3d offPlaneNormal = cCross(dirInWorld, deltaPos);
+            cVector3d inPlaneNormal = cCross(offPlaneNormal, dirInWorld);
+            inPlaneNormal.normalize();
+            deltaPos = cDot(inPlaneNormal, deltaPos) * inPlaneNormal;
 //            if ( (1.0 -  cAbs(cDot(dirInWorld, deltaPos)) > 0.3) ){
             {
                 dynamicForce = m_dynamicFriction * deltaPos;
 //                std::cerr << staticForce << std::endl;
 
                 btVector3 relPosA = getParentBody()->m_bulletRigidBody->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
-                btVector3 relPosB = getSensedRigidBody()->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
+                cVector3d pointBCur = toCvec(getSensedRigidBody()->getWorldTransform() * toBTvec(m_bodyBContactPoint));
+                btVector3 relPosB = getSensedRigidBody()->getCenterOfMassTransform().inverse() * toBTvec(pointBCur);
 
                 cVector3d totalForce = staticForce + dynamicForce;
 
