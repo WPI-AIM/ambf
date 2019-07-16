@@ -96,6 +96,7 @@ typedef std::vector<afLightPtr> afLightVec;
 typedef std::vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
 class afSensor;
+class afResistanceSensor;
 typedef afSensor* afSensorPtr;
 typedef std::map<std::string, afSensorPtr> afSensorMap;
 typedef std::vector<afSensorPtr> afSensorVec;
@@ -625,7 +626,7 @@ private:
 
 //-----------------------------------------------------------------------------
 enum afSensorType{
-    proximity=0, range=1
+    proximity=0, range=1, resistance=2
 };
 
 ///
@@ -670,19 +671,28 @@ public:
 };
 
 
-///
-/// \brief The afProximitySensor class
-///
-class afProximitySensor: public afSensor{
+class afRayTracerSensor: public afSensor{
+
+    friend class afProximitySensor;
+    friend class afResistanceSensor;
+
 public:
+    // Declare enum to find out later what type of body we sensed
+    enum SensedBodyType{
+        RIGID_BODY=0, SOFT_BODY=1};
+
+    // Type of sensed body, could be a rigid body or a soft body
+    SensedBodyType m_sensedBodyType;
+
+public:
+    // Constructor
+    afRayTracerSensor(afWorldPtr a_afWorld);
+
     // Load the sensor from ambf format
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
     // Load the sensor from ambf format
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Constructor
-    afProximitySensor(afWorldPtr a_afWorld);
 
     // Update sensor is called on each update of positions of RBs and SBs
     virtual void updateSensor();
@@ -690,6 +700,9 @@ public:
     // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(){return m_triggered;}
 
+    // Get the type of sensed body
+    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;
+                                             }
     // Return the sensed RigidBody's Ptr
     inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
 
@@ -711,15 +724,7 @@ public:
     // Get the sensed point in world frame
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
-public:
-    // Declare enum to find out later what type of body we sensed
-    enum SensedBodyType{
-        RIGID_BODY=0, SOFT_BODY=1};
-
-    // Type of sensed body, could be a rigid body or a soft body
-    SensedBodyType m_sensedBodyType;
-
-private:
+protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
 
@@ -755,7 +760,6 @@ private:
     // Location of sensed point in World Frame. This is along of the sensor direction
     cVector3d m_sensedLocationWorld;
 
-private:
     // Visual markers to show the hit point and the sensor start and end points
     cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;
 
@@ -763,7 +767,33 @@ private:
     btPoint2PointConstraint* _p2p;
 };
 
+
+///
+/// \brief The afProximitySensor class
+///
+class afProximitySensor: public afRayTracerSensor{
+public:
+    // Constructor
+    afProximitySensor(afWorldPtr a_afWorld);
+};
+
 //-----------------------------------------------------------------------------
+
+class afResistanceSensor: public afRayTracerSensor{
+public:
+    afResistanceSensor(afWorldPtr a_afWorld);
+    virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx="");
+    virtual void updateSensor();
+
+private:
+    cVector3d m_lastContactPos;
+    cVector3d m_curContactPos;
+
+    double m_staticFriction;
+    double m_dynamicFriction;
+
+    bool m_firstTrigger = true;
+};
 
 ///
 /// \brief The afCamera class

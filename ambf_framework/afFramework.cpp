@@ -2558,32 +2558,13 @@ double afJoint::getPosition(){
     }
 }
 
+
 ///
-/// \brief afProximitySensor::afProximitySensor
+/// \brief afRayTracerSensor
 /// \param a_afWorld
 ///
-afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
-    m_hitSphere = new cMesh();
-    m_fromSphere = new cMesh();
-    m_toSphere = new cMesh();
-    cCreateSphere(m_hitSphere, 0.03);
-    cCreateSphere(m_fromSphere, 0.02);
-    cCreateSphere(m_toSphere, 0.02);
-    a_afWorld->s_bulletWorld->addChild(m_hitSphere);
-    a_afWorld->s_bulletWorld->addChild(m_fromSphere);
-    a_afWorld->s_bulletWorld->addChild(m_toSphere);
-    m_hitSphere->m_material->setPinkHot();
-    m_fromSphere->m_material->setRed();
-    m_toSphere->m_material->setGreen();
-    m_hitSphere->setShowEnabled(false);
+afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 
-    m_fromSphere->setUseDisplayList(true);
-    m_toSphere->setUseDisplayList(true);
-    m_hitSphere->setUseDisplayList(true);
-
-    m_fromSphere->markForUpdate(false);
-    m_toSphere->markForUpdate(false);
-    m_hitSphere->markForUpdate(false);
 }
 
 ///
@@ -2593,7 +2574,7 @@ afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+bool afRayTracerSensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(sensor_config_file);
@@ -2615,7 +2596,7 @@ bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string n
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node sensorNode = *sensor_node;
     if (sensorNode.IsNull()){
         std::cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -2629,6 +2610,8 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorLocation = sensorNode["location"];
     YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
+    YAML::Node sensorVisible = sensorNode["visible"];
+    YAML::Node sensorVisibleSize = sensorNode["visible size"];
 
     std::string _parent_name;
     if (sensorParentName.IsDefined()){
@@ -2642,6 +2625,50 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     m_location = toXYZ<cVector3d>(&sensorLocation);
     m_direction = toXYZ<cVector3d>(&sensorDirection);
     m_range = sensorRange.as<double>();
+
+    if (m_range < 0.0){
+        std::cerr << "ERROR! SENSOR RANGE CANNOT BE NEGATIVE" << std::endl;
+        return 0;
+    }
+
+    if (sensorVisible.IsDefined()){
+        m_showSensor = sensorVisible.as<bool>();
+    }
+    else{
+        m_showSensor = false;
+    }
+
+    if (m_showSensor){
+
+        m_hitSphere = new cMesh();
+        m_fromSphere = new cMesh();
+        m_toSphere = new cMesh();
+
+
+        // Chosed an random scale to divide the visual radius of the sensor markers
+        double visible_size = m_range / 8;
+        if (sensorVisibleSize.IsDefined()){
+            visible_size = sensorVisibleSize.as<double>();
+        }
+        cCreateSphere(m_hitSphere, visible_size);
+        cCreateSphere(m_fromSphere, visible_size);
+        cCreateSphere(m_toSphere, visible_size);
+        m_afWorld->s_bulletWorld->addChild(m_hitSphere);
+        m_afWorld->s_bulletWorld->addChild(m_fromSphere);
+        m_afWorld->s_bulletWorld->addChild(m_toSphere);
+        m_hitSphere->m_material->setPinkHot();
+        m_fromSphere->m_material->setRed();
+        m_toSphere->m_material->setGreen();
+        m_hitSphere->setShowEnabled(false);
+
+        m_fromSphere->setUseDisplayList(true);
+        m_toSphere->setUseDisplayList(true);
+        m_hitSphere->setUseDisplayList(true);
+
+        m_fromSphere->markForUpdate(false);
+        m_toSphere->markForUpdate(false);
+        m_hitSphere->markForUpdate(false);
+    }
 
     // First search in the local space.
     m_parentBody = mB->getAFRigidBodyLocal(_parent_name);
@@ -2669,7 +2696,7 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 ///
 /// \brief afSensor::processSensor
 ///
-void afProximitySensor::updateSensor(){
+void afRayTracerSensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
     cTransform T_bInw = m_parentBody->getLocalTransform();
@@ -2678,16 +2705,8 @@ void afProximitySensor::updateSensor(){
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
-        m_fromSphere->setShowEnabled(true);
-        m_toSphere->setShowEnabled(true);
-
         m_fromSphere->setLocalPos(toCvec(_rayFromWorld) );
         m_toSphere->setLocalPos(toCvec(_rayToWorld) );
-    }
-    else{
-        m_fromSphere->setShowEnabled(false);
-        m_toSphere->setShowEnabled(false);
-        m_hitSphere->setShowEnabled(false);
     }
 
     btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
@@ -2756,8 +2775,116 @@ void afProximitySensor::updateSensor(){
         m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
     }
     else{
-        m_hitSphere->setShowEnabled(false);
+        if(m_showSensor){
+            m_hitSphere->setShowEnabled(false);
+        }
         m_triggered = false;
+    }
+}
+
+
+///
+/// \brief afProximitySensor::afProximitySensor
+/// \param a_afWorld
+///
+afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_afWorld){
+    m_afWorld = a_afWorld;
+}
+
+
+///
+/// \brief afResistanceSensor::afResistanceSensor
+/// \param a_afWorld
+///
+afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_afWorld){
+    m_lastContactPos.set(0,0,0);
+    m_curContactPos.set(0,0,0);
+    m_staticFriction = 0;
+    m_dynamicFriction = 0;
+}
+
+
+///
+/// \brief afResistanceSensor::loadSensor
+/// \param sensor_node
+/// \param node_name
+/// \param mB
+/// \param name_remapping_idx
+/// \return
+///
+bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    bool result = false;
+    result = afRayTracerSensor::loadSensor(sensor_node, node_name, mB, name_remapping_idx);
+
+    if (result){
+        YAML::Node sensorFriction = (*sensor_node)["friction"];
+
+        if (sensorFriction.IsDefined()){
+            m_staticFriction = sensorFriction["static"].as<double>();
+        }
+
+        if (sensorFriction.IsDefined()){
+            m_dynamicFriction = sensorFriction["dynamic"].as<double>();
+        }
+    }
+    return result;
+}
+
+
+///
+/// \brief afResistanceSensor::updateSensor
+///
+void afResistanceSensor::updateSensor(){
+    // Let's update the RayTracer Sensor First
+    afRayTracerSensor::updateSensor();
+
+    // Find the rigid or softbody that this sensor made a contact with
+    if (isTriggered()){
+        if (getSensedBodyType() == SensedBodyType::RIGID_BODY){
+            if (m_firstTrigger){
+                m_lastContactPos = getSensedPoint();
+                m_firstTrigger = false;
+            }
+            else{
+                m_lastContactPos = m_curContactPos;
+            }
+            m_curContactPos = getSensedPoint();
+
+            // Now lets perform the simplest friction implementation.
+
+            // First lets convert the sensor direction from body to world frame.
+            cVector3d dirInWorld = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform().getBasis() * toBTvec(m_direction));
+            dirInWorld.normalize();
+
+            // Get the error from last to cur pos
+            cVector3d deltaPos = m_curContactPos - m_lastContactPos;
+
+            // Check if the error is along the direction of sensor
+            double mag = deltaPos.length();
+            deltaPos = cCross(dirInWorld, deltaPos);
+            deltaPos = cCross(deltaPos, dirInWorld);
+            deltaPos.normalize();
+            deltaPos *= mag;
+//            if ( (1.0 -  cAbs(cDot(dirInWorld, deltaPos)) > 0.3) ){
+            {
+                cVector3d frictionForce = m_staticFriction * deltaPos;
+                std::cerr << frictionForce << std::endl;
+
+                btVector3 relPosA = getParentBody()->m_bulletRigidBody->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
+                btVector3 relPosB = getSensedRigidBody()->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
+
+                // Nows lets add the action and reaction friction forces to both the bodies
+//                getParentBody()->m_bulletRigidBody->applyForce(toBTvec(-frictionForce), relPosA);
+                getSensedRigidBody()->applyForce(toBTvec(frictionForce), relPosB);
+            }
+        }
+
+        else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){
+
+        }
+    }
+    else{
+        m_firstTrigger = true;
     }
 }
 
@@ -4013,6 +4140,9 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
             // More sensors to follow
             if (_sensor_type.compare("Proximity") ||_sensor_type.compare("proximity") ||_sensor_type.compare("PROXIMITY")){
                 sensorPtr = new afProximitySensor(m_afWorld);
+            }
+            if (_sensor_type.compare("Resistance") ||_sensor_type.compare("resistance") ||_sensor_type.compare("PROXIMITY")){
+                sensorPtr = new afResistanceSensor(m_afWorld);
             }
 
             // Finally load the sensor from afmb config data
