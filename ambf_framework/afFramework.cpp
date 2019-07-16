@@ -675,6 +675,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyRollingFriction = bodyNode["friction"]["rolling"];
     YAML::Node bodyRestitution = bodyNode["restitution"];
     YAML::Node bodyPublishChildrenNames = bodyNode["publish children names"];
+    YAML::Node bodyPublishJointNames = bodyNode["publish joint names"];
     YAML::Node bodyPublishJointPositions = bodyNode["publish joint positions"];
     YAML::Node bodyPublishFrequency = bodyNode["publish frequency"];
     YAML::Node bodyCollisionGroups = bodyNode["collision groups"];
@@ -1127,11 +1128,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_surfaceProps.m_restitution = bodyRestitution.as<double>();
 
     if (bodyPublishChildrenNames.IsDefined()){
-        _publish_children_names = bodyPublishChildrenNames.as<bool>();
+        m_publish_children_names = bodyPublishChildrenNames.as<bool>();
+    }
+
+    if (bodyPublishJointNames.IsDefined()){
+        m_publish_joint_names = bodyPublishJointNames.as<bool>();
     }
 
     if (bodyPublishJointPositions.IsDefined()){
-        _publish_joint_positions = bodyPublishJointPositions.as<bool>();
+        m_publish_joint_positions = bodyPublishJointPositions.as<bool>();
     }
 
     if (bodyPublishFrequency.IsDefined()){
@@ -1283,7 +1288,7 @@ void afRigidBody::updatePositionFromDynamics()
 
         // We can set this body to publish it's children joint names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (_publish_joint_names || m_afObjectPtr->m_objectCommand.publish_joint_names){
+        if (m_publish_joint_names == true || m_afObjectPtr->m_objectCommand.publish_joint_names == true){
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -1293,13 +1298,13 @@ void afRigidBody::updatePositionFromDynamics()
 
         // We can set this body to publish joint positions in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (_publish_joint_positions || m_afObjectPtr->m_objectCommand.publish_joint_positions){
+        if (m_publish_joint_positions == true || m_afObjectPtr->m_objectCommand.publish_joint_positions == true){
             afObjectSetJointPositions();
         }
 
         // We can set this body to publish it's children names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (_publish_children_names || m_afObjectPtr->m_objectCommand.publish_children_names){
+        if (m_publish_children_names == true || m_afObjectPtr->m_objectCommand.publish_children_names == true){
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -1327,9 +1332,6 @@ void afRigidBody::afObjectCommandExecute(double dt){
         btVector3 force, torque;
         ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
-        _publish_children_names = m_afCommand.publish_children_names;
-        _publish_joint_names = m_afCommand.publish_joint_names;
-        _publish_joint_positions = m_afCommand.publish_joint_positions;
         // If the body is kinematic, we just want to control the position
         if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
             btTransform _Td;
