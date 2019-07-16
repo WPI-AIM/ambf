@@ -19,10 +19,11 @@ RP0:
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
   visible: true
+  contact tolerance: 0.005
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP1:
@@ -31,11 +32,12 @@ RP1:
   location: {x: -0.2, y: 0.05, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP2:
@@ -44,11 +46,12 @@ RP2:
   location: {x: -0.2, y: -0.05, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP3:
@@ -57,11 +60,12 @@ RP3:
   location: {x: -0.2, y: 0.0, z: 0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP4:
@@ -70,11 +74,12 @@ RP4:
   location: {x: -0.2, y: 0.0, z: -0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP5:
@@ -83,11 +88,12 @@ RP5:
   location: {x: -0.2, y: 0.05, z: 0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP6:
@@ -96,11 +102,12 @@ RP6:
   location: {x: -0.2, y: -0.05, z: -0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP7:
@@ -109,11 +116,12 @@ RP7:
   location: {x: -0.2, y: 0.05, z: -0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP8:
@@ -122,11 +130,12 @@ RP8:
   location: {x: -0.2, y: -0.05, z: 0.05}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.5
+  contact tolerance: 0.005
   visible: true
   visible size: 0.03
   friction: {
     static: 10,
-    dynamic: 0.0}
+    dynamic: 0}
   parent: /ambf/env/BODY r_gripper_palm_link
 
 SENSOR Proximity1:

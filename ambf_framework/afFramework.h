@@ -792,6 +792,15 @@ private:
     double m_staticFriction;
     double m_dynamicFriction;
 
+    cVector3d m_bodyAContactPoint;
+    cVector3d m_bodyBContactPoint;
+
+    bool m_contactPointsValid;
+
+    // Tolerance to slide of the contact points between two bodies
+    // tangential to the direction of the sensor direction
+    double m_contactTolerance;
+
     bool m_firstTrigger = true;
 };
 
