@@ -12,130 +12,122 @@ ignore inter-collision: true
 namespace: /ambf/env/
 # publish children names: true
 
+friction: &default_friction
+  static: 100
+  dynamic: 20
+
+visiblity: &visibility 0.01
+range: &range 0.5
+x_location: &xl -0.2
+negative_default_offset: &ndo -0.1
+positive_default_offset: &pdo 0.1
+
 RP0:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.0, z: 0.0}
+  location: {x: *xl, y: 0.0, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   visible: true
   contact tolerance: 0.001
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP1:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.05, z: 0.0}
+  location: {x: *xl, y: *pdo, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP2:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: -0.05, z: 0.0}
+  location: {x: *xl, y: *ndo, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP3:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.0, z: 0.05}
+  location: {x: *xl, y: 0.0, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP4:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.0, z: -0.05}
+  location: {x: *xl, y: 0.0, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP5:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.05, z: 0.05}
+  location: {x: *xl, y: *pdo, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP6:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: -0.05, z: -0.05}
+  location: {x: *xl, y: *ndo, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP7:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: 0.05, z: -0.05}
+  location: {x: *xl, y: *pdo, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 RP8:
   name: Proximity
   type: Resistance
-  location: {x: -0.2, y: -0.05, z: 0.05}
+  location: {x: *xl, y: *ndo, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.5
+  range: *range
   contact tolerance: 0.001
   visible: true
-  visible size: 0.03
-  friction: {
-    static: 20,
-    dynamic: 0}
+  visible size: *visibility
+  friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
 SENSOR Proximity1:
