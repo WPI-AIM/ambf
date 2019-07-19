@@ -264,6 +264,24 @@ private:
 
 
 ///
+/// \brief The afResistiveSurface struct
+///
+struct afResistiveSurface{
+    bool enable = false;
+    double faceResolution = 1;
+    double edgeResolution = 1;
+    double protrusion = 0.1;
+    double contactArea = 0.001;
+    double contactHardness = 1;
+    double contactDamping = 1;
+    double slipFriction = 0.1;
+    int sourceMesh = 0; // collision mesh
+
+    bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
+};
+
+
+///
 /// \brief The afBody class
 ///
 class afRigidBody: public cBulletMultiMesh{
@@ -414,6 +432,10 @@ protected:
 protected:
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
+
+protected:
+
+    afResistiveSurface m_resistiveSurface;
 
 private:
     // Ptr to afWorld
@@ -724,6 +746,20 @@ public:
     // Get the sensed point in world frame
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
+public:
+
+    inline void setRayFrom(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
+
+    inline void setRayTo(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
+
+    inline void setDirection(const cVector3d& a_direction){m_direction = a_direction;}
+
+    inline void setRange(const double& a_range){m_range = a_range;}
+
+    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
+
+    void enableVisualization();
+
 protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
@@ -765,6 +801,9 @@ protected:
 
     // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
+
+    // Size of spheres for the sensor visualization
+    double m_visibilitySphereRadius;
 };
 
 
@@ -785,21 +824,37 @@ public:
     virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx="");
     virtual void updateSensor();
 
+public:
+    inline void setContactHardness(const double& a_contactHardness){m_staticFriction = a_contactHardness;}
+
+    inline void setSlipFriction(const double& a_dynamicFriction){m_slipFriction = a_dynamicFriction;}
+
+    inline void setContactDamping(const double& a_contactDamping){m_contactDamping = a_contactDamping;}
+
+    inline void setContactArea(const double& a_contactArea){m_contactTolerance = a_contactArea;}
+
 private:
-    cVector3d m_lastContactPos;
-    cVector3d m_curContactPos;
+    cVector3d m_lastContactPosInWorld;
+    cVector3d m_curContactPosInWorld;
 
     double m_staticFriction;
-    double m_dynamicFriction;
+    double m_slipFriction;
 
-    cVector3d m_bodyAContactPoint;
-    cVector3d m_bodyBContactPoint;
+    cVector3d m_bodyAContactPointLocal;
+    cVector3d m_bodyBContactPointLocal;
+
+    cVector3d m_tangentialError;
+
+    cVector3d m_tangentialErrorLast;
 
     bool m_contactPointsValid;
 
     // Tolerance to slide of the contact points between two bodies
     // tangential to the direction of the sensor direction
     double m_contactTolerance;
+
+    // The damping along the contact point
+    double m_contactDamping;
 
     bool m_firstTrigger = true;
 };

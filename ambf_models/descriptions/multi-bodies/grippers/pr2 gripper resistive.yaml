@@ -13,14 +13,16 @@ namespace: /ambf/env/
 # publish children names: true
 
 friction: &default_friction
-  static: 100
+  static: 1000
   dynamic: 20
 
 visiblity: &visibility 0.01
-range: &range 0.5
-x_location: &xl -0.2
-negative_default_offset: &ndo -0.1
-positive_default_offset: &pdo 0.1
+range: &range 0.01
+x_location: &xl -0.22
+contact tolerance: &cto 0.0005
+contact hardness: &chd 500
+negative_default_offset: &ndo -0.05
+positive_default_offset: &pdo 0.05
 
 RP0:
   name: Proximity
@@ -29,7 +31,8 @@ RP0:
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
   visible: true
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible size: *visibility
   friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
@@ -40,7 +43,8 @@ RP1:
   location: {x: *xl, y: *pdo, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -52,7 +56,8 @@ RP2:
   location: {x: *xl, y: *ndo, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -64,7 +69,8 @@ RP3:
   location: {x: *xl, y: 0.0, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -76,7 +82,8 @@ RP4:
   location: {x: *xl, y: 0.0, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -88,7 +95,8 @@ RP5:
   location: {x: *xl, y: *pdo, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -100,7 +108,8 @@ RP6:
   location: {x: *xl, y: *ndo, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -112,7 +121,8 @@ RP7:
   location: {x: *xl, y: *pdo, z: *ndo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -124,7 +134,8 @@ RP8:
   location: {x: *xl, y: *ndo, z: *pdo}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact tolerance: 0.001
+  contact tolerance: *cto
+  contact hardness: *chd
   visible: true
   visible size: *visibility
   friction: *default_friction
@@ -160,7 +171,7 @@ BODY r_gripper_palm_link:
     position: {x: -0.143, y: -0.0, z: 0.0}
   publish joint names: true
   publish joint positions: true
-  friction: {rolling: 0.01, static: 0.5}
+  friction: {rolling: 0.00, static: 0.0}
   damping: {angular: 1.0, linear: 0.5}
   restitution: 0
   collision groups: [0]
