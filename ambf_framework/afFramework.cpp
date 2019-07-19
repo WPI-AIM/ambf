@@ -359,20 +359,21 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
 
 template <>
 ///
-/// \brief afCartesianController::computeOutput
+/// \brief afCartesianController::computeOutput ts is the time_scale and computed as a fraction of fixed time-step (dt-fixed) and dynamic time-step (dt)
 /// \param process_val
 /// \param set_point
 /// \param dt
+/// \param ts
 /// \return
 ///
-btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt, const double &ts){
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
     m_dPos = set_point - process_val;
     _ddPos = (m_dPos - _dPos_prev) / dt;
 
-    _output = P_lin * (m_dPos) + D_lin * (_ddPos);
+    _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
     return _output;
 }
 
@@ -383,9 +384,10 @@ template<>
 /// \param process_val
 /// \param set_point
 /// \param dt
+/// \param ts
 /// \return
 ///
-btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt, const double &ts){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -399,7 +401,7 @@ btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btM
     m_dRot.getRotation(_dRotQuat);
     _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
 
-    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -415,14 +417,14 @@ template<>
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt, const double &ts){
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
     m_dPos_cvec = set_point - process_val;
     _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
 
-    _output = P_lin * (m_dPos_cvec) + D_lin * (_ddPos);
+    _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
     return _output;
 }
 
@@ -434,7 +436,7 @@ template<>
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -449,7 +451,7 @@ cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatr
     m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
     _error_cur = _e_axis * _e_angle;
 
-    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -465,7 +467,7 @@ template<>
 /// \param current_time
 /// \return
 ///
-btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt){
+btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt, const double &tsf){
 
 }
 

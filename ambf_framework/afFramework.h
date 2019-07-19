@@ -239,7 +239,8 @@ public:
 public:
     template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
-    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt);
+    // The last argument ts is the time_scale and is computed at dt_fixed / dt
+    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt, const double &ts=1);
 
     // Yet to be implemented
     void boundImpulse(double effort_cmd);

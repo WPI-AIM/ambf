@@ -1273,6 +1273,8 @@ void updatePhysics(){
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool _bodyPicked = false;
 
+    double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
+
     cVector3d torque, torque_prev;
     torque.set(0, 0, 0);
     torque_prev.set(0, 0, 0);
@@ -1408,11 +1410,12 @@ void updatePhysics(){
             }
 
             cVector3d force, torque;
-
-            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt);
+            // ts is to prevent the saturation of forces
+            double ts = dt_fixed / dt;
+            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt, ts);
             force = simGripper->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt, ts);
             simGripper->applyForce(force);
             simGripper->applyTorque(torque);
             simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
