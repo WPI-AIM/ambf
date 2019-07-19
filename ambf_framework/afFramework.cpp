@@ -839,25 +839,35 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 double x = bodyGeometry["x"].as<double>();
                 double y = bodyGeometry["y"].as<double>();
                 double z = bodyGeometry["z"].as<double>();
+                x *= m_scale;
+                y *= m_scale;
+                z *= m_scale;
                 cCreateBox(tempMesh, x, y, z);
             }
             else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
+                radius *= m_scale;
                 cCreateSphere(tempMesh, radius, dx, dy);
             }
             else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
                 cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
             }
             else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
                 cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
             }
             else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
                 cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
             }
             m_meshes->push_back(tempMesh);
@@ -926,16 +936,22 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             double x = bodyCollisionGeometry["x"].as<double>();
             double y = bodyCollisionGeometry["y"].as<double>();
             double z = bodyCollisionGeometry["z"].as<double>();
+            x *= m_scale;
+            y *= m_scale;
+            z *= m_scale;
             btVector3 halfExtents(x/2, y/2, z/2);
             m_bulletCollisionShape = new btBoxShape(halfExtents);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
+            radius *= m_scale;
             m_bulletCollisionShape = new btSphereShape(radius);
         }
         else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
             std::string axis = "z";
             if(bodyCollisionGeometry["axis"].IsDefined()){
                 axis = bodyCollisionGeometry["axis"].as<std::string>();
@@ -963,6 +979,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
             // Adjust for height as bullet treats the height as the distance
             // between the two spheres forming the capsule's ends.
             height = height - 2*radius;
@@ -989,6 +1007,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
             double height = bodyCollisionGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
             std::string axis = "z";
             if(bodyCollisionGeometry["axis"].IsDefined()){
                 axis = bodyCollisionGeometry["axis"].as<std::string>();
