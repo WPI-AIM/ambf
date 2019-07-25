@@ -269,13 +269,14 @@ private:
 ///
 struct afResistiveSurface{
     bool enable = false;
-    double faceResolution = 1;
-    double edgeResolution = 1;
-    double range = 0.1;
-    double contactArea = 0.001;
-    double staticContactFriction = 1;
-    double staticContactDamping = 1;
-    double dynamicFriction = 0.1;
+    double faceResolution = 1; // Resolution along the face
+    double edgeResolution = 1; // Resolution along the edges
+    double range = 0.1; // Protrusion outward from the face normal
+    double depth = 0.0; // Depth backward from the face normal
+    double contactArea = 0.001; // Area of contact for "Stick" Friction
+    double staticContactFriction = 1; // Stick friction coefficient
+    double staticContactDamping = 1; // Stick friction Damping coefficient
+    double dynamicFriction = 0.1; // Slip Friction coefficient
     int sourceMesh = 0; // collision mesh
 
     bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
@@ -307,6 +308,12 @@ public:
     virtual void updatePositionFromDynamics();
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
+    // Apply force that is specified in the world frame at a point specified in world frame
+    // This force is first converted into body frame and then is used to compute
+    // the resulting torque in the body frame. This torque in the body frame is
+    // then converted to the world frame and is applied to the body in the world frame
+    // along with the original force in the world frame
+    void applyForceAtPointOnBody(const cVector3d & a_forceInWorld, const cVector3d & a_pointInWorld);
 
     // A vector of joints that this bodies is a parent off. Includes joints of all the
     // connected children all the way down to the last child

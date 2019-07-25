@@ -1165,6 +1165,9 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         if (bodyResistiveSurface["range"].IsDefined()){
             m_resistiveSurface.range = bodyResistiveSurface["range"].as<double>();
         }
+        if (bodyResistiveSurface["depth"].IsDefined()){
+            m_resistiveSurface.depth = bodyResistiveSurface["depth"].as<double>();
+        }
         if (bodyResistiveSurface["contact area"].IsDefined()){
             m_resistiveSurface.contactArea = bodyResistiveSurface["contact area"].as<double>();
         }
@@ -1223,10 +1226,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             cVector3d normal = cCross(e1, e2);
 
             normal.normalize();
+            cVector3d rayFrom = centroid - (normal * m_resistiveSurface.depth);
             cVector3d rayTo = centroid + (normal * m_resistiveSurface.range);
 
             afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
-            _resistanceSensor->setRayFromInLocal(centroid);
+            _resistanceSensor->setRayFromInLocal(rayFrom);
             _resistanceSensor->setRayToInLocal(rayTo);
             _resistanceSensor->setDirection(normal);
             _resistanceSensor->setRange(m_resistiveSurface.range);
@@ -1567,6 +1571,29 @@ void afRigidBody::afObjectSetJointPositions(){
         m_afObjectPtr->set_joint_positions(m_joint_positions);
     }
 #endif
+}
+
+
+///
+/// \brief afRigidBody::applyForceAtPoint
+/// \param a_forceInWorldFrame
+/// \param a_pointInLocalFrame
+///
+void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const cVector3d &a_pointInWorld){
+    if (m_bulletRigidBody){
+        btTransform T_bodyInWorld = m_bulletRigidBody->getWorldTransform();
+        btTransform T_worldInBody = T_bodyInWorld.inverse(); // Invert once here so we dont have to invert multiple times.
+        btVector3 worldForce = toBTvec(a_forceInWorld);
+        btVector3 worldPoint = toBTvec(a_pointInWorld);
+        btVector3 localForce = T_worldInBody.getBasis() * worldForce;
+        btVector3 localPoint = T_worldInBody * worldPoint;
+        btVector3 localTorque = localPoint.cross(localForce);
+        btVector3 worldTorque = T_worldInBody.getBasis() * localTorque;
+
+        m_bulletRigidBody->applyCentralForce(worldForce);
+        m_bulletRigidBody->applyTorque(worldTorque);
+    }
+
 }
 
 ///
@@ -3026,6 +3053,9 @@ void afResistanceSensor::updateSensor(){
                 m_contactPointsValid = true;
             }
 
+            btVector3 relPosA = getParentBody()->m_bulletRigidBody->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
+            btVector3 relPosB = getSensedRigidBody()->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
+
             // Calculate the friction due to sliding velocities
 
             btVector3 bodyAVelInWorld = getParentBody()->m_bulletRigidBody->getVelocityInLocalPoint(toBTvec(getSensedPoint()));
@@ -3043,15 +3073,34 @@ void afResistanceSensor::updateSensor(){
 
             cVector3d totalForce = staticForce + dynamicForce;
 
-            double ma = getParentBody()->getMass();
-            double mb = 1/getSensedRigidBody()->getInvMass();
+            // Lets find the added torque at the point where the force is applied
 
-            ma = 1;
-            mb = 1;
+            btVector3 worldForce = toBTvec(totalForce);
+            btVector3 worldPoint = toBTvec(getSensedPoint());
+
+            btTransform TaInWorld = getParentBody()->m_bulletRigidBody->getWorldTransform();
+            btTransform TworldInA = TaInWorld.inverse(); // Invert once to save computation later
+
+            btVector3 localForceA = TworldInA.getBasis() * (-worldForce);
+            btVector3 localPointA = TworldInA * worldPoint;
+            btVector3 localTorqueA = localPointA.cross(localForceA * getParentBody()->m_bulletRigidBody->getLinearFactor());
+            btVector3 worldTorqueA = TaInWorld.getBasis() * localTorqueA;
+
+
+            btTransform TbInWorld = getSensedRigidBody()->getWorldTransform();
+            btTransform TworldInB = TbInWorld.inverse(); // Invert once to save computation later
+
+            btVector3 localForceB = TworldInB.getBasis() * worldForce;
+            btVector3 localPointB = TworldInB * worldPoint;
+            btVector3 localTorqueB = localPointB.cross(localForceB * getSensedRigidBody()->getLinearFactor());
+            btVector3 worldTorqueB = TbInWorld.getBasis() * localTorqueB;
 
             // Nows lets add the action and reaction friction forces to both the bodies
-            getParentBody()->m_bulletRigidBody->applyForce(toBTvec(-totalForce*ma), toBTvec(getSensedPoint()));
-            getSensedRigidBody()->applyForce(toBTvec(totalForce*mb), toBTvec(getSensedPoint()));
+            getParentBody()->m_bulletRigidBody->applyCentralForce(-worldForce);
+            getParentBody()->m_bulletRigidBody->applyTorque(worldTorqueA);
+
+            getSensedRigidBody()->applyCentralForce(worldForce);
+            getSensedRigidBody()->applyTorque(worldTorqueB);
         }
 
         else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){
