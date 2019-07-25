@@ -271,11 +271,11 @@ struct afResistiveSurface{
     bool enable = false;
     double faceResolution = 1;
     double edgeResolution = 1;
-    double protrusion = 0.1;
+    double range = 0.1;
     double contactArea = 0.001;
-    double contactHardness = 1;
-    double contactDamping = 1;
-    double slipFriction = 0.1;
+    double staticContactFriction = 1;
+    double staticContactDamping = 1;
+    double dynamicFriction = 0.1;
     int sourceMesh = 0; // collision mesh
 
     bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
@@ -749,9 +749,9 @@ public:
 
 public:
 
-    inline void setRayFrom(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
 
-    inline void setRayTo(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
+    inline void setRayToInLocal(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
 
     inline void setDirection(const cVector3d& a_direction){m_direction = a_direction;}
 
@@ -826,37 +826,47 @@ public:
     virtual void updateSensor();
 
 public:
-    inline void setContactHardness(const double& a_contactHardness){m_staticFriction = a_contactHardness;}
+    inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}
 
-    inline void setSlipFriction(const double& a_dynamicFriction){m_slipFriction = a_dynamicFriction;}
+    inline void setStaticContactDamping(const double& a_staticDamping){m_staticContactDamping = a_staticDamping;}
 
-    inline void setContactDamping(const double& a_contactDamping){m_contactDamping = a_contactDamping;}
+    inline void setDynamicFriction(const double& a_dynamicFriction){m_dynamicFriction = a_dynamicFriction;}
 
-    inline void setContactArea(const double& a_contactArea){m_contactTolerance = a_contactArea;}
+    inline void setContactArea(const double& a_contactArea){m_contactArea = a_contactArea;}
 
 private:
     cVector3d m_lastContactPosInWorld;
     cVector3d m_curContactPosInWorld;
 
-    double m_staticFriction;
-    double m_slipFriction;
+    // The static "stick" friction
+    double m_staticContactFriction;
 
+    // The damping along the contact point
+    double m_staticContactDamping;
+
+    // Friction due to slide, or kinetic friction
+    double m_dynamicFriction;
+
+    // Contact point in Body A frame
     cVector3d m_bodyAContactPointLocal;
+
+    // Contact point in body B frame
     cVector3d m_bodyBContactPointLocal;
 
+    // Error tangential to the contact (or sensor) normal
     cVector3d m_tangentialError;
 
+    // Pre value of tangential contact error
     cVector3d m_tangentialErrorLast;
 
+    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
     bool m_contactPointsValid;
 
     // Tolerance to slide of the contact points between two bodies
     // tangential to the direction of the sensor direction
-    double m_contactTolerance;
+    double m_contactArea;
 
-    // The damping along the contact point
-    double m_contactDamping;
-
+    // First time the sensor made contact with another object. Computed everytime a new contact happens
     bool m_firstTrigger = true;
 };
 

@@ -1162,20 +1162,24 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         if (bodyResistiveSurface["edge resolution"].IsDefined()){
             m_resistiveSurface.edgeResolution = bodyResistiveSurface["edge resolution"].as<double>();
         }
-        if (bodyResistiveSurface["protrusion"].IsDefined()){
-            m_resistiveSurface.protrusion = bodyResistiveSurface["protrusion"].as<double>();
+        if (bodyResistiveSurface["range"].IsDefined()){
+            m_resistiveSurface.range = bodyResistiveSurface["range"].as<double>();
         }
         if (bodyResistiveSurface["contact area"].IsDefined()){
             m_resistiveSurface.contactArea = bodyResistiveSurface["contact area"].as<double>();
         }
-        if (bodyResistiveSurface["contact hardness"].IsDefined()){
-            m_resistiveSurface.contactHardness = bodyResistiveSurface["contact hardness"].as<double>();
-        }
-        if (bodyResistiveSurface["contact damping"].IsDefined()){
-            m_resistiveSurface.contactDamping = bodyResistiveSurface["contact damping"].as<double>();
-        }
-        if (bodyResistiveSurface["slip friction"].IsDefined()){
-            m_resistiveSurface.slipFriction = bodyResistiveSurface["slip friction"].as<double>();
+
+        if (bodyResistiveSurface["friction"].IsDefined()){
+            YAML::Node bodyResistiveFriction = bodyResistiveSurface["friction"];
+            if (bodyResistiveFriction["static"].IsDefined()){
+                m_resistiveSurface.staticContactFriction = bodyResistiveFriction["static"].as<double>();
+            }
+            if (bodyResistiveFriction["damping"].IsDefined()){
+                m_resistiveSurface.staticContactDamping = bodyResistiveFriction["damping"].as<double>();
+            }
+            if (bodyResistiveFriction["dynamic"].IsDefined()){
+                m_resistiveSurface.dynamicFriction = bodyResistiveFriction["dynamic"].as<double>();
+            }
         }
 
         bool _showSensors = false;
@@ -1219,20 +1223,20 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             cVector3d normal = cCross(e1, e2);
 
             normal.normalize();
-            cVector3d rayTo = centroid + (normal * m_resistiveSurface.protrusion);
+            cVector3d rayTo = centroid + (normal * m_resistiveSurface.range);
 
             afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
-            _resistanceSensor->setRayFrom(centroid);
-            _resistanceSensor->setRayTo(rayTo);
+            _resistanceSensor->setRayFromInLocal(centroid);
+            _resistanceSensor->setRayToInLocal(rayTo);
             _resistanceSensor->setDirection(normal);
-            _resistanceSensor->setRange(m_resistiveSurface.protrusion);
+            _resistanceSensor->setRange(m_resistiveSurface.range);
             _resistanceSensor->setContactArea(m_resistiveSurface.contactArea);
-            _resistanceSensor->setContactHardness(m_resistiveSurface.contactHardness);
-            _resistanceSensor->setContactDamping(m_resistiveSurface.contactDamping);
-            _resistanceSensor->setSlipFriction(m_resistiveSurface.slipFriction);
+            _resistanceSensor->setStaticContactFriction(m_resistiveSurface.staticContactFriction);
+            _resistanceSensor->setStaticContactDamping(m_resistiveSurface.staticContactDamping);
+            _resistanceSensor->setDynamicFriction(m_resistiveSurface.dynamicFriction);
 
             if (_showSensors){
-                _resistanceSensor->setSensorVisibilityRadius(m_resistiveSurface.protrusion / 5);
+                _resistanceSensor->setSensorVisibilityRadius(m_resistiveSurface.range / 5);
                 _resistanceSensor->enableVisualization();
             }
 
@@ -2922,8 +2926,8 @@ afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_
 afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_afWorld){
     m_lastContactPosInWorld.set(0,0,0);
     m_curContactPosInWorld.set(0,0,0);
-    m_staticFriction = 0;
-    m_slipFriction = 0;
+    m_staticContactFriction = 0;
+    m_dynamicFriction = 0;
 
     m_bodyAContactPointLocal.set(0,0,0);
     m_bodyBContactPointLocal.set(0,0,0);
@@ -2932,8 +2936,8 @@ afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_
     m_tangentialErrorLast.set(0,0,0);
 
     m_contactPointsValid = false;
-    m_contactTolerance = 0.1;
-    m_contactDamping = 0.1;
+    m_contactArea = 0.1;
+    m_staticContactDamping = 0.1;
 
     m_sensorType = afSensorType::resistance;
 }
@@ -2952,24 +2956,24 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_na
     result = afRayTracerSensor::loadSensor(sensor_node, node_name, mB, name_remapping_idx);
 
     if (result){
-        YAML::Node sensorFriction = (*sensor_node)["friction"];
-        YAML::Node sensorContactTolerance = (*sensor_node)["contact tolerance"];
-        YAML::Node sensorContactHardness = (*sensor_node)["contact hardness"];
 
-        if (sensorFriction.IsDefined()){
-            m_staticFriction = sensorFriction["static"].as<double>();
+        YAML::Node bodyResistiveFriction = (*sensor_node)["friction"];
+        YAML::Node sensorContactArea = (*sensor_node)["contact area"];
+
+        if (bodyResistiveFriction["static"].IsDefined()){
+            m_staticContactFriction = bodyResistiveFriction["static"].as<double>();
         }
 
-        if (sensorFriction.IsDefined()){
-            m_slipFriction = sensorFriction["dynamic"].as<double>();
+        if (bodyResistiveFriction["damping"].IsDefined()){
+            m_staticContactDamping = bodyResistiveFriction["damping"].as<double>();
         }
 
-        if (sensorContactTolerance.IsDefined()){
-            m_contactTolerance = sensorContactTolerance.as<double>();
+        if (bodyResistiveFriction["dynamic"].IsDefined()){
+            m_dynamicFriction = bodyResistiveFriction["dynamic"].as<double>();
         }
 
-        if (sensorContactHardness.IsDefined()){
-            m_contactDamping = sensorContactHardness.as<double>();
+        if (sensorContactArea.IsDefined()){
+            m_contactArea = sensorContactArea.as<double>();
         }
     }
     return result;
@@ -2990,7 +2994,7 @@ void afResistanceSensor::updateSensor(){
 
         if (getSensedBodyType() == SensedBodyType::RIGID_BODY){
             // First lets convert the sensor direction from body to world frame.
-            cVector3d dirInWorld = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform().getBasis() * toBTvec(m_direction));
+            cVector3d dirInWorld = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform() * toBTvec(m_direction));
             dirInWorld.normalize();
 
             if(m_contactPointsValid){
@@ -3002,10 +3006,14 @@ void afResistanceSensor::updateSensor(){
                 cVector3d offPlaneNormal = cCross(dirInWorld, m_tangentialError);
                 cVector3d inPlaneNormal = cCross(offPlaneNormal, dirInWorld);
                 inPlaneNormal.normalize();
-                m_tangentialError = cDot(inPlaneNormal, m_tangentialError) * inPlaneNormal;
+                double inPlaneComponent = cDot(inPlaneNormal, m_tangentialError);
+                if (inPlaneComponent < 0.0){
+                    std::cerr << inPlaneComponent << std::endl;
+                }
+                m_tangentialError = inPlaneComponent * inPlaneNormal;
 
-                if (m_tangentialError.lengthsq() <= m_contactTolerance){
-                    staticForce = m_staticFriction * m_tangentialError + m_contactDamping * (m_tangentialError - m_tangentialErrorLast);
+                if (m_tangentialError.length() > 0.0 && m_tangentialError.length() <= m_contactArea){
+                    staticForce = m_staticContactFriction * m_tangentialError + m_staticContactDamping * (m_tangentialError - m_tangentialErrorLast);
                 }
                 else{
                     m_contactPointsValid = false;
@@ -3013,23 +3021,15 @@ void afResistanceSensor::updateSensor(){
 
             }
             else{
-                m_bodyAContactPointLocal = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform().inverse() * toBTvec(m_curContactPosInWorld));
-                m_bodyBContactPointLocal = toCvec(getSensedRigidBody()->getWorldTransform().inverse() * toBTvec(m_curContactPosInWorld));
-
+                m_bodyAContactPointLocal = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform().inverse() * toBTvec(getSensedPoint()));
+                m_bodyBContactPointLocal = toCvec(getSensedRigidBody()->getWorldTransform().inverse() * toBTvec(getSensedPoint()));
                 m_contactPointsValid = true;
             }
 
             // Calculate the friction due to sliding velocities
 
-            m_curContactPosInWorld = getSensedPoint();
-
-            // Now lets perform the simplest friction implementation.
-
-            btVector3 relPosA = getParentBody()->m_bulletRigidBody->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
-            btVector3 relPosB = getSensedRigidBody()->getCenterOfMassTransform().inverse() * toBTvec(getSensedPoint());
-
-            btVector3 bodyAVelInWorld = getParentBody()->m_bulletRigidBody->getVelocityInLocalPoint(relPosA);
-            btVector3 bodyBVelInWorld = getSensedRigidBody()->getVelocityInLocalPoint(relPosB);
+            btVector3 bodyAVelInWorld = getParentBody()->m_bulletRigidBody->getVelocityInLocalPoint(toBTvec(getSensedPoint()));
+            btVector3 bodyBVelInWorld = getSensedRigidBody()->getVelocityInLocalPoint(toBTvec(getSensedPoint()));
 
             cVector3d deltaVel = toCvec(bodyAVelInWorld - bodyBVelInWorld);
 
@@ -3038,7 +3038,7 @@ void afResistanceSensor::updateSensor(){
             cVector3d inPlaneNormal = cCross(offPlaneNormal, dirInWorld);
             inPlaneNormal.normalize();
             deltaVel = cDot(inPlaneNormal, deltaVel) * inPlaneNormal;
-            dynamicForce = m_slipFriction * deltaVel;
+            dynamicForce = m_dynamicFriction * deltaVel;
             //                std::cerr << staticForce << std::endl;
 
             cVector3d totalForce = staticForce + dynamicForce;
@@ -3046,9 +3046,12 @@ void afResistanceSensor::updateSensor(){
             double ma = getParentBody()->getMass();
             double mb = 1/getSensedRigidBody()->getInvMass();
 
+            ma = 1;
+            mb = 1;
+
             // Nows lets add the action and reaction friction forces to both the bodies
-            getParentBody()->m_bulletRigidBody->applyForce(toBTvec(-totalForce*ma), relPosA);
-            getSensedRigidBody()->applyForce(toBTvec(totalForce*mb), relPosB);
+            getParentBody()->m_bulletRigidBody->applyForce(toBTvec(-totalForce*ma), toBTvec(getSensedPoint()));
+            getSensedRigidBody()->applyForce(toBTvec(totalForce*mb), toBTvec(getSensedPoint()));
         }
 
         else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){

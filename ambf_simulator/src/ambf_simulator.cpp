@@ -1106,6 +1106,12 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         afJointPtr jnt = (*jIt);
         jnt->applyDamping(timeStep);
     }
+
+//    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
+//    // Update the data for sensors
+//    for (int i=0 ; i < afSensors.size() ; i++){
+//        afSensors[i]->updateSensor();
+//    }
 }
 
 ///
