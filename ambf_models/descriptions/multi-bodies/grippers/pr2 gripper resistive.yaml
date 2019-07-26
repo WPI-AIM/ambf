@@ -13,9 +13,9 @@ namespace: /ambf/env/
 # publish children names: true
 
 friction: &default_friction
-  static: 1000,
+  {static: 2000,
   damping: 0,
-  dynamic: 20
+  dynamic: 0.3}
 
 visiblity: &visibility 0.01
 range: &range 0.01

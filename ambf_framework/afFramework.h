@@ -277,6 +277,9 @@ struct afResistiveSurface{
     double staticContactFriction = 1; // Stick friction coefficient
     double staticContactDamping = 1; // Stick friction Damping coefficient
     double dynamicFriction = 0.1; // Slip Friction coefficient
+    double contactNormalStiffness = 0.0; // Stiffness along contact normal
+    double contactNormalDamping = 0.0; // Damping along contact normal
+    double useVariableCoeff = 0.1; // Normalize Coefficients based on depthFraction
     int sourceMesh = 0; // collision mesh
 
     bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
@@ -839,11 +842,24 @@ public:
 
     inline void setDynamicFriction(const double& a_dynamicFriction){m_dynamicFriction = a_dynamicFriction;}
 
+    inline void setContactNormalStiffness(const double& a_contactStiffness){m_contactNormalStiffness = a_contactStiffness;}
+
+    inline void setContactNormalDamping(const double& a_contactDamping){m_contactNormalDamping = a_contactDamping;}
+
+    inline void useVariableCoeff(const bool & a_enable){m_useVariableCoeff = a_enable;}
+
     inline void setContactArea(const double& a_contactArea){m_contactArea = a_contactArea;}
 
 private:
     cVector3d m_lastContactPosInWorld;
     cVector3d m_curContactPosInWorld;
+
+    // Contact Stiffness. The force along the direction of the sensor to
+    // emulate contact stiffness. Default to 0
+    double m_contactNormalStiffness;
+
+    // Contact Damping. Soften the stiffness of the contact by damping. Default to 0
+    double m_contactNormalDamping;
 
     // The static "stick" friction
     double m_staticContactFriction;
@@ -875,6 +891,12 @@ private:
 
     // First time the sensor made contact with another object. Computed everytime a new contact happens
     bool m_firstTrigger = true;
+
+    // Depth fraction is the penetration depth of the sensor
+    double m_depthFraction = 0;
+
+    // Use Variable Coeffecients based on the Depth Fraction
+    bool m_useVariableCoeff = false;
 };
 
 ///
