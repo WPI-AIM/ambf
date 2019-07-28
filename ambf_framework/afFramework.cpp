@@ -3057,9 +3057,10 @@ void afResistanceSensor::updateSensor(){
 
 
             // Get the fraction of contact point penetration from the range of the sensor
-            // (c) is contact point
-            // (a) is parent body, on which the resisitive sensor is based off of
-            // (b) is the sensed body, which is in contact with the resistive sensor
+            // Subscript (a) represents parent body, on which the resisitive sensor is based off of
+            // Subscript (b) represents the sensed body, which is in contact with the resistive sensor
+            // Subscript (c) represents contact point
+            // Subscript (w) represents world
             btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
             btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
             btVector3 P_cINw = toBTvec(getSensedPoint());
@@ -3074,19 +3075,24 @@ void afResistanceSensor::updateSensor(){
             btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
 
             double depthFractionLast = m_depthFraction;
-            m_depthFraction = (m_rayToLocal - toCvec(P_cINa)).length() / (m_rayFromLocal - m_rayToLocal).length();
+//            m_depthFraction = (m_rayToLocal - toCvec(P_cINa)).length() / (m_rayToLocal - m_rayFromLocal).length();
+            m_depthFraction = (m_rayToLocal - toCvec(P_cINa) ).dot(m_rayToLocal - m_rayFromLocal)
+                    / pow( (m_rayToLocal - m_rayFromLocal).length(), 2);
 
-            // First calculate the normal contact forc
+            if (m_depthFraction < 0 || m_depthFraction > 1){
+//                std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
+//                             ". It should be between \[0-1\]" << std::endl;
+//                std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
+//                             "\nSensed Point: " << toCvec(P_cINa) << std::endl;
+//                std::cerr << "----------\n";
+                m_depthFraction = 0;
+            }
+
+            // First calculate the normal contact force
             if (m_contactNormalStiffness > 0){
-
-                if (m_depthFraction >=0 && m_depthFraction <= 1){
-                    btVector3 F_a = ((m_contactNormalStiffness * m_depthFraction)
-                            + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * toBTvec(m_direction);
-                    F_normal = toCvec(T_aINw.getBasis() * F_a);
-                }
-                else{
-                    std::cerr << "LOGIC ERROR! Depth Fraction should be between \[0-1\]" << std::endl;
-                }
+                btVector3 F_a = ((m_contactNormalStiffness * m_depthFraction)
+                                 + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * toBTvec(m_direction);
+                F_normal = toCvec(T_aINw.getBasis() * F_a);
             }
 
             double coeffScale = 1;
