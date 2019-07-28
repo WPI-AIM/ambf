@@ -3057,17 +3057,24 @@ void afResistanceSensor::updateSensor(){
 
 
             // Get the fraction of contact point penetration from the range of the sensor
+            // (c) is contact point
+            // (a) is parent body, on which the resisitive sensor is based off of
+            // (b) is the sensed body, which is in contact with the resistive sensor
             btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
             btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
-            btVector3 P_w = toBTvec(getSensedPoint());
-            btVector3 P_a = T_wINa * P_w;
+            btVector3 P_cINw = toBTvec(getSensedPoint());
+            btVector3 P_cINa = T_wINa * P_cINw;
+            btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
+            btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
 
             btTransform T_bINw = getSensedRigidBody()->getWorldTransform();
             btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
-            btVector3 P_b = T_wINb * P_w;
+            btVector3 P_cINb = T_wINb * P_cINw;
+            btVector3 vel_bINw = getSensedRigidBody()->getLinearVelocity();
+            btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
 
             double depthFractionLast = m_depthFraction;
-            m_depthFraction = (m_rayToLocal - toCvec(P_a)).length() / (m_rayFromLocal - m_rayToLocal).length();
+            m_depthFraction = (m_rayToLocal - toCvec(P_cINa)).length() / (m_rayFromLocal - m_rayToLocal).length();
 
             // First calculate the normal contact forc
             if (m_contactNormalStiffness > 0){
@@ -3118,19 +3125,27 @@ void afResistanceSensor::updateSensor(){
             }
 
             // Calculate the friction due to sliding velocities
+            // Get velocity of point
+            btVector3 vel_a = T_wINa.getBasis() * vel_aINw;
+            btVector3 omega_a = T_wINa.getBasis() * omega_aINw;
+            btVector3 vel_cINa = vel_a + omega_a.cross(P_cINa);
 
-            btVector3 bodyAVelInWorld = getParentBody()->m_bulletRigidBody->getVelocityInLocalPoint(toBTvec(getSensedPoint()));
-            btVector3 bodyBVelInWorld = getSensedRigidBody()->getVelocityInLocalPoint(toBTvec(getSensedPoint()));
+            btVector3 vel_b = T_wINb.getBasis() * vel_bINw;
+            btVector3 omega_b = T_wINb.getBasis() * omega_bINw;
+            btVector3 vel_cINb = vel_b + omega_b.cross(P_cINb);
 
-            cVector3d deltaVel = toCvec(bodyAVelInWorld - bodyBVelInWorld);
+            btVector3 V_aINw = T_aINw.getBasis() * vel_cINa;
+            btVector3 V_bINw = T_bINw.getBasis() * vel_cINb;
+
+            cVector3d dV = toCvec(V_aINw - V_bINw);
 
             // Check if the error is along the direction of sensor
-            cVector3d offPlaneNormal = cCross(N_aINw, deltaVel);
+            cVector3d offPlaneNormal = cCross(N_aINw, dV);
             cVector3d inPlaneNormal = cCross(offPlaneNormal, N_aINw);
             inPlaneNormal.normalize();
-            deltaVel = cDot(inPlaneNormal, deltaVel) * inPlaneNormal;
+            dV = cDot(inPlaneNormal, dV) * inPlaneNormal;
 
-            F_dynamic = m_dynamicFriction * coeffScale * deltaVel;
+            F_dynamic = m_dynamicFriction * coeffScale * dV;
             //                std::cerr << staticForce << std::endl;
 
             cVector3d totalForce = F_static + F_dynamic + F_normal;
@@ -3141,11 +3156,11 @@ void afResistanceSensor::updateSensor(){
             btVector3 Fw = toBTvec(totalForce);
 
             btVector3 Fa = T_wINa.getBasis() * (-Fw);
-            btVector3 Tau_a = P_a.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());
+            btVector3 Tau_a = P_cINa.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());
             btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
 
             btVector3 Fb = T_wINb.getBasis() * Fw;
-            btVector3 Tau_b = P_b.cross(Fb * getSensedRigidBody()->getLinearFactor());
+            btVector3 Tau_b = P_cINb.cross(Fb * getSensedRigidBody()->getLinearFactor());
             btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
 
             // Nows lets add the action and reaction friction forces to both the bodies
