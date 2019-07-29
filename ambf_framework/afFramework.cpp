@@ -163,6 +163,105 @@ cVector3d toCvec(const btVector3 &bVec){
 }
 
 
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cQuaternion afUtils::getRotBetweenVectors<>(const cVector3d &v1, const cVector3d &v2){
+    cQuaternion quat;
+    double rot_angle = cAngle(v1, v2);
+    if ( cAbs(rot_angle) < 0.1){
+        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        cVector3d nx(1, 0, 0);
+        double temp_ang = cAngle(v1, nx);
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
+            cVector3d rot_axis = cCross(v1, nx);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+        else{
+            cVector3d ny(0, 1, 0);
+            cVector3d rot_axis = cCross(v2, ny);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+    }
+    else{
+        cVector3d rot_axis = cCross(v1, v2);
+        quat.fromAxisAngle(rot_axis, rot_angle);
+    }
+
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cMatrix3d afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(const cVector3d &v1, const cVector3d &v2){
+    cMatrix3d rot_mat;
+    cQuaternion quat = getRotBetweenVectors<cQuaternion, cVector3d>(v1, v2);
+    quat.toRotMat(rot_mat);
+    return rot_mat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btQuaternion, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btQuaternion afUtils::getRotBetweenVectors<btQuaternion, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btQuaternion quat;
+    double rot_angle = v1.angle(v2);
+    if ( cAbs(rot_angle) < 0.1){
+        quat.setEulerZYX(0,0,0);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        btVector3 nx(1, 0, 0);
+        double temp_ang = v1.angle(nx);
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
+            btVector3 rot_axis = v1.cross(nx);
+            quat.setRotation(rot_axis, rot_angle);
+        }
+        else{
+            btVector3 ny(0, 1, 0);
+            btVector3 rot_axis = v2.cross(ny);
+            quat.setRotation(rot_axis, rot_angle);
+        }
+    }
+    else{
+        btVector3 rot_axis = v1.cross(v2);
+        quat.setRotation(rot_axis, rot_angle);
+    }
+
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btMatrix3x3 rot_mat;
+    btQuaternion quat = getRotBetweenVectors<btQuaternion, btVector3>(v1, v2);
+    rot_mat.setRotation(quat);
+    return rot_mat;
+}
+
 ///////////////////////////////////////////////
 
 ///
@@ -2415,13 +2514,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     // Rotation of constraint in parent axis as quaternion
     btQuaternion Q_conINp;
-    Q_conINp = getRotationBetweenVectors(ax_cINp, m_axisA);
+    Q_conINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_cINp, m_axisA);
     frameA.setRotation(Q_conINp);
     frameA.setOrigin(m_pvtA);
 
     // Rotation of child axis in parent axis as Quaternion
     btQuaternion Q_cINp;
-    Q_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
+    Q_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
 
     // Offset rotation along the parent axis
     btQuaternion Q_offINp;
@@ -2586,40 +2685,6 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         afBodyA->addChildBody(afBodyB, this);
     }
     return true;
-}
-
-
-///
-/// \brief afJoint::getRotationBetweenVectors
-/// \param v1
-/// \param v2
-/// \return
-///
-btQuaternion afJoint::getRotationBetweenVectors(btVector3 &v1, btVector3 &v2){
-    btQuaternion quat;
-    double rot_angle = v1.angle(v2);
-    if ( cAbs(rot_angle) < 0.1){
-        quat.setEulerZYX(0,0,0);
-    }
-    else if ( cAbs(rot_angle) > 3.13 ){
-        btVector3 nx(1, 0, 0);
-        double temp_ang = v1.angle(nx);
-        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
-            btVector3 rot_axis = v1.cross(nx);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-        else{
-            btVector3 ny(0, 1, 0);
-            btVector3 rot_axis = m_axisA.cross(ny);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-    }
-    else{
-        btVector3 rot_axis = v1.cross(v2);
-        quat.setRotation(rot_axis, rot_angle);
-    }
-
-    return quat;
 }
 
 
@@ -2832,6 +2897,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     return true;
 }
 
+
 ///
 /// \brief afSensor::processSensor
 ///
@@ -2844,16 +2910,16 @@ void afRayTracerSensor::updateSensor(){
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
-        m_fromSphere->setLocalPos(toCvec(_rayFromWorld) );
-        m_toSphere->setLocalPos(toCvec(_rayToWorld) );
+        m_fromSphereMesh->setLocalPos(toCvec(_rayFromWorld) );
+        m_toSphereMesh->setLocalPos(toCvec(_rayToWorld) );
     }
 
     btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
     m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
-            m_hitSphere->setShowEnabled(true);
-            m_hitSphere->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
+            m_hitSphereMesh->setShowEnabled(true);
+            m_hitSphereMesh->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
         }
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
@@ -2910,14 +2976,16 @@ void afRayTracerSensor::updateSensor(){
                 m_sensedBodyType = SOFT_BODY;
             }
         }
-
+        m_depthFraction = (1.0 - _rayCallBack.m_closestHitFraction);
+        m_contactNormal = toCvec(_rayCallBack.m_hitNormalWorld);
         m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
     }
     else{
         if(m_showSensor){
-            m_hitSphere->setShowEnabled(false);
+            m_hitSphereMesh->setShowEnabled(false);
         }
         m_triggered = false;
+        m_depthFraction = 0;
     }
 }
 
@@ -2925,27 +2993,39 @@ void afRayTracerSensor::updateSensor(){
 /// \brief afRayTracerSensor::visualize
 ///
 void afRayTracerSensor::enableVisualization(){
-    m_hitSphere = new cMesh();
-    m_fromSphere = new cMesh();
-    m_toSphere = new cMesh();
-    cCreateSphere(m_hitSphere, m_visibilitySphereRadius);
-    cCreateSphere(m_fromSphere, m_visibilitySphereRadius);
-    cCreateSphere(m_toSphere, m_visibilitySphereRadius);
-    m_afWorld->s_bulletWorld->addChild(m_hitSphere);
-    m_afWorld->s_bulletWorld->addChild(m_fromSphere);
-    m_afWorld->s_bulletWorld->addChild(m_toSphere);
-    m_hitSphere->m_material->setPinkHot();
-    m_fromSphere->m_material->setRed();
-    m_toSphere->m_material->setGreen();
-    m_hitSphere->setShowEnabled(false);
+    m_hitSphereMesh = new cMesh();
+    m_fromSphereMesh = new cMesh();
+    m_toSphereMesh = new cMesh();
+    cCreateSphere(m_hitSphereMesh, m_visibilitySphereRadius);
+    cCreateSphere(m_fromSphereMesh, m_visibilitySphereRadius);
+    cCreateSphere(m_toSphereMesh, m_visibilitySphereRadius);
+    m_afWorld->s_bulletWorld->addChild(m_hitSphereMesh);
+    m_afWorld->s_bulletWorld->addChild(m_fromSphereMesh);
+    m_afWorld->s_bulletWorld->addChild(m_toSphereMesh);
+    m_hitSphereMesh->m_material->setPinkHot();
+    m_fromSphereMesh->m_material->setRed();
+    m_toSphereMesh->m_material->setGreen();
+    m_hitSphereMesh->setShowEnabled(false);
 
-    m_fromSphere->setUseDisplayList(true);
-    m_toSphere->setUseDisplayList(true);
-    m_hitSphere->setUseDisplayList(true);
+    m_fromSphereMesh->setUseDisplayList(true);
+    m_toSphereMesh->setUseDisplayList(true);
+    m_hitSphereMesh->setUseDisplayList(true);
 
-    m_fromSphere->markForUpdate(false);
-    m_toSphere->markForUpdate(false);
-    m_hitSphere->markForUpdate(false);
+    m_fromSphereMesh->markForUpdate(false);
+    m_toSphereMesh->markForUpdate(false);
+    m_hitSphereMesh->markForUpdate(false);
+
+    m_hitNormalMesh = new cMesh();
+    cCreateArrow(m_hitNormalMesh, m_visibilitySphereRadius*10,
+                 m_visibilitySphereRadius*0.5,
+                 m_visibilitySphereRadius*1,
+                 m_visibilitySphereRadius*0.8,
+                 false);
+    m_afWorld->s_bulletWorld->addChild(m_hitNormalMesh);
+    m_hitNormalMesh->m_material->setGreenForest();
+    m_hitNormalMesh->setShowEnabled(false);
+    m_hitNormalMesh->setUseDisplayList(true);
+    m_hitNormalMesh->markForUpdate(false);
 }
 
 
@@ -3046,6 +3126,12 @@ void afResistanceSensor::updateSensor(){
 
     // Find the rigid or softbody that this sensor made a contact with
     if (isTriggered()){
+        if (m_showSensor){
+            m_hitNormalMesh->setShowEnabled(true);
+            m_hitNormalMesh->setLocalPos(getSensedPoint());
+            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
+        }
+
         cVector3d F_static(0,0,0); // Due to "stick" friction
         cVector3d F_dynamic(0,0,0); // Due to "sliding" friction
         cVector3d F_normal(0,0,0); // Force normal to contact point.
@@ -3075,33 +3161,27 @@ void afResistanceSensor::updateSensor(){
             btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
 
             double depthFractionLast = m_depthFraction;
-//            m_depthFraction = (m_rayToLocal - toCvec(P_cINa)).length() / (m_rayToLocal - m_rayFromLocal).length();
-            m_depthFraction = (m_rayToLocal - toCvec(P_cINa) ).dot(m_rayToLocal - m_rayFromLocal)
-                    / pow( (m_rayToLocal - m_rayFromLocal).length(), 2);
 
             if (m_depthFraction < 0 || m_depthFraction > 1){
-//                std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
-//                             ". It should be between \[0-1\]" << std::endl;
-//                std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
-//                             "\nSensed Point: " << toCvec(P_cINa) << std::endl;
-//                std::cerr << "----------\n";
+                std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
+                             ". It should be between \[0-1\]" << std::endl;
+                std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
+                             "\nSensed Point: " << toCvec(P_cINa) << std::endl;
+                std::cerr << "----------\n";
                 m_depthFraction = 0;
             }
 
             // First calculate the normal contact force
-            if (m_contactNormalStiffness > 0){
-                btVector3 F_a = ((m_contactNormalStiffness * m_depthFraction)
-                                 + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * toBTvec(m_direction);
-                F_normal = toCvec(T_aINw.getBasis() * F_a);
-            }
+            btVector3 F_a = ((m_contactNormalStiffness * m_depthFraction)
+                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * toBTvec(m_direction);
+            F_normal = toCvec(T_aINw.getBasis() * F_a);
 
             double coeffScale = 1;
             if (m_useVariableCoeff){
-                coeffScale = m_depthFraction;
+                coeffScale = F_normal.length();
             }
 
             if(m_contactPointsValid){
-
                 cVector3d P_aINw = toCvec(T_aINw * toBTvec(m_bodyAContactPointLocal));
                 cVector3d P_bINw = toCvec(T_bINw * toBTvec(m_bodyBContactPointLocal));
                 m_tangentialErrorLast = m_tangentialError;
@@ -3110,9 +3190,11 @@ void afResistanceSensor::updateSensor(){
                 cVector3d inPlaneNormal = cCross(offPlaneNormal, N_aINw);
                 inPlaneNormal.normalize();
                 double inPlaneComponent = cDot(inPlaneNormal, m_tangentialError);
+
                 if (inPlaneComponent < 0.0){
                     std::cerr << inPlaneComponent << std::endl;
                 }
+
                 m_tangentialError = inPlaneComponent * inPlaneNormal;
 
                 if (m_tangentialError.length() > 0.0 && m_tangentialError.length() <= m_contactArea){
@@ -3123,6 +3205,10 @@ void afResistanceSensor::updateSensor(){
                     m_contactPointsValid = false;
                 }
 
+//                std::cerr << "F Static: " << F_static << std::endl;
+//                std::cerr << "F Normal: " << F_normal << std::endl;
+//                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
+//                std::cerr << "------------\n";
             }
             else{
                 m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint()));
@@ -3184,6 +3270,10 @@ void afResistanceSensor::updateSensor(){
     else{
         m_contactPointsValid = false;
         m_firstTrigger = true;
+
+        if(m_showSensor){
+            m_hitNormalMesh->setShowEnabled(false);
+        }
     }
 }
 

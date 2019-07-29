@@ -135,6 +135,16 @@ template <typename T>
 T toRPY(YAML::Node* node);
 
 
+
+class afUtils{
+public:
+
+    afUtils(){}
+    template<typename T1, typename T2>
+    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+};
+
+
 ///
 /// \brief The afConfigHandler class
 ///
@@ -633,8 +643,6 @@ protected:
     double m_joint_offset;
     btRigidBody *m_rbodyA, *m_rbodyB;
     void printVec(std::string name, btVector3* v);
-    btQuaternion getRotationBetweenVectors(btVector3 &v1, btVector3 &v2);
-
     afWorldPtr m_afWorld;
 
 protected:
@@ -771,6 +779,14 @@ public:
 
     void enableVisualization();
 
+public:
+
+    // Depth fraction is the penetration normalized depth of the sensor
+    double m_depthFraction = 0;
+
+    // Normal at Contact Point
+    cVector3d m_contactNormal;
+
 protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
@@ -808,7 +824,10 @@ protected:
     cVector3d m_sensedLocationWorld;
 
     // Visual markers to show the hit point and the sensor start and end points
-    cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;
+    cMesh *m_hitSphereMesh, *m_fromSphereMesh, *m_toSphereMesh;
+
+    // Visual Mesh for Normal at Contact Point
+    cMesh *m_hitNormalMesh;
 
     // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
@@ -891,9 +910,6 @@ private:
 
     // First time the sensor made contact with another object. Computed everytime a new contact happens
     bool m_firstTrigger = true;
-
-    // Depth fraction is the penetration depth of the sensor
-    double m_depthFraction = 0;
 
     // Use Variable Coeffecients based on the Depth Fraction
     bool m_useVariableCoeff = false;
