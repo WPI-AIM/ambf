@@ -3132,18 +3132,14 @@ void afResistanceSensor::updateSensor(){
             m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
         }
 
-        cVector3d F_static(0,0,0); // Due to "stick" friction
-        cVector3d F_dynamic(0,0,0); // Due to "sliding" friction
-        cVector3d F_normal(0,0,0); // Force normal to contact point.
+        btVector3 F_s_w(0,0,0); // Due to "stick" friction
+        btVector3 F_d_w(0,0,0); // Due to "sliding" friction
+        btVector3 F_n_w(0,0,0); // Force normal to contact point.
 
         if (getSensedBodyType() == SensedBodyType::RIGID_BODY){
-            // First lets convert the sensor direction from body to world frame.
-            cVector3d N_aINw = toCvec(getParentBody()->m_bulletRigidBody->getWorldTransform() * toBTvec(m_direction));
-            N_aINw.normalize();
-
 
             // Get the fraction of contact point penetration from the range of the sensor
-            // Subscript (a) represents parent body, on which the resisitive sensor is based off of
+            // Subscript (a) represents parent body, which is the parent of this sensor
             // Subscript (b) represents the sensed body, which is in contact with the resistive sensor
             // Subscript (c) represents contact point
             // Subscript (w) represents world
@@ -3153,12 +3149,16 @@ void afResistanceSensor::updateSensor(){
             btVector3 P_cINa = T_wINa * P_cINw;
             btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
             btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
+            btVector3 N_a = toBTvec(m_direction);
+            btVector3 N_aINw = T_aINw.getBasis() * N_a;
 
             btTransform T_bINw = getSensedRigidBody()->getWorldTransform();
             btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
             btVector3 P_cINb = T_wINb * P_cINw;
             btVector3 vel_bINw = getSensedRigidBody()->getLinearVelocity();
             btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
+            btVector3 N_bINw = toBTvec(m_contactNormal);
+            btVector3 N_b = T_wINb.getBasis() * N_bINw;
 
             double depthFractionLast = m_depthFraction;
 
@@ -3172,34 +3172,38 @@ void afResistanceSensor::updateSensor(){
             }
 
             // First calculate the normal contact force
-            btVector3 F_a = ((m_contactNormalStiffness * m_depthFraction)
-                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * toBTvec(m_direction);
-            F_normal = toCvec(T_aINw.getBasis() * F_a);
+            btVector3 F_n_a = ((m_contactNormalStiffness * m_depthFraction)
+                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * N_a;
+            F_n_w = T_aINw.getBasis() * F_n_a;
 
             double coeffScale = 1;
             if (m_useVariableCoeff){
-                coeffScale = F_normal.length();
+                coeffScale = F_n_w.length();
             }
 
             if(m_contactPointsValid){
-                cVector3d P_aINw = toCvec(T_aINw * toBTvec(m_bodyAContactPointLocal));
-                cVector3d P_bINw = toCvec(T_bINw * toBTvec(m_bodyBContactPointLocal));
-                m_tangentialErrorLast = m_tangentialError;
-                m_tangentialError = P_aINw - P_bINw;
-                cVector3d offPlaneNormal = cCross(N_aINw, m_tangentialError);
-                cVector3d inPlaneNormal = cCross(offPlaneNormal, N_aINw);
-                inPlaneNormal.normalize();
-                double inPlaneComponent = cDot(inPlaneNormal, m_tangentialError);
-
-                if (inPlaneComponent < 0.0){
-                    std::cerr << inPlaneComponent << std::endl;
+                btVector3 P_aINw = T_aINw * toBTvec(m_bodyAContactPointLocal);
+                btVector3 P_bINw = T_bINw * toBTvec(m_bodyBContactPointLocal);
+                btVector3 error;
+                error = P_aINw - P_bINw;
+                btVector3 orthogonalError = N_aINw.cross(error);
+                btVector3 errorDir = orthogonalError.cross(N_aINw);
+                if (errorDir.length() > 0.0001){
+                    errorDir.normalize();
+                }
+                double errorMag = errorDir.dot(error);
+                if (errorMag < 0.0){
+                    std::cerr << errorMag << std::endl;
                 }
 
-                m_tangentialError = inPlaneComponent * inPlaneNormal;
+                btVector3 tangentialError = errorMag * errorDir;
+                btVector3 tangentialErrorLast = toBTvec(m_tangentialErrorLast);
+                m_tangentialErrorLast = m_tangentialError;
+                m_tangentialError = toCvec(tangentialError);
 
-                if (m_tangentialError.length() > 0.0 && m_tangentialError.length() <= m_contactArea){
-                    F_static = m_staticContactFriction * coeffScale * m_tangentialError +
-                            m_staticContactDamping * (m_tangentialError - m_tangentialErrorLast);
+                if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
+                    F_s_w = m_staticContactFriction * coeffScale * tangentialError +
+                            m_staticContactDamping * (tangentialError - tangentialErrorLast);
                 }
                 else{
                     m_contactPointsValid = false;
@@ -3229,23 +3233,22 @@ void afResistanceSensor::updateSensor(){
             btVector3 V_aINw = T_aINw.getBasis() * vel_cINa;
             btVector3 V_bINw = T_bINw.getBasis() * vel_cINb;
 
-            cVector3d dV = toCvec(V_aINw - V_bINw);
+            btVector3 dV = V_aINw - V_bINw;
 
             // Check if the error is along the direction of sensor
-            cVector3d offPlaneNormal = cCross(N_aINw, dV);
-            cVector3d inPlaneNormal = cCross(offPlaneNormal, N_aINw);
-            inPlaneNormal.normalize();
-            dV = cDot(inPlaneNormal, dV) * inPlaneNormal;
+            btVector3 orthogonalVelError = N_aINw.cross(dV);
+            btVector3 velErrorDir = orthogonalVelError.cross(N_aINw);
+            if (velErrorDir.length() > 0.0001){
+                velErrorDir.normalize();
+            }
+            dV = velErrorDir.dot(dV) * velErrorDir;
 
-            F_dynamic = m_dynamicFriction * coeffScale * dV;
+            F_d_w = m_dynamicFriction * coeffScale * dV;
             //                std::cerr << staticForce << std::endl;
 
-            cVector3d totalForce = F_static + F_dynamic + F_normal;
+            btVector3 Fw = F_s_w + F_d_w + F_n_w;
 
             // Lets find the added torque at the point where the force is applied
-
-            // Get the fraction of contact point penetration from the range of the sensor
-            btVector3 Fw = toBTvec(totalForce);
 
             btVector3 Fa = T_wINa.getBasis() * (-Fw);
             btVector3 Tau_a = P_cINa.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());

@@ -15,9 +15,10 @@ default_resistive: &default_resistive {
   range: 0.01,
   contact area: 0.001,
   friction: {
-    static: 10000,
+    static: 5000,
     damping: 0,
-    dynamic: 5},
+    dynamic: 5,
+    variable: true},
   visible: true,
   contact stiffness: 3,
   contact damping: 0
@@ -66,7 +67,7 @@ BODY LeftL1:
   publish joint names: true
   publish joint positions: true
   friction: {rolling: 0.01, static: 0.5}
-  damping: {angular: 0.1, linear: 0.04}
+  damping: {angular: 0.1, linear: 0.3}
   restitution: 0
   collision groups: [0]
   color components:
@@ -87,7 +88,7 @@ BODY LeftL2:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: -0.0, y: -0.0, z: 0.0}
   friction: {rolling: 0.01, static: 0.5}
-  damping: {angular: 0.1, linear: 0.04}
+  damping: {angular: 0.1, linear: 0.3}
   restitution: 0
   collision groups: [0]
   collision shape: BOX
@@ -113,7 +114,7 @@ BODY RightL1:
   publish joint names: true
   publish joint positions: true
   friction: {rolling: 0.01, static: 0.5}
-  damping: {angular: 0.1, linear: 0.04}
+  damping: {angular: 0.1, linear: 0.3}
   restitution: 0
   collision groups: [0]
   color components:
@@ -134,7 +135,7 @@ BODY RightL2:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: 0.0, y: 0.0, z: 0.0}
   friction: {rolling: 0.01, static: 0.5}
-  damping: {angular: 0.1, linear: 0.04}
+  damping: {angular: 0.1, linear: 0.3}
   restitution: 0
   collision groups: [0]
   collision shape: BOX
@@ -180,7 +181,7 @@ JOINT LeftL1-LeftL2:
   child axis: {x: 0.0, y: -0.0, z: 1.0}
   child pivot: {x: 0.212, y: -0.028, z: 0.037}
   joint limits: {high: 0.175, low: -0.7}
-  controller: {D: 0.05, I: 0, P: 100.0}
+  controller: {D: 0.2, I: 0, P: 100.0}
   detached: true
   type: revolute
   offset: 0.524
@@ -193,7 +194,7 @@ JOINT RightL1-RightL2:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.212, y: -0.029, z: 0.037}
   joint limits: {high: 0.175, low: -0.7}
-  controller: {D: 0.05, I: 0, P: 100.0}
+  controller: {D: 0.2, I: 0, P: 100.0}
   detached: true
   type: revolute
   offset: 0.524
