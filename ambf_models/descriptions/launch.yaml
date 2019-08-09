@@ -29,3 +29,9 @@ multibody configs:
   - "./multi-bodies/puzzles/puzzle3.yaml" #22
   - "./multi-bodies/grippers/sensorized_box.yaml" #23
   - "./multi-bodies/robots/resistive_sensor/resistive_sensor1.yaml" #24
+  - "./multi-bodies/robots/resistive_sensor/test1.yaml" #25
+  - "/home/adnan/needle_driver.yaml" #26
+  - "/home/adnan/needle_driver2.yaml" #27
+  - "/home/adnan/jhu_urdfs/ral-icra/spheres_fall_test.yaml" #28
+  - "/home/adnan/icl_ambf/icl.yaml" #29
+  - "./multi-bodies/puzzles/compound_example.yaml" #30

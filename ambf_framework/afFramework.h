@@ -218,7 +218,7 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 /// \brief The Geometrytype enum
 ///
 enum GeometryType{
-    invalid= 0, mesh = 1, shape = 2
+    invalid= 0, mesh = 1, shape = 2, compound_shape=3
 };
 
 

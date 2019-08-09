@@ -751,9 +751,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyName = bodyNode["name"];
     YAML::Node bodyMesh = bodyNode["mesh"];
     YAML::Node bodyShape = bodyNode["shape"];
+    YAML::Node bodyCompoundShape = bodyNode["compound shape"];
     YAML::Node bodyGeometry = bodyNode["geometry"];
     YAML::Node bodyCollisionMesh = bodyNode["collision mesh"];
     YAML::Node bodyCollisionShape = bodyNode["collision shape"];
+    YAML::Node bodyCompoundCollisionShape = bodyNode["compound collision shape"];
     YAML::Node bodyCollisionGeometry = bodyNode["collision geometry"];
     YAML::Node bodyCollisionMargin = bodyNode["collision margin"];
     YAML::Node bodyScale = bodyNode["scale"];
@@ -806,10 +808,16 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     std::string _visual_shape_str;
     std::string _collision_shape_str;
 
+    std::string high_res_path;
+
     if (bodyCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
         m_collisionGeometryType = GeometryType::shape;
         _collision_shape_str = bodyCollisionShape.as<std::string>();
+    }
+    else if (bodyCompoundCollisionShape.IsDefined()){
+        _collision_geometry_valid = true;
+        m_collisionGeometryType = GeometryType::compound_shape;
     }
 
     if (bodyShape.IsDefined()){
@@ -824,6 +832,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             bodyCollisionShape = bodyShape;
         }
     }
+    else if (bodyCompoundShape.IsDefined()){
+        _visual_geometry_valid = true;
+        m_visualGeometryType = GeometryType::compound_shape;
+        if (!_collision_geometry_valid){
+            _collision_geometry_valid = true;
+            m_collisionGeometryType = GeometryType::compound_shape;
+            bodyCompoundCollisionShape = bodyCompoundShape;
+        }
+    }
     else if(bodyMesh.IsDefined()){
         m_mesh_name = bodyMesh.as<std::string>();
         if (!m_mesh_name.empty()){
@@ -831,12 +848,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             // Incase they are defined, we use those paths and if they are not, we use
             // the paths for the whole file
             if (bodyMeshPathHR.IsDefined()){
+                high_res_path = bodyMeshPathHR.as<std::string>();
                 high_res_filepath = bodyMeshPathHR.as<std::string>() + m_mesh_name;
                 if (high_res_filepath.is_relative()){
+                    high_res_path = mB->getMultiBodyPath() + '/' + high_res_path;
                     high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
                 }
             }
             else{
+                high_res_path = mB->getHighResMeshesPath();
                 high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
             }
             _visual_geometry_valid = true;
@@ -923,7 +943,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                       << "'s mesh \"" << high_res_filepath << "\" not found\n";
         }
     }
-
     else if (m_visualGeometryType == GeometryType::shape){
         int dx = 32; // Default x resolution for shape
         int dy = 32; // Default y resolution for shape
@@ -966,7 +985,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 height *= m_scale;
                 cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
             }
-            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("Cone") == 0){
+            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
                 double height = bodyGeometry["height"].as<double>();
                 radius *= m_scale;
@@ -975,6 +994,73 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             m_meshes->push_back(tempMesh);
         }
+    else if (m_visualGeometryType == GeometryType::compound_shape){
+        for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
+            _visual_shape_str = bodyCompoundShape[shapeIdx]["shape"].as<std::string>();
+            bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
+            YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
+            int dx = 32; // Default x resolution for shape
+            int dy = 32; // Default y resolution for shape
+            int dz = 5; // Default z resolution for shape
+            double px = shapeOffset["position"]["x"].as<double>();
+            double py = shapeOffset["position"]["y"].as<double>();
+            double pz = shapeOffset["position"]["z"].as<double>();
+            double roll =  shapeOffset["orientation"]["r"].as<double>();
+            double pitch = shapeOffset["orientation"]["p"].as<double>();
+            double yaw =   shapeOffset["orientation"]["y"].as<double>();
+            cVector3d shapePos(px, py, pz);
+            cMatrix3d shapeRot;
+            shapeRot.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+            if (bodyGeometry["dx"].IsDefined()){
+                dx = bodyGeometry["dx"].as<int>();
+            }
+            if (bodyGeometry["dy"].IsDefined()){
+                dy = bodyGeometry["dy"].as<int>();
+            }
+            if (bodyGeometry["dz"].IsDefined()){
+                dz = bodyGeometry["dZ"].as<int>();
+            }
+            cMesh* tempMesh = new cMesh();
+            if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
+                double x = bodyGeometry["x"].as<double>();
+                double y = bodyGeometry["y"].as<double>();
+                double z = bodyGeometry["z"].as<double>();
+                x *= m_scale;
+                y *= m_scale;
+                z *= m_scale;
+                cCreateBox(tempMesh, x, y, z, shapePos, shapeRot);
+            }
+            else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
+                double radius = bodyGeometry["radius"].as<double>();
+                radius *= m_scale;
+                cCreateSphere(tempMesh, radius, dx, dy, shapePos, shapeRot);
+            }
+            else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                shapePos.set(shapePos.x(), shapePos.y(), shapePos.z() - 0.5 * height);
+                cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, shapePos, shapeRot);
+            }
+            else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy, shapePos, shapeRot);
+            }
+            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
+                double radius = bodyGeometry["radius"].as<double>();
+                double height = bodyGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                shapePos.set(shapePos.x(), shapePos.y(), shapePos.z() - 0.5 * height);
+                cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, shapePos, shapeRot);
+            }
+            m_meshes->push_back(tempMesh);
+        }
+    }
 
     cMaterial _mat;
     double _r, _g, _b, _a;
@@ -1133,6 +1219,122 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
         }
     }
+    else if (m_collisionGeometryType == GeometryType::compound_shape){
+        btCompoundShape* _compoundCollisionShape = new btCompoundShape();
+        for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
+            std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
+            bodyCollisionGeometry = bodyCompoundShape[shapeIdx]["geometry"];
+            YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
+            double px = shapeOffset["position"]["x"].as<double>();
+            double py = shapeOffset["position"]["y"].as<double>();
+            double pz = shapeOffset["position"]["z"].as<double>();
+            double roll =  shapeOffset["orientation"]["r"].as<double>();
+            double pitch = shapeOffset["orientation"]["p"].as<double>();
+            double yaw =   shapeOffset["orientation"]["y"].as<double>();
+            btVector3 shapePos(px, py, pz);
+            btMatrix3x3 shapeRot;
+            shapeRot.setEulerZYX(roll, pitch, yaw);
+            btTransform shapeTrans(shapeRot, shapePos);
+            if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
+                double x = bodyCollisionGeometry["x"].as<double>();
+                double y = bodyCollisionGeometry["y"].as<double>();
+                double z = bodyCollisionGeometry["z"].as<double>();
+                x *= m_scale;
+                y *= m_scale;
+                z *= m_scale;
+                btVector3 halfExtents(x/2, y/2, z/2);
+                _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
+            }
+            else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                radius *= m_scale;
+                _compoundCollisionShape->addChildShape(shapeTrans, new btSphereShape(radius));
+            }
+            else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    btVector3 halfExtents(height/2, radius, radius);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeX(halfExtents));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    btVector3 halfExtents(radius, height/2, radius);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShape(halfExtents));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    btVector3 halfExtents(radius, radius, height/2);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    btVector3 halfExtents(radius, radius, height/2);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
+                }
+            }
+            else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                // Adjust for height as bullet treats the height as the distance
+                // between the two spheres forming the capsule's ends.
+                height = height - 2*radius;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeX(radius, height));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShape(radius, height));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
+                }
+            }
+            else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeX(radius, height));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShape(radius, height));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
+                }
+            }
+        }
+        m_bulletCollisionShape = _compoundCollisionShape;
+    }
 
     if (bodyNamespace.IsDefined()){
         m_namespace = bodyNamespace.as<std::string>();
@@ -1219,7 +1421,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 return 0;
             }
         }
-        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == GeometryType::shape){
+        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == GeometryType::shape || m_collisionGeometryType == GeometryType::compound_shape){
             estimateInertia();
         }
     }
@@ -1299,67 +1501,69 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             _showSensors = bodyResistiveSurface["visible"].as<bool>();
         }
 
-        cMesh* _sourceMesh = (*m_meshes)[0];
-        if (bodyResistiveSurface["source mesh"].IsDefined()){
-            std::string _mesh = bodyResistiveSurface["source mesh"].as<std::string>();
-            if (_mesh.compare("Visual") == 0 || _mesh.compare("visual") == 0){
-
-            }
-            else if (_mesh.compare("Collision") == 0 || _mesh.compare("collision") == 0){
-
+        cMesh* _sourceMesh = NULL;
+        if (bodyResistiveSurface["mesh"].IsDefined()){
+            std::string _resistiveMeshName = bodyResistiveSurface["mesh"].as<std::string>();
+            _resistiveMeshName = high_res_path + _resistiveMeshName;
+            cMultiMesh* resistiveMesh = new cBulletMultiMesh(m_afWorld->s_bulletWorld);
+            if (resistiveMesh->loadFromFile(_resistiveMeshName)){
+                _sourceMesh = (*resistiveMesh->m_meshes)[0];
             }
             else{
-                std::cerr << "ERROR: Body "
-                          << m_name
-                          << "'s resistive mesh source \"" << _mesh << "\" should be either \"visual\" or \"collision\", ignoring\n";
-                return 0;
+                std::cerr << "ERROR! BODY \"" << m_name <<
+                             "\s\" RESISTIVE MESH " <<
+                             _resistiveMeshName << " NOT FOUND. IGNORING\n";
             }
+        }
+        else{
+            _sourceMesh = (*m_meshes)[0];
         }
 
         // Lets assign a resistive sensor per each triangle face.
+        if (_sourceMesh){
+            for (int tIdx = 0 ; tIdx < _sourceMesh->m_triangles->getNumElements() ; tIdx++ ){
+                int vIdx0 = _sourceMesh->m_triangles->getVertexIndex0(tIdx);
+                int vIdx1 = _sourceMesh->m_triangles->getVertexIndex1(tIdx);
+                int vIdx2 = _sourceMesh->m_triangles->getVertexIndex2(tIdx);
 
-        for (int tIdx = 0 ; tIdx < _sourceMesh->m_triangles->getNumElements() ; tIdx++ ){
-            int vIdx0 = _sourceMesh->m_triangles->getVertexIndex0(tIdx);
-            int vIdx1 = _sourceMesh->m_triangles->getVertexIndex1(tIdx);
-            int vIdx2 = _sourceMesh->m_triangles->getVertexIndex2(tIdx);
+                cVector3d v0 = _sourceMesh->m_vertices->getLocalPos(vIdx0);
+                cVector3d v1 = _sourceMesh->m_vertices->getLocalPos(vIdx1);
+                cVector3d v2 = _sourceMesh->m_vertices->getLocalPos(vIdx2);
 
-            cVector3d v0 = _sourceMesh->m_vertices->getLocalPos(vIdx0);
-            cVector3d v1 = _sourceMesh->m_vertices->getLocalPos(vIdx1);
-            cVector3d v2 = _sourceMesh->m_vertices->getLocalPos(vIdx2);
+                cVector3d e1 = v1 - v0;
+                cVector3d e2 = v2 - v1;
 
-            cVector3d e1 = v1 - v0;
-            cVector3d e2 = v2 - v1;
+                cVector3d centroid = ( v0 + v1 + v2 ) / 3;
 
-            cVector3d centroid = ( v0 + v1 + v2 ) / 3;
+                cVector3d normal = cCross(e1, e2);
 
-            cVector3d normal = cCross(e1, e2);
+                normal.normalize();
+                cVector3d rayFrom = centroid - (normal * m_resistiveSurface.depth);
+                cVector3d rayTo = rayFrom + (normal * m_resistiveSurface.range);
 
-            normal.normalize();
-            cVector3d rayFrom = centroid - (normal * m_resistiveSurface.depth);
-            cVector3d rayTo = rayFrom + (normal * m_resistiveSurface.range);
+                afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
+                _resistanceSensor->setRayFromInLocal(rayFrom);
+                _resistanceSensor->setRayToInLocal(rayTo);
+                _resistanceSensor->setDirection(normal);
+                _resistanceSensor->setRange(m_resistiveSurface.range);
+                _resistanceSensor->setContactArea(m_resistiveSurface.contactArea);
+                _resistanceSensor->setStaticContactFriction(m_resistiveSurface.staticContactFriction);
+                _resistanceSensor->setStaticContactDamping(m_resistiveSurface.staticContactDamping);
+                _resistanceSensor->setDynamicFriction(m_resistiveSurface.dynamicFriction);
+                _resistanceSensor->setContactNormalStiffness(m_resistiveSurface.contactNormalStiffness);
+                _resistanceSensor->setContactNormalDamping(m_resistiveSurface.contactNormalDamping);
+                _resistanceSensor->useVariableCoeff(m_resistiveSurface.useVariableCoeff);
 
-            afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
-            _resistanceSensor->setRayFromInLocal(rayFrom);
-            _resistanceSensor->setRayToInLocal(rayTo);
-            _resistanceSensor->setDirection(normal);
-            _resistanceSensor->setRange(m_resistiveSurface.range);
-            _resistanceSensor->setContactArea(m_resistiveSurface.contactArea);
-            _resistanceSensor->setStaticContactFriction(m_resistiveSurface.staticContactFriction);
-            _resistanceSensor->setStaticContactDamping(m_resistiveSurface.staticContactDamping);
-            _resistanceSensor->setDynamicFriction(m_resistiveSurface.dynamicFriction);
-            _resistanceSensor->setContactNormalStiffness(m_resistiveSurface.contactNormalStiffness);
-            _resistanceSensor->setContactNormalDamping(m_resistiveSurface.contactNormalDamping);
-            _resistanceSensor->useVariableCoeff(m_resistiveSurface.useVariableCoeff);
+                if (_showSensors){
+                    _resistanceSensor->setSensorVisibilityRadius(m_resistiveSurface.range / 5);
+                    _resistanceSensor->enableVisualization();
+                }
 
-            if (_showSensors){
-                _resistanceSensor->setSensorVisibilityRadius(m_resistiveSurface.range / 5);
-                _resistanceSensor->enableVisualization();
+                _resistanceSensor->m_sensorType = afSensorType::resistance;
+
+                this->addAFSensor(_resistanceSensor);
+                _resistanceSensor->m_parentBody = this;
             }
-
-            _resistanceSensor->m_sensorType = afSensorType::resistance;
-
-            this->addAFSensor(_resistanceSensor);
-            _resistanceSensor->m_parentBody = this;
         }
 
     }
@@ -4532,10 +4736,10 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
             std::string _sensor_type = sensor_node["type"].as<std::string>();
             // Check if this is a proximity sensor
             // More sensors to follow
-            if (_sensor_type.compare("Proximity") ||_sensor_type.compare("proximity") ||_sensor_type.compare("PROXIMITY")){
+            if (_sensor_type.compare("Proximity") == 0 || _sensor_type.compare("proximity") == 0 || _sensor_type.compare("PROXIMITY") == 0){
                 sensorPtr = new afProximitySensor(m_afWorld);
             }
-            if (_sensor_type.compare("Resistance") ||_sensor_type.compare("resistance") ||_sensor_type.compare("PROXIMITY")){
+            if (_sensor_type.compare("Resistance") == 0 || _sensor_type.compare("resistance") == 0 || _sensor_type.compare("RESISTANCE") == 0){
                 sensorPtr = new afResistanceSensor(m_afWorld);
             }
 

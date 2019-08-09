@@ -1211,8 +1211,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time:" + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time" + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1305,11 +1305,12 @@ void updatePhysics(){
 
         double dt;
         if (g_cmdOpts.useFixedPhxTimeStep){
-            dt = 1/g_cmdOpts.phxFrequency;
+            dt = 1.0 / g_cmdOpts.phxFrequency;
         }
         else{
             dt = compute_dt(true);
         }
+
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
             afSimulatedDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
@@ -1512,7 +1513,7 @@ void updateHapticDevice(void* a_arg){
         double dt;
         if (g_cmdOpts.useFixedHtxTimeStep){
 
-            dt = 1/g_cmdOpts.htxFrequency;
+            dt = 1.0 / g_cmdOpts.htxFrequency;
         }
         else{
             dt = compute_dt();
