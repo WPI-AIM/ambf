@@ -1,4 +1,4 @@
-input devices: [MTMR, MTML, Razer Hydra0, Razer Hydra1, Geomagic Touch,
+input devices: [MTMR, MTML, Geomagic Touch, Razer Hydra0, Razer Hydra1,
  Novint Falcon]
 
 MTMR:
@@ -34,10 +34,16 @@ Geomagic Touch:
     hardware name: PHANTOM Omni
     haptic gain: {linear: 0.0, angular: 0.0}
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
+    button mapping: {
+      a1: 0,
+      a2: -1,
+      g1: 1,
+      next mode: 3,
+      prev mode: 4}
 
 Razer Hydra0:
     hardware name: Razer Hydra

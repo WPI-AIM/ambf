@@ -1519,6 +1519,10 @@ void updateHapticDevice(void* a_arg){
         if (pDev->m_hInfo.m_sensedGripper){
             simGripper->m_gripper_angle = pDev->measuredGripperAngle();
         }
+        if (pDev->m_buttons.G1 > 0){
+            // Some devices may have a gripper button instead of a continous gripper.
+            simGripper->m_gripper_angle = !pDev->isButtonPressed(pDev->m_buttons.G1);
+        }
         else{
             simGripper->m_gripper_angle = 0.5;
         }
