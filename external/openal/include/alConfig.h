@@ -71,7 +71,9 @@
 #define HAVE_STDINT_H
 #define HAVE_DLFCN_H
 #define HAVE_MALLOC_H
-#define HAVE_CPUID_H
+#if defined (__arm__)
+    #define C_ENABLE_DELTA_DEVICE_SUPPORT
+#endif
 #define HAVE_FLOAT_H
 #define HAVE_FENV_H
 #define HAVE_FESETROUND

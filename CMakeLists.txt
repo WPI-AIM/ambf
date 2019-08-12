@@ -258,7 +258,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
 endif ()
 if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
     message (USING X86_64_ASM)
-  add_definitions ("-DUSE_X86_64_ASM")
+  #add_definitions ("-DUSE_X86_64_ASM")
 endif ()
 
 # build flags
@@ -290,7 +290,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
 endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
-  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+  set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
   set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
 else ()
   set (AMBF_LIBRARIES ${AMBF_LIBRARIES} winmm)
