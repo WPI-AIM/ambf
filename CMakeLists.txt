@@ -257,8 +257,10 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   message (USING X86_64_ASM)
 endif ()
 if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
     message (USING X86_64_ASM)
-  #add_definitions ("-DUSE_X86_64_ASM")
+    add_definitions ("-DUSE_X86_64_ASM")
+  endif ()
 endif ()
 
 # build flags
