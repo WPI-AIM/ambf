@@ -120,7 +120,11 @@ TheoraMemoryFileDataSource::TheoraMemoryFileDataSource(std::string filename) :
 	mData = new unsigned char[(unsigned int) mSize];
 	if (mSize < UINT_MAX)
 	{
-		fread(mData, 1, (size_t) mSize, f);
+		int systemRet = fread(mData, 1, (size_t) mSize, f);
+
+		//if(systemRet == -1){
+		     // The system method failed
+		//}
 	}
 	else
 	{

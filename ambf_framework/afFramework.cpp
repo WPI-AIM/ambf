@@ -277,7 +277,8 @@ std::string afConfigHandler::getMultiBodyConfig(int i){
         return s_multiBodyConfigFileNames[i];
     }
     else{
-        printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBodyConfigFileNames.size());
+        //printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBodyConfigFileNames.size());
+        printf("i = %d, Whereas only %lu multi bodies specified", i, (unsigned long)s_multiBodyConfigFileNames.size());
         return "";
     }
 }
@@ -2123,8 +2124,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     else if(jointOrigin.IsDefined()){
         btQuaternion quat;
         btVector3 pos;
-        YAML::Node jointXYZ = jointOrigin['position'];
-        YAML::Node jointRPY = jointOrigin['orientation'];
+        YAML::Node jointXYZ = jointOrigin["position"];
+        YAML::Node jointRPY = jointOrigin["orientation"];
         if (jointXYZ.IsDefined()){
             pos = toXYZ<btVector3>(&jointXYZ);
             T_j_p.setOrigin(pos);

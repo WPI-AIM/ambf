@@ -4,6 +4,8 @@
  */
 
 #include "gzguts.h"
+#include <unistd.h>  /* Many POSIX functions (but not all, by a large margin) */
+#include <fcntl.h>   /* open(), creat() - and fcntl() */
 
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
 #  define LSEEK lseek64
