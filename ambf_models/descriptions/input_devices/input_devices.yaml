@@ -32,11 +32,12 @@ MTML:
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
-    haptic gain: {linear: 0.01, angular: 0.0}
-    deadband: 0.5
-    max force: 1
+    haptic gain: {linear: 0.000, angular: 0.0}
+    deadband: 0.01
+    max force: 2
+    max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}

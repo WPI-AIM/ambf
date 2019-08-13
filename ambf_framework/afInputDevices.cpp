@@ -118,7 +118,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
     YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
     YAML::Node pDDeadband = physicaDeviceNode["deadband"];
-    YAML::Node pDForceLimit = physicaDeviceNode["max force"];
+    YAML::Node pDMaxForce = physicaDeviceNode["max force"];
+    YAML::Node pDMaxJerk = physicaDeviceNode["max jerk"];
     YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
     YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
     YAML::Node pDRootLink = physicaDeviceNode["root link"];
@@ -254,13 +255,23 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
 
-    if (pDForceLimit.IsDefined()){
-        double _maxForce = pDForceLimit.as<double>();
+    if (pDMaxForce.IsDefined()){
+        double _maxForce = pDMaxForce.as<double>();
         if (_maxForce < m_deadBand){
             std::cerr << "WARNING: MAX FORCE : \"" << node_name << "\" MUST BE GREATER THAN MIN FORCE, IGNORING \n";
         }
         else{
             m_maxForce = _maxForce;
+        }
+    }
+
+    if (pDMaxJerk.IsDefined()){
+        double _maxJerk = pDMaxJerk.as<double>();
+        if (_maxJerk < 0){
+            std::cerr << "WARNING: MAX JERK : \"" << node_name << "\" MUST BE POSITIVE, IGNORING \n";
+        }
+        else{
+            m_maxJerk = _maxJerk;
         }
     }
 
