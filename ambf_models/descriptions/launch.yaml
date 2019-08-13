@@ -20,3 +20,4 @@ multibody configs:
   - "./multi-bodies/robots/blender-pr2-textured.yaml" #13
   - "./multi-bodies/robots/sophie.yaml" #14
   - "./multi-bodies/puzzles/puzzle4.yaml" #15
+  - "./multi-bodies/puzzles/puzzle5.yaml" #16
