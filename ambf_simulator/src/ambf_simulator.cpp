@@ -1660,6 +1660,25 @@ void updateHapticDevice(void* a_arg){
         force  = - g_cmdOpts.enableForceFeedback * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
         torque = - g_cmdOpts.enableForceFeedback * pDev->K_ah_ramp * (P_ang * angle * axis);
 
+        if (force.length() < pDev->m_deadBand){
+            force.set(0,0,0);
+        }
+
+        if (force.length() > pDev->m_maxForce){
+            force.normalize();
+            force = force * pDev->m_maxForce;
+        }
+
+        if (torque.length() < pDev->m_deadBand){
+            torque.set(0,0,0);
+        }
+
+        std::vector<float> force_msg;
+        force_msg.push_back(force.x());
+        force_msg.push_back(force.y());
+        force_msg.push_back(force.z());
+        simGripper->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
+
         pDev->applyWrench(force, torque);
         rateSleep.sleep();
 

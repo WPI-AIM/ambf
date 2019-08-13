@@ -196,6 +196,8 @@ public:
     double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
 
     afButtons m_buttons;
+    double m_deadBand = 0.001;
+    double m_maxForce = 1;
     int m_gripper_pinch_btn = -1;
     bool btn_cam_rising_edge;
     bool btn_clutch_rising_edge;

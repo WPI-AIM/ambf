@@ -117,6 +117,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
     YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
+    YAML::Node pDDeadband = physicaDeviceNode["deadband"];
+    YAML::Node pDForceLimit = physicaDeviceNode["max force"];
     YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
     YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
     YAML::Node pDRootLink = physicaDeviceNode["root link"];
@@ -240,6 +242,26 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
+    }
+
+    if (pDDeadband.IsDefined()){
+        double _deadBand = pDDeadband.as<double>();
+        if (_deadBand < 0){
+            std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
+        }
+        else{
+            m_deadBand = _deadBand;
+        }
+    }
+
+    if (pDForceLimit.IsDefined()){
+        double _maxForce = pDForceLimit.as<double>();
+        if (_maxForce < m_deadBand){
+            std::cerr << "WARNING: MAX FORCE : \"" << node_name << "\" MUST BE GREATER THAN MIN FORCE, IGNORING \n";
+        }
+        else{
+            m_maxForce = _maxForce;
+        }
     }
 
     if (_simulatedMBDefined){
