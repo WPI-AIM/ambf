@@ -16,9 +16,9 @@ namespace: /ambf/env/
 SENSOR Proximity0:
   name: Proximity
   type: Proximity
-  location: {x: -0.3, y: 0.0, z: 0.0}
+  location: {x: -0.2, y: 0.0, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.1
+  range: 0.15
   parent: /ambf/env/BODY r_gripper_palm_link
 
 SENSOR Proximity1:
