@@ -452,12 +452,13 @@ int main(int argc, char* argv[])
                 cLabel* devFreqLabel = new cLabel(font);
                 devFreqLabel->m_fontColor.setBlack();
                 devFreqLabel->setFontScale(0.8);
+                devFreqLabel->m_fontColor.setGreenLime();
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
                 (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_physicalDevice->m_hInfo.m_modelName);
+                            dgPairs[dgPairIdx]->m_name);
             }
         }
         else{
@@ -471,13 +472,14 @@ int main(int argc, char* argv[])
                 cLabel* devFreqLabel = new cLabel(font);
                 devFreqLabel->m_fontColor.setBlack();
                 devFreqLabel->setFontScale(0.8);
+                devFreqLabel->m_fontColor.setGreenLime();
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
                 (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_physicalDevice->m_hInfo.m_modelName);
+                            dgPairs[dgPairIdx]->m_name);
             }
         }
     }
@@ -1454,6 +1456,7 @@ void updateHapticDevice(void* a_arg){
     RateSleep rateSleep(g_cmdOpts.htxFrequency);
 
     // update position and orientation of simulated gripper
+    std::string identifyingName = g_inputDevices->m_psDevicePairs[devIdx].m_name;
     afPhysicalDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
     afSimulatedDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
     std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
@@ -1504,7 +1507,7 @@ void updateHapticDevice(void* a_arg){
     {
         pDev->m_freq_ctr.signal(1);
         if (devFreqLabel != NULL){
-            devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+            devFreqLabel->setText(identifyingName + " [" + pDev->m_hInfo.m_modelName + "] " + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
         }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
