@@ -797,6 +797,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
             afPhysicalDevice* pD = new afPhysicalDevice();
             afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
 
+            // Load the device specified in the afInputDevice yaml file
             std::string devKey = inputDevices[devIdx].as<std::string>();
             YAML::Node devNode = inputDevicesNode[devKey];
 
@@ -804,7 +805,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
                 InputControlUnit dgPair;
                 dgPair.m_physicalDevice = pD;
                 dgPair.m_simulatedDevice = sD;
-                dgPair.m_name = pD->m_hInfo.m_modelName;
+                dgPair.m_name = devKey;
                 m_psDevicePairs.push_back(dgPair);
             }
         }
