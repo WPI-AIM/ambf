@@ -33,11 +33,12 @@
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE. 
+    POSSIBILITY OF SUCH DAMAGE.
 
     \author     Federico Barbagli
     \author     Francois Conti
     \author     Sebastien Grange
+    \modificaiton Adnan Munawar
 */
 //===========================================================================
 
@@ -76,7 +77,7 @@ using namespace chai3d;
 #define PHANTOM_NUM_DEVICES_MAX 4
 #endif
 #ifdef LINUX
-#define PHANTOM_NUM_DEVICES_MAX 1
+#define PHANTOM_NUM_DEVICES_MAX 4
 #endif
 
 // structure used to store data related to each device entity
@@ -267,6 +268,46 @@ _hdLoad(void)
             phantomDevices[numPhantomDevices].enabled = true;
             numPhantomDevices++;
         }
+
+        //------------------------------------------------------------------
+        // INITIALIZE DEVICE 4
+        //------------------------------------------------------------------
+
+        // search for a possible second device
+        HHD hHD4 = hdInitDevice("Right");
+
+        // check if device is available
+    if (!HD_DEVICE_ERROR(error = hdGetError()) && hHD4 != HD_INVALID_HANDLE)
+        {
+            // enable forces
+            hdMakeCurrentDevice(hHD4);
+            hdEnable(HD_FORCE_OUTPUT);
+
+            // add device to list
+            phantomDevices[numPhantomDevices].handle = hHD4;
+            phantomDevices[numPhantomDevices].enabled = true;
+            numPhantomDevices++;
+        }
+
+        //------------------------------------------------------------------
+        // INITIALIZE DEVICE 5
+        //------------------------------------------------------------------
+
+        // search for a possible second device
+        HHD hHD5 = hdInitDevice("Left");
+
+        // check if device is available
+    if (!HD_DEVICE_ERROR(error = hdGetError()) && hHD5 != HD_INVALID_HANDLE)
+        {
+            // enable forces
+            hdMakeCurrentDevice(hHD5);
+            hdEnable(HD_FORCE_OUTPUT);
+
+            // add device to list
+            phantomDevices[numPhantomDevices].handle = hHD5;
+            phantomDevices[numPhantomDevices].enabled = true;
+            numPhantomDevices++;
+        }
     }
 }
 
@@ -293,11 +334,11 @@ void _hdUnload(void)
 
 #if defined(WIN32) | defined(WIN64)
 
-BOOL APIENTRY DllMain( HANDLE hModule, 
-                       DWORD  ul_reason_for_call, 
+BOOL APIENTRY DllMain( HANDLE hModule,
+                       DWORD  ul_reason_for_call,
                        LPVOID lpReserved)
 {
-    switch (ul_reason_for_call) 
+    switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
         _hdLoad();
@@ -321,7 +362,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     \fn     int __FNCALL hdPhantomGetNumDevices()
 
-    \return Returns the number of devices found      
+    \return Returns the number of devices found
 */
 //==========================================================================
 int __FNCALL hdPhantomGetNumDevices()
@@ -336,8 +377,8 @@ int __FNCALL hdPhantomGetNumDevices()
 
     \fn     int __FNCALL hdPhantomOpen(const int a_deviceID)
 
-    \param  a_deviceID device identification number. 
-    
+    \param  a_deviceID device identification number.
+
      \return Return 0 if success, otherwise -1.
 */
 //==========================================================================
@@ -366,8 +407,8 @@ int __FNCALL hdPhantomOpen(const int a_deviceID)
 
     \fn     int __FNCALL hdPhantomClose(const int a_deviceID)
 
-    \param  a_deviceID device identification number. 
-    
+    \param  a_deviceID device identification number.
+
     \return Return 0 if success, otherwise -1.
 */
 //==========================================================================
@@ -517,15 +558,15 @@ int __FNCALL hdPhantomGetRotation(const int a_deviceID,
 
     // return rotation matrix
     /*
-    *a_rot00 = phantomDevices[a_deviceID].rotation[8];	
-    *a_rot01 = phantomDevices[a_deviceID].rotation[2];	
-    *a_rot02 = phantomDevices[a_deviceID].rotation[5];	
-    *a_rot10 = phantomDevices[a_deviceID].rotation[6];	
-    *a_rot11 = phantomDevices[a_deviceID].rotation[0];	
-    *a_rot12 = phantomDevices[a_deviceID].rotation[3];	
-    *a_rot20 = phantomDevices[a_deviceID].rotation[7];	
-    *a_rot21 = phantomDevices[a_deviceID].rotation[1];	
-    *a_rot22 = phantomDevices[a_deviceID].rotation[4];	
+    *a_rot00 = phantomDevices[a_deviceID].rotation[8];
+    *a_rot01 = phantomDevices[a_deviceID].rotation[2];
+    *a_rot02 = phantomDevices[a_deviceID].rotation[5];
+    *a_rot10 = phantomDevices[a_deviceID].rotation[6];
+    *a_rot11 = phantomDevices[a_deviceID].rotation[0];
+    *a_rot12 = phantomDevices[a_deviceID].rotation[3];
+    *a_rot20 = phantomDevices[a_deviceID].rotation[7];
+    *a_rot21 = phantomDevices[a_deviceID].rotation[1];
+    *a_rot22 = phantomDevices[a_deviceID].rotation[4];
     */
 
     // read value from matrix and correct matrix to be orthogonal
@@ -543,14 +584,14 @@ int __FNCALL hdPhantomGetRotation(const int a_deviceID,
     v0.crossr(v1, v2);
     v2.crossr(v0, v1);
 
-    *a_rot00 = v0.x();	
-    *a_rot01 = v1.x(); 
-    *a_rot02 = v2.x(); 
-    *a_rot10 = v0.y(); 
+    *a_rot00 = v0.x();
+    *a_rot01 = v1.x();
+    *a_rot02 = v2.x();
+    *a_rot10 = v0.y();
     *a_rot11 = v1.y();
     *a_rot12 = v2.y();
-    *a_rot20 = v0.z(); 
-    *a_rot21 = v1.z(); 
+    *a_rot20 = v0.z();
+    *a_rot21 = v1.z();
     *a_rot22 = v2.z();
 
     // success
@@ -565,7 +606,7 @@ int __FNCALL hdPhantomGetRotation(const int a_deviceID,
     \fn     int __FNCALL hdPhantomGetButtons(const int a_deviceID)
 
     \param  a_deviceID device identification number.
-    
+
     \return Return a integer for which each bit corresponds to a button status.
 */
 //==========================================================================
@@ -785,7 +826,7 @@ int __FNCALL hdPhantomGetWorkspaceRadius(const int a_deviceID,
 /*!
     Read the name type of the device
 
-    \fn     int hdPhantomGetType(int a_deviceID, 
+    \fn     int hdPhantomGetType(int a_deviceID,
                                  const char* a_typeName)
 
     \param  a_deviceID device identification number.
@@ -901,12 +942,12 @@ HDCallbackCode HDCALLBACK servoPhantomDevices(void* pUserData)
 
             // start sending commands
             hdBeginFrame(hHD);
-            
+
             // retrieve the position and orientation of the end-effector.
             double frame[16];
             hdGetDoublev(HD_CURRENT_TRANSFORM, frame);
 
-            // convert position from [mm] to [m] 
+            // convert position from [mm] to [m]
             frame[12] = frame[12] * 0.001;
             frame[13] = frame[13] * 0.001;
             frame[14] = frame[14] * 0.001;
@@ -929,11 +970,11 @@ HDCallbackCode HDCALLBACK servoPhantomDevices(void* pUserData)
             double vel[3];
             hdGetDoublev(HD_CURRENT_VELOCITY, vel);
 
-            // convert position from [mm] to [m] 
+            // convert position from [mm] to [m]
             vel[0] = vel[0] * 0.001;
             vel[1] = vel[1] * 0.001;
             vel[2] = vel[2] * 0.001;
-            
+
             phantomDevices[i].linearVelocity[0] = vel[0];
             phantomDevices[i].linearVelocity[1] = vel[1];
             phantomDevices[i].linearVelocity[2] = vel[2];
