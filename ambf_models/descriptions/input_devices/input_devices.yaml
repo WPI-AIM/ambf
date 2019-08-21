@@ -4,12 +4,12 @@ input devices: [MTMR, MTML, Geomagic Touch, Razer Hydra0, Razer Hydra1,
 MTMR:
   hardware name: MTMR
   haptic gain: {linear: 0.03, angular: 1}
-  workspace scaling: 10
-  simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+  workspace scaling: 5
+  simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
   # root link:
   location: {
-    position: {x: 0.3, y: 0, z: -1.0},
-    orientation: {r: 0, p: 0, y: 0}}
+    position: {x: -0.5, y: 0, z: 0},
+    orientation: {r: 0, p: 0, y: 3.14}}
   button mapping: {
     a1: 1,
     a2: 2,
@@ -19,11 +19,11 @@ MTMR:
 MTML:
     hardware name: MTML
     haptic gain: {linear: 0.03, angular: 0.0}
-    workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
     location: {
-      position: {x: 0.3, y: 0.0, z: -1.0},
-      orientation: {r: 0, p: 0, y: 0}}
+      position: {x: -0.5, y: 0.0, z: 0},
+      orientation: {r: 0, p: 0.0, y: 3.14}}
     button mapping: {
       a1: 1,
       a2: 6,
@@ -37,14 +37,15 @@ Geomagic Touch:
     max force: 2
     max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper small.yaml"
+    simulated multibody: "../multi-bodies/tools/bar.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
-      orientation: {r: 0, p: 0, y: 0}}
+      orientation: {r: 0, p: -0.7, y: 0}}
+    orientation offset: {r: 0, p: 0, y: 0}
     button mapping: {
       a1: 0,
-      a2: -1,
-      g1: 1,
+      a2: 1,
+      g1: -1,
       next mode: 3,
       prev mode: 4}
 
