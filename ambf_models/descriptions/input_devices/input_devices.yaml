@@ -32,12 +32,18 @@ MTML:
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
-    haptic gain: {linear: 0.0, angular: 0.0}
+    haptic gain: {linear: 0.01, angular: 0.0}
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/box tool.yaml"
+    simulated multibody: "../multi-bodies/grippers/resistive/gripper2/gripper2.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
+    button mapping: {
+      a1: 0,
+      a2: -1,
+      g1: 1,
+      next mode: 2,
+      prev mode: 3}
 
 Razer Hydra0:
     hardware name: Razer Hydra
@@ -46,7 +52,7 @@ Razer Hydra0:
     #   linear: {P: 0.0, D: 0.0},
     #   angular: {P: 0.0, D: 0.0}}
     workspace scaling: 5
-    simulated multibody: "../multi-bodies/grippers/two fists resistive.yaml"
+    simulated multibody: "../multi-bodies/grippers/resistive/gripper2/gripper2.yaml"
     # root link: "/ambf/env/BODY l_wrist_roll_link"
     location: {
       position: {x: 0.0, y: -1.0, z: 0},

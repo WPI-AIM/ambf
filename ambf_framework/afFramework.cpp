@@ -995,6 +995,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             m_meshes->push_back(tempMesh);
         }
     else if (m_visualGeometryType == GeometryType::compound_shape){
+        // First of all, set the inertial offset to 0.
+        bodyInertialOffsetPos = bodyNode["inertial offset undef"];
+        std::cerr << "\n\n***** VISUAL *******\nName: " << m_name << std::endl;
+        std::cerr << bodyCompoundShape << std::endl;
+        std::cerr << bodyCompoundCollisionShape << std::endl;
         for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
             _visual_shape_str = bodyCompoundShape[shapeIdx]["shape"].as<std::string>();
             bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
@@ -1018,7 +1023,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 dy = bodyGeometry["dy"].as<int>();
             }
             if (bodyGeometry["dz"].IsDefined()){
-                dz = bodyGeometry["dZ"].as<int>();
+                dz = bodyGeometry["dz"].as<int>();
             }
             cMesh* tempMesh = new cMesh();
             if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
@@ -1028,6 +1033,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 x *= m_scale;
                 y *= m_scale;
                 z *= m_scale;
+//                std::cerr << "---------------------" << std::endl;
+////                std::cerr << shapeIdx << std::endl;
+//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
+//                std::cerr << "Location : " << std::endl;
+//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
+//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
+//                std::cerr << "Scale    : "  << m_scale << std::endl;
+
                 cCreateBox(tempMesh, x, y, z, shapePos, shapeRot);
             }
             else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
@@ -1221,10 +1234,12 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
         btCompoundShape* _compoundCollisionShape = new btCompoundShape();
+        std::cerr << "\n\n***** COLLISION *******\nName: " << m_name << std::endl;
+        std::cerr << bodyCompoundCollisionShape << std::endl;
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
-            bodyCollisionGeometry = bodyCompoundShape[shapeIdx]["geometry"];
-            YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
+            bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
+            YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
             double px = shapeOffset["position"]["x"].as<double>();
             double py = shapeOffset["position"]["y"].as<double>();
             double pz = shapeOffset["position"]["z"].as<double>();
@@ -1242,6 +1257,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 x *= m_scale;
                 y *= m_scale;
                 z *= m_scale;
+//                std::cerr << "---------------------" << std::endl;
+////                std::cerr << shapeIdx << std::endl;
+//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
+//                std::cerr << "Location : " << std::endl;
+//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
+//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
+//                std::cerr << "Scale    : "  << m_scale << std::endl;
                 btVector3 halfExtents(x/2, y/2, z/2);
                 _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
             }
@@ -1497,8 +1519,12 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
 
         bool _showSensors = false;
+        double _visiblitySize = 0;
         if (bodyResistiveSurface["visible"].IsDefined()){
             _showSensors = bodyResistiveSurface["visible"].as<bool>();
+            if (bodyResistiveSurface["visible size"].IsDefined()){
+                _visiblitySize = bodyResistiveSurface["visible size"].as<double>();
+            }
         }
 
         cMesh* _sourceMesh = NULL;
@@ -1555,13 +1581,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 _resistanceSensor->useVariableCoeff(m_resistiveSurface.useVariableCoeff);
 
                 if (_showSensors){
-                    _resistanceSensor->setSensorVisibilityRadius(m_resistiveSurface.range / 5);
+                    if (_visiblitySize <= 0){
+                        _visiblitySize = m_resistiveSurface.range / 5;
+                    }
+                    _resistanceSensor->setSensorVisibilityRadius(_visiblitySize);
                     _resistanceSensor->enableVisualization();
                 }
 
                 _resistanceSensor->m_sensorType = afSensorType::resistance;
 
                 this->addAFSensor(_resistanceSensor);
+                std::string _sensorName = m_name + "_sensor" + std::to_string(tIdx);
+                m_afWorld->addAFSensor(_resistanceSensor, _sensorName);
                 _resistanceSensor->m_parentBody = this;
             }
         }
@@ -3122,8 +3153,8 @@ void afRayTracerSensor::updateSensor(){
     m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
-            m_hitSphereMesh->setShowEnabled(true);
             m_hitSphereMesh->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
+            m_hitSphereMesh->setShowEnabled(true);
         }
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
@@ -3331,9 +3362,9 @@ void afResistanceSensor::updateSensor(){
     // Find the rigid or softbody that this sensor made a contact with
     if (isTriggered()){
         if (m_showSensor){
-            m_hitNormalMesh->setShowEnabled(true);
-            m_hitNormalMesh->setLocalPos(getSensedPoint());
-            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
+//            m_hitNormalMesh->setLocalPos(getSensedPoint());
+//            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
+//            m_hitNormalMesh->setShowEnabled(true);
         }
 
         btVector3 F_s_w(0,0,0); // Due to "stick" friction
@@ -3377,7 +3408,7 @@ void afResistanceSensor::updateSensor(){
 
             // First calculate the normal contact force
             btVector3 F_n_a = ((m_contactNormalStiffness * m_depthFraction)
-                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * N_a;
+                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * (N_a);
             F_n_w = T_aINw.getBasis() * F_n_a;
 
             double coeffScale = 1;
@@ -3440,8 +3471,8 @@ void afResistanceSensor::updateSensor(){
             btVector3 dV = V_aINw - V_bINw;
 
             // Check if the error is along the direction of sensor
-            btVector3 orthogonalVelError = N_aINw.cross(dV);
-            btVector3 velErrorDir = orthogonalVelError.cross(N_aINw);
+            btVector3 orthogonalVelError = N_bINw.cross(dV);
+            btVector3 velErrorDir = orthogonalVelError.cross(N_bINw);
             if (velErrorDir.length() > 0.0001){
                 velErrorDir.normalize();
             }

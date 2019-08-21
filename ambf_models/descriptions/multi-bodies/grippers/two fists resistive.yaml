@@ -5,6 +5,7 @@
 bodies: [BODY Fist1, BODY Fist2]
 joints: [JOINT Fist1-Fist2]
 sensors: [RP10, RP11, RP12, RP13, RP14, RP15, RP16, RP17, RP18, RP20, RP21, RP22, RP23, RP24, RP25, RP26, RP27, RP28]
+# sensors: [RP10, RP20]
 high resolution path: ../../../meshes/grippers/pr2_gripper/high_res/
 low resolution path: ../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true
@@ -12,12 +13,12 @@ namespace: /ambf/env/
 # publish children names: true
 
 friction: &default_friction
-  {static: 8000,
+  {static: 10000,
   damping: 0,
-  dynamic: 0,
-  variable: false}
-contact stiffness: &ctf 0
-contact damping: &ctd 0
+  dynamic: 5,
+  variable: true}
+contact stiffness: &ctf 5.0
+contact damping: &ctd 5
 
 visiblity: &visibility 0.01
 range: &range 0.08
@@ -346,7 +347,7 @@ JOINT Fist1-Fist2:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: -0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.3, low: -0.1}
-  controller: {D: 1, I: 0, P: 30}
+  controller: {D: 1, I: 0, P: 50}
   type: prismatic
   offset: 0.0
   max motor impulse: 0.05

@@ -130,6 +130,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     // Initialize Default Buttons
     m_buttons.A1 = 0;
     m_buttons.A2 = 1;
+    m_buttons.G1 = -1;
     m_buttons.NEXT_MODE = 2;
     m_buttons.PREV_MODE = 3;
 
@@ -359,6 +360,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
         if (pDButtonMapping["a2"].IsDefined()){
             m_buttons.A2 = pDButtonMapping["a2"].as<int>();
+        }
+        if (pDButtonMapping["g1"].IsDefined()){
+            m_buttons.G1 = pDButtonMapping["g1"].as<int>();
         }
         if (pDButtonMapping["next mode"].IsDefined()){
             m_buttons.NEXT_MODE = pDButtonMapping["next mode"].as<int>();

@@ -12,17 +12,17 @@ namespace: /ambf/env/
 
 
 friction: &default_friction
-  {static: 3000,
+  {static: 10000,
   damping: 0,
   dynamic: 0,
   variable: true}
 contact area: &cta 0.001
-contact stiffness: &ctf 0.0
-contact damping: &ctd 0.0
+contact stiffness: &ctf 1
+contact damping: &ctd 50
 
 visiblity: &visibility 0.01
-range: &range 0.2
-x_location: &xl -0.12
+range: &range 0.3
+x_location: &xl -0.15
 
 negative_default_offset: &ndo -0.08
 positive_default_offset: &pdo 0.08
@@ -176,7 +176,7 @@ BODY BoxTool:
     ambient: {level: 1.0}
     diffuse: {b: 0.8, g: 0.3295, r: 0.1495}
     specular: {b: 1.0, g: 1.0, r: 1.0}
-    transparency: 1.0
+    transparency: 0.3
   controller: {
     linear: {P: 500, D: 20},
     angular: {P: 30, D: 1}}

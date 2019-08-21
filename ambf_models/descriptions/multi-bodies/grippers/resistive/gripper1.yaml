@@ -20,6 +20,7 @@ default_resistive: &default_resistive {
     dynamic: 5,
     variable: true},
   visible: true,
+  mesh: resistive_plate.STL,
   contact stiffness: 3,
   contact damping: 0
   }

@@ -35,3 +35,6 @@ multibody configs:
   - "/home/adnan/jhu_urdfs/ral-icra/spheres_fall_test.yaml" #28
   - "/home/adnan/icl_ambf/icl.yaml" #29
   - "./multi-bodies/puzzles/compound_example.yaml" #30
+  - "./multi-bodies/puzzles/puzzle4.yaml" #31
+  - "/home/adnan/icl_ambf/icl.yaml" #32
+  - "/home/adnan/scratch_pad/scratch_pad.yaml" #33
