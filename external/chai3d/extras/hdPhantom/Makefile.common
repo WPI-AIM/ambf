@@ -41,7 +41,8 @@
 # external dependencies
 CHAI3D_DIR = ../..
 GLEW_DIR   = ../../external/glew
-EIGEN_DIR  = ../../external/Eigen
+EIGEN_DIR  = ../../../Eigen
+DVRK_ARM_DIR  = .
 
 # determine version info
 MAJOR   = $(shell cat $(CHAI3D_DIR)/src/version | grep MAJOR   | awk 'BEGIN { FS = "=" } { print $$2 }' )

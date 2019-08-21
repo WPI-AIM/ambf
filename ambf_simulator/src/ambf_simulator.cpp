@@ -452,12 +452,13 @@ int main(int argc, char* argv[])
                 cLabel* devFreqLabel = new cLabel(font);
                 devFreqLabel->m_fontColor.setBlack();
                 devFreqLabel->setFontScale(0.8);
+                devFreqLabel->m_fontColor.setGreenLime();
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
                 (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_physicalDevice->m_hInfo.m_modelName);
+                            dgPairs[dgPairIdx]->m_name);
             }
         }
         else{
@@ -471,13 +472,14 @@ int main(int argc, char* argv[])
                 cLabel* devFreqLabel = new cLabel(font);
                 devFreqLabel->m_fontColor.setBlack();
                 devFreqLabel->setFontScale(0.8);
+                devFreqLabel->m_fontColor.setGreenLime();
                 dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
                 (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
                 (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
 
 
                 (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_physicalDevice->m_hInfo.m_modelName);
+                            dgPairs[dgPairIdx]->m_name);
             }
         }
     }
@@ -1464,6 +1466,7 @@ void updateHapticDevice(void* a_arg){
     RateSleep rateSleep(g_cmdOpts.htxFrequency);
 
     // update position and orientation of simulated gripper
+    std::string identifyingName = g_inputDevices->m_psDevicePairs[devIdx].m_name;
     afPhysicalDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
     afSimulatedDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
     std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
@@ -1502,12 +1505,19 @@ void updateHapticDevice(void* a_arg){
     _refSphere->setFrameSize(0.3);
     g_bulletWorld->addChild(_refSphere);
 
+    cVector3d force, torque;
+    cVector3d force_prev, torque_prev;
+    force.set(0,0,0);
+    torque.set(0,0,0);
+    force_prev.set(0,0,0);
+    torque_prev.set(0,0,0);
+
     // main haptic simulation loop
     while(g_simulationRunning)
     {
         pDev->m_freq_ctr.signal(1);
         if (devFreqLabel != NULL){
-            devFreqLabel->setText(pDev->m_hInfo.m_modelName + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+            devFreqLabel->setText(identifyingName + " [" + pDev->m_hInfo.m_modelName + "] " + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
         }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
@@ -1665,10 +1675,39 @@ void updateHapticDevice(void* a_arg){
         drot.toAxisAngle(axis, angle);
         ddrot.toAxisAngle(daxis, dangle);
 
-        cVector3d force, torque;
-
+        force_prev = force;
+        torque_prev = torque_prev;
         force  = - g_cmdOpts.enableForceFeedback * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
         torque = - g_cmdOpts.enableForceFeedback * pDev->K_ah_ramp * (P_ang * angle * axis);
+
+        if ((force - force_prev).length() > pDev->m_maxJerk){
+            cVector3d normalized_force = force;
+            normalized_force.normalize();
+            double _sign = 1.0;
+            if (force.x() < 0 || force.y() < 0 || force.z() < 0){
+                _sign = 1.0;
+            }
+            force = force_prev + (normalized_force * pDev->m_maxJerk * _sign);
+        }
+
+        if (force.length() < pDev->m_deadBand){
+            force.set(0,0,0);
+        }
+
+        if (force.length() > pDev->m_maxForce){
+            force.normalize();
+            force = force * pDev->m_maxForce;
+        }
+
+        if (torque.length() < pDev->m_deadBand){
+            torque.set(0,0,0);
+        }
+
+        std::vector<float> force_msg;
+        force_msg.push_back(force.x());
+        force_msg.push_back(force.y());
+        force_msg.push_back(force.z());
+        simGripper->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
 
         pDev->applyWrench(force, torque);
         rateSleep.sleep();

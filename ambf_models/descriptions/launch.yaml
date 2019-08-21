@@ -19,22 +19,6 @@ multibody configs:
   - "./multi-bodies/puzzles/puzzle2.yaml" #12
   - "./multi-bodies/robots/blender-pr2-textured.yaml" #13
   - "./multi-bodies/robots/sophie.yaml" #14
-  - "/home/adnan/jhu_urdfs/test.yaml" #15
-  - "./multi-bodies/sb/cloth.yaml" #16
-  - "./multi-bodies/sb/cloth2.yaml" #17
-  - "/home/adnan/sb/sb.yaml" #18
-  - "/home/adnan/sb/sb2.yaml" #19
-  - "/home/adnan/sb/sb3.yaml" #20
-  - "/home/adnan/sb/sb4.yaml" #21
-  - "./multi-bodies/puzzles/puzzle3.yaml" #22
-  - "./multi-bodies/grippers/sensorized_box.yaml" #23
-  - "./multi-bodies/robots/resistive_sensor/resistive_sensor1.yaml" #24
-  - "./multi-bodies/robots/resistive_sensor/test1.yaml" #25
-  - "/home/adnan/needle_driver.yaml" #26
-  - "/home/adnan/needle_driver2.yaml" #27
-  - "/home/adnan/jhu_urdfs/ral-icra/spheres_fall_test.yaml" #28
-  - "/home/adnan/icl_ambf/icl.yaml" #29
-  - "./multi-bodies/puzzles/compound_example.yaml" #30
-  - "./multi-bodies/puzzles/puzzle4.yaml" #31
-  - "/home/adnan/icl_ambf/icl.yaml" #32
-  - "/home/adnan/scratch_pad/scratch_pad.yaml" #33
+  - "./multi-bodies/puzzles/puzzle4.yaml" #15
+  - "./multi-bodies/puzzles/puzzle5.yaml" #16
+  - "./multi-bodies/puzzles/puzzle6.yaml" #17

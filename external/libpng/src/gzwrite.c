@@ -4,6 +4,8 @@
  */
 
 #include "gzguts.h"
+#include <unistd.h>  /* Many POSIX functions (but not all, by a large margin) */
+#include <fcntl.h>   /* open(), creat() - and fcntl() */
 
 /* Local functions */
 local int gz_init OF((gz_statep));

@@ -48,7 +48,7 @@ camera2:
   field view angle: 0.8
   stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
   monitor: 3
-  controlling devices: [Falcon]
+  controlling devices: [Novint Falcon] # These device are specified in the input_devices.yaml file
   # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
   # device: Razer Hydra
@@ -61,7 +61,7 @@ camera3:
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
   monitor: 2
-  controlling devices: [PHANTOM Omni]
+  controlling devices: [Geomagic Touch] # No need to use the hardware name, simply use the name from input_devices.yaml
   # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
 # device: Razer Hydra

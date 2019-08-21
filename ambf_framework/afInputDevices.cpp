@@ -117,6 +117,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
     YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
+    YAML::Node pDDeadband = physicaDeviceNode["deadband"];
+    YAML::Node pDMaxForce = physicaDeviceNode["max force"];
+    YAML::Node pDMaxJerk = physicaDeviceNode["max jerk"];
     YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
     YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
     YAML::Node pDRootLink = physicaDeviceNode["root link"];
@@ -240,6 +243,36 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
+    }
+
+    if (pDDeadband.IsDefined()){
+        double _deadBand = pDDeadband.as<double>();
+        if (_deadBand < 0){
+            std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
+        }
+        else{
+            m_deadBand = _deadBand;
+        }
+    }
+
+    if (pDMaxForce.IsDefined()){
+        double _maxForce = pDMaxForce.as<double>();
+        if (_maxForce < m_deadBand){
+            std::cerr << "WARNING: MAX FORCE : \"" << node_name << "\" MUST BE GREATER THAN MIN FORCE, IGNORING \n";
+        }
+        else{
+            m_maxForce = _maxForce;
+        }
+    }
+
+    if (pDMaxJerk.IsDefined()){
+        double _maxJerk = pDMaxJerk.as<double>();
+        if (_maxJerk < 0){
+            std::cerr << "WARNING: MAX JERK : \"" << node_name << "\" MUST BE POSITIVE, IGNORING \n";
+        }
+        else{
+            m_maxJerk = _maxJerk;
+        }
     }
 
     if (_simulatedMBDefined){
@@ -764,6 +797,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
             afPhysicalDevice* pD = new afPhysicalDevice();
             afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
 
+            // Load the device specified in the afInputDevice yaml file
             std::string devKey = inputDevices[devIdx].as<std::string>();
             YAML::Node devNode = inputDevicesNode[devKey];
 
@@ -771,7 +805,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
                 InputControlUnit dgPair;
                 dgPair.m_physicalDevice = pD;
                 dgPair.m_simulatedDevice = sD;
-                dgPair.m_name = pD->m_hInfo.m_modelName;
+                dgPair.m_name = devKey;
                 m_psDevicePairs.push_back(dgPair);
             }
         }

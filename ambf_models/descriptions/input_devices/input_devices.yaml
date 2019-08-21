@@ -1,15 +1,15 @@
-input devices: [MTMR, MTML, Geomagic Touch, Razer Hydra1, Razer Hydra0,
+input devices: [MTMR, MTML, Geomagic Touch, Razer Hydra0, Razer Hydra1,
  Novint Falcon]
 
 MTMR:
   hardware name: MTMR
   haptic gain: {linear: 0.03, angular: 1}
-  workspace scaling: 10
-  simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+  workspace scaling: 5
+  simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
   # root link:
   location: {
-    position: {x: 0.3, y: 0, z: -1.0},
-    orientation: {r: 0, p: 0, y: 0}}
+    position: {x: -0.5, y: 0, z: 0},
+    orientation: {r: 0, p: 0, y: 3.14}}
   button mapping: {
     a1: 1,
     a2: 2,
@@ -19,11 +19,11 @@ MTMR:
 MTML:
     hardware name: MTML
     haptic gain: {linear: 0.03, angular: 0.0}
-    workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
     location: {
-      position: {x: 0.3, y: 0.0, z: -1.0},
-      orientation: {r: 0, p: 0, y: 0}}
+      position: {x: -0.5, y: 0.0, z: 0},
+      orientation: {r: 0, p: 0.0, y: 3.14}}
     button mapping: {
       a1: 1,
       a2: 6,
@@ -32,7 +32,10 @@ MTML:
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
-    haptic gain: {linear: 0.01, angular: 0.0}
+    haptic gain: {linear: 0.000, angular: 0.0}
+    deadband: 0.01
+    max force: 2
+    max jerk: 0.2
     workspace scaling: 10
     simulated multibody: "../multi-bodies/grippers/resistive/gripper2/gripper2.yaml"
     location: {
