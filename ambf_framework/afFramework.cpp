@@ -944,6 +944,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                       << "'s mesh \"" << high_res_filepath << "\" not found\n";
         }
     }
+
     else if (m_visualGeometryType == GeometryType::shape){
         int dx = 32; // Default x resolution for shape
         int dy = 32; // Default y resolution for shape
@@ -995,52 +996,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             m_meshes->push_back(tempMesh);
         }
-    else if (m_visualGeometryType == GeometryType::compound_shape){
-        // First of all, set the inertial offset to 0.
-        bodyInertialOffsetPos = bodyNode["inertial offset undef"];
-        std::cerr << "\n\n***** VISUAL *******\nName: " << m_name << std::endl;
-        std::cerr << bodyCompoundShape << std::endl;
-        std::cerr << bodyCompoundCollisionShape << std::endl;
-        for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
-            _visual_shape_str = bodyCompoundShape[shapeIdx]["shape"].as<std::string>();
-            bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
-            YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
-            int dx = 32; // Default x resolution for shape
-            int dy = 32; // Default y resolution for shape
-            int dz = 5; // Default z resolution for shape
-            double px = shapeOffset["position"]["x"].as<double>();
-            double py = shapeOffset["position"]["y"].as<double>();
-            double pz = shapeOffset["position"]["z"].as<double>();
-            double roll =  shapeOffset["orientation"]["r"].as<double>();
-            double pitch = shapeOffset["orientation"]["p"].as<double>();
-            double yaw =   shapeOffset["orientation"]["y"].as<double>();
-            cVector3d shapePos(px, py, pz);
-            cMatrix3d shapeRot;
-            shapeRot.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
-            if (bodyGeometry["dx"].IsDefined()){
-                dx = bodyGeometry["dx"].as<int>();
-            }
-            if (bodyGeometry["dy"].IsDefined()){
-                dy = bodyGeometry["dy"].as<int>();
-            }
-            if (bodyGeometry["dz"].IsDefined()){
-                dz = bodyGeometry["dz"].as<int>();
-            }
-            cMesh* tempMesh = new cMesh();
-            if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
-                double x = bodyGeometry["x"].as<double>();
-                double y = bodyGeometry["y"].as<double>();
-                double z = bodyGeometry["z"].as<double>();
-                x *= m_scale;
-                y *= m_scale;
-                z *= m_scale;
-//                std::cerr << "---------------------" << std::endl;
-////                std::cerr << shapeIdx << std::endl;
-//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-//                std::cerr << "Location : " << std::endl;
-//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-//                std::cerr << "Scale    : "  << m_scale << std::endl;
 
     else if (m_visualGeometryType == GeometryType::compound_shape){
         // First of all, set the inertial offset to 0.
@@ -3532,9 +3487,9 @@ void afResistanceSensor::updateSensor(){
     // Find the rigid or softbody that this sensor made a contact with
     if (isTriggered()){
         if (m_showSensor){
-//            m_hitNormalMesh->setLocalPos(getSensedPoint());
-//            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
-//            m_hitNormalMesh->setShowEnabled(true);
+            m_hitNormalMesh->setLocalPos(getSensedPoint());
+            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
+            m_hitNormalMesh->setShowEnabled(true);
         }
 
         btVector3 F_s_w(0,0,0); // Due to "stick" friction
