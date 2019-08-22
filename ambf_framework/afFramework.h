@@ -56,6 +56,7 @@
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+#include <thread>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 //------------------------------------------------------------------------------
@@ -457,6 +458,25 @@ protected:
 protected:
 
     afResistiveSurface m_resistiveSurface;
+
+    // pool of threads for solving the body's sensors in paralled
+    std::vector<std::thread*> m_sensorThreads;
+
+    // Block size. i.e. number of sensors per thread
+    int m_sensorThreadBlockSize = 10;
+
+    // This method uses the eq:
+    // startIdx = threadIdx * m_sensorThreadBlockSize
+    // endIdx = startIdx + m_sensorThreadBlockSize - 1
+    // to compute the two indexes. The runs a loop to solve the indexes
+    // in between so that we can progress in parallel
+    bool updateBodySensors(int threadIdx);
+
+    // boolean flags for each thread to progress
+    std::vector<bool> m_threadUpdateFlags;
+
+    // Global flag for all sensor threads
+    bool m_keepSensorThreadsAlive = true;
 
 private:
     // Ptr to afWorld

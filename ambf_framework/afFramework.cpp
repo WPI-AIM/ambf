@@ -1662,7 +1662,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             else{
                 std::cerr << "ERROR! BODY \"" << m_name <<
-                             "\s\" RESISTIVE MESH " <<
+                             "\'s\" RESISTIVE MESH " <<
                              _resistiveMeshName << " NOT FOUND. IGNORING\n";
             }
         }
@@ -1721,6 +1721,20 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 _resistanceSensor->m_parentBody = this;
             }
         }
+# ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
+        // Sub-divide the sensors into the threads
+        int _nSensors = m_afSensors.size();
+        int _nBlocks = _nSensors / m_sensorThreadBlockSize;
+
+        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
+            m_threadUpdateFlags.push_back(false);
+        }
+
+        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
+            std::thread* th = new std::thread(&afRigidBody::updateBodySensors, this, bIdx);
+            m_sensorThreads.push_back(th);
+        }
+#endif
 
     }
 
@@ -1864,9 +1878,15 @@ void afRigidBody::updatePositionFromDynamics()
     }
 
     // Update the data for sensors
-    for (int i=0 ; i < m_afSensors.size() ; i++){
+#ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
+    for (int thIdx = 0 ; thIdx < m_sensorThreads.size() ; thIdx++){
+        m_threadUpdateFlags[thIdx] = true;
+    }
+#else
+    for (int i = 0 ; i < m_afSensors.size() ; i++){
         m_afSensors[i]->updateSensor();
     }
+#endif
 
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -1915,6 +1935,31 @@ void afRigidBody::updatePositionFromDynamics()
         m_write_count++;
     }
 #endif
+}
+
+
+///
+/// \brief afRigidBody::updateBodySensors
+/// \param threadIdx
+/// \return
+///
+bool afRigidBody::updateBodySensors(int threadIdx){
+    int startIdx = threadIdx * m_sensorThreadBlockSize;
+    int endIdx = startIdx + m_sensorThreadBlockSize;
+
+    endIdx = endIdx > m_afSensors.size() ? m_afSensors.size() : endIdx;
+    while (m_keepSensorThreadsAlive){
+        if (m_threadUpdateFlags[threadIdx] == true){
+
+            for (int idx = startIdx ; idx < endIdx ; idx++){
+                m_afSensors[idx]->updateSensor();
+            }
+
+            m_threadUpdateFlags[threadIdx] = false;
+        }
+        usleep(1000);
+    }
+    return true;
 }
 
 
@@ -3524,7 +3569,7 @@ void afResistanceSensor::updateSensor(){
 
             if (m_depthFraction < 0 || m_depthFraction > 1){
                 std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
-                             ". It should be between \[0-1\]" << std::endl;
+                             ". It should be between [0-1]" << std::endl;
                 std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
                              "\nSensed Point: " << toCvec(P_cINa) << std::endl;
                 std::cerr << "----------\n";
