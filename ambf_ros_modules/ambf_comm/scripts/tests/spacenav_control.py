@@ -4,6 +4,7 @@ from sensor_msgs.msg import Joy
 from ambf_client import Client
 import sys
 import time
+from argparse import ArgumentParser
 
 
 # Init everthing related to SpaceNav
@@ -100,48 +101,40 @@ class SpaceNavDevice:
 
 
 def main():
-    client = Client('spacenav_ambf_node')
+    # Begin Argument Parser Code
+    parser = ArgumentParser()
+
+    parser.add_argument('-d', action='store', dest='spacenav_name', help='Specify ros base name of spacenav',
+                        default='/spacenav/')
+    parser.add_argument('-o', action='store', dest='obj_name', help='Specify AMBF Obj Name', default='BoxTool')
+    parser.add_argument('-c', action='store', dest='camera_name', help='Specify AMBF Camera Name',
+                        default='default_camera')
+    parser.add_argument('-a', action='store', dest='client_name', help='Specify AMBF Client Name',
+                        default='client_name')
+
+    parsed_args = parser.parse_args()
+    print('Specified Arguments')
+    print parsed_args
+
+    _spacenav_one_name = parsed_args.spacenav_name
+    _obj_one_name = parsed_args.obj_name
+    _default_camera_name = parsed_args.camera_name
+    _ambf_client_name = parsed_args.client_name
+
+    client = Client(_ambf_client_name)
     client.connect()
 
     _pair_one_specified = True
-    _pair_two_specified = False
-    # rospy.init_node('spacenav_ambf_node')
-
-    _spacenav_one_name = '/spacenav/'
-    _spacenav_two_name = ''
 
     _device_pairs = []
 
-    default_camera = client.get_obj_handle('default_camera')
-
-    _obj_one_name = 'default_camera'
-    _obj_two_name = 'default_camera2'
+    default_camera = client.get_obj_handle(_default_camera_name)
 
     # The publish frequency
     _pub_freq = 500
 
-    print('Specified Arguments')
-    for i in range(0, len(sys.argv)):
-        print (sys.argv[i])
-
-    if len(sys.argv) > 1:
-        _spacenav_one_name = sys.argv[1]
-        _pair_one_specified = True
-
-    if len(sys.argv) > 2:
-        _spacenav_two_name = sys.argv[2]
-        _pair_two_specified = True
-
-    if len(sys.argv) > 3:
-        _pub_freq = int(sys.argv[3])
-
-    if _pair_one_specified:
-        spacenav_one = SpaceNavDevice(_spacenav_one_name, client, _obj_one_name, default_camera)
-        _device_pairs.append(spacenav_one)
-
-    if _pair_two_specified:
-        spacenav_two = SpaceNavDevice(_spacenav_two_name, _obj_two_name)
-        _device_pairs.append(spacenav_two)
+    spacenav_one = SpaceNavDevice(_spacenav_one_name, client, _obj_one_name, default_camera)
+    _device_pairs.append(spacenav_one)
 
     rate = rospy.Rate(_pub_freq)
     msg_index = 0
