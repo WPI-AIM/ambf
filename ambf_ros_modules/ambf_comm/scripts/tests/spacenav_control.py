@@ -39,6 +39,8 @@ class SpaceNavDevice:
         self._obj_handle = ambf_client.get_obj_handle(obj_name)
         if self._obj_handle is None:
             print('ERROR, CAN\'T FIND ', obj_name)
+            print('EXISTING OBJECTS ARE: ')
+            print(ambf_client.get_obj_names())
 
         else:
             time.sleep(0.5)
@@ -111,6 +113,8 @@ def main():
                         default='default_camera')
     parser.add_argument('-a', action='store', dest='client_name', help='Specify AMBF Client Name',
                         default='client_name')
+    parser.add_argument('-p', action='store', dest='print_obj_names', help='Print Object Names',
+                        default=False)
 
     parsed_args = parser.parse_args()
     print('Specified Arguments')
@@ -120,9 +124,15 @@ def main():
     _obj_one_name = parsed_args.obj_name
     _default_camera_name = parsed_args.camera_name
     _ambf_client_name = parsed_args.client_name
+    _print_obj_names = parsed_args.print_obj_names
 
     client = Client(_ambf_client_name)
     client.connect()
+
+    if _print_obj_names:
+        print ('Printing Found AMBF Object Names: ')
+        print client.get_obj_names()
+        exit()
 
     _pair_one_specified = True
 
