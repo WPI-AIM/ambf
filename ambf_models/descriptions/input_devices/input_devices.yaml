@@ -9,7 +9,7 @@ MTMR:
   # root link:
   location: {
     position: {x: -0.5, y: 0, z: 0},
-    orientation: {r: 0, p: 0, y: 3.14}}
+    orientation: {r: 0, p: 0, y: 0}}
   button mapping: {
     a1: 1,
     a2: 2,
@@ -23,7 +23,7 @@ MTML:
     simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
     location: {
       position: {x: -0.5, y: 0.0, z: 0},
-      orientation: {r: 0, p: 0.0, y: 3.14}}
+      orientation: {r: 0, p: 0.0, y: 0}}
     button mapping: {
       a1: 1,
       a2: 6,
