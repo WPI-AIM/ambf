@@ -105,6 +105,19 @@ class Object(WatchDog):
 
         return self._state.joint_positions[idx]
 
+    def get_all_joint_pos(self):
+        """
+                Get the joint position of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in xrange(n_jnts):
+            joints.append(self._state.joint_positions[idx])
+
+        return joints
+
     def get_num_joints(self):
         """
         Get the number of joints for this object
@@ -292,7 +305,7 @@ class Object(WatchDog):
 
     def set_joint_pos(self, joint, pos):
         """
-        Set the joint position based on the index. Check the get_joint_names to see the list of
+        Set the joint position based on the index or names. Check the get_joint_names to see the list of
         joint names for indexes
         :param joint:
         :param pos:
