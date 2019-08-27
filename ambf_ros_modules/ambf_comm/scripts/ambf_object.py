@@ -105,6 +105,19 @@ class Object(WatchDog):
 
         return self._state.joint_positions[idx]
 
+    def get_all_joint_pos(self):
+        """
+                Get the joint position of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in xrange(n_jnts):
+            joints.append(self._state.joint_positions[idx])
+
+        return joints
+
     def get_num_joints(self):
         """
         Get the number of joints for this object
@@ -290,14 +303,24 @@ class Object(WatchDog):
         self._apply_command()
         self._pose_cmd_set = True
 
-    def set_joint_pos(self, idx, pos):
+    def set_joint_pos(self, joint, pos):
         """
-        Set the joint position based on the index. Check the get_joint_names to see the list of
+        Set the joint position based on the index or names. Check the get_joint_names to see the list of
         joint names for indexes
-        :param idx:
+        :param joint:
         :param pos:
         :return:
         """
+
+        if isinstance(joint, basestring):
+            
+            joint_names = self._state.joint_names
+            if joint not in joint_names:
+                print joint +  " is not a joint"
+            idx = joint_names.index(joint)
+        else:
+            idx = joint
+
         n_jnts = len(self._state.joint_positions)
 
         if not 0 <= idx < n_jnts:
@@ -315,6 +338,7 @@ class Object(WatchDog):
         self._cmd.position_controller_mask[idx] = True
 
         self._apply_command()
+
 
     def set_force(self, fx, fy, fz):
         """
@@ -348,14 +372,25 @@ class Object(WatchDog):
         _wrench_cmd.torque.z = nz
         self.set_wrench(_wrench_cmd)
 
-    def set_joint_effort(self, idx, effort):
+    def set_joint_effort(self, joint, effort):
         """
-        Set the joint effort based on the index. Check the get_joint_names to see the list of
+        Set the joint effort based on the index or name. Check the get_joint_names to see the list of
         joint names for indexes
-        :param idx:
+        :param joint:
         :param effort:
         :return:
         """
+
+        if isinstance(joint, basestring):
+            
+            joint_names = self._state.joint_names
+            if joint not in joint_names:
+                print joint +  " is not a joint"
+                return
+            idx = joint_names.index(joint)
+        else:
+            idx = joint
+
         n_jnts = len(self._state.joint_positions)
 
         if not 0 <= idx < n_jnts:
@@ -364,7 +399,7 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0] * n_jnts
+            self._cmd.joint_cmds = [0] * n_jnts 
             for j_idx in range(0, n_jnts):
                 self._cmd.joint_cmds[j_idx] = 0.0
             self._cmd.position_controller_mask = [0]*n_jnts
