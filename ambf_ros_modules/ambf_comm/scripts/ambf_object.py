@@ -48,6 +48,7 @@ from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
 import rospy
+import numpy as np
 from geometry_msgs.msg import Pose, Wrench
 
 
@@ -64,9 +65,13 @@ class Object(WatchDog):
         self._pub = None
         self._sub = None
         self.pub_flag = True
+        self._start_flag = False
         self._active = False
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
+        self._joint_velocity = None
+        self._dt = 0.0
+
 
     def ros_cb(self, data):
         """
@@ -74,8 +79,19 @@ class Object(WatchDog):
         :param data:
         :return:
         """
+        if not self._start_flag:
+            last_joints_state = data.joint_positions
+            last_time = 0.000000001
+        else:
+            last_joints_state = self._state.joint_positions
+            last_time = self.get_wall_time()
+        
         self._state = data
 
+        self._calc_dt(last_time)
+        self._calc_joint_velocity(last_joints_state)
+        self._start_flag = True
+    
     def is_active(self):
         """
         Flag to check if the cb for this Object is active or not
@@ -89,6 +105,19 @@ class Object(WatchDog):
         :return:
         """
         return self._state.sim_step
+
+    def get_wall_time(self):
+        """
+        get the wall time
+        """
+        return self._state.wall_time
+
+    def get_dt(self):
+        """
+        Gets the time delta
+        :return: delta time
+        """
+        return self._dt
 
     def get_joint_pos(self, idx):
         """
@@ -115,6 +144,34 @@ class Object(WatchDog):
         joints = []
         for idx in xrange(n_jnts):
             joints.append(self._state.joint_positions[idx])
+
+        return joints
+
+    def get_joint_vel(self, idx):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param idx:
+        :return:
+        """
+        n_jnts = len(self._state.joint_positions)
+
+        if not 0 <= idx < n_jnts:
+            # Index invalid
+            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            return
+
+        return self._joint_velocity[idx]
+
+    def get_all_joint_vel(self):
+        """
+                Get the joint position of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in xrange(n_jnts):
+            joints.append(self._joint_velocity[idx])
 
         return joints
 
@@ -490,6 +547,23 @@ class Object(WatchDog):
         self._cmd.header.stamp = rospy.Time.now()
         self._pub.publish(self._cmd)
         self.acknowledge_wd()
+
+    def _calc_joint_velocity(self,last_joints_state):
+        """
+        calculates the joint state
+        :param last_joints_state: last joint state
+        :return:
+        """
+        self._joint_velocity = tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
+    
+
+    def _calc_dt(self, last_time):
+        """
+        calculates the dt
+        :param last_time: prevous time
+        :return:
+        """
+        self._dt = self.get_wall_time() - last_time + 0.000000001
 
     def _clear_command(self):
         """
