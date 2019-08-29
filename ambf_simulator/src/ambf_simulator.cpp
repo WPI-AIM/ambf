@@ -1421,10 +1421,10 @@ void updatePhysics(){
             cVector3d force, torque;
             // ts is to prevent the saturation of forces
             double ts = dt_fixed / dt;
-            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt, ts);
+            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt, 1);
             force = simGripper->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt, ts);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt, 1);
             simGripper->applyForce(force);
             simGripper->applyTorque(torque);
             simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
@@ -1702,12 +1702,6 @@ void updateHapticDevice(void* a_arg){
         if (torque.length() < pDev->m_deadBand){
             torque.set(0,0,0);
         }
-
-        std::vector<float> force_msg;
-        force_msg.push_back(force.x());
-        force_msg.push_back(force.y());
-        force_msg.push_back(force.z());
-        simGripper->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
 
         pDev->applyWrench(force, torque);
         rateSleep.sleep();

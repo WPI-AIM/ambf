@@ -16,7 +16,7 @@ y_max = 1.
 c = Client()
 c.connect()
 box = c.get_obj_handle('BoxTool')
-diff = c.get_obj_handle('diff')
+# diff = c.get_obj_handle('diff')
 
 box.set_rpy(0, -1.57079, 0)
 
@@ -39,7 +39,7 @@ if trajectory_type == 0:
         box.set_pos(0, y_command, depth)
         box.set_rpy(0, -1.57079, 0)
         dy = y_command - y_state
-        diff.set_pos(0, dy, 0)
+        # diff.set_pos(0, dy, 0)
         time.sleep(dt)
 
 # Line trajectory
@@ -58,13 +58,13 @@ elif trajectory_type == 1:
         error_series.append(dy)
         t = t+dt
         t_series.append(t)
-        diff.set_pos(0, dy, 0)
+        # diff.set_pos(0, dy, 0)
         time.sleep(dt)
 
 plt.plot(t_series, error_series)
 plt.grid(True)
 # plt.show()
-plt.legend(['Error'])
-plt.ylabel('Tangential Error')
+plt.legend(['eT'])
+plt.ylabel('Tangential Error (eT)')
 plt.xlabel('Time (s)')
 plt.show()
