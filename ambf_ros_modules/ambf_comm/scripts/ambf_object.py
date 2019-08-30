@@ -50,7 +50,7 @@ from watch_dog import WatchDog
 import rospy
 import numpy as np
 from geometry_msgs.msg import Pose, Wrench
-
+from collections import deque
 
 class Object(WatchDog):
     def __init__(self, a_name):
@@ -71,6 +71,8 @@ class Object(WatchDog):
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
         self._joint_velocity = None
         self._dt = 0.0
+        self._velocity_window_size = 10
+        self._vel_smoother =  deque([], self._velocity_window_size)
 
 
     def ros_cb(self, data):
@@ -270,7 +272,7 @@ class Object(WatchDog):
         :return:
         """
         if self._pose_cmd_set:
-            return self._cmd.pose.orientation
+            return self._cmd.fpose.orientation
         else:
             return self._state.pose.orientation
 
@@ -554,8 +556,10 @@ class Object(WatchDog):
         :param last_joints_state: last joint state
         :return:
         """
-        self._joint_velocity = tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
-    
+        vel = tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
+        self._vel_smoother.append(vel)
+
+        self._joint_velocity = np.sum(self._vel_smoother, 0)/len(self._vel_smoother)
 
     def _calc_dt(self, last_time):
         """
@@ -563,7 +567,10 @@ class Object(WatchDog):
         :param last_time: prevous time
         :return:
         """
-        self._dt = self.get_wall_time() - last_time + 0.000000001
+        if self.get_wall_time() - last_time == 0:
+            pass
+        else:
+            self._dt = self.get_wall_time() - last_time 
 
     def _clear_command(self):
         """
