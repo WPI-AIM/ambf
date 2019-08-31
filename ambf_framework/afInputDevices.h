@@ -86,10 +86,49 @@ public:
     afSharedDataStructure();
 
 public:
+
+    cVector3d getPosRef(){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_posRef;
+    }
+    cVector3d getPosRefOrigin(){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_posRefOrigin;
+    }
+    cMatrix3d getRotRef(){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_rotRef;
+    }
+    cMatrix3d getRotRefOrigin(){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_rotRefOrigin;
+    }
+
+    void setPosRef(cVector3d a_posRef){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_posRef = a_posRef;
+    }
+    void setPosRefOrigin(cVector3d a_posRefOrigin){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_posRefOrigin = a_posRefOrigin;
+    }
+    void setRotRef(cMatrix3d a_rotRef){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_rotRef = a_rotRef;
+    }
+    void setRotRefOrigin(cMatrix3d a_rotRefOrigin){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_rotRefOrigin = a_rotRefOrigin;
+    }
+
+
+private:
     cVector3d m_posRef;
     cVector3d m_posRefOrigin;
     cMatrix3d m_rotRef;
     cMatrix3d m_rotRefOrigin;
+
+    std::mutex m_mutex;
 };
 
 ///
@@ -102,17 +141,26 @@ public:
     cVector3d measuredPos();
     cMatrix3d measuredRot();
     void updateMeasuredPose();
-    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
-    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+    inline void applyForce(cVector3d force){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_rootLink->m_af_enable_position_controller){
+            m_rootLink->addExternalForce(force);
+        }
+    }
+    inline void applyTorque(cVector3d torque){
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_rootLink->m_af_enable_position_controller){
+            m_rootLink->addExternalTorque(torque);
+        }
+    }
     bool isWrenchSet();
     void clearWrench();
+
+    double getGripperAngle();
     void offsetGripperAngle(double offset);
     void setGripperAngle(double angle, double dt=0.001);
 
 public:
-    cVector3d m_pos;
-    cMatrix3d m_rot;
-    double m_gripper_angle;
     double P_lc_ramp;        //Linear Haptic Propotional Gain Ramp
     double P_ac_ramp;        //Angular Haptic Propotional Gain Ramp
     // Gripping constraints, the number is the same as the total
@@ -128,7 +176,11 @@ public:
     // Root link for this simulated device hhhhhhh
     afRigidBodyPtr m_rootLink;
 
-private:
+private:  
+    cVector3d m_pos;
+    cMatrix3d m_rot;
+    double m_gripper_angle;
+
     std::mutex m_mutex;
 };
 
@@ -155,19 +207,30 @@ public:
     virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
     virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
-    cVector3d measuredPos();
-    cMatrix3d measuredRot();
-    cVector3d measuredPosPreclutch();
-    cMatrix3d measuredRotPreclutch();
-    void setPosPreclutch(cVector3d a_pos);
-    void setRotPreclutch(cMatrix3d a_rot);
-    cVector3d measuredPosCamPreclutch();
-    cMatrix3d measuredRotCamPreclutch();
-    void setPosCamPreclutch(cVector3d a_pos);
-    void setRotCamPreclutch(cMatrix3d a_rot);
+
+
     cVector3d measuredVelLin();
     cVector3d mearuredVelAng();
     double measuredGripperAngle();
+
+    cVector3d measuredPos();
+    cMatrix3d measuredRot();
+    cVector3d measuredPosClutch();
+    cMatrix3d measuredRotClutch();
+    cVector3d measuredPosPreClutch();
+    cMatrix3d measuredRotPreClutch();
+    cVector3d measuredPosCamPreclutch();
+    cMatrix3d measuredRotCamPreClutch();
+
+    void setPos(cVector3d a_pos);
+    void setRot(cMatrix3d a_rot);
+    void setPosClutch(cVector3d a_pos);
+    void setRotClutch(cMatrix3d a_rot);
+    void setPosPreClutch(cVector3d a_pos);
+    void setRotPreClutch(cMatrix3d a_rot);
+    void setPosCamPreClutch(cVector3d a_pos);
+    void setRotCamPreClutch(cMatrix3d a_rot);
+
     void applyWrench(cVector3d a_force, cVector3d a_torque);
     bool isButtonPressed(int button_index);
     bool isButtonPressRisingEdge(int button_index);
@@ -177,11 +240,6 @@ public:
 public:
     cGenericHapticDevicePtr m_hDevice;
     cHapticDeviceInfo m_hInfo;
-    cVector3d m_pos, m_posClutched, m_posPreClutch;
-    cMatrix3d m_rot, m_rotClutched, m_rotPreClutch;
-    cVector3d m_posCamPreClutch;
-    cMatrix3d m_rotCamPreClutch;
-    cVector3d m_vel, m_avel;
     double m_workspaceScale;
     cBulletSphere* m_afCursor = NULL;
     bool m_btn_prev_state_rising[10] = {false};
@@ -206,6 +264,13 @@ private:
     std::mutex m_mutex;
     void updateCursorPose();
     bool m_dev_force_enabled = false;
+
+private:
+    cVector3d m_pos, m_posClutched, m_posPreClutch;
+    cMatrix3d m_rot, m_rotClutched, m_rotPreClutch;
+    cVector3d m_posCamPreClutch;
+    cMatrix3d m_rotCamPreClutch;
+    cVector3d m_vel, m_avel;
 
 public:
     // Initial offset between the simulated end effector and the

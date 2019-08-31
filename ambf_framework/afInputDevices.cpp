@@ -330,15 +330,15 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
         a_iD->s_inputDeviceCount++;
         std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-//        createAfCursor(a_iD->getAFWorld(),
-//                       _pDevName,
-//                       simDevice->getNamespace(),
-//                       simDevice->m_rootLink->getMinPublishFrequency(),
-//                       simDevice->m_rootLink->getMaxPublishFrequency());
+        createAfCursor(a_iD->getAFWorld(),
+                       _pDevName,
+                       simDevice->getNamespace(),
+                       simDevice->m_rootLink->getMinPublishFrequency(),
+                       simDevice->m_rootLink->getMaxPublishFrequency());
 
-        // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
-        // Since an existing root body is bound to the physical device whose afComm should already be
-        // running
+//         Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
+//         Since an existing root body is bound to the physical device whose afComm should already be
+//         running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
             simDevice->m_rootLink->afObjectCreate(_sDevName,
@@ -372,10 +372,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_simRotInitial.identity();
     }
 
-    simDevice->m_posRef = _position/ m_workspaceScale;
-    simDevice->m_posRefOrigin = _position / m_workspaceScale;
-    simDevice->m_rotRef = _orientation;
-    simDevice->m_rotRefOrigin = _orientation;
+    simDevice->setPosRef( _position/ m_workspaceScale );
+    simDevice->setPosRefOrigin( _position / m_workspaceScale );
+    simDevice->setRotRef( _orientation );
+    simDevice->setRotRefOrigin(_orientation );
     m_gripper_pinch_btn = 0;
 
     if (pDOrientationOffset.IsDefined()){
@@ -444,16 +444,43 @@ cVector3d afPhysicalDevice::measuredPos(){
 /// \brief afPhysicalDevice::measuredPosPreclutch
 /// \return
 ///
-cVector3d afPhysicalDevice::measuredPosPreclutch(){
+cVector3d afPhysicalDevice::measuredPosClutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posClutched;
+}
+
+///
+/// \brief afPhysicalDevice::measuredPosPreclutch
+/// \return
+///
+cVector3d afPhysicalDevice::measuredPosPreClutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_posPreClutch;
+}
+
+///
+/// \brief afPhysicalDevice::setPos
+/// \param a_pos
+///
+void afPhysicalDevice::setPos(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_pos = a_pos;
 }
 
 ///
 /// \brief afPhysicalDevice::setPosPreclutch
 /// \param a_pos
 ///
-void afPhysicalDevice::setPosPreclutch(cVector3d a_pos){
+void afPhysicalDevice::setPosClutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posClutched = a_pos;
+}
+
+///
+/// \brief afPhysicalDevice::setPosPreclutch
+/// \param a_pos
+///
+void afPhysicalDevice::setPosPreClutch(cVector3d a_pos){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_posPreClutch = a_pos;
 }
@@ -472,16 +499,43 @@ cMatrix3d afPhysicalDevice::measuredRot(){
 /// \brief afPhysicalDevice::measuredRotPreclutch
 /// \return
 ///
-cMatrix3d afPhysicalDevice::measuredRotPreclutch(){
+cMatrix3d afPhysicalDevice::measuredRotClutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotClutched;
+}
+
+///
+/// \brief afPhysicalDevice::measuredRotPreclutch
+/// \return
+///
+cMatrix3d afPhysicalDevice::measuredRotPreClutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotPreClutch;
 }
 
 ///
-/// \brief afPhysicalDevice::setRotPreclutch
+/// \brief afPhysicalDevice::setRot
 /// \param a_rot
 ///
-void afPhysicalDevice::setRotPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRot(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rot = a_rot;
+}
+
+///
+/// \brief afPhysicalDevice::setRotClutch
+/// \param a_rot
+///
+void afPhysicalDevice::setRotClutch(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotClutched = a_rot;
+}
+
+///
+/// \brief afPhysicalDevice::setRotPreClutch
+/// \param a_rot
+///
+void afPhysicalDevice::setRotPreClutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotPreClutch = a_rot;
 }
@@ -497,10 +551,10 @@ cVector3d afPhysicalDevice::measuredPosCamPreclutch(){
 }
 
 ///
-/// \brief afPhysicalDevice::setPosCamPreclutch
+/// \brief afPhysicalDevice::setPosCamPreClutch
 /// \param a_pos
 ///
-void afPhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
+void afPhysicalDevice::setPosCamPreClutch(cVector3d a_pos){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_posCamPreClutch = a_pos;
 }
@@ -509,16 +563,16 @@ void afPhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
 /// \brief afPhysicalDevice::measuredRotCamPreclutch
 /// \return
 ///
-cMatrix3d afPhysicalDevice::measuredRotCamPreclutch(){
+cMatrix3d afPhysicalDevice::measuredRotCamPreClutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotCamPreClutch;
 }
 
 ///
-/// \brief afPhysicalDevice::setRotCamPreclutch
+/// \brief afPhysicalDevice::setRotCamPreClutch
 /// \param a_rot
 ///
-void afPhysicalDevice::setRotCamPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRotCamPreClutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotCamPreClutch = a_rot;
 }
@@ -672,12 +726,18 @@ void afSimulatedDevice::updateMeasuredPose(){
     m_rot = m_rootLink->getLocalRot();
 }
 
+double afSimulatedDevice::getGripperAngle(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_gripper_angle;
+}
+
 ///
 /// \brief afSimulatedDevice::setGripperAngle
 /// \param angle
 /// \param dt
 ///
 void afSimulatedDevice::setGripperAngle(double angle, double dt){
+    std::lock_guard<std::mutex> lock(m_mutex);
     // Since it's not desireable to control the exact angle of multiple joints in the gripper.
     // We override the set angle method for grippers to simplify the angle bound. 0 for closed
     // and 1 for open and everything in between is scaled.

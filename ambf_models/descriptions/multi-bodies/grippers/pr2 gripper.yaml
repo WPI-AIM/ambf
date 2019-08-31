@@ -186,7 +186,7 @@ JOINT r_gripper_palm_link-r_gripper_l_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: -0.3}
-  controller: {D: 0.1, I: 0, P: 10}
+  controller: {D: 0., I: 0, P: 0}
   type: revolute
   offset: -2.851
   max motor impulse: 0.05
@@ -199,7 +199,7 @@ JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: -0.3}
-  controller: {D: 0.01, I: 0, P: 2}
+  controller: {D: 0.0, I: 0, P: 0}
   type: revolute
   max motor impulse: 0.05
 JOINT r_gripper_palm_link-r_gripper_r_finger_link:
@@ -211,7 +211,7 @@ JOINT r_gripper_palm_link-r_gripper_r_finger_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: -0.3}
-  controller: {D: 0.1, I: 0, P: 10}
+  controller: {D: 0.0, I: 0, P: 0}
   type: revolute
   offset: 0.123
   max motor impulse: 0.05
@@ -224,6 +224,6 @@ JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.548, low: -0.3}
-  controller: {D: 0.01, I: 0, P: 2}
+  controller: {D: 0.0, I: 0, P: 0}
   type: revolute
   max motor impulse: 0.05

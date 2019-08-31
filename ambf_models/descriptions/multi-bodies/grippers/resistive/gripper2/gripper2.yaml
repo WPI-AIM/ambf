@@ -8,6 +8,18 @@ high resolution path: ./high_res/
 low resolution path: ./low_res/
 ignore inter-collision: true
 namespace: /ambf/gripper2/
+sensors: [SENSOR Proximity0]
+
+
+SENSOR Proximity0:
+  name: Proximity
+  type: Proximity
+  location: {x: -0.14, y: 0.0, z: 0.0}
+  direction: {x: -1.0, y: 0.0, z: 0.0}
+  range: 0.15
+  visible: True
+  parent: /ambf/gripper2/BODY Cylinder
+
 BODY Cylinder:
   name: Cylinder
   mesh: Cylinder.STL
@@ -50,13 +62,13 @@ BODY FingerL:
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.8, linear: 0.8}
   restitution: 0
-  resistive surface: {
+  resistive surface1: {
     range: 0.05,
     contact area: 0.001,
     mesh: CurveL.STL,
     contact stiffness: 0.5,
     contact damping: 1,
-    visible: true,
+    visible: false,
     visible size: 0.005,
     friction: {
       static: 15000,
@@ -88,13 +100,13 @@ BODY FingerR:
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.8, linear: 0.8}
   restitution: 0
-  resistive surface: {
+  resistive surface1: {
     range: 0.05,
     contact area: 0.001,
     mesh: CurveR.STL,
     contact stiffness: 0.5,
     contact damping: 1,
-    visible: true,
+    visible: false,
     visible size: 0.005,
     friction: {
       static: 15000,

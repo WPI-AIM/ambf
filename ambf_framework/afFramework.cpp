@@ -467,6 +467,7 @@ template <>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt, const double &ts){
+    std::lock_guard<std::mutex> lock(m_mutex);
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
@@ -488,6 +489,7 @@ template<>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt, const double &ts){
+    std::lock_guard<std::mutex> lock(m_mutex);
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -518,6 +520,7 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt, const double &ts){
+    std::lock_guard<std::mutex> lock(m_mutex);
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
@@ -537,6 +540,7 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
+    std::lock_guard<std::mutex> lock(m_mutex);
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -568,6 +572,7 @@ template<>
 /// \return
 ///
 btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt, const double &tsf){
+    std::lock_guard<std::mutex> lock(m_mutex);
 
 }
 
@@ -1712,6 +1717,9 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                     _resistanceSensor->setSensorVisibilityRadius(_visiblitySize);
                     _resistanceSensor->enableVisualization();
                 }
+                else{
+                    _resistanceSensor->m_showSensor = false;
+                }
 
                 _resistanceSensor->m_sensorType = afSensorType::resistance;
 
@@ -2499,6 +2507,19 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
         if (cfg_flags.IsDefined()){
             m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+            std::cerr << "SOFT BODY, FLAG SPECIFIED = " << cfg_flags.as<int>() << std::endl ;
+            if (cfg_flags.as<int>() == btSoftBody::fCollision::VF_SS){
+                std::cerr << "SOFT BODY, FLAG VF_SS\n" ;
+            }
+            if (cfg_flags.as<int>() == btSoftBody::fCollision::SDF_RS){
+                std::cerr << "SOFT BODY, FLAG SDF_RS\n" ;
+            }
+            if (cfg_flags.as<int>() == btSoftBody::fCollision::CL_SS){
+                std::cerr << "SOFT BODY, FLAG CL_SS\n" ;
+            }
+            if (cfg_flags.as<int>() == btSoftBody::fCollision::CL_SELF){
+                std::cerr << "SOFT BODY, FLAG CL_SELF\n" ;
+            }
         }
         if (cfg_bendingConstraint.IsDefined()){
             int _bending = cfg_bendingConstraint.as<int>();

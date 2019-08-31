@@ -272,6 +272,8 @@ private:
     // between commanded and current rotation
     btMatrix3x3 m_dRot;
     cMatrix3d m_dRot_cvec;
+
+    std::mutex m_mutex;
 };
 
 

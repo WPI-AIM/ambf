@@ -38,6 +38,15 @@ camera1:
   field view angle: 0.8
   monitor: 0
 
+camera1a:
+  name: camera1a
+  location: {x: 4.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+  monitor: 0
+
 camera2:
   namespace: /ambf/env/cameras/
   name: openhmd

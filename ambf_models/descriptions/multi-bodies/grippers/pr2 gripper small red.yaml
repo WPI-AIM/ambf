@@ -18,7 +18,8 @@ SENSOR Proximity0:
   type: Proximity
   location: {x: -0.14, y: 0.0, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: 0.105
+  range: 0.15
+  visible: True
   parent: /ambf/env/BODY r_gripper_palm_link
 
 SENSOR Proximity1:

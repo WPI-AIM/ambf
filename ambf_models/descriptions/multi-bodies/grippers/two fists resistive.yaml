@@ -347,7 +347,7 @@ JOINT Fist1-Fist2:
   child axis: {x: 1.0, y: 0.0, z: 0.0}
   child pivot: {x: -0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.3, low: -0.1}
-  controller: {D: 1, I: 0, P: 50}
+  controller: {D: 0, I: 0, P: 00}
   type: prismatic
   offset: 0.0
   max motor impulse: 0.05
