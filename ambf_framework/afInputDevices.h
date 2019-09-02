@@ -104,21 +104,21 @@ public:
         return m_rotRefOrigin;
     }
 
-    void setPosRef(cVector3d a_posRef){
+    void setPosRef(cVector3d a_pos){
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_posRef = a_posRef;
+        m_posRef = a_pos;
     }
-    void setPosRefOrigin(cVector3d a_posRefOrigin){
+    void setPosRefOrigin(cVector3d a_pos){
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_posRefOrigin = a_posRefOrigin;
+        m_posRefOrigin = a_pos;
     }
-    void setRotRef(cMatrix3d a_rotRef){
+    void setRotRef(cMatrix3d a_rot){
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_rotRef = a_rotRef;
+        m_rotRef = a_rot;
     }
-    void setRotRefOrigin(cMatrix3d a_rotRefOrigin){
+    void setRotRefOrigin(cMatrix3d a_rot){
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_rotRefOrigin = a_rotRefOrigin;
+        m_rotRefOrigin = a_rot;
     }
 
 
@@ -138,9 +138,9 @@ class afSimulatedDevice: public afSharedDataStructure, public afMultiBody{
 public:
     afSimulatedDevice(afWorldPtr a_afWorld);
     ~afSimulatedDevice(){}
-    cVector3d measuredPos();
-    cMatrix3d measuredRot();
-    void updateMeasuredPose();
+    cVector3d getPos();
+    cMatrix3d getRot();
+    void updatePose();
     inline void applyForce(cVector3d force){
         std::lock_guard<std::mutex> lock(m_mutex);
         if (!m_rootLink->m_af_enable_position_controller){
@@ -209,18 +209,18 @@ public:
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
 
 
-    cVector3d measuredVelLin();
-    cVector3d mearuredVelAng();
-    double measuredGripperAngle();
+    cVector3d getVelLin();
+    cVector3d getVelAng();
+    double getGripperAngle();
 
-    cVector3d measuredPos();
-    cMatrix3d measuredRot();
-    cVector3d measuredPosClutch();
-    cMatrix3d measuredRotClutch();
-    cVector3d measuredPosPreClutch();
-    cMatrix3d measuredRotPreClutch();
-    cVector3d measuredPosCamPreclutch();
-    cMatrix3d measuredRotCamPreClutch();
+    cVector3d getPos();
+    cMatrix3d getRot();
+    cVector3d getPosClutch();
+    cMatrix3d getRotClutch();
+    cVector3d getPosPreClutch();
+    cMatrix3d getRotPreClutch();
+    cVector3d getPosCamPreclutch();
+    cMatrix3d getRotCamPreClutch();
 
     void setPos(cVector3d a_pos);
     void setRot(cMatrix3d a_rot);
