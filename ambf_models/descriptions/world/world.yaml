@@ -1,4 +1,4 @@
-enclosure size: {length: 10.0, width: 10.0, height: 3.0}
+enclosure size: {length: 10.0, width: 10.0, height: 10.0}
 lights: [light1, light2]
 cameras: [camera1]
 namespace: /ambf/env/
