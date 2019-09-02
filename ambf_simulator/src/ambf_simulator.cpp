@@ -1629,8 +1629,8 @@ void updateHapticDevice(void* a_arg){
             pDev->btn_clutch_rising_edge = true;
         }
 
-        simGripper->m_posRef = simGripper->m_posRefOrigin +
-                (devCams[0]->getLocalRot() * (pDev->m_pos - pDev->m_posClutched));
+        simGripper->m_posRef = pDev->m_workspaceScale * (simGripper->m_posRefOrigin +
+                (devCams[0]->getLocalRot() * (pDev->m_pos - pDev->m_posClutched)));
         if (!g_inputDevices->m_use_cam_frame_rot){
             simGripper->m_rotRef = simGripper->m_rotRefOrigin * devCams[0]->getLocalRot() *
                     cTranspose(pDev->m_rotClutched) * pDev->m_rot *
@@ -1639,9 +1639,8 @@ void updateHapticDevice(void* a_arg){
         else{
             simGripper->m_rotRef = pDev->m_simRotInitial * pDev->m_rot * pDev->m_simRotOffset;
         }
-        _refSphere->setLocalPos(simGripper->m_posRef*pDev->m_workspaceScale);
+        _refSphere->setLocalPos(simGripper->m_posRef);
         _refSphere->setLocalRot(simGripper->m_rotRef);
-        simGripper->m_posRef.mul(pDev->m_workspaceScale);
 
         // update position of simulated gripper
         simGripper->updateMeasuredPose();
