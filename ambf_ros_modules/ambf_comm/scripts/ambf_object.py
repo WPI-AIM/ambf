@@ -329,11 +329,9 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0]*n_jnts
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
-            self._cmd.position_controller_mask = [0]*n_jnts
-
+            self._cmd.joint_cmds = [0.0]*n_jnts
+            self._cmd.position_controller_mask = [1]*n_jnts
+        
         self._cmd.joint_cmds[idx] = pos
         self._cmd.position_controller_mask[idx] = True
 
@@ -399,9 +397,7 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0] * n_jnts 
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
+            self._cmd.joint_cmds = [0.0] * n_jnts 
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
