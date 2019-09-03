@@ -45,8 +45,8 @@ BODY Cylinder:
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.073, radius: 0.116}
   controller: {
-    linear: {P: 500, D: 40},
-    angular: {P: 50, D: 1}}
+    linear: {P: 800, D: 60},
+    angular: {P: 80, D: 2}}
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.8, g: 0.3514, r: 0.4266}

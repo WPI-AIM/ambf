@@ -1421,13 +1421,13 @@ void updatePhysics(){
             cVector3d force, torque;
             // ts is to prevent the saturation of forces
             double ts = dt_fixed / dt;
-            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt, 1);
-            force = simGripper->P_lc_ramp * force;
+            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
+            force = simDev->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt, 1);
-            simGripper->applyForce(force);
-            simGripper->applyTorque(torque);
-            simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
+            simDev->applyForce(force);
+            simDev->applyTorque(torque);
+            simDev->setGripperAngle(simDev->m_gripper_angle, dt);
 
             if (simDev->P_lc_ramp < 1.0)
             {
@@ -1706,9 +1706,9 @@ void updateHapticDevice(void* a_arg){
         force_msg.push_back(force.x());
         force_msg.push_back(force.y());
         force_msg.push_back(force.z());
-        simGripper->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
+        simDev->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
 
-        pDev->applyWrench(force, torque);
+        phyDev->applyWrench(force, torque);
         rateSleep.sleep();
 
         if (phyDev->K_lh_ramp < phyDev->K_lh)

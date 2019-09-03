@@ -37,7 +37,7 @@ Geomagic Touch:
     max force: 2
     max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/resistive/gripper2/gripper2.yaml"
+    simulated multibody: "../multi-bodies/grippers/resistive/gripper2.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
