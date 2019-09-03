@@ -22,3 +22,4 @@ multibody configs:
   - "./multi-bodies/puzzles/puzzle4.yaml" #15
   - "./multi-bodies/puzzles/puzzle5.yaml" #16
   - "./multi-bodies/puzzles/puzzle6.yaml" #17
+

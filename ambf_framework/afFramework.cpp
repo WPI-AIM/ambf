@@ -2025,7 +2025,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 // The size of pos ctrl mask can be less than the num of joint commands
                 // keep this in check and still read the mask to apply it. Run
                 // effort control on the masks not specified
-                if (m_afCommand.position_controller_mask[jnt] == true || m_afCommand.enable_position_controller == true){
+                if (m_afCommand.position_controller_mask[jnt] == true ){
                     m_joints[jnt]->commandPosition(m_afCommand.joint_commands[jnt]);
                 }
                 else{
