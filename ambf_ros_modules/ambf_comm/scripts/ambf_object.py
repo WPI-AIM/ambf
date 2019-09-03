@@ -75,11 +75,6 @@ class Object(WatchDog):
         self._dt = 0.0
         self._velocity_window_size = 4
         self._vel_smoother = deque([], self._velocity_window_size)
-<<<<<<< HEAD
-=======
-        #self._accel_window_size = 4
-        #self._accel_smoother = deque([], self._accel_window_size)
->>>>>>> 781ba0a2bc12222262df10d31ebf283e77aabf77
 
     def ros_cb(self, data):
         """
@@ -89,19 +84,11 @@ class Object(WatchDog):
         """
         if not self._start_flag:
             last_joints_state = data.joint_positions
-<<<<<<< HEAD
             last_joints_vel = tuple([0.0]*len(self._state.joint_positions))
             last_time = 0.000000001
         else:
             last_joints_state = self._state.joint_positions
             last_joints_vel = tuple(self.get_all_joint_vel())
-=======
-            last_joints_vel = 0
-            last_time = 0.000000001
-        else:
-            last_joints_state = self._state.joint_positions
-            #last_joints_vel = self.get_all_joint_vel()
->>>>>>> 781ba0a2bc12222262df10d31ebf283e77aabf77
             last_time = self.get_wall_time()
 
         self._state = data
@@ -473,9 +460,7 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0] * n_jnts
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
+            self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.position_controller_mask = [0] * n_jnts
 
         self._cmd.joint_cmds[idx] = effort
@@ -488,14 +473,19 @@ class Object(WatchDog):
 
         n_jnts = len(self._state.joint_positions)
 
+        
         if n_jnts > len(efforts) or n_jnts < len(efforts):
             print "Not correct amoutn efforts"
             return
         else:
             self._cmd.joint_cmds = efforts
 
-        self._cmd.position_controller_mask = [False]*n_jnts
-        self._cmd.enable_position_controller = False
+        if len(self._cmd.joint_cmds) != n_jnts:
+            self._cmd.joint_cmds = [0.0] * n_jnts
+            self._cmd.position_controller_mask = [0] * n_jnts
+
+        self._cmd.position_controller_mask = [0]*n_jnts
+    
         self._apply_command()
 
 
@@ -590,7 +580,6 @@ class Object(WatchDog):
 
     def _calc_joint_velocity(self, last_joints_state):
         """
-<<<<<<< HEAD
         calculates the joint vel
         :param last_joints_state: last joint state
         :return: None
@@ -599,18 +588,6 @@ class Object(WatchDog):
         self._vel_smoother.append(vel)
         self._joint_velocity = np.sum(self._vel_smoother, 0) / len(self._vel_smoother)
 
-=======
-        calculates the joint state
-        :param last_joints_state: last joint state
-        :return:
-        """
-        vel = tuple(np.subtract(self._state.joint_positions, last_joints_state) / self.get_dt())
-        self._vel_smoother.append(vel)
-
-        self._joint_velocity = np.sum(self._vel_smoother, 0) / len(self._vel_smoother)
-
-
->>>>>>> 781ba0a2bc12222262df10d31ebf283e77aabf77
     def _calc_dt(self, last_time):
         """
         calculates the dt
