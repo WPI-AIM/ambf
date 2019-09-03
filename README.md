@@ -176,3 +176,13 @@ _client.clean_up()
 
 ### The AMBF Controller Client
 See [here](/ambf_controller/README.md) for more information.
+
+## Citation
+If this work is helpful for your research, please use the following reference for citation:
+```
+Munawar, Adnan, Wang, Yan, Gondokaryono, Radian & Gregory Fischer. "A Real-Time Dynamic Simulator and
+an Associated Front-End Representation Format for Simulating Complex Robots and Environments" 2019
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2019
+```
+
+
