@@ -75,8 +75,6 @@ class Object(WatchDog):
         self._dt = 0.0
         self._velocity_window_size = 4
         self._vel_smoother = deque([], self._velocity_window_size)
-        #self._accel_window_size = 4
-        #self._accel_smoother = deque([], self._accel_window_size)
 
     def ros_cb(self, data):
         """
@@ -86,11 +84,11 @@ class Object(WatchDog):
         """
         if not self._start_flag:
             last_joints_state = data.joint_positions
-            last_joints_vel = 0
+            last_joints_vel = tuple([0.0]*len(self._state.joint_positions))
             last_time = 0.000000001
         else:
             last_joints_state = self._state.joint_positions
-            #last_joints_vel = self.get_all_joint_vel()
+            last_joints_vel = tuple(self.get_all_joint_vel())
             last_time = self.get_wall_time()
 
         self._state = data
@@ -579,15 +577,13 @@ class Object(WatchDog):
 
     def _calc_joint_velocity(self, last_joints_state):
         """
-        calculates the joint state
+        calculates the joint vel
         :param last_joints_state: last joint state
-        :return:
+        :return: None
         """
         vel = tuple(np.subtract(self._state.joint_positions, last_joints_state) / self.get_dt())
         self._vel_smoother.append(vel)
-
         self._joint_velocity = np.sum(self._vel_smoother, 0) / len(self._vel_smoother)
-
 
     def _calc_dt(self, last_time):
         """
