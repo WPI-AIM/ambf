@@ -68,6 +68,45 @@ afSharedDataStructure::afSharedDataStructure(){
     m_rotRefOrigin.identity();
 }
 
+
+///
+/// \brief afSharedDataStructure::setPosRef
+/// \param a_pos
+///
+void afSharedDataStructure::setPosRef(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posRef = a_pos;
+}
+
+
+///
+/// \brief afSharedDataStructure::setRotRef
+/// \param a_rot
+///
+void afSharedDataStructure::setRotRef(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotRef = a_rot;
+}
+
+
+///
+/// \brief afSharedDataStructure::getPosRef
+/// \return
+///
+cVector3d afSharedDataStructure::getPosRef(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posRef;
+}
+
+///
+/// \brief afSharedDataStructure::getRotRef
+/// \return
+///
+cMatrix3d afSharedDataStructure::getRotRef(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotRef;
+}
+
 ///
 /// \brief afPhysicalDevice::~afPhysicalDevice
 ///
@@ -372,9 +411,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_simRotInitial.identity();
     }
 
-    simDevice->m_posRef = _position/ m_workspaceScale;
+    simDevice->setPosRef(_position/ m_workspaceScale);
     simDevice->m_posRefOrigin = _position / m_workspaceScale;
-    simDevice->m_rotRef = _orientation;
+    simDevice->setRotRef(_orientation);
     simDevice->m_rotRefOrigin = _orientation;
     m_gripper_pinch_btn = 0;
 

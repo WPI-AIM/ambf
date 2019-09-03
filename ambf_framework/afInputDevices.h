@@ -86,10 +86,22 @@ public:
     afSharedDataStructure();
 
 public:
-    cVector3d m_posRef;
     cVector3d m_posRefOrigin;
-    cMatrix3d m_rotRef;
     cMatrix3d m_rotRefOrigin;
+
+public:
+    void setPosRef(cVector3d a_pos);
+    void setRotRef(cMatrix3d a_rot);
+
+    cVector3d getPosRef();
+    cMatrix3d getRotRef();
+
+private:
+    cVector3d m_posRef;
+    cMatrix3d m_rotRef;
+
+protected:
+    std::mutex m_mutex;
 };
 
 ///
@@ -128,8 +140,8 @@ public:
     // Root link for this simulated device hhhhhhh
     afRigidBodyPtr m_rootLink;
 
-private:
-    std::mutex m_mutex;
+//private:
+//    std::mutex m_mutex;
 };
 
 

@@ -1306,34 +1306,34 @@ void updatePhysics(){
         }
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
-            afSimulatedDevice * simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
-            afRigidBodyPtr rootLink = simGripper->m_rootLink;
-            simGripper->updateMeasuredPose();
+            afSimulatedDevice * simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+            afRigidBodyPtr rootLink = simDev->m_rootLink;
+            simDev->updateMeasuredPose();
 
             if (g_enableGrippingAssist){
                 for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
                     afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
                     if (sensorPtr->m_sensorType == afSensorType::proximity){
                         afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
-                        if (proximitySensorPtr->isTriggered() && simGripper->m_gripper_angle < 0.5){
+                        if (proximitySensorPtr->isTriggered() && simDev->m_gripper_angle < 0.5){
                             if (proximitySensorPtr->m_sensedBodyType == afProximitySensor::RIGID_BODY){
-                                if (!simGripper->m_rigidGrippingConstraints[sIdx]){
+                                if (!simDev->m_rigidGrippingConstraints[sIdx]){
                                     btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
                                     btRigidBody* bodyBPtr = proximitySensorPtr->getSensedRigidBody();
                                     if (!rootLink->isChild(bodyBPtr)){
                                         cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint();
                                         btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
                                         btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
-                                        simGripper->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
-                                        simGripper->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
-                                        simGripper->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
-                                        g_bulletWorld->m_bulletWorld->addConstraint(simGripper->m_rigidGrippingConstraints[sIdx]);
+                                        simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
+                                        simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
+                                        simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
+                                        g_bulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                     }
                                 }
                             }
 
                             if (proximitySensorPtr->m_sensedBodyType == afProximitySensor::SOFT_BODY){
-                                if (!simGripper->m_softGrippingConstraints[sIdx]){
+                                if (!simDev->m_softGrippingConstraints[sIdx]){
                                     // Here we implemented the softBody grad logic. We want to move the
                                     // soft body as we move the simulated end effector
 
@@ -1342,9 +1342,9 @@ void updatePhysics(){
                                     // Get the sensed softbody
                                     btSoftBody* _sBody = proximitySensorPtr->getSensedSoftBody();
 
-                                    simGripper->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
-                                    simGripper->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;
-                                    simGripper->m_softGrippingConstraints[sIdx]->m_rBody = _rBody;
+                                    simDev->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
+                                    simDev->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;
+                                    simDev->m_softGrippingConstraints[sIdx]->m_rBody = _rBody;
 
                                     // If we get a sensedSoftBody, we should check if it has a detected face. If a face
                                     // is found, we can anchor all the connecting nodes.
@@ -1361,7 +1361,7 @@ void updatePhysics(){
                                             _anchor.m_influence = 1;
                                             _anchor.m_local = _localPivot;
                                             _sBody->m_anchors.push_back(_anchor);
-                                            simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
+                                            simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
                                         }
                                     }
                                     // Otherwise we shall directly anchor to nodes. This case
@@ -1376,22 +1376,22 @@ void updatePhysics(){
                                         _anchor.m_influence = 1;
                                         _anchor.m_local = _localPivot;
                                         _sBody->m_anchors.push_back(_anchor);
-                                        simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
+                                        simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
 
                                     }
                                 }
                             }
                         }
                         else{
-                            if(simGripper->m_rigidGrippingConstraints[sIdx]){
-                                g_bulletWorld->m_bulletWorld->removeConstraint(simGripper->m_rigidGrippingConstraints[sIdx]);
-                                simGripper->m_rigidGrippingConstraints[sIdx] = 0;
+                            if(simDev->m_rigidGrippingConstraints[sIdx]){
+                                g_bulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                simDev->m_rigidGrippingConstraints[sIdx] = 0;
                             }
-                            if(simGripper->m_softGrippingConstraints[sIdx]){
-                                for (int nIdx = 0 ; nIdx < simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs.size()  ; nIdx++){
-                                    btSoftBody::Node* _nodePtr = simGripper->m_softGrippingConstraints[sIdx]->m_nodePtrs[nIdx];
-                                    btSoftBody* _sBody = simGripper->m_softGrippingConstraints[sIdx]->m_sBody;
-                                    btRigidBody* _rBody = simGripper->m_softGrippingConstraints[sIdx]->m_rBody;
+                            if(simDev->m_softGrippingConstraints[sIdx]){
+                                for (int nIdx = 0 ; nIdx < simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.size()  ; nIdx++){
+                                    btSoftBody::Node* _nodePtr = simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs[nIdx];
+                                    btSoftBody* _sBody = simDev->m_softGrippingConstraints[sIdx]->m_sBody;
+                                    btRigidBody* _rBody = simDev->m_softGrippingConstraints[sIdx]->m_rBody;
                                     for (int aIdx = 0 ; aIdx < _sBody->m_anchors.size() ; aIdx++){
                                         if (_sBody->m_anchors[aIdx].m_body == _rBody){
                                             btSoftBody::Anchor* _anchor = &_sBody->m_anchors[aIdx];
@@ -1402,7 +1402,7 @@ void updatePhysics(){
                                         }
                                     }
                                 }
-                                simGripper->m_softGrippingConstraints[sIdx] = 0;
+                                simDev->m_softGrippingConstraints[sIdx] = 0;
                             }
                         }
                     }
@@ -1411,30 +1411,30 @@ void updatePhysics(){
 
             cVector3d force, torque;
 
-            force = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_pos, simGripper->m_posRef, dt);
-            force = simGripper->P_lc_ramp * force;
+            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt);
+            force = simDev->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simGripper->m_rot, simGripper->m_rotRef, dt);
-            simGripper->applyForce(force);
-            simGripper->applyTorque(torque);
-            simGripper->setGripperAngle(simGripper->m_gripper_angle, dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt);
+            simDev->applyForce(force);
+            simDev->applyTorque(torque);
+            simDev->setGripperAngle(simDev->m_gripper_angle, dt);
 
-            if (simGripper->P_lc_ramp < 1.0)
+            if (simDev->P_lc_ramp < 1.0)
             {
-                simGripper->P_lc_ramp = simGripper->P_lc_ramp + 0.5 * dt;
+                simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * dt;
             }
             else
             {
-                simGripper->P_lc_ramp = 1.0;
+                simDev->P_lc_ramp = 1.0;
             }
 
-            if (simGripper->P_ac_ramp < 1.0)
+            if (simDev->P_ac_ramp < 1.0)
             {
-                simGripper->P_ac_ramp = simGripper->P_ac_ramp + 0.5 * dt;
+                simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * dt;
             }
             else
             {
-                simGripper->P_ac_ramp = 1.0;
+                simDev->P_ac_ramp = 1.0;
             }
         }
         g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
@@ -1457,19 +1457,19 @@ void updateHapticDevice(void* a_arg){
 
     // update position and orientation of simulated gripper
     std::string identifyingName = g_inputDevices->m_psDevicePairs[devIdx].m_name;
-    afPhysicalDevice *pDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
-    afSimulatedDevice* simGripper = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+    afPhysicalDevice *phyDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
+    afSimulatedDevice* simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
     std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
     cLabel* devFreqLabel = g_inputDevices->m_psDevicePairs[devIdx].m_devFreqLabel;
     if (g_inputDevices->m_psDevicePairs[devIdx].m_cameras.size() == 0){
-        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << pDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
+        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
         devCams = g_cameras;
     }
 
-    pDev->m_posClutched.set(0.0,0.0,0.0);
-    pDev->measuredRot();
-    pDev->m_rotClutched.identity();
-    simGripper->m_rotRefOrigin = pDev->m_rot;
+    phyDev->m_posClutched.set(0.0,0.0,0.0);
+    phyDev->measuredRot();
+    phyDev->m_rotClutched.identity();
+    simDev->m_rotRefOrigin = phyDev->m_rot;
 
     cVector3d dpos, ddpos, dposLast;
     cMatrix3d drot, ddrot, drotLast;
@@ -1484,7 +1484,7 @@ void updateHapticDevice(void* a_arg){
     double K_ah_offset = 1;
 
     double wait_time = 1.0;
-    if (std::strcmp(pDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
+    if (std::strcmp(phyDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
         wait_time = 5.0;
     }
 
@@ -1505,9 +1505,9 @@ void updateHapticDevice(void* a_arg){
     // main haptic simulation loop
     while(g_simulationRunning)
     {
-        pDev->m_freq_ctr.signal(1);
+        phyDev->m_freq_ctr.signal(1);
         if (devFreqLabel != NULL){
-            devFreqLabel->setText(identifyingName + " [" + pDev->m_hInfo.m_modelName + "] " + ": " + cStr(pDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+            devFreqLabel->setText(identifyingName + " [" + phyDev->m_hInfo.m_modelName + "] " + ": " + cStr(phyDev->m_freq_ctr.getFrequency(), 0) + " Hz");
         }
         // Adjust time dilation by computing dt from clockWorld time and the simulationTime
         double dt;
@@ -1518,38 +1518,38 @@ void updateHapticDevice(void* a_arg){
         else{
             dt = compute_dt();
         }
-        pDev->m_pos = pDev->measuredPos();
-        pDev->m_rot = pDev->measuredRot();
+        phyDev->m_pos = phyDev->measuredPos();
+        phyDev->m_rot = phyDev->measuredRot();
 
-        if(pDev->m_gripper_pinch_btn >= 0){
-            if(pDev->isButtonPressed(pDev->m_gripper_pinch_btn)){
-                pDev->enableForceFeedback(true);
+        if(phyDev->m_gripper_pinch_btn >= 0){
+            if(phyDev->isButtonPressed(phyDev->m_gripper_pinch_btn)){
+                phyDev->enableForceFeedback(true);
             }
         }
-        if (pDev->m_hInfo.m_sensedGripper){
-            simGripper->m_gripper_angle = pDev->measuredGripperAngle();
+        if (phyDev->m_hInfo.m_sensedGripper){
+            simDev->m_gripper_angle = phyDev->measuredGripperAngle();
         }
-        else if (pDev->m_buttons.G1 > 0){
+        else if (phyDev->m_buttons.G1 > 0){
             // Some devices may have a gripper button instead of a continous gripper.
-            simGripper->m_gripper_angle = !pDev->isButtonPressed(pDev->m_buttons.G1);
+            simDev->m_gripper_angle = !phyDev->isButtonPressed(phyDev->m_buttons.G1);
         }
         else{
-            simGripper->m_gripper_angle = 0.5;
+            simDev->m_gripper_angle = 0.5;
         }
 
-        if(pDev->isButtonPressRisingEdge(pDev->m_buttons.NEXT_MODE)) g_inputDevices->nextMode();
-        if(pDev->isButtonPressRisingEdge(pDev->m_buttons.PREV_MODE)) g_inputDevices->prevMode();
+        if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.NEXT_MODE)) g_inputDevices->nextMode();
+        if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.PREV_MODE)) g_inputDevices->prevMode();
 
-        bool btn_1_rising_edge = pDev->isButtonPressRisingEdge(pDev->m_buttons.A1);
-        bool btn_1_falling_edge = pDev->isButtonPressFallingEdge(pDev->m_buttons.A1);
-        bool btn_2_rising_edge = pDev->isButtonPressRisingEdge(pDev->m_buttons.A2);
-        bool btn_2_falling_edge = pDev->isButtonPressFallingEdge(pDev->m_buttons.A2);
+        bool btn_1_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A1);
+        bool btn_1_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A1);
+        bool btn_2_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A2);
+        bool btn_2_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A2);
 
         double gripper_offset = 0;
         switch (g_inputDevices->m_simModes){
         case MODES::CAM_CLUTCH_CONTROL:
-            g_inputDevices->g_clutch_btn_pressed  = pDev->isButtonPressed(pDev->m_buttons.A1);
-            g_inputDevices->g_cam_btn_pressed     = pDev->isButtonPressed(pDev->m_buttons.A2);
+            g_inputDevices->g_clutch_btn_pressed  = phyDev->isButtonPressed(phyDev->m_buttons.A1);
+            g_inputDevices->g_cam_btn_pressed     = phyDev->isButtonPressed(phyDev->m_buttons.A2);
             if(g_inputDevices->g_clutch_btn_pressed) g_inputDevices->g_btn_action_str = "Clutch Pressed";
             if(g_inputDevices->g_cam_btn_pressed)   {g_inputDevices->g_btn_action_str = "Cam Pressed";}
             if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->g_btn_action_str = "";
@@ -1557,7 +1557,7 @@ void updateHapticDevice(void* a_arg){
         case MODES::GRIPPER_JAW_CONTROL:
             if (btn_1_rising_edge) gripper_offset = 0.1;
             if (btn_2_rising_edge) gripper_offset = -0.1;
-            simGripper->offsetGripperAngle(gripper_offset);
+            simDev->offsetGripperAngle(gripper_offset);
             break;
         case MODES::CHANGE_CONT_LIN_GAIN:
             if(btn_1_rising_edge) g_inputDevices->increment_P_lc(P_lc_offset);
@@ -1585,78 +1585,78 @@ void updateHapticDevice(void* a_arg){
             break;
         }
 
-        pDev->m_hDevice->getUserSwitch(pDev->m_buttons.A2, devCams[0]->m_cam_pressed);
+        devCams[0]->m_cam_pressed = phyDev->isButtonPressed(phyDev->m_buttons.A2);
         if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
             double scale = 0.01;
             for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
-                devCams[dcIdx]->setLocalPos(devCams[dcIdx]->measuredPos() + cMul(scale, devCams[dcIdx]->measuredRot() * pDev->measuredVelLin() ) );
-                devCams[dcIdx]->setLocalRot(pDev->measuredRotCamPreclutch() * cTranspose(pDev->measuredRotPreclutch()) * pDev->measuredRot());
+                devCams[dcIdx]->setLocalPos(devCams[dcIdx]->measuredPos() + cMul(scale, devCams[dcIdx]->measuredRot() * phyDev->measuredVelLin() ) );
+                devCams[dcIdx]->setLocalRot(phyDev->measuredRotCamPreclutch() * cTranspose(phyDev->measuredRotPreclutch()) * phyDev->measuredRot());
             }
 
         }
         if (!devCams[0]->m_cam_pressed){
-                pDev->setRotCamPreclutch( devCams[0]->measuredRot() );
-                pDev->setRotPreclutch( pDev->measuredRot() );
+                phyDev->setRotCamPreclutch( devCams[0]->measuredRot() );
+                phyDev->setRotPreclutch( phyDev->measuredRot() );
         }
 
 
         if (g_clockWorld.getCurrentTimeSeconds() < wait_time){
-            pDev->m_posClutched = pDev->m_pos;
+            phyDev->m_posClutched = phyDev->m_pos;
         }
 
         if(g_inputDevices->g_cam_btn_pressed){
-            if(pDev->btn_cam_rising_edge){
-                pDev->btn_cam_rising_edge = false;
-                simGripper->m_posRefOrigin = simGripper->m_posRef / pDev->m_workspaceScale;
-                simGripper->m_rotRefOrigin = simGripper->m_rotRef;
+            if(phyDev->btn_cam_rising_edge){
+                phyDev->btn_cam_rising_edge = false;
+                simDev->m_posRefOrigin = simDev->getPosRef()/ phyDev->m_workspaceScale;
+                simDev->m_rotRefOrigin = simDev->getRotRef();
             }
-            pDev->m_posClutched = pDev->m_pos;
-            pDev->m_rotClutched = pDev->m_rot;
+            phyDev->m_posClutched = phyDev->m_pos;
+            phyDev->m_rotClutched = phyDev->m_rot;
         }
         else{
-            pDev->btn_cam_rising_edge = true;
+            phyDev->btn_cam_rising_edge = true;
         }
         if(g_inputDevices->g_clutch_btn_pressed){
-            if(pDev->btn_clutch_rising_edge){
-                pDev->btn_clutch_rising_edge = false;
-                simGripper->m_posRefOrigin = simGripper->m_posRef / pDev->m_workspaceScale;
-                simGripper->m_rotRefOrigin = simGripper->m_rotRef;
+            if(phyDev->btn_clutch_rising_edge){
+                phyDev->btn_clutch_rising_edge = false;
+                simDev->m_posRefOrigin = simDev->getPosRef() / phyDev->m_workspaceScale;
+                simDev->m_rotRefOrigin = simDev->getRotRef();
             }
-            pDev->m_posClutched = pDev->m_pos;
-            pDev->m_rotClutched = pDev->m_rot;
+            phyDev->m_posClutched = phyDev->m_pos;
+            phyDev->m_rotClutched = phyDev->m_rot;
         }
         else{
-            pDev->btn_clutch_rising_edge = true;
+            phyDev->btn_clutch_rising_edge = true;
         }
 
-        simGripper->m_posRef = pDev->m_workspaceScale * (simGripper->m_posRefOrigin +
-                (devCams[0]->getLocalRot() * (pDev->m_pos - pDev->m_posClutched)));
+        simDev->setPosRef(phyDev->m_workspaceScale * (simDev->m_posRefOrigin +
+                (devCams[0]->getLocalRot() * (phyDev->m_pos - phyDev->m_posClutched))));
         if (!g_inputDevices->m_use_cam_frame_rot){
-            simGripper->m_rotRef = simGripper->m_rotRefOrigin * devCams[0]->getLocalRot() *
-                    cTranspose(pDev->m_rotClutched) * pDev->m_rot *
-                    cTranspose(devCams[0]->getLocalRot());
+            simDev->setRotRef(simDev->m_rotRefOrigin * devCams[0]->getLocalRot() *
+                    cTranspose(phyDev->m_rotClutched) * phyDev->m_rot *
+                    cTranspose(devCams[0]->getLocalRot()));
         }
         else{
-            simGripper->m_rotRef = pDev->m_simRotInitial * pDev->m_rot * pDev->m_simRotOffset;
+            simDev->setRotRef(phyDev->m_simRotInitial * phyDev->m_rot * phyDev->m_simRotOffset);
         }
-        _refSphere->setLocalPos(simGripper->m_posRef);
-        _refSphere->setLocalRot(simGripper->m_rotRef);
+        _refSphere->setLocalPos(simDev->getPosRef());
+        _refSphere->setLocalRot(simDev->getRotRef());
 
         // update position of simulated gripper
-        simGripper->updateMeasuredPose();
+        simDev->updateMeasuredPose();
 
 
-        double P_lin = simGripper->m_rootLink->m_controller.getP_lin();
-        double D_lin = simGripper->m_rootLink->m_controller.getD_lin();
-        double P_ang = simGripper->m_rootLink->m_controller.getP_ang();
-        double D_ang = simGripper->m_rootLink->m_controller.getD_ang();
+        double P_lin = simDev->m_rootLink->m_controller.getP_lin();
+        double D_lin = simDev->m_rootLink->m_controller.getD_lin();
+        double P_ang = simDev->m_rootLink->m_controller.getP_ang();
+        double D_ang = simDev->m_rootLink->m_controller.getD_ang();
 
         dposLast = dpos;
-        dpos = simGripper->m_posRef - simGripper->m_pos;
+        dpos = simDev->getPosRef() - simDev->m_pos;
         ddpos = (dpos - dposLast) / dt;
 
         drotLast = drot;
-        drot = cTranspose(simGripper->m_rot) * simGripper->m_rotRef;
+        drot = cTranspose(simDev->m_rot) * simDev->getRotRef();
         ddrot = (cTranspose(drot) * drotLast);
 
         double angle, dangle;
@@ -1666,29 +1666,29 @@ void updateHapticDevice(void* a_arg){
 
         force_prev = force;
         torque_prev = torque_prev;
-        force  = - g_cmdOpts.enableForceFeedback * pDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-        torque = - g_cmdOpts.enableForceFeedback * pDev->K_ah_ramp * (P_ang * angle * axis);
+        force  = - g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+        torque = - g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
 
-        if ((force - force_prev).length() > pDev->m_maxJerk){
+        if ((force - force_prev).length() > phyDev->m_maxJerk){
             cVector3d normalized_force = force;
             normalized_force.normalize();
             double _sign = 1.0;
             if (force.x() < 0 || force.y() < 0 || force.z() < 0){
                 _sign = 1.0;
             }
-            force = force_prev + (normalized_force * pDev->m_maxJerk * _sign);
+            force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
         }
 
-        if (force.length() < pDev->m_deadBand){
+        if (force.length() < phyDev->m_deadBand){
             force.set(0,0,0);
         }
 
-        if (force.length() > pDev->m_maxForce){
+        if (force.length() > phyDev->m_maxForce){
             force.normalize();
-            force = force * pDev->m_maxForce;
+            force = force * phyDev->m_maxForce;
         }
 
-        if (torque.length() < pDev->m_deadBand){
+        if (torque.length() < phyDev->m_deadBand){
             torque.set(0,0,0);
         }
 
@@ -1696,27 +1696,27 @@ void updateHapticDevice(void* a_arg){
         force_msg.push_back(force.x());
         force_msg.push_back(force.y());
         force_msg.push_back(force.z());
-        simGripper->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
+        simDev->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
 
-        pDev->applyWrench(force, torque);
+        phyDev->applyWrench(force, torque);
         rateSleep.sleep();
 
-        if (pDev->K_lh_ramp < pDev->K_lh)
+        if (phyDev->K_lh_ramp < phyDev->K_lh)
         {
-            pDev->K_lh_ramp = pDev->K_lh_ramp + 0.1 * dt * pDev->K_lh;
+            phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->K_lh;
         }
         else
         {
-            pDev->K_lh_ramp = pDev->K_lh;
+            phyDev->K_lh_ramp = phyDev->K_lh;
         }
 
-        if (pDev->K_ah_ramp < pDev->K_ah)
+        if (phyDev->K_ah_ramp < phyDev->K_ah)
         {
-            pDev->K_ah_ramp = pDev->K_ah_ramp + 0.1 * dt * pDev->K_ah;
+            phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->K_ah;
         }
         else
         {
-            pDev->K_ah_ramp = pDev->K_ah;
+            phyDev->K_ah_ramp = phyDev->K_ah;
         }
 
     }
