@@ -271,9 +271,10 @@ bool afSoftMultiMesh::loadFromFile(std::string a_filename){
 /// \param mesh
 /// \param outputVertices
 /// \param outputTriangles
+/// \param outputLines
 /// \param print_debug_info
 ///
-void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, bool print_debug_info){
+void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines, bool print_debug_info){
 
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();
@@ -443,13 +444,13 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // the unique vertices to the index of the original array of duplicated vertices.
     // This is an example of the orderedVtxList might look like for usual run
     // After above steps
-    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  6,  7,  7}
-    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
     // And we want:
-    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8}
-    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  6,  7,  7}
-    // orderedVtxList[:][1] = { 0,  1,  2,  3,  3,  2,  4,  5,  5}
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  1,  4,  3,  4,  5,  3}
     int vtxCounted = 0;
     for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
         if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
@@ -495,6 +496,20 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
         int triIdx = mesh->m_triangles->m_indices[i];
         (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+    }
+
+    // This last loop iterates over the lines and assigns the re-idxd vertices to the
+    // lines
+    if (outputLines){
+        for (int i = 0 ; i < outputLines->size() ; i++){
+            std::vector<int> originalLine = (*outputLines)[i];
+            std::vector<int> reIndexedLine = originalLine;
+            for (int vtx = 0 ; vtx < originalLine.size() ; vtx++){
+                reIndexedLine[vtx] = orderedVtxList[ originalLine[vtx] ][2];
+            }
+            (*outputLines)[i].clear();
+            (*outputLines)[i] = reIndexedLine;
+        }
     }
 
     if (print_debug_info){
@@ -575,6 +590,7 @@ void afSoftMultiMesh::createGELSkeleton(){
             m_afSoftNodes[nodeIdx2].m_gelLinks.push_back(link);
         }
     }
+
     m_gelMesh.m_showSkeletonModel = false;
     m_gelMesh.m_useSkeletonModel = true;
 }
@@ -622,37 +638,114 @@ void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
 
 
 ///
-/// \brief afSoftMultiMesh::createRope
-/// \param m_sb
-/// \param m_edges
-/// \param m_vertices
+/// \brief afSoftMultiMesh::createLinksFromLineIdxs
+/// \param a_sb
+/// \param a_line
 /// \return
 ///
-bool afSoftMultiMesh::createRope(btSoftBody *a_sb, std::vector<int> *a_line, const cMesh *a_mesh){
-    if (a_sb){
-        a_sb->m_nodes.resize(a_mesh->m_vertices->getNumElements());
-        for(int nIdx = 0 ; nIdx < a_sb->m_nodes.size() ; nIdx++){
-            cVector3d pos = a_mesh->m_vertices->getLocalPos(nIdx);
-            btVector3 vPos = cVec2bVec(pos);
-            btSoftBody::Node& n = a_sb->m_nodes[nIdx];
-            n.m_im = 1;
-            n.m_im = 1 / n.m_im;
-            n.m_x = vPos;
-            n.m_q = n.m_x;
-            n.m_n = btVector3(0, 0, 1);
-            n.m_leaf = a_sb->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
-            n.m_material = a_sb->m_materials[0];
-        }
+bool afSoftMultiMesh::createLinksFromLines(btSoftBody *a_sb, std::vector< std::vector<int> > *a_lines, cMesh* a_mesh){
+    if (a_sb && a_lines){
+//        btSoftBody::Material* pm = a_sb->appendMaterial();
+//                    pm->m_kLST = 1;
+//                    pm->m_kAST = 1;
+//                    pm->m_kVST = 1;
+//                    pm->m_flags = btSoftBody::fMaterial::Default;
+        for(int lIdx = 0 ; lIdx < a_lines->size() ; lIdx++){
+            std::vector<int> line = (*a_lines)[lIdx];
 
-        for(int pIdx = 0 ; pIdx < a_line->size() - 1 ; pIdx++){
-            // The indexes start at zero, correct this
-            int node0Idx = (*a_line)[pIdx] - 1;
-            int node1Idx = (*a_line)[pIdx+1] - 1;
-            a_sb->appendLink(node0Idx, node1Idx);
+            for(int vIdx = 0 ; vIdx < line.size() - 1 ; vIdx++){
+                // The indexes start at zero, correct this
+                int node0Idx = line[vIdx];
+                int node1Idx = line[vIdx+1];
+                int nodesSize = a_sb->m_nodes.size();
+
+                if (node0Idx >= nodesSize){
+                    int originalVtxIdx = a_mesh->m_lines[lIdx][vIdx];
+                    cVector3d pos = a_mesh->m_vertices->getLocalPos(originalVtxIdx);
+                    btVector3 vPos = cVec2bVec(pos);
+                    btSoftBody::Node n;
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                    a_sb->m_nodes.push_back(n);
+                    node0Idx = a_sb->m_nodes.size() - 1;
+                }
+
+                if (node1Idx >= nodesSize){
+                    int originalVtxIdx = a_mesh->m_lines[lIdx][vIdx];
+                    cVector3d pos = a_mesh->m_vertices->getLocalPos(originalVtxIdx);
+                    btVector3 vPos = cVec2bVec(pos);
+                    btSoftBody::Node n;
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                    a_sb->m_nodes.push_back(n);
+                    node1Idx = a_sb->m_nodes.size() - 1;
+                }
+                a_sb->appendLink(node0Idx, node1Idx);
+            }
         }
     }
 }
 
+
+
+/// Copied from btSoftBodyHelpers with few modifications
+///
+///
+btSoftBody* CreateFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes,
+                                                 const int* triangles,
+                                                 int ntriangles, bool randomizeConstraints=true)
+{
+    int maxidx = 0;
+    int i, j, ni;
+
+    for (i = 0, ni = ntriangles * 3; i < ni; ++i)
+    {
+        maxidx = btMax(triangles[i], maxidx);
+    }
+    ++maxidx;
+    btAlignedObjectArray<bool> chks;
+    btAlignedObjectArray<btVector3> vtx;
+    chks.resize(maxidx * maxidx, false);
+    vtx.resize(nNodes);
+    for (i = 0, j = 0; i < nNodes * 3; ++j, i += 3)
+    {
+        vtx[j] = btVector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+    }
+    btSoftBody* psb = new btSoftBody(&worldInfo, vtx.size(), &vtx[0], 0);
+    for (i = 0, ni = ntriangles * 3; i < ni; i += 3)
+    {
+        const int idx[] = {triangles[i], triangles[i + 1], triangles[i + 2]};
+#define IDX(_x_, _y_) ((_y_)*maxidx + (_x_))
+        for (int j = 2, k = 0; k < 3; j = k++)
+        {
+            if (!chks[IDX(idx[j], idx[k])])
+            {
+                chks[IDX(idx[j], idx[k])] = true;
+                chks[IDX(idx[k], idx[j])] = true;
+                psb->appendLink(idx[j], idx[k]);
+            }
+        }
+#undef IDX
+        psb->appendFace(idx[0], idx[1], idx[2]);
+    }
+
+    if (randomizeConstraints)
+    {
+        psb->randomizeConstraints();
+    }
+
+    return (psb);
+}
 
 ///
 /// \brief afSoftMultiMesh::buildContactTriangles: This method creates a Bullet collision model for this object.
@@ -682,10 +775,12 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
 
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
-        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr);
+        std::vector<std::vector <int> > _lines = mesh->m_lines;
+        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines);
         if (m_trianglesPtr.size() > 0){
-            m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
-                                                                    m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+            m_bulletSoftBody = CreateFromMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
+                                                                    m_verticesPtr.data(), m_verticesPtr.size() / 3, m_trianglesPtr.data(), numTriangles);
+            createLinksFromLines(m_bulletSoftBody, &_lines, mesh);
         }
         else{
             m_bulletSoftBody = new btSoftBody(m_dynamicWorld->m_bulletSoftBodyWorldInfo);
@@ -695,9 +790,22 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
             pm->m_kAST = 1;
             pm->m_kVST = 1;
             pm->m_flags = btSoftBody::fMaterial::Default;
-            for (int lIdx = 0 ; lIdx < mesh->m_lines.size() ; lIdx++){
-                createRope(m_bulletSoftBody, &mesh->m_lines[lIdx], mesh);
+            if (m_bulletSoftBody){
+                m_bulletSoftBody->m_nodes.resize(mesh->m_vertices->getNumElements());
+                for(int nIdx = 0 ; nIdx < m_bulletSoftBody->m_nodes.size() ; nIdx++){
+                    cVector3d pos = mesh->m_vertices->getLocalPos(nIdx);
+                    btVector3 vPos = cVec2bVec(pos);
+                    btSoftBody::Node& n = m_bulletSoftBody->m_nodes[nIdx];
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                }
             }
+            createLinksFromLines(m_bulletSoftBody, &mesh->m_lines, mesh);
         }
         m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
         // Set the default radius of the GEL Skeleton Node
