@@ -79,6 +79,11 @@ int afCamera::s_numMonitors = 0;
 int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
+
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+ros::NodeHandle* afCamera::s_imageTransportNode;
+bool afCamera::s_imageTransportInitialized = false;
+#endif
 //------------------------------------------------------------------------------
 
 /// End declare static variables
@@ -3596,18 +3601,18 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
     YAML::Node cameraParent = cameraNode["parent"];
     YAML::Node cameraMonitor = cameraNode["monitor"];
+    YAML::Node cameraPublishImage = cameraNode["publish image"];
 
     bool _is_valid = true;
     cVector3d _location, _up, _look_at;
     double _clipping_plane_limits[2], _field_view_angle;
     bool _enable_ortho_view = false;
     double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
-    cStereoMode _stereMode;
     std::string _stereoModeStr;
     int _monitorToLoad = -1;
 
     // Set some default values
-    _stereMode = C_STEREO_DISABLED;
+    m_stereMode = C_STEREO_DISABLED;
     _stereoFocalLength = 2.0;
     _stereoEyeSeperation = 0.02;
 
@@ -3671,7 +3676,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     if (cameraStereo.IsDefined()){
         _stereoModeStr = cameraStereo["mode"].as<std::string>();
         if (_stereoModeStr.compare("PASSIVE") || _stereoModeStr.compare("passive") || _stereoModeStr.compare("Passive")){
-            _stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
+            m_stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
         }
         _stereoEyeSeperation = cameraStereo["eye separation"].as<double>();
         _stereoFocalLength = cameraStereo["focal length"].as<double>();
@@ -3689,6 +3694,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
             m_controllingDevNames.push_back( cameraControllingDevicesData[idx].as<std::string>());
         }
+    }
+
+    if (cameraPublishImage.IsDefined()){
+        m_publishImage = cameraPublishImage.as<bool>();
     }
 
     if(_is_valid){
@@ -3721,7 +3730,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_camera->setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
 
         // set stereo mode
-        m_camera->setStereoMode(_stereMode);
+        m_camera->setStereoMode(m_stereMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
         m_camera->setStereoEyeSeparation(_stereoEyeSeperation);
@@ -3802,9 +3811,47 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_mass = 0.0;
         // Build the model which inturn adds this body to bullet world
         buildDynamicModel();
+
+
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+        if (m_publishImage){
+            m_frameBuffer = new cFrameBuffer();
+            m_imageFromBuffer = cImage::create();
+
+            if (s_imageTransportInitialized == false){
+                s_imageTransportInitialized = true;
+                int argc = 0;
+                char **argv = 0;
+                ros::init(argc, argv, "ambf_image_transport_node");
+                s_imageTransportNode = new ros::NodeHandle();
+                m_imageTransport = new image_transport::ImageTransport(*s_imageTransportNode);
+            }
+
+            m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
+            m_imagePublisher = m_imageTransport->advertise("/ambf/image_data/" + m_name, 1);
+        }
+#endif
     }
 
     return _is_valid;
+}
+
+
+///
+/// \brief afCamera::publishImage
+///
+void afCamera::publishImage(){
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    if (m_publishImage){
+        m_frameBuffer->renderView();
+        m_frameBuffer->copyImageBuffer(m_imageFromBuffer);
+        m_imageFromBuffer->flipHorizontal();
+        m_imageMatrix = cv::Mat(m_imageFromBuffer->getHeight(), m_imageFromBuffer->getWidth(), CV_8UC4, m_imageFromBuffer->getData());
+        cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
+        sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
+        m_imagePublisher.publish(rosMsg);
+    }
+#endif
 }
 
 
@@ -3822,6 +3869,23 @@ cVector3d afCamera::measuredPos(){
 ///
 cMatrix3d afCamera::measuredRot(){
     return getLocalRot();
+}
+
+
+///
+/// \brief afCamera::~afCamera
+///
+afCamera::~afCamera(){
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+        if (m_publishImage){
+            delete m_frameBuffer;
+            delete m_imageTransport;
+            if (s_imageTransportInitialized == true){
+                s_imageTransportInitialized = false;
+                delete s_imageTransportNode;
+            }
+        }
+#endif
 }
 
 

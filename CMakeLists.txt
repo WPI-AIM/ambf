@@ -97,6 +97,8 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 include_directories (${OPENGL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 
+set(AMBF_ROS_INCLUDE_DIRS "")
+set(AMBF_ROS_LIBRARIES "")
 # ROS Dependency
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
     find_package(catkin COMPONENTS
@@ -107,23 +109,54 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         add_subdirectory(${PROJECT_SOURCE_DIR}/ambf_ros_modules)
         # Call find catkin again, with REQUIRED this time, it's okay to write over previously
         # imported catkin variables
-        find_package(catkin REQUIRED COMPONENTS ambf_comm ambf_msgs dvrk_arm)
-        add_definitions(-DC_ENABLE_AMBF_COMM_SUPPORT)
-        add_definitions(-DC_ENABLE_AMBF_DVRK_SUPPORT)
-        set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_COMM_SUPPORT)
-        set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
+        find_package(catkin QUIET COMPONENTS ambf_comm ambf_msgs dvrk_arm razer_hydra cv_bridge image_transport)
 
-        find_package(razer_hydra QUIET)
+        if(${ambf_comm_FOUND} AND ${ambf_msgs_FOUND} AND ${dvrk_arm_FOUND})
+            message("-- *** FOUND AMBF_COMM, AMBF_MSGS and DVRK_ARM, ENABLING SUPPORT")
+
+            set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+            set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
+
+            add_definitions(-DC_ENABLE_AMBF_COMM_SUPPORT)
+            add_definitions(-DC_ENABLE_AMBF_DVRK_SUPPORT)
+
+            set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_COMM_SUPPORT)
+            set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
+        else()
+            message("-- *** AMBF_COMM, AMBF_MSGS and DVRK_ARM NOT FOUND")
+        endif()
+
+        find_package(OpenCV QUIET)
+        if(${OpenCV_FOUND})
+            message("-- *** FOUND OPENCV")
+            if(${cv_bridge_FOUND} AND ${image_transport_FOUND})
+                message("-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING SUPPORT")
+                add_definitions(-DAF_ENABLE_OPEN_CV_SUPPORT)
+
+                set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+                set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${OpenCV_LIBRARIES})
+
+                set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+                set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
+            else()
+                message("-- *** ROS CV_BRIDGE and IMAGE_TRANSPORT NOT FOUND")
+            endif()
+        endif()
+
         if (${razer_hydra_FOUND})
             message("-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING SUPPORT")
             add_definitions(-DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
-            set(catkin_INCLUDE_DIRS ${catkin_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
-            set(catkin_LIBRARIES ${catkin_LIBRARIES} ${razer_hydra_LIBRARIES})
+
+            set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
+            set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${razer_hydra_LIBRARIES})
+
             add_definitions(-DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
             set (CHAI3D_DEFINITIONS -DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
+
         else()
         message("RAZER HYDRA'S ROS PACKAGE NOT FOUND")
         endif()
+
     endif()
     include_directories(${catkin_INCLUDE_DIRS})
 endif()
@@ -287,8 +320,8 @@ set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 # ROS CATKIN INCLUDES AND LIBRARIES
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-    set (AMBF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} ${catkin_LIBRARIES})
+    set (AMBF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${AMBF_ROS_INCLUDE_DIRS})
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} ${AMBF_ROS_LIBRARIES})
 endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)

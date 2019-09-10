@@ -58,6 +58,12 @@
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
+
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+#include <image_transport/image_transport.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
+#endif
 //------------------------------------------------------------------------------
 namespace ambf {
 using namespace chai3d;
@@ -772,6 +778,7 @@ class afCamera: public afRigidBody{
 public:
 
     afCamera(afWorld* a_afWorld);
+    ~afCamera();
 
 
     // Initialize
@@ -814,6 +821,9 @@ public:
         m_camera->renderView(a_windowWidth, a_windowHeight);
     }
 
+    // Publish Image as a ROS Topic
+    void publishImage();
+
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
         return m_camera->m_frontLayer;
@@ -852,6 +862,8 @@ public:
     static GLFWmonitor** s_monitors;
     GLFWmonitor* m_monitor;
     static int s_numMonitors;
+
+    cStereoMode m_stereMode;
 
 public:
     // Labels
@@ -893,6 +905,30 @@ protected:
     static int s_cameraIdx;
     static int s_windowIdx;
 
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+
+    // Frame Buffer to write to OpenCV Transport stream
+    cFrameBuffer* m_frameBuffer;
+
+    // Image to Convert the FrameBuffer into an image
+    cImagePtr m_imageFromBuffer;
+
+    // Open CV Image Matrix
+    cv::Mat m_imageMatrix;
+
+    // Image Transport CV Bridge Node
+    image_transport::ImageTransport *m_imageTransport;
+
+    // Image Transport Publisher
+    image_transport::Publisher m_imagePublisher;
+
+    // Image Transport ROS Node
+    static ros::NodeHandle* s_imageTransportNode;
+
+    // Flag to check if to check if ROS Node and CV ROS Node is initialized
+    static bool s_imageTransportInitialized;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 
@@ -901,6 +937,9 @@ private:
     // by cGenericObject from the world since we want afRidigBody to
     // represent the kinematics instead
     cCamera* m_camera;
+
+    // Flag to enable disable publishing of image as a ROS topic
+    bool m_publishImage = false;
 };
 
 //-----------------------------------------------------------------------------

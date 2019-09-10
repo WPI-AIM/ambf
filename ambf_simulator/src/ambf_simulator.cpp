@@ -386,7 +386,11 @@ int main(int argc, char* argv[])
         }
 
         // get width and height of window
-        glfwGetWindowSize(windowPtr, &(*g_cameraIt)->m_width, &(*g_cameraIt)->m_height);
+        int _width, _height;
+        glfwGetWindowSize(windowPtr, &_width, &_height);
+
+        (*g_cameraIt)->m_width = _width;
+        (*g_cameraIt)->m_height = _height;
 
         // set position of window
         glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
@@ -1169,6 +1173,8 @@ void updateGraphics()
             g_window_closed = true;
         }
 
+        cameraPtr->publishImage();
+
 //        // wait until all GL commands are completed
 //        glFinish();
 
@@ -1692,11 +1698,11 @@ void updateHapticDevice(void* a_arg){
             torque.set(0,0,0);
         }
 
-        std::vector<float> force_msg;
-        force_msg.push_back(force.x());
-        force_msg.push_back(force.y());
-        force_msg.push_back(force.z());
-        simDev->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
+//        std::vector<float> force_msg;
+//        force_msg.push_back(force.x());
+//        force_msg.push_back(force.y());
+//        force_msg.push_back(force.z());
+//        simDev->m_rootLink->m_afObjectPtr->set_userdata(force_msg);
 
         phyDev->applyWrench(force, torque);
         rateSleep.sleep();
