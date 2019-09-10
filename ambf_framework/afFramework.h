@@ -917,7 +917,7 @@ protected:
     cv::Mat m_imageMatrix;
 
     // Image Transport CV Bridge Node
-    image_transport::ImageTransport *m_imageTransport;
+    static image_transport::ImageTransport *s_imageTransport;
 
     // Image Transport Publisher
     image_transport::Publisher m_imagePublisher;

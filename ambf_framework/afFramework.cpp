@@ -82,6 +82,7 @@ int afCamera::s_windowIdx = 0;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 ros::NodeHandle* afCamera::s_imageTransportNode;
+image_transport::ImageTransport* afCamera::s_imageTransport;
 bool afCamera::s_imageTransportInitialized = false;
 #endif
 //------------------------------------------------------------------------------
@@ -3824,11 +3825,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
                 char **argv = 0;
                 ros::init(argc, argv, "ambf_image_transport_node");
                 s_imageTransportNode = new ros::NodeHandle();
-                m_imageTransport = new image_transport::ImageTransport(*s_imageTransportNode);
+                s_imageTransport = new image_transport::ImageTransport(*s_imageTransportNode);
             }
 
             m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
-            m_imagePublisher = m_imageTransport->advertise("/ambf/image_data/" + m_name, 1);
+            m_imagePublisher = s_imageTransport->advertise("/ambf/image_data/" + m_name, 1);
         }
 #endif
     }
@@ -3878,10 +3879,10 @@ cMatrix3d afCamera::measuredRot(){
 afCamera::~afCamera(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
         if (m_publishImage){
-            delete m_frameBuffer;
-            delete m_imageTransport;
+            delete m_frameBuffer;;
             if (s_imageTransportInitialized == true){
                 s_imageTransportInitialized = false;
+                delete s_imageTransport;
                 delete s_imageTransportNode;
             }
         }
