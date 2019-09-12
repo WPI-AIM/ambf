@@ -6,7 +6,7 @@ bodies: [BODY r_gripper_palm_link, BODY r_gripper_l_finger_link, BODY r_gripper_
   BODY r_gripper_r_finger_link, BODY r_gripper_r_finger_tip_link]
 joints: [JOINT r_gripper_palm_link-r_gripper_l_finger_link, JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link,
   JOINT r_gripper_palm_link-r_gripper_r_finger_link, JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link]
-# sensors: [SENSOR Proximity0]
+sensors: [SENSOR Proximity0]
 high resolution path: ../../../meshes/grippers/pr2_gripper/high_res/
 low resolution path: ../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true
@@ -124,7 +124,7 @@ BODY r_gripper_l_finger_tip_link:
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.09, y: 0.06, z: 0.042}
-  resistive surface: *default_resistive_surface
+  resistive surface1: *default_resistive_surface
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.0908, g: 0.0908, r: 0.0908}
@@ -171,7 +171,7 @@ BODY r_gripper_r_finger_tip_link:
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.09, y: 0.06, z: 0.042}
-  resistive surface: *default_resistive_surface
+  resistive surface1: *default_resistive_surface
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.0607, g: 0.0607, r: 0.0607}
