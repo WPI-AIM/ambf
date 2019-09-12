@@ -1,14 +1,27 @@
 bodies: [cylinder]
 joints: []
+sensors: [SENSOR Proximity]
 high resolution path: ../../../meshes/tools/high_res/
 low resolution path: ../../../meshes/tools/low_res/
+namespace: /ambf/env/
+
+SENSOR Proximity:
+  name: Proximity
+  type: Proximity
+  location: {x: -0.4, y: 0.0, z: 0.0}
+  direction: {x: -1.0, y: 0.0, z: 0.0}
+  range: 0.3
+  parent: /ambf/env/cylinder
 
 cylinder:
  name: cylinder
  mass: 0.08
  mesh: Cylinder.STL
- collision shape: CYLINDER
- collision geometry: {axis: x, radius: 0.06, height: 0.8}
+ collision shape: cylinder
+ collision geometry: {axis: x, radius: 0.06, height: 1.0}
  scale: 1.0
  friction: {static: 0.2}
+ controller: {
+   linear: {P: 50, D: 5},
+   angular: {P: 50, D: 0.1}}
  color: random

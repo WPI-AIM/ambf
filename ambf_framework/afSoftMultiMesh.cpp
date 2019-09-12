@@ -253,8 +253,8 @@ void afSoftMultiMesh::updatePositionFromDynamics()
 ///
 void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize){
     int s = blockSize*blockSize*blockSize;
-    memset(vtxChkBlock, false, s*sizeof(bool));
-    memset(vtxIdxBlock, -1, s*sizeof(int));
+    memset(vtxChkBlock, false, s*sizeof(bool)); // Initialize all the vtx check blocks to 0
+    memset(vtxIdxBlock, -1, s*sizeof(int)); // Initialize all the vtx index blocks to -1
 }
 
 ///
@@ -284,20 +284,21 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     }
 
     // The max number of vertices to check per block
-    int blockSize = 60;
+    int vtxBlockSize = 60;
     // Number of default blocks
     int numBlocks = 1;
     //Define bound for lowest value of vertices
     cVector3d vMin(9999,9999,9999);
     //Define bound for max value of vertices
     cVector3d vMax(-9999,-9999,-9999);
+    // Length of the bounds (max - min) for each x,y,z
     cVector3d vBounds;
 
-    // Update the min and max value x,y,z value of vertices to get bounds
+    // Update the min and max value (x,y,z) of vertices to get bounds
     for (int x = 0 ; x < numVertices ; x++){
         cVector3d v = mesh->m_vertices->getLocalPos(x);
-        updateMins(vMin, v);
-        updateMaxs(vMax, v);
+        updateMins(vMin, v); // Iterative search to get the min distance
+        updateMaxs(vMax, v); // Iterative search to get the max distance
     }
     // Update magnitude of bound
     vBounds = vMax - vMin;
@@ -314,8 +315,8 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 
     // If number of vertices is greater the vertices per block, increase no of blocks
     // This is to prevent memory exhaustion
-    if (numVertices > blockSize){
-        numBlocks = std::ceil((float)numVertices / (float)blockSize);
+    if (numVertices > vtxBlockSize){
+        numBlocks = std::ceil((float)numVertices / (float)vtxBlockSize);
     }
 
     if (print_debug_info){
@@ -323,52 +324,84 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     }
     // Copy over the vertices to process without altering the original data
     auto vtxArrCopy = mesh->m_vertices->copy();
-    // This tri vector is to store the unaltered indices in the first row vertices referring to their
-    // original copy in the second row. The third row contains the index to the vertices after
-    // the unique vertices have been place in the outputVertices array
-    // . E.g. if a vertex at idx 5 was a repeat of vtx at idx 3, vtxIdxPair[5][0] = 5 ; vtxIdxPair[5][1] = 3;
-    // and if the vertex was added to the array of unique vertices at Idx 2 then vtxIdxPair[5][2] = 2;
-    int vtxIdxTriPair [numVertices][3];
-    memset(vtxIdxTriPair, -1, numVertices*3*sizeof(int));
+    // This data-structure is to store the unaltered indices in the first row vertices referring to their
+    // original copy in the second row. The third row contains the indexes to the vertices after
+    // the unique vertices have been placed in the outputVertices array
+    // . E.g. if a vertex at idx 5 was a repeat of vtx at idx 3, orderedVtxList[5][0] = 5 ; orderedVtxList[5][1] = 3;
+    // and if the vertex was added to the array of unique vertices at Idx 2 then orderedVtxList[5][2] = 2;
+    int orderedVtxList [numVertices][3];
+    memset(orderedVtxList, -1, numVertices*3*sizeof(int));
 
-    // This forms a 3D block with all value init to false
-    // If we visit a specific 3D idx, its set to true to know that we have been there
-    bool vtxChkBlock[blockSize][blockSize][blockSize];
+    // This forms a 3D block with all value initiazlied to false
+    // If we visit a specific 3D idx, it's set to true to know that we have been there
+    bool vtxChkBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
     // This forms a 3D block with all values init to -1
     // What ever 3D idx we visited we set the corresponding corrected idx value in this 3D block
-    int vtxIdxBlock[blockSize][blockSize][blockSize];
+    int vtxIdxBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
     // To reduce computational cost, if we have already checked a vertex, we can mark it
     bool vtxAlreadyChkd[numVertices];
+    // Initialize all the vertex check index to false
     memset(vtxAlreadyChkd, false, numVertices*sizeof(bool));
-    int xblockLowerBound; int xblockUpperBound;
-    int yblockLowerBound; int yblockUpperBound;
-    int zblockLowerBound; int zblockUpperBound;
-    int vxKey;
-    int vyKey;
-    int vzKey;
-    cVector3d vPos;
-    double xCoeff = (double) (numVertices - 1) / vBounds.x();
-    double yCoeff = (double) (numVertices - 1) / vBounds.y();
-    double zCoeff = (double) (numVertices - 1) / vBounds.z();
+    // Upper a lower bound for block in x direction
+    int xblockLowerBound;
+    int xblockUpperBound;
+    // Upper a lower bound for block in y direction
+    int yblockLowerBound;
+    int yblockUpperBound;
+    // Upper a lower bound for block in z direction
+    int zblockLowerBound;
+    int zblockUpperBound;
+
+    int vxKey; // X key to look up in the block
+    int vyKey; // Y key to look up in the block
+    int vzKey; // Z ket to look up in the block
+
+    double xRes; // X Resolution
+    double yRes; // Y Resolution
+    double zRes; // X Resolution
+
+    cVector3d vPos; // The position of a vertex
+    if(vBounds.x() == 0){
+        xRes = 0; // If planar in x direction, set x res to 0
+    }
+    else{
+
+        xRes = (double) (numVertices - 1) / vBounds.x();
+    }
+    if(vBounds.y() == 0){
+        yRes = 0; // If planar in y direction, set x res to 0
+    }
+    else{
+
+        yRes = (double) (numVertices - 1) / vBounds.y();
+    }
+    if(vBounds.z() == 0){
+        zRes = 0; // If planar in z direction, set x res to 0
+    }
+    else{
+        zRes = (double) (numVertices - 1) / vBounds.z();
+    }
+
+    // Begin the loop to create a hash grid and check for unique vertices
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
-        xblockLowerBound = xblockNum * blockSize;
-        xblockUpperBound = xblockLowerBound + blockSize;
+        xblockLowerBound = xblockNum * vtxBlockSize;
+        xblockUpperBound = xblockLowerBound + vtxBlockSize;
         for (int yblockNum = 0 ; yblockNum < numBlocks ; yblockNum ++){
-            yblockLowerBound = yblockNum * blockSize;
-            yblockUpperBound = yblockLowerBound + blockSize;
+            yblockLowerBound = yblockNum * vtxBlockSize;
+            yblockUpperBound = yblockLowerBound + vtxBlockSize;
             for (int zblockNum = 0 ; zblockNum < numBlocks ; zblockNum ++){
-                zblockLowerBound = zblockNum * blockSize;
-                zblockUpperBound = zblockLowerBound + blockSize;
+                zblockLowerBound = zblockNum * vtxBlockSize;
+                zblockUpperBound = zblockLowerBound + vtxBlockSize;
                 if (print_debug_info) {printf("Block Num [%d, %d, %d] \n", xblockNum, yblockNum, zblockNum);}
                 // Clear the 3D idx and chk arrays to be reused for the new block
-                clearArrays(&vtxChkBlock[0][0][0], &vtxIdxBlock[0][0][0], blockSize);
+                clearArrays(&vtxChkBlock[0][0][0], &vtxIdxBlock[0][0][0], vtxBlockSize);
                 for(int idx = 0; idx < numVertices ; idx++){
                     if (!vtxAlreadyChkd[idx]){
                         vPos = vtxArrCopy->getLocalPos(idx);
                         // Generate keys to parse the 3D idx and chk block
-                        vxKey = xCoeff * (vPos.x() - vMin.x());
-                        vyKey = yCoeff * (vPos.y() - vMin.y());
-                        vzKey = zCoeff * (vPos.z() - vMin.z());
+                        vxKey = xRes * (vPos.x() - vMin.x());
+                        vyKey = yRes * (vPos.y() - vMin.y());
+                        vzKey = zRes * (vPos.z() - vMin.z());
                         // Check if the generated keys are in the bounds of the current block
                         if (vxKey >= xblockLowerBound && vyKey >= yblockLowerBound && vzKey >= zblockLowerBound){
                             if (vxKey <= xblockUpperBound && vyKey <= yblockUpperBound && vzKey <= zblockUpperBound){
@@ -376,22 +409,21 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
                                 vxKey -= xblockLowerBound; vyKey -= yblockLowerBound; vzKey -= zblockLowerBound;
                                 // Mark that we already checked this vertex, so we don't have to check it again
                                 vtxAlreadyChkd[idx] = true;
+                                // Set the vertexIdx Pair value
+                                orderedVtxList[idx][0] = idx;
                                 // Check if the key is already set in the chk block
                                 if (vtxChkBlock[vxKey][vyKey][vzKey] == false){
                                     // Unique vertex, so mark it as such in the corresponding blocks
                                     vtxChkBlock[vxKey][vyKey][vzKey] = true;
                                     // Set the idx block to the original idx
                                     vtxIdxBlock[vxKey][vyKey][vzKey] = idx;
-                                    // Set the vertexIdx Pair value
-                                    vtxIdxTriPair[idx][0] = idx;
-                                    vtxIdxTriPair[idx][1] = idx;
+                                    orderedVtxList[idx][1] = idx;
                                     uniqueVtxCount ++;
                                 }
                                 else{
                                     // This is not a unique vertex, so get the original idx
                                     // and set it in the corresponding blocks
-                                    vtxIdxTriPair[idx][0] = idx;
-                                    vtxIdxTriPair[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
+                                    orderedVtxList[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
                                     duplicateVtxCount++;
                                 }
                             }
@@ -401,55 +433,68 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
             }
         }
     }
+
     //Resize once to save on iterative push/pop time
     outputVertices->resize(uniqueVtxCount*3);
     outputTriangles->resize(numTriangles*3);
     m_vertexTree.resize(uniqueVtxCount);
 
-    // This loop uses a logic that appends the index of the new resized array containing
+    // In this loop we append the index of the newly resized array containing
     // the unique vertices to the index of the original array of duplicated vertices.
-    int vtxCounted = -1;
-    for (int i = 0 ; i < numVertices ; i++){
-        if (vtxIdxTriPair[i][1] == vtxIdxTriPair[i][0] && vtxIdxTriPair[i][2] == -1){
-            vPos = mesh->m_vertices->getLocalPos(i);
-            vtxCounted++;
+    // This is an example of the orderedVtxList might look like for usual run
+    // After above steps
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // And we want:
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  1,  4,  3,  4,  5,  3}
+    int vtxCounted = 0;
+    for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
+        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
+            vPos = mesh->m_vertices->getLocalPos(aIdx);
             (*outputVertices)[3*vtxCounted + 0] = vPos.x();
             (*outputVertices)[3*vtxCounted + 1] = vPos.y();
             (*outputVertices)[3*vtxCounted + 2] = vPos.z();
 
-            vtxIdxTriPair[i][2] = vtxCounted;
-            m_vertexTree[vtxCounted].vertexIdx.push_back(i);
+            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
+            vtxCounted++; // Increase the queue idx by 1
         }
-        else if(vtxIdxTriPair[i][1] < vtxIdxTriPair[i][0]){
-            int bi = vtxIdxTriPair[i][1];
-            int ci = vtxIdxTriPair[bi][2];
-            if (vtxIdxTriPair[bi][1] != vtxIdxTriPair[bi][0] || ci == -1){
-                throw 'Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1';
+        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
+            int bIdx = orderedVtxList[aIdx][1];
+            int cIdx = orderedVtxList[bIdx][2];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
+                // This shouldn't happend. This means that we haven't assigned the third row
+                // and row 1 is greater than row 2
+                throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1";
             }
-            vtxIdxTriPair[i][2] = ci;
-            m_vertexTree[ci].vertexIdx.push_back(i);
+            orderedVtxList[aIdx][2] = cIdx;
+            m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
         }
-        else if(vtxIdxTriPair[i][1] > vtxIdxTriPair[i][0]){
-            int bi = vtxIdxTriPair[i][1];
-            if (vtxIdxTriPair[bi][1] != vtxIdxTriPair[bi][0]){
-                throw 'Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d';
+        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
+            int bIdx = orderedVtxList[aIdx][1];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
+                throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
             }
-            if (vtxIdxTriPair[bi][2] == -1){
-                vPos = mesh->m_vertices->getLocalPos(bi);
+            if (orderedVtxList[bIdx][2] == -1){
+                vPos = mesh->m_vertices->getLocalPos(bIdx);
                 vtxCounted++;
                 (*outputVertices)[3*vtxCounted + 0] = vPos.x();
                 (*outputVertices)[3*vtxCounted + 1] = vPos.y();
                 (*outputVertices)[3*vtxCounted + 2] = vPos.z();
-                vtxIdxTriPair[bi][2] = vtxCounted;
+                orderedVtxList[bIdx][2] = vtxCounted;
             }
-            vtxIdxTriPair[i][2] = vtxIdxTriPair[bi][2];
+            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
         }
     }
 
     // This last loop iterates over the triangle idxes and assigns the re-idxd vertices from the
-    // third row of vtxIdxTriPair
-    for (int i = 0 ; i < numTriangles*3 ; i++){
-        (*outputTriangles)[i] = vtxIdxTriPair[i][2];
+    // third row of orderedVtxList
+    for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
+        int triIdx = mesh->m_triangles->m_indices[i];
+        (*outputTriangles)[i] = orderedVtxList[triIdx][2];
     }
 
     if (print_debug_info){
@@ -470,7 +515,7 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
         }
 
         for (int i = 0 ; i < numTriangles*3 ; i++){
-            printf("v[0] = %d \t v[1] = %d \t v[2] = %d \n", vtxIdxTriPair[i][0], vtxIdxTriPair[i][1], vtxIdxTriPair[i][2]);
+            printf("v[0] = %d \t v[1] = %d \t v[2] = %d \n", orderedVtxList[i][0], orderedVtxList[i][1], orderedVtxList[i][2]);
         }
     }
 
@@ -483,17 +528,28 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
 ///  based on the underlying bullet softbody
 ///
 void afSoftMultiMesh::createGELSkeleton(){
-    int nLinks = m_bulletSoftBody->m_links.size();
-    int nNodes = m_bulletSoftBody->m_nodes.size();
-    std::vector<cGELSkeletonNode*> vNodes;
-    vNodes.resize(nNodes);
-    for (int i = 0 ; i < nNodes ; i++){
-        auto btNode = m_bulletSoftBody->m_nodes[i];
+    int n_btNodes = m_bulletSoftBody->m_nodes.size();
+    std::vector<cGELSkeletonNode*> gelNodes;
+    gelNodes.resize(n_btNodes);
+    m_afSoftNodes.resize(n_btNodes);
+    for (int i = 0 ; i < n_btNodes ; i++){
+        btSoftBody::Node* btNode = &m_bulletSoftBody->m_nodes[i];
+
         cGELSkeletonNode* gelNode = new cGELSkeletonNode;
-        m_gelMesh.m_nodes.push_back(gelNode);
-        vNodes[i] = gelNode;
-        gelNode->m_pos.set(btNode.m_x.x(), btNode.m_x.y(), btNode.m_x.z());
+        gelNode->m_pos.set(btNode->m_x.x(), btNode->m_x.y(), btNode->m_x.z());
         gelNode->m_nextRot.identity();
+        gelNodes[i] = gelNode;
+        m_gelMesh.m_nodes.push_back(gelNode);
+
+        m_afSoftNodes[i].m_gelNode = gelNode;
+        m_afSoftNodes[i].m_btNode = btNode;
+
+        for (int j = 0 ; j < m_bulletSoftBody->m_links.size() ; j++){
+            btSoftBody::Link* btLink = &m_bulletSoftBody->m_links[j];
+            if (btNode == btLink->m_n[0]){
+                m_afSoftNodes[i].m_btLinks.push_back(btLink);
+            }
+        }
     }
 
     for (int i = 0 ; i < m_trianglesPtr.size()/3 ; i++){
@@ -501,46 +557,99 @@ void afSoftMultiMesh::createGELSkeleton(){
         int nodeIdx1 = m_trianglesPtr[3*i + 1];
         int nodeIdx2 = m_trianglesPtr[3*i + 2];
         if (m_bulletSoftBody->checkLink(nodeIdx0, nodeIdx1)){
-            cGELSkeletonLink* link = new cGELSkeletonLink(vNodes[nodeIdx0], vNodes[nodeIdx1]);
+            cGELSkeletonLink* link = new cGELSkeletonLink(gelNodes[nodeIdx0], gelNodes[nodeIdx1]);
             m_gelMesh.m_links.push_back(link);
+            // Store the link the afNode DS so that it can be used later
+            m_afSoftNodes[nodeIdx0].m_gelLinks.push_back(link);
         }
         if (m_bulletSoftBody->checkLink(nodeIdx1, nodeIdx2)){
-            cGELSkeletonLink* link = new cGELSkeletonLink(vNodes[nodeIdx1], vNodes[nodeIdx2]);
+            cGELSkeletonLink* link = new cGELSkeletonLink(gelNodes[nodeIdx1], gelNodes[nodeIdx2]);
             m_gelMesh.m_links.push_back(link);
+            // Store the link the afNode DS so that it can be used later
+            m_afSoftNodes[nodeIdx1].m_gelLinks.push_back(link);
         }
         if (m_bulletSoftBody->checkLink(nodeIdx2, nodeIdx0)){
-            cGELSkeletonLink* link = new cGELSkeletonLink(vNodes[nodeIdx2], vNodes[nodeIdx0]);
+            cGELSkeletonLink* link = new cGELSkeletonLink(gelNodes[nodeIdx2], gelNodes[nodeIdx0]);
             m_gelMesh.m_links.push_back(link);
+            // Store the link the afNode DS so that it can be used later
+            m_afSoftNodes[nodeIdx2].m_gelLinks.push_back(link);
         }
     }
-    m_gelMesh.m_showSkeletonModel = true;
+    m_gelMesh.m_showSkeletonModel = false;
     m_gelMesh.m_useSkeletonModel = true;
+}
+
+btVector3 cVec2bVec(cVector3d &cVec){
+    btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
+    return bVec;
+}
+
+cVector3d bVec2cVec(btVector3 &bVec){
+    cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
+    return cVec;
 }
 
 ///
 /// \brief afSoftMultiMesh::updateGELSkeletonFrombtSoftBody
 ///
 void afSoftMultiMesh::updateGELSkeletonFrombtSoftBody(){
-    std::list<cGELSkeletonNode*>::iterator n;
-    int i = 0;
-    for(n = m_gelMesh.m_nodes.begin(); n != m_gelMesh.m_nodes.end(); ++n)
-    {
-        btVector3 &vPos = m_bulletSoftBody->m_nodes[i].m_x;
-        btVector3 &vNorm = m_bulletSoftBody->m_nodes[i].m_n;
-        (*n)->m_nextPos.set(vPos.x(), vPos.y(), vPos.z());
-        cVector3d nz = (*n)->m_rot.getCol2();
-        cVector3d nzSB(vNorm.x(), vNorm.y(), vNorm.z());
-        double angle = cAngle(nz, nzSB);
-        cVector3d rotAxes = cNormalize(cCross(nz, nzSB));
-        if (rotAxes.length() == 1.0){
-            (*n)->m_nextRot.rotateAboutGlobalAxisRad(rotAxes, angle);
-        }
-        //        (*n)->m_nextRot.identity();
-        i++;
+
+    for (int i = 0 ; i < m_afSoftNodes.size() ; i++){
+//        int lastLinkIdx = m_afSoftNodes[i].m_btLinks.size() - 1 ;
+//        btSoftBody::Link* btLink = m_afSoftNodes[i].m_btLinks[lastLinkIdx];
+        cVector3d vPos =  bVec2cVec(m_afSoftNodes[i].m_btNode->m_x);
+//        btVector3 dPos = btLink->m_n[1]->m_x - btLink->m_n[0]->m_x;
+//        cVector3d vZ = bVec2cVec(m_afSoftNodes[i].m_btNode->m_n);
+//        vZ.normalize();
+//        cVector3d vX = bVec2cVec(dPos);
+//        vX.normalize();
+        m_afSoftNodes[i].m_gelNode->m_nextPos.set(vPos.x(), vPos.y(), vPos.z());
+//        cVector3d vY = cCross(vZ, vX);
+//        vY.normalize();
+//        vX = cCross(vY, vZ);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol0(vX);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol1(vY);
+//        m_afSoftNodes[i].m_gelNode->m_nextRot.setCol2(vZ);
+
     }
+
+    std::list<cGELSkeletonNode*>::iterator n;
     for(n = m_gelMesh.m_nodes.begin(); n != m_gelMesh.m_nodes.end(); ++n)
     {
         (*n)->applyNextPose();
+    }
+}
+
+
+///
+/// \brief afSoftMultiMesh::createRope
+/// \param m_sb
+/// \param m_edges
+/// \param m_vertices
+/// \return
+///
+bool afSoftMultiMesh::createRope(btSoftBody *a_sb, std::vector<int> *a_line, const cMesh *a_mesh){
+    if (a_sb){
+        a_sb->m_nodes.resize(a_mesh->m_vertices->getNumElements());
+        for(int nIdx = 0 ; nIdx < a_sb->m_nodes.size() ; nIdx++){
+            cVector3d pos = a_mesh->m_vertices->getLocalPos(nIdx);
+            btVector3 vPos = cVec2bVec(pos);
+            btSoftBody::Node& n = a_sb->m_nodes[nIdx];
+            n.m_im = 1;
+            n.m_im = 1 / n.m_im;
+            n.m_x = vPos;
+            n.m_q = n.m_x;
+            n.m_n = btVector3(0, 0, 1);
+            n.m_leaf = a_sb->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+            n.m_material = a_sb->m_materials[0];
+        }
+
+        for(int pIdx = 0 ; pIdx < a_line->size() - 1 ; pIdx++){
+            // The indexes start at zero, correct this
+            int node0Idx = (*a_line)[pIdx] - 1;
+            int node1Idx = (*a_line)[pIdx+1] - 1;
+            a_sb->appendLink(node0Idx, node1Idx);
+        }
     }
 }
 
@@ -574,10 +683,25 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
         computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr);
-        m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
-                                                                m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        if (m_trianglesPtr.size() > 0){
+            m_bulletSoftBody = btSoftBodyHelpers::CreateFromTriMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
+                                                                    m_verticesPtr.data(), m_trianglesPtr.data(), numTriangles);
+        }
+        else{
+            m_bulletSoftBody = new btSoftBody(m_dynamicWorld->m_bulletSoftBodyWorldInfo);
+            /* Default material	*/
+            btSoftBody::Material* pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kLST = 1;
+            pm->m_kAST = 1;
+            pm->m_kVST = 1;
+            pm->m_flags = btSoftBody::fMaterial::Default;
+            for (int lIdx = 0 ; lIdx < mesh->m_lines.size() ; lIdx++){
+                createRope(m_bulletSoftBody, &mesh->m_lines[lIdx], mesh);
+            }
+        }
+        m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
         // Set the default radius of the GEL Skeleton Node
-        cGELSkeletonNode::s_default_radius = a_margin;
+        cGELSkeletonNode::s_default_radius = m_bulletSoftBody->getCollisionShape()->getMargin();
         createGELSkeleton();
         m_gelMesh.connectVerticesToSkeleton(false);
         // add to compound object
@@ -660,7 +784,7 @@ void afSoftMultiMesh::buildContactHull(const double a_margin)
 ///
 void afSoftMultiMesh::buildDynamicModel(){
     // add collision shape to compound
-    m_bulletSoftBody->setTotalMass(m_mass, true);
+    m_bulletSoftBody->setTotalMass(m_mass, false);
     m_bulletSoftBody->getCollisionShape()->setUserPointer(m_bulletSoftBody);
     btSoftRigidDynamicsWorld *softWorld = (btSoftRigidDynamicsWorld*) m_dynamicWorld->m_bulletWorld;
     softWorld->addSoftBody(m_bulletSoftBody);

@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <plotmatrix rows="3" columns="2" tab_name="plot">
+   <plot row="0" col="0">
+    <range bottom="0.439209" right="83.743608" top="2.555519" left="78.743782"/>
+    <limitY/>
+    <curve custom_transform="" B="0" R="255" name="/ambf/env/raven_2/base_link_L/Command/joint_cmds.0" G="3"/>
+    <curve custom_transform="" B="7" R="0" name="/ambf/env/raven_2/base_link_L/State/joint_positions.0" G="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="1" col="0">
+    <range bottom="-1.052681" right="83.743608" top="1.053012" left="78.743782"/>
+    <limitY/>
+    <curve custom_transform="" B="9" R="255" name="/ambf/env/raven_2/base_link_L/Command/joint_cmds.1" G="0"/>
+    <curve custom_transform="" B="0" R="0" name="/ambf/env/raven_2/base_link_L/State/joint_positions.1" G="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="2" col="0">
+    <range bottom="-0.169767" right="83.743608" top="0.007491" left="78.743782"/>
+    <limitY/>
+    <curve custom_transform="" B="0" R="255" name="/ambf/env/raven_2/base_link_L/Command/joint_cmds.2" G="0"/>
+    <curve custom_transform="" B="0" R="0" name="/ambf/env/raven_2/base_link_L/State/joint_positions.2" G="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="0" col="1">
+    <range bottom="0.441809" right="83.743694" top="2.555114" left="78.743748"/>
+    <limitY/>
+    <curve custom_transform="" B="3" R="255" name="/ambf/env/raven_2/base_link_R/Command/joint_cmds.0" G="0"/>
+    <curve custom_transform="" B="0" R="0" name="/ambf/env/raven_2/base_link_R/State/joint_positions.0" G="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="1" col="1">
+    <range bottom="-1.051807" right="83.743694" top="1.052431" left="78.743748"/>
+    <limitY/>
+    <curve custom_transform="" B="0" R="255" name="/ambf/env/raven_2/base_link_R/Command/joint_cmds.1" G="0"/>
+    <curve custom_transform="" B="0" R="0" name="/ambf/env/raven_2/base_link_R/State/joint_positions.1" G="0"/>
+    <transform value=""/>
+   </plot>
+   <plot row="2" col="1">
+    <range bottom="-0.170045" right="83.743694" top="0.006763" left="78.743748"/>
+    <limitY/>
+    <curve custom_transform="" B="11" R="255" name="/ambf/env/raven_2/base_link_R/Command/joint_cmds.2" G="0"/>
+    <curve custom_transform="" B="0" R="0" name="/ambf/env/raven_2/base_link_R/State/joint_positions.2" G="0"/>
+    <transform value=""/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <Plugins>
+  <DataLoad_CSV>
+   <default time_axis=""/>
+  </DataLoad_CSV>
+  <DataLoad_ROS_bags>
+   <selected_topics list=""/>
+  </DataLoad_ROS_bags>
+  <ROS_Topic_Streamer>
+   <selected_topics list="/ambf/env/raven_2/base_link_L/Command;/ambf/env/raven_2/base_link_L/State;/ambf/env/raven_2/base_link_R/Command;/ambf/env/raven_2/base_link_R/State"/>
+  </ROS_Topic_Streamer>
+  <RosoutPublisherROS/>
+  <TopicPublisherROS/>
+ </Plugins>
+ <previouslyLoadedStreamer name="ROS_Topic_Streamer"/>
+ <customMathEquations/>
+ <snippets>
+  <snippet name="1st_derivative">
+   <global>var prevX = 0
+var prevY = 0</global>
+   <equation>dx = time - prevX
+dy = value - prevY
+prevX = time
+prevY = value
+
+return dy/dx</equation>
+  </snippet>
+  <snippet name="1st_order_lowpass">
+   <global>var prevY = 0
+var alpha = 0.1</global>
+   <equation>prevY = alpha * value + (1.-alpha) * prevY
+
+return prevY</equation>
+  </snippet>
+  <snippet name="difference">
+   <global></global>
+   <equation>return $$/ambf/env/ecm/baselink/State/joint_positions.0$$ - $$/ambf/env/ecm/baselink/Command/joint_cmds.0$$</equation>
+  </snippet>
+  <snippet name="sum_A_B">
+   <global></global>
+   <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+  </snippet>
+  <snippet name="yaw_from_quaternion">
+   <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToYaw(x, y, z, w)
+{
+  // yaw (z-axis rotation)
+  t1 = 2.0 * (w * z + x * y);
+  t2 = 1.0 - 2.0 * (y * y + z * z);
+  yaw = Math.atan2(t1, t2);
+
+  return yaw
+}</global>
+   <equation>return quaternionToYaw($$x$$, $$y$$, $$z$$, $$w$$);</equation>
+  </snippet>
+ </snippets>
+</root>
+

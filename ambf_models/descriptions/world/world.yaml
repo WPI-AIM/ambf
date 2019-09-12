@@ -1,8 +1,11 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
 lights: [light1, light2]
-# cameras: [camera1, camera2]
+cameras: [camera1]
+namespace: /ambf/env/
 
 light1:
+  namespace: /ambf/env/lights/
+  name: light_left
   location: {x: 0.0, y: 0.5, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
   spot exponent: 0.3
@@ -10,28 +13,55 @@ light1:
   cutoff angle: 0.7
 
 light2:
+  namespace: /ambf/env/lights/
+  name: light_right
   location: {x: 0.5, y: -1, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
   spot exponent: 0.3
   shadow quality: 5
   cutoff angle: 0.7
 
+light3:
+  location: {x: 0.5, y: 0.0, z: -0.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+  parent: /ambf/env/BODY LightCone
+
 camera1:
-  location: {x: 3.0, y: -3.0, z: 2.0}
+  name: default_camera
+  location: {x: 4.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  controlling devices: [Falcon]
+  monitor: 0
+
+camera2:
+  namespace: /ambf/env/cameras/
+  name: openhmd
+  location: {x: 3.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -1.0}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+  stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
+  monitor: 3
+  controlling devices: [Novint Falcon] # These device are specified in the input_devices.yaml file
+  # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
   # device: Razer Hydra
 
-camera2:
-  location: {x: 3.0, y: 3.0, z: 2.0}
+camera3:
+  name: normal_camera
+  location: {x: 3.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
-  controlling devices: [PHANTOM Omni]
+  monitor: 2
+  controlling devices: [Geomagic Touch] # No need to use the hardware name, simply use the name from input_devices.yaml
+  # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
-  # device: Razer Hydra
+# device: Razer Hydra

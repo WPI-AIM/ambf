@@ -56,6 +56,7 @@ SOURCES   = $(wildcard $(SRC_DIR)/*.cpp)
 CXXFLAGS += -I$(CHAI3D_DIR)/src
 CXXFLAGS += -I$(GLEW_DIR)/include
 CXXFLAGS += -I$(EIGEN_DIR)
+CXXFLAGS += -I$(DVRK_ARM_DIR)
 
 # headers
 INCLUDES  = $(wildcard $(INC_DIR)/d*.h)

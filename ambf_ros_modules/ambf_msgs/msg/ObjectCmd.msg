@@ -4,3 +4,6 @@ geometry_msgs/Pose pose
 geometry_msgs/Wrench wrench
 float32[] joint_cmds
 bool[] position_controller_mask
+bool publish_children_names
+bool publish_joint_names
+bool publish_joint_positions

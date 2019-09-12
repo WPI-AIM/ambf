@@ -11,3 +11,9 @@ bin-debug/
 *.autosave
 
 *.pyc
+
+*.bin
+
+*.ipch
+
+\.vscode/

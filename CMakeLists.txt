@@ -35,7 +35,8 @@
 #
 #  $Author: seb $
 #  $Author: Adnan Munawar $
-#  $Date:  $
+#  $Author: Melody Su $
+#  $Date:  April, 2019 $
 #  $Rev: $
 
 
@@ -89,9 +90,12 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${O
 
 # find dependencies
 find_package(yaml-cpp REQUIRED)
-find_package (OpenGL REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(Boost REQUIRED)
+
 include_directories(${YAML_CPP_INCLUDE_DIR})
-include_directories (OPENGL_INCLUDE_DIR)
+include_directories (${OPENGL_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # ROS Dependency
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
@@ -253,8 +257,10 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   message (USING X86_64_ASM)
 endif ()
 if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
     message (USING X86_64_ASM)
-  add_definitions ("-DUSE_X86_64_ASM")
+    add_definitions ("-DUSE_X86_64_ASM")
+  endif ()
 endif ()
 
 # build flags
@@ -265,6 +271,12 @@ add_library (ambf_framework STATIC ${source} ${source_eigen} ${source_gif} ${sou
  ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_chai3d}
  ${source_chai3d_bullet} ${source_chai3d_gel} ${source_bullet_collision} ${source_bullet_dynamics}
  ${source_bullet_softbody} ${source_bullet_linearmath} )
+
+# To ensure the ambf_ros_modules are build before the ambf_framework,
+# add catkin's targets as build dependency
+ if (${catkin_FOUND})
+   add_dependencies(ambf_framework ${catkin_EXPORTED_TARGETS})
+ endif()
 
 # AMBF library exports
 set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
@@ -280,7 +292,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
 endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
-  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+  if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
+  else ()
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+  endif ()
   set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
 else ()
   set (AMBF_LIBRARIES ${AMBF_LIBRARIES} winmm)
@@ -299,6 +315,17 @@ set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 
 # AMBF Simulator
 add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
+
+# AMBF Controller
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+  find_package(catkin COMPONENTS
+    roscpp
+  )
+  if (${catkin_FOUND})
+    add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
+  endif()
+endif()
+
 
 #
 # export package
