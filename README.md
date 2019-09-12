@@ -45,11 +45,12 @@ For this purpose, on **Mac OS**, if you don't have Boost
 `brew install boost`
 
 
-To build the framework (Linux and Mac-OS):
+To build the framework (Linux and Mac-OS) and get various addon scripts (blender, yaml <-> urdf):
 ```
 cd ~
 git clone https://github.com/WPI-AIM/ambf.git
 cd ambf && mkdir build
+git submodule update --init --recursive
 cd build
 cmake ..
 make
