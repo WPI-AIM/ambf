@@ -1240,8 +1240,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
         btCompoundShape* _compoundCollisionShape = new btCompoundShape();
-//        std::cerr << "\n\n***** COLLISION *******\nName: " << m_name << std::endl;
-//        std::cerr << bodyCompoundCollisionShape << std::endl;
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
             bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
@@ -1263,13 +1261,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 x *= m_scale;
                 y *= m_scale;
                 z *= m_scale;
-//                std::cerr << "---------------------" << std::endl;
-////                std::cerr << shapeIdx << std::endl;
-//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-//                std::cerr << "Location : " << std::endl;
-//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-//                std::cerr << "Scale    : "  << m_scale << std::endl;
                 btVector3 halfExtents(x/2, y/2, z/2);
                 _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
             }
