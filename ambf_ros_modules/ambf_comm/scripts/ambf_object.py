@@ -271,7 +271,7 @@ class Object(WatchDog):
         :param yaw:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
         self.set_rot(quat)
 
     def set_rot(self, quat):

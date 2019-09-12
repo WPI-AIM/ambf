@@ -1112,6 +1112,12 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         afJointPtr jnt = (*jIt);
         jnt->applyDamping(timeStep);
     }
+
+//    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
+//    // Update the data for sensors
+//    for (int i=0 ; i < afSensors.size() ; i++){
+//        afSensors[i]->updateSensor();
+//    }
 }
 
 ///
@@ -1213,8 +1219,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time:" + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time" + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1281,6 +1287,8 @@ void updatePhysics(){
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool _bodyPicked = false;
 
+    double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
+
     cVector3d torque, torque_prev;
     torque.set(0, 0, 0);
     torque_prev.set(0, 0, 0);
@@ -1305,11 +1313,12 @@ void updatePhysics(){
 
         double dt;
         if (g_cmdOpts.useFixedPhxTimeStep){
-            dt = 1/g_cmdOpts.phxFrequency;
+            dt = 1.0 / g_cmdOpts.phxFrequency;
         }
         else{
             dt = compute_dt(true);
         }
+
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
             afSimulatedDevice * simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
@@ -1416,11 +1425,12 @@ void updatePhysics(){
             }
 
             cVector3d force, torque;
-
-            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt);
+            // ts is to prevent the saturation of forces
+            double ts = dt_fixed / dt;
+            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
             force = simDev->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
             simDev->applyForce(force);
             simDev->applyTorque(torque);
             simDev->setGripperAngle(simDev->m_gripper_angle, dt);
@@ -1519,7 +1529,7 @@ void updateHapticDevice(void* a_arg){
         double dt;
         if (g_cmdOpts.useFixedHtxTimeStep){
 
-            dt = 1/g_cmdOpts.htxFrequency;
+            dt = 1.0 / g_cmdOpts.htxFrequency;
         }
         else{
             dt = compute_dt();

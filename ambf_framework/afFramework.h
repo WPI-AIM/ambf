@@ -56,6 +56,7 @@
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+#include <thread>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 
@@ -102,6 +103,7 @@ typedef std::vector<afLightPtr> afLightVec;
 typedef std::vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
 class afSensor;
+class afResistanceSensor;
 typedef afSensor* afSensorPtr;
 typedef std::map<std::string, afSensorPtr> afSensorMap;
 typedef std::vector<afSensorPtr> afSensorVec;
@@ -138,6 +140,16 @@ template <typename T>
 /// \return
 ///
 T toRPY(YAML::Node* node);
+
+
+
+class afUtils{
+public:
+
+    afUtils(){}
+    template<typename T1, typename T2>
+    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+};
 
 
 ///
@@ -244,7 +256,8 @@ public:
 public:
     template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
-    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt);
+    // The last argument ts is the time_scale and is computed at dt_fixed / dt
+    T1 computeOutput(const T2 &process_val, const T2 &set_point, const double &dt, const double &ts=1);
 
     // Yet to be implemented
     void boundImpulse(double effort_cmd);
@@ -265,6 +278,28 @@ private:
     // between commanded and current rotation
     btMatrix3x3 m_dRot;
     cMatrix3d m_dRot_cvec;
+};
+
+
+///
+/// \brief The afResistiveSurface struct
+///
+struct afResistiveSurface{
+    bool enable = false;
+    double faceResolution = 1; // Resolution along the face
+    double edgeResolution = 1; // Resolution along the edges
+    double range = 0.1; // Protrusion outward from the face normal
+    double depth = 0.0; // Depth backward from the face normal
+    double contactArea = 0.001; // Area of contact for "Stick" Friction
+    double staticContactFriction = 1; // Stick friction coefficient
+    double staticContactDamping = 1; // Stick friction Damping coefficient
+    double dynamicFriction = 0.1; // Slip Friction coefficient
+    double contactNormalStiffness = 0.0; // Stiffness along contact normal
+    double contactNormalDamping = 0.0; // Damping along contact normal
+    double useVariableCoeff = 0.1; // Normalize Coefficients based on depthFraction
+    int sourceMesh = 0; // collision mesh
+
+    bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
 };
 
 
@@ -293,6 +328,12 @@ public:
     virtual void updatePositionFromDynamics();
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
+    // Apply force that is specified in the world frame at a point specified in world frame
+    // This force is first converted into body frame and then is used to compute
+    // the resulting torque in the body frame. This torque in the body frame is
+    // then converted to the world frame and is applied to the body in the world frame
+    // along with the original force in the world frame
+    void applyForceAtPointOnBody(const cVector3d & a_forceInWorld, const cVector3d & a_pointInWorld);
 
     // A vector of joints that this bodies is a parent off. Includes joints of all the
     // connected children all the way down to the last child
@@ -419,6 +460,29 @@ protected:
 protected:
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
+
+protected:
+
+    afResistiveSurface m_resistiveSurface;
+
+    // pool of threads for solving the body's sensors in paralled
+    std::vector<std::thread*> m_sensorThreads;
+
+    // Block size. i.e. number of sensors per thread
+    int m_sensorThreadBlockSize = 10;
+
+    // This method uses the eq:
+    // startIdx = threadIdx * m_sensorThreadBlockSize
+    // endIdx = startIdx + m_sensorThreadBlockSize - 1
+    // to compute the two indexes. The runs a loop to solve the indexes
+    // in between so that we can progress in parallel
+    bool updateBodySensors(int threadIdx);
+
+    // boolean flags for each thread to progress
+    std::vector<bool> m_threadUpdateFlags;
+
+    // Global flag for all sensor threads
+    bool m_keepSensorThreadsAlive = true;
 
 private:
     // Ptr to afWorld
@@ -605,8 +669,6 @@ protected:
     double m_joint_offset;
     btRigidBody *m_rbodyA, *m_rbodyB;
     void printVec(std::string name, btVector3* v);
-    btQuaternion getRotationBetweenVectors(btVector3 &v1, btVector3 &v2);
-
     afWorldPtr m_afWorld;
 
 protected:
@@ -631,7 +693,7 @@ private:
 
 //-----------------------------------------------------------------------------
 enum afSensorType{
-    proximity=0, range=1
+    proximity=0, range=1, resistance=2
 };
 
 ///
@@ -676,19 +738,28 @@ public:
 };
 
 
-///
-/// \brief The afProximitySensor class
-///
-class afProximitySensor: public afSensor{
+class afRayTracerSensor: public afSensor{
+
+    friend class afProximitySensor;
+    friend class afResistanceSensor;
+
 public:
+    // Declare enum to find out later what type of body we sensed
+    enum SensedBodyType{
+        RIGID_BODY=0, SOFT_BODY=1};
+
+    // Type of sensed body, could be a rigid body or a soft body
+    SensedBodyType m_sensedBodyType;
+
+public:
+    // Constructor
+    afRayTracerSensor(afWorldPtr a_afWorld);
+
     // Load the sensor from ambf format
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
     // Load the sensor from ambf format
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Constructor
-    afProximitySensor(afWorldPtr a_afWorld);
 
     // Update sensor is called on each update of positions of RBs and SBs
     virtual void updateSensor();
@@ -696,6 +767,9 @@ public:
     // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(){return m_triggered;}
 
+    // Get the type of sensed body
+    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;
+                                             }
     // Return the sensed RigidBody's Ptr
     inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
 
@@ -718,14 +792,28 @@ public:
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
 public:
-    // Declare enum to find out later what type of body we sensed
-    enum SensedBodyType{
-        RIGID_BODY=0, SOFT_BODY=1};
 
-    // Type of sensed body, could be a rigid body or a soft body
-    SensedBodyType m_sensedBodyType;
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
 
-private:
+    inline void setRayToInLocal(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
+
+    inline void setDirection(const cVector3d& a_direction){m_direction = a_direction;}
+
+    inline void setRange(const double& a_range){m_range = a_range;}
+
+    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
+
+    void enableVisualization();
+
+public:
+
+    // Depth fraction is the penetration normalized depth of the sensor
+    double m_depthFraction = 0;
+
+    // Normal at Contact Point
+    cVector3d m_contactNormal;
+
+protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
 
@@ -761,15 +849,97 @@ private:
     // Location of sensed point in World Frame. This is along of the sensor direction
     cVector3d m_sensedLocationWorld;
 
-private:
     // Visual markers to show the hit point and the sensor start and end points
-    cMesh *m_hitSphere, *m_fromSphere, *m_toSphere;
+    cMesh *m_hitSphereMesh, *m_fromSphereMesh, *m_toSphereMesh;
+
+    // Visual Mesh for Normal at Contact Point
+    cMesh *m_hitNormalMesh;
 
     // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
+
+    // Size of spheres for the sensor visualization
+    double m_visibilitySphereRadius;
+};
+
+
+///
+/// \brief The afProximitySensor class
+///
+class afProximitySensor: public afRayTracerSensor{
+public:
+    // Constructor
+    afProximitySensor(afWorldPtr a_afWorld);
 };
 
 //-----------------------------------------------------------------------------
+
+class afResistanceSensor: public afRayTracerSensor{
+public:
+    afResistanceSensor(afWorldPtr a_afWorld);
+    virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx="");
+    virtual void updateSensor();
+
+public:
+    inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}
+
+    inline void setStaticContactDamping(const double& a_staticDamping){m_staticContactDamping = a_staticDamping;}
+
+    inline void setDynamicFriction(const double& a_dynamicFriction){m_dynamicFriction = a_dynamicFriction;}
+
+    inline void setContactNormalStiffness(const double& a_contactStiffness){m_contactNormalStiffness = a_contactStiffness;}
+
+    inline void setContactNormalDamping(const double& a_contactDamping){m_contactNormalDamping = a_contactDamping;}
+
+    inline void useVariableCoeff(const bool & a_enable){m_useVariableCoeff = a_enable;}
+
+    inline void setContactArea(const double& a_contactArea){m_contactArea = a_contactArea;}
+
+private:
+    cVector3d m_lastContactPosInWorld;
+    cVector3d m_curContactPosInWorld;
+
+    // Contact Stiffness. The force along the direction of the sensor to
+    // emulate contact stiffness. Default to 0
+    double m_contactNormalStiffness;
+
+    // Contact Damping. Soften the stiffness of the contact by damping. Default to 0
+    double m_contactNormalDamping;
+
+    // The static "stick" friction
+    double m_staticContactFriction;
+
+    // The damping along the contact point
+    double m_staticContactDamping;
+
+    // Friction due to slide, or kinetic friction
+    double m_dynamicFriction;
+
+    // Contact point in Body A frame
+    cVector3d m_bodyAContactPointLocal;
+
+    // Contact point in body B frame
+    cVector3d m_bodyBContactPointLocal;
+
+    // Error tangential to the contact (or sensor) normal
+    cVector3d m_tangentialError;
+
+    // Pre value of tangential contact error
+    cVector3d m_tangentialErrorLast;
+
+    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
+    bool m_contactPointsValid;
+
+    // Tolerance to slide of the contact points between two bodies
+    // tangential to the direction of the sensor direction
+    double m_contactArea;
+
+    // First time the sensor made contact with another object. Computed everytime a new contact happens
+    bool m_firstTrigger = true;
+
+    // Use Variable Coeffecients based on the Depth Fraction
+    bool m_useVariableCoeff = false;
+};
 
 ///
 /// \brief The afCamera class

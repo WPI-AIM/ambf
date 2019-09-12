@@ -51,7 +51,7 @@ from ambf_world import World
 
 
 class Client:
-    def __init__(self):
+    def __init__(self, client_name='ambf_client'):
         self._ros_topics = []
         self._search_prefix_str = '/ambf/env/'
         self._search_suffix_str = '/State'
@@ -62,10 +62,11 @@ class Client:
         self._pub_thread = []
         self._rate = 0
         self._world_name = ''
+        self._client_name = client_name
         pass
 
     def create_objs_from_rostopics(self):
-        rospy.init_node('ambf_client')
+        rospy.init_node(self._client_name)
         rospy.on_shutdown(self.clean_up)
         self._rate = rospy.Rate(1000)
         self._ros_topics = rospy.get_published_topics()
