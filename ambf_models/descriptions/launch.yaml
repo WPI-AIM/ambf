@@ -22,10 +22,8 @@ multibody configs:
   - "./multi-bodies/puzzles/puzzle4.yaml" #15
   - "./multi-bodies/puzzles/puzzle5.yaml" #16
   - "./multi-bodies/puzzles/puzzle6.yaml" #17
-  - "./multi-bodies/grippers/box tool.yaml" #18
-  - "./multi-bodies/robots/resistive_sensor/ground.yaml" #19
-  - "/home/adnan/ExoSkeleton/ambf_model/hex.yaml" #20
-  - "/home/adnan/sb/sb4.yaml" #21
-  - "/home/adnan/sb/rb1.yaml" #22
-  - "/home/adnan/jhu_urdfs/resistive_gripper/resistive_gripper.yaml" #23
-  - "/home/adnan/Grasping Paper/screw_driver_puzzle.yaml" #24
+  - "./multi-bodies/environments/ScrewDriverEnv/env.yaml" #18
+  - "./multi-bodies/environments/KnotEnv/env.yaml" #19
+  - "./multi-bodies/environments/KnotEnv2/env.yaml" #20
+  - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
+  - "./multi-bodies/environments/TexturedGround/env.yaml" #22
