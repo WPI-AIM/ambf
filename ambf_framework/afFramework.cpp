@@ -1234,8 +1234,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
         btCompoundShape* _compoundCollisionShape = new btCompoundShape();
-        std::cerr << "\n\n***** COLLISION *******\nName: " << m_name << std::endl;
-        std::cerr << bodyCompoundCollisionShape << std::endl;
+//        std::cerr << "\n\n***** COLLISION *******\nName: " << m_name << std::endl;
+//        std::cerr << bodyCompoundCollisionShape << std::endl;
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
             bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
