@@ -6,8 +6,8 @@ bodies: [BODY Fist1, BODY Fist2]
 joints: [JOINT Fist1-Fist2]
 sensors: [RP10, RP11, RP12, RP13, RP14, RP15, RP16, RP17, RP18, RP20, RP21, RP22, RP23, RP24, RP25, RP26, RP27, RP28]
 # sensors: [RP10, RP20]
-high resolution path: ../../../meshes/grippers/pr2_gripper/high_res/
-low resolution path: ../../../meshes/grippers/pr2_gripper/low_res/
+high resolution path: ../../../../../meshes/grippers/pr2_gripper/high_res/
+low resolution path: ../../../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/
 # publish children names: true

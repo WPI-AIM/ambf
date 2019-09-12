@@ -5,8 +5,8 @@
 bodies: [BODY BoxTool]
 joints: []
 sensors: [RP0, RP1, RP2, RP3, RP4, RP5, RP6, RP7, RP8]
-high resolution path: ../../../meshes/grippers/box_tool/high_res/
-low resolution path: ../../../meshes/grippers/box_tool/low_res/
+high resolution path: ../../../../../meshes/grippers/box_tool/high_res/
+low resolution path: ../../../../../meshes/grippers/box_tool/low_res/
 ignore inter-collision: false
 namespace: /ambf/env/
 
