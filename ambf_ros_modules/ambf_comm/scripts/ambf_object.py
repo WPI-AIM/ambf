@@ -73,7 +73,7 @@ class Object(WatchDog):
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
         self._joint_velocity = None
         self._dt = 0.0
-        self._velocity_window_size = 4
+        self._velocity_window_size = 10
         self._vel_smoother = deque([], self._velocity_window_size)
 
     def ros_cb(self, data):

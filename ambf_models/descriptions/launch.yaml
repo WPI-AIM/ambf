@@ -22,4 +22,4 @@ multibody configs:
   # - "./multi-bodies/puzzles/puzzle4.yaml" #15
   # - "./multi-bodies/puzzles/puzzle5.yaml" #16
   # - "./multi-bodies/puzzles/puzzle6.yaml" #17
-  - "/home/nathaniel/Dropbox/Hex Exo Skeleton/ambf model/hex2.yaml"
+  - "/home/nathaniel/ExoSkeleton/ambf_model/urdf.yaml"
