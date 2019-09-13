@@ -330,7 +330,7 @@ class Object(WatchDog):
 
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0]*n_jnts
-            self._cmd.position_controller_mask = [1]*n_jnts
+            self._cmd.position_controller_mask = [0]*n_jnts
         
         self._cmd.joint_cmds[idx] = pos
         self._cmd.position_controller_mask[idx] = True
