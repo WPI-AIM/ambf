@@ -1106,7 +1106,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             _g *= _level;
             _b *= _level;
             _mat.m_ambient.set(_r, _g, _b);
-
         }
         if (bodyColorComponents["specular"].IsDefined()){
             _r = bodyColorComponents["specular"]["r"].as<float>();
@@ -1114,8 +1113,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             _b = bodyColorComponents["specular"]["b"].as<float>();
             _mat.m_specular.set(_r, _g, _b);
         }
+        if (bodyColorComponents["emission"].IsDefined()){
+            _r = bodyColorComponents["emission"]["r"].as<float>();
+            _g = bodyColorComponents["emission"]["g"].as<float>();
+            _b = bodyColorComponents["emission"]["b"].as<float>();
+            _mat.m_emission.set(_r, _g, _b);
+        }
+        _a = bodyColorComponents["transparency"].as<float>();
         setMaterial(_mat);
-        setTransparencyLevel(bodyColorComponents["transparency"].as<float>());
+        setTransparencyLevel(_a);
     }
     else if(bodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(bodyColor.as<std::string>());
@@ -2434,7 +2440,6 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _g *= _level;
             _b *= _level;
             _mat.m_ambient.set(_r, _g, _b);
-
         }
         if (softBodyColorComponents["specular"].IsDefined()){
             _r = softBodyColorComponents["specular"]["r"].as<float>();
@@ -2442,8 +2447,17 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _b = softBodyColorComponents["specular"]["b"].as<float>();
             _mat.m_specular.set(_r, _g, _b);
         }
+        if (softBodyColorComponents["emission"].IsDefined()){
+            _r = softBodyColorComponents["emission"]["r"].as<float>();
+            _g = softBodyColorComponents["emission"]["g"].as<float>();
+            _b = softBodyColorComponents["emission"]["b"].as<float>();
+            _mat.m_emission.set(_r, _g, _b);
+        }
+
+        _a = softBodyColorComponents["transparency"].as<float>();
+        _mat.setTransparencyLevel(_a);
         m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(softBodyColorComponents["transparency"].as<float>());
+//        m_gelMesh.setTransparencyLevel(_a);
     }
     else if(softBodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<std::string>());
@@ -4285,6 +4299,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraParent = cameraNode["parent"];
     YAML::Node cameraMonitor = cameraNode["monitor"];
     YAML::Node cameraPublishImage = cameraNode["publish image"];
+    YAML::Node cameraMultiPass = cameraNode["multipass"];
 
     bool _is_valid = true;
     cVector3d _location, _up, _look_at;
@@ -4293,6 +4308,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
     std::string _stereoModeStr;
     int _monitorToLoad = -1;
+    bool _useMultiPassTransparency = false;
 
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
@@ -4383,6 +4399,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_publishImage = cameraPublishImage.as<bool>();
     }
 
+    if (cameraMultiPass.IsDefined()){
+        _useMultiPassTransparency = cameraMultiPass.as<bool>();
+    }
+
     if(_is_valid){
         m_camera = new cCamera(a_world->s_bulletWorld);
         addChild(m_camera);
@@ -4428,6 +4448,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         if (_enable_ortho_view){
             m_camera->setOrthographicView(_orthoViewWidth);
         }
+
+        m_camera->setUseMultipassTransparency(_useMultiPassTransparency);
 
         std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
         if (m_controllingDevNames.size() > 0){
