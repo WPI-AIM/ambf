@@ -37,6 +37,7 @@ camera1:
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
   monitor: 0
+  multipass: True
 
 camera2:
   namespace: /ambf/env/cameras/

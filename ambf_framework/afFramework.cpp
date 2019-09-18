@@ -2295,6 +2295,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_flags = softBodyConfigData["flags"];
     YAML::Node cfg_bendingConstraint = softBodyConfigData["bending constraint"];
     YAML::Node cfg_cutting = softBodyConfigData["cutting"];
+    YAML::Node cfg_clusters = softBodyConfigData["clusters"];
     YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
     if(softBodyName.IsDefined()){
@@ -2477,7 +2478,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_kPR.IsDefined()) m_bulletSoftBody->m_cfg.kPR = cfg_kPR.as<double>();
         if (cfg_kVC.IsDefined()) m_bulletSoftBody->m_cfg.kVC = cfg_kVC.as<double>();
         if (cfg_kDF.IsDefined()) m_bulletSoftBody->m_cfg.kDF = cfg_kDF.as<double>();
-        if (cfg_kMT.IsDefined()) m_bulletSoftBody->m_cfg.kMT = cfg_kMT.as<double>();
+        if (cfg_kMT.IsDefined()){
+            m_bulletSoftBody->m_cfg.kMT = cfg_kMT.as<double>();
+            m_bulletSoftBody->setPose(false, true);
+        }
         if (cfg_kCHR.IsDefined()) m_bulletSoftBody->m_cfg.kCHR = cfg_kCHR.as<double>();
         if (cfg_kKHR.IsDefined()) m_bulletSoftBody->m_cfg.kKHR = cfg_kKHR.as<double>();
         if (cfg_kSHR.IsDefined()) m_bulletSoftBody->m_cfg.kSHR = cfg_kSHR.as<double>();
@@ -2495,7 +2499,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<double>();
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
         if (cfg_flags.IsDefined()){
-            m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+            m_bulletSoftBody->m_cfg.collisions = cfg_flags.as<int>();
         }
         if (cfg_bendingConstraint.IsDefined()){
             int _bending = cfg_bendingConstraint.as<int>();
@@ -2508,6 +2512,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
                     m_bulletSoftBody->setMass(nodeIdx, 0);
                 }
             }
+        }
+        if(cfg_clusters.IsDefined()){
+            int num_clusters = cfg_clusters.as<int>();
+            m_bulletSoftBody->generateClusters(num_clusters);
         }
     }
 
