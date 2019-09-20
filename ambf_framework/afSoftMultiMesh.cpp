@@ -495,7 +495,12 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     // third row of orderedVtxList
     for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
         int triIdx = mesh->m_triangles->m_indices[i];
-        (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+        if ( triIdx >= numVertices){
+            std::cerr << "ERROR ! Triangle Vtx Index " << triIdx << " >= # Vertices " << numVertices << std::endl;
+        }
+        else{
+            (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+        }
     }
 
     // This last loop iterates over the lines and assigns the re-idxd vertices to the
@@ -513,6 +518,8 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
     }
 
     if (print_debug_info){
+        printf("*** PARALLEL COMPUTE UNIQUE VERTICES AND TRIANGLE INDICES ***\n");
+
         for (int i = 0 ; i < uniqueVtxCount; i ++){
             printf("Vertex %d = [%f, %f, %f] \n", i, (*outputVertices)[3*i + 0], (*outputVertices)[3*i + 1], (*outputVertices)[3*i + 2]);
         }
@@ -529,12 +536,160 @@ void afSoftMultiMesh::computeUniqueVerticesandTriangles(cMesh* mesh, std::vector
             printf("Triangle %d = [%d, %d, %d] \n", i, (*outputTriangles)[3*i], (*outputTriangles)[3*i+1], (*outputTriangles)[3*i+2]);
         }
 
-        for (int i = 0 ; i < numTriangles*3 ; i++){
-            printf("v[0] = %d \t v[1] = %d \t v[2] = %d \n", orderedVtxList[i][0], orderedVtxList[i][1], orderedVtxList[i][2]);
+        for (int i = 0 ; i < numVertices ; i++){
+            printf("%d) v[0] = %d \t v[1] = %d \t v[2] = %d \n", i, orderedVtxList[i][0], orderedVtxList[i][1], orderedVtxList[i][2]);
         }
     }
 
     printf("Unique Vertices Found = %d, Duplicate Vertices Found = %d\n", uniqueVtxCount, duplicateVtxCount);
+}
+
+
+
+void afSoftMultiMesh::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<btScalar> *outputVertices, std::vector<int> *outputTriangles, std::vector<std::vector<int> > *outputLines, bool print_debug_info){
+    // read number of triangles of the object
+    int numTriangles = mesh->m_triangles->getNumElements();
+    int numVertices = mesh->m_vertices->getNumElements();
+
+    // Place holder for count of repeat and duplicate vertices
+    int uniqueVtxCount = 0;
+    int duplicateVtxCount = 0;
+
+    if (print_debug_info){
+        printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
+    }
+
+    int orderedVtxList[numVertices][3];
+
+
+    orderedVtxList[0][0] = 0;
+    orderedVtxList[0][1] = 0;
+    orderedVtxList[0][2] = -1;
+
+    cVector3d v1Pos, v2Pos;
+    for (int i = 0 ; i < numVertices ; i++){
+        orderedVtxList[i][0] = i;
+        orderedVtxList[i][1] = -1;
+        orderedVtxList[i][2] = -1;
+    }
+
+    for (int aIdx = 0 ; aIdx < numVertices - 1 ; aIdx++){
+        if (orderedVtxList[aIdx][1] == -1){
+            orderedVtxList[aIdx][1] = aIdx;
+            uniqueVtxCount++;
+        }
+        else{
+            duplicateVtxCount++;
+        }
+        for (int bIdx = aIdx + 1 ; bIdx < numVertices ; bIdx++){
+            v1Pos = mesh->m_vertices->getLocalPos(aIdx);
+            v2Pos = mesh->m_vertices->getLocalPos(bIdx);
+
+            if (orderedVtxList[bIdx][1] == -1){
+                if ( (v1Pos - v2Pos).length() == 0 ){
+                    orderedVtxList[bIdx][1] = aIdx;
+                }
+            }
+        }
+    }
+
+    // Check if the last vtx index was assigned
+    if (orderedVtxList[numVertices-1][1] == -1){
+        orderedVtxList[numVertices-1][1] = orderedVtxList[numVertices-1][0];
+        uniqueVtxCount++;
+    }
+
+    outputVertices->resize(uniqueVtxCount*3);
+    outputTriangles->resize(numTriangles*3);
+    m_vertexTree.resize(uniqueVtxCount);
+
+    // In this loop we append the index of the newly resized array containing
+    // the unique vertices to the index of the original array of duplicated vertices.
+    // This is an example of the orderedVtxList might look like for usual run
+    // After above steps
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // And we want:
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  1,  4,  3,  4,  5,  3}
+    int vtxCounted = 0;
+    cVector3d vPos;
+    for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
+        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
+            vPos = mesh->m_vertices->getLocalPos(aIdx);
+            (*outputVertices)[3*vtxCounted + 0] = vPos.x();
+            (*outputVertices)[3*vtxCounted + 1] = vPos.y();
+            (*outputVertices)[3*vtxCounted + 2] = vPos.z();
+
+            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
+            vtxCounted++; // Increase the queue idx by 1
+        }
+        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
+            int bIdx = orderedVtxList[aIdx][1];
+            int cIdx = orderedVtxList[bIdx][2];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
+                // This shouldn't happend. This means that we haven't assigned the third row
+                // and row 1 is greater than row 2
+                throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : and c[b[i]] != -1";
+            }
+            orderedVtxList[aIdx][2] = cIdx;
+            m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
+        }
+        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
+            int bIdx = orderedVtxList[aIdx][1];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
+                throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
+            }
+            if (orderedVtxList[bIdx][2] == -1){
+                vPos = mesh->m_vertices->getLocalPos(bIdx);
+                vtxCounted++;
+                (*outputVertices)[3*vtxCounted + 0] = vPos.x();
+                (*outputVertices)[3*vtxCounted + 1] = vPos.y();
+                (*outputVertices)[3*vtxCounted + 2] = vPos.z();
+                orderedVtxList[bIdx][2] = vtxCounted;
+            }
+            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
+        }
+    }
+
+    // This last loop iterates over the triangle idxes and assigns the re-idxd vertices from the
+    // third row of orderedVtxList
+    for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
+        int triIdx = mesh->m_triangles->m_indices[i];        if ( triIdx >= numVertices){
+            std::cerr << "ERROR ! Triangle Vtx Index " << triIdx << " >= # Vertices " << numVertices << std::endl;
+        }
+        else{
+            (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+        }
+    }
+
+    // This last loop iterates over the lines and assigns the re-idxd vertices to the
+    // lines
+    if (outputLines){
+        for (int i = 0 ; i < outputLines->size() ; i++){
+            std::vector<int> originalLine = (*outputLines)[i];
+            std::vector<int> reIndexedLine = originalLine;
+            for (int vtx = 0 ; vtx < originalLine.size() ; vtx++){
+                reIndexedLine[vtx] = orderedVtxList[ originalLine[vtx] ][2];
+            }
+            (*outputLines)[i].clear();
+            (*outputLines)[i] = reIndexedLine;
+        }
+    }
+
+    if(print_debug_info){
+        printf("*** SEQUENTIAL COMPUTE UNIQUE VERTICES AND TRIANGLE INDICES ***\n");
+
+        printf("# Unique Vertices = %d, # Duplicate Vertices = %d\n", uniqueVtxCount, duplicateVtxCount);
+
+        for (int i = 0 ; i < numVertices ; i++){
+            std::cerr << i << ")\t" << orderedVtxList[i][0] << " ,\t" << orderedVtxList[i][1] << " ,\t" << orderedVtxList[i][2] << std::endl;
+        }
+    }
+
 }
 
 
@@ -776,7 +931,8 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
         std::vector<std::vector <int> > _lines = mesh->m_lines;
-        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines);
+//        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines, true);
+        computeUniqueVerticesandTrianglesSequential(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines, false);
         if (m_trianglesPtr.size() > 0){
             m_bulletSoftBody = CreateFromMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
                                                                     m_verticesPtr.data(), m_verticesPtr.size() / 3, m_trianglesPtr.data(), numTriangles);

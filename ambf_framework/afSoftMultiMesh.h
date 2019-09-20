@@ -200,6 +200,8 @@ private:
     std::vector<VertexTree> m_vertexTree;
     //! Function to detect, index and store repeat vertices
     void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    //! Function to detect, index and store repeat vertices
+    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
     unsigned int m_counter = 0;
 
