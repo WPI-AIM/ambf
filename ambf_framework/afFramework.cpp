@@ -3833,7 +3833,7 @@ bool afWorld::createDefaultWorld(){
 /// \param a_world_config
 /// \return
 ///
-bool afWorld::loadWorld(std::string a_world_config){
+bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     if (a_world_config.empty()){
         a_world_config = getWorldConfig();
     }
@@ -3895,33 +3895,35 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
-    if (worldCamerasData.IsDefined()){
-        for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
-            std::string camera_name = worldCamerasData[idx].as<std::string>();
+    if (showGUI){
+        if (worldCamerasData.IsDefined()){
+            for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
+                std::string camera_name = worldCamerasData[idx].as<std::string>();
+                afCameraPtr cameraPtr = new afCamera(this);
+                YAML::Node cameraNode = worldNode[camera_name];
+                if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
+                    addAFCamera(cameraPtr, camera_name);
+                    cameraPtr->afObjectCreate(cameraPtr->m_name,
+                                              cameraPtr->getNamespace(),
+                                              cameraPtr->getMinPublishFrequency(),
+                                              cameraPtr->getMaxPublishFrequency());
+                }
+            }
+        }
+
+        if (m_afCameraMap.size() == 0){
+            // No valid cameras defined in the world config file
+            // hence create a default camera
             afCameraPtr cameraPtr = new afCamera(this);
-            YAML::Node cameraNode = worldNode[camera_name];
-            if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
-                addAFCamera(cameraPtr, camera_name);
+            if (cameraPtr->createDefaultCamera()){
+                addAFCamera(cameraPtr, "default_camera");
                 cameraPtr->afObjectCreate(cameraPtr->m_name,
                                           cameraPtr->getNamespace(),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
-        }
-    }
 
-    if (m_afCameraMap.size() == 0){
-        // No valid cameras defined in the world config file
-        // hence create a default camera
-        afCameraPtr cameraPtr = new afCamera(this);
-        if (cameraPtr->createDefaultCamera()){
-            addAFCamera(cameraPtr, "default_camera");
-            cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                      cameraPtr->getNamespace(),
-                                      cameraPtr->getMinPublishFrequency(),
-                                      cameraPtr->getMaxPublishFrequency());
         }
-
     }
 
     return true;

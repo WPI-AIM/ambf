@@ -1159,7 +1159,7 @@ class afWorld: public afConfigHandler{
 public:
     afWorld(cBulletWorld *bulletWorld);
     virtual ~afWorld(){}
-    virtual bool loadWorld(std::string a_world_config = "");
+    virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
     bool createDefaultWorld();
     double getEnclosureLength();
     double getEnclosureWidth();
