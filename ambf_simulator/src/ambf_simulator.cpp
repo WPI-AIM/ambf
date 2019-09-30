@@ -572,7 +572,6 @@ int main(int argc, char* argv[])
 
 //    signal (SIGINT, exitHandler);
 
-    std::cerr << "\nRunning Headless (-g option provided)" << std::endl;
     // main graphic loop
     while (!g_window_closed)
     {
@@ -588,6 +587,7 @@ int main(int argc, char* argv[])
         }
 
         else{
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_clockWorld.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
     }
