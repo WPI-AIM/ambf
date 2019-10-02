@@ -210,6 +210,9 @@ endif ()
 # static library
 #
 
+# Setting CMake to prepent rather than append include directories
+set(CMAKE_INCLUDE_DIRECTORIES_BEFORE TRUE)
+
 # GLFW
 add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
 

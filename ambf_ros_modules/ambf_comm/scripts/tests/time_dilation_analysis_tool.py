@@ -83,8 +83,8 @@ class TimeDilationAnalysis:
 
     def obj_state_cb(self, data):
         if not self.done:
-            ambf_sim_time = data.ambf_sim_time
-            ambf_wall_time = data.ambf_wall_time
+            ambf_sim_time = data.sim_time
+            ambf_wall_time = data.wall_time
             if ambf_wall_time > self.time_window_lims[0]:
                 if self.counter % 100 == 0:
                     if self.first_run:

@@ -169,6 +169,105 @@ cVector3d toCvec(const btVector3 &bVec){
 }
 
 
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cQuaternion afUtils::getRotBetweenVectors<>(const cVector3d &v1, const cVector3d &v2){
+    cQuaternion quat;
+    double rot_angle = cAngle(v1, v2);
+    if ( cAbs(rot_angle) < 0.1){
+        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        cVector3d nx(1, 0, 0);
+        double temp_ang = cAngle(v1, nx);
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
+            cVector3d rot_axis = cCross(v1, nx);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+        else{
+            cVector3d ny(0, 1, 0);
+            cVector3d rot_axis = cCross(v2, ny);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+    }
+    else{
+        cVector3d rot_axis = cCross(v1, v2);
+        quat.fromAxisAngle(rot_axis, rot_angle);
+    }
+
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cMatrix3d afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(const cVector3d &v1, const cVector3d &v2){
+    cMatrix3d rot_mat;
+    cQuaternion quat = getRotBetweenVectors<cQuaternion, cVector3d>(v1, v2);
+    quat.toRotMat(rot_mat);
+    return rot_mat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btQuaternion, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btQuaternion afUtils::getRotBetweenVectors<btQuaternion, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btQuaternion quat;
+    double rot_angle = v1.angle(v2);
+    if ( cAbs(rot_angle) < 0.1){
+        quat.setEulerZYX(0,0,0);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        btVector3 nx(1, 0, 0);
+        double temp_ang = v1.angle(nx);
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
+            btVector3 rot_axis = v1.cross(nx);
+            quat.setRotation(rot_axis, rot_angle);
+        }
+        else{
+            btVector3 ny(0, 1, 0);
+            btVector3 rot_axis = v2.cross(ny);
+            quat.setRotation(rot_axis, rot_angle);
+        }
+    }
+    else{
+        btVector3 rot_axis = v1.cross(v2);
+        quat.setRotation(rot_axis, rot_angle);
+    }
+
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btMatrix3x3 rot_mat;
+    btQuaternion quat = getRotBetweenVectors<btQuaternion, btVector3>(v1, v2);
+    rot_mat.setRotation(quat);
+    return rot_mat;
+}
+
 ///////////////////////////////////////////////
 
 ///
@@ -366,20 +465,21 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
 
 template <>
 ///
-/// \brief afCartesianController::computeOutput
+/// \brief afCartesianController::computeOutput ts is the time_scale and computed as a fraction of fixed time-step (dt-fixed) and dynamic time-step (dt)
 /// \param process_val
 /// \param set_point
 /// \param dt
+/// \param ts
 /// \return
 ///
-btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt, const double &ts){
     btVector3 _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos;
     m_dPos = set_point - process_val;
     _ddPos = (m_dPos - _dPos_prev) / dt;
 
-    _output = P_lin * (m_dPos) + D_lin * (_ddPos);
+    _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
     return _output;
 }
 
@@ -390,9 +490,10 @@ template<>
 /// \param process_val
 /// \param set_point
 /// \param dt
+/// \param ts
 /// \return
 ///
-btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt){
+btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt, const double &ts){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
@@ -406,7 +507,7 @@ btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btM
     m_dRot.getRotation(_dRotQuat);
     _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
 
-    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -422,14 +523,14 @@ template<>
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt, const double &ts){
     cVector3d _dPos_prev, _ddPos, _output;
 
     _dPos_prev = m_dPos_cvec;
     m_dPos_cvec = set_point - process_val;
     _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
 
-    _output = P_lin * (m_dPos_cvec) + D_lin * (_ddPos);
+    _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
     return _output;
 }
 
@@ -441,7 +542,7 @@ template<>
 /// \param dt
 /// \return
 ///
-cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt){
+cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
@@ -456,7 +557,7 @@ cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatr
     m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
     _error_cur = _e_axis * _e_angle;
 
-    _output = (P_ang * _error_cur) + (D_ang * (_error_cur - _error_prev) / dt);
+    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -472,7 +573,7 @@ template<>
 /// \param current_time
 /// \return
 ///
-btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt){
+btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt, const double &tsf){
 
 }
 
@@ -688,6 +789,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyPublishJointPositions = bodyNode["publish joint positions"];
     YAML::Node bodyPublishFrequency = bodyNode["publish frequency"];
     YAML::Node bodyCollisionGroups = bodyNode["collision groups"];
+    YAML::Node bodyResistiveSurface = bodyNode["resistive surface"];
+
 
     if(bodyName.IsDefined()){
         m_name = bodyName.as<std::string>();
@@ -711,6 +814,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     boost::filesystem::path low_res_filepath;
     std::string _visual_shape_str;
     std::string _collision_shape_str;
+
+    std::string high_res_path;
 
     if (bodyCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
@@ -750,12 +855,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             // Incase they are defined, we use those paths and if they are not, we use
             // the paths for the whole file
             if (bodyMeshPathHR.IsDefined()){
+                high_res_path = bodyMeshPathHR.as<std::string>();
                 high_res_filepath = bodyMeshPathHR.as<std::string>() + m_mesh_name;
                 if (high_res_filepath.is_relative()){
+                    high_res_path = mB->getMultiBodyPath() + '/' + high_res_path;
                     high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
                 }
             }
             else{
+                high_res_path = mB->getHighResMeshesPath();
                 high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
             }
             _visual_geometry_valid = true;
@@ -880,7 +988,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
                 double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>(); 
+                double height = bodyGeometry["height"].as<double>();
                 radius *= m_scale;
                 height *= m_scale;
                 cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
@@ -998,7 +1106,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             _g *= _level;
             _b *= _level;
             _mat.m_ambient.set(_r, _g, _b);
-
         }
         if (bodyColorComponents["specular"].IsDefined()){
             _r = bodyColorComponents["specular"]["r"].as<float>();
@@ -1006,8 +1113,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             _b = bodyColorComponents["specular"]["b"].as<float>();
             _mat.m_specular.set(_r, _g, _b);
         }
+        if (bodyColorComponents["emission"].IsDefined()){
+            _r = bodyColorComponents["emission"]["r"].as<float>();
+            _g = bodyColorComponents["emission"]["g"].as<float>();
+            _b = bodyColorComponents["emission"]["b"].as<float>();
+            _mat.m_emission.set(_r, _g, _b);
+        }
+        _a = bodyColorComponents["transparency"].as<float>();
         setMaterial(_mat);
-        setTransparencyLevel(bodyColorComponents["transparency"].as<float>());
+        setTransparencyLevel(_a);
     }
     else if(bodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(bodyColor.as<std::string>());
@@ -1129,6 +1243,122 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 m_bulletCollisionShape = new btConeShapeZ(radius, height);
             }
         }
+    }
+    else if (m_collisionGeometryType == GeometryType::compound_shape){
+        btCompoundShape* _compoundCollisionShape = new btCompoundShape();
+        for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
+            std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
+            bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
+            YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
+            double px = shapeOffset["position"]["x"].as<double>();
+            double py = shapeOffset["position"]["y"].as<double>();
+            double pz = shapeOffset["position"]["z"].as<double>();
+            double roll =  shapeOffset["orientation"]["r"].as<double>();
+            double pitch = shapeOffset["orientation"]["p"].as<double>();
+            double yaw =   shapeOffset["orientation"]["y"].as<double>();
+            btVector3 shapePos(px, py, pz);
+            btMatrix3x3 shapeRot;
+            shapeRot.setEulerZYX(roll, pitch, yaw);
+            btTransform shapeTrans(shapeRot, shapePos);
+            if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
+                double x = bodyCollisionGeometry["x"].as<double>();
+                double y = bodyCollisionGeometry["y"].as<double>();
+                double z = bodyCollisionGeometry["z"].as<double>();
+                x *= m_scale;
+                y *= m_scale;
+                z *= m_scale;
+                btVector3 halfExtents(x/2, y/2, z/2);
+                _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
+            }
+            else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                radius *= m_scale;
+                _compoundCollisionShape->addChildShape(shapeTrans, new btSphereShape(radius));
+            }
+            else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    btVector3 halfExtents(height/2, radius, radius);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeX(halfExtents));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    btVector3 halfExtents(radius, height/2, radius);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShape(halfExtents));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    btVector3 halfExtents(radius, radius, height/2);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    btVector3 halfExtents(radius, radius, height/2);
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
+                }
+            }
+            else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                // Adjust for height as bullet treats the height as the distance
+                // between the two spheres forming the capsule's ends.
+                height = height - 2*radius;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeX(radius, height));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShape(radius, height));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
+                }
+            }
+            else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
+                double radius = bodyCollisionGeometry["radius"].as<double>();
+                double height = bodyCollisionGeometry["height"].as<double>();
+                radius *= m_scale;
+                height *= m_scale;
+                std::string axis = "z";
+                if(bodyCollisionGeometry["axis"].IsDefined()){
+                    axis = bodyCollisionGeometry["axis"].as<std::string>();
+                }
+                if (axis.compare("x") == 0 || axis.compare("X") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeX(radius, height));
+                }
+                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShape(radius, height));
+                }
+                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
+                }
+                else{
+                    std::cerr << "WARNING: Body "
+                              << m_name
+                              << "'s axis \"" << axis << "\" not understood?\n";
+                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
+                }
+            }
+        }
+        m_bulletCollisionShape = _compoundCollisionShape;
     }
 
     else if (m_collisionGeometryType == GeometryType::compound_shape){
@@ -1341,9 +1571,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 return 0;
             }
         }
-        else if (m_lowResMesh.m_meshes->size() > 0 ||
-                 m_collisionGeometryType == GeometryType::shape ||
-                 m_collisionGeometryType == GeometryType::compound_shape){
+        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == GeometryType::shape || m_collisionGeometryType == GeometryType::compound_shape){
             estimateInertia();
         }
     }
@@ -1373,6 +1601,145 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_surfaceProps.m_rolling_friction = bodyRollingFriction.as<double>();
     if (bodyRestitution.IsDefined())
         m_surfaceProps.m_restitution = bodyRestitution.as<double>();
+
+    // Handle resistive surface features
+
+    if (bodyResistiveSurface.IsDefined()){
+        m_resistiveSurface.enable = true;
+
+        if (bodyResistiveSurface["face resolution"].IsDefined()){
+            m_resistiveSurface.faceResolution = bodyResistiveSurface["face resolution"].as<double>();
+        }
+        if (bodyResistiveSurface["edge resolution"].IsDefined()){
+            m_resistiveSurface.edgeResolution = bodyResistiveSurface["edge resolution"].as<double>();
+        }
+        if (bodyResistiveSurface["range"].IsDefined()){
+            m_resistiveSurface.range = bodyResistiveSurface["range"].as<double>();
+        }
+        if (bodyResistiveSurface["depth"].IsDefined()){
+            m_resistiveSurface.depth = bodyResistiveSurface["depth"].as<double>();
+        }
+        if (bodyResistiveSurface["contact area"].IsDefined()){
+            m_resistiveSurface.contactArea = bodyResistiveSurface["contact area"].as<double>();
+        }
+
+        if (bodyResistiveSurface["friction"].IsDefined()){
+            YAML::Node bodyResistiveFriction = bodyResistiveSurface["friction"];
+            if (bodyResistiveFriction["static"].IsDefined()){
+                m_resistiveSurface.staticContactFriction = bodyResistiveFriction["static"].as<double>();
+            }
+            if (bodyResistiveFriction["damping"].IsDefined()){
+                m_resistiveSurface.staticContactDamping = bodyResistiveFriction["damping"].as<double>();
+            }
+            if (bodyResistiveFriction["dynamic"].IsDefined()){
+                m_resistiveSurface.dynamicFriction = bodyResistiveFriction["dynamic"].as<double>();
+            }
+            if (bodyResistiveFriction["variable"].IsDefined()){
+                m_resistiveSurface.useVariableCoeff = bodyResistiveFriction["variable"].as<bool>();
+            }
+        }
+
+        if (bodyResistiveSurface["contact stiffness"].IsDefined()){
+            m_resistiveSurface.contactNormalStiffness = bodyResistiveSurface["contact stiffness"].as<double>();
+        }
+        if (bodyResistiveSurface["contact damping"].IsDefined()){
+            m_resistiveSurface.contactNormalDamping = bodyResistiveSurface["contact damping"].as<double>();
+        }
+
+        bool _showSensors = false;
+        double _visiblitySize = 0;
+        if (bodyResistiveSurface["visible"].IsDefined()){
+            _showSensors = bodyResistiveSurface["visible"].as<bool>();
+            if (bodyResistiveSurface["visible size"].IsDefined()){
+                _visiblitySize = bodyResistiveSurface["visible size"].as<double>();
+            }
+        }
+
+        cMesh* _sourceMesh = NULL;
+        if (bodyResistiveSurface["mesh"].IsDefined()){
+            std::string _resistiveMeshName = bodyResistiveSurface["mesh"].as<std::string>();
+            _resistiveMeshName = high_res_path + _resistiveMeshName;
+            cMultiMesh* resistiveMesh = new cBulletMultiMesh(m_afWorld->s_bulletWorld);
+            if (resistiveMesh->loadFromFile(_resistiveMeshName)){
+                _sourceMesh = (*resistiveMesh->m_meshes)[0];
+            }
+            else{
+                std::cerr << "ERROR! BODY \"" << m_name <<
+                             "\'s\" RESISTIVE MESH " <<
+                             _resistiveMeshName << " NOT FOUND. IGNORING\n";
+            }
+        }
+        else{
+            _sourceMesh = (*m_meshes)[0];
+        }
+
+        // Lets assign a resistive sensor per each triangle face.
+        if (_sourceMesh){
+            for (int tIdx = 0 ; tIdx < _sourceMesh->m_triangles->getNumElements() ; tIdx++ ){
+                int vIdx0 = _sourceMesh->m_triangles->getVertexIndex0(tIdx);
+                int vIdx1 = _sourceMesh->m_triangles->getVertexIndex1(tIdx);
+                int vIdx2 = _sourceMesh->m_triangles->getVertexIndex2(tIdx);
+
+                cVector3d v0 = _sourceMesh->m_vertices->getLocalPos(vIdx0);
+                cVector3d v1 = _sourceMesh->m_vertices->getLocalPos(vIdx1);
+                cVector3d v2 = _sourceMesh->m_vertices->getLocalPos(vIdx2);
+
+                cVector3d e1 = v1 - v0;
+                cVector3d e2 = v2 - v1;
+
+                cVector3d centroid = ( v0 + v1 + v2 ) / 3;
+
+                cVector3d normal = cCross(e1, e2);
+
+                normal.normalize();
+                cVector3d rayFrom = centroid - (normal * m_resistiveSurface.depth);
+                cVector3d rayTo = rayFrom + (normal * m_resistiveSurface.range);
+
+                afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
+                _resistanceSensor->setRayFromInLocal(rayFrom);
+                _resistanceSensor->setRayToInLocal(rayTo);
+                _resistanceSensor->setDirection(normal);
+                _resistanceSensor->setRange(m_resistiveSurface.range);
+                _resistanceSensor->setContactArea(m_resistiveSurface.contactArea);
+                _resistanceSensor->setStaticContactFriction(m_resistiveSurface.staticContactFriction);
+                _resistanceSensor->setStaticContactDamping(m_resistiveSurface.staticContactDamping);
+                _resistanceSensor->setDynamicFriction(m_resistiveSurface.dynamicFriction);
+                _resistanceSensor->setContactNormalStiffness(m_resistiveSurface.contactNormalStiffness);
+                _resistanceSensor->setContactNormalDamping(m_resistiveSurface.contactNormalDamping);
+                _resistanceSensor->useVariableCoeff(m_resistiveSurface.useVariableCoeff);
+
+                if (_showSensors){
+                    if (_visiblitySize <= 0){
+                        _visiblitySize = m_resistiveSurface.range / 5;
+                    }
+                    _resistanceSensor->setSensorVisibilityRadius(_visiblitySize);
+                    _resistanceSensor->enableVisualization();
+                }
+
+                _resistanceSensor->m_sensorType = afSensorType::resistance;
+
+                this->addAFSensor(_resistanceSensor);
+                std::string _sensorName = m_name + "_sensor" + std::to_string(tIdx);
+                m_afWorld->addAFSensor(_resistanceSensor, _sensorName);
+                _resistanceSensor->m_parentBody = this;
+            }
+        }
+# ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
+        // Sub-divide the sensors into the threads
+        int _nSensors = m_afSensors.size();
+        int _nBlocks = _nSensors / m_sensorThreadBlockSize;
+
+        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
+            m_threadUpdateFlags.push_back(false);
+        }
+
+        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
+            std::thread* th = new std::thread(&afRigidBody::updateBodySensors, this, bIdx);
+            m_sensorThreads.push_back(th);
+        }
+#endif
+
+    }
 
     if (bodyPublishChildrenNames.IsDefined()){
         m_publish_children_names = bodyPublishChildrenNames.as<bool>();
@@ -1514,9 +1881,15 @@ void afRigidBody::updatePositionFromDynamics()
     }
 
     // Update the data for sensors
-    for (int i=0 ; i < m_afSensors.size() ; i++){
+#ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
+    for (int thIdx = 0 ; thIdx < m_sensorThreads.size() ; thIdx++){
+        m_threadUpdateFlags[thIdx] = true;
+    }
+#else
+    for (int i = 0 ; i < m_afSensors.size() ; i++){
         m_afSensors[i]->updateSensor();
     }
+#endif
 
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -1565,6 +1938,31 @@ void afRigidBody::updatePositionFromDynamics()
         m_write_count++;
     }
 #endif
+}
+
+
+///
+/// \brief afRigidBody::updateBodySensors
+/// \param threadIdx
+/// \return
+///
+bool afRigidBody::updateBodySensors(int threadIdx){
+    int startIdx = threadIdx * m_sensorThreadBlockSize;
+    int endIdx = startIdx + m_sensorThreadBlockSize;
+
+    endIdx = endIdx > m_afSensors.size() ? m_afSensors.size() : endIdx;
+    while (m_keepSensorThreadsAlive){
+        if (m_threadUpdateFlags[threadIdx] == true){
+
+            for (int idx = startIdx ; idx < endIdx ; idx++){
+                m_afSensors[idx]->updateSensor();
+            }
+
+            m_threadUpdateFlags[threadIdx] = false;
+        }
+        usleep(1000);
+    }
+    return true;
 }
 
 
@@ -1693,6 +2091,29 @@ void afRigidBody::afObjectSetJointPositions(){
         m_afObjectPtr->set_joint_positions(m_joint_positions);
     }
 #endif
+}
+
+
+///
+/// \brief afRigidBody::applyForceAtPoint
+/// \param a_forceInWorldFrame
+/// \param a_pointInLocalFrame
+///
+void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const cVector3d &a_pointInWorld){
+    if (m_bulletRigidBody){
+        btTransform T_bodyInWorld = m_bulletRigidBody->getWorldTransform();
+        btTransform T_worldInBody = T_bodyInWorld.inverse(); // Invert once here so we dont have to invert multiple times.
+        btVector3 worldForce = toBTvec(a_forceInWorld);
+        btVector3 worldPoint = toBTvec(a_pointInWorld);
+        btVector3 localForce = T_worldInBody.getBasis() * worldForce;
+        btVector3 localPoint = T_worldInBody * worldPoint;
+        btVector3 localTorque = localPoint.cross(localForce);
+        btVector3 worldTorque = T_worldInBody.getBasis() * localTorque;
+
+        m_bulletRigidBody->applyCentralForce(worldForce);
+        m_bulletRigidBody->applyTorque(worldTorque);
+    }
+
 }
 
 ///
@@ -1880,6 +2301,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     YAML::Node cfg_flags = softBodyConfigData["flags"];
     YAML::Node cfg_bendingConstraint = softBodyConfigData["bending constraint"];
     YAML::Node cfg_cutting = softBodyConfigData["cutting"];
+    YAML::Node cfg_clusters = softBodyConfigData["clusters"];
     YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
     if(softBodyName.IsDefined()){
@@ -2018,7 +2440,6 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _g *= _level;
             _b *= _level;
             _mat.m_ambient.set(_r, _g, _b);
-
         }
         if (softBodyColorComponents["specular"].IsDefined()){
             _r = softBodyColorComponents["specular"]["r"].as<float>();
@@ -2026,8 +2447,17 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _b = softBodyColorComponents["specular"]["b"].as<float>();
             _mat.m_specular.set(_r, _g, _b);
         }
+        if (softBodyColorComponents["emission"].IsDefined()){
+            _r = softBodyColorComponents["emission"]["r"].as<float>();
+            _g = softBodyColorComponents["emission"]["g"].as<float>();
+            _b = softBodyColorComponents["emission"]["b"].as<float>();
+            _mat.m_emission.set(_r, _g, _b);
+        }
+
+        _a = softBodyColorComponents["transparency"].as<float>();
+        _mat.setTransparencyLevel(_a);
         m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(softBodyColorComponents["transparency"].as<float>());
+//        m_gelMesh.setTransparencyLevel(_a);
     }
     else if(softBodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<std::string>());
@@ -2062,7 +2492,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_kPR.IsDefined()) m_bulletSoftBody->m_cfg.kPR = cfg_kPR.as<double>();
         if (cfg_kVC.IsDefined()) m_bulletSoftBody->m_cfg.kVC = cfg_kVC.as<double>();
         if (cfg_kDF.IsDefined()) m_bulletSoftBody->m_cfg.kDF = cfg_kDF.as<double>();
-        if (cfg_kMT.IsDefined()) m_bulletSoftBody->m_cfg.kMT = cfg_kMT.as<double>();
+        if (cfg_kMT.IsDefined()){
+            m_bulletSoftBody->m_cfg.kMT = cfg_kMT.as<double>();
+            m_bulletSoftBody->setPose(false, true);
+        }
         if (cfg_kCHR.IsDefined()) m_bulletSoftBody->m_cfg.kCHR = cfg_kCHR.as<double>();
         if (cfg_kKHR.IsDefined()) m_bulletSoftBody->m_cfg.kKHR = cfg_kKHR.as<double>();
         if (cfg_kSHR.IsDefined()) m_bulletSoftBody->m_cfg.kSHR = cfg_kSHR.as<double>();
@@ -2080,7 +2513,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<double>();
         if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
         if (cfg_flags.IsDefined()){
-            m_bulletSoftBody->m_cfg.collisions |= cfg_flags.as<int>();
+            m_bulletSoftBody->m_cfg.collisions = cfg_flags.as<int>();
         }
         if (cfg_bendingConstraint.IsDefined()){
             int _bending = cfg_bendingConstraint.as<int>();
@@ -2093,6 +2526,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
                     m_bulletSoftBody->setMass(nodeIdx, 0);
                 }
             }
+        }
+        if(cfg_clusters.IsDefined()){
+            int num_clusters = cfg_clusters.as<int>();
+            m_bulletSoftBody->generateClusters(num_clusters);
         }
     }
 
@@ -2501,13 +2938,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     // Rotation of constraint in parent axis as quaternion
     btQuaternion Q_conINp;
-    Q_conINp = getRotationBetweenVectors(ax_cINp, m_axisA);
+    Q_conINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_cINp, m_axisA);
     frameA.setRotation(Q_conINp);
     frameA.setOrigin(m_pvtA);
 
     // Rotation of child axis in parent axis as Quaternion
     btQuaternion Q_cINp;
-    Q_cINp = getRotationBetweenVectors(m_axisB, m_axisA);
+    Q_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
 
     // Offset rotation along the parent axis
     btQuaternion Q_offINp;
@@ -2676,40 +3113,6 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
 
 ///
-/// \brief afJoint::getRotationBetweenVectors
-/// \param v1
-/// \param v2
-/// \return
-///
-btQuaternion afJoint::getRotationBetweenVectors(btVector3 &v1, btVector3 &v2){
-    btQuaternion quat;
-    double rot_angle = v1.angle(v2);
-    if ( cAbs(rot_angle) < 0.1){
-        quat.setEulerZYX(0,0,0);
-    }
-    else if ( cAbs(rot_angle) > 3.13 ){
-        btVector3 nx(1, 0, 0);
-        double temp_ang = v1.angle(nx);
-        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
-            btVector3 rot_axis = v1.cross(nx);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-        else{
-            btVector3 ny(0, 1, 0);
-            btVector3 rot_axis = m_axisA.cross(ny);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-    }
-    else{
-        btVector3 rot_axis = v1.cross(v2);
-        quat.setRotation(rot_axis, rot_angle);
-    }
-
-    return quat;
-}
-
-
-///
 /// \brief afJoint::applyDamping
 ///
 void afJoint::applyDamping(const double &dt){
@@ -2807,32 +3210,13 @@ double afJoint::getPosition(){
     }
 }
 
+
 ///
-/// \brief afProximitySensor::afProximitySensor
+/// \brief afRayTracerSensor
 /// \param a_afWorld
 ///
-afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
-    m_hitSphere = new cMesh();
-    m_fromSphere = new cMesh();
-    m_toSphere = new cMesh();
-    cCreateSphere(m_hitSphere, 0.03);
-    cCreateSphere(m_fromSphere, 0.02);
-    cCreateSphere(m_toSphere, 0.02);
-    a_afWorld->s_bulletWorld->addChild(m_hitSphere);
-    a_afWorld->s_bulletWorld->addChild(m_fromSphere);
-    a_afWorld->s_bulletWorld->addChild(m_toSphere);
-    m_hitSphere->m_material->setPinkHot();
-    m_fromSphere->m_material->setRed();
-    m_toSphere->m_material->setGreen();
-    m_hitSphere->setShowEnabled(false);
+afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 
-    m_fromSphere->setUseDisplayList(true);
-    m_toSphere->setUseDisplayList(true);
-    m_hitSphere->setUseDisplayList(true);
-
-    m_fromSphere->markForUpdate(false);
-    m_toSphere->markForUpdate(false);
-    m_hitSphere->markForUpdate(false);
 }
 
 ///
@@ -2842,7 +3226,7 @@ afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+bool afRayTracerSensor::loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(sensor_config_file);
@@ -2864,7 +3248,7 @@ bool afProximitySensor::loadSensor(std::string sensor_config_file, std::string n
 /// \param name_remapping_idx
 /// \return
 ///
-bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
     YAML::Node sensorNode = *sensor_node;
     if (sensorNode.IsNull()){
         std::cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -2878,6 +3262,8 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorLocation = sensorNode["location"];
     YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
+    YAML::Node sensorVisible = sensorNode["visible"];
+    YAML::Node sensorVisibleSize = sensorNode["visible size"];
 
     std::string _parent_name;
     if (sensorParentName.IsDefined()){
@@ -2891,6 +3277,28 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     m_location = toXYZ<cVector3d>(&sensorLocation);
     m_direction = toXYZ<cVector3d>(&sensorDirection);
     m_range = sensorRange.as<double>();
+
+    if (m_range < 0.0){
+        std::cerr << "ERROR! SENSOR RANGE CANNOT BE NEGATIVE" << std::endl;
+        return 0;
+    }
+
+    if (sensorVisible.IsDefined()){
+        m_showSensor = sensorVisible.as<bool>();
+    }
+    else{
+        m_showSensor = false;
+    }
+
+    // Chosed an random scale to divide the visual radius of the sensor markers
+    m_visibilitySphereRadius = m_range / 8;
+    if (sensorVisibleSize.IsDefined()){
+        m_visibilitySphereRadius = sensorVisibleSize.as<double>();
+    }
+
+    if (m_showSensor){
+        enableVisualization();
+    }
 
     // First search in the local space.
     m_parentBody = mB->getAFRigidBodyLocal(_parent_name);
@@ -2910,15 +3318,14 @@ bool afProximitySensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     m_rayFromLocal = m_location;
     m_rayToLocal = m_rayFromLocal + (m_direction * m_range);
 
-    m_sensorType = afSensorType::proximity;
-
     return true;
 }
+
 
 ///
 /// \brief afSensor::processSensor
 ///
-void afProximitySensor::updateSensor(){
+void afRayTracerSensor::updateSensor(){
     btVector3 _rayFromWorld, _rayToWorld;
     // Transform of World in Body
     cTransform T_bInw = m_parentBody->getLocalTransform();
@@ -2927,24 +3334,16 @@ void afProximitySensor::updateSensor(){
 
     // Check for global flag for debug visibility of this sensor
     if (m_showSensor){
-        m_fromSphere->setShowEnabled(true);
-        m_toSphere->setShowEnabled(true);
-
-        m_fromSphere->setLocalPos(toCvec(_rayFromWorld) );
-        m_toSphere->setLocalPos(toCvec(_rayToWorld) );
-    }
-    else{
-        m_fromSphere->setShowEnabled(false);
-        m_toSphere->setShowEnabled(false);
-        m_hitSphere->setShowEnabled(false);
+        m_fromSphereMesh->setLocalPos(toCvec(_rayFromWorld) );
+        m_toSphereMesh->setLocalPos(toCvec(_rayToWorld) );
     }
 
     btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
     m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
-            m_hitSphere->setShowEnabled(true);
-            m_hitSphere->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
+            m_hitSphereMesh->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
+            m_hitSphereMesh->setShowEnabled(true);
         }
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
@@ -3001,12 +3400,307 @@ void afProximitySensor::updateSensor(){
                 m_sensedBodyType = SOFT_BODY;
             }
         }
-
+        m_depthFraction = (1.0 - _rayCallBack.m_closestHitFraction);
+        m_contactNormal = toCvec(_rayCallBack.m_hitNormalWorld);
         m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
     }
     else{
-        m_hitSphere->setShowEnabled(false);
+        if(m_showSensor){
+            m_hitSphereMesh->setShowEnabled(false);
+        }
         m_triggered = false;
+        m_depthFraction = 0;
+    }
+}
+
+///
+/// \brief afRayTracerSensor::visualize
+///
+void afRayTracerSensor::enableVisualization(){
+    m_hitSphereMesh = new cMesh();
+    m_fromSphereMesh = new cMesh();
+    m_toSphereMesh = new cMesh();
+    cCreateSphere(m_hitSphereMesh, m_visibilitySphereRadius);
+    cCreateSphere(m_fromSphereMesh, m_visibilitySphereRadius);
+    cCreateSphere(m_toSphereMesh, m_visibilitySphereRadius);
+    m_afWorld->s_bulletWorld->addChild(m_hitSphereMesh);
+    m_afWorld->s_bulletWorld->addChild(m_fromSphereMesh);
+    m_afWorld->s_bulletWorld->addChild(m_toSphereMesh);
+    m_hitSphereMesh->m_material->setPinkHot();
+    m_fromSphereMesh->m_material->setRed();
+    m_toSphereMesh->m_material->setGreen();
+    m_hitSphereMesh->setShowEnabled(false);
+
+    m_fromSphereMesh->setUseDisplayList(true);
+    m_toSphereMesh->setUseDisplayList(true);
+    m_hitSphereMesh->setUseDisplayList(true);
+
+    m_fromSphereMesh->markForUpdate(false);
+    m_toSphereMesh->markForUpdate(false);
+    m_hitSphereMesh->markForUpdate(false);
+
+    m_hitNormalMesh = new cMesh();
+    cCreateArrow(m_hitNormalMesh, m_visibilitySphereRadius*10,
+                 m_visibilitySphereRadius*0.5,
+                 m_visibilitySphereRadius*1,
+                 m_visibilitySphereRadius*0.8,
+                 false);
+    m_afWorld->s_bulletWorld->addChild(m_hitNormalMesh);
+    m_hitNormalMesh->m_material->setGreenForest();
+    m_hitNormalMesh->setShowEnabled(false);
+    m_hitNormalMesh->setUseDisplayList(true);
+    m_hitNormalMesh->markForUpdate(false);
+}
+
+
+///
+/// \brief afProximitySensor::afProximitySensor
+/// \param a_afWorld
+///
+afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_afWorld){
+    m_afWorld = a_afWorld;
+    m_sensorType = afSensorType::proximity;
+}
+
+
+///
+/// \brief afResistanceSensor::afResistanceSensor
+/// \param a_afWorld
+///
+afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_afWorld){
+    m_lastContactPosInWorld.set(0,0,0);
+    m_curContactPosInWorld.set(0,0,0);
+    m_staticContactFriction = 0;
+    m_dynamicFriction = 0;
+
+    m_bodyAContactPointLocal.set(0,0,0);
+    m_bodyBContactPointLocal.set(0,0,0);
+
+    m_tangentialError.set(0,0,0);
+    m_tangentialErrorLast.set(0,0,0);
+
+    m_contactPointsValid = false;
+    m_contactArea = 0.1;
+    m_staticContactDamping = 0.1;
+
+    m_contactNormalStiffness = 0;
+    m_contactNormalDamping = 0;
+
+    m_sensorType = afSensorType::resistance;
+}
+
+
+///
+/// \brief afResistanceSensor::loadSensor
+/// \param sensor_node
+/// \param node_name
+/// \param mB
+/// \param name_remapping_idx
+/// \return
+///
+bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    bool result = false;
+    result = afRayTracerSensor::loadSensor(sensor_node, node_name, mB, name_remapping_idx);
+
+    if (result){
+
+        YAML::Node bodyResistiveFriction = (*sensor_node)["friction"];
+        YAML::Node sensorContactArea = (*sensor_node)["contact area"];
+        YAML::Node sensorContactStiffness = (*sensor_node)["contact stiffness"];
+        YAML::Node sensorContactDamping = (*sensor_node)["contact damping"];
+
+        if (bodyResistiveFriction["static"].IsDefined()){
+            m_staticContactFriction = bodyResistiveFriction["static"].as<double>();
+        }
+
+        if (bodyResistiveFriction["damping"].IsDefined()){
+            m_staticContactDamping = bodyResistiveFriction["damping"].as<double>();
+        }
+
+        if (bodyResistiveFriction["dynamic"].IsDefined()){
+            m_dynamicFriction = bodyResistiveFriction["dynamic"].as<double>();
+        }
+
+        if (bodyResistiveFriction["variable"].IsDefined()){
+            m_useVariableCoeff = bodyResistiveFriction["variable"].as<bool>();
+        }
+
+        if (sensorContactArea.IsDefined()){
+            m_contactArea = sensorContactArea.as<double>();
+        }
+
+        if (sensorContactStiffness.IsDefined()){
+            m_contactNormalStiffness = sensorContactStiffness.as<double>();
+        }
+
+        if (sensorContactDamping.IsDefined()){
+            m_contactNormalDamping = sensorContactDamping.as<double>();
+        }
+    }
+    return result;
+}
+
+
+///
+/// \brief afResistanceSensor::updateSensor
+///
+void afResistanceSensor::updateSensor(){
+    // Let's update the RayTracer Sensor First
+    afRayTracerSensor::updateSensor();
+
+    // Find the rigid or softbody that this sensor made a contact with
+    if (isTriggered()){
+        if (m_showSensor){
+            m_hitNormalMesh->setLocalPos(getSensedPoint());
+            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
+            m_hitNormalMesh->setShowEnabled(true);
+        }
+
+        btVector3 F_s_w(0,0,0); // Due to "stick" friction
+        btVector3 F_d_w(0,0,0); // Due to "sliding" friction
+        btVector3 F_n_w(0,0,0); // Force normal to contact point.
+
+        if (getSensedBodyType() == SensedBodyType::RIGID_BODY){
+
+            // Get the fraction of contact point penetration from the range of the sensor
+            // Subscript (a) represents parent body, which is the parent of this sensor
+            // Subscript (b) represents the sensed body, which is in contact with the resistive sensor
+            // Subscript (c) represents contact point
+            // Subscript (w) represents world
+            btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
+            btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
+            btVector3 P_cINw = toBTvec(getSensedPoint());
+            btVector3 P_cINa = T_wINa * P_cINw;
+            btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
+            btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
+            btVector3 N_a = toBTvec(m_direction);
+            btVector3 N_aINw = T_aINw.getBasis() * N_a;
+
+            btTransform T_bINw = getSensedRigidBody()->getWorldTransform();
+            btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
+            btVector3 P_cINb = T_wINb * P_cINw;
+            btVector3 vel_bINw = getSensedRigidBody()->getLinearVelocity();
+            btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
+            btVector3 N_bINw = toBTvec(m_contactNormal);
+            btVector3 N_b = T_wINb.getBasis() * N_bINw;
+
+            double depthFractionLast = m_depthFraction;
+
+            if (m_depthFraction < 0 || m_depthFraction > 1){
+                std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
+                             ". It should be between [0-1]" << std::endl;
+                std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
+                             "\nSensed Point: " << toCvec(P_cINa) << std::endl;
+                std::cerr << "----------\n";
+                m_depthFraction = 0;
+            }
+
+            // First calculate the normal contact force
+            btVector3 F_n_a = ((m_contactNormalStiffness * m_depthFraction)
+                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * (N_a);
+            F_n_w = T_aINw.getBasis() * F_n_a;
+
+            double coeffScale = 1;
+            if (m_useVariableCoeff){
+                coeffScale = F_n_w.length();
+            }
+
+            if(m_contactPointsValid){
+                btVector3 P_aINw = T_aINw * toBTvec(m_bodyAContactPointLocal);
+                btVector3 P_bINw = T_bINw * toBTvec(m_bodyBContactPointLocal);
+                btVector3 error;
+                error = P_aINw - P_bINw;
+                btVector3 orthogonalError = N_aINw.cross(error);
+                btVector3 errorDir = orthogonalError.cross(N_aINw);
+                if (errorDir.length() > 0.0001){
+                    errorDir.normalize();
+                }
+                double errorMag = errorDir.dot(error);
+                if (errorMag < 0.0){
+                    std::cerr << errorMag << std::endl;
+                }
+
+                btVector3 tangentialError = errorMag * errorDir;
+                btVector3 tangentialErrorLast = toBTvec(m_tangentialErrorLast);
+                m_tangentialErrorLast = m_tangentialError;
+                m_tangentialError = toCvec(tangentialError);
+
+                if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
+                    F_s_w = m_staticContactFriction * coeffScale * tangentialError +
+                            m_staticContactDamping * (tangentialError - tangentialErrorLast);
+                }
+                else{
+                    m_contactPointsValid = false;
+                }
+
+//                std::cerr << "F Static: " << F_static << std::endl;
+//                std::cerr << "F Normal: " << F_normal << std::endl;
+//                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
+//                std::cerr << "------------\n";
+            }
+            else{
+                m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint()));
+                m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint()));
+                m_contactPointsValid = true;
+            }
+
+            // Calculate the friction due to sliding velocities
+            // Get velocity of point
+            btVector3 vel_a = T_wINa.getBasis() * vel_aINw;
+            btVector3 omega_a = T_wINa.getBasis() * omega_aINw;
+            btVector3 vel_cINa = vel_a + omega_a.cross(P_cINa);
+
+            btVector3 vel_b = T_wINb.getBasis() * vel_bINw;
+            btVector3 omega_b = T_wINb.getBasis() * omega_bINw;
+            btVector3 vel_cINb = vel_b + omega_b.cross(P_cINb);
+
+            btVector3 V_aINw = T_aINw.getBasis() * vel_cINa;
+            btVector3 V_bINw = T_bINw.getBasis() * vel_cINb;
+
+            btVector3 dV = V_aINw - V_bINw;
+
+            // Check if the error is along the direction of sensor
+            btVector3 orthogonalVelError = N_bINw.cross(dV);
+            btVector3 velErrorDir = orthogonalVelError.cross(N_bINw);
+            if (velErrorDir.length() > 0.0001){
+                velErrorDir.normalize();
+            }
+            dV = velErrorDir.dot(dV) * velErrorDir;
+
+            F_d_w = m_dynamicFriction * coeffScale * dV;
+            //                std::cerr << staticForce << std::endl;
+
+            btVector3 Fw = F_s_w + F_d_w + F_n_w;
+
+            // Lets find the added torque at the point where the force is applied
+
+            btVector3 Fa = T_wINa.getBasis() * (-Fw);
+            btVector3 Tau_a = P_cINa.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());
+            btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
+
+            btVector3 Fb = T_wINb.getBasis() * Fw;
+            btVector3 Tau_b = P_cINb.cross(Fb * getSensedRigidBody()->getLinearFactor());
+            btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
+
+            // Nows lets add the action and reaction friction forces to both the bodies
+            getParentBody()->m_bulletRigidBody->applyCentralForce(-Fw);
+            getParentBody()->m_bulletRigidBody->applyTorque(Tau_aINw);
+
+            getSensedRigidBody()->applyCentralForce(Fw);
+            getSensedRigidBody()->applyTorque(Tau_bINw);
+        }
+
+        else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){
+
+        }
+    }
+    else{
+        m_contactPointsValid = false;
+        m_firstTrigger = true;
+
+        if(m_showSensor){
+            m_hitNormalMesh->setShowEnabled(false);
+        }
     }
 }
 
@@ -3128,7 +3822,9 @@ bool afWorld::createDefaultWorld(){
     // define some material properties and apply to mesh
     _bulletGround->m_material->m_emission.setGrayLevel(0.3);
     _bulletGround->m_material->setWhiteAzure();
-    _bulletGround->m_bulletRigidBody->setFriction(0.5);
+    _bulletGround->m_bulletRigidBody->setFriction(0.9);
+    _bulletGround->m_bulletRigidBody->setRollingFriction(0.05);
+    _bulletGround->m_bulletRigidBody->setDamping(0.5, 0.1);
 }
 
 
@@ -3137,7 +3833,7 @@ bool afWorld::createDefaultWorld(){
 /// \param a_world_config
 /// \return
 ///
-bool afWorld::loadWorld(std::string a_world_config){
+bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     if (a_world_config.empty()){
         a_world_config = getWorldConfig();
     }
@@ -3199,33 +3895,35 @@ bool afWorld::loadWorld(std::string a_world_config){
         }
     }
 
-    if (worldCamerasData.IsDefined()){
-        for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
-            std::string camera_name = worldCamerasData[idx].as<std::string>();
+    if (showGUI){
+        if (worldCamerasData.IsDefined()){
+            for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
+                std::string camera_name = worldCamerasData[idx].as<std::string>();
+                afCameraPtr cameraPtr = new afCamera(this);
+                YAML::Node cameraNode = worldNode[camera_name];
+                if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
+                    addAFCamera(cameraPtr, camera_name);
+                    cameraPtr->afObjectCreate(cameraPtr->m_name,
+                                              cameraPtr->getNamespace(),
+                                              cameraPtr->getMinPublishFrequency(),
+                                              cameraPtr->getMaxPublishFrequency());
+                }
+            }
+        }
+
+        if (m_afCameraMap.size() == 0){
+            // No valid cameras defined in the world config file
+            // hence create a default camera
             afCameraPtr cameraPtr = new afCamera(this);
-            YAML::Node cameraNode = worldNode[camera_name];
-            if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
-                addAFCamera(cameraPtr, camera_name);
+            if (cameraPtr->createDefaultCamera()){
+                addAFCamera(cameraPtr, "default_camera");
                 cameraPtr->afObjectCreate(cameraPtr->m_name,
                                           cameraPtr->getNamespace(),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
-        }
-    }
 
-    if (m_afCameraMap.size() == 0){
-        // No valid cameras defined in the world config file
-        // hence create a default camera
-        afCameraPtr cameraPtr = new afCamera(this);
-        if (cameraPtr->createDefaultCamera()){
-            addAFCamera(cameraPtr, "default_camera");
-            cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                      cameraPtr->getNamespace(),
-                                      cameraPtr->getMinPublishFrequency(),
-                                      cameraPtr->getMaxPublishFrequency());
         }
-
     }
 
     return true;
@@ -3603,6 +4301,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraParent = cameraNode["parent"];
     YAML::Node cameraMonitor = cameraNode["monitor"];
     YAML::Node cameraPublishImage = cameraNode["publish image"];
+    YAML::Node cameraMultiPass = cameraNode["multipass"];
 
     bool _is_valid = true;
     cVector3d _location, _up, _look_at;
@@ -3611,6 +4310,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
     std::string _stereoModeStr;
     int _monitorToLoad = -1;
+    bool _useMultiPassTransparency = false;
 
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
@@ -3701,6 +4401,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_publishImage = cameraPublishImage.as<bool>();
     }
 
+    if (cameraMultiPass.IsDefined()){
+        _useMultiPassTransparency = cameraMultiPass.as<bool>();
+    }
+
     if(_is_valid){
         m_camera = new cCamera(a_world->s_bulletWorld);
         addChild(m_camera);
@@ -3746,6 +4450,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         if (_enable_ortho_view){
             m_camera->setOrthographicView(_orthoViewWidth);
         }
+
+        m_camera->setUseMultipassTransparency(_useMultiPassTransparency);
 
         std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
         if (m_controllingDevNames.size() > 0){
@@ -4319,8 +5025,11 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
             std::string _sensor_type = sensor_node["type"].as<std::string>();
             // Check if this is a proximity sensor
             // More sensors to follow
-            if (_sensor_type.compare("Proximity") ||_sensor_type.compare("proximity") ||_sensor_type.compare("PROXIMITY")){
+            if (_sensor_type.compare("Proximity") == 0 || _sensor_type.compare("proximity") == 0 || _sensor_type.compare("PROXIMITY") == 0){
                 sensorPtr = new afProximitySensor(m_afWorld);
+            }
+            if (_sensor_type.compare("Resistance") == 0 || _sensor_type.compare("resistance") == 0 || _sensor_type.compare("RESISTANCE") == 0){
+                sensorPtr = new afResistanceSensor(m_afWorld);
             }
 
             // Finally load the sensor from afmb config data

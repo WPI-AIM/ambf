@@ -25,10 +25,10 @@ AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few ext
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support. 
 
 ### Building:
-On Linux machines, you might need to install the `libasound2-dev` package.
+On Linux machines, you might need to install the `libasound2-dev` package and external libraries dependencies.
 
 ```
-sudo apt install libasound2-dev
+sudo apt install libasound2-dev libgl1-mesa-dev xorg-dev
 ```
 
 Boost libraires ship with Ubuntu systems, but on Mac OS, you might need to install them explicitly.

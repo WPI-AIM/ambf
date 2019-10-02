@@ -37,17 +37,16 @@ Geomagic Touch:
     max force: 2
     max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/tools/bar.yaml"
+    simulated multibody: "../multi-bodies/grippers/resistive/sensorized_box/gripper.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
-      orientation: {r: 0, p: -0.7, y: 0}}
-    orientation offset: {r: 0, p: 0, y: 0}
+      orientation: {r: 0, p: 0, y: 0}}
     button mapping: {
       a1: 0,
-      a2: 1,
-      g1: -1,
-      next mode: 3,
-      prev mode: 4}
+      a2: -1,
+      g1: 1,
+      next mode: 2,
+      prev mode: 3}
 
 Razer Hydra0:
     hardware name: Razer Hydra

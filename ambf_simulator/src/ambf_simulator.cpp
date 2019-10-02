@@ -50,6 +50,7 @@
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
 #include <mutex>
+#include <signal.h>
 //---------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -99,6 +100,7 @@ struct CommandLineOptions{
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
     std::string multiBodiesToLoad; // A string list of multibody indexes to load
+    bool showGUI = true; //
 };
 
 // Global struct for command line options
@@ -193,6 +195,12 @@ void updateLabels();
 // Bullet pretick callback
 void preTickCallBack(btDynamicsWorld* world, btScalar timeStep);
 
+// Exit Handler
+void exitHandler(int s){
+           std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
+           g_window_closed = true;
+}
+
 ///
 /// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
 /// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
@@ -257,7 +265,8 @@ int main(int argc, char* argv[])
 /////////////////////////////////////////////////////////////////////////////////////////
 //        Only for debugging, shall be deprecated later in later Revisions
             ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
-            ("show_patch,s", p_opt::value<bool>(), "Show Soft Cloth Patch");
+            ("show_patch,s", p_opt::value<bool>(), "Show Soft Cloth Patch")
+            ("show_gui,g", p_opt::value<bool>(), "Show GUI");
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
     p_opt::notify(var_map);
@@ -276,6 +285,7 @@ int main(int argc, char* argv[])
     else{
         g_cmdOpts.multiBodiesToLoad = "0";
     }
+    if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
 
     // Process the loadMultiBodies string
 
@@ -295,29 +305,32 @@ int main(int argc, char* argv[])
     // OPEN GL - WINDOW DISPLAY
     //-----------------------------------------------------------------------
 
-    // initialize GLFW library
-    if (!glfwInit())
-    {
-        cout << "failed initialization" << endl;
-        cSleepMs(1000);
-        return 1;
-    }
+    if (g_cmdOpts.showGUI){
 
-    // set error callback
-    glfwSetErrorCallback(errorCallback);
+        // initialize GLFW library
+        if (!glfwInit())
+        {
+            cout << "failed initialization" << endl;
+            cSleepMs(1000);
+            return 1;
+        }
 
-    // set OpenGL version
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        // set error callback
+        glfwSetErrorCallback(errorCallback);
 
-    // set active stereo mode
-    if (stereoMode == C_STEREO_ACTIVE)
-    {
-        glfwWindowHint(GLFW_STEREO, GL_TRUE);
-    }
-    else
-    {
-        glfwWindowHint(GLFW_STEREO, GL_FALSE);
+        // set OpenGL version
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+
+        // set active stereo mode
+        if (stereoMode == C_STEREO_ACTIVE)
+        {
+            glfwWindowHint(GLFW_STEREO, GL_TRUE);
+        }
+        else
+        {
+            glfwWindowHint(GLFW_STEREO, GL_FALSE);
+        }
     }
 
 
@@ -364,8 +377,8 @@ int main(int argc, char* argv[])
                 g_afMultiBody->loadMultiBody(mbIndexes[idx], true);
             }
         }
-
-        g_afWorld->loadWorld();
+        std::string world_filename = g_afWorld->getWorldConfig();
+        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
         g_cameras = g_afWorld->getAFCameras();
 
         g_bulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
@@ -549,9 +562,20 @@ int main(int argc, char* argv[])
         windowSizeCallback((*g_cameraIt)->m_window, (*g_cameraIt)->m_width, (*g_cameraIt)->m_height);
     }
 
+    // Assign Exit Handler
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = exitHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
+//    signal (SIGINT, exitHandler);
+
     // main graphic loop
     while (!g_window_closed)
     {
+        if (g_cmdOpts.showGUI){
         // Call the update graphics method
         updateGraphics();
 
@@ -560,6 +584,12 @@ int main(int argc, char* argv[])
 
         // signal frequency counter
         g_freqCounterGraphics.signal(1);
+        }
+
+        else{
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_clockWorld.getCurrentTimeSeconds() << " sec" << std::endl;
+            sleep(1.0);
+        }
     }
 
     // close window
@@ -1112,6 +1142,12 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         afJointPtr jnt = (*jIt);
         jnt->applyDamping(timeStep);
     }
+
+//    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
+//    // Update the data for sensors
+//    for (int i=0 ; i < afSensors.size() ; i++){
+//        afSensors[i]->updateSensor();
+//    }
 }
 
 ///
@@ -1213,8 +1249,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time:" + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time" + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1281,6 +1317,8 @@ void updatePhysics(){
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool _bodyPicked = false;
 
+    double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
+
     cVector3d torque, torque_prev;
     torque.set(0, 0, 0);
     torque_prev.set(0, 0, 0);
@@ -1305,11 +1343,12 @@ void updatePhysics(){
 
         double dt;
         if (g_cmdOpts.useFixedPhxTimeStep){
-            dt = 1/g_cmdOpts.phxFrequency;
+            dt = 1.0 / g_cmdOpts.phxFrequency;
         }
         else{
             dt = compute_dt(true);
         }
+
         for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
             // update position of simulate gripper
             afSimulatedDevice * simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
@@ -1416,11 +1455,12 @@ void updatePhysics(){
             }
 
             cVector3d force, torque;
-
-            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt);
+            // ts is to prevent the saturation of forces
+            double ts = dt_fixed / dt;
+            force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
             force = simDev->P_lc_ramp * force;
 
-            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt);
+            torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
             simDev->applyForce(force);
             simDev->applyTorque(torque);
             simDev->setGripperAngle(simDev->m_gripper_angle, dt);
@@ -1489,7 +1529,7 @@ void updateHapticDevice(void* a_arg){
     double K_lh_offset = 5;
     double K_ah_offset = 1;
 
-    double wait_time = 1.0;
+    double wait_time = 3.0;
     if (std::strcmp(phyDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
         wait_time = 5.0;
     }
@@ -1519,7 +1559,7 @@ void updateHapticDevice(void* a_arg){
         double dt;
         if (g_cmdOpts.useFixedHtxTimeStep){
 
-            dt = 1/g_cmdOpts.htxFrequency;
+            dt = 1.0 / g_cmdOpts.htxFrequency;
         }
         else{
             dt = compute_dt();

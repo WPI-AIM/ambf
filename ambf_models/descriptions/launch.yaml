@@ -22,4 +22,8 @@ multibody configs:
   - "./multi-bodies/puzzles/puzzle4.yaml" #15
   - "./multi-bodies/puzzles/puzzle5.yaml" #16
   - "./multi-bodies/puzzles/puzzle6.yaml" #17
-
+  - "./multi-bodies/environments/ScrewDriverEnv/env.yaml" #18
+  - "./multi-bodies/environments/KnotEnv/env.yaml" #19
+  - "./multi-bodies/environments/KnotEnv2/env.yaml" #20
+  - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
+  - "./multi-bodies/environments/TexturedGround/env.yaml" #22
