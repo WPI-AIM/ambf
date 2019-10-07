@@ -72,25 +72,31 @@ class Client:
         self._ros_topics = rospy.get_published_topics()
         for i in range(len(self._ros_topics)):
             for j in range(len(self._ros_topics[i])):
-                prefix_ind = self._ros_topics[i][j].find(self._search_prefix_str)
+                prefix_ind = self._ros_topics[i][j].find(
+                    self._search_prefix_str)
                 if prefix_ind >= 0:
-                    search_ind = self._ros_topics[i][j].find(self._search_suffix_str)
+                    search_ind = self._ros_topics[i][j].find(
+                        self._search_suffix_str)
                     if search_ind >= 0:
                         # Searching the active topics between the end of prefix:/ambf/env/ and start of /State
                         obj_name = self._ros_topics[i][j][
-                                     prefix_ind + len(self._search_prefix_str):search_ind]
+                            prefix_ind + len(self._search_prefix_str):search_ind]
                         if obj_name == 'World' or obj_name == 'world':
                             self._world_name = obj_name
                             obj = World(obj_name)
-                            obj._sub = rospy.Subscriber(self._ros_topics[i][j], WorldState, obj.ros_cb)
+                            obj._sub = rospy.Subscriber(
+                                self._ros_topics[i][j], WorldState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
-                            obj._pub = rospy.Publisher(name=pub_topic_str, data_class=WorldCmd, queue_size=10)
+                            obj._pub = rospy.Publisher(
+                                name=pub_topic_str, data_class=WorldCmd, queue_size=10)
                         else:
                             obj = Object(obj_name)
                             obj.set_name(obj_name)
-                            obj._sub = rospy.Subscriber(self._ros_topics[i][j], ObjectState, obj.ros_cb)
+                            obj._sub = rospy.Subscriber(
+                                self._ros_topics[i][j], ObjectState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
-                            obj._pub = rospy.Publisher(name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
+                            obj._pub = rospy.Publisher(
+                                name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
 
                         self._objects_dict[obj_name] = obj
 
@@ -115,6 +121,9 @@ class Client:
         obj = self._objects_dict.get(a_name)
         if obj:
             obj.set_active()
+            obj.set_children_name_published_state(True)
+            obj.set_joint_name_published_state(True)
+            obj.set_joint_pos_published_state(True)
         else:
             print a_name, 'named object not found'
         return obj
@@ -163,4 +172,3 @@ class Client:
             val.pub_flag = False
             print 'Closing publisher for: ', key
         self._objects_dict.clear()
-

@@ -57,7 +57,8 @@ class Object(WatchDog):
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(time_out=0.1) # Set duration of Watchdog expiry
+        super(Object, self).__init__(
+            time_out=0.1)  # Set duration of Watchdog expiry
         self._name = ''
         self._state = ObjectState()
         self._cmd = ObjectCmd()
@@ -65,8 +66,10 @@ class Object(WatchDog):
         self._sub = None
         self.pub_flag = True
         self._active = False
-        self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
-        self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
+        # Flag to check if a Pose command has been set from the Object
+        self._pose_cmd_set = False
+        # Flag to check if a Wrench command has been set from the Object
+        self._wrench_cmd_set = False
 
     def ros_cb(self, data):
         """
@@ -171,7 +174,8 @@ class Object(WatchDog):
         :return:
         """
         quat = self._state.pose.orientation
-        rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        rpy = transformations.euler_from_quaternion(
+            [quat.x, quat.y, quat.z, quat.w])
         return rpy
 
     def get_pose(self):
@@ -230,6 +234,45 @@ class Object(WatchDog):
         :return:
         """
         return self._cmd.wrench.torque
+
+    def get_children_name_published_state(self):
+        """
+        Check if the object is publishing children names
+        :return:
+        """
+        return self._cmd.publish_children_names
+
+    def get_joint_name_published_state(self):
+        """
+        Check if the object is publishing joint names
+        :return:
+        """
+        return self._cmd.publish_joint_names
+
+    def get_joint_pos_published_state(self):
+        """
+        Check if the object is publishing joint poisitions
+        :return:
+        """
+        return self._cmd.publish_joint_positions
+
+    def set_children_name_published_state(self, state):
+        """
+        Set children name publishing state
+        """
+        self._cmd.publish_children_names = state
+
+    def set_joint_name_published_state(self, state):
+        """
+        set joint name publishing state
+        """
+        self._cmd.publish_joint_names = state
+
+    def set_joint_pos_published_state(self, state):
+        """
+        set joint position publishing state
+        """
+        self._cmd.publish_joint_positions = state
 
     def set_name(self, name):
         """
@@ -313,10 +356,10 @@ class Object(WatchDog):
         """
 
         if isinstance(joint, basestring):
-            
+
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint +  " is not a joint"
+                print joint + " is not a joint"
             idx = joint_names.index(joint)
         else:
             idx = joint
@@ -331,12 +374,11 @@ class Object(WatchDog):
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0]*n_jnts
             self._cmd.position_controller_mask = [0]*n_jnts
-        
+
         self._cmd.joint_cmds[idx] = pos
         self._cmd.position_controller_mask[idx] = True
 
         self._apply_command()
-
 
     def set_force(self, fx, fy, fz):
         """
@@ -380,10 +422,10 @@ class Object(WatchDog):
         """
 
         if isinstance(joint, basestring):
-            
+
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint +  " is not a joint"
+                print joint + " is not a joint"
                 return
             idx = joint_names.index(joint)
         else:
@@ -397,7 +439,7 @@ class Object(WatchDog):
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0.0] * n_jnts 
+            self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
@@ -509,4 +551,3 @@ class Object(WatchDog):
                 # self.console_print(self._name)
                 self._clear_command()
             self._pub.publish(self._cmd)
-
