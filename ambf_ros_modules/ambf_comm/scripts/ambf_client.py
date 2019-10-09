@@ -117,7 +117,7 @@ class Client:
             obj.set_active()
             obj.set_publish_children_names_flag(True)
             obj.set_publish_joint_names_flag(True)
-            obj.set_publish_joint_pos_flag(True)
+            obj.set_publish_joint_positions_flag(True)
         else:
             print a_name, 'named object not found'
         return obj

@@ -100,7 +100,7 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         return self._state.joint_positions[idx]
@@ -355,7 +355,7 @@ class Object(WatchDog):
 
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint +  " is not a joint"
+                print joint + " is not a joint"
             idx = joint_names.index(joint)
         else:
             idx = joint
@@ -364,7 +364,7 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index {} should be between 0-{}'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
@@ -431,7 +431,7 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
@@ -480,19 +480,6 @@ class Object(WatchDog):
         self._cmd.joint_cmds = [jnt for jnt in jnt_cmds]
 
         self._apply_command()
-        self._pose_cmd_set
-
-    def set_force(self, fx, fy, fz):
-        nx = self._cmd.wrench.torque.x
-        ny = self._cmd.wrench.torque.y
-        nz = self._cmd.wrench.torque.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
-
-    def set_torque(self, nx, ny, nz):
-        fx = self._cmd.wrench.force.x
-        fy = self._cmd.wrench.force.y
-        fz = self._cmd.wrench.force.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
 
     def wrench_command(self, fx, fy, fz, nx, ny, nz):
         """
