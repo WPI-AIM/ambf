@@ -57,8 +57,7 @@ class Object(WatchDog):
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(
-            time_out=0.1)  # Set duration of Watchdog expiry
+        super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
         self._name = ''
         self._state = ObjectState()
         self._cmd = ObjectCmd()
@@ -66,10 +65,8 @@ class Object(WatchDog):
         self._sub = None
         self.pub_flag = True
         self._active = False
-        # Flag to check if a Pose command has been set from the Object
-        self._pose_cmd_set = False
-        # Flag to check if a Wrench command has been set from the Object
-        self._wrench_cmd_set = False
+        self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
+        self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
 
     def ros_cb(self, data):
         """
@@ -174,8 +171,7 @@ class Object(WatchDog):
         :return:
         """
         quat = self._state.pose.orientation
-        rpy = transformations.euler_from_quaternion(
-            [quat.x, quat.y, quat.z, quat.w])
+        rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         return rpy
 
     def get_pose(self):
@@ -235,40 +231,40 @@ class Object(WatchDog):
         """
         return self._cmd.wrench.torque
 
-    def get_children_name_published_state(self):
+    def get_publish_children_name_flag(self):
         """
         Check if the object is publishing children names
         :return:
         """
         return self._cmd.publish_children_names
 
-    def get_joint_name_published_state(self):
+    def get_publish_joint_names_flag(self):
         """
         Check if the object is publishing joint names
         :return:
         """
         return self._cmd.publish_joint_names
 
-    def get_joint_pos_published_state(self):
+    def get_publish_joint_positions_flag(self):
         """
         Check if the object is publishing joint poisitions
         :return:
         """
         return self._cmd.publish_joint_positions
 
-    def set_children_name_published_state(self, state):
+    def set_publish_children_names_flag(self, state):
         """
         Set children name publishing state
         """
         self._cmd.publish_children_names = state
 
-    def set_joint_name_published_state(self, state):
+    def set_publish_joint_names_flag(self, state):
         """
         set joint name publishing state
         """
         self._cmd.publish_joint_names = state
 
-    def set_joint_pos_published_state(self, state):
+    def set_publish_joint_positions_flag(self, state):
         """
         set joint position publishing state
         """
@@ -359,7 +355,7 @@ class Object(WatchDog):
 
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint + " is not a joint"
+                print joint +  " is not a joint"
             idx = joint_names.index(joint)
         else:
             idx = joint
@@ -425,7 +421,7 @@ class Object(WatchDog):
 
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint + " is not a joint"
+                print joint +  " is not a joint"
                 return
             idx = joint_names.index(joint)
         else:
