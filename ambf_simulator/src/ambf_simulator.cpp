@@ -100,7 +100,7 @@ struct CommandLineOptions{
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
     std::string multiBodiesToLoad; // A string list of multibody indexes to load
-    std::string ConfigFilePath; // A string of Path of config file to load
+    std::string LaunchFilePath; // A string of Path of launch file to load
     bool showGUI = true; //
 };
 
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
             ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
             ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. -l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
-            ("config_file,c", p_opt::value<std::string>(), "Config file path to load (default: ../../ambf_models/descriptions/launch.yaml")
+            ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
 /////////////////////////////////////////////////////////////////////////////////////////
 //        Only for debugging, shall be deprecated later in later Revisions
             ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
@@ -287,10 +287,10 @@ int main(int argc, char* argv[])
     else{
         g_cmdOpts.multiBodiesToLoad = "0";
     }
-    if(var_map.count("config_file")){ g_cmdOpts.ConfigFilePath = var_map["config_file"].as<std::string>();}
+    if(var_map.count("launch_file")){ g_cmdOpts.LaunchFilePath = var_map["launch_file"].as<std::string>();}
     else{
-        // load default config file if no path is given
-        g_cmdOpts.ConfigFilePath = "../../ambf_models/descriptions/launch.yaml";
+        // load default launch file if no path is given
+        g_cmdOpts.LaunchFilePath = "../../ambf_models/descriptions/launch.yaml";
     }
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
 
@@ -362,7 +362,7 @@ int main(int argc, char* argv[])
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
     g_afWorld = new afWorld(g_bulletWorld);
-    if (g_afWorld->loadBaseConfig(g_cmdOpts.ConfigFilePath)){
+    if (g_afWorld->loadBaseConfig(g_cmdOpts.LaunchFilePath)){
         // The world loads the lights and cameras + windows
         g_afMultiBody = new afMultiBody(g_afWorld);
         // Process the loadMultiBody string
