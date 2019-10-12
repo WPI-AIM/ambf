@@ -100,7 +100,8 @@ struct CommandLineOptions{
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
     std::string multiBodiesToLoad; // A string list of multibody indexes to load
-    std::string LaunchFilePath; // A string of Path of launch file to load
+    std::string multiBodyFilesToLoad = ""; // A string list of multibody files to load
+    std::string launchFilePath; // A string of Path of launch file to load
     bool showGUI = true; //
 };
 
@@ -262,7 +263,11 @@ int main(int argc, char* argv[])
             ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
             ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
-            ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. -l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
+            ("load_multibody_files,a", p_opt::value<std::string>(), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
+                                                                      "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
+                                                                      " and test2.yaml if they are valid files")
+            ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
+                                                                "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
 /////////////////////////////////////////////////////////////////////////////////////////
 //        Only for debugging, shall be deprecated later in later Revisions
@@ -283,14 +288,18 @@ int main(int argc, char* argv[])
     if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
     if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
     if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
+    if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
     else{
-        g_cmdOpts.multiBodiesToLoad = "0";
+        if (g_cmdOpts.multiBodyFilesToLoad.empty()){
+            // Fall back file index option if the no options for launching any ambf file is described.
+            g_cmdOpts.multiBodiesToLoad = "1";
+        }
     }
-    if(var_map.count("launch_file")){ g_cmdOpts.LaunchFilePath = var_map["launch_file"].as<std::string>();}
+    if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
     else{
         // load default launch file if no path is given
-        g_cmdOpts.LaunchFilePath = "../../ambf_models/descriptions/launch.yaml";
+        g_cmdOpts.launchFilePath = "../../ambf_models/descriptions/launch.yaml";
     }
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
 
@@ -362,14 +371,29 @@ int main(int argc, char* argv[])
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
     g_afWorld = new afWorld(g_bulletWorld);
-    if (g_afWorld->loadBaseConfig(g_cmdOpts.LaunchFilePath)){
+    if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
         g_afMultiBody = new afMultiBody(g_afWorld);
-        // Process the loadMultiBody string
-        if (g_cmdOpts.multiBodiesToLoad.compare("a") == 0){
-            g_afMultiBody->loadAllMultiBodies();
+
+        // Process the loadMultiBodyFiles string
+        if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
+            std::vector<std::string> mbFileNames;
+            std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
+            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
+            std::stringstream ss(loadMBFilenames);
+            while(ss.good() )
+            {
+                string mbFilename;
+                getline( ss, mbFilename, ',' );
+                mbFileNames.push_back(mbFilename);
+            }
+            for (int idx = 0 ; idx < mbFileNames.size() ; idx++){
+                g_afMultiBody->loadMultiBody(mbFileNames[idx], true);
+            }
         }
-        else{
+
+        // Process the Multi-body index files
+        if (!g_cmdOpts.multiBodiesToLoad.empty()){
             std::vector<int> mbIndexes;
             std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
             loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
@@ -384,11 +408,16 @@ int main(int argc, char* argv[])
                 g_afMultiBody->loadMultiBody(mbIndexes[idx], true);
             }
         }
+
         std::string world_filename = g_afWorld->getWorldConfig();
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
         g_cameras = g_afWorld->getAFCameras();
 
         g_bulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
+    }
+    else{
+        // Safely exit the program
+        return -1;
     }
 
     //-----------------------------------------------------------------------------------------------------------

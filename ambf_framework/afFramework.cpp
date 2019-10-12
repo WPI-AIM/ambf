@@ -288,6 +288,7 @@ bool afConfigHandler::loadBaseConfig(std::string a_config_file){
     } catch (std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
         std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_config_file << std::endl;
+        std::cerr << "PLEASE PROVIDE A VALID LAUNCH FILE. EXITING \n";
         return 0;
     }
 
