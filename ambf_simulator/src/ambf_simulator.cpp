@@ -169,6 +169,9 @@ void mousePosCallback(GLFWwindow* a_window, double x_pos, double y_pos);
 //callback for mouse positions
 void mouseScrollCallback(GLFWwindow* a_window, double x_pos, double y_pos);
 
+// Drag and drop callback
+void dragDropCallback(GLFWwindow* window, int count, const char** paths);
+
 // Copied from CommonRidiBodyBase.h of Bullet Physics by Erwin Coumans with
 // Ray Tracing for Camera Pick and Place
 cVector3d getRayTo(int x, int y, afCameraPtr a_camera);
@@ -459,6 +462,9 @@ int main(int argc, char* argv[])
         // set resize callback
         glfwSetWindowSizeCallback(windowPtr, windowSizeCallback);
 
+        // set drag and drop callback
+        glfwSetDropCallback(windowPtr, dragDropCallback);
+
         // set the current context
         glfwMakeContextCurrent(windowPtr);
 
@@ -640,6 +646,40 @@ int main(int argc, char* argv[])
     // exit
     return 0;
 }
+
+
+///
+/// \brief dragDropCallback
+/// \param window
+/// \param count
+/// \param paths
+///
+void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
+    int i;
+    for (i = 0;  i < count;  i++){
+        // Check if the file name ends in a .yaml or .ambf file. Only then attempt
+        // to load other file, otherwise throw a warning that we are ignoring this
+        // file
+        std::string extension = paths[i];
+        unsigned long int findIdx = extension.find_last_of(".");
+        std::cerr << "FIND IDX == " << findIdx << std::endl;
+        if (findIdx != std::string::npos){
+            extension = extension.substr(findIdx);
+
+            if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
+                std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
+                g_afMultiBody->loadMultiBody(paths[i], true);
+            }
+            else{
+                std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
+            }
+        }
+        else{
+            std::cerr << "INVALID DRAG AND DROP OF DIRECTORY \"" << paths[i] << "\". PLEASE ONLY D&D FILES \n";
+        }
+    }
+}
+
 
 ///
 /// \brief windowSizeCallback
