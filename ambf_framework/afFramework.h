@@ -1165,6 +1165,8 @@ public:
     double getEnclosureWidth();
     double getEnclosureHeight();
     void getEnclosureExtents(double &length, double &width, double &height);
+    inline void pausePhysics(bool pause){m_pausePhx = pause;}
+    bool isPhysicsPaused(){return m_pausePhx;}
 
     static cBulletWorld *s_bulletWorld;
     GLFWwindow* m_mainWindow;
@@ -1223,6 +1225,10 @@ private:
     static double m_encl_length;
     static double m_encl_width;
     static double m_encl_height;
+
+private:
+    // Global flag to pause simulation
+    bool m_pausePhx = false;
 
 };
 
