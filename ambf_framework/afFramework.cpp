@@ -3761,71 +3761,119 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
 
 bool afWorld::createDefaultWorld(){
     // TRANSPARENT WALLS
-    double _box_l, _box_w, _box_h;
-    _box_l = getEnclosureLength();
-    _box_w = getEnclosureWidth();
-    _box_h = getEnclosureHeight();
+    double box_l, box_w, box_h;
+    box_l = getEnclosureLength();
+    box_w = getEnclosureWidth();
+    box_h = getEnclosureHeight();
 
-    // bullet static walls and ground
-    cBulletStaticPlane* _bulletGround;
+    double thickness = 0.1;
 
-    cBulletStaticPlane* _bulletBoxWall[4];
+    bool usePlanes = false;
 
-    _bulletBoxWall[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * _box_w);
-    _bulletBoxWall[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * _box_w);
-    _bulletBoxWall[2] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * _box_l);
-    _bulletBoxWall[3] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * _box_l);
+    if (usePlanes){
+        // bullet static walls and ground
+        cBulletStaticPlane* bulletGround;
 
-    cVector3d _nz(0.0, 0.0, 1.0);
-    cMaterial _matPlane;
-    _matPlane.setWhiteIvory();
-    _matPlane.setShininess(1);
-    cVector3d _planeNorm;
-    cMatrix3d _planeRot;
+        cBulletStaticPlane* bulletBoxWall[4];
 
-    double _dim1, _dim2;
+        bulletBoxWall[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * box_w);
+        bulletBoxWall[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * box_w);
+        bulletBoxWall[2] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
+        bulletBoxWall[3] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
 
-    for (int i = 0 ; i < 4 ; i++){
-        cBulletStaticPlane* wall = _bulletBoxWall[i];
-        _planeNorm = cCross(wall->getPlaneNormal(), _nz);
-        _planeRot.setAxisAngleRotationDeg(_planeNorm, 90);
-        if (i < 2){
-            _dim1 = _box_l; _dim2 = _box_h;
+        cVector3d nz(0.0, 0.0, 1.0);
+        cMaterial matPlane;
+        matPlane.setWhiteIvory();
+        matPlane.setShininess(1);
+        cVector3d planeNorm;
+        cMatrix3d planeRot;
+
+        double dim1, dim2;
+
+        for (int i = 0 ; i < 4 ; i++){
+            cBulletStaticPlane* wall = bulletBoxWall[i];
+            planeNorm = cCross(wall->getPlaneNormal(), nz);
+            planeRot.setAxisAngleRotationDeg(planeNorm, 90);
+            if (i < 2){
+                dim1 = box_l; dim2 = box_h;
+            }
+            else{
+                dim1 = box_h; dim2 = box_w;
+            }
+            cCreatePlane(wall, dim1, dim2,
+                         wall->getPlaneConstant() * wall->getPlaneNormal(), planeRot);
+            wall->setMaterial(matPlane);
+            if (i == 0) wall->setTransparencyLevel(0.3, true, true);
+            else wall->setTransparencyLevel(0.5, true, true);
+
+            s_bulletWorld->addChild(wall);
         }
-        else{
-            _dim1 = _box_h; _dim2 = _box_w;
-        }
-        cCreatePlane(wall, _dim1, _dim2,
-                     wall->getPlaneConstant() * wall->getPlaneNormal(), _planeRot);
-        wall->setMaterial(_matPlane);
-        if (i == 0) wall->setTransparencyLevel(0.3, true, true);
-        else wall->setTransparencyLevel(0.5, true, true);
 
-        s_bulletWorld->addChild(wall);
+
+        //////////////////////////////////////////////////////////////////////////
+        // GROUND
+        //////////////////////////////////////////////////////////////////////////
+
+        // create ground plane
+        bulletGround = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * box_h);
+
+        // add plane to world as we will want to make it visibe
+        s_bulletWorld->addChild(bulletGround);
+
+        // create a mesh plane where the static plane is located
+        cCreatePlane(bulletGround, box_l + 0.4, box_w + 0.8,
+                     bulletGround->getPlaneConstant() * bulletGround->getPlaneNormal());
+        bulletGround->computeAllNormals();
+
+        // define some material properties and apply to mesh
+        bulletGround->m_material->m_emission.setGrayLevel(0.3);
+        bulletGround->m_material->setWhiteAzure();
+        bulletGround->m_bulletRigidBody->setFriction(0.9);
+        bulletGround->m_bulletRigidBody->setRollingFriction(0.05);
+        bulletGround->m_bulletRigidBody->setDamping(0.5, 0.1);
     }
+    else{
+
+        cBulletBox* boundaryWalls[5];
+
+        box_l = box_l + thickness;
+        box_w = box_w + thickness;
+        box_h = box_h + thickness;
+
+        boundaryWalls[0] = new cBulletBox(s_bulletWorld, box_l, thickness, box_h); // Right Wall
+        boundaryWalls[1] = new cBulletBox(s_bulletWorld, box_l, thickness, box_h); // Left Wall
+        boundaryWalls[2] = new cBulletBox(s_bulletWorld, thickness, box_w, box_h); // Back Wall
+        boundaryWalls[3] = new cBulletBox(s_bulletWorld, thickness, box_w, box_h); // Front Wall
+        boundaryWalls[4] = new cBulletBox(s_bulletWorld, box_l + 0.5, box_w + 0.5, thickness); // Front Wall
+
+        boundaryWalls[0]->setLocalPos(0, box_w/2, 0);
+        boundaryWalls[1]->setLocalPos(0, -box_w/2, 0);
+        boundaryWalls[2]->setLocalPos(-box_l/2, 0, 0);
+        boundaryWalls[3]->setLocalPos(box_l/2, 0, 0);
+        boundaryWalls[4]->setLocalPos(0, 0, -box_h/2);
+
+        for(int i = 0 ; i < 5 ; i++){
+            boundaryWalls[i]->m_material->setWhiteIvory();
+            boundaryWalls[i]->setTransparencyLevel(0.5, true, true);
+            boundaryWalls[i]->m_material->setShininess(1);
+            s_bulletWorld->addChild(boundaryWalls[i]);
+            boundaryWalls[i]->setMass(0.0);
+            boundaryWalls[i]->estimateInertia();
+            boundaryWalls[i]->buildDynamicModel();
+        }
+
+        // Make the front wall more transparent
+        boundaryWalls[3]->setTransparencyLevel(0.3, true, true);
 
 
-    //////////////////////////////////////////////////////////////////////////
-    // GROUND
-    //////////////////////////////////////////////////////////////////////////
-
-    // create ground plane
-    _bulletGround = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * _box_h);
-
-    // add plane to world as we will want to make it visibe
-    s_bulletWorld->addChild(_bulletGround);
-
-    // create a mesh plane where the static plane is located
-    cCreatePlane(_bulletGround, _box_l + 0.4, _box_w + 0.8,
-                 _bulletGround->getPlaneConstant() * _bulletGround->getPlaneNormal());
-    _bulletGround->computeAllNormals();
-
-    // define some material properties and apply to mesh
-    _bulletGround->m_material->m_emission.setGrayLevel(0.3);
-    _bulletGround->m_material->setWhiteAzure();
-    _bulletGround->m_bulletRigidBody->setFriction(0.9);
-    _bulletGround->m_bulletRigidBody->setRollingFriction(0.05);
-    _bulletGround->m_bulletRigidBody->setDamping(0.5, 0.1);
+        // define some material properties and apply to mesh
+        boundaryWalls[4]->m_material->m_emission.setGrayLevel(0.3);
+        boundaryWalls[4]->m_material->setWhiteAzure();
+        boundaryWalls[4]->setTransparencyLevel(0.5, true, true);
+        boundaryWalls[4]->m_bulletRigidBody->setFriction(0.5);
+        boundaryWalls[4]->m_bulletRigidBody->setRollingFriction(0.05);
+        boundaryWalls[4]->m_bulletRigidBody->setDamping(0.5, 0.1);
+    }
 }
 
 
