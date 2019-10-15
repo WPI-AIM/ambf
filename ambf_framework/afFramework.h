@@ -108,6 +108,11 @@ typedef afSensor* afSensorPtr;
 typedef std::map<std::string, afSensorPtr> afSensorMap;
 typedef std::vector<afSensorPtr> afSensorVec;
 //------------------------------------------------------------------------------
+class afMultiBody;
+typedef afMultiBody* afMultiBodyPtr;
+typedef std::map<std::string, afMultiBodyPtr> afMultiBodyMap;
+typedef std::vector<afMultiBodyPtr> afMultiBodyVec;
+//-----------------------------------------------------------------------------
 
 ///
 /// \brief toBTvec
@@ -149,6 +154,9 @@ public:
     afUtils(){}
     template<typename T1, typename T2>
     static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+
+    template<typename T1, typename T2>
+    static T1 convertDataType(const T2 &r);
 };
 
 
@@ -328,6 +336,10 @@ public:
     virtual void updatePositionFromDynamics();
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
+    // Get Initial Position of this body
+    inline cVector3d getInitialPosition(){return m_initialPos;}
+    // Get Initial Rotation of this body
+    inline cMatrix3d getInitialRotation(){return m_initialRot;}
     // Apply force that is specified in the world frame at a point specified in world frame
     // This force is first converted into body frame and then is used to compute
     // the resulting torque in the body frame. This torque in the body frame is
@@ -1167,6 +1179,7 @@ public:
     void getEnclosureExtents(double &length, double &width, double &height);
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
     bool isPhysicsPaused(){return m_pausePhx;}
+    void resetWorld(bool reset_time=false);
 
     static cBulletWorld *s_bulletWorld;
     GLFWwindow* m_mainWindow;
@@ -1179,6 +1192,7 @@ public:
     bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
     bool addAFJoint(afJointPtr a_jnt, std::string a_name);
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
+    bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
     afLightPtr getAFLight(std::string a_name);
     afCameraPtr getAFCamera(std::string a_name);
@@ -1186,6 +1200,7 @@ public:
     afSoftBodyPtr getAFSoftBody(std::string a_name);
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
+    afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
     std::string getNamespace(){return m_world_namespace;}
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
@@ -1194,6 +1209,7 @@ public:
     inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
     inline afJointMap* getAFJointMap(){return &m_afJointMap;}
     inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
+    inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
 
     afLightVec  getAFLighs();
     afCameraVec getAFCameras();
@@ -1201,6 +1217,7 @@ public:
     afSoftBodyVec getAFSoftBodies();
     afJointVec getAFJoints();
     afSensorVec getAFSensors();
+    afMultiBodyVec getAFMultiBodies();
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
@@ -1214,6 +1231,7 @@ protected:
     afSoftBodyMap m_afSoftBodyMap;
     afJointMap m_afJointMap;
     afSensorMap m_afSensorMap;
+    afMultiBodyMap m_afMultiBodyMap;
 
 protected:
 
@@ -1232,9 +1250,14 @@ private:
 
 };
 
+
+///
+/// \brief The afPickingConstraintData struct
+///
 struct afPickingConstraintData{
 
 };
+
 
 ///
 /// \brief The afMultiBody class

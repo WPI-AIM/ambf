@@ -811,6 +811,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[t] - toogle gripper picking constraints" << endl << endl;
         cout << "[p] - toogle mouse picking constraints" << endl << endl;
         cout << "[u] - toogle update of labels" << endl << endl;
+        cout << "[CTRL + R] - Reset the Simulation" << endl << endl;
         cout << "[q] - Exit application\n" << endl;
         cout << endl << endl;
     }
@@ -963,6 +964,12 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
             sIt->second->toggleSensorVisibility();
         }
+    }
+
+    // option - If CTRL R is pressed, reset the simulation
+    else if (a_key == GLFW_KEY_R && a_mods == GLFW_MOD_CONTROL){
+        printf("Resetting the Simulation\n");
+        g_afWorld->resetWorld();
     }
 
 }

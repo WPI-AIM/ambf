@@ -268,6 +268,117 @@ btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector
     return rot_mat;
 }
 
+template<>
+///
+/// \brief afUtils::convertDataTypes<cVector3d, btVector3>
+/// \param p
+/// \return
+///
+cVector3d afUtils::convertDataType<cVector3d, btVector3>(const btVector3 &p){
+    cVector3d cPos(p.x(), p.y(), p.z());
+    return cPos;
+}
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<btVector3, cVector3d>
+/// \param p
+/// \return
+///
+btVector3 afUtils::convertDataType<btVector3, cVector3d>(const cVector3d &p){
+    btVector3 btPos(p.x(), p.y(), p.z());
+    return btPos;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cQuaternion, btQuaternion>
+/// \param q
+/// \return
+///
+cQuaternion afUtils::convertDataType<cQuaternion, btQuaternion>(const btQuaternion &q){
+    cQuaternion cQuat(q.w(), q.x(), q.y(), q.z());
+    return cQuat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cQuaternion, btQuaternion>
+/// \param q
+/// \return
+///
+btQuaternion afUtils::convertDataType<btQuaternion, cQuaternion>(const cQuaternion &q){
+    btQuaternion btQuat(q.x, q.y, q.z, q.w);
+    return btQuat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cMatrix3d, btMatrix3x3>
+/// \param r
+/// \return
+///
+cMatrix3d afUtils::convertDataType<cMatrix3d, btMatrix3x3>(const btMatrix3x3 &r){
+    btQuaternion btQuat;
+    r.getRotation(btQuat);
+
+    cQuaternion cQuat(btQuat.w(), btQuat.x(), btQuat.y(), btQuat.z());
+
+    cMatrix3d cMat;
+    cQuat.toRotMat(cMat);
+
+    return cMat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<btMatrix3x3, cMatrix3d>
+/// \param r
+/// \return
+///
+btMatrix3x3 afUtils::convertDataType<btMatrix3x3, cMatrix3d>(const cMatrix3d &r){
+    cQuaternion cQuat;
+    cQuat.fromRotMat(r);
+
+    btQuaternion btQuat(cQuat.x, cQuat.y, cQuat.z, cQuat.w);
+    btMatrix3x3 btMat;
+    btMat.setRotation(btQuat);
+
+    return btMat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cTransform, btTransform>
+/// \param t
+/// \return
+///
+cTransform afUtils::convertDataType<cTransform, btTransform>(const btTransform &t){
+    cMatrix3d cRot = afUtils::convertDataType<cMatrix3d, btMatrix3x3>(t.getBasis());
+    cVector3d cPos = afUtils::convertDataType<cVector3d, btVector3>(t.getOrigin());
+    cTransform cMat(cPos, cRot);
+    return cMat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<btTransform, cTransform>
+/// \param t
+/// \return
+///
+btTransform afUtils::convertDataType<btTransform, cTransform>(const cTransform &t){
+    btMatrix3x3 btRot = afUtils::convertDataType<btMatrix3x3, cMatrix3d>(t.getLocalRot());
+    btVector3 btPos = afUtils::convertDataType<btVector3, cVector3d>(t.getLocalPos());
+    btTransform btMat(btRot, btPos);
+    return btMat;
+}
+
 ///////////////////////////////////////////////
 
 ///
@@ -622,8 +733,8 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
             }
         }
         else{
-//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
-//                      << (*cBodyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
+            //            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+            //                      << (*cBodyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 
@@ -646,8 +757,8 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
             m_joints.push_back(*cJointIt);
         }
         else{
-//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
-//                      << (*cJointIt)->m_name << "\ PARALLEL LINKAGE FOUND" << std::endl;
+            //            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
+            //                      << (*cJointIt)->m_name << "\ PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 }
@@ -677,8 +788,8 @@ void afRigidBody::downwardTreePopulation(afRigidBodyPtr a_parentBody){
             m_parentBodies.push_back(*pBobyIt);
         }
         else{
-//            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
-//                      << (*pBobyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
+            //            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A CHILD BODY NAMED \""
+            //                      << (*pBobyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
 }
@@ -966,43 +1077,43 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             dz = bodyGeometry["dZ"].as<int>();
         }
         cMesh* tempMesh = new cMesh();
-            if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
-                double x = bodyGeometry["x"].as<double>();
-                double y = bodyGeometry["y"].as<double>();
-                double z = bodyGeometry["z"].as<double>();
-                x *= m_scale;
-                y *= m_scale;
-                z *= m_scale;
-                cCreateBox(tempMesh, x, y, z);
-            }
-            else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                radius *= m_scale;
-                cCreateSphere(tempMesh, radius, dx, dy);
-            }
-            else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
-            }
-            else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
-            }
-            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
-            }
-            m_meshes->push_back(tempMesh);
+        if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
+            double x = bodyGeometry["x"].as<double>();
+            double y = bodyGeometry["y"].as<double>();
+            double z = bodyGeometry["z"].as<double>();
+            x *= m_scale;
+            y *= m_scale;
+            z *= m_scale;
+            cCreateBox(tempMesh, x, y, z);
         }
+        else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
+            double radius = bodyGeometry["radius"].as<double>();
+            radius *= m_scale;
+            cCreateSphere(tempMesh, radius, dx, dy);
+        }
+        else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
+            double radius = bodyGeometry["radius"].as<double>();
+            double height = bodyGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
+            cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
+        }
+        else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
+            double radius = bodyGeometry["radius"].as<double>();
+            double height = bodyGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
+            cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
+        }
+        else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
+            double radius = bodyGeometry["radius"].as<double>();
+            double height = bodyGeometry["height"].as<double>();
+            radius *= m_scale;
+            height *= m_scale;
+            cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
+        }
+        m_meshes->push_back(tempMesh);
+    }
 
     else if (m_visualGeometryType == GeometryType::compound_shape){
         // First of all, set the inertial offset to 0.
@@ -1040,13 +1151,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 x *= m_scale;
                 y *= m_scale;
                 z *= m_scale;
-//                std::cerr << "---------------------" << std::endl;
-//                std::cerr << shapeIdx << std::endl;
-//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-//                std::cerr << "Location : " << std::endl;
-//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-//                std::cerr << "Scale    : "  << m_scale << std::endl;
+                //                std::cerr << "---------------------" << std::endl;
+                //                std::cerr << shapeIdx << std::endl;
+                //                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
+                //                std::cerr << "Location : " << std::endl;
+                //                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
+                //                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
+                //                std::cerr << "Scale    : "  << m_scale << std::endl;
 
                 cCreateBox(tempMesh, x, y, z, shapePos, shapeRot);
             }
@@ -1385,13 +1496,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 x *= m_scale;
                 y *= m_scale;
                 z *= m_scale;
-//                std::cerr << "---------------------" << std::endl;
-//                std::cerr << shapeIdx << std::endl;
-//                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-//                std::cerr << "Location : " << std::endl;
-//                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-//                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-//                std::cerr << "Scale    : "  << m_scale << std::endl;
+                //                std::cerr << "---------------------" << std::endl;
+                //                std::cerr << shapeIdx << std::endl;
+                //                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
+                //                std::cerr << "Location : " << std::endl;
+                //                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
+                //                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
+                //                std::cerr << "Scale    : "  << m_scale << std::endl;
                 btVector3 halfExtents(x/2, y/2, z/2);
                 _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
             }
@@ -1998,7 +2109,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 _cmd_pos.setValue(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
                 if( _cmd_rot_quat.length() < 0.9 || _cmd_rot_quat.length() > 1.1 ){
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
-                                                          " not normalized" << std::endl;
+                                                                 " not normalized" << std::endl;
                     if (_cmd_rot_quat.length() < 0.1){
                         _cmd_rot_quat.setW(1.0); // Invalid Quaternion
                     }
@@ -2354,32 +2465,32 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     else{
         low_res_filepath = mB->getLowResMeshesPath() + m_mesh_name;
     }
-     double _collision_margin = 0.1;
-     if(softBodyCollisionMargin.IsDefined()){
-         _collision_margin = softBodyCollisionMargin.as<double>();
-     }
+    double _collision_margin = 0.1;
+    if(softBodyCollisionMargin.IsDefined()){
+        _collision_margin = softBodyCollisionMargin.as<double>();
+    }
 
-     if (loadFromFile(high_res_filepath.c_str())){
-         scale(m_scale);
-     }
-     else{
-         // If we can't find the visual mesh, we can proceed with
-         // printing just a warning
-         std::cerr << "WARNING: Soft Body " << m_name
-                   << "'s mesh " << high_res_filepath << " not found\n";
-     }
+    if (loadFromFile(high_res_filepath.c_str())){
+        scale(m_scale);
+    }
+    else{
+        // If we can't find the visual mesh, we can proceed with
+        // printing just a warning
+        std::cerr << "WARNING: Soft Body " << m_name
+                  << "'s mesh " << high_res_filepath << " not found\n";
+    }
 
-     if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
-         buildContactTriangles(_collision_margin, &m_lowResMesh);
-         m_lowResMesh.scale(m_scale);
-     }
-     else{
-         // If we can't find the collision mesh, then we have a problem,
-         // stop loading this softbody and return with 0
-         std::cerr << "WARNING: Soft Body " << m_name
-                   << "'s mesh " << low_res_filepath << " not found\n";
-         return 0;
-     }
+    if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
+        buildContactTriangles(_collision_margin, &m_lowResMesh);
+        m_lowResMesh.scale(m_scale);
+    }
+    else{
+        // If we can't find the collision mesh, then we have a problem,
+        // stop loading this softbody and return with 0
+        std::cerr << "WARNING: Soft Body " << m_name
+                  << "'s mesh " << low_res_filepath << " not found\n";
+        return 0;
+    }
 
     if(softBodyNameSpace.IsDefined()){
         m_namespace = softBodyNameSpace.as<std::string>();
@@ -2458,7 +2569,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         _a = softBodyColorComponents["transparency"].as<float>();
         _mat.setTransparencyLevel(_a);
         m_gelMesh.setMaterial(_mat);
-//        m_gelMesh.setTransparencyLevel(_a);
+        //        m_gelMesh.setTransparencyLevel(_a);
     }
     else if(softBodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<std::string>());
@@ -2561,23 +2672,23 @@ void afSoftBody::setConfigProperties(const afSoftBodyPtr a_body, const afSoftBod
 /// \return
 ///
 double afJointController::computeOutput(double process_val, double set_point, double current_time){
-        for (size_t i = n-1 ; i >= 1 ; i--){
-            t[i] = t[i-1];
-            e[i] = e[i-1];
-            de[i] = de[i-1];
-        }
-        t[0] = current_time;
-        e[0] = set_point - process_val;
-        double dt = t[0] - t[1];
-        if (!dt > 0.0001 || !dt > 0.0){
-            dt = 0.0001;
-        }
-        de[0] = de[0] + ( (de[0] - de[1]) / dt );
-        dde[0] = (e[0] - e[1]) / dt;
-        output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
-//        boundImpulse(output);
-//        std::cerr << "Output " << output << std::endl ;
-        return output;
+    for (size_t i = n-1 ; i >= 1 ; i--){
+        t[i] = t[i-1];
+        e[i] = e[i-1];
+        de[i] = de[i-1];
+    }
+    t[0] = current_time;
+    e[0] = set_point - process_val;
+    double dt = t[0] - t[1];
+    if (!dt > 0.0001 || !dt > 0.0){
+        dt = 0.0001;
+    }
+    de[0] = de[0] + ( (de[0] - de[1]) / dt );
+    dde[0] = (e[0] - e[1]) / dt;
+    output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
+    //        boundImpulse(output);
+    //        std::cerr << "Output " << output << std::endl ;
+    return output;
 }
 
 
@@ -2588,7 +2699,7 @@ double afJointController::computeOutput(double process_val, double set_point, do
 ///
 void afJointController::boundImpulse(double &effort_cmd){
     double impulse = ( effort_cmd - m_last_cmd ) / (t[0]- t[1]);
-//    std::cerr << "Before " << effort_cmd ;
+    //    std::cerr << "Before " << effort_cmd ;
     int sign = 1;
     if (impulse > max_impulse){
         if (impulse < 0){
@@ -2596,7 +2707,7 @@ void afJointController::boundImpulse(double &effort_cmd){
         }
         effort_cmd = m_last_cmd + (sign * max_impulse * (t[0]- t[1]));
     }
-//    std::cerr << " - After " << effort_cmd << " Impulse: " << max_impulse << std::endl ;
+    //    std::cerr << " - After " << effort_cmd << " Impulse: " << max_impulse << std::endl ;
     m_last_cmd = effort_cmd;
 }
 
@@ -2738,9 +2849,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if ((!strcmp(afBodyA->m_name.c_str(), "world") == 0)
                 &&(!strcmp(afBodyA->m_name.c_str(), "World") == 0)
                 &&(!strcmp(afBodyA->m_name.c_str(), "WORLD") == 0)){
-//            std::cerr <<"INFO: JOINT: \"" << m_name <<
-//                        "\'s\" PARENT BODY \"" << m_parent_name <<
-//                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
+            //            std::cerr <<"INFO: JOINT: \"" << m_name <<
+            //                        "\'s\" PARENT BODY \"" << m_parent_name <<
+            //                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
     if(afBodyB == NULL){
@@ -3057,9 +3168,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             double _equiblirium = jointNode["equiblirium point"].as<double>();
             // The equiblirium offset if also inverted for torsional springs
             // Fix it internally rather than breaking AMBF description specificaiton
-             if (m_jointType == JointType::torsion_spring){
-                 _equiblirium = - _equiblirium;
-             }
+            if (m_jointType == JointType::torsion_spring){
+                _equiblirium = - _equiblirium;
+            }
             m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
         }
         else{
@@ -3104,8 +3215,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
     else if (m_jointType == JointType::fixed){
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
-//        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
-//        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildBody(afBodyB, this);
     }
@@ -3353,7 +3464,7 @@ void afRayTracerSensor::updateSensor(){
             m_sensedBodyType = RIGID_BODY;
         }
         else if (_rayCallBack.m_collisionObject->getInternalType()
-                == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
+                 == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
             btSoftBody* _sensedSoftBody = (btSoftBody*)btSoftBody::upcast(_rayCallBack.m_collisionObject);
 
             // Now get the node which is closest to the hit point;
@@ -3364,7 +3475,7 @@ void afRayTracerSensor::updateSensor(){
             double _maxDistance = 0.1;
             for (int faceIdx = 0 ; faceIdx < _sensedSoftBody->m_faces.size() ; faceIdx++){
                 btVector3 _faceCenter(0, 0, 0);
-                // Iterate over all the three nodes of the face to find the this centroid to the hit 
+                // Iterate over all the three nodes of the face to find the this centroid to the hit
                 // point in world to store this face as the closest face
                 for (int nIdx = 0 ; nIdx < 3 ; nIdx++){
                     _faceCenter += _sensedSoftBody->m_faces[faceIdx].m_n[nIdx]->m_x;
@@ -3598,7 +3709,7 @@ void afResistanceSensor::updateSensor(){
 
             // First calculate the normal contact force
             btVector3 F_n_a = ((m_contactNormalStiffness * m_depthFraction)
-                             + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * (N_a);
+                               + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * (N_a);
             F_n_w = T_aINw.getBasis() * F_n_a;
 
             double coeffScale = 1;
@@ -3634,10 +3745,10 @@ void afResistanceSensor::updateSensor(){
                     m_contactPointsValid = false;
                 }
 
-//                std::cerr << "F Static: " << F_static << std::endl;
-//                std::cerr << "F Normal: " << F_normal << std::endl;
-//                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
-//                std::cerr << "------------\n";
+                //                std::cerr << "F Static: " << F_static << std::endl;
+                //                std::cerr << "F Normal: " << F_normal << std::endl;
+                //                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
+                //                std::cerr << "------------\n";
             }
             else{
                 m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint()));
@@ -3759,6 +3870,38 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_encl_height;
 }
 
+///
+/// \brief afWorld::resetWorld
+/// \param reset_time
+///
+void afWorld::resetWorld(bool reset_time){
+    pausePhysics(true);
+
+    afRigidBodyMap::iterator _rbIt;
+
+    for (_rbIt = m_afRigidBodyMap.begin() ; _rbIt != m_afRigidBodyMap.end() ; _rbIt++){
+        afRigidBodyPtr afRB = (_rbIt->second);
+        btRigidBody* rB = afRB->m_bulletRigidBody;
+        btVector3 zero(0, 0, 0);
+        rB->clearForces();
+        rB->setLinearVelocity(zero);
+        rB->setAngularVelocity(zero);
+        cTransform c_T(afRB->getInitialPosition(), afRB->getInitialRotation());
+        btTransform bt_T = afUtils::convertDataType<btTransform, cTransform>(c_T);
+        rB->setWorldTransform(bt_T);
+    }
+
+    if (reset_time){
+//        s_bulletWorld->setSimulationTime(0.0);
+    }
+
+    pausePhysics(false);
+}
+
+///
+/// \brief afWorld::createDefaultWorld
+/// \return
+///
 bool afWorld::createDefaultWorld(){
     // TRANSPARENT WALLS
     double box_l, box_w, box_h;
@@ -3768,7 +3911,7 @@ bool afWorld::createDefaultWorld(){
 
     double thickness = 0.1;
 
-    bool usePlanes = false;
+    bool usePlanes = true;
 
     if (usePlanes){
         // bullet static walls and ground
@@ -4046,7 +4189,18 @@ bool afWorld::addAFSensor(afSensorPtr a_sensor, std::string a_name){
 }
 
 ///
-/// \brief afWorld::getLighs
+/// \brief afWorld::addAFMultiBody
+/// \param a_multiBody
+/// \param a_name
+/// \return
+///
+bool afWorld::addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name){
+    m_afMultiBodyMap[a_name] = a_multiBody;
+    return true;
+}
+
+///
+/// \brief afWorld::getAFLighs
 /// \return
 ///
 afLightVec  afWorld::getAFLighs(){
@@ -4061,7 +4215,7 @@ afLightVec  afWorld::getAFLighs(){
 }
 
 ///
-/// \brief afWorld::getCameras
+/// \brief afWorld::getAFCameras
 /// \return
 ///
 afCameraVec afWorld::getAFCameras(){
@@ -4076,7 +4230,7 @@ afCameraVec afWorld::getAFCameras(){
 }
 
 ///
-/// \brief afWorld::getRigidBodies
+/// \brief afWorld::getAFRigidBodies
 /// \return
 ///
 afRigidBodyVec afWorld::getAFRigidBodies(){
@@ -4091,7 +4245,7 @@ afRigidBodyVec afWorld::getAFRigidBodies(){
 }
 
 ///
-/// \brief afWorld::getSoftBodies
+/// \brief afWorld::getAFSoftBodies
 /// \return
 ///
 afSoftBodyVec afWorld::getAFSoftBodies(){
@@ -4133,6 +4287,22 @@ afSensorVec afWorld::getAFSensors(){
     }
 
     return _sensors;
+}
+
+
+///
+/// \brief afWorld::getAFMultiBodies
+/// \return
+///
+afMultiBodyVec afWorld::getAFMultiBodies(){
+    afMultiBodyVec _multiBodies;
+    afMultiBodyMap::iterator _mIt;
+
+    for (_mIt = m_afMultiBodyMap.begin() ; _mIt != m_afMultiBodyMap.end() ; _mIt++){
+        _multiBodies.push_back(_mIt->second);
+    }
+
+    return _multiBodies;
 }
 
 
@@ -4216,7 +4386,7 @@ void afCamera::setTargetPos(cVector3d a_pos){
     if(getParent()){
         cTransform T_inv = getParent()->getLocalTransform();
         T_inv.invert();
-//        a_pos = T_inv * a_pos;
+        //        a_pos = T_inv * a_pos;
     }
     setView(getLocalPos(), a_pos, m_camera->getUpVector());
 }
@@ -4239,7 +4409,7 @@ cVector3d afCamera::getTargetPos(){
     cTransform _T_pInw;
     _T_pInw.identity();
     if (getParent()){
-//        _T_pInw = getParent()->getLocalTransform();
+        //        _T_pInw = getParent()->getLocalTransform();
     }
     return _T_pInw * getLocalTransform() * m_targetPos;
 }
@@ -4259,8 +4429,8 @@ bool afCamera::createDefaultCamera(){
 
     // position and orient the camera
     setView(cVector3d(4.0, 0.0, 2.0),  // camera position (eye)
-        cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
-        cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
+            cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
+            cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
 
     // set the near and far clipping planes of the camera
     m_camera->setClippingPlanes(0.01, 10.0);
@@ -4385,7 +4555,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
-         _is_valid = false;
+        _is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
         _look_at = toXYZ<cVector3d>(&cameraLookAtData);
@@ -4421,7 +4591,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         _orthoViewWidth = cameraOrthoWidthData.as<double>();
     }
     else{
-         _enable_ortho_view = false;
+        _enable_ortho_view = false;
     }
     if (cameraStereo.IsDefined()){
         _stereoModeStr = cameraStereo["mode"].as<std::string>();
@@ -4633,14 +4803,14 @@ cMatrix3d afCamera::measuredRot(){
 ///
 afCamera::~afCamera(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-        if (m_publishImage){
-            delete m_frameBuffer;;
-            if (s_imageTransportInitialized == true){
-                s_imageTransportInitialized = false;
-                delete s_imageTransport;
-                delete s_imageTransportNode;
-            }
+    if (m_publishImage){
+        delete m_frameBuffer;;
+        if (s_imageTransportInitialized == true){
+            s_imageTransportInitialized = false;
+            delete s_imageTransport;
+            delete s_imageTransportNode;
         }
+    }
 #endif
 }
 
@@ -4827,13 +4997,13 @@ afMultiBody::afMultiBody(afWorldPtr a_afWorld){
     m_pickSphere->setShowEnabled(false);
     a_afWorld->s_bulletWorld->addChild(m_pickSphere);
 
-//    m_pickDragVector = new cMesh();
-//    cCreateArrow(m_pickDragVector);
-//    m_pickDragVector->m_material->setPurpleAmethyst();
-//    m_pickDragVector->setShowEnabled(false);
-//    m_pickDragVector->setUseDisplayList(true);
-//    m_pickDragVector->markForUpdate(false);
-//    m_chaiWorld->addChild(m_pickDragVector);
+    //    m_pickDragVector = new cMesh();
+    //    cCreateArrow(m_pickDragVector);
+    //    m_pickDragVector->m_material->setPurpleAmethyst();
+    //    m_pickDragVector->setShowEnabled(false);
+    //    m_pickDragVector->setUseDisplayList(true);
+    //    m_pickDragVector->markForUpdate(false);
+    //    m_chaiWorld->addChild(m_pickDragVector);
 }
 
 
@@ -5039,9 +5209,9 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
                 }
                 else{
                     rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
-                                                 rBodyPtr->getNamespace(),
-                                                 rBodyPtr->getMinPublishFrequency(),
-                                                 rBodyPtr->getMaxPublishFrequency());
+                                             rBodyPtr->getNamespace(),
+                                             rBodyPtr->getMinPublishFrequency(),
+                                             rBodyPtr->getMaxPublishFrequency());
                 }
             }
         }
@@ -5128,7 +5298,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         buildCollisionGroups();
     }
 
-//    removeOverlappingCollisionChecking();
+    //    removeOverlappingCollisionChecking();
 
     return true;
 }
@@ -5283,6 +5453,32 @@ afRigidBodyPtr afWorld::getAFRigidBody(std::string a_name, bool suppress_warning
             afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
             for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
                 std::cerr << rbIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+
+///
+/// \brief afWorld::getAFMultiBody
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afMultiBodyPtr afWorld::getAFMultiBody(std::string a_name, bool suppress_warning){
+    if (m_afMultiBodyMap.find(a_name) != m_afMultiBodyMap.end()){
+        return m_afMultiBodyMap[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY MULTI-BODY NAMED: " << a_name << std::endl;
+
+            std::cerr <<"Existing Multi Bodies in Map: " << m_afMultiBodyMap.size() << std::endl;
+            afMultiBodyMap::iterator mbIt = m_afMultiBodyMap.begin();
+            for (; mbIt != m_afMultiBodyMap.end() ; ++mbIt){
+                std::cerr << mbIt->first << std::endl;
             }
         }
         return NULL;
