@@ -113,6 +113,7 @@ cPrecisionClock g_clockWorld;
 // Info for mouse events in case a body is picked
 bool g_pickBody = false;
 cVector3d g_pickFrom, g_pickTo;
+afRigidBodyPtr g_lastClickedBody;
 
 //---------------------------------------------------------------------------
 // GENERAL VARIABLES
@@ -812,6 +813,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[p] - toogle mouse picking constraints" << endl << endl;
         cout << "[u] - toogle update of labels" << endl << endl;
         cout << "[CTRL + R] - Reset the Simulation" << endl << endl;
+        cout << "[CTRL + X] - Remove Last Picked Body" << endl << endl;
         cout << "[q] - Exit application\n" << endl;
         cout << endl << endl;
     }
@@ -970,6 +972,14 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     else if (a_key == GLFW_KEY_R && a_mods == GLFW_MOD_CONTROL){
         printf("Resetting the Simulation\n");
         g_afWorld->resetWorld();
+    }
+
+    // option - If CTRL R is pressed, reset the simulation
+    else if (a_key == GLFW_KEY_X && a_mods == GLFW_MOD_CONTROL){
+        printf("Removing Last Picked Body\n");
+        g_afWorld->pausePhysics(true);
+        g_afWorld->m_lastPickedBody->remove();
+        g_afWorld->pausePhysics(false);
     }
 
 }
@@ -1211,15 +1221,15 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 ///
 void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
     // Check if a softbody has been picked
-    if (g_afMultiBody->m_pickedSoftBody){
-        cVector3d delta = g_afMultiBody->m_pickedNodeGoal - toCvec(g_afMultiBody->m_pickedNode->m_x);
+    if (g_afWorld->m_pickedSoftBody){
+        cVector3d delta = g_afWorld->m_pickedNodeGoal - toCvec(g_afWorld->m_pickedNode->m_x);
         static const double maxdrag = 10;
         if (delta.length() > (maxdrag * maxdrag))
         {
             delta.normalize();
             delta = delta * maxdrag;
         }
-        g_afMultiBody->m_pickedNode->m_v += toBTvec(delta) / timeStep;
+        g_afWorld->m_pickedNode->m_v += toBTvec(delta) / timeStep;
     }
     std::vector<afJointPtr>::const_iterator jIt;
     std::vector<afJointPtr> afJoints = g_afWorld->getAFJoints();
@@ -1400,7 +1410,7 @@ void updatePhysics(){
     g_clockWorld.start(true);
 
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
-    bool _bodyPicked = false;
+    bool bodyPicked = false;
 
     double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
 
@@ -1414,17 +1424,17 @@ void updatePhysics(){
 
             // Take care of any picked body by mouse
             if (g_pickBody){
-                if (_bodyPicked == false){
-                    _bodyPicked = true;
-                    g_afMultiBody->pickBody(g_pickFrom, g_pickTo);
+                if (bodyPicked == false){
+                    bodyPicked = true;
+                    g_afWorld->pickBody(g_pickFrom, g_pickTo);
                 }
                 else{
-                    g_afMultiBody->movePickedBody(g_pickFrom, g_pickTo);
+                    g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
                 }
             }
             else{
-                _bodyPicked = false;
-                g_afMultiBody->removePickingConstraint();
+                bodyPicked = false;
+                g_afWorld->removePickingConstraint();
             }
 
             double dt;
