@@ -795,6 +795,7 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_afWorld->s_bulletWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
     }
+    m_meshes->clear();
 }
 
 

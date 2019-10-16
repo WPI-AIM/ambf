@@ -813,6 +813,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         cout << "[p] - toogle mouse picking constraints" << endl << endl;
         cout << "[u] - toogle update of labels" << endl << endl;
         cout << "[CTRL + R] - Reset the Simulation" << endl << endl;
+        cout << "[CTRL + X] - Remove Last Picked Body" << endl << endl;
         cout << "[q] - Exit application\n" << endl;
         cout << endl << endl;
     }
@@ -971,6 +972,14 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     else if (a_key == GLFW_KEY_R && a_mods == GLFW_MOD_CONTROL){
         printf("Resetting the Simulation\n");
         g_afWorld->resetWorld();
+    }
+
+    // option - If CTRL R is pressed, reset the simulation
+    else if (a_key == GLFW_KEY_X && a_mods == GLFW_MOD_CONTROL){
+        printf("Removing Last Picked Body\n");
+        g_afWorld->pausePhysics(true);
+        g_afWorld->m_lastPickedBody->remove();
+        g_afWorld->pausePhysics(false);
     }
 
 }
