@@ -1316,6 +1316,34 @@ private:
     // Global flag to pause simulation
     bool m_pausePhx = false;
 
+
+public:
+
+    bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+
+    bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
+
+    void removePickingConstraint();
+
+public:
+    //data for picking objects
+    class btRigidBody* m_pickedBody=0;
+    afRigidBodyPtr m_lastPickedBody;
+    cColorf m_pickedBodyColor;
+    class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
+    class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
+    int m_pickedNodeIdx = -1; // Picked SoftBody Node
+    double m_pickedNodeMass = 0;
+    cVector3d m_pickedNodeGoal;
+    class btTypedConstraint* m_pickedConstraint=0;
+    int m_savedState;
+    cVector3d m_oldPickingPos;
+    cVector3d m_hitPos;
+    double m_oldPickingDist;
+    cMesh* m_pickSphere;
+
+    //    cMesh* m_pickDragVector;
+
 };
 
 
@@ -1346,8 +1374,11 @@ public:
     void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
+
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
+
     inline std::string getMultiBodyPath(){return m_multibody_path;}
+
     inline std::string getNamespace(){return m_mb_namespace;}
 
     // We can have multiple bodies connected to a single body.
@@ -1363,12 +1394,9 @@ public:
     // debugging purposes
     void ignoreCollisionChecking();
 
-    bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
-    bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
-    void removePickingConstraint();
-
     // Get Rigid Body or Soft Body belonging to this Specific Multibody
     afRigidBodyPtr getAFRigidBodyLocal(std::string a_name, bool suppress_warning=false);
+
     afSoftBodyPtr getAFSoftBodyLocal(std::string a_name);
 
     // Get the root parent of a body, if null is provided, returns the parent body
@@ -1412,23 +1440,6 @@ private:
     afRigidBodyMap m_afRigidBodyMapLocal;
     afSoftBodyMap m_afSoftBodyMapLocal;
     afJointMap m_afJointMapLocal;
-
-public:
-    //data for picking objects
-    class btRigidBody* m_pickedBody=0;
-    class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
-    class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
-    int m_pickedNodeIdx = -1; // Picked SoftBody Node
-    double m_pickedNodeMass = 0;
-    cVector3d m_pickedNodeGoal;
-    class btTypedConstraint* m_pickedConstraint=0;
-    int m_savedState;
-    cVector3d m_oldPickingPos;
-    cVector3d m_hitPos;
-    double m_oldPickingDist;
-    cMesh* m_pickSphere;
-
-//    cMesh* m_pickDragVector;
 };
 
 }

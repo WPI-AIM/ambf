@@ -3942,6 +3942,15 @@ afWorld::afWorld(cBulletWorld* a_chaiWorld){
     m_encl_length = 4.0;
     m_encl_width = 4.0;
     m_encl_height = 3.0;
+
+    m_pickSphere = new cMesh();
+    cCreateSphere(m_pickSphere, 0.02);
+    m_pickSphere->m_material->setPinkHot();
+    m_pickSphere->setUseDisplayList(true);
+    m_pickSphere->markForUpdate(false);
+    m_pickSphere->setLocalPos(0,0,0);
+    m_pickSphere->setShowEnabled(false);
+    s_bulletWorld->addChild(m_pickSphere);
 }
 
 ///
@@ -4413,6 +4422,174 @@ afMultiBodyVec afWorld::getAFMultiBodies(){
     }
 
     return _multiBodies;
+}
+
+
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
+///
+/// \brief afWorld::pickBody
+/// \param rayFromWorld
+/// \param rayToWorld
+/// \return
+///
+bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
+    if (m_dynamicsWorld == 0)
+        return false;
+
+    btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
+
+    rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
+    m_dynamicsWorld->rayTest(toBTvec(rayFromWorld), toBTvec(rayToWorld), rayCallback);
+    if (rayCallback.hasHit())
+    {
+        cVector3d pickPos = toCvec(rayCallback.m_hitPointWorld);
+        m_pickSphere->setLocalPos(pickPos);
+        m_pickSphere->setShowEnabled(true);
+        const btCollisionObject* colObject = rayCallback.m_collisionObject;
+        if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
+            if (body){
+                m_lastPickedBody = getAFRigidBody(body, true);
+                if (m_lastPickedBody){
+                    std::cerr << "Picked AF Rigid Body: " << m_lastPickedBody->m_name << std::endl;
+                }
+                //other exclusions?
+                if (!(body->isStaticObject() || body->isKinematicObject()))
+                {
+                    m_pickedBody = body;
+                    m_pickedBodyColor = m_lastPickedBody->m_material->m_ambient;
+                    m_lastPickedBody->m_material->setGrayLightSlate();
+                    m_lastPickedBody->markForUpdate();
+                    m_savedState = m_pickedBody->getActivationState();
+                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
+                    //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
+                    btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
+                    m_dynamicsWorld->addConstraint(p2p, true);
+                    m_pickedConstraint = p2p;
+                    btScalar mousePickClamping = 30.f;
+                    p2p->m_setting.m_impulseClamp = mousePickClamping;
+                    //very weak constraint for picking
+                    p2p->m_setting.m_tau = 0.001f;
+                }
+            }
+        }
+        else if((colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY)){
+            btSoftBody* sBody = (btSoftBody*)btSoftBody::upcast(colObject);
+            // Now find the closest node in the soft body so we can do
+            // something about it.
+            btVector3 _hitPoint = rayCallback.m_hitPointWorld;
+
+            // Max distance between the hit point softbody nodes to be considered
+            double _maxDistance = 0.1;
+
+            // Index of closest Node. Initialize to -1 so it can be used
+            // as boolean as well if a Node was Found
+            int _closestNodeIdx = -1;
+
+            for (int nodeIdx = 0 ; nodeIdx < sBody->m_nodes.size() ; nodeIdx++){
+                if ( (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
+                    _maxDistance = (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
+                    _closestNodeIdx = nodeIdx;
+                }
+            }
+
+            if(_closestNodeIdx >=0 ){
+                m_pickedNode = &sBody->m_nodes[_closestNodeIdx];
+                m_pickedNode->m_v.setZero();
+                m_pickedSoftBody = sBody;
+                m_pickedNodeIdx = _closestNodeIdx;
+                m_pickedNodeGoal = toCvec(_hitPoint);
+            }
+        }
+
+
+        m_oldPickingPos = rayToWorld;
+        m_hitPos = pickPos;
+        m_oldPickingDist = (pickPos - rayFromWorld).length();
+    }
+    return false;
+
+}
+
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
+///
+/// \brief afMultiBody::movePickedBody
+/// \param rayFromWorld
+/// \param rayToWorld
+/// \return
+///
+bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
+    if (m_pickedBody && m_pickedConstraint)
+    {
+        btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
+        if (pickCon)
+        {
+            //keep it at the same picking distance
+
+            cVector3d newPivotB;
+
+            cVector3d dir = rayToWorld - rayFromWorld;
+            dir.normalize();
+            dir *= m_oldPickingDist;
+
+            newPivotB = rayFromWorld + dir;
+            // Set the position of grab sphere
+            m_pickSphere->setLocalPos(newPivotB);
+            pickCon->setPivotB(toBTvec(newPivotB));
+            return true;
+        }
+    }
+
+    if (m_pickedSoftBody){
+        //keep it at the same picking distance
+
+        cVector3d newPivotB;
+
+        cVector3d dir = rayToWorld - rayFromWorld;
+        dir.normalize();
+        dir *= m_oldPickingDist;
+
+        newPivotB = rayFromWorld + dir;
+        m_pickSphere->setLocalPos(newPivotB);
+        m_pickedNodeGoal = newPivotB;
+        return true;
+    }
+    return false;
+}
+
+
+// The following function has been copied from btRidigBodyBase by Erwin Coumans
+// with slight modification
+///
+/// \brief afMultiBody::removePickingConstraint
+///
+void afWorld::removePickingConstraint(){
+    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
+    if (m_pickedConstraint)
+    {
+        m_pickSphere->setShowEnabled(false);
+        m_pickedBody->forceActivationState(m_savedState);
+        m_pickedBody->activate();
+        m_dynamicsWorld->removeConstraint(m_pickedConstraint);
+        delete m_pickedConstraint;
+        m_pickedConstraint = 0;
+        m_pickedBody = 0;
+        if (m_lastPickedBody){
+            m_lastPickedBody->m_material->m_ambient = m_pickedBodyColor;
+            m_lastPickedBody->markForUpdate();
+        }
+    }
+
+    if (m_pickedSoftBody){
+        m_pickSphere->setShowEnabled(false);
+        m_pickedSoftBody = 0;
+        m_pickedNodeIdx = -1;
+        m_pickedNodeMass = 0;
+    }
 }
 
 
@@ -5097,15 +5274,7 @@ afMultiBody::afMultiBody(){
 
 afMultiBody::afMultiBody(afWorldPtr a_afWorld){
     m_wallClock.start(true);
-    m_pickSphere = new cMesh();
     m_afWorld = a_afWorld;
-    cCreateSphere(m_pickSphere, 0.02);
-    m_pickSphere->m_material->setPinkHot();
-    m_pickSphere->setUseDisplayList(true);
-    m_pickSphere->markForUpdate(false);
-    m_pickSphere->setLocalPos(0,0,0);
-    m_pickSphere->setShowEnabled(false);
-    a_afWorld->s_bulletWorld->addChild(m_pickSphere);
 
     //    m_pickDragVector = new cMesh();
     //    cCreateArrow(m_pickDragVector);
@@ -5717,162 +5886,6 @@ afRigidBodyPtr afMultiBody::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
     return rootParentBody;
 }
 
-// The following function has been copied from btRidigBodyBase by Erwin Coumans
-// with slight modification
-///
-/// \brief afMultiBody::pickBody
-/// \param rayFromWorld
-/// \param rayToWorld
-/// \return
-///
-bool afMultiBody::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btDynamicsWorld* m_dynamicsWorld = m_afWorld->s_bulletWorld->m_bulletWorld;
-    if (m_dynamicsWorld == 0)
-        return false;
-
-    btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
-
-    rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-    m_dynamicsWorld->rayTest(toBTvec(rayFromWorld), toBTvec(rayToWorld), rayCallback);
-    if (rayCallback.hasHit())
-    {
-        cVector3d pickPos = toCvec(rayCallback.m_hitPointWorld);
-        m_pickSphere->setLocalPos(pickPos);
-        m_pickSphere->setShowEnabled(true);
-        const btCollisionObject* colObject = rayCallback.m_collisionObject;
-        if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
-            btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
-            if (body){
-                //other exclusions?
-                if (!(body->isStaticObject() || body->isKinematicObject()))
-                {
-                    m_pickedBody = body;
-                    m_savedState = m_pickedBody->getActivationState();
-                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
-                    //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
-                    btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
-                    m_dynamicsWorld->addConstraint(p2p, true);
-                    m_pickedConstraint = p2p;
-                    btScalar mousePickClamping = 30.f;
-                    p2p->m_setting.m_impulseClamp = mousePickClamping;
-                    //very weak constraint for picking
-                    p2p->m_setting.m_tau = 0.001f;
-                }
-            }
-        }
-        else if((colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY)){
-            btSoftBody* sBody = (btSoftBody*)btSoftBody::upcast(colObject);
-            // Now find the closest node in the soft body so we can do
-            // something about it.
-            btVector3 _hitPoint = rayCallback.m_hitPointWorld;
-
-            // Max distance between the hit point softbody nodes to be considered
-            double _maxDistance = 0.1;
-
-            // Index of closest Node. Initialize to -1 so it can be used
-            // as boolean as well if a Node was Found
-            int _closestNodeIdx = -1;
-
-            for (int nodeIdx = 0 ; nodeIdx < sBody->m_nodes.size() ; nodeIdx++){
-                if ( (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
-                    _maxDistance = (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
-                    _closestNodeIdx = nodeIdx;
-                }
-            }
-
-            if(_closestNodeIdx >=0 ){
-                m_pickedNode = &sBody->m_nodes[_closestNodeIdx];
-                m_pickedNode->m_v.setZero();
-                m_pickedSoftBody = sBody;
-                m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal = toCvec(_hitPoint);
-            }
-        }
-
-
-        m_oldPickingPos = rayToWorld;
-        m_hitPos = pickPos;
-        m_oldPickingDist = (pickPos - rayFromWorld).length();
-    }
-    return false;
-
-}
-
-
-// The following function has been copied from btRidigBodyBase by Erwin Coumans
-// with slight modification
-///
-/// \brief afMultiBody::movePickedBody
-/// \param rayFromWorld
-/// \param rayToWorld
-/// \return
-///
-bool afMultiBody::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    if (m_pickedBody && m_pickedConstraint)
-    {
-        btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
-        if (pickCon)
-        {
-            //keep it at the same picking distance
-
-            cVector3d newPivotB;
-
-            cVector3d dir = rayToWorld - rayFromWorld;
-            dir.normalize();
-            dir *= m_oldPickingDist;
-
-            newPivotB = rayFromWorld + dir;
-            // Set the position of grab sphere
-            m_pickSphere->setLocalPos(newPivotB);
-            pickCon->setPivotB(toBTvec(newPivotB));
-            return true;
-        }
-    }
-
-    if (m_pickedSoftBody){
-        //keep it at the same picking distance
-
-        cVector3d newPivotB;
-
-        cVector3d dir = rayToWorld - rayFromWorld;
-        dir.normalize();
-        dir *= m_oldPickingDist;
-
-        newPivotB = rayFromWorld + dir;
-        m_pickSphere->setLocalPos(newPivotB);
-        m_pickedNodeGoal = newPivotB;
-        return true;
-    }
-    return false;
-}
-
-
-// The following function has been copied from btRidigBodyBase by Erwin Coumans
-// with slight modification
-///
-/// \brief afMultiBody::removePickingConstraint
-///
-void afMultiBody::removePickingConstraint(){
-    btDynamicsWorld* m_dynamicsWorld = m_afWorld->s_bulletWorld->m_bulletWorld;
-    if (m_pickedConstraint)
-    {
-        m_pickSphere->setShowEnabled(false);
-        m_pickedBody->forceActivationState(m_savedState);
-        m_pickedBody->activate();
-        m_dynamicsWorld->removeConstraint(m_pickedConstraint);
-        delete m_pickedConstraint;
-        m_pickedConstraint = 0;
-        m_pickedBody = 0;
-    }
-
-    if (m_pickedSoftBody){
-        m_pickSphere->setShowEnabled(false);
-        m_pickedSoftBody = 0;
-        m_pickedNodeIdx = -1;
-        m_pickedNodeMass = 0;
-    }
-}
 
 ///
 /// \brief afMultiBody::~afMultiBody

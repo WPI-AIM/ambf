@@ -1212,15 +1212,15 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 ///
 void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
     // Check if a softbody has been picked
-    if (g_afMultiBody->m_pickedSoftBody){
-        cVector3d delta = g_afMultiBody->m_pickedNodeGoal - toCvec(g_afMultiBody->m_pickedNode->m_x);
+    if (g_afWorld->m_pickedSoftBody){
+        cVector3d delta = g_afWorld->m_pickedNodeGoal - toCvec(g_afWorld->m_pickedNode->m_x);
         static const double maxdrag = 10;
         if (delta.length() > (maxdrag * maxdrag))
         {
             delta.normalize();
             delta = delta * maxdrag;
         }
-        g_afMultiBody->m_pickedNode->m_v += toBTvec(delta) / timeStep;
+        g_afWorld->m_pickedNode->m_v += toBTvec(delta) / timeStep;
     }
     std::vector<afJointPtr>::const_iterator jIt;
     std::vector<afJointPtr> afJoints = g_afWorld->getAFJoints();
@@ -1401,7 +1401,7 @@ void updatePhysics(){
     g_clockWorld.start(true);
 
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
-    bool _bodyPicked = false;
+    bool bodyPicked = false;
 
     double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
 
@@ -1415,17 +1415,17 @@ void updatePhysics(){
 
             // Take care of any picked body by mouse
             if (g_pickBody){
-                if (_bodyPicked == false){
-                    _bodyPicked = true;
-                    g_afMultiBody->pickBody(g_pickFrom, g_pickTo);
+                if (bodyPicked == false){
+                    bodyPicked = true;
+                    g_afWorld->pickBody(g_pickFrom, g_pickTo);
                 }
                 else{
-                    g_afMultiBody->movePickedBody(g_pickFrom, g_pickTo);
+                    g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
                 }
             }
             else{
-                _bodyPicked = false;
-                g_afMultiBody->removePickingConstraint();
+                bodyPicked = false;
+                g_afWorld->removePickingConstraint();
             }
 
             double dt;
