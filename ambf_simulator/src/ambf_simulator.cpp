@@ -113,6 +113,7 @@ cPrecisionClock g_clockWorld;
 // Info for mouse events in case a body is picked
 bool g_pickBody = false;
 cVector3d g_pickFrom, g_pickTo;
+afRigidBodyPtr g_lastClickedBody;
 
 //---------------------------------------------------------------------------
 // GENERAL VARIABLES

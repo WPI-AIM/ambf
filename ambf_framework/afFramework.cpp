@@ -704,32 +704,36 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bu
     m_torque.setValue(0, 0, 0);
 }
 
+
 ///
-/// \brief afRigidBody::upwardTreePopulation
+/// \brief afRigidBody::updateUpwardHeirarchyForAddition
 /// \param a_childBody
 /// \param a_jnt
 ///
-void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
+void afRigidBody::updateUpwardHeirarchyForAddition(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //1a. We add the child body and all of it's children to this body
-    std::vector<afRigidBodyPtr> cBodies;
-    cBodies = a_childBody->m_childrenBodies;
-    cBodies.push_back(a_childBody);
+    std::vector<afChildJointPair> cjPairs;
+    cjPairs = a_childBody->m_childAndJointPairs;
+    for (int i = 0 ; i < cjPairs.size() ; i++){
+        cjPairs[i].m_directConnection = false; // Make sure to mark that these are not directly connected to the body
+    }
+    cjPairs.push_back(afChildJointPair(a_childBody, a_jnt, true));
 
-    std::vector<afRigidBodyPtr>::iterator cBodyIt;
-    for (cBodyIt = cBodies.begin() ; cBodyIt != cBodies.end(); ++cBodyIt){
+    std::vector<afChildJointPair>::iterator cjIt;
+    for (cjIt = cjPairs.begin() ; cjIt != cjPairs.end(); ++cjIt){
         bool _cExists = false;
-        for (size_t cIdx = 0; cIdx < m_childrenBodies.size() ; cIdx++){
-            if (*cBodyIt == m_childrenBodies[cIdx]){
+        for (size_t cjIdx = 0; cjIdx < m_childAndJointPairs.size() ; cjIdx++){
+            if (cjIt->m_childBody == m_childAndJointPairs[cjIdx].m_childBody){
                 _cExists = true;
                 break;
             }
         }
 
         if (!_cExists){
-            m_childrenBodies.push_back(*cBodyIt);
-            if ((*cBodyIt)->m_afSensors.size() > 0){
-                m_afSensors.insert(m_afSensors.end(), (*cBodyIt)->m_afSensors.begin(), (*cBodyIt)->m_afSensors.end());
+            m_childAndJointPairs.push_back(*cjIt);
+            if (cjIt->m_childBody->m_afSensors.size() > 0){
+                m_afSensors.insert(m_afSensors.end(), cjIt->m_childBody->m_afSensors.begin(), cjIt->m_childBody->m_afSensors.end());
             }
         }
         else{
@@ -737,37 +741,14 @@ void afRigidBody::upwardTreePopulation(afRigidBodyPtr a_childBody, afJointPtr a_
             //                      << (*cBodyIt)->m_name << "\" PARALLEL LINKAGE FOUND" << std::endl;
         }
     }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    //1b. We add the child joint and the children joint of child body to this body
-    std::vector<afJointPtr> cJoints;
-    cJoints = a_childBody->m_joints;
-    cJoints.push_back(a_jnt);
-
-    std::vector<afJointPtr>::iterator cJointIt;
-    for (cJointIt = cJoints.begin() ; cJointIt != cJoints.end(); ++cJointIt){
-        bool _cJointExists = false;
-        for (size_t jIdx = 0; jIdx < m_joints.size() ; jIdx++){
-            if (*cJointIt == m_joints[jIdx]){
-                _cJointExists = true;
-                break;
-            }
-        }
-        if(!_cJointExists){
-            m_joints.push_back(*cJointIt);
-        }
-        else{
-            //            std::cerr << "INFO, BODY \"" << this->m_name << "\": ALREADY HAS A JOINT NAMED \""
-            //                      << (*cJointIt)->m_name << "\ PARALLEL LINKAGE FOUND" << std::endl;
-        }
-    }
 }
 
+
 ///
-/// \brief afRigidBody::downwardTreePopulation
+/// \brief afRigidBody::updateDownwardHeirarchyForAddition
 /// \param a_parentBody
 ///
-void afRigidBody::downwardTreePopulation(afRigidBodyPtr a_parentBody){
+void afRigidBody::updateDownwardHeirarchyForAddition(afRigidBodyPtr a_parentBody){
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //2a. We add the child body and all of it's children to this body
     std::vector<afRigidBodyPtr> pBodies;
@@ -794,12 +775,107 @@ void afRigidBody::downwardTreePopulation(afRigidBodyPtr a_parentBody){
     }
 }
 
+
 ///
-/// \brief afBody::add_child_body
+/// \brief afRigidBody::remove
+///
+void afRigidBody::remove(){
+    if (m_bulletRigidBody){
+        m_bulletRigidBody->clearForces();
+    }
+
+    if (m_afObjectPtr){
+        m_afObjectPtr->cleanUp();
+        m_afObjectPtr.reset();
+    }
+
+    updateDownwardHeirarchyForRemoval();
+    updateUpwardHeirarchyForRemoval();
+
+    if (m_bulletRigidBody){
+        m_afWorld->s_bulletWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
+    }
+}
+
+
+///
+/// \brief afRigidBody::updateUpwardHeirarchyForRemoval
+///
+void afRigidBody::updateUpwardHeirarchyForRemoval(){
+    // We want to remove not only the current body from the parents list of all its children, but also all
+    // the parents of this body from the parents list of its children
+
+    std::vector<afRigidBodyPtr> childrensParents = m_parentBodies;
+    childrensParents.push_back(this);
+    std::vector<afRigidBodyPtr>::iterator cpIt;
+    std::vector<afChildJointPair>::iterator cjIt;
+
+    for (cpIt = childrensParents.begin() ; cpIt != childrensParents.end() ; ++cpIt){
+
+        for (cjIt = m_childAndJointPairs.begin() ; cjIt != m_childAndJointPairs.end(); ++cjIt){
+            afRigidBodyPtr childBody = cjIt->m_childBody;
+            std::vector<afRigidBodyPtr>::iterator pIt;
+            for (pIt = childBody->m_parentBodies.begin() ; pIt != childBody->m_parentBodies.end() ; ++pIt){
+                if (*cpIt == *pIt){
+                    childBody->m_parentBodies.erase(pIt);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+///
+/// \brief afRigidBody::removalUpdateDownwardTree
+///
+void afRigidBody::updateDownwardHeirarchyForRemoval(){
+    // We want to remove not only the current body from the children list of its parents but also all
+    // the children of this body from the children list of its parents
+
+
+    // First we want to remove
+    std::vector<afChildJointPair> parentsChildrenJointPairs = m_childAndJointPairs;
+    parentsChildrenJointPairs.push_back( afChildJointPair(this, NULL));
+    std::vector<afChildJointPair>::iterator pCJIt;
+    std::vector<afRigidBodyPtr>::iterator pIt;
+
+    for (pCJIt = parentsChildrenJointPairs.begin() ; pCJIt != parentsChildrenJointPairs.end() ; ++pCJIt){
+        for (pIt = m_parentBodies.begin() ; pIt != m_parentBodies.end(); ++pIt){
+            afRigidBodyPtr parentBody = *pIt;
+            std::vector<afChildJointPair>::iterator cjIt;
+            for (cjIt = parentBody->m_childAndJointPairs.begin() ; cjIt != parentBody->m_childAndJointPairs.end() ; ++cjIt){
+                if (pCJIt->m_childBody == cjIt->m_childBody){
+                    if (this == cjIt->m_childBody){
+                        // This the special case where we provide null for the joint.
+                        // We want to clear this joint
+                        if (cjIt->m_childJoint){
+                            cjIt->m_childJoint->remove();
+                        }
+                    }
+                    parentBody->m_childAndJointPairs.erase(cjIt);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Also make sure to remove all the directly connected joints to this body
+    std::vector<afChildJointPair>::iterator cjIt;
+    for (cjIt = m_childAndJointPairs.begin() ; cjIt != m_childAndJointPairs.end() ; ++cjIt){
+        if (cjIt->m_directConnection){
+            cjIt->m_childJoint->remove();
+        }
+    }
+}
+
+
+///
+/// \brief afRigidBody::addChildJointPair
 /// \param a_childBody
 /// \param a_jnt
 ///
-void afRigidBody::addChildBody(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
+void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
     //TODO: TEST THIS LOGIC RIGOROUSLY
     if (this == a_childBody){
         std::cerr << "INFO, BODY \"" << this->m_name << "\": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
@@ -814,18 +890,21 @@ void afRigidBody::addChildBody(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
         std::vector<afRigidBodyPtr>::iterator pIt;
 
         for (pIt = pBodies.begin() ; pIt != pBodies.end() ; ++pIt){
-            (*pIt)->upwardTreePopulation(a_childBody, a_jnt);
+            (*pIt)->updateUpwardHeirarchyForAddition(a_childBody, a_jnt);
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
         //2. Now we add this body as the parent of all the children of the child body
-        std::vector<afRigidBodyPtr> cBodies;
-        cBodies = a_childBody->m_childrenBodies;
-        cBodies.push_back(a_childBody);
+        std::vector<afChildJointPair> cjPairs;
+        cjPairs = a_childBody->m_childAndJointPairs;
+        for (int i = 0 ; i < cjPairs.size() ; i++){
+            cjPairs[i].m_directConnection = false; // Make sure to mark that these are not directly connected to the body
+        }
+        cjPairs.push_back(afChildJointPair(a_childBody, a_jnt, true));
 
-        std::vector<afRigidBodyPtr>::iterator cIt;
-        for (cIt = cBodies.begin() ; cIt != cBodies.end() ; ++cIt){
-            (*cIt)->downwardTreePopulation(this);
+        std::vector<afChildJointPair>::iterator cjIt;
+        for (cjIt = cjPairs.begin() ; cjIt != cjPairs.end() ; ++cjIt){
+            cjIt->m_childBody->updateDownwardHeirarchyForAddition(this);
         }
     }
 }
@@ -1933,13 +2012,14 @@ void afRigidBody::computeControllerGains(){
     double P_lin, D_lin, P_ang, D_ang;
     double lumped_mass = m_mass;
     cVector3d lumped_intertia = m_inertia;
-    for(m_bodyIt = m_childrenBodies.begin() ; m_bodyIt != m_childrenBodies.end() ; ++m_bodyIt){
-        lumped_mass += (*m_bodyIt)->getMass();
-        lumped_intertia += (*m_bodyIt)->getInertia();
+    std::vector<afChildJointPair>::iterator sjIt;
+    for(sjIt = m_childAndJointPairs.begin() ; sjIt != m_childAndJointPairs.end() ; ++sjIt){
+        lumped_mass += sjIt->m_childBody->getMass();
+        lumped_intertia += sjIt->m_childBody->getInertia();
     }
     if (!_lin_gains_computed){
         P_lin = lumped_mass * 20;
-        D_lin = P_lin / 10;
+        D_lin = P_lin / 100;
         m_controller.setLinearGains(P_lin, 0, D_lin);
         _lin_gains_computed = true;
     }
@@ -2133,18 +2213,19 @@ void afRigidBody::afObjectCommandExecute(double dt){
         }
         size_t jntCmdSize = m_afCommand.joint_commands_size;
         if (jntCmdSize > 0){
-            size_t jntCmdCnt = m_joints.size() < jntCmdSize ? m_joints.size() : jntCmdSize;
-            for (size_t jnt = 0 ; jnt < jntCmdCnt ; jnt++){
+            size_t jntCmdCnt = m_childAndJointPairs.size() < jntCmdSize ? m_childAndJointPairs.size() : jntCmdSize;
+            for (size_t jntIdx = 0 ; jntIdx < jntCmdCnt ; jntIdx++){
                 // If the enable position controllers flag is set, run
                 // position control on all joints
                 // The size of pos ctrl mask can be less than the num of joint commands
                 // keep this in check and still read the mask to apply it. Run
                 // effort control on the masks not specified
-                if (m_afCommand.position_controller_mask[jnt] == true ){
-                    m_joints[jnt]->commandPosition(m_afCommand.joint_commands[jnt]);
+                afJointPtr joint = m_childAndJointPairs[jntIdx].m_childJoint;
+                if (m_afCommand.position_controller_mask[jntIdx] == true ){
+                    joint->commandPosition(m_afCommand.joint_commands[jntIdx]);
                 }
                 else{
-                    m_joints[jnt]->commandEffort(m_afCommand.joint_commands[jnt]);
+                    joint->commandEffort(m_afCommand.joint_commands[jntIdx]);
                 }
             }
         }
@@ -2157,13 +2238,13 @@ void afRigidBody::afObjectCommandExecute(double dt){
 ///
 void afRigidBody::afObjectStateSetChildrenNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    int num_children = m_childrenBodies.size();
+    int num_children = m_childAndJointPairs.size();
     if (num_children > 0 && m_afObjectPtr != NULL){
         std::vector<std::string> children_names;
 
         children_names.resize(num_children);
         for (size_t i = 0 ; i < num_children ; i++){
-            children_names[i] = m_childrenBodies[i]->m_name;
+            children_names[i] = m_childAndJointPairs[i].m_childBody->m_name;
         }
         m_afObjectPtr->set_children_names(children_names);
     }
@@ -2175,12 +2256,12 @@ void afRigidBody::afObjectStateSetChildrenNames(){
 ///
 void afRigidBody::afObjectStateSetJointNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    int num_joints = m_joints.size();
+    int num_joints = m_childAndJointPairs.size();
     if (num_joints > 0 && m_afObjectPtr != NULL){
         std::vector<std::string> joint_names;
         joint_names.resize(num_joints);
         for (size_t i = 0 ; i < num_joints ; i++){
-            joint_names[i] = m_joints[i]->m_name;
+            joint_names[i] = m_childAndJointPairs[i].m_childJoint->m_name;
         }
         m_afObjectPtr->set_joint_names(joint_names);
     }
@@ -2192,13 +2273,13 @@ void afRigidBody::afObjectStateSetJointNames(){
 ///
 void afRigidBody::afObjectSetJointPositions(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    int num_jnts = m_joints.size();
+    int num_jnts = m_childAndJointPairs.size();
     if (num_jnts > 0 && m_afObjectPtr != NULL){
         if(m_joint_positions.size() != num_jnts){
             m_joint_positions.resize(num_jnts);
         }
         for (size_t i = 0 ; i < num_jnts ; i++){
-            m_joint_positions[i] = m_joints[i]->getPosition();
+            m_joint_positions[i] = m_childAndJointPairs[i].m_childJoint->getPosition();
         }
         m_afObjectPtr->set_joint_positions(m_joint_positions);
     }
@@ -2234,8 +2315,8 @@ void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const
 ///
 void afRigidBody::setAngle(double &angle){
     if (m_parentBodies.size() == 0){
-        for (size_t jnt = 0 ; jnt < m_joints.size() ; jnt++){
-            m_joints[jnt]->commandPosition(angle);
+        for (size_t jnt = 0 ; jnt < m_childAndJointPairs.size() ; jnt++){
+            m_childAndJointPairs[jnt].m_childJoint->commandPosition(angle);
         }
 
     }
@@ -2247,9 +2328,9 @@ void afRigidBody::setAngle(double &angle){
 ///
 void afRigidBody::setAngle(std::vector<double> &angles){
     if (m_parentBodies.size() == 0){
-        double jntCmdSize = m_joints.size() < angles.size() ? m_joints.size() : angles.size();
-        for (size_t jnt = 0 ; jnt < jntCmdSize ; jnt++){
-            m_joints[jnt]->commandPosition(angles[jnt]);
+        double jntCmdSize = m_childAndJointPairs.size() < angles.size() ? m_childAndJointPairs.size() : angles.size();
+        for (size_t jntIdx = 0 ; jntIdx < jntCmdSize ; jntIdx++){
+            m_childAndJointPairs[jntIdx].m_childJoint->commandPosition(angles[jntIdx]);
         }
 
     }
@@ -2291,22 +2372,44 @@ bool afRigidBody::isCommonCollisionGroupIdx(std::vector<int> a_idx){
     return in_group;
 }
 
+
 ///
 /// \brief afRigidBody::isChild
 /// \param a_body
 /// \return
 ///
 bool afRigidBody::isChild(btRigidBody *a_body){
-    bool _isChild = false;
-    afRigidBodyVec::iterator rbIt;
-    for (rbIt = m_childrenBodies.begin() ; rbIt != m_childrenBodies.end() ; ++rbIt){
-        if (a_body == (*rbIt)->m_bulletRigidBody){
-            _isChild = true;
+    bool isChild = false;
+    std::vector<afChildJointPair>::iterator cjIt;
+    for (cjIt = m_childAndJointPairs.begin() ; cjIt != m_childAndJointPairs.end() ; ++cjIt){
+        if (a_body == cjIt->m_childBody->m_bulletRigidBody){
+            isChild = true;
             break;
         }
     }
 
-    return _isChild;
+    return isChild;
+}
+
+
+///
+/// \brief afRigidBody::isDirectChild
+/// \param a_body
+/// \return
+///
+bool afRigidBody::isDirectChild(btRigidBody *a_body){
+    bool isDirectChild = false;
+    std::vector<afChildJointPair>::iterator cjIt;
+    for (cjIt = m_childAndJointPairs.begin() ; cjIt != m_childAndJointPairs.end() ; ++cjIt){
+        if (a_body == cjIt->m_childBody->m_bulletRigidBody){
+            if (cjIt->m_directConnection){
+                isDirectChild = true;
+            }
+            break;
+        }
+    }
+
+    return isDirectChild;
 }
 
 ///
@@ -2800,20 +2903,20 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
     m_name = jointName.as<std::string>();
     m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
-    m_parent_name = jointParentName.as<std::string>();
-    m_child_name = jointChildName.as<std::string>();
+    m_parentName = jointParentName.as<std::string>();
+    m_childName = jointChildName.as<std::string>();
     // Joint Transform in Parent
     btTransform T_j_p;
     // Joint Axis
     btVector3 joint_axis(0,0,1);
-    m_enable_actuator = true;
+    m_enableActuator = true;
     m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
-    m_joint_offset = 0.0;
-    m_lower_limit = -100;
-    m_upper_limit = 100;
+    m_jointOffset = 0.0;
+    m_lowerLimit = -100;
+    m_upperLimit = 100;
     //Default joint type is revolute if not type is specified
     m_jointType = JointType::revolute;
-    m_joint_damping = 0.0; // Initialize damping to 0
+    m_jointDamping = 0.0; // Initialize damping to 0
 
     afRigidBodyPtr afBodyA, afBodyB;
 
@@ -2822,14 +2925,14 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // First we should search in the local MultiBody space and if we don't find the body.
     // On then we find the world space
 
-    afBodyA = mB->getAFRigidBodyLocal(mB->getNamespace() + m_parent_name, true);
-    afBodyB = mB->getAFRigidBodyLocal(mB->getNamespace() + m_child_name, true);
+    afBodyA = mB->getAFRigidBodyLocal(mB->getNamespace() + m_parentName, true);
+    afBodyB = mB->getAFRigidBodyLocal(mB->getNamespace() + m_childName, true);
 
     if (!afBodyA){
-        afBodyA = m_afWorld->getAFRigidBody(mB->getNamespace() + m_parent_name + name_remapping, true);
+        afBodyA = m_afWorld->getAFRigidBody(mB->getNamespace() + m_parentName + name_remapping, true);
     }
     if (!afBodyB){
-        afBodyB = m_afWorld->getAFRigidBody(mB->getNamespace() + m_child_name + name_remapping, true);
+        afBodyB = m_afWorld->getAFRigidBody(mB->getNamespace() + m_childName + name_remapping, true);
     }
 
     bool _ignore_inter_collision = true;
@@ -2837,11 +2940,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
     if(afBodyA == NULL){
-        afBodyA = m_afWorld->getAFRigidBody(m_parent_name, true);
+        afBodyA = m_afWorld->getAFRigidBody(m_parentName, true);
         // If any body is still not found, print error and ignore joint
         if (afBodyA == NULL){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
-                        "\'s\" PARENT BODY \"" << m_parent_name <<
+                        "\'s\" PARENT BODY \"" << m_parentName <<
                         "\" NOT FOUND" << std::endl;
             return 0;
         }
@@ -2855,11 +2958,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
     }
     if(afBodyB == NULL){
-        afBodyB = m_afWorld->getAFRigidBody(m_child_name, true);
+        afBodyB = m_afWorld->getAFRigidBody(m_childName, true);
         // If any body is still not found, print error and ignore joint
         if (afBodyB == NULL){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
-                        "\'s\" CHILD BODY \"" << m_child_name <<
+                        "\'s\" CHILD BODY \"" << m_childName <<
                         "\" NOT FOUND" << std::endl;
             return 0;
         }
@@ -2868,7 +2971,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
                 &&(!strcmp(afBodyB->m_name.c_str(), "World") == 0)
                 &&(!strcmp(afBodyB->m_name.c_str(), "WORLD") == 0)){
             std::cerr <<"INFO: JOINT: \"" << m_name <<
-                        "\'s\" CHILD BODY \"" << m_child_name <<
+                        "\'s\" CHILD BODY \"" << m_childName <<
                         "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
@@ -2942,18 +3045,18 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
 
     if(jointOffset.IsDefined()){
-        m_joint_offset = jointOffset.as<double>();
+        m_jointOffset = jointOffset.as<double>();
     }
 
     if (jointDamping.IsDefined()){
-        m_joint_damping = jointDamping.as<double>();
+        m_jointDamping = jointDamping.as<double>();
     }
 
     if(jointLimits.IsDefined()){
         if (jointLimits["low"].IsDefined())
-            m_lower_limit = jointLimits["low"].as<double>();
+            m_lowerLimit = jointLimits["low"].as<double>();
         if (jointLimits["high"].IsDefined())
-            m_upper_limit = jointLimits["high"].as<double>();
+            m_upperLimit = jointLimits["high"].as<double>();
     }
 
     if (jointController.IsDefined()){
@@ -3060,7 +3163,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
     // Offset rotation along the parent axis
     btQuaternion Q_offINp;
-    Q_offINp.setRotation(m_axisA, m_joint_offset);
+    Q_offINp.setRotation(m_axisA, m_jointOffset);
     // We need to post-multiply frameA's rot to cancel out the shift in axis, then
     // the offset along joint axis and finally frameB's axis alignment in frameA.
     frameB.setRotation( Q_cINp.inverse() * Q_offINp.inverse() * Q_conINp);
@@ -3083,12 +3186,12 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if(jointLimits.IsDefined()){
-            m_hinge->setLimit(m_lower_limit, m_upper_limit);
+            m_hinge->setLimit(m_lowerLimit, m_upperLimit);
         }
 
         m_btConstraint = m_hinge;
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildBody(afBodyB, this);
+        afBodyA->addChildJointPair(afBodyB, this);
     }
     // If the joint is slider, prismatic or linear
     else if (m_jointType == JointType::prismatic){
@@ -3097,7 +3200,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
 
         if (jointEnableMotor.IsDefined()){
-            m_enable_actuator = jointEnableMotor.as<int>();
+            m_enableActuator = jointEnableMotor.as<int>();
             // Don't enable motor yet, only enable when set position is called
             if(jointMaxMotorImpulse.IsDefined()){
                 m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
@@ -3105,13 +3208,13 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         if(jointLimits.IsDefined()){
-            m_slider->setLowerLinLimit(m_lower_limit);
-            m_slider->setUpperLinLimit(m_upper_limit);
+            m_slider->setLowerLinLimit(m_lowerLimit);
+            m_slider->setUpperLinLimit(m_upperLimit);
         }
 
         m_btConstraint = m_slider;
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildBody(afBodyB, this);
+        afBodyA->addChildJointPair(afBodyB, this);
     }
 
     // If the joint is a spring
@@ -3185,7 +3288,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
         m_spring->setStiffness(_axisNumber, _stiffness);
 
-        m_spring->setDamping(_axisNumber, m_joint_damping);
+        m_spring->setDamping(_axisNumber, m_jointDamping);
 
         m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
         m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
@@ -3193,7 +3296,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_btConstraint = m_spring;
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
-        afBodyA->addChildBody(afBodyB, this);
+        afBodyA->addChildJointPair(afBodyB, this);
     }
     else if (m_jointType == JointType::p2p){
         // p2p joint doesnt concern itself with rotations, its set using just the pivot information
@@ -3202,7 +3305,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
 
         if (jointEnableMotor.IsDefined()){
-            m_enable_actuator = jointEnableMotor.as<int>();
+            m_enableActuator = jointEnableMotor.as<int>();
             // Don't enable motor yet, only enable when set position is called
             if(jointMaxMotorImpulse.IsDefined()){
                 m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
@@ -3211,16 +3314,23 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         m_btConstraint = m_p2p;
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildBody(afBodyB, this);
+        afBodyA->addChildJointPair(afBodyB, this);
     }
     else if (m_jointType == JointType::fixed){
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildBody(afBodyB, this);
+        afBodyA->addChildJointPair(afBodyB, this);
     }
     return true;
+}
+
+
+void afJoint::remove(){
+    if (m_btConstraint){
+        m_afWorld->s_bulletWorld->m_bulletWorld->removeConstraint(m_btConstraint);
+    }
 }
 
 
@@ -3231,7 +3341,7 @@ void afJoint::applyDamping(const double &dt){
     // First lets configure what type of joint is this.
     m_prevPos = m_curPos;
     m_curPos = getPosition();
-    double effort = - m_joint_damping * (m_curPos - m_prevPos)/dt;
+    double effort = - m_jointDamping * (m_curPos - m_prevPos)/dt;
     commandEffort(effort);
 }
 
@@ -3242,7 +3352,7 @@ void afJoint::applyDamping(const double &dt){
 void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
-    if (m_enable_actuator){
+    if (m_enableActuator){
         if (m_jointType == JointType::revolute){
             double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_mB->m_wallClock.getCurrentTimeSeconds());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
@@ -4661,7 +4771,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_camera->setStereoFocalLength(_stereoFocalLength);
 
         // set vertical mirrored display mode
-        setMirrorVertical(false);
+        m_camera->setMirrorVertical(false);
 
         m_camera->setFieldViewAngleRad(_field_view_angle);
 
@@ -5457,6 +5567,33 @@ afRigidBodyPtr afWorld::getAFRigidBody(std::string a_name, bool suppress_warning
         }
         return NULL;
     }
+}
+
+
+///
+/// \brief afWorld::getAFRigidBody
+/// \param a_body
+/// \param suppress_warning
+/// \return
+///
+afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warning){
+    afRigidBodyMap::iterator afIt;
+    for (afIt = m_afRigidBodyMap.begin() ; afIt != m_afRigidBodyMap.end() ; ++ afIt){
+        afRigidBodyPtr afBody = afIt->second;
+        if (a_body == afBody->m_bulletRigidBody){
+            return afBody;
+        }
+    }
+    if (!suppress_warning){
+        std::cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: " << a_body << std::endl;
+
+        std::cerr <<"Existing Bodies in Map: " << m_afRigidBodyMap.size() << std::endl;
+        afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
+        for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
+            std::cerr << rbIt->first << std::endl;
+        }
+    }
+    return NULL;
 }
 
 
