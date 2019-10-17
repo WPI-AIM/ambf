@@ -747,18 +747,24 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             g_afWorld->resetDynamicBodies();
         }
 
-        // option - If CTRL X is pressed, reset the simulation
-        else if (a_key == GLFW_KEY_X){
-            printf("Removing Last Picked Body\n");
-            g_afWorld->pausePhysics(true);
-            g_afWorld->m_lastPickedBody->remove();
-            g_afWorld->pausePhysics(false);
-        }
-
         // option - If CTRL V is pressed, reset the simulation
         else if (a_key == GLFW_KEY_V){
             printf("Resetting Camera Views\n");
             g_afWorld->resetCameras();
+        }
+
+
+        // option - If CTRL X is pressed, reset the simulation
+        else if (a_key == GLFW_KEY_X){
+            g_afWorld->pausePhysics(true);
+            if (g_afWorld->m_lastPickedBody){
+                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_lastPickedBody->m_name.c_str());
+                g_afWorld->m_lastPickedBody->remove();
+            }
+            else{
+                printf("Last Picked Body Not Valid for Removal\n");
+            }
+            g_afWorld->pausePhysics(false);
         }
 
     }
