@@ -165,6 +165,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDLocation = physicaDeviceNode["location"];
     YAML::Node pDOrientationOffset = physicaDeviceNode["orientation offset"];
     YAML::Node pDButtonMapping = physicaDeviceNode["button mapping"];
+    YAML::Node pDVisible = physicaDeviceNode["visible"];
+    YAML::Node pDVisibleSize = physicaDeviceNode["visible size"];
+    YAML::Node pDVisibleColor = physicaDeviceNode["visible color"];
 
     std::string _hardwareName = "";
     K_lh = 0;
@@ -444,6 +447,26 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
 
+    m_showMarker = false;
+    m_markerSize = 0.05;
+    if (pDVisible.IsDefined()){
+        m_showMarker = pDVisible.as<bool>();
+    }
+
+    if (pDVisibleSize.IsDefined()){
+        m_markerSize = pDVisibleSize.as<double>();
+    }
+
+    if (m_showMarker)
+    {
+        cCreateSphere(m_refSphere, m_markerSize);
+        m_refSphere->m_material->setRed();
+        m_refSphere->setShowFrame(true);
+        m_refSphere->setFrameSize(m_markerSize * 5);
+        m_afWorld->s_bulletWorld->addChild(m_refSphere);
+    }
+
+
     return 1;
 }
 
@@ -466,6 +489,7 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     m_afCursor->setMaterial(mat);
     a_afWorld->s_bulletWorld->addChild(m_afCursor);
     m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
+    m_afWorld = a_afWorld;
 }
 
 ///

@@ -223,12 +223,23 @@ public:
     // Initial offset between the simulated end effector and the
     // physical device
     cMatrix3d m_simRotInitial;
+
     // A transform between simulated and pyhsical devices' frame
     // to store any intended offset
     cMatrix3d m_simRotOffset;
 
+    // Flag to enable disable showing of reference marker
+    bool m_showMarker;
+
+    // Marker size to display
+    double m_markerSize;
+
+    // Visual Marker to show the target position of the device
+    cMesh* m_refSphere = new cMesh();
+
 private:
     afInputDevices* m_iDPtr; // Ptr to the Device Handler class
+    afWorldPtr m_afWorld; // Ref to world ptr
 };
 
 ///
