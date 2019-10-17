@@ -785,8 +785,8 @@ void afRigidBody::remove(){
     }
 
     if (m_afObjectPtr){
-        m_afObjectPtr->cleanUp();
-        m_afObjectPtr.reset();
+//        m_afObjectPtr->cleanUp();
+//        m_afObjectPtr.reset();
     }
 
     updateDownwardHeirarchyForRemoval();
@@ -3990,17 +3990,31 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_encl_height;
 }
 
+
+///
+/// \brief afWorld::resetCameras
+///
+void afWorld::resetCameras(){
+    afCameraMap::iterator camIt;
+    for (camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
+        afCameraPtr afCam = (camIt->second);
+        cTransform c_T(afCam->getInitialPosition(), afCam->getInitialRotation());
+        afCam->setLocalTransform(c_T);
+    }
+
+}
+
 ///
 /// \brief afWorld::resetWorld
 /// \param reset_time
 ///
-void afWorld::resetWorld(bool reset_time){
+void afWorld::resetDynamicBodies(bool reset_time){
     pausePhysics(true);
 
-    afRigidBodyMap::iterator _rbIt;
+    afRigidBodyMap::iterator rbIt;
 
-    for (_rbIt = m_afRigidBodyMap.begin() ; _rbIt != m_afRigidBodyMap.end() ; _rbIt++){
-        afRigidBodyPtr afRB = (_rbIt->second);
+    for (rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
+        afRigidBodyPtr afRB = (rbIt->second);
         btRigidBody* rB = afRB->m_bulletRigidBody;
         btVector3 zero(0, 0, 0);
         rB->clearForces();
@@ -4720,6 +4734,9 @@ bool afCamera::createDefaultCamera(){
             cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
             cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
 
+    m_initialPos = getLocalPos();
+    m_initialRot = getLocalRot();
+
     // set the near and far clipping planes of the camera
     m_camera->setClippingPlanes(0.01, 10.0);
 
@@ -4937,7 +4954,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         //////////////////////////////////////////////////////////////////////////////////////
         // position and orient the camera
         setView(_location, _look_at, _up);
-
+        m_initialPos = getLocalPos();
+        m_initialRot = getLocalRot();
         // set the near and far clipping planes of the camera
         m_camera->setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
 

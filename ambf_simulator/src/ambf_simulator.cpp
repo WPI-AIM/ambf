@@ -739,249 +739,260 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         glfwSetWindowShouldClose(a_window, GLFW_TRUE);
     }
 
-    // option - toggle fullscreen
-    else if (a_key == GLFW_KEY_F)
-    {
-        // toggle state variable
-        fullscreen = !fullscreen;
+    if (a_mods == GLFW_MOD_CONTROL){
+        // MODS IF THE CTRL KEY IS PRESSED
+        // option - If CTRL R is pressed, reset the simulation
+        if (a_key == GLFW_KEY_R){
+            printf("Resetting the Simulation\n");
+            g_afWorld->resetDynamicBodies();
+        }
 
-        std::vector<afCameraPtr>::iterator cameraIt;
-        for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
+        // option - If CTRL X is pressed, reset the simulation
+        else if (a_key == GLFW_KEY_X){
+            printf("Removing Last Picked Body\n");
+            g_afWorld->pausePhysics(true);
+            g_afWorld->m_lastPickedBody->remove();
+            g_afWorld->pausePhysics(false);
+        }
 
-            // get handle to monitor
-            GLFWmonitor* monitor = (*cameraIt)->m_monitor;
+        // option - If CTRL V is pressed, reset the simulation
+        else if (a_key == GLFW_KEY_V){
+            printf("Resetting Camera Views\n");
+            g_afWorld->resetCameras();
+        }
 
-            // get handle to window
-            GLFWwindow* window = (*cameraIt)->m_window;
+    }
+    else{
 
-            // get information about monitor
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        // option - grippers orientation w.r.t contextual camera
+        if (a_key == GLFW_KEY_C){
+            g_inputDevices->m_use_cam_frame_rot = true;
+            printf("Gripper Rotation w.r.t Camera Frame:\n");
+        }
 
-            // set fullscreen or window mode
-            if (fullscreen)
-            {
-                glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                glfwSwapInterval(g_swapInterval);
+        // option - toggle fullscreen
+        if (a_key == GLFW_KEY_F)
+        {
+            // toggle state variable
+            fullscreen = !fullscreen;
+
+            std::vector<afCameraPtr>::iterator cameraIt;
+            for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
+
+                // get handle to monitor
+                GLFWmonitor* monitor = (*cameraIt)->m_monitor;
+
+                // get handle to window
+                GLFWwindow* window = (*cameraIt)->m_window;
+
+                // get information about monitor
+                const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+                // set fullscreen or window mode
+                if (fullscreen)
+                {
+                    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                    glfwSwapInterval(g_swapInterval);
+                }
+                else
+                {
+                    int w = 0.8 * mode->height;
+                    int h = 0.5 * mode->height;
+                    int x = 0.5 * (mode->width - w);
+                    int y = 0.5 * (mode->height - h);
+                    glfwSetWindowMonitor(window, NULL, x, y, w, h, mode->refreshRate);
+                    glfwSwapInterval(g_swapInterval);
+                }
             }
-            else
-            {
-                int w = 0.8 * mode->height;
-                int h = 0.5 * mode->height;
-                int x = 0.5 * (mode->width - w);
-                int y = 0.5 * (mode->height - h);
-                glfwSetWindowMonitor(window, NULL, x, y, w, h, mode->refreshRate);
-                glfwSwapInterval(g_swapInterval);
+        }
+
+        // option - help menu
+        else if (a_key == GLFW_KEY_H)
+        {
+            cout << "Keyboard Options:" << endl << endl;
+            cout << "[h] - Display help menu" << endl;
+            cout << "[1] - Enable gravity" << endl;
+            cout << "[2] - Disable gravity" << endl << endl;
+            cout << "[3] - decrease linear haptic gain" << endl;
+            cout << "[4] - increase linear haptic gain" << endl;
+            cout << "[5] - decrease angular haptic gain" << endl;
+            cout << "[6] - increase angular haptic gain" << endl << endl;
+            cout << "[7] - decrease linear stiffness" << endl;
+            cout << "[8] - increase linear stiffness" << endl;
+            cout << "[9] - decrease angular stiffness" << endl;
+            cout << "[0] - increase angular stiffness" << endl;
+            cout << "[PgUp] - increase linear damping" << endl;
+            cout << "[PgDown] - decrease linear damping" << endl;
+            cout << "[Home] - increate angular damping" << endl;
+            cout << "[End] - decrease angular damping" << endl << endl;
+            cout << "[v] - toggle frame/skeleton visualization" << endl;
+            cout << "[s] - toggle sensors visibility" << endl;
+            cout << "[w] - use world frame for orientation clutch" << endl;
+            cout << "[c] - use9999 camera frame for orientation clutch" << endl;
+            cout << "[n] - next device mode" << endl << endl;
+            cout << "[i] - toogle inverted y for camera control via mouse" << endl << endl;
+            cout << "[t] - toogle gripper picking constraints" << endl << endl;
+            cout << "[p] - toogle mouse picking constraints" << endl << endl;
+            cout << "[u] - toogle update of labels" << endl << endl;
+            cout << "[CTRL + R] - Reset the Dynamic Bodies" << endl << endl;
+            cout << "[CTRL + X] - Remove Last Picked Body" << endl << endl;
+            cout << "[CTRL + V] - Reset the Camera Views" << endl << endl;
+            cout << "[q] - Exit application\n" << endl;
+            cout << endl << endl;
+        }
+
+        // option - Toggle Inverted Y axis of mouse for camera control
+        else if (a_key == GLFW_KEY_I){
+            g_mouse_inverted_y = !g_mouse_inverted_y;
+        }
+
+        // option - toggle vertical mirroring
+        else if (a_key == GLFW_KEY_M){
+            mirroredDisplay = !mirroredDisplay;
+            std::vector<afCameraPtr>::iterator cameraIt;
+            for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
+                (*cameraIt)->setMirrorVertical(mirroredDisplay);
             }
         }
-    }
 
-    // option - toggle vertical mirroring
-    else if (a_key == GLFW_KEY_M){
-         mirroredDisplay = !mirroredDisplay;
-        std::vector<afCameraPtr>::iterator cameraIt;
-        for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
-            (*cameraIt)->setMirrorVertical(mirroredDisplay);
-        }
-    }
-
-    // option - help menu
-    else if (a_key == GLFW_KEY_H)
-    {
-        cout << "Keyboard Options:" << endl << endl;
-        cout << "[h] - Display help menu" << endl;
-        cout << "[1] - Enable gravity" << endl;
-        cout << "[2] - Disable gravity" << endl << endl;
-        cout << "[3] - decrease linear haptic gain" << endl;
-        cout << "[4] - increase linear haptic gain" << endl;
-        cout << "[5] - decrease angular haptic gain" << endl;
-        cout << "[6] - increase angular haptic gain" << endl << endl;
-        cout << "[7] - decrease linear stiffness" << endl;
-        cout << "[8] - increase linear stiffness" << endl;
-        cout << "[9] - decrease angular stiffness" << endl;
-        cout << "[0] - increase angular stiffness" << endl;
-        cout << "[PgUp] - increase linear damping" << endl;
-        cout << "[PgDown] - decrease linear damping" << endl;
-        cout << "[Home] - increate angular damping" << endl;
-        cout << "[End] - decrease angular damping" << endl << endl;
-        cout << "[v] - toggle frame/skeleton visualization" << endl;
-        cout << "[s] - toggle sensors visibility" << endl;
-        cout << "[w] - use world frame for orientation clutch" << endl;
-        cout << "[c] - use9999 camera frame for orientation clutch" << endl;
-        cout << "[n] - next device mode" << endl << endl;
-        cout << "[i] - toogle inverted y for camera control via mouse" << endl << endl;
-        cout << "[t] - toogle gripper picking constraints" << endl << endl;
-        cout << "[p] - toogle mouse picking constraints" << endl << endl;
-        cout << "[u] - toogle update of labels" << endl << endl;
-        cout << "[CTRL + R] - Reset the Simulation" << endl << endl;
-        cout << "[CTRL + X] - Remove Last Picked Body" << endl << endl;
-        cout << "[q] - Exit application\n" << endl;
-        cout << endl << endl;
-    }
-
-    // option - enable gravity
-    else if (a_key == GLFW_KEY_1)
-    {
-        // enable gravity
-        g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
-        printf("gravity ON:\n");
-    }
-
-    // option - disable gravity
-    else if (a_key == GLFW_KEY_2)
-    {
-        // disable gravity
-        g_bulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
-        printf("gravity OFF:\n");
-    }
-
-    // option - decrease linear haptic gain
-    else if (a_key == GLFW_KEY_3)
-    {
-        printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(-0.05));
-    }
-
-    // option - increase linear haptic gain
-    else if (a_key == GLFW_KEY_4)
-    {
-        printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(0.05));
-    }
-
-    // option - decrease angular haptic gain
-    else if (a_key == GLFW_KEY_5)
-    {
-        printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(-0.05));
-    }
-
-    // option - increase angular haptic gain
-    else if (a_key == GLFW_KEY_6)
-    {
-        printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(0.05));
-    }
-
-    // option - decrease linear stiffness
-    else if (a_key == GLFW_KEY_7)
-    {
-        printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(-50));
-    }
-
-    // option - increase linear stiffness
-    else if (a_key == GLFW_KEY_8)
-    {
-        printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(50));
-    }
-
-    // option - decrease angular stiffness
-    else if (a_key == GLFW_KEY_9)
-    {
-        printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(-1));
-    }
-
-    // option - increase angular stiffness
-    else if (a_key == GLFW_KEY_0)
-    {
-        printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(1));
-    }
-
-    // option - decrease linear damping
-    else if (a_key == GLFW_KEY_PAGE_DOWN)
-    {
-        printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(-0.1));
-    }
-
-    // option - increase linear damping
-    else if (a_key == GLFW_KEY_PAGE_UP)
-    {
-        printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(0.1));
-    }
-
-    // option - decrease angular damping
-    else if (a_key == GLFW_KEY_END)
-    {
-        printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(-0.1));
-    }
-
-    // option - increase angular damping
-    else if (a_key == GLFW_KEY_HOME)
-    {
-        printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(0.1));
-    }
-
-    // option - grippers orientation w.r.t contextual camera
-    else if (a_key == GLFW_KEY_C){
-        g_inputDevices->m_use_cam_frame_rot = true;
-        printf("Gripper Rotation w.r.t Camera Frame:\n");
-    }
-
-    // option - grippers orientation w.r.t world
-    else if (a_key == GLFW_KEY_W){
-        g_inputDevices->m_use_cam_frame_rot = false;
-        printf("Gripper Rotation w.r.t World Frame:\n");
-    }
-
-    // option - Change to next device mode
-    else if (a_key == GLFW_KEY_N){
-        g_inputDevices->nextMode();
-        printf("Changing to next device mode:\n");
-    }
-
-    // option - Toogle visibility of body frames and softbody skeleton
-    else if (a_key == GLFW_KEY_V){
-        auto rbMap = g_afWorld->getAFRigidBodyMap();
-        afRigidBodyMap::const_iterator rbIt;
-        for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
-            rbIt->second->toggleFrameVisibility();
+        // option - Change to next device mode
+        else if (a_key == GLFW_KEY_N){
+            g_inputDevices->nextMode();
+            printf("Changing to next device mode:\n");
         }
 
-        auto sbMap = g_afWorld->getAFSoftBodyMap();
-        afSoftBodyMap::const_iterator sbIt;
-        for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
-            sbIt->second->toggleSkeletalModelVisibility();
+        // option - Toogle mouse picking
+        else if (a_key == GLFW_KEY_P){
+            g_mousePickingEnabled = !g_mousePickingEnabled;
+        }
+
+        // option - Toggle Visibility of Sensors
+        else if (a_key == GLFW_KEY_S){
+            auto sMap = g_afWorld->getAFSensorMap();
+            afSensorMap::const_iterator sIt;
+            for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
+                sIt->second->toggleSensorVisibility();
+            }
+        }
+
+        // option - Toggle Ray Test for Gripper Picking
+        else if (a_key == GLFW_KEY_T){
+            g_enableGrippingAssist = !g_enableGrippingAssist;
+        }
+
+        // option - Toggle visibility of label updates
+        else if (a_key == GLFW_KEY_U){
+            g_updateLabels = !g_updateLabels;
+        }
+
+        // option - Toogle visibility of body frames and softbody skeleton
+        else if (a_key == GLFW_KEY_V){
+            auto rbMap = g_afWorld->getAFRigidBodyMap();
+            afRigidBodyMap::const_iterator rbIt;
+            for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
+                rbIt->second->toggleFrameVisibility();
+            }
+
+            auto sbMap = g_afWorld->getAFSoftBodyMap();
+            afSoftBodyMap::const_iterator sbIt;
+            for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
+                sbIt->second->toggleSkeletalModelVisibility();
+            }
+        }
+
+        // option - grippers orientation w.r.t world
+        else if (a_key == GLFW_KEY_W){
+            g_inputDevices->m_use_cam_frame_rot = false;
+            printf("Gripper Rotation w.r.t World Frame:\n");
+        }
+        // option - enable gravity
+        else if (a_key == GLFW_KEY_1)
+        {
+            // enable gravity
+            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+            printf("gravity ON:\n");
+        }
+
+        // option - disable gravity
+        else if (a_key == GLFW_KEY_2)
+        {
+            // disable gravity
+            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
+            printf("gravity OFF:\n");
+        }
+
+        // option - decrease linear haptic gain
+        else if (a_key == GLFW_KEY_3)
+        {
+            printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(-0.05));
+        }
+
+        // option - increase linear haptic gain
+        else if (a_key == GLFW_KEY_4)
+        {
+            printf("linear haptic gain:  %f\n", g_inputDevices->increment_K_lh(0.05));
+        }
+
+        // option - decrease angular haptic gain
+        else if (a_key == GLFW_KEY_5)
+        {
+            printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(-0.05));
+        }
+
+        // option - increase angular haptic gain
+        else if (a_key == GLFW_KEY_6)
+        {
+            printf("angular haptic gain:  %f\n", g_inputDevices->increment_K_ah(0.05));
+        }
+
+        // option - decrease linear stiffness
+        else if (a_key == GLFW_KEY_7)
+        {
+            printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(-50));
+        }
+
+        // option - increase linear stiffness
+        else if (a_key == GLFW_KEY_8)
+        {
+            printf("linear stiffness:  %f\n", g_inputDevices->increment_P_lc(50));
+        }
+
+        // option - decrease angular stiffness
+        else if (a_key == GLFW_KEY_9)
+        {
+            printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(-1));
+        }
+
+        // option - increase angular stiffness
+        else if (a_key == GLFW_KEY_0)
+        {
+            printf("angular stiffness:  %f\n", g_inputDevices->increment_P_ac(1));
+        }
+
+        // option - decrease linear damping
+        else if (a_key == GLFW_KEY_PAGE_DOWN)
+        {
+            printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(-0.1));
+        }
+
+        // option - increase linear damping
+        else if (a_key == GLFW_KEY_PAGE_UP)
+        {
+            printf("linear damping:  %f\n", g_inputDevices->increment_D_lc(0.1));
+        }
+
+        // option - decrease angular damping
+        else if (a_key == GLFW_KEY_END)
+        {
+            printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(-0.1));
+        }
+
+        // option - increase angular damping
+        else if (a_key == GLFW_KEY_HOME)
+        {
+            printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(0.1));
         }
     }
-
-    // option - Toogle mouse picking
-    else if (a_key == GLFW_KEY_P){
-        g_mousePickingEnabled = !g_mousePickingEnabled;
-    }
-
-    // option - Toggle Inverted Y axis of mouse for camera control
-    else if (a_key == GLFW_KEY_I){
-        g_mouse_inverted_y = !g_mouse_inverted_y;
-    }
-
-    // option - Toggle visibility of label updates
-    else if (a_key == GLFW_KEY_U){
-        g_updateLabels = !g_updateLabels;
-    }
-
-    // option - Toggle Ray Test for Gripper Picking
-    else if (a_key == GLFW_KEY_T){
-        g_enableGrippingAssist = !g_enableGrippingAssist;
-    }
-
-    // option - Toggle Visibility of Sensors
-    else if (a_key == GLFW_KEY_S){
-        auto sMap = g_afWorld->getAFSensorMap();
-        afSensorMap::const_iterator sIt;
-        for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
-            sIt->second->toggleSensorVisibility();
-        }
-    }
-
-    // option - If CTRL R is pressed, reset the simulation
-    else if (a_key == GLFW_KEY_R && a_mods == GLFW_MOD_CONTROL){
-        printf("Resetting the Simulation\n");
-        g_afWorld->resetWorld();
-    }
-
-    // option - If CTRL R is pressed, reset the simulation
-    else if (a_key == GLFW_KEY_X && a_mods == GLFW_MOD_CONTROL){
-        printf("Removing Last Picked Body\n");
-        g_afWorld->pausePhysics(true);
-        g_afWorld->m_lastPickedBody->remove();
-        g_afWorld->pausePhysics(false);
-    }
-
 }
 
 ///
