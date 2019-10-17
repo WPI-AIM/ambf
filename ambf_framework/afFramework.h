@@ -356,6 +356,10 @@ public:
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
 
+    inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
+
+    inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
+
     // Get Initial Position of this body
     inline cVector3d getInitialPosition(){return m_initialPos;}
 

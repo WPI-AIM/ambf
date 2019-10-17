@@ -182,9 +182,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
     std::string _rootLinkName = "";
-    cVector3d _position(0, 0, 0);
-    cMatrix3d _orientation;
-    _orientation.identity();
+    cVector3d position(0, 0, 0);
+    cMatrix3d rotation;
+    rotation.identity();
 
     // For the simulated gripper, the user can specify a MultiBody config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
@@ -396,28 +396,30 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     if (pDLocation.IsDefined()){
         YAML::Node posNode = pDLocation["position"];
         YAML::Node rpyNode = pDLocation["orientation"];
-        _position = toXYZ<cVector3d>(&posNode);
+        position = toXYZ<cVector3d>(&posNode);
         cVector3d _rpy;
         _rpy = toRPY<cVector3d>(&rpyNode);
-        _orientation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
+        rotation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
 
-        simDevice->m_rootLink->setLocalPos(_position);
-        simDevice->m_rootLink->setLocalRot(_orientation);
-        m_simRotInitial = _orientation;
+        simDevice->m_rootLink->setLocalPos(position);
+        simDevice->m_rootLink->setLocalRot(rotation);
+        simDevice->m_rootLink->setInitialPosition(position);
+        simDevice->m_rootLink->setInitialRotation(rotation);
+        m_simRotInitial = rotation;
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
         // In this case, take the current position of the root link and set it as initial
         // reference pose
-        _position = simDevice->m_rootLink->getLocalPos();
-        _orientation = simDevice->m_rootLink->getLocalRot();
+        position = simDevice->m_rootLink->getLocalPos();
+        rotation = simDevice->m_rootLink->getLocalRot();
         m_simRotInitial.identity();
     }
 
-    simDevice->setPosRef(_position/ m_workspaceScale);
-    simDevice->m_posRefOrigin = _position / m_workspaceScale;
-    simDevice->setRotRef(_orientation);
-    simDevice->m_rotRefOrigin = _orientation;
+    simDevice->setPosRef(position/ m_workspaceScale);
+    simDevice->m_posRefOrigin = position / m_workspaceScale;
+    simDevice->setRotRef(rotation);
+    simDevice->m_rotRefOrigin = rotation;
     m_gripper_pinch_btn = 0;
 
     if (pDOrientationOffset.IsDefined()){
