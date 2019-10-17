@@ -1246,7 +1246,8 @@ public:
     void getEnclosureExtents(double &length, double &width, double &height);
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
     bool isPhysicsPaused(){return m_pausePhx;}
-    void resetWorld(bool reset_time=false);
+    void resetCameras();
+    void resetDynamicBodies(bool reset_time=false);
 
     static cBulletWorld *s_bulletWorld;
     GLFWwindow* m_mainWindow;
