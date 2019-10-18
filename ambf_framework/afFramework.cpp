@@ -3952,6 +3952,8 @@ afWorld::afWorld(cBulletWorld* a_chaiWorld){
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
     s_bulletWorld->addChild(m_pickSphere);
+    m_pickColor.setOrangeTomato();
+    m_pickColor.setTransparencyLevel(0.3);
 }
 
 ///
@@ -4474,9 +4476,8 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 if (!(body->isStaticObject() || body->isKinematicObject()))
                 {
                     m_pickedBody = body;
-                    m_pickedBodyColor = m_lastPickedBody->m_material->m_ambient;
-                    m_lastPickedBody->m_material->setGrayLightSlate();
-                    m_lastPickedBody->markForUpdate();
+                    m_pickedBodyColor = m_lastPickedBody->m_material->copy();
+                    m_lastPickedBody->setMaterial(m_pickColor);
                     m_savedState = m_pickedBody->getActivationState();
                     m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
@@ -4594,8 +4595,7 @@ void afWorld::removePickingConstraint(){
         m_pickedConstraint = 0;
         m_pickedBody = 0;
         if (m_lastPickedBody){
-            m_lastPickedBody->m_material->m_ambient = m_pickedBodyColor;
-            m_lastPickedBody->markForUpdate();
+            m_lastPickedBody->setMaterial(m_pickedBodyColor);
         }
     }
 

@@ -1334,7 +1334,8 @@ public:
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
     afRigidBodyPtr m_lastPickedBody;
-    cColorf m_pickedBodyColor;
+    cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+    cMaterial m_pickColor; // The color to be applied to the picked body
     class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
     class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
     int m_pickedNodeIdx = -1; // Picked SoftBody Node
