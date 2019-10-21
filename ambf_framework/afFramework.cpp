@@ -783,11 +783,12 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_bulletRigidBody->clearForces();
     }
-
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectPtr){
 //        m_afObjectPtr->cleanUp();
 //        m_afObjectPtr.reset();
     }
+#endif
 
     updateDownwardHeirarchyForRemoval();
     updateUpwardHeirarchyForRemoval();
