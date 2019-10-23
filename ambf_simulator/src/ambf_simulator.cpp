@@ -236,6 +236,9 @@ private:
     cPrecisionClock m_rateClock;
 };
 
+cShaderPtr g_shader;
+cShaderProgramPtr g_shaderProg;
+
 
 std::shared_ptr<afInputDevices> g_inputDevices;
 
@@ -615,18 +618,89 @@ int main(int argc, char* argv[])
 
 //    signal (SIGINT, exitHandler);
 
+    g_shader = cShader::create(C_FRAGMENT_SHADER);
+    g_shader->loadSourceFile("/home/adnan/ambf/bin/lin-x86_64/custom_lighting.glsl");
+    g_shader->compile();
+
+    printf("Shader Compiled ? %d \n", g_shader->isCompiled());
+
+    g_shaderProg = cShaderProgram::create();
+
+    cRenderOptions renderOpts;
+    renderOpts.m_camera = g_cameras[0]->getCamera();
+    cCamera* tempCam = g_cameras[0]->getCamera();
+
+    g_shaderProg->attachShader(g_shader);
+    g_shaderProg->use(renderOpts.m_camera, renderOpts);
+
+    printf("Shader Linked ? %d \n", g_shaderProg->linkProgram());
+    printf("Shader Log : %s \n", g_shader->getLog().c_str());
+
+    printf("\n ------- \n");
+
+    printf("Shader Program ID: %d \n", g_shaderProg->getId());
+    printf("Shader ID: %d \n", g_shader->getId());
+    g_shaderProg->use(renderOpts.m_camera, renderOpts);
+//    printf("Diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "diffuse"));
+//    printf("ambientGoal: %d \n", glGetUniformLocation(g_shaderProg->getId(), "ambientGlobal"));
+//    printf("ambient: %d \n", glGetUniformLocation(g_shaderProg->getId(), "ambient"));
+//    printf("ecPos: %d \n", glGetUniformLocation(g_shaderProg->getId(), "ecPos"));
+//    printf("normal: %d \n", glGetUniformLocation(g_shaderProg->getId(), "normal"));
+//    printf("halfVector: %d \n", glGetUniformLocation(g_shaderProg->getId(), "halfVector"));
+//    printf("dist: %d \n", glGetUniformLocation(g_shaderProg->getId(), "dist"));
+
+
+    printf("material.diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.diffuse"));
+    printf("material.specular: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.specular"));
+    printf("material.shininess: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.shininess"));
+    printf("light.position: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.position"));
+    printf("light.direction: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.direction"));
+    printf("light.cutOff: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.cutOff"));
+    printf("light.outerCutOff: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.outerCutOff"));
+    printf("light.ambient: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.ambient"));
+    printf("light.diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.diffuse"));
+    printf("light.specular: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.specular"));
+    printf("viewPos: %d \n", glGetUniformLocation(g_shaderProg->getId(), "viewPos"));
+
+    printf("\n ------- \n");
+
+
+
+//    g_bulletWorld->enableLightSourceRendering(true);
+    g_bulletWorld->setShaderProgram(g_shaderProg);
+
     // main graphic loop
     while (!g_window_closed)
     {
+
         if (g_cmdOpts.showGUI){
-        // Call the update graphics method
-        updateGraphics();
+//            glUniform4f(g_shaderProg->getUniformLocation("diffuse"), 0.3, 0.3, 0.3, 1.0);
+//            glUniform4f(g_shaderProg->getUniformLocation("ambientGlobal"), 0.5,0.5,0.5,0.3);
+//            glUniform4f(g_shaderProg->getUniformLocation("ambient"), 0.5,0.5,0.5,0.1);
+//            glUniform4f(g_shaderProg->getUniformLocation("ecPos"), tempCam->getLocalPos().x(),tempCam->getLocalPos().y(),tempCam->getLocalPos().z(),0.3);
+//            glUniform3f(g_shaderProg->getUniformLocation("normal"), tempCam->getLocalPos().x(),tempCam->getLocalPos().y(),tempCam->getLocalPos().z());
+//            glUniform3f(g_shaderProg->getUniformLocation("halfVector"), 0.0,0.0,1.0);
+//            glUniform1f(g_shaderProg->getUniformLocation("dist"), 0.5);
 
-        // process events
-        glfwPollEvents();
+//            glUniform3f(g_shaderProg->getUniformLocation("material.diffuse"), 0.5, 0.5, 0.5);
+//            glUniform3f(g_shaderProg->getUniformLocation("material.specular"), 0.7, 0.7, 0.7);
+//            glUniform1f(g_shaderProg->getUniformLocation("material.shininess"), 0.2);
+            glUniform3f(g_shaderProg->getUniformLocation("light.position"), tempCam->getLocalPos().x(), tempCam->getLocalPos().y(), tempCam->getLocalPos().z());
+            glUniform3f(g_shaderProg->getUniformLocation("light.direction"), tempCam->getLookVector().x(), tempCam->getLookVector().y(), tempCam->getLookVector().z());
+            glUniform1f(g_shaderProg->getUniformLocation("light.cutOff"), 0.7);
+            glUniform1f(g_shaderProg->getUniformLocation("light.outerCutOff"), 0.9);
+            glUniform3f(g_shaderProg->getUniformLocation("light.ambient"), 0.5, 0.5, 0.5);
+            glUniform3f(g_shaderProg->getUniformLocation("light.diffuse"), 0.5, 0.5, 0.5);
+            glUniform3f(g_shaderProg->getUniformLocation("light.specular"), 0.5, 0.5, 0.5);
+//            glUniform3f(g_shaderProg->getUniformLocation("viewPos"), -2.0, 0.0, 0.5);
+            // Call the update graphics method
+            updateGraphics();
 
-        // signal frequency counter
-        g_freqCounterGraphics.signal(1);
+            // process events
+            glfwPollEvents();
+
+            // signal frequency counter
+            g_freqCounterGraphics.signal(1);
         }
 
         else{

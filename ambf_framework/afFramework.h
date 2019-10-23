@@ -1087,6 +1087,8 @@ public:
         return m_camera->m_backLayer;
     }
 
+    inline cCamera* getCamera(){return m_camera;}
+
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
