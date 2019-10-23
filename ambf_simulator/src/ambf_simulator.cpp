@@ -51,6 +51,7 @@
 #include <boost/program_options.hpp>
 #include <mutex>
 #include <signal.h>
+#include <fstream>
 //---------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -236,8 +237,8 @@ private:
     cPrecisionClock m_rateClock;
 };
 
-cShaderPtr g_shader;
-cShaderProgramPtr g_shaderProg;
+cShaderProgramPtr g_lightingShader;
+cShaderProgramPtr g_lampShader;
 
 
 std::shared_ptr<afInputDevices> g_inputDevices;
@@ -617,30 +618,48 @@ int main(int argc, char* argv[])
     sigaction(SIGINT, &sigIntHandler, NULL);
 
 //    signal (SIGINT, exitHandler);
+    ifstream file1;
+    ifstream file2;
+    ifstream file3;
+    ifstream file4;
+    file1.open("/home/adnan/ambf/bin/lin-x86_64/light_caster.vs");
+    file2.open("/home/adnan/ambf/bin/lin-x86_64/light_caster.fs");
+    file3.open("/home/adnan/ambf/bin/lin-x86_64/lamp.vs");
+    file4.open("/home/adnan/ambf/bin/lin-x86_64/lamp.fs");
+    // create a string stream
+    stringstream light_vtx_shader_file, light_frg_shader_file, lamp_vtx_shader_file, lamp_frg_shader_file;
+    // dump the contents of the file into it
+    light_vtx_shader_file << file1.rdbuf();
+    light_frg_shader_file << file2.rdbuf();
+    lamp_vtx_shader_file << file3.rdbuf();
+    lamp_frg_shader_file << file4.rdbuf();
+    // close the file
+    file1.close();
+    file2.close();
+    file3.close();
+    file4.close();
+    // convert the StringStream into a string
+    std::string shaderSource1 = light_vtx_shader_file.str();
+    std::string shaderSource2 = light_frg_shader_file.str();
+    std::string shaderSource3 = lamp_vtx_shader_file.str();
+    std::string shaderSource4 = lamp_frg_shader_file.str();
 
-    g_shader = cShader::create(C_FRAGMENT_SHADER);
-    g_shader->loadSourceFile("/home/adnan/ambf/bin/lin-x86_64/custom_lighting.glsl");
-    g_shader->compile();
-
-    printf("Shader Compiled ? %d \n", g_shader->isCompiled());
-
-    g_shaderProg = cShaderProgram::create();
+    g_lightingShader = cShaderProgram::create(shaderSource1, shaderSource2);
+//    g_lampShader = cShaderProgram::create(shaderSource3, shaderSource4);
 
     cRenderOptions renderOpts;
     renderOpts.m_camera = g_cameras[0]->getCamera();
     cCamera* tempCam = g_cameras[0]->getCamera();
 
-    g_shaderProg->attachShader(g_shader);
-    g_shaderProg->use(renderOpts.m_camera, renderOpts);
+    g_lightingShader->use(renderOpts.m_camera, renderOpts);
 
-    printf("Shader Linked ? %d \n", g_shaderProg->linkProgram());
-    printf("Shader Log : %s \n", g_shader->getLog().c_str());
+    printf("Shader Linked ? %d \n", g_lightingShader->linkProgram());
 
     printf("\n ------- \n");
 
-    printf("Shader Program ID: %d \n", g_shaderProg->getId());
-    printf("Shader ID: %d \n", g_shader->getId());
-    g_shaderProg->use(renderOpts.m_camera, renderOpts);
+    printf("Shader Program ID: %d \n", g_lightingShader->getId());
+    printf("Shader ID: %d \n", g_lightingShader->getId());
+    g_lightingShader->use(renderOpts.m_camera, renderOpts);
 //    printf("Diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "diffuse"));
 //    printf("ambientGoal: %d \n", glGetUniformLocation(g_shaderProg->getId(), "ambientGlobal"));
 //    printf("ambient: %d \n", glGetUniformLocation(g_shaderProg->getId(), "ambient"));
@@ -650,24 +669,21 @@ int main(int argc, char* argv[])
 //    printf("dist: %d \n", glGetUniformLocation(g_shaderProg->getId(), "dist"));
 
 
-    printf("material.diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.diffuse"));
-    printf("material.specular: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.specular"));
-    printf("material.shininess: %d \n", glGetUniformLocation(g_shaderProg->getId(), "material.shininess"));
-    printf("light.position: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.position"));
-    printf("light.direction: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.direction"));
-    printf("light.cutOff: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.cutOff"));
-    printf("light.outerCutOff: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.outerCutOff"));
-    printf("light.ambient: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.ambient"));
-    printf("light.diffuse: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.diffuse"));
-    printf("light.specular: %d \n", glGetUniformLocation(g_shaderProg->getId(), "light.specular"));
-    printf("viewPos: %d \n", glGetUniformLocation(g_shaderProg->getId(), "viewPos"));
+    printf("material.diffuse: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.diffuse"));
+    printf("material.specular: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.specular"));
+    printf("material.shininess: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.shininess"));
+    printf("light.position: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.position"));
+    printf("light.direction: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.direction"));
+    printf("light.cutOff: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.cutOff"));
+    printf("light.ambient: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.ambient"));
+    printf("light.diffuse: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.diffuse"));
+    printf("light.specular: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.specular"));
+    printf("viewPos: %d \n", glGetUniformLocation(g_lightingShader->getId(), "viewPos"));
+
 
     printf("\n ------- \n");
 
-
-
-//    g_bulletWorld->enableLightSourceRendering(true);
-    g_bulletWorld->setShaderProgram(g_shaderProg);
+    g_bulletWorld->setShaderProgram(g_lightingShader);
 
     // main graphic loop
     while (!g_window_closed)
@@ -682,18 +698,38 @@ int main(int argc, char* argv[])
 //            glUniform3f(g_shaderProg->getUniformLocation("halfVector"), 0.0,0.0,1.0);
 //            glUniform1f(g_shaderProg->getUniformLocation("dist"), 0.5);
 
-//            glUniform3f(g_shaderProg->getUniformLocation("material.diffuse"), 0.5, 0.5, 0.5);
-//            glUniform3f(g_shaderProg->getUniformLocation("material.specular"), 0.7, 0.7, 0.7);
-//            glUniform1f(g_shaderProg->getUniformLocation("material.shininess"), 0.2);
-            glUniform3f(g_shaderProg->getUniformLocation("light.position"), tempCam->getLocalPos().x(), tempCam->getLocalPos().y(), tempCam->getLocalPos().z());
-            glUniform3f(g_shaderProg->getUniformLocation("light.direction"), tempCam->getLookVector().x(), tempCam->getLookVector().y(), tempCam->getLookVector().z());
-            glUniform1f(g_shaderProg->getUniformLocation("light.cutOff"), 0.7);
-            glUniform1f(g_shaderProg->getUniformLocation("light.outerCutOff"), 0.9);
-            glUniform3f(g_shaderProg->getUniformLocation("light.ambient"), 0.5, 0.5, 0.5);
-            glUniform3f(g_shaderProg->getUniformLocation("light.diffuse"), 0.5, 0.5, 0.5);
-            glUniform3f(g_shaderProg->getUniformLocation("light.specular"), 0.5, 0.5, 0.5);
-//            glUniform3f(g_shaderProg->getUniformLocation("viewPos"), -2.0, 0.0, 0.5);
+            cVector3d lightPos = cVector3d(0,0,0);
+            cVector3d localPos = tempCam->getLocalPos();
+            cVector3d dir = tempCam->getLookVector();
+            cVector3d ambient = cVector3d(0.1, 0.1, 0.1);
+            cVector3d diffuse = cVector3d(0.8, 0.8, 0.8);
+            cVector3d specular = cVector3d(1.0, 1.0, 1.0);
+
+            g_lightingShader->setUniform("light.position", lightPos);
+            g_lightingShader->setUniform("light.direction", dir);
+            g_lightingShader->setUniformf("light.cutOff", 0.2);
+            g_lightingShader->setUniform("viewPos", localPos);
+            g_lightingShader->setUniform("light.ambient", ambient);
+            g_lightingShader->setUniform("light.diffuse", diffuse);
+            g_lightingShader->setUniform("light.specular", specular);
+            g_lightingShader->setUniformf("light.constant", 1.0);
+            g_lightingShader->setUniformf("light.linear", 0.09);
+            g_lightingShader->setUniformf("light.quadratic", 0.032);
+            g_lightingShader->setUniformf("material.shininess", 32.0);
+
+            float* modelViewMat = (float*)tempCam->m_modelViewMatrix.getData();
+            float* projectionMat = (float*)tempCam->m_projectionMatrix.getData();
+            glUniformMatrix4fv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, modelViewMat);
+            glUniformMatrix4fv(g_lightingShader->getAttributeLocation("projection"), 1, GL_FALSE, projectionMat);
             // Call the update graphics method
+            afRigidBodyMap::iterator rbIt;
+
+//            for (rbIt = g_afWorld->getAFRigidBodyMap()->begin() ; rbIt != g_afWorld->getAFRigidBodyMap()->end() ; ++rbIt){
+//                afRigidBody* rb = (rbIt->second);
+//                float* bodyTrans = (float*)rb->getLocalTransform().getData();
+//                glUniformMatrix4fv(g_lightingShader->getAttributeLocation("model"), 1, GL_FALSE, bodyTrans);
+//                glDrawArrays(GL_TRIANGLES,0, rb->getNumTriangles());
+//            }
             updateGraphics();
 
             // process events
