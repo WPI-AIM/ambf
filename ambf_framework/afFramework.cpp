@@ -547,6 +547,7 @@ afCartesianController::afCartesianController(){
     m_dPos_cvec.set(0, 0, 0);
     m_dRot.setIdentity();
     m_dRot_cvec.identity();
+    m_enabled = false;
 }
 
 
@@ -560,6 +561,8 @@ void afCartesianController::setLinearGains(double a_P, double a_I, double a_D){
     P_lin = a_P;
     I_lin = a_I;
     D_lin = a_D;
+    // If someone sets the gains, enable the controller
+    enable(true);
 }
 
 
@@ -573,6 +576,8 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     P_ang = a_P;
     I_ang = a_I;
     D_ang = a_D;
+
+    enable(true);
 }
 
 template <>
@@ -585,13 +590,18 @@ template <>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt, const double &ts){
-    btVector3 _dPos_prev, _ddPos, _output;
+    btVector3 _output(0, 0, 0); // Initialize the output to zero
+    if (isEnabled()){
+        btVector3 _dPos_prev, _ddPos;
+        _dPos_prev = m_dPos;
+        m_dPos = set_point - process_val;
+        _ddPos = (m_dPos - _dPos_prev) / dt;
 
-    _dPos_prev = m_dPos;
-    m_dPos = set_point - process_val;
-    _ddPos = (m_dPos - _dPos_prev) / dt;
-
-    _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
+        _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
+    }
+    else{
+        // Maybe throw a console warning to notify the user that this controller is disabled
+    }
     return _output;
 }
 
@@ -606,11 +616,12 @@ template<>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt, const double &ts){
+    btVector3 _output(0, 0, 0);
+
+    if (isEnabled()){
     btVector3 _error_cur, _error_prev;
     btMatrix3x3 _dRot_prev;
     btQuaternion _dRotQuat, _dRotQuat_prev;
-    btVector3 _output;
-
     _dRot_prev = m_dRot;
     _dRot_prev.getRotation(_dRotQuat_prev);
     _error_prev = _dRotQuat_prev.getAxis() * _dRotQuat_prev.getAngle();
@@ -624,6 +635,11 @@ btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btM
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
     _output = process_val * _output;
+    }
+    else{
+        // Maybe throw a console warning to notify the user that this controller is disabled
+    }
+
     return _output;
 }
 
@@ -636,13 +652,18 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt, const double &ts){
-    cVector3d _dPos_prev, _ddPos, _output;
+    cVector3d _output(0, 0, 0);
+    if (isEnabled()){
+        cVector3d _dPos_prev, _ddPos;
+        _dPos_prev = m_dPos_cvec;
+        m_dPos_cvec = set_point - process_val;
+        _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
 
-    _dPos_prev = m_dPos_cvec;
-    m_dPos_cvec = set_point - process_val;
-    _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
-
-    _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
+        _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
+    }
+    else{
+        // Maybe throw a console warning to notify the user that this controller is disabled
+    }
     return _output;
 }
 
@@ -655,12 +676,12 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
+    cVector3d _output(0, 0, 0);
+    if (isEnabled()){
     cVector3d _error_cur, _error_prev;
     cMatrix3d _dRot_prev;
     cVector3d _e_axis, _e_axis_prev;
     double _e_angle, _e_angle_prev;
-    cVector3d _output;
-
     _dRot_prev = m_dRot_cvec;
     _dRot_prev.toAxisAngle(_e_axis_prev, _e_angle_prev);
     _error_prev = _e_axis_prev * _e_angle_prev;
@@ -674,6 +695,10 @@ cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatr
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
     _output = process_val * _output;
+    }
+    else{
+        // Maybe throw a console warning to notify the user that this controller is disabled
+    }
     return _output;
 }
 
@@ -686,7 +711,7 @@ template<>
 /// \return
 ///
 btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt, const double &tsf){
-
+    // Not implemented yet
 }
 
 ///

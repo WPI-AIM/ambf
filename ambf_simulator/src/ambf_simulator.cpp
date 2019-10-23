@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
         if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
             std::vector<std::string> mbFileNames;
             std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
-            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
+//            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
             std::stringstream ss(loadMBFilenames);
             while(ss.good() )
             {
@@ -1479,6 +1479,7 @@ void updatePhysics(){
             for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
                 // update position of simulate gripper
                 afSimulatedDevice * simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+                afPhysicalDevice * phyDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
                 afRigidBodyPtr rootLink = simDev->m_rootLink;
                 simDev->updateMeasuredPose();
 
@@ -1584,13 +1585,16 @@ void updatePhysics(){
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / dt;
-                force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
+                force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
                 force = simDev->P_lc_ramp * force;
 
-                torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
+                torque = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
                 simDev->applyForce(force);
                 simDev->applyTorque(torque);
-                simDev->setGripperAngle(simDev->m_gripper_angle, dt);
+                // Control simulated body joints only if joint control of this physical device has been enabled
+                if (phyDev->isJointControlEnabled()){
+                    simDev->setGripperAngle(simDev->m_gripper_angle, dt);
+                }
 
                 if (simDev->P_lc_ramp < 1.0)
                 {

@@ -252,6 +252,9 @@ public:
     inline double getD_ang(){return D_ang;}
 
 public:
+    inline void enable(bool a_enable){m_enabled = a_enable;}
+    inline bool isEnabled(){return m_enabled;}
+
     void setLinearGains(double a_P, double a_I, double a_D);
     void setAngularGains(double a_P, double a_I, double a_D);
 
@@ -286,6 +289,9 @@ private:
     // between commanded and current rotation
     btMatrix3x3 m_dRot;
     cMatrix3d m_dRot_cvec;
+
+    // Flag to enable disable this controller
+    bool m_enabled;
 };
 
 

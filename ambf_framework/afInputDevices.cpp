@@ -156,6 +156,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
     YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
+    YAML::Node pDEnableJointControl = physicaDeviceNode["enable joint control"];
     YAML::Node pDDeadband = physicaDeviceNode["deadband"];
     YAML::Node pDMaxForce = physicaDeviceNode["max force"];
     YAML::Node pDMaxJerk = physicaDeviceNode["max jerk"];
@@ -203,6 +204,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     bool _simulatedMBDefined = false;
     bool _rootLinkDefined = false;
+    bool _enableJointControl = true; // Be default enable the joint control of simulated dynamic body
 
     if (pDHardwareName.IsDefined()){
         _hardwareName = pDHardwareName.as<std::string>();
@@ -341,13 +343,19 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     if (simDevice->m_rootLink){
         // Now check if the controller gains have been defined. If so, override the controller gains
         // defined for the rootlink of simulate end effector
+        bool linGainsDefined = false;
+        bool angGainsDefined = false;
         if (pDControllerGain.IsDefined()){
+            // Should we consider disable the controller for the physical device if a controller has been
+            // defined using the Physical device??
+
             // Check if the linear controller is defined
             if (pDControllerGain["linear"].IsDefined()){
                 double _P, _D;
                 _P = pDControllerGain["linear"]["P"].as<double>();
                 _D = pDControllerGain["linear"]["D"].as<double>();
-                simDevice->m_rootLink->m_controller.setLinearGains(_P, 0, _D);
+                m_controller.setLinearGains(_P, 0, _D);
+                linGainsDefined = true;
             }
 
             // Check if the angular controller is defined
@@ -355,12 +363,34 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 double _P, _D;
                 _P = pDControllerGain["angular"]["P"].as<double>();
                 _D = pDControllerGain["angular"]["D"].as<double>();
-                simDevice->m_rootLink->m_controller.setAngularGains(_P, 0, _D);
+                m_controller.setAngularGains(_P, 0, _D);
+                angGainsDefined = true;
             }
+        }
+        if(!linGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
+                                        0,
+                                        simDevice->m_rootLink->m_controller.getD_lin());
+        }
+        if (!angGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
+                                         0,
+                                         simDevice->m_rootLink->m_controller.getD_ang());
+        }
+
+        // Read the flag to enable disable the joint control of SDE from this input device
+        // Defaults to enabled
+        if (pDEnableJointControl.IsDefined()){
+            _enableJointControl = pDEnableJointControl.as<bool>();
         }
 
         simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
         simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        enableJointControl(_enableJointControl);
         // Initialize all the constraint to null ptr
         for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
             simDevice->m_rigidGrippingConstraints[sIdx] = 0;
