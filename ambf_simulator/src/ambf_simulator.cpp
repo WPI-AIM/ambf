@@ -96,6 +96,7 @@ struct CommandLineOptions{
     int htxFrequency = 1000; // Physics Update Frequency
     bool enableForceFeedback = true; // Enable Force Feedback
     int numDevicesToLoad; // Number of Devices to Load
+    std::string devicesToLoad = ""; // A string of device indexes to load
 //////////////////////////////////////////////////////////////////////////
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
@@ -262,6 +263,7 @@ int main(int argc, char* argv[])
     cmd_opts.add_options()
             ("help,h", "Show help")
             ("ndevs,n", p_opt::value<int>(), "Number of Haptic Devices to Load")
+            ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
             ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
             ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
             ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
@@ -284,15 +286,27 @@ int main(int argc, char* argv[])
 
     g_cmdOpts.numDevicesToLoad = MAX_DEVICES;
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
+
     if(var_map.count("ndevs")){ g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();}
+
+    if(var_map.count("load_devices")){ g_cmdOpts.devicesToLoad = var_map["load_devices"].as<std::string>();}
+
     if(var_map.count("phx_frequency")){ g_cmdOpts.phxFrequency = var_map["phx_frequency"].as<int>();}
+
     if(var_map.count("htx_frequency")){ g_cmdOpts.htxFrequency = var_map["htx_frequency"].as<int>();}
+
     if(var_map.count("fixed_phx_timestep")){ g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();}
+
     if(var_map.count("fixed_htx_timestep")){ g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();}
+
     if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
+
     if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
+
     if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
+
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
+
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
     else{
         if (g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -490,7 +504,22 @@ int main(int argc, char* argv[])
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
     g_inputDevices = std::make_shared<afInputDevices>(g_afWorld);
-    g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
+    if (!g_cmdOpts.devicesToLoad.empty()){
+        std::vector<int> devIndices;
+        std::string loadDevIndices = g_cmdOpts.devicesToLoad;
+        loadDevIndices.erase(std::remove(loadDevIndices.begin(), loadDevIndices.end(), ' '), loadDevIndices.end());
+        std::stringstream ss(loadDevIndices);
+        while(ss.good() )
+        {
+            string devIndex;
+            getline( ss, devIndex, ',' );
+            devIndices.push_back(std::stoi(devIndex));
+        }
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), devIndices);
+    }
+    else{
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
+    }
 
     //-----------------------------------------------------------------------------------------------------------
     // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR

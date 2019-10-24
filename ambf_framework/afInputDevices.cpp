@@ -308,6 +308,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             m_maxForce = _maxForce;
         }
     }
+    else{
+        // If not specified, use the value specified in the devices source file
+        m_maxForce = m_hInfo.m_maxLinearForce;
+    }
 
     if (pDMaxJerk.IsDefined()){
         double _maxJerk = pDMaxJerk.as<double>();
@@ -915,6 +919,74 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
     m_mode_str = "CAM_CLUTCH_CONTROL";
     m_mode_idx = 0;
 }
+
+
+///
+/// \brief afInputDevices::loadInputDevices
+/// \param a_inputdevice_config
+/// \param a_device_indices
+/// \return
+///
+bool afInputDevices::loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices){
+    if (a_input_devices_config.empty()){
+        a_input_devices_config = m_afWorld->getInputDevicesConfig();
+    }
+    YAML::Node inputDevicesNode;
+    try{
+        inputDevicesNode = YAML::LoadFile(a_input_devices_config);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
+        return 0;
+    }
+
+    YAML::Node inputDevices = inputDevicesNode["input devices"];
+
+    m_basePath = boost::filesystem::path(a_input_devices_config).parent_path();
+
+    if (!inputDevices.IsDefined()){
+        return 0;
+    }
+
+    if (a_device_indices.size() >= 0 && a_device_indices.size() < inputDevices.size()){
+        m_deviceHandler.reset(new cHapticDeviceHandler());
+        for (int i = 0; i < a_device_indices.size(); i++){
+            int devIdx = a_device_indices[i];
+            if (devIdx >=0 && devIdx < inputDevices.size()){
+                afPhysicalDevice* pD = new afPhysicalDevice();
+                afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
+
+                // Load the device specified in the afInputDevice yaml file
+                std::string devKey = inputDevices[devIdx].as<std::string>();
+                YAML::Node devNode = inputDevicesNode[devKey];
+
+                if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
+                    InputControlUnit dgPair;
+                    dgPair.m_physicalDevice = pD;
+                    dgPair.m_simulatedDevice = sD;
+                    dgPair.m_name = devKey;
+                    m_psDevicePairs.push_back(dgPair);
+                }
+                else
+                {
+                    std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devKey << "\"\n";
+                }
+            }
+            else{
+                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevices.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+            }
+        }
+    }
+    else{
+        std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+    }
+    m_numDevices = m_psDevicePairs.size();
+    m_use_cam_frame_rot = true;
+    m_simModes = CAM_CLUTCH_CONTROL;
+    m_mode_str = "CAM_CLUTCH_CONTROL";
+    m_mode_idx = 0;
+}
+
 
 ///
 /// \brief afInputDevices::getDeviceGripperPairs

@@ -323,7 +323,9 @@ public:
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
 
-    virtual bool loadInputDevices(std::string a_inputdevice_config, int a_max_load_devs = MAX_DEVICES);
+    virtual bool loadInputDevices(std::string a_input_devices_config, int a_max_load_devs = MAX_DEVICES);
+
+    virtual bool loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices);
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 

@@ -1,20 +1,12 @@
 input devices: [
- Novint Falcon1, Novint Falcon2]
+  MTMR,
+  MTML,
+  Geomagic Touch,
+  Razer Hydra0,
+  Razer Hydra1,
+  Novint Falcon1,
+  Novint Falcon2]
 
-MTMR:
-  hardware name: MTMR
-  haptic gain: {linear: 0.03, angular: 1}
-  workspace scaling: 5
-  simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
-  # root link:
-  location: {
-    position: {x: -0.5, y: 0, z: 0},
-    orientation: {r: 0, p: 0, y: 0}}
-  button mapping: {
-    a1: 1,
-    a2: 2,
-    next mode: 3,
-    prev mode: 4}
 
 MTML:
     hardware name: MTML
@@ -31,6 +23,22 @@ MTML:
       prev mode: 4}
     # visible: True
     # visible size: 0.005
+
+MTMR:
+  hardware name: MTMR
+  haptic gain: {linear: 0.03, angular: 1}
+  workspace scaling: 5
+  simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+  # root link:
+  location: {
+    position: {x: -0.5, y: 0, z: 0},
+    orientation: {r: 0, p: 0, y: 0}}
+  button mapping: {
+    a1: 1,
+    a2: 2,
+    next mode: 3,
+    prev mode: 4}
+
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
