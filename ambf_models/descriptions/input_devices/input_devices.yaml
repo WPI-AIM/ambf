@@ -1,5 +1,5 @@
-input devices: [MTMR, MTML, Geomagic Touch, Razer Hydra0, Razer Hydra1,
- Novint Falcon]
+input devices: [
+ Novint Falcon1, Novint Falcon2]
 
 MTMR:
   hardware name: MTMR
@@ -91,13 +91,34 @@ Razer Hydra1:
     # visible: True
     # visible size: 0.005
 
-Novint Falcon:
+Novint Falcon1:
     hardware name: Falcon
-    haptic gain: {linear: 0.0, angular: 0.0}
+    haptic gain: {linear: 0.5, angular: 0.0}
+    deadband: 0.01
+    max force: 10
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/single joint1.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}
+    # visible: True
+    # visible size: 0.005
+
+Novint Falcon2:
+    hardware name: Falcon
+    haptic gain: {linear: 0.5, angular: 0.0}
+    deadband: 0.01
+    max force: 10
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    location: {
+      position: {x: 0.0, y: -0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
 
     button mapping: {

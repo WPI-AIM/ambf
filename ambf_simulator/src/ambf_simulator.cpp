@@ -1844,15 +1844,15 @@ void updateHapticDevice(void* a_arg){
             force  = - g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
             torque = - g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
 
-            if ((force - force_prev).length() > phyDev->m_maxJerk){
-                cVector3d normalized_force = force;
-                normalized_force.normalize();
-                double _sign = 1.0;
-                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
-                    _sign = 1.0;
-                }
-                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
-            }
+//            if ((force - force_prev).length() > phyDev->m_maxJerk){
+//                cVector3d normalized_force = force;
+//                normalized_force.normalize();
+//                double _sign = 1.0;
+//                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
+//                    _sign = 1.0;
+//                }
+//                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
+//            }
 
             if (force.length() < phyDev->m_deadBand){
                 force.set(0,0,0);
