@@ -534,3 +534,9 @@ class Object(WatchDog):
                 # self.console_print(self._name)
                 self._clear_command()
             self._pub.publish(self._cmd)
+
+    def get_inertia(self):
+        """
+        Get the inertia the body
+        """
+        return self._state.pInertia
