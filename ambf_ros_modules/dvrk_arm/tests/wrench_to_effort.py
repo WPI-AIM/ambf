@@ -2,7 +2,7 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 import numpy as np
 import time
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import Wrench, WrenchStamped
 from sensor_msgs.msg import JointState
 from argparse import ArgumentParser
 
@@ -30,16 +30,16 @@ class WatchDog(object):
 
 
 def rot_z(q):
-    r = np.mat([[np.cos(q),-np.sin(q), 0], [np.sin(q), np.cos(q), 0], [0, 0, 1]])
+    r = np.mat([[np.cos(q), -np.sin(q), 0], [np.sin(q), np.cos(q), 0], [0, 0, 1]])
     return r
 
 
 class TaskToJointSpace:
     def __init__(self, arm_name='MTMR'):
-        self._jac_spa = np.zeros((6, 7))
-        self._jac_bod = np.zeros((6, 7))
-        self._jac_rows = 6
-        self._jac_cols = 7
+        self._num_rows = 6
+        self._num_cols = 7
+        self._jac_spa = np.zeros((self._num_rows, self._num_cols))
+        self._jac_bod = np.zeros((self._num_rows, self._num_cols))
 
         self._new_data = 0
 
@@ -53,7 +53,7 @@ class TaskToJointSpace:
         self._jac_spa_sub = rospy.Subscriber('/dvrk/' + arm_name + '/jacobian_spatial', Float64MultiArray, self.jac_spa_cb, queue_size=1)
         self._jac_bod_sub = rospy.Subscriber('/dvrk/' + arm_name + '/jacobian_body', Float64MultiArray, self.jac_bod_cb, queue_size=1)
         self._js_sub = rospy.Subscriber('/dvrk/' + arm_name + '/state_joint_current', JointState, self.js_cb, queue_size=1)
-        self._wrench_bod_sub = rospy.Subscriber('/ambf/' + arm_name + '/wrench_body', WrenchStamped, self.wrench_bod_cb, queue_size=1)
+        self._wrench_bod_sub = rospy.Subscriber('/ambf/' + arm_name + '/set_wrench_body', Wrench, self.wrench_bod_cb, queue_size=1)
 
         self._torque_pub = rospy.Publisher('/dvrk/' + arm_name + '/set_effort_joint', JointState, queue_size=5)
 
@@ -78,14 +78,14 @@ class TaskToJointSpace:
 
     def jac_spa_cb(self, msg):
         self._new_data = True
-        for r in range(0, self._jac_rows):
-            for c in range(0, self._jac_cols):
+        for r in range(0, self._num_rows):
+            for c in range(0, self._num_cols):
                 self._jac_spa[r][c] = msg.data[r + (6 * c)]
         pass
 
     def jac_bod_cb(self, msg):
-        for r in range(0, self._jac_rows):
-            for c in range(0, self._jac_cols):
+        for r in range(0, self._num_rows):
+            for c in range(0, self._num_cols):
                 self._jac_bod[r][c] = msg.data[r + (6 * c)]
         pass
 
@@ -93,13 +93,13 @@ class TaskToJointSpace:
         self._joint_state = msg
 
     def wrench_bod_cb(self, msg):
-        self._wrench_cmd[0] = msg.wrench.force.x
-        self._wrench_cmd[1] = msg.wrench.force.y
-        self._wrench_cmd[2] = msg.wrench.force.z
+        self._wrench_cmd[0] = msg.force.x
+        self._wrench_cmd[1] = msg.force.y
+        self._wrench_cmd[2] = msg.force.z
 
-        self._wrench_cmd[3] = msg.wrench.torque.x
-        self._wrench_cmd[4] = msg.wrench.torque.y
-        self._wrench_cmd[5] = msg.wrench.torque.z
+        self._wrench_cmd[3] = msg.torque.x
+        self._wrench_cmd[4] = msg.torque.y
+        self._wrench_cmd[5] = msg.torque.z
 
         self._wd.acknowledge_wd()
 
@@ -113,10 +113,18 @@ class TaskToJointSpace:
         self._wrench_cmd[5] = 0
 
     def print_jacobian_spatial(self):
-        print(self._jac_spa)
+        jac = np.zeros(self._jac_spa.shape)
+        for r in range(0, self._num_rows):
+            for c in range(0, self._num_cols):
+                jac[r][c] = round(self._jac_spa[r][c], 3)
+        print(jac)
 
     def print_jacobian_body(self):
-        print(self._jac_bod)
+        jac = np.zeros(self._jac_bod.shape)
+        for r in range(0, self._num_rows):
+            for c in range(0, self._num_cols):
+                jac[r][c] = round(self._jac_bod[r][c], 3)
+        print(jac)
 
     def convert_force_to_torque_spa(self, force):
         torque = np.matmul(self._jac_spa.transpose(), force)
@@ -183,6 +191,8 @@ def main():
     print('Initialized')
 
     time.sleep(0.2)
+    # tjs.print_jacobian_body()
+    # tjs.print_jacobian_spatial()
     tjs.run()
 
 
