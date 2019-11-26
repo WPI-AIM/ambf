@@ -948,7 +948,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, std::v
         return 0;
     }
 
-    if (a_device_indices.size() >= 0 && a_device_indices.size() < inputDevices.size()){
+    if (a_device_indices.size() >= 0 && a_device_indices.size() <= inputDevices.size()){
         m_deviceHandler.reset(new cHapticDeviceHandler());
         for (int i = 0; i < a_device_indices.size(); i++){
             int devIdx = a_device_indices[i];
