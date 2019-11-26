@@ -2,9 +2,10 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 import numpy as np
 import time
-from geometry_msgs.msg import Wrench, WrenchStamped
+from geometry_msgs.msg import Wrench, WrenchStamped, PoseStamped
 from sensor_msgs.msg import JointState
 from argparse import ArgumentParser
+from PyKDL import Vector, Rotation
 
 
 class WatchDog(object):
@@ -45,7 +46,8 @@ class TaskToJointSpace:
 
         self._rate = rospy.Rate(500)
         self._joint_state = JointState()
-        self._joint_cmd = JointState()
+        self._cart_state = JointState()
+        self._state_cmd = JointState()
 
         self._wrench_cmd = np.zeros((6, 1))
         self._joint_torques_cmd = np.zeros((7, 1))
@@ -53,6 +55,7 @@ class TaskToJointSpace:
         self._jac_spa_sub = rospy.Subscriber('/dvrk/' + arm_name + '/jacobian_spatial', Float64MultiArray, self.jac_spa_cb, queue_size=1)
         self._jac_bod_sub = rospy.Subscriber('/dvrk/' + arm_name + '/jacobian_body', Float64MultiArray, self.jac_bod_cb, queue_size=1)
         self._js_sub = rospy.Subscriber('/dvrk/' + arm_name + '/state_joint_current', JointState, self.js_cb, queue_size=1)
+        self._cs_sub = rospy.Subscriber('/dvrk/' + arm_name + '/position_cartesian_current', PoseStamped, self.cs_cb, queue_size=1)
         self._wrench_bod_sub = rospy.Subscriber('/ambf/' + arm_name + '/set_wrench_body', Wrench, self.wrench_bod_cb, queue_size=1)
 
         self._torque_pub = rospy.Publisher('/dvrk/' + arm_name + '/set_effort_joint', JointState, queue_size=5)
@@ -69,6 +72,13 @@ class TaskToJointSpace:
 
         self.Kp = 0.3
         self.Kd = 0
+
+        theta = 0
+        self._rot_offset = np.mat([[+1.0, +0.0, +0.0],
+                                   [+0.0, +np.cos(theta), +np.sin(theta)],
+                                   [+0.0, -np.sin(theta), +np.cos(theta)]])
+
+        self._ee_rot = Rotation()
 
     def set_k_gain(self, val):
         self.Kp = val
@@ -92,10 +102,31 @@ class TaskToJointSpace:
     def js_cb(self, msg):
         self._joint_state = msg
 
+    def cs_cb(self, msg):
+        self._cart_state = msg
+        self._ee_rot = Rotation.Quaternion(msg.pose.orientation.x,
+                                           msg.pose.orientation.y,
+                                           msg.pose.orientation.z,
+                                           msg.pose.orientation.w)
+
     def wrench_bod_cb(self, msg):
-        self._wrench_cmd[0] = msg.force.x
-        self._wrench_cmd[1] = msg.force.y
-        self._wrench_cmd[2] = msg.force.z
+        force = np.zeros((3, 1))
+
+        force[0] = msg.force.x
+        force[1] = msg.force.y
+        force[2] = msg.force.z
+
+        force = np.matmul(self._rot_offset, force)
+
+        rel_force = Vector(force[0], force[1], force[2])
+
+        abs_force = self._ee_rot.Inverse() * rel_force
+
+        print abs_force[0], abs_force[1], abs_force[2]
+
+        self._wrench_cmd[0] = abs_force[0]
+        self._wrench_cmd[1] = abs_force[1]
+        self._wrench_cmd[2] = abs_force[2]
 
         self._wrench_cmd[3] = msg.torque.x
         self._wrench_cmd[4] = msg.torque.y
@@ -135,12 +166,12 @@ class TaskToJointSpace:
         return torque
 
     def command_torques(self, torques):
-        self._joint_cmd.effort = torques.flatten().tolist()
-        self._torque_pub.publish(self._joint_cmd)
+        self._state_cmd.effort = torques.flatten().tolist()
+        self._torque_pub.publish(self._state_cmd)
 
     def run(self):
         while not rospy.is_shutdown():
-            self._joint_torques_cmd = self.convert_force_to_torque_spa(self._wrench_cmd)
+            self._joint_torques_cmd = self.convert_force_to_torque_bod(self._wrench_cmd)
 
             r4 = rot_z(self._joint_state.position[3])
             r5 = rot_z(self._joint_state.position[4])
@@ -155,10 +186,16 @@ class TaskToJointSpace:
             tau4 = self.Kp * e - self.Kd * self._joint_state.velocity[3]
             np.clip(tau4, -0.3, 0.3)
 
-            self._joint_torques_cmd[3] = tau4[0, 0]
+            # self._joint_torques_cmd[3] = tau4[0, 0]
+            self._joint_torques_cmd[3] = 0
             self._joint_torques_cmd[4] = 0
             self._joint_torques_cmd[5] = 0
             self._joint_torques_cmd[6] = 0
+
+            # Apply the relation between J2 and J3
+            self._joint_torques_cmd[1] = self._joint_torques_cmd[1]
+            # self._joint_torques_cmd[1] = -self._joint_torques_cmd[1]
+            self._joint_torques_cmd[2] = self._joint_torques_cmd[2]
             self.command_torques(self._joint_torques_cmd)
 
             if self._wd.is_wd_expired():
