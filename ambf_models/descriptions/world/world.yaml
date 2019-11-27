@@ -40,7 +40,7 @@ camera1:
   monitor: 1
   controlling devices: [MTMR, MTML]
   # multipass: True
-  publish image: True
+  # publish image: True
 
 camera2:
   # namespace: /ambf/env/cameras/

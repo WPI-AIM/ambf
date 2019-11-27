@@ -2,7 +2,7 @@
 world config: ./world/world.yaml
 # world config: ./world/raven_world.yaml
 color config: ./color/colors.yaml
-input devices config: "./input_devices/1_TRAINING.yaml"
+input devices config: "./input_devices/SISO.yaml"
 multibody configs:
   - "./multi-bodies/robots/blender-toy-car.yaml" #0
   - "./multi-bodies/robots/blender-toy-car2.yaml" #1
@@ -28,3 +28,5 @@ multibody configs:
   - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
   - "./multi-bodies/environments/TexturedGround/env.yaml" #22
   - "./multi-bodies/puzzles/puzzle7.yaml" #23
+  - "./multi-bodies/puzzles/puzzle8.yaml" #24
+  - "./multi-bodies/puzzles/puzzle9.yaml" #25

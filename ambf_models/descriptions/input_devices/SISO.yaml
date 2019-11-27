@@ -9,7 +9,7 @@ input devices: [
 
 MTML:
     hardware name: MTML
-    haptic gain: {linear: 0.00, angular: 0.0}
+    haptic gain: {linear: 0.06, angular: 0.0}
     deadband: 0.01
     max force: 10
     workspace scaling: 5
@@ -17,7 +17,7 @@ MTML:
     # root link: /ambf/env/BODY r_gripper_palm_link
     location: {
       position: {x: -0.5, y: 0.0, z: 0},
-      orientation: {r: 0, p: -0.5, y: 0}}
+      orientation: {r: 0, p: -0.0, y: 0}}
     orientatffion offset: {r: 0.0, p: 0, y: 0}
     controller gain: {
       linear: {P: 200.0, D: 20.0},
@@ -33,7 +33,7 @@ MTML:
 
 MTMR:
   hardware name: MTMR
-  haptic gain: {linear: 0.00, angular: 0.0}
+  haptic gain: {linear: 0.06, angular: 0.0}
   controller gain: {
     linear: {P: 200.0, D: 20.0},
     angular: {P: 50.0, D: 1.0}
@@ -47,7 +47,7 @@ MTMR:
   # root link: /ambf/env/BODY r_gripper_palm_link
   location: {
     position: {x: -0.5, y: 0, z: 0},
-    orientation: {r: 0, p: -0.5, y: 0}}
+    orientation: {r: 0, p: -0.0, y: 0}}
   orientation offset: {r: 0.0, p: 0.0, y: 0}
   button mapping: {
     a1: 1,
@@ -127,7 +127,7 @@ Razer Hydra1:
 
 Novint Falcon1:
     hardware name: Falcon
-    haptic gain: {linear: 0.00, angular: 0.0}
+    haptic gain: {linear: 0.03, angular: 0.0}
     controller gain: {
       linear: {P: 200, D: 20.0},
       angular: {P: 0.0, D: 0.0}
@@ -153,7 +153,7 @@ Novint Falcon1:
 
 Novint Falcon2:
     hardware name: Falcon
-    haptic gain: {linear: 0.00, angular: 0.0}
+    haptic gain: {linear: 0.03, angular: 0.0}
     controller gain: {
       linear: {P: 200, D: 20.0},
       angular: {P: 0.0, D: 0.0}

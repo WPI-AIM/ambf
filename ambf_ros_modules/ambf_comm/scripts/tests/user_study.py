@@ -6,6 +6,7 @@ import shlex
 
 import rospy
 from std_msgs.msg import Time
+from std_msgs.msg import Empty
 import time
 
 import threading
@@ -16,6 +17,9 @@ class UserStudy:
 
         rospy.init_node('user_study_data')
         self._time_pub = rospy.Publisher('/ambf/env/user_study_time', Time, queue_size=1)
+        self._dvrk_on_pub = rospy.Publisher('/dvrk/console/power_on', Empty, queue_size=1)
+        self._dvrk_off_pub = rospy.Publisher('/dvrk/console/power_off', Empty, queue_size=1)
+        self._dvrk_home_pub = rospy.Publisher('/dvrk/console/home', Empty, queue_size=1)
         self._time_msg = 0
         self._start_time = 0
         self._active = False
@@ -35,6 +39,10 @@ class UserStudy:
                              "/ambf/env/physical_device_2/MTMR/State",
                              "/ambf/env/physical_device_3/Falcon/State",
                              "/ambf/env/physical_device_4/Falcon/State",
+                             "/ambf/env/HandleLeft/State",
+                             "/ambf/env/HandleRight/State",
+                             "/ambf/env/FixedBase/State",
+                             "/ambf/env/MovingBase/State",
                              "/dvrk/MTML/position_cartesian_current",
                              "/dvrk/MTMR/position_cartesian_current",
                              "/dvrk/footpedals/clutch",
@@ -58,7 +66,7 @@ class UserStudy:
             self._time_pub_thread.start()
             print("Start Recording ROS Bag")
             date_time_str = str(datetime.now()).replace(' ', '_')
-            self._rosbag_filepath = './user_study_data/' + e1.get() + '_' + date_time_str
+            self._rosbag_filepath = './user_study_data/' + e1.get() + '_' + b1.get() + '_' + date_time_str
             command = "rosbag record -O" + ' ' + self._rosbag_filepath + self._topic_names_str
             print "Running Command", command
             command = shlex.split(command)
@@ -84,6 +92,18 @@ class UserStudy:
             self._time_pub.publish(self._time_msg)
             time.sleep(0.05)
 
+    def dvrk_power_on(self):
+        self._dvrk_on_pub.publish(Empty())
+        time.sleep(0.1)
+
+    def dvrk_power_off(self):
+        self._dvrk_off_pub.publish(Empty())
+        time.sleep(0.1)
+
+    def dvrk_home(self):
+        self._dvrk_home_pub.publish(Empty())
+        time.sleep(0.1)
+
 
 
 
@@ -91,18 +111,56 @@ study = UserStudy()
 
 master = Tk()
 master.title("AMBF USER STUDY 1")
-master.geometry('500x500')
+width = 550
+height = 600
+master.geometry(str(width)+'x'+str(height))
 Label(master, text='Human Subject Name').grid(row=0)
 
 e1 = Entry(master)
 e1.grid(row=0, column=1)
 
+b1 = StringVar()
+
+rb1 = Radiobutton(master,  text="TRAINING", padx=20, variable=b1, value='TRAINING')
+
+rb2 = Radiobutton(master, text="1a SINGLE", padx=20, variable=b1, value='1A_SINGLE')
+rb3 = Radiobutton(master, text="2a SISO", padx=20, variable=b1, value='2A_SISO')
+rb4 = Radiobutton(master, text="3a SIAO", padx=20, variable=b1, value='3A_SIAO')
+
+rb5 = Radiobutton(master, text="1b SINGLE", padx=20, variable=b1, value='1B_SINGLE')
+rb6 = Radiobutton(master, text="2b SISO", padx=20, variable=b1, value='2B_SISO')
+rb7 = Radiobutton(master, text="3b SIAO", padx=20, variable=b1, value='3B_SIAO')
+
+# Set Default Value
+
+b1.set('TRAINING')
+
 button_start = Button(master, text="Start Record", bg="green", fg="white", height=8, width=20, command=study.call)
 button_stop = Button(master, text="Stop Record (SAVE)", bg="red", fg="white", height=8, width=20, command=study.save)
 button_destroy = Button(master, text="Close App", bg="black", fg="white", height=8, width=20, command=master.destroy)
 
-button_start.grid(row=20, column=1)
-button_stop.grid(row=40, column=1)
-button_destroy.grid(row=60, column=1)
+
+button_on = Button(master, text="DVRK ON", bg="green", fg="white", height=4, width=10, command=study.dvrk_power_on)
+button_off = Button(master, text="DVRK OFF", bg="red", fg="white", height=4, width=10, command=study.dvrk_power_off)
+button_home = Button(master, text="DVRK HOME", bg="purple", fg="white", height=4, width=10, command=study.dvrk_home)
+
+rb1.grid(row=10, column=0)
+
+rb2.grid(row=20, column=0)
+rb3.grid(row=30, column=0)
+rb4.grid(row=40, column=0)
+
+rb5.grid(row=50, column=0)
+rb6.grid(row=60, column=0)
+rb7.grid(row=70, column=0)
+
+
+button_on.grid(row=20, column=1)
+button_off.grid(row=40, column=1)
+button_home.grid(row=60, column=1)
+
+button_start.grid(row=20, column=2)
+button_stop.grid(row=40, column=2)
+button_destroy.grid(row=60, column=2)
 
 master.mainloop()
