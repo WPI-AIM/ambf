@@ -1702,6 +1702,14 @@ void updateHapticDevice(void* a_arg){
     force_prev.set(0,0,0);
     torque_prev.set(0,0,0);
 
+
+    std::vector<float> error_and_force;
+    error_and_force.resize(6);
+
+    if (simDev->m_rootLink->m_afObjectPtr){
+        simDev->m_rootLink->m_afObjectPtr->set_userdata_desc("error_and_force");
+    }
+
     // main haptic simulation loop
     while(g_simulationRunning)
     {
@@ -1872,6 +1880,16 @@ void updateHapticDevice(void* a_arg){
             torque_prev = torque_prev;
             force  = - g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
             torque = - g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
+
+            if (simDev->m_rootLink->m_afObjectPtr){
+                error_and_force[0] = dpos.x();
+                error_and_force[1] = dpos.y();
+                error_and_force[2] = dpos.z();
+                error_and_force[3] = force.x();
+                error_and_force[4] = force.x();
+                error_and_force[5] = force.x();
+                simDev->m_rootLink->m_afObjectPtr->set_userdata(error_and_force);
+            }
 
 //            if ((force - force_prev).length() > phyDev->m_maxJerk){
 //                cVector3d normalized_force = force;

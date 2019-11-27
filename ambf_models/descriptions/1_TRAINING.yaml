@@ -1,0 +1,30 @@
+# This is the base file for Coordination Application
+world config: ./world/world.yaml
+# world config: ./world/raven_world.yaml
+color config: ./color/colors.yaml
+input devices config: "./input_devices/1_TRAINING.yaml"
+multibody configs:
+  - "./multi-bodies/robots/blender-toy-car.yaml" #0
+  - "./multi-bodies/robots/blender-toy-car2.yaml" #1
+  - "./multi-bodies/robots/blender-neuro-robot.yaml" #2
+  - "./multi-bodies/robots/blender-raven2.yaml" #3
+  - "./multi-bodies/robots/blender-mtm.yaml" #4
+  - "./multi-bodies/robots/blender-psm.yaml" #5
+  - "./multi-bodies/robots/blender-ecm.yaml" #6
+  - "./multi-bodies/robots/blender-suj.yaml" #7
+  - "./multi-bodies/robots/blender-kuka.yaml" #8
+  - "./multi-bodies/robots/blender-pr2.yaml" #9
+  - "./multi-bodies/puzzles/parallel_structure.yaml" #10
+  - "./multi-bodies/puzzles/puzzle1.yaml" #11
+  - "./multi-bodies/puzzles/puzzle2.yaml" #12
+  - "./multi-bodies/robots/blender-pr2-textured.yaml" #13
+  - "./multi-bodies/robots/sophie.yaml" #14
+  - "./multi-bodies/puzzles/puzzle4.yaml" #15
+  - "./multi-bodies/puzzles/puzzle5.yaml" #16
+  - "./multi-bodies/puzzles/puzzle6.yaml" #17
+  - "./multi-bodies/environments/ScrewDriverEnv/env.yaml" #18
+  - "./multi-bodies/environments/KnotEnv/env.yaml" #19
+  - "./multi-bodies/environments/KnotEnv2/env.yaml" #20
+  - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
+  - "./multi-bodies/environments/TexturedGround/env.yaml" #22
+  - "./multi-bodies/puzzles/puzzle7.yaml" #23

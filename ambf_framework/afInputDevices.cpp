@@ -406,11 +406,11 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
         a_iD->s_inputDeviceCount++;
         std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-//        createAfCursor(a_iD->getAFWorld(),
-//                       _pDevName,
-//                       simDevice->getNamespace(),
-//                       simDevice->m_rootLink->getMinPublishFrequency(),
-//                       simDevice->m_rootLink->getMaxPublishFrequency());
+        createAfCursor(a_iD->getAFWorld(),
+                       _pDevName,
+                       simDevice->m_rootLink->getNamespace(),
+                       simDevice->m_rootLink->getMinPublishFrequency(),
+                       simDevice->m_rootLink->getMaxPublishFrequency());
 
         // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
         // Since an existing root body is bound to the physical device whose afComm should already be
@@ -517,9 +517,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 ///
 void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
     m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
-    m_afCursor->setShowEnabled(true);
-    m_afCursor->setShowFrame(true);
-    m_afCursor->setFrameSize(0.1);
+    m_afCursor->setShowEnabled(false);
+    m_afCursor->setShowFrame(false);
+    m_afCursor->setFrameSize(0.001);
     cMaterial mat;
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
