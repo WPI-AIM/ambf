@@ -1886,8 +1886,8 @@ void updateHapticDevice(void* a_arg){
                 error_and_force[1] = dpos.y();
                 error_and_force[2] = dpos.z();
                 error_and_force[3] = force.x();
-                error_and_force[4] = force.x();
-                error_and_force[5] = force.x();
+                error_and_force[4] = force.y();
+                error_and_force[5] = force.z();
                 simDev->m_rootLink->m_afObjectPtr->set_userdata(error_and_force);
             }
 
