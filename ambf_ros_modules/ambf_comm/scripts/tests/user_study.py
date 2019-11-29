@@ -2,12 +2,15 @@ from tkinter import *
 import rosbag
 from datetime import datetime
 import subprocess
+import signal
 import shlex
 
 import rospy
 from std_msgs.msg import Time
 from std_msgs.msg import Empty
 import time
+
+import os
 
 import threading
 
@@ -77,11 +80,24 @@ class UserStudy:
     def save(self):
 
         if self._rosbag_filepath is not 0:
-            self._rosbag_process.send_signal(subprocess.signal.SIGINT)
-            print("Saving to:", self._rosbag_filepath)
 
+            # self._active = False
+            filepath = self._rosbag_filepath
             self._rosbag_filepath = 0
+
+            node_prefix = "/record"
+            # Adapted from http://answers.ros.org/question/10714/start-and-stop-rosbag-within-a-python-script/
+            list_cmd = subprocess.Popen("rosnode list", shell=True, stdout=subprocess.PIPE)
+            list_output = list_cmd.stdout.read()
+            retcode = list_cmd.wait()
+            assert retcode == 0, "List command returned %d" % retcode
+            for node_name in list_output.split("\n"):
+                if node_name.startswith(node_prefix):
+                    os.system("rosnode kill " + node_name)
+
+            print("Saved As:", filepath, ".bag")
             self._active = False
+
         else:
             print("You should start recording first before trying to save")
 
