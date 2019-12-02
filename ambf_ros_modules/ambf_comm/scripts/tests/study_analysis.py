@@ -58,15 +58,19 @@ def compute_number_of_clutches(topic_name, t_start=-1, t_end=-1):
 
     num_clutches = 0.0
     clutch_pressed = False
+    clutch_press_times = []
+    t_press = 0
     for top, msg, t in cur_bag.read_messages(topics=[topic_name], start_time=t_start, end_time=t_end):
         if msg.buttons[0] is 1:
             clutch_pressed = True
+            t_press = t
 
         if msg.buttons[0] is 0 and clutch_pressed is True:
             clutch_pressed = False
+            clutch_press_times.append(t.to_sec() - t_press.to_sec())
             num_clutches = num_clutches + 1
 
-    return num_clutches
+    return num_clutches, clutch_press_times
 
 
 print os.listdir('.')
@@ -75,44 +79,52 @@ print os.listdir('.')[0]
 
 os.chdir(os.listdir('.')[0])
 os.chdir('./Reduced')
-bag_filepath = os.listdir('.')[2]
-print "Opening Bag file: ", bag_filepath
+files = os.listdir('.')
 
-cur_bag = rosbag.Bag(bag_filepath)
+for cur_file in files:
+    print '--------------------------------'
+    print '--------------------------------'
+    print "Opening Bag file: ", cur_file
 
-print cur_bag.get_end_time() - cur_bag.get_start_time()
+    print(cur_file.split('_'))
+    control_type = cur_file.split('_')
+    # control_type = control_type[1] + ' ' + control_type[2]
+    print "Subject Name: ", control_type[1], "Control Type: ", control_type[2]
 
-ctr = 0
-final_time = 0
-for topic, msg, time in cur_bag.read_messages(['/ambf/env/user_study_time']):
-    # print 'TOPIC: ', topic
-    # print 'TIME: ', time
-    # print 'MESSAGE: ', msg
-    # print 'COUNTER: ', ctr
-    ctr = ctr + 1
-    final_time = time
+    cur_bag = rosbag.Bag(cur_file)
 
-mtmr_path_len, mtmr_traj = compute_dist('/dvrk/MTMR/position_cartesian_current', t_end=final_time)
-mtml_path_len, mtml_traj = compute_dist('/dvrk/MTML/position_cartesian_current', t_end=final_time)
-mtmr_force_traj = get_force_trajectory('/ambf/env/simulated_device_1/MTML/State', t_end=final_time)
-mtml_force_traj = get_force_trajectory('/ambf/env/simulated_device_2/MTMR/State', t_end=final_time)
+    print cur_bag.get_end_time() - cur_bag.get_start_time()
 
-print "MTMR Path Length: ", mtmr_path_len
-print "MTML Path Length: ", mtml_path_len
-print "Number of Clutches: ", compute_number_of_clutches('/dvrk/footpedals/clutch', t_end=final_time)
+    ctr = 0
+    final_time = 0
+    for topic, msg, time in cur_bag.read_messages(['/ambf/env/user_study_time']):
+        # print 'TOPIC: ', topic
+        # print 'TIME: ', time
+        # print 'MESSAGE: ', msg
+        # print 'COUNTER: ', ctr
+        ctr = ctr + 1
+        final_time = time
 
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.plot3D(mtmr_traj[:, 0], mtmr_traj[:, 1], mtmr_traj[:, 2], 'red')
-ax.plot3D(mtml_traj[:, 0], mtml_traj[:, 1], mtml_traj[:, 2], 'green')
+    mtmr_path_len, mtmr_traj = compute_dist('/dvrk/MTMR/position_cartesian_current', t_end=final_time)
+    mtml_path_len, mtml_traj = compute_dist('/dvrk/MTML/position_cartesian_current', t_end=final_time)
+    mtmr_force_traj = get_force_trajectory('/ambf/env/simulated_device_1/MTML/State', t_end=final_time)
+    mtml_force_traj = get_force_trajectory('/ambf/env/simulated_device_2/MTMR/State', t_end=final_time)
 
-plt.figure()
-plt.plot(mtml_traj)
-plt.plot(mtmr_traj)
+    print "MTMR Path Length: ", mtmr_path_len
+    print "MTML Path Length: ", mtml_path_len
+    print "Number of Clutches: ", compute_number_of_clutches('/dvrk/footpedals/clutch', t_end=final_time)
 
-plt.figure()
-plt.plot(mtml_force_traj)
-plt.plot(mtmr_force_traj)
-
-plt.show()
-
+# fig = plt.figure()
+# ax = plt.axes(projection='3d')
+# ax.plot3D(mtmr_traj[:, 0], mtmr_traj[:, 1], mtmr_traj[:, 2], 'red')
+# ax.plot3D(mtml_traj[:, 0], mtml_traj[:, 1], mtml_traj[:, 2], 'green')
+#
+# plt.figure()
+# plt.plot(mtml_traj)
+# plt.plot(mtmr_traj)
+#
+# plt.figure()
+# plt.plot(mtml_force_traj)
+# plt.plot(mtmr_force_traj)
+#
+# plt.show()
