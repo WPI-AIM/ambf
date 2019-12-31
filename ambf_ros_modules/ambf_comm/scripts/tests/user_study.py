@@ -141,11 +141,11 @@ rb1 = Radiobutton(master,  text="TRAINING", padx=20, variable=b1, value='TRAININ
 
 rb2 = Radiobutton(master, text="1a SINGLE", padx=20, variable=b1, value='1A_SINGLE')
 rb3 = Radiobutton(master, text="2a SISO", padx=20, variable=b1, value='2A_SISO')
-rb4 = Radiobutton(master, text="3a SIAO", padx=20, variable=b1, value='3A_SIAO')
+rb4 = Radiobutton(master, text="3a SINO", padx=20, variable=b1, value='3A_SINO')
 
 rb5 = Radiobutton(master, text="1b SINGLE", padx=20, variable=b1, value='1B_SINGLE')
 rb6 = Radiobutton(master, text="2b SISO", padx=20, variable=b1, value='2B_SISO')
-rb7 = Radiobutton(master, text="3b SIAO", padx=20, variable=b1, value='3B_SIAO')
+rb7 = Radiobutton(master, text="3b SINO", padx=20, variable=b1, value='3B_SINO')
 
 # Set Default Value
 
