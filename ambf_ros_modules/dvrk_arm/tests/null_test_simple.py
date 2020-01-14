@@ -15,6 +15,7 @@ Kp = 0.5
 Kd = 0.1
 arm_name = 'MTMR'
 robot_ready = False
+namespace = '/dvrk/'
 
 
 def js_cb(msg):
@@ -51,6 +52,8 @@ def main():
                         default=0.5)
     parser.add_argument('-d', action='store', dest='Kd', help='Specify Damping Gain',
                         default=0.1)
+    parser.add_argument('-n', action='store', dest='namespace', help='ROS Namespace',
+                        default='dvrk')
 
     parsed_args = parser.parse_args()
     print('Specified Arguments')
@@ -67,55 +70,41 @@ def main():
 
     node_name = arm_name + '_null_space_test'
     rospy.init_node(node_name)
-    joint_state_sub = rospy.Subscriber('/dvrk/' + arm_name + '/state_joint_current', JointState, js_cb)
-    robot_state_sub = rospy.Subscriber('/dvrk/' + arm_name + '/current_state', String, state_cb, queue_size=1)
+    joint_state_sub = rospy.Subscriber(namespace + arm_name + '/state_joint_current', JointState, js_cb)
+    robot_state_sub = rospy.Subscriber(namespace + arm_name + '/current_state', String, state_cb, queue_size=1)
 
-    joint_state_pub = rospy.Publisher('/dvrk/' + arm_name + '/set_effort_joint', JointState, queue_size=10)
+    joint_state_pub = rospy.Publisher(namespace + arm_name + '/set_effort_joint', JointState, queue_size=10)
     js_cmd.effort = [0, 0, 0, 0, 0, 0, 0]
-    l4_o = np.identity(3)
-    l5_o = np.mat([[ 0, 0,-1],
-                    [ 0, 1, 0],
-                    [ 1, 0, 0]])
-
-    l6_o = np.mat([[ 0, 0, 1],
-                    [ 0, 1, 0],
-                    [-1, 0, 0]])
-
-    l7_o = np.mat([[ 1, 0, 0],
-                    [ 0, 0,-1],
-                    [ 0, 1, 0]])
 
     e = 0.0
     e_pre = e
     r = rospy.Rate(1000)
+
     while not rospy.is_shutdown():
-        r4 = rot_z(qs[3])
-        r5 = rot_z(qs[4])
-        r6 = rot_z(qs[5])
-        r7 = rot_z(qs[6])
-
-        if qs[4] > np.pi/2:
-            direction = -1
-        else:
-            direction = 1
-
-        re = l4_o * r4 * l5_o * r5 * l6_o * r6 * l7_o * r7
-        # print 'EE Matrix'
-        # print re
-        ve = re[:, 2]
-        v4 = r4[:, 0]
-
-        e_pre = e
-        e = (np.pi/2) - np.arccos(np.dot(v4.transpose(), ve))
-        de = e - e_pre
-        tau4 = Kp * direction * e - Kd * vs[3]
-        np.clip(tau4, -0.3, 0.3)
-        js_cmd.effort[3] = tau4[0, 0]
-
+        
         if robot_ready:
-            joint_state_pub.publish(js_cmd)
-        r.sleep()
 
+            lim1 = -1.5
+            lim2 = 1.3
+            lim3 = 1.7
+
+            sign = 1
+            if lim1 < qs[4] <= lim2 :
+                sign = 1
+            elif lim2 < qs[4] < lim3:
+                sign = 0
+            else:
+                sign = -1
+
+            e = qs[5]
+            tau4 = Kp * e * sign - Kd * vs[3]
+            tau4 = np.clip(tau4, -0.3, 0.3)
+            js_cmd.effort[3] = tau4
+            joint_state_pub.publish(js_cmd)
+            print 'PITCH JOINT: ', qs[4]
+            # print(round(e, 2))
+            # print('YAW :', qs[3], 'PITCH: ', qs[4], ' | YAW: ', qs[5])
+        r.sleep()
 
 if __name__ == "__main__":
     main()
