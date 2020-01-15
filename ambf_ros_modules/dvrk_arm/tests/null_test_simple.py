@@ -13,6 +13,9 @@ qs = np.zeros(7)
 vs = np.zeros(7)
 Kp = 0.5
 Kd = 0.1
+Kp2 = 0.1
+Kd2 = 0.05
+L2 = 0.01
 arm_name = 'MTMR'
 robot_ready = False
 namespace = '/dvrk/'
@@ -52,6 +55,12 @@ def main():
                         default=0.5)
     parser.add_argument('-d', action='store', dest='Kd', help='Specify Damping Gain',
                         default=0.1)
+    parser.add_argument('-p2', action='store', dest='Kp2', help='Specify Linear Gain',
+                        default=0.1)
+    parser.add_argument('-d2', action='store', dest='Kd2', help='Specify Damping Gain',
+                        default=0.05)
+    parser.add_argument('-l2', action='store', dest='L2', help='Specify Torque Limit',
+                        default=0.05)
     parser.add_argument('-n', action='store', dest='namespace', help='ROS Namespace',
                         default='dvrk')
 
@@ -67,6 +76,9 @@ def main():
 
     Kp = float(parsed_args.Kp)
     Kd = float(parsed_args.Kd)
+    Kp2 = float(parsed_args.Kp2)
+    Kd2 = float(parsed_args.Kd2)
+    L2 = float(parsed_args.L2)
 
     node_name = arm_name + '_null_space_test'
     rospy.init_node(node_name)
@@ -92,16 +104,26 @@ def main():
             if lim1 < qs[4] <= lim2 :
                 sign = 1
             elif lim2 < qs[4] < lim3:
-                sign = 0
+                range = lim3 - lim2
+                normalized_val = (qs[4] - lim2) / range
+                centerd_val = normalized_val - 0.5
+                sign = -centerd_val * 2
+                print('MID VAL:', sign)
+                #sign = 0
             else:
                 sign = -1
 
             e = qs[5]
             tau4 = Kp * e * sign - Kd * vs[3]
             tau4 = np.clip(tau4, -0.3, 0.3)
+
+            tau6 = -Kp2 * qs[5] - Kd2 * vs[5]
+            tau6 = np.clip(tau6, -L2, L2)
             js_cmd.effort[3] = tau4
+            js_cmd.effort[5] = tau6
             joint_state_pub.publish(js_cmd)
-            print 'PITCH JOINT: ', qs[4]
+            #print 'PITCH JOINT: ', qs[4]
+            # print 'YAW JOINT: ', tau6
             # print(round(e, 2))
             # print('YAW :', qs[3], 'PITCH: ', qs[4], ' | YAW: ', qs[5])
         r.sleep()
