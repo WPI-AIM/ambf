@@ -11,11 +11,6 @@ js_msg = JointState()
 js_cmd = JointState()
 qs = np.zeros(7)
 vs = np.zeros(7)
-Kp = 0.5
-Kd = 0.1
-Kp2 = 0.1
-Kd2 = 0.05
-L2 = 0.01
 arm_name = 'MTMR'
 robot_ready = False
 namespace = '/dvrk/'
@@ -51,16 +46,18 @@ def main():
 
     parser.add_argument('-a', action='store', dest='arm_name', help='Specify Arm Name',
                         default='MTMR')
-    parser.add_argument('-p', action='store', dest='Kp', help='Specify Linear Gain',
+    parser.add_argument('-p4', action='store', dest='Kp_4', help='Specify Wrist Platform (Joint 4) Linear Gain',
                         default=0.5)
-    parser.add_argument('-d', action='store', dest='Kd', help='Specify Damping Gain',
-                        default=0.1)
-    parser.add_argument('-p2', action='store', dest='Kp2', help='Specify Linear Gain',
-                        default=0.1)
-    parser.add_argument('-d2', action='store', dest='Kd2', help='Specify Damping Gain',
+    parser.add_argument('-d4', action='store', dest='Kd_4', help='Specify Wirst Platform (Joint 4) Damping Gain',
                         default=0.05)
-    parser.add_argument('-l2', action='store', dest='L2', help='Specify Torque Limit',
-                        default=0.05)
+    parser.add_argument('-l4', action='store', dest='lim_4', help='Specify Wrist Platform (Joint 4) Torque Limit',
+                        default=0.2)
+    parser.add_argument('-p6', action='store', dest='Kp_6', help='Specify Wrist Yaw (Joint 6) Linear Gain',
+                        default=0.0)
+    parser.add_argument('-d6', action='store', dest='Kd_6', help='Specify Wrist Yaw (Joint 6) Damping Gain',
+                        default=0.0)
+    parser.add_argument('-l6', action='store', dest='lim_6', help='Specify Wrist Yaw (Joint 6) Torque Limit',
+                        default=0.01)
     parser.add_argument('-n', action='store', dest='namespace', help='ROS Namespace',
                         default='dvrk')
 
@@ -74,11 +71,15 @@ def main():
         print('Specified arm is: ', arm_name)
         raise Exception('Error, specify MTML or MTMR as input arg')
 
-    Kp = float(parsed_args.Kp)
-    Kd = float(parsed_args.Kd)
-    Kp2 = float(parsed_args.Kp2)
-    Kd2 = float(parsed_args.Kd2)
-    L2 = float(parsed_args.L2)
+    # Wrist Platform (Joint 4)
+    Kp_4 = float(parsed_args.Kp_4)
+    Kd_4 = float(parsed_args.Kd_4)
+    lim_4 = float(parsed_args.lim_4)
+
+    # Wrist Yaw (Joint 6)
+    Kp_6 = float(parsed_args.Kp_6)
+    Kd_6 = float(parsed_args.Kd_6)
+    lim_6 = float(parsed_args.lim_6)
 
     node_name = arm_name + '_null_space_test'
     rospy.init_node(node_name)
@@ -93,19 +94,20 @@ def main():
     r = rospy.Rate(1000)
 
     while not rospy.is_shutdown():
-        
+
         if robot_ready:
 
-            lim1 = -1.5
-            lim2 = 1.3
-            lim3 = 1.7
+            # Limits for Wrist Pitch (Joint 5)
+            a_lim_5 = -1.5
+            b_lim_5 = 1.2
+            c_lim_5 = 1.8
 
             sign = 1
-            if lim1 < qs[4] <= lim2 :
+            if a_lim_5 < qs[4] <= b_lim_5 :
                 sign = 1
-            elif lim2 < qs[4] < lim3:
-                range = lim3 - lim2
-                normalized_val = (qs[4] - lim2) / range
+            elif b_lim_5 < qs[4] < c_lim_5:
+                range = c_lim_5 - b_lim_5
+                normalized_val = (qs[4] - b_lim_5) / range
                 centerd_val = normalized_val - 0.5
                 sign = -centerd_val * 2
                 print('MID VAL:', sign)
@@ -114,13 +116,13 @@ def main():
                 sign = -1
 
             e = qs[5]
-            tau4 = Kp * e * sign - Kd * vs[3]
-            tau4 = np.clip(tau4, -0.3, 0.3)
+            tau_4 = Kp_4 * e * sign - Kd_4 * vs[3]
+            tau_4 = np.clip(tau_4, -lim_4, lim_4)
 
-            tau6 = -Kp2 * qs[5] - Kd2 * vs[5]
-            tau6 = np.clip(tau6, -L2, L2)
-            js_cmd.effort[3] = tau4
-            js_cmd.effort[5] = tau6
+            tau_6 = -Kp_6 * qs[5] - Kd_6 * vs[5]
+            tau_6 = np.clip(tau_6, -lim_6, lim_6)
+            js_cmd.effort[3] = tau_4
+            js_cmd.effort[5] = tau_6
             joint_state_pub.publish(js_cmd)
             #print 'PITCH JOINT: ', qs[4]
             # print 'YAW JOINT: ', tau6
@@ -130,7 +132,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
