@@ -27,7 +27,7 @@ BODY Chassis:
   damping: {angular: 0.1, linear: 0.04}
   restitution: 0
   collision groups: [0]
-  color rgba: {a: 0.94, b: 0.6619, g: 0.0908, r: 0.2876}
+  color rgba: {a: 1.0, b: 0.6619, g: 0.0908, r: 0.2876}
 BODY WheelBL:
   name: WheelBL
   mesh: WheelBL.STL
@@ -46,7 +46,7 @@ BODY WheelBL:
   collision groups: [0]
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.115, radius: 0.181}
-  color rgba: {a: 0.94, b: 0.8, g: 0.6473, r: 0.153}
+  color rgba: {a: 1.0, b: 0.8, g: 0.6473, r: 0.153}
 BODY WheelBR:
   name: WheelBR
   mesh: WheelBR.STL
@@ -65,7 +65,7 @@ BODY WheelBR:
   collision groups: [0]
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.115, radius: 0.181}
-  color rgba: {a: 0.94, b: 0.8006, g: 0.7331, r: 0.2805}
+  color rgba: {a: 1.0, b: 0.8006, g: 0.7331, r: 0.2805}
 BODY WheelFL:
   name: WheelFL
   mesh: WheelFL.STL
@@ -84,7 +84,7 @@ BODY WheelFL:
   collision groups: [0]
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.092, radius: 0.1455}
-  color rgba: {a: 0.94, b: 0.0429, g: 0.6955, r: 0.8}
+  color rgba: {a: 1.0, b: 0.0429, g: 0.6955, r: 0.8}
 BODY WheelFR:
   name: WheelFR
   mesh: WheelFR.STL
@@ -103,7 +103,7 @@ BODY WheelFR:
   collision groups: [0]
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.092, radius: 0.1455}
-  color rgba: {a: 0.94, b: 0.0373, g: 0.5604, r: 0.8}
+  color rgba: {a: 1.0, b: 0.0373, g: 0.5604, r: 0.8}
 JOINT Chassis-WheelBL:
   name: Chassis-WheelBL
   parent: BODY Chassis

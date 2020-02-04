@@ -1,0 +1,95 @@
+bodies: [BODY A]
+high resolution path: ../../../meshes/puzzle2/high_res/
+low resolution path: ../../../meshes/puzzle2/low_res/
+ignore inter-collision: false
+namespace: /ambf/env/
+BODY A:
+  name: A
+  mesh: ''
+  mass: 0.4
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    orientation: {p: -0.0, r: 0.0, y: 0.0}
+    position: {x: 1.186, y: -0.554, z: -0.625}
+  inertial offset:
+    orientation: {p: 0, r: 0, y: 0}
+    position: {x: 0.0, y: -0.0, z: 0.0}
+  friction: {rolling: 0.01, static: 0.5}
+  damping: {angular: 0.1, linear: 0.04}
+  restitution: 0
+  collision groups: [0]
+  compound shape:
+    [
+    {
+      shape : CONE,
+      geometry: {radius: 0.149, height: 0.3, x: 0.2, y: 0.3, z: 0.25},
+      offset:
+        {
+          orientation: {p: -0.0, r: 0.0, y: 0.0},
+          position: {x: 0, y: 0.3, z: 0}
+        }
+      },
+      {
+      shape : CONE,
+      geometry: {radius: 0.149, height: 0.3, x: 0.2, y: 0.3, z: 0.25},
+      offset:
+        {
+          orientation: {p: -0.0, r: 0.0, y: 0.0},
+          position: {x: 0, y: -0.3, z: 0}
+        }
+      },
+      {
+      shape : SPHERE,
+      geometry: {radius: 0.149, height: 0.3, x: 0.2, y: 0.3, z: 0.25},
+      offset:
+        {
+          orientation: {p: -0.0, r: 0.0, y: 0.0},
+          position: {x: 0.3, y: -0.3, z: 0}
+        }
+      },
+      {
+      shape : BOX,
+      geometry: {radius: 0.149, height: 0.3, x: 0.2, y: 0.3, z: 0.25},
+      offset:
+        {
+          orientation: {p: -0.0, r: 0.0, y: 0.0},
+          position: {x: 0.3, y: 0.3, z: 0}
+        }
+      }
+    ]
+  color components:
+    ambient: {level: 1.0}
+    diffuse: {b: 0.1316, g: 0.1483, r: 0.8}
+    specular: {b: 1.0, g: 1.0, r: 1.0}
+    transparency: 1.0
+
+  BODY B:
+    name: B
+    mesh: ''
+    mass: 0.4
+    collision margin: 0.001
+    scale: 1.0
+    location:
+      orientation: {p: -0.0, r: 0.0, y: 0.0}
+      position: {x: 1.186, y: -0.554, z: -0.625}
+    inertial offset:
+      orientation: {p: 0, r: 0, y: 0}
+      position: {x: 0.0, y: -0.0, z: 0.0}
+    friction: {rolling: 0.01, static: 0.5}
+    damping: {angular: 0.1, linear: 0.04}
+    restitution: 0
+    collision groups: [0]
+    shape : CONE,
+    geometry: {radius: 0.149, height: 0.3, x: 0.2, y: 0.3, z: 0.25},
+    offset:
+          {
+            orientation: {p: -0.0, r: 0.0, y: 0.0},
+            position: {x: 0, y: 0.3, z: 0}
+          }
+        }
+    color components:
+      ambient: {level: 1.0}
+      diffuse: {b: 0.1316, g: 0.1483, r: 0.8}
+      specular: {b: 1.0, g: 1.0, r: 1.0}
+      transparency: 1.0

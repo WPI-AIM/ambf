@@ -1,0 +1,175 @@
+input devices: [
+  MTML, #0
+  MTMR, #1
+  Geomagic Touch, #2
+  Razer Hydra0, #3
+  Razer Hydra1, #4
+  Novint Falcon1, #5
+  Novint Falcon2] #6
+
+MTML:
+    hardware name: MTML
+    haptic gain: {linear: 0.06, angular: 0.0}
+    deadband: 0.01
+    max force: 10
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    # root link: /ambf/env/BODY r_gripper_palm_link
+    location: {
+      position: {x: -0.5, y: 0.0, z: 0},
+      orientation: {r: 0, p: 0.0, y: 0}}
+    controller gain: {
+      linear: {P: 200.0, D: 20.0},
+      angular: {P: 50.0, D: 1.0}
+      }
+    button mapping: {
+      a1: 1,
+      a2: 6,
+      next mode: 3,
+      prev mode: 4}
+    # visible: True
+    # visible size: 0.005
+
+MTMR:
+  hardware name: MTMR
+  haptic gain: {linear: 0.06, angular: 0.0}
+  controller gain: {
+    linear: {P: 200.0, D: 20.0},
+    angular: {P: 50.0, D: 1.0}
+    # angular: {P: 0.0, D: 0.0}
+    }
+  # enable joint control: False
+  deadband: 0.01
+  max force: 10
+  workspace scaling: 5
+  simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+  # root link: /ambf/env/BODY r_gripper_palm_link
+  location: {
+    position: {x: -0.5, y: 0, z: 0},
+    orientation: {r: 0, p: 0, y: 0}}
+  button mapping: {
+    a1: 1,
+    a2: 2,
+    next mode: 3,
+    prev mode: 4}
+
+
+Geomagic Touch:
+    hardware name: PHANTOM Omni
+    haptic gain: {linear: 0.000, angular: 0.0}
+    controller gain: {
+      linear: {P: 200, D: 20.0},
+      angular: {P: 0.0, D: 0.0}
+      }
+    enable joint control: False # This flag disables the control of simulated dynamic bodies
+    deadband: 0.01
+    max force: 2
+    max jerk: 0.2
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    # root link: /ambf/env/BODY r_gripper_palm_link
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+    button mapping: {
+      a1: 0,
+      a2: -1,
+      g1: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Razer Hydra0:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    controller gain: {
+      linear: {P: 0.0, D: 0.0},
+      angular: {P: 50.0, D: 1.0}
+      }
+    # enable joint control: False # This flag disables the control of simulated dynamic bodies
+    workspace scaling: 5
+    # simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    # root link: "/ambf/env/BODY l_wrist_roll_link"
+    root link: /ambf/env/BODY r_gripper_palm_link
+    location: {
+      position: {x: 0.0, y: -1.0, z: 0},
+      orientation: {r: 0.0, p: 0.0, y: 0.0}}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Razer Hydra1:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    workspace scaling: 5
+    # simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    root link: "/ambf/env/BODY r_wrist_roll_link"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0},
+      orientation: {r: 0, p: 0, y: 0}}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Novint Falcon1:
+    hardware name: Falcon
+    haptic gain: {linear: 0.05, angular: 0.0}
+    controller gain: {
+      linear: {P: 200, D: 20.0},
+      angular: {P: 0.0, D: 0.0}
+      }
+    enable joint control: False
+    deadband: 0.01
+    max force: 20
+    # max jerk: 0.2
+    workspace scaling: 10
+    # simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    root link: /ambf/env/BODY r_gripper_palm_link1
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}
+    # visible: True
+    # visible size: 0.005
+
+Novint Falcon2:
+    hardware name: Falcon
+    haptic gain: {linear: 0.05, angular: 0.0}
+    controller gain: {
+      linear: {P: 200, D: 20.0},
+      angular: {P: 0.0, D: 0.0}
+      }
+    enable joint control: False
+    deadband: 0.01
+    max force: 20
+    # max jerk: 0.2
+    workspace scaling: 10
+    # simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    root link: /ambf/env/BODY r_gripper_palm_link
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}
+    # visible: True
+    # visible size: 0.005

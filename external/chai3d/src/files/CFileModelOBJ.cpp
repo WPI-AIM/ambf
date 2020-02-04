@@ -33,7 +33,7 @@
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE. 
+    POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.chai3d.org>
     \author    Tim Schroeder
@@ -130,7 +130,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     bool result = newTexture->loadFromFile(material.m_texture);
 
                     // If this didn't work out, try again in the obj file's path
-                    if (result == false) 
+                    if (result == false)
                     {
                         string model_dir = cGetDirectory(a_filename);
 
@@ -148,7 +148,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                 }
 
                 float alpha = material.m_alpha;
-                if (alpha < 1.0) 
+                if (alpha < 1.0)
                 {
                     newMesh->setUseTransparency(true, false);
                     found_transparent_material = true;
@@ -232,23 +232,26 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     // number of vertices on face
                     int vertCount = face.m_numVertices;
 
-                    if (vertCount >= 3) 
+                    if (vertCount >= 3)
                     {
                         int indexV1 = face.m_pVertexIndices[0];
+                        int originalV1 = indexV1;
 
-                        if (g_objLoaderShouldGenerateExtraVertices==false) 
+                        if (g_objLoaderShouldGenerateExtraVertices==false)
                         {
                             vertexIndexSet vis(indexV1);
                             if (face.m_pNormals != NULL) vis.nIndex = face.m_pNormalIndices[0];
                             if (face.m_pTexCoords != NULL) vis.tIndex = face.m_pTextureIndices[0];
                             indexV1 = getVertexIndex(curMesh, &fileObj, curVertexMap, vis);
-                        }                
+                        }
 
                         for (int triangleVert = 2; triangleVert < vertCount; triangleVert++)
                         {
                             int indexV2 = face.m_pVertexIndices[triangleVert-1];
                             int indexV3 = face.m_pVertexIndices[triangleVert];
-                            if (g_objLoaderShouldGenerateExtraVertices==false) 
+                            int originalV2 = indexV2;
+                            int originalV3 = indexV3;
+                            if (g_objLoaderShouldGenerateExtraVertices==false)
                             {
                                 vertexIndexSet vis(indexV2);
                                 if (face.m_pNormals != NULL) vis.nIndex = face.m_pNormalIndices[triangleVert-1];
@@ -262,25 +265,33 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
 
                             // for debugging, I want to look for degenerate triangles, but
                             // I don't want to assert here.
-                            if (indexV1 == indexV2 || indexV2 == indexV3 || indexV1 == indexV3) 
+                            if (indexV1 == indexV2 || indexV2 == indexV3 || indexV1 == indexV3)
                             {
                             }
 
                             unsigned int indexTriangle;
 
                             // create triangle:
-                            if (g_objLoaderShouldGenerateExtraVertices==false) 
+                            if (g_objLoaderShouldGenerateExtraVertices==false)
                             {
                                 indexTriangle = curMesh->newTriangle(indexV1,indexV2,indexV3);
                                 curMesh->m_triangles->computeNormal(indexTriangle, true);
+
+                                // This map keeps track of the vertex indices in the newly created mesh
+                                // as compared to original indices in obj file. These indices are later
+                                // used to add polylines without vertex duplication
+                                fileObj.m_vtxIdxMap[originalV1].push_back(curMesh->m_vertices->getNumElements() - 3);
+                                fileObj.m_vtxIdxMap[originalV2].push_back(curMesh->m_vertices->getNumElements() - 2);
+                                fileObj.m_vtxIdxMap[originalV3].push_back(curMesh->m_vertices->getNumElements() - 1);
                             }
-                            else 
+                            else
                             {
                                 indexTriangle = curMesh->newTriangle(
                                     fileObj.m_pVertices[indexV1],
                                     fileObj.m_pVertices[indexV2],
                                     fileObj.m_pVertices[indexV3]
                                 );
+
                                 curMesh->m_triangles->computeNormal(indexTriangle, true);
                             }
 
@@ -303,7 +314,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                             }
                         }
                     }
-                    else 
+                    else
                     {
                         // This faces doesn't have 3 vertices... this line is just
                         // here for debugging, since this should never happen, but
@@ -311,6 +322,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     }
 
                     j++;
+
                 }
                 i++;
             }
@@ -318,8 +330,6 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
             {
                 // get number of vertices
                 int numVertices = fileObj.m_OBJInfo.m_vertexCount;
-                // get number of edges
-                int numLines = fileObj.m_OBJInfo.m_lineCount;
                 int j = 0;
 
                 // get main mesh
@@ -330,8 +340,14 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                 {
                     cColorf color = fileObj.m_pColors[j];
                     cVector3d vertex = fileObj.m_pVertices[j];
-                    mesh->newVertex(vertex, cVector3d(1,0,0), cVector3d(0,0,0), color);
+                    int vertexIdx = mesh->newVertex(vertex, cVector3d(1,0,0), cVector3d(0,0,0), color);
                     j++;
+
+
+                    // This map keeps track of the vertex indices in the newly created mesh
+                    // as compared to original indices in obj file. These indices are later
+                    // used to add polylines without vertex duplication
+                    fileObj.m_vtxIdxMap[j].push_back(vertexIdx);
                 }
 
                 if (numVertices > 0)
@@ -347,12 +363,31 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     }
                 }
 
-                // Add line data
-                for(int lIdx = 0 ; lIdx < fileObj.m_pLines.size() ; lIdx++){
-                    mesh->m_lines.push_back(fileObj.m_pLines[lIdx]);
-                }
             }
         }
+
+        // Add line data if present
+        // get main mesh
+        cMesh* curMesh = a_object->getMesh(0);
+        for(int lIdx = 0 ; lIdx < fileObj.m_pLines.size() ; lIdx++){
+             std::vector<int>* originalLine = &(fileObj.m_pLines[lIdx]);
+             std::vector<int> newLine;
+             for (int j = 0 ; j < originalLine->size() ; j++){
+                 int vIdx = (*originalLine)[j];
+                 if (fileObj.m_vtxIdxMap.find(vIdx) != fileObj.m_vtxIdxMap.end()){
+                     newLine.push_back( (fileObj.m_vtxIdxMap[vIdx])[0] );
+                 }
+                 else{
+                     int newVtxIdx = curMesh->newVertex(fileObj.m_pVertices[vIdx]);
+                     fileObj.m_vtxIdxMap[vIdx].push_back(newVtxIdx);
+                     newLine.push_back(newVtxIdx);
+                 }
+             }
+             if (newLine.size() > 0){
+                 curMesh->m_lines.push_back(newLine);
+             }
+        }
+
         delete [] vertexMaps;
 
         // compute boundary boxes
@@ -375,7 +410,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
 //==============================================================================
 /*!
     This function saves an OBJ 3D model from a cMultiMesh object to a file.
-    If the operation succeeds, then the functions returns __true__ and the 
+    If the operation succeeds, then the functions returns __true__ and the
     model data is saved to a file.
     If the operation fails, then the function returns __false__.
 
@@ -449,7 +484,7 @@ bool cSaveFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
             {
                 fileMat << "d" << cStr(transparency, 3);
             }
-            
+
             fileMat << "illum 2" << endl;
             fileMat << "map_Kd " << textureName << endl;
             fileMat << "map_bump" << endl;
@@ -564,7 +599,7 @@ bool cSaveFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
         fileObj << "usemtl MATERIAL" << cStr(i) << endl;
         unsigned numTriangles = mesh->getNumTriangles();
         for (unsigned int j=0; j<numTriangles; j++)
-        {  
+        {
             int indexV0 = mesh->m_triangles->getVertexIndex0(j) + vertexCounter + 1;
             int indexV1 = mesh->m_triangles->getVertexIndex1(j) + vertexCounter + 1;
             int indexV2 = mesh->m_triangles->getVertexIndex2(j) + vertexCounter + 1;
@@ -634,7 +669,7 @@ cOBJModel::~cOBJModel()
         }
         delete [] m_pFaces;
     }
-    for(unsigned int i=0; i<m_groupNames.size(); i++) 
+    for(unsigned int i=0; i<m_groupNames.size(); i++)
     {
         delete [] m_groupNames[i];
     }
@@ -1254,10 +1289,10 @@ bool cOBJModel::loadMaterialLib(const char a_fileName[],
             char textureFile[C_OBJ_SIZE_PATH];
             strcpy(textureFile, a_basePath);
             strcat(textureFile, str);
-            
+
             // store texture filename in the structure
             strcpy(m_pMaterials[*a_curMaterialIndex].m_texture, textureFile);
-            
+
             // load texture and store its ID in the structure
             m_pMaterials[*a_curMaterialIndex].m_textureID = 1;//LoadTexture(szTextureFile);
         }
@@ -1317,11 +1352,11 @@ void cOBJModel::getFileInfo(FILE *a_hStream, cOBJFileInfo *a_info, const char a_
         // texture coordinate?
         if (!strncmp(str, C_OBJ_TEXCOORD_ID, sizeof(C_OBJ_TEXCOORD_ID)))
         a_info->m_texCoordCount++;
-        
+
         // vertex normal?
         if (!strncmp(str, C_OBJ_NORMAL_ID, sizeof(C_OBJ_NORMAL_ID)))
         a_info->m_normalCount++;
-        
+
         // face?
         if (!strncmp(str, C_OBJ_FACE_ID, sizeof(C_OBJ_FACE_ID)))
         a_info->m_faceCount++;
@@ -1439,7 +1474,7 @@ void cOBJModel::makePath(char a_fileAndPath[])
 //------------------------------------------------------------------------------
 
 void cOBJModel::getTokenParameter(char a_str[],
-                                  const unsigned int a_strSize, 
+                                  const unsigned int a_strSize,
                                   FILE *a_hFile)
 {
     char str[C_OBJ_MAX_STR_SIZE];
@@ -1467,7 +1502,7 @@ void cOBJModel::getTokenParameter(char a_str[],
 //------------------------------------------------------------------------------
 
 unsigned int getVertexIndex(cMesh* a_mesh, cOBJModel* a_model,
-                            vertexIndexSet_uint_map* a_vertexMap, vertexIndexSet& vis) 
+                            vertexIndexSet_uint_map* a_vertexMap, vertexIndexSet& vis)
 {
     unsigned int index;
 
@@ -1475,14 +1510,14 @@ unsigned int getVertexIndex(cMesh* a_mesh, cOBJModel* a_model,
     vertexIndexSet_uint_map::iterator vertexMapIter = a_vertexMap->find(vis);
 
     // if we have, just grab the new index for this vertex
-    if (vertexMapIter != a_vertexMap->end()) 
+    if (vertexMapIter != a_vertexMap->end())
     {
         index = (*vertexMapIter).second;
         return (index);
     }
 
     // otherwise create a new vertex and put the mapping in our map
-    else 
+    else
     {
         index = a_mesh->newVertex(a_model->m_pVertices[vis.vIndex]);
         (*a_vertexMap)[vis] = index;

@@ -49,7 +49,7 @@ import position_control_utility as PU
 
 global state_msg, cmd_msg, active
 
-object_name = '/ambf/env/CirclePuzzle/'
+object_name = '/ambf/env/gripper3/Cylinder/'
 
 
 # State CB
@@ -126,6 +126,7 @@ while not rospy.is_shutdown():
         last_delta_pos = delta_pos
         delta_pos = cmd_pos - cur_pos
         delta_delta_pos = (delta_pos - last_delta_pos) / dt
+        # print delta_pos, last_delta_pos
         # print  (D_lin * delta_delta_pos) / dtp
         force = PU.K_lin * delta_pos + PU.D_lin * delta_delta_pos
 

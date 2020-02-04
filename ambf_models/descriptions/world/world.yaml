@@ -37,6 +37,8 @@ camera1:
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
   monitor: 0
+  controlling devices: [MTMR, MTML]
+  # multipass: True
 
 camera2:
   namespace: /ambf/env/cameras/
@@ -48,20 +50,20 @@ camera2:
   field view angle: 0.8
   stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
   monitor: 3
-  controlling devices: [Novint Falcon] # These device are specified in the input_devices.yaml file
+  controlling devices: [MTMR, MTML] # These device are specified in the input_devices.yaml file
   # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
   # device: Razer Hydra
 
 camera3:
   name: normal_camera
-  location: {x: 3.0, y: 0.0, z: 2.0}
+  location: {x: -3.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8
   monitor: 2
-  controlling devices: [Geomagic Touch] # No need to use the hardware name, simply use the name from input_devices.yaml
+  controlling devices: [Novint Falcon1, Novint Falcon2] # No need to use the hardware name, simply use the name from input_devices.yaml
   # parent: /ambf/env/BODY Occulus
   # orthographic view width: 6
 # device: Razer Hydra

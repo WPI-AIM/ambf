@@ -25,6 +25,7 @@ BODY Top Panel:
   inertial offset:
     orientation: {p: 0, r: 0, y: 0}
     position: {x: -0.008, y: 0.064, z: 0.028}
+  publish children names: true
   publish joint names: true
   publish joint positions: true
   friction: {rolling: 0.01, static: 0.5}
@@ -230,7 +231,7 @@ JOINT Top Panel-OutPitch Shoulder:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: -1.309}
-  controller: {D: 2.0, I: 0, P: 1000.0}
+  controller: {D: 0.5, I: 0, P: 1000.0}
   type: revolute
   offset: 1.571
 JOINT OutPitch Shoulder-ArmParallel:
@@ -242,7 +243,7 @@ JOINT OutPitch Shoulder-ArmParallel:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 0.785, low: -0.785}
-  controller: {D: 3.8, I: 0, P: 1900.0}
+  controller: {D: 0.6, I: 0, P: 1200.0}
   type: revolute
   offset: -1.566
 JOINT ArmParallel-ArmParallel1:
@@ -254,7 +255,7 @@ JOINT ArmParallel-ArmParallel1:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 1.571, low: -1.571}
-  controller: {D: 2.1, I: 0, P: 1050.0}
+  controller: {D: 0.3, I: 0, P: 500.0}
   type: revolute
   offset: -1.571
 JOINT ArmParallel1-ArmFront:
@@ -302,7 +303,7 @@ JOINT BottomArm-WristPlatform:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 4.276, low: -1.047}
-  controller: {D: 2.4, I: 0, P: 1200.0}
+  controller: {D: 0.2, I: 0, P: 1200.0}
   type: revolute
 JOINT WristPlatform-WristPitch:
   name: WristPlatform-WristPitch

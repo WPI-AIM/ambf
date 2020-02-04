@@ -25,10 +25,10 @@ AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few ext
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support. 
 
 ### Building:
-On Linux machines, you might need to install the `libasound2-dev` package.
+On Linux machines, you might need to install the `libasound2-dev` package and external libraries dependencies.
 
 ```
-sudo apt install libasound2-dev
+sudo apt install libasound2-dev libgl1-mesa-dev xorg-dev
 ```
 
 Boost libraires ship with Ubuntu systems, but on Mac OS, you might need to install them explicitly.
@@ -45,11 +45,12 @@ For this purpose, on **Mac OS**, if you don't have Boost
 `brew install boost`
 
 
-To build the framework (Linux and Mac-OS):
+To build the framework (Linux and Mac-OS) and get various addon scripts (blender, yaml <-> urdf):
 ```
 cd ~
 git clone https://github.com/WPI-AIM/ambf.git
 cd ambf && mkdir build
+git submodule update --init --recursive
 cd build
 cmake ..
 make
@@ -74,13 +75,35 @@ cd ~/ambf/bin/<os>
 ```
 
 #### Launching Specific Multibodies:
-The -l command line argument can be used to launch a specific multibody at launch. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the -l command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the -l flag with the integer index of the multi-body as follows:
+There are two ways to launch multibodies:
+1. Using the integer index of the filename specified in the launch file
+2. Providing the explicit filename(s).
+##### 1. Using the Integer Index in the launch file
+The -l command line argument can be used to launch a specific multibody at launch using indexing. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the `-l` command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the `-l` flag with the integer index of the multi-body as follows:
 
 ```
 cd ~/ambf/bin/<os>
 ./ambf_simulator -l 4
 ```
 This command will launch the 4th body defined in the `launch.yaml` file. To launch multiple multi-bodies, you can use a comma separated list (without spaces in between) of integers indices e.g.`./ambf_simulator -l 1,6,10`. This in turn would load the multi-bodies defined at 1, 6 and the 10th index in the `launch.yaml` file. 
+
+##### 2. Providing the fully qualified filename
+The second option is to use the `-a` flag. For example, if one has an AMBF description file in the home directory `/users/potato/tests/robot.yaml`, this file can be launched directly as follows
+
+```
+cd ~/ambf/bin/<os>
+./ambf_simulator -a /users/potato/tests/robot.yaml
+```
+
+Similarly, as it the case with the `-l` flag, multiple filenames can be launch by comma separated values. E.g.
+
+
+```
+cd ~/ambf/bin/<os>
+./ambf_simulator -a /users/potato/tests/robot.yaml,/users/potato/tests/car.yaml
+```
+
+Lastly, the `-l` and `-a` flags can be used together to launch some files based on the index and some based on the filenames.
 
 ### Note:
 The AMBF Simulator uses the yaml file located in `ambf/ambf_models/descriptions/launch.yaml` to
@@ -176,3 +199,13 @@ _client.clean_up()
 
 ### The AMBF Controller Client
 See [here](/ambf_controller/README.md) for more information.
+
+## Citation
+If this work is helpful for your research, please use the following reference for citation:
+```
+Munawar, Adnan, Wang, Yan, Gondokaryono, Radian & Gregory Fischer. "A Real-Time Dynamic Simulator and
+an Associated Front-End Representation Format for Simulating Complex Robots and Environments" 2019
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2019
+```
+
+

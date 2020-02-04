@@ -95,8 +95,8 @@ class MessageLatency:
 
             if ambf_sim_wall_time > self.time_window_lims[0]:
                 if self.is_first_run:
-                    self.capture_window_times(data.ambf_wall_time)
-                    self.initial_time_offset = ambf_sim_wall_time - data.ambf_wall_time
+                    self.capture_window_times(data.wall_time)
+                    self.initial_time_offset = ambf_sim_wall_time - data.wall_time
                     print 'ROS & AMBF Clock Offset in C++ Server: ', self.initial_time_offset
                     print 'AMBF Wall Time after offset          : ', ambf_sim_wall_time - self.initial_time_offset
                     print 'Cur Process Wall Time after offset   : ', process_wall_time - self.initial_time_offset

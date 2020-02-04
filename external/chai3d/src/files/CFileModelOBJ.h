@@ -33,7 +33,7 @@
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE. 
+    POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.chai3d.org>
     \author    Tim Schroder
@@ -99,26 +99,26 @@ extern bool g_objLoaderShouldGenerateExtraVertices;
 
 //==============================================================================
 // INTERNAL DEFINITIONS FOR OBJ FILE LOADER:
-//============================================================================== 
+//==============================================================================
 
 //! A face vertex, as defined in an .obj file (a vertex/normal/texture set)
-struct vertexIndexSet 
+struct vertexIndexSet
 {
     int vIndex;
     int nIndex;
     int tIndex;
 
-    vertexIndexSet() 
+    vertexIndexSet()
     {
         vIndex = nIndex = tIndex = 0;
     }
-    vertexIndexSet(int vIndex, int nIndex, int tIndex) 
+    vertexIndexSet(int vIndex, int nIndex, int tIndex)
     {
         this->vIndex = vIndex;
         this->nIndex = nIndex;
         this->tIndex = tIndex;
     }
-    vertexIndexSet(int vIndex) 
+    vertexIndexSet(int vIndex)
     {
         this->vIndex = vIndex;
         this->nIndex = 0;
@@ -254,7 +254,7 @@ struct cMaterialInfo
     float m_alpha;
     float m_shininess;
 
-    cMaterialInfo() 
+    cMaterialInfo()
     {
         init();
     }
@@ -284,7 +284,7 @@ struct cMaterialInfo
 */
 //==============================================================================
 class cOBJModel
-{    
+{
     //--------------------------------------------------------------------------
     // CONSTRUCTOR & DESTRUCTOR:
     //--------------------------------------------------------------------------
@@ -293,7 +293,7 @@ class cOBJModel
 
     //! Constructor of cOBJModel.
     cOBJModel();
-    
+
     //! Destructor of cOBJModel.
     ~cOBJModel();
 
@@ -315,21 +315,24 @@ class cOBJModel
     //! List of lines.
     std::vector< std::vector<int> > m_pLines;
 
+    //! Mapping original vertex indices to regenerated indices in CHAI-3D
+    std::map<int, std::vector<int> > m_vtxIdxMap;
+
     //! List of colors.
     cColorf* m_pColors;
 
     //! List of faces.
     cFace* m_pFaces;
-    
+
     //! List of normals.
     cVector3d* m_pNormals;
-    
+
     //! List of texture coordinates.
     cVector3d* m_pTexCoords;
-    
+
     //! List of material and texture properties.
     cMaterialInfo* m_pMaterials;
-    
+
     //! Information about image file.
     cOBJFileInfo m_OBJInfo;
 
@@ -345,13 +348,13 @@ class cOBJModel
 
     //! Read next string of file.
     void readNextString(char *a_str, int a_size, FILE *a_hStream);
-    
+
     //! Get next token from file.
     void getTokenParameter(char a_str[], const unsigned int a_strSize, FILE *a_hFile);
 
     //! File path.
     void makePath(char a_fileAndPath[]);
-    
+
     //! Load material file [mtl].
     bool loadMaterialLib(const char a_fFileName[], cMaterialInfo *a_pMaterials,
         unsigned int *a_curMaterialIndex, char a_basePath[]);
@@ -369,9 +372,9 @@ class cOBJModel
 };
 
 //! Internal: get a (possibly new) vertex index for a vertex.
-unsigned int getVertexIndex(cMesh* a_Mesh, 
-                            cOBJModel* a_model, 
-                            vertexIndexSet_uint_map* a_VertexMap, 
+unsigned int getVertexIndex(cMesh* a_Mesh,
+                            cOBJModel* a_model,
+                            vertexIndexSet_uint_map* a_VertexMap,
                             vertexIndexSet& vis);
 
 //------------------------------------------------------------------------------

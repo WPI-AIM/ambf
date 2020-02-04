@@ -71,6 +71,7 @@ public:
     }
     virtual void init() = 0;
     virtual void run_publishers();
+    virtual void cleanUp();
 
 protected:
     boost::shared_ptr<ros::NodeHandle> nodePtr;

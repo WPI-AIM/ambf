@@ -13,12 +13,30 @@ ignore inter-collision: true
 namespace: /ambf/env/
 # publish children names: true
 
+default resistive surface: &default_resistive_surface
+  {
+    range: 0.05,
+    contact area: 0.001,
+    mesh: resistive_tip_2.STL,
+    contact stiffness: 0.1,
+    contact damping: 1,
+    visible: True,
+    visible size: 0.005,
+    friction: {
+      static: 100000,
+      damping: 0,
+      dynamic: 1,
+      variable: True
+      }
+    }
+
 SENSOR Proximity0:
   name: Proximity
   type: Proximity
   location: {x: -0.2, y: 0.0, z: 0.0}
   direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.15
+  visible: True
   parent: /ambf/env/BODY r_gripper_palm_link
 
 SENSOR Proximity1:
@@ -106,6 +124,7 @@ BODY r_gripper_l_finger_tip_link:
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.09, y: 0.06, z: 0.042}
+  resistive surface1: *default_resistive_surface
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.0908, g: 0.0908, r: 0.0908}
@@ -152,6 +171,7 @@ BODY r_gripper_r_finger_tip_link:
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.09, y: 0.06, z: 0.042}
+  resistive surface1: *default_resistive_surface
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.0607, g: 0.0607, r: 0.0607}

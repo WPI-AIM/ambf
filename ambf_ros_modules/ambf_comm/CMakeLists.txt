@@ -75,25 +75,26 @@ set (ENV_HDR_FILES include/${PROJECT_NAME}/ambf_comm.h
                    include/${PROJECT_NAME}/Object.h
                    include/${PROJECT_NAME}/RosComBase.h
                    include/${PROJECT_NAME}/ObjectRosCom.h
-	                 include/${PROJECT_NAME}/CmdWatchDog.h)
+                   include/${PROJECT_NAME}/CmdWatchDog.h)
 
 set (ENV_SRC_FILES src/ambf_comm.cpp
                    src/Object.cpp
-                   src/ObjectRosCom.cpp)
+                   src/ObjectRosCom.cpp
+                   src/RosComBase.cpp)
 
 set (OBJ_HDR_FILES include/${PROJECT_NAME}/Object.h
                    include/${PROJECT_NAME}/RosComBase.h
                    include/${PROJECT_NAME}/ObjectRosCom.h
-	                 include/${PROJECT_NAME}/CmdWatchDog.h)
+                   include/${PROJECT_NAME}/CmdWatchDog.h)
 
-set (OBJ_SRC_FILES src/Object.cpp src/ObjectRosCom.cpp)
+set (OBJ_SRC_FILES src/Object.cpp src/ObjectRosCom.cpp src/RosComBase.cpp)
 
 set (WORLD_HDR_FILES include/${PROJECT_NAME}/World.h
                      include/${PROJECT_NAME}/RosComBase.h
                      include/${PROJECT_NAME}/WorldRosCom.h
                      include/${PROJECT_NAME}/CmdWatchDog.h  )
 
-set (WORLD_SRC_FILES src/World.cpp src/WorldRosCom.cpp)
+set (WORLD_SRC_FILES src/World.cpp src/WorldRosCom.cpp src/RosComBase.cpp)
 
 ## Declare a C++ library
 add_library(ambf_comm ${ENV_HDR_FILES} ${ENV_SRC_FILES})

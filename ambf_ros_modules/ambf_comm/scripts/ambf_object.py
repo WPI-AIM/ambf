@@ -57,7 +57,7 @@ class Object(WatchDog):
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(time_out=0.1) # Set duration of Watchdog expiry
+        super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
         self._name = ''
         self._state = ObjectState()
         self._cmd = ObjectCmd()
@@ -100,10 +100,23 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         return self._state.joint_positions[idx]
+
+    def get_all_joint_pos(self):
+        """
+                Get the joint position of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in xrange(n_jnts):
+            joints.append(self._state.joint_positions[idx])
+
+        return joints
 
     def get_num_joints(self):
         """
@@ -218,6 +231,45 @@ class Object(WatchDog):
         """
         return self._cmd.wrench.torque
 
+    def get_publish_children_name_flag(self):
+        """
+        Check if the object is publishing children names
+        :return:
+        """
+        return self._cmd.publish_children_names
+
+    def get_publish_joint_names_flag(self):
+        """
+        Check if the object is publishing joint names
+        :return:
+        """
+        return self._cmd.publish_joint_names
+
+    def get_publish_joint_positions_flag(self):
+        """
+        Check if the object is publishing joint poisitions
+        :return:
+        """
+        return self._cmd.publish_joint_positions
+
+    def set_publish_children_names_flag(self, state):
+        """
+        Set children name publishing state
+        """
+        self._cmd.publish_children_names = state
+
+    def set_publish_joint_names_flag(self, state):
+        """
+        set joint name publishing state
+        """
+        self._cmd.publish_joint_names = state
+
+    def set_publish_joint_positions_flag(self, state):
+        """
+        set joint position publishing state
+        """
+        self._cmd.publish_joint_positions = state
+
     def set_name(self, name):
         """
         Set the name for this object
@@ -258,7 +310,7 @@ class Object(WatchDog):
         :param yaw:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
         self.set_rot(quat)
 
     def set_rot(self, quat):
@@ -290,25 +342,33 @@ class Object(WatchDog):
         self._apply_command()
         self._pose_cmd_set = True
 
-    def set_joint_pos(self, idx, pos):
+    def set_joint_pos(self, joint, pos):
         """
-        Set the joint position based on the index. Check the get_joint_names to see the list of
+        Set the joint position based on the index or names. Check the get_joint_names to see the list of
         joint names for indexes
-        :param idx:
+        :param joint:
         :param pos:
         :return:
         """
+
+        if isinstance(joint, basestring):
+
+            joint_names = self._state.joint_names
+            if joint not in joint_names:
+                print joint + " is not a joint"
+            idx = joint_names.index(joint)
+        else:
+            idx = joint
+
         n_jnts = len(self._state.joint_positions)
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index {} should be between 0-{}'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0]*n_jnts
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
+            self._cmd.joint_cmds = [0.0]*n_jnts
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = pos
@@ -348,25 +408,34 @@ class Object(WatchDog):
         _wrench_cmd.torque.z = nz
         self.set_wrench(_wrench_cmd)
 
-    def set_joint_effort(self, idx, effort):
+    def set_joint_effort(self, joint, effort):
         """
-        Set the joint effort based on the index. Check the get_joint_names to see the list of
+        Set the joint effort based on the index or name. Check the get_joint_names to see the list of
         joint names for indexes
-        :param idx:
+        :param joint:
         :param effort:
         :return:
         """
+
+        if isinstance(joint, basestring):
+
+            joint_names = self._state.joint_names
+            if joint not in joint_names:
+                print joint +  " is not a joint"
+                return
+            idx = joint_names.index(joint)
+        else:
+            idx = joint
+
         n_jnts = len(self._state.joint_positions)
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0] * n_jnts
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
+            self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
@@ -411,19 +480,6 @@ class Object(WatchDog):
         self._cmd.joint_cmds = [jnt for jnt in jnt_cmds]
 
         self._apply_command()
-        self._pose_cmd_set
-
-    def set_force(self, fx, fy, fz):
-        nx = self._cmd.wrench.torque.x
-        ny = self._cmd.wrench.torque.y
-        nz = self._cmd.wrench.torque.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
-
-    def set_torque(self, nx, ny, nz):
-        fx = self._cmd.wrench.force.x
-        fy = self._cmd.wrench.force.y
-        fz = self._cmd.wrench.force.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
 
     def wrench_command(self, fx, fy, fz, nx, ny, nz):
         """
@@ -479,3 +535,8 @@ class Object(WatchDog):
                 self._clear_command()
             self._pub.publish(self._cmd)
 
+    def get_inertia(self):
+        """
+        Get the inertia the body
+        """
+        return self._state.pInertia

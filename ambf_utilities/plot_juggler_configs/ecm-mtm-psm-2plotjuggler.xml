@@ -1,68 +1,68 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
- <tabbed_widget name="Main Window" parent="main_window">
-  <plotmatrix columns="3" tab_name="plot" rows="3">
+ <tabbed_widget parent="main_window" name="Main Window">
+  <plotmatrix tab_name="plot" rows="3" columns="3">
    <plot col="0" row="0">
-    <range left="222.980783" right="227.980975" top="0.537100" bottom="-0.535775"/>
+    <range top="0.527221" right="29.913256" bottom="-0.526961" left="18.912992"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/ecm/baselink/Command/joint_cmds.0" custom_transform="" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/ecm/baselink/State/joint_positions.0" custom_transform="" G="0"/>
+    <curve R="0" custom_transform="" name="/ambf/env/ecm/baselink/Command/joint_cmds.0" G="0" B="0"/>
+    <curve R="255" custom_transform="" name="/ambf/env/ecm/baselink/State/joint_positions.0" G="0" B="0"/>
     <transform value="Custom::"/>
    </plot>
    <plot col="0" row="1">
-    <range left="222.980783" right="227.980975" top="0.535901" bottom="-0.533748"/>
+    <range top="0.543123" right="29.913256" bottom="-0.545654" left="18.912992"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/ecm/baselink/Command/joint_cmds.2" custom_transform="noTransform" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/ecm/baselink/State/joint_positions.2" custom_transform="noTransform" G="3"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/ecm/baselink/Command/joint_cmds.2" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/ecm/baselink/State/joint_positions.2" G="3" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="0" row="2">
-    <range left="222.980783" right="227.980975" top="0.207555" bottom="0.035913"/>
+    <range top="0.215427" right="29.913256" bottom="0.035721" left="18.912992"/>
     <limitY/>
-    <curve B="5" R="5" name="/ambf/env/ecm/baselink/Command/joint_cmds.6" custom_transform="noTransform" G="5"/>
-    <curve B="6" R="255" name="/ambf/env/ecm/baselink/State/joint_positions.6" custom_transform="noTransform" G="0"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/ecm/baselink/Command/joint_cmds.5" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/ecm/baselink/State/joint_positions.5" G="0" B="27"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="1" row="0">
-    <range left="222.980842" right="227.980764" top="0.318806" bottom="-0.318705"/>
+    <range top="0.317469" right="29.913435" bottom="-0.317851" left="18.913623"/>
     <limitY/>
-    <curve B="15" R="15" name="/ambf/env/psm/baselink/Command/joint_cmds.0" custom_transform="noTransform" G="15"/>
-    <curve B="0" R="255" name="/ambf/env/psm/baselink/State/joint_positions.0" custom_transform="noTransform" G="14"/>
+    <curve R="15" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.0" G="15" B="15"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.0" G="14" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="1" row="1">
-    <range left="222.980842" right="227.980764" top="0.580333" bottom="-0.560733"/>
+    <range top="0.529018" right="29.913435" bottom="-0.527878" left="18.913623"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/psm/baselink/Command/joint_cmds.2" custom_transform="noTransform" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/psm/baselink/State/joint_positions.2" custom_transform="noTransform" G="3"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.2" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.2" G="3" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="1" row="2">
-    <range left="222.980842" right="227.980764" top="0.237906" bottom="0.004441"/>
+    <range top="0.237382" right="29.913435" bottom="0.004454" left="18.913623"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/psm/baselink/Command/joint_cmds.4" custom_transform="noTransform" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/psm/baselink/State/joint_positions.4" custom_transform="noTransform" G="7"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.4" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.4" G="7" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="2" row="0">
-    <range left="222.981037" right="227.980824" top="0.316748" bottom="-0.316650"/>
+    <range top="0.317949" right="29.913015" bottom="-0.319662" left="18.913271"/>
     <limitY/>
-    <curve B="16" R="16" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.0" custom_transform="noTransform" G="16"/>
-    <curve B="0" R="255" name="/ambf/env/mtm/TopPanel/State/joint_positions.0" custom_transform="noTransform" G="8"/>
+    <curve R="16" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.0" G="16" B="16"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/State/joint_positions.0" G="8" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="2" row="1">
-    <range left="222.981037" right="227.980824" top="0.210152" bottom="-0.216252"/>
+    <range top="0.210182" right="29.913015" bottom="-0.217479" left="18.913271"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.2" custom_transform="noTransform" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/mtm/TopPanel/State/joint_positions.2" custom_transform="noTransform" G="8"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.2" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/State/joint_positions.2" G="8" B="0"/>
     <transform value="noTransform"/>
    </plot>
    <plot col="2" row="2">
-    <range left="222.981037" right="227.980824" top="0.474668" bottom="-0.472950"/>
+    <range top="0.474411" right="29.913015" bottom="-0.472547" left="18.913271"/>
     <limitY/>
-    <curve B="0" R="0" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.6" custom_transform="noTransform" G="0"/>
-    <curve B="0" R="255" name="/ambf/env/mtm/TopPanel/State/joint_positions.6" custom_transform="noTransform" G="0"/>
+    <curve R="0" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/Command/joint_cmds.6" G="0" B="0"/>
+    <curve R="255" custom_transform="noTransform" name="/ambf/env/mtm/TopPanel/State/joint_positions.6" G="0" B="0"/>
     <transform value="noTransform"/>
    </plot>
   </plotmatrix>
@@ -76,6 +76,9 @@
   <DataLoad_ROS_bags>
    <selected_topics list=""/>
   </DataLoad_ROS_bags>
+  <DataLoad_ULog>
+   <no_params/>
+  </DataLoad_ULog>
   <ROS_Topic_Streamer>
    <selected_topics list="/ambf/env/ecm/baselink/Command;/ambf/env/ecm/baselink/State;/ambf/env/mtm/TopPanel/Command;/ambf/env/mtm/TopPanel/State;/ambf/env/psm/baselink/Command;/ambf/env/psm/baselink/State"/>
   </ROS_Topic_Streamer>
@@ -102,9 +105,40 @@ var alpha = 0.1</global>
 
 return prevY</equation>
   </snippet>
+  <snippet name="Mean">
+   <global>n = 0.0
+total = 0.0
+mean = 0.0</global>
+   <equation>n = n+1
+total = total + value
+mean = total / n
+return mean</equation>
+  </snippet>
+  <snippet name="Scale_1000">
+   <global></global>
+   <equation>return value*1000</equation>
+  </snippet>
+  <snippet name="difference">
+   <global></global>
+   <equation>V3 = $$/ambf/env/World/State/sim_time$$
+V4 = $$/ambf/env/World/State/wall_time$$
+
+return (V3 - V4)</equation>
+  </snippet>
+  <snippet name="difference2">
+   <global>command = 1
+state = 2</global>
+   <equation>var = command - state
+return var</equation>
+  </snippet>
   <snippet name="sum_A_B">
    <global></global>
    <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+  </snippet>
+  <snippet name="sum_a_b">
+   <global></global>
+   <equation>return $$/ambf/env/BoxTool/Command/pose/position/y$$
+ + $$/ambf/env/BoxTool/State/pose/position/y$$</equation>
   </snippet>
   <snippet name="yaw_from_quaternion">
    <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles

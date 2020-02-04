@@ -161,8 +161,8 @@ public:
     //! Create CGEL Bodys and Nodes based on bulletSoftBody
     virtual void createGELSkeleton();
 
-    //! Helper Function to Create ROPE From 1 D .obj meshes
-    bool createRope(btSoftBody* a_sb, std::vector<int>* a_line, const cMesh* a_mesh);
+    //! Helper Function to Create Links from Lines
+    bool createLinksFromLines(btSoftBody* a_sb, std::vector< std::vector<int>>* a_lines, cMesh* a_mesh);
 
     //! Overrride the loadFromFile Method.
     virtual bool loadFromFile(std::string a_filename);
@@ -194,12 +194,14 @@ private:
     std::vector<btScalar> m_verticesPtr;
     //! Ptr to Triangles arrays referring to vertices by indices
     std::vector<int> m_trianglesPtr;
-     //! Ptr to vector vertex arrays of the sofy body
+    //! Ptr to vector vertex arrays of the sofy body
     std::vector<btVector3> m_verticesVecPtr;
     //! Vertex Tree containing vtx idx's that are repeated for a given vtx
     std::vector<VertexTree> m_vertexTree;
     //! Function to detect, index and store repeat vertices
-    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, bool print_debug_info=false);
+    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    //! Function to detect, index and store repeat vertices
+    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
     unsigned int m_counter = 0;
 
