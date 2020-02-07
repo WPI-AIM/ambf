@@ -5761,6 +5761,56 @@ void afMultiBody::removeOverlappingCollisionChecking(){
 
 
 ///
+/// \brief afWorld::getAFLight
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afLightPtr afWorld::getAFLight(std::string a_name, bool suppress_warning){
+    if (m_afLightMap.find(a_name) != m_afLightMap.end()){
+        return m_afLightMap[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY LIGHT NAMED: \"" << a_name << "\"\n";
+
+            std::cerr <<"Existing Lights in Map: " << m_afLightMap.size() << std::endl;
+            afLightMap::iterator lightIt = m_afLightMap.begin();
+            for (; lightIt != m_afLightMap.end() ; ++lightIt){
+                std::cerr << lightIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+///
+/// \brief afWorld::getAFCamera
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afCameraPtr afWorld::getAFCamera(std::string a_name, bool suppress_warning){
+    if (m_afCameraMap.find(a_name) != m_afCameraMap.end()){
+        return m_afCameraMap[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY CAMERA NAMED: \"" << a_name << "\"\n";
+
+            std::cerr <<"Existing Cameras in Map: " << m_afCameraMap.size() << std::endl;
+            afCameraMap::iterator camIt = m_afCameraMap.begin();
+            for (; camIt != m_afCameraMap.end() ; ++camIt){
+                std::cerr << camIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+///
 /// \brief afMultiBody::getRidigBody
 /// \param a_name
 /// \return
@@ -5771,7 +5821,7 @@ afRigidBodyPtr afWorld::getAFRigidBody(std::string a_name, bool suppress_warning
     }
     else{
         if (!suppress_warning){
-            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: " << a_name << std::endl;
+            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: \"" << a_name << "\"\n";
 
             std::cerr <<"Existing Bodies in Map: " << m_afRigidBodyMap.size() << std::endl;
             afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
@@ -5799,7 +5849,7 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
         }
     }
     if (!suppress_warning){
-        std::cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: " << a_body << std::endl;
+        std::cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
 
         std::cerr <<"Existing Bodies in Map: " << m_afRigidBodyMap.size() << std::endl;
         afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
@@ -5824,7 +5874,7 @@ afMultiBodyPtr afWorld::getAFMultiBody(std::string a_name, bool suppress_warning
     }
     else{
         if (!suppress_warning){
-            std::cerr << "WARNING: CAN'T FIND ANY MULTI-BODY NAMED: " << a_name << std::endl;
+            std::cerr << "WARNING: CAN'T FIND ANY MULTI-BODY NAMED: \"" << a_name << "\"\n";
 
             std::cerr <<"Existing Multi Bodies in Map: " << m_afMultiBodyMap.size() << std::endl;
             afMultiBodyMap::iterator mbIt = m_afMultiBodyMap.begin();
