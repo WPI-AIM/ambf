@@ -1272,8 +1272,8 @@ public:
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
-    afLightPtr getAFLight(std::string a_name);
-    afCameraPtr getAFCamera(std::string a_name);
+    afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
+    afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
     afSoftBodyPtr getAFSoftBody(std::string a_name);

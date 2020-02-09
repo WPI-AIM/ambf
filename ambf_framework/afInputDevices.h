@@ -63,8 +63,8 @@ const int MAX_DEVICES = 10;
 //---------------------------------------------------------------------------
 class afPhysicalDevice;
 class afSimulatedDevice;
-class afInputDevices;
-struct InputControlUnit;
+class afCollateralControlManager;
+struct afCollateralControlUnit;
 
 ///
 /// \brief The SoftBodyGrippingConstraint struct
@@ -172,11 +172,11 @@ struct afButtons{
 ///
 class afPhysicalDevice{
 public:
-    afPhysicalDevice(){}
+    afPhysicalDevice(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
     ~afPhysicalDevice();
-    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
+    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
 
-    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
+    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
 
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
 
@@ -278,8 +278,12 @@ public:
     // for this physical device
     bool m_jointControlEnable;
 
+    // The names of camera that this device can control. The first camera in the
+    // list the parent of this device for hand-eye coordination.
+    std::vector<std::string> m_pairedCameraNames;
+
 private:
-    afInputDevices* m_iDPtr; // Ptr to the Device Handler class
+    afCollateralControlManager* m_iDPtr; // Ptr to the Device Handler class
     afWorldPtr m_afWorld; // Ref to world ptr
 };
 
@@ -298,10 +302,12 @@ enum MODES{ CAM_CLUTCH_CONTROL,
 
 ///
 /// \brief The InputControlUnit struct
+/// Basically a struct of an IID, its SDE and all the
+/// controllable cameras by that SDE-IID
 ///
-struct InputControlUnit{
-    afPhysicalDevice* m_physicalDevice = NULL;
-    afSimulatedDevice* m_simulatedDevice = NULL;
+struct afCollateralControlUnit{
+    afPhysicalDevice* m_physicalDevicePtr = NULL;
+    afSimulatedDevice* m_simulatedDevicePtr = NULL;
     // The cameras that this particular device Gripper Pair control
     std::vector<afCameraPtr> m_cameras;
 
@@ -315,10 +321,10 @@ struct InputControlUnit{
 /// \brief This is a higher level class that queries the number of haptics devices available on the sytem
 /// and on the Network for dVRK devices and creates a Simulated and Physical Device Handle
 ///
-class afInputDevices{
+class afCollateralControlManager{
 public:
-    afInputDevices(afWorldPtr a_afWorld);
-    ~afInputDevices();
+    afCollateralControlManager(afWorldPtr a_afWorld);
+    ~afCollateralControlManager();
 
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
@@ -326,6 +332,8 @@ public:
     virtual bool loadInputDevices(std::string a_input_devices_config, int a_max_load_devs = MAX_DEVICES);
 
     virtual bool loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices);
+
+    bool pairCamerasToCCU(afCollateralControlUnit& a_ccu);
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 
@@ -347,9 +355,9 @@ public:
     void nextMode();
     void prevMode();
 
-    std::vector<InputControlUnit*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
+    std::vector<afCollateralControlUnit*> getCollateralControlUnits(std::vector<std::string> a_device_names);
 
-    std::vector<InputControlUnit*> getAllDeviceGripperPairs();
+    std::vector<afCollateralControlUnit*> getAllCollateralControlUnits();
 
     // Add the index of a claimed device
     void addClaimedDeviceIndex(int a_idx);
@@ -359,7 +367,7 @@ public:
 
 public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
-    std::vector<InputControlUnit> m_psDevicePairs;
+    std::vector<afCollateralControlUnit> m_collateralControlUnits;
 
     uint m_numDevices;
 

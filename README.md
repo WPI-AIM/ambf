@@ -203,9 +203,18 @@ See [here](/ambf_controller/README.md) for more information.
 ## Citation
 If this work is helpful for your research, please use the following reference for citation:
 ```
-Munawar, Adnan, Wang, Yan, Gondokaryono, Radian & Gregory Fischer. "A Real-Time Dynamic Simulator and
-an Associated Front-End Representation Format for Simulating Complex Robots and Environments" 2019
-IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2019
+@INPROCEEDINGS{8968568,
+author={A. {Munawar} and Y. {Wang} and R. {Gondokaryono} and G. S. {Fischer}},
+booktitle={2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+title={A Real-Time Dynamic Simulator and an Associated Front-End Representation Format for Simulating Complex Robots and Environments},
+year={2019},
+volume={},
+number={},
+pages={1875-1882},
+keywords={},
+doi={10.1109/IROS40897.2019.8968568},
+ISSN={2153-0858},
+month={Nov},}
 ```
 
 
