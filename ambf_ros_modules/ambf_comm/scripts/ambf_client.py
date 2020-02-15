@@ -115,9 +115,10 @@ class Client:
         obj = self._objects_dict.get(a_name)
         if obj:
             obj.set_active()
-            obj.set_publish_children_names_flag(True)
-            obj.set_publish_joint_names_flag(True)
-            obj.set_publish_joint_positions_flag(True)
+            if not a_name == 'World' or a_name == 'world':
+                obj.set_publish_children_names_flag(True)
+                obj.set_publish_joint_names_flag(True)
+                obj.set_publish_joint_positions_flag(True)
         else:
             print a_name, 'named object not found'
         return obj
@@ -166,3 +167,4 @@ class Client:
             val.pub_flag = False
             print 'Closing publisher for: ', key
         self._objects_dict.clear()
+
