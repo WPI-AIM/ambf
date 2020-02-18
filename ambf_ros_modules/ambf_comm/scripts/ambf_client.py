@@ -63,6 +63,7 @@ class Client:
         self._rate = 0
         self._world_name = ''
         self._client_name = client_name
+        self._world_handle = None
         pass
 
     def create_objs_from_rostopics(self):
@@ -85,14 +86,15 @@ class Client:
                             obj._sub = rospy.Subscriber(self._ros_topics[i][j], WorldState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=WorldCmd, queue_size=10)
+                            self._world_handle = obj
+
                         else:
                             obj = Object(obj_name)
                             obj.set_name(obj_name)
                             obj._sub = rospy.Subscriber(self._ros_topics[i][j], ObjectState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
-
-                        self._objects_dict[obj_name] = obj
+                            self._objects_dict[obj_name] = obj
 
     def connect(self):
         self.create_objs_from_rostopics()
@@ -104,6 +106,9 @@ class Client:
 
     def start(self):
         self._start_pubs()
+
+    def get_world_handle(self):
+        return self._world_handle
 
     def get_obj_names(self):
         obj_names = []
