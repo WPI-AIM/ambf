@@ -24,6 +24,16 @@ AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few ext
 
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support. 
 
+### AMBF Network Setup:
+In order to subscribe and publish data using AMBF over multiple machines, the following steps would need to be followed:
+1. Check the connectivity between the machines (example: using ssh and ping)
+2. Edit the /etc/hosts file and add the hostnames of the machines, so that the machines can find each other over the network (example: similar to [Adding host name to /etc/hosts](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/)
+3. Set the ROS environment variable in local machine to the host using export ROS_MASTER_URI=http://hostIPaddress:11311 (ex: export ROS_MASTER_URI=http://112.115.256.121:11311)
+4. Now you should be able to send and receive ROS messages over the two machines. 
+5. If you face any firewall issues or unable to receive or publish any ROS topics over the two machines, follow the next step.
+6. Open a terminal and type the command:   sudo apt-get install gufw 
+7. Next type sudo gufw (type the password when prompted) and ensure both the Incoming and Outgoing traffic is allowed.
+
 ### Building:
 On Linux machines, you might need to install the `libasound2-dev` package and external libraries dependencies.
 
