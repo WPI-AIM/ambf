@@ -124,7 +124,7 @@ class Client:
             obj.set_publish_joint_names_flag(True)
             obj.set_publish_joint_positions_flag(True)
         else:
-            print a_name, 'named object not found'
+            print(a_name, 'named object not found')
         return obj
 
     def get_obj_pose(self, a_name):
@@ -151,23 +151,23 @@ class Client:
             self._rate.sleep()
 
     def print_active_topics(self):
-        print self._ros_topics
+        print(self._ros_topics)
         pass
 
     def print_summary(self):
-        print '_________________________________________________________'
-        print '---------------------------------------------------------'
-        print 'CLIENT FOR CREATING OBJECTS FROM ROSTOPICS'
-        print 'Searching Object names from ros topics with'
-        print 'Prefix: ', self._search_prefix_str
-        print 'Suffix: ', self._search_suffix_str
-        print 'Number of OBJECTS found', len(self._objects_dict)
+        print('_________________________________________________________')
+        print('---------------------------------------------------------')
+        print('CLIENT FOR CREATING OBJECTS FROM ROSTOPICS')
+        print('Searching Object names from ros topics with')
+        print('Prefix: ', self._search_prefix_str)
+        print('Suffix: ', self._search_suffix_str)
+        print('Number of OBJECTS found', len(self._objects_dict))
         for key, value in self._objects_dict.items():
-            print key
-        print '---------------------------------------------------------'
+            print(key)
+        print('---------------------------------------------------------')
 
     def clean_up(self):
-        for key, val in self._objects_dict.iteritems():
+        for key, val in self._objects_dict.items():
             val.pub_flag = False
-            print 'Closing publisher for: ', key
+            print('Closing publisher for: ', key)
         self._objects_dict.clear()

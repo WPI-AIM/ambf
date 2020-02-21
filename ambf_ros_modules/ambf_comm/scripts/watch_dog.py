@@ -64,5 +64,5 @@ class WatchDog(object):
 
     def console_print(self, class_name):
         if self._initialized:
-            print 'Watch Dog Expired, Resetting {} command'.format(class_name)
+            print('Watch Dog Expired, Resetting {} command'.format(class_name))
             self._initialized = False
