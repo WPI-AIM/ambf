@@ -46,7 +46,7 @@
 # Initial python2 code, but had few errors while importing in python3
 # from tf import transformations
 # Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
-from external.tf_function.transformations import quaternion_from_euler, euler_from_quaternion
+from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
