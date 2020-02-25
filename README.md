@@ -34,6 +34,7 @@ In order to subscribe and publish data using AMBF over multiple machines, the fo
 6. Open a terminal and type the command:  `sudo apt-get install gufw` 
 7. Next type `sudo gufw` (type the password when prompted) and ensure both the Incoming and Outgoing traffic is allowed.
 
+
 ### Building:
 On Linux machines, you might need to install the `libasound2-dev` package and external libraries dependencies.
 
