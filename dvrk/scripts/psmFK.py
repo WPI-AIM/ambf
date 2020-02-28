@@ -40,6 +40,14 @@ def round_mat(mat, rows, cols, precision=4):
     return mat
 
 
+def round_transform(mat, precision=4):
+    return round_mat(mat, 4, 4, precision)
+
+
+def round_vec(vec, precision=4):
+    return round_mat(vec, 3, 1, precision)
+
+
 class DH:
     def __init__(self, alpha, a, theta, d, offset, type='R'):
         self.alpha = alpha
