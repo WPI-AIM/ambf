@@ -18,6 +18,12 @@ def get_angle(vec_a, vec_b):
     else:
         return math.acos(vdot)
 
+
+def round_vec(vec, precision=4):
+    for i in range(3):
+        vec[i] = round(vec[i], precision)
+    return vec
+
 # Read the frames, positions and rotation as follows, T_A_B, means that this
 # is a Transfrom of frame A with respect to frame B. Similarly P_A_B is the
 # Position Vector of frame A's origin with respect to frame B's origin. And finally
@@ -137,11 +143,21 @@ def compute_IK(T_7_0):
     P_PinchJoint_0 = T_PinchJoint_0.p
     P_PinchTip_0 = T_7_0.p
 
-    a = P_PinchJoint_0 - P_PalmJoint_0
-    b = P_PinchTip_0 - P_PinchJoint_0
+    a_0 = P_PinchJoint_0 - P_PalmJoint_0
+    b_0 = P_PinchTip_0 - P_PinchJoint_0
 
-    j6 = get_angle(a, b)
+    R_tool_roll = Rotation.RPY(0, 0, j4)
 
+    a = R_tool_roll.Inverse() * a_0
+    b = R_tool_roll.Inverse() * b_0
+
+    print('A :', round_vec(a))
+    print('B :', round_vec(b))
+
+    j6 = - np.sign(b[0]) * get_angle(a_0, b_0)
+
+    str = '\n*************************'*3
+    print(str)
     print("Joint 1: ", j1)
     print("Joint 2: ", j2)
     print("Joint 3: ", j3)
@@ -150,7 +166,7 @@ def compute_IK(T_7_0):
     print("Joint 6: ", j6)
 
 
-req_rot = Rotation.RPY(np.pi-0.15, 0, np.pi/2)
+req_rot = Rotation.RPY(np.pi+0.5, 0, np.pi/2)
 req_pos = Vector(0.0, 0.0, -0.2)
 T_7_0 = Frame(req_rot, req_pos)
 
