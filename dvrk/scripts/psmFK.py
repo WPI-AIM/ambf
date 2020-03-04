@@ -7,7 +7,7 @@ PI_2 = np.pi/2
 
 # You need to provide a list of joint positions. If the list is less that the number of joint
 # i.e. the robot has 6 joints, but only provide 3 joints. The FK till the 3+1 link will be provided
-def compute_fk(joint_pos):
+def compute_FK(joint_pos):
     j = [0, 0, 0, 0, 0, 0]
     for i in range(len(joint_pos)):
         j[i] = joint_pos[i]
@@ -18,7 +18,7 @@ def compute_fk(joint_pos):
     link4 = DH(alpha=0, a=0, theta=j[3], d=0.4162, offset=0)
     link5 = DH(alpha=-PI_2, a=0, theta=j[4], d=0, offset=-PI_2)
     link6 = DH(alpha=-PI_2, a=0.0091, theta=j[5], d=0, offset=-PI_2)
-    link7 = DH(alpha=-PI_2, a=0, theta=0, d=0.007, offset=PI_2)
+    link7 = DH(alpha=-PI_2, a=0, theta=0, d=0.0102, offset=PI_2)
 
     T_1_0 = link1.get_trans()
     T_2_1 = link2.get_trans()
@@ -103,7 +103,7 @@ class DH:
         return self.mat_from_dh(self.alpha, self.a, self.theta, self.d, self.offset, self.type)
 
 
-T_7_0 = compute_fk([-0.5, 0, 0.2, 0, 0, 0])
+T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
 
 print T_7_0
 print "\n AFTER ROUNDING \n"
