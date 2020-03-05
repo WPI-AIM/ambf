@@ -94,9 +94,12 @@ def compute_IK(T_7_0):
     # Pinch Joint in Origin
     T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
     # Get the x vector
-    Rx_PinchJoint_0 = T_PinchJoint_7.M.UnitX()
+    Rx_PinchJoint_0 = T_PinchJoint_0.M.UnitX()
     # Get the angle between the computed X vector and the origin's z vector
     angle = get_angle(Rx_PinchJoint_0, Vector(0, 0, 1))
+
+    # print("Rx: ", Rx_PinchJoint_0)
+    # print("Angle: ", angle)
 
     if angle == 0 or angle == np.pi:
         # Due to the geometry of the PSM, in such cases, the correction is always
@@ -127,13 +130,15 @@ def compute_IK(T_7_0):
 
     # Now having the end point of the shaft or the PalmJoint, we can calculate some
     # angles as follows
-    xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
-    # print ('XZ Diagonal: ', xz_diagonal)
-    j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
+    # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
+    # # print ('XZ Diagonal: ', xz_diagonal)
+    # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
+    j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
 
-    yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
-    # print('YZ Diagonal: ', yz_diagonal)
-    j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
+    # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
+    # # print('YZ Diagonal: ', yz_diagonal)
+    # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
+    j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
 
     j3 = -T_PalmJoint_0.p[2]
 
@@ -164,11 +169,11 @@ def compute_IK(T_7_0):
 
     b = R_tool_roll.Inverse() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
 
-    print("B: ", b)
+    print("B: ", round_vec(b))
 
     # print("A: ", a, "B: ", b, "C: ", c)
     # print("Val: ", (a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
-    j5 = np.pi - math.acos((a_0 ** 2 + b_0 ** 2 - c_0 ** 2) / (2 * a_0 * b_0))
+    j5 = -np.sign(b[1]) * (np.pi - math.acos((a_0 ** 2 + b_0 ** 2 - c_0 ** 2) / (2 * a_0 * b_0)))
 
     # Calculate j6
     # We really don't need FK for this. All we need is the angle between the vector from ShaftTip (PalmJoint)
@@ -216,10 +221,10 @@ rx = Rotation.RPY(0.0, 0.0, 0.0)
 ry = Rotation.RPY(0.0, 1.0, 0.0)
 rz = Rotation.RPY(0.0, 0.0, 0.0)
 
-req_rot = Rotation.RPY(np.pi, 0, np.pi/2)
-req_rot = req_rot * rz * ry * rx
+tip_offset_rot = Rotation.RPY(np.pi, 0, np.pi/2)
+req_rot = tip_offset_rot * rz * ry * rx
 req_pos = Vector(0.0, 0.0, -0.3)
 T_7_0 = Frame(req_rot, req_pos)
-
+print "REQ POSE \n", round_transform(convert_frame_to_mat(T_7_0), 3), "\n\n--------\n\n"
 compute_IK(T_7_0)
 
