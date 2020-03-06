@@ -88,43 +88,40 @@ def convert_mat_to_frame(mat):
 def compute_IK(T_7_0):
     palm_length = 0.0091 # Fixed length from the palm joint to the pinch joint
     pinch_length = 0.0102 # Fixed length from the pinch joint to the pinch tip
+    tool_rcm_offset = 0.0156 # Delta between tool tip and the Remote Center of Motion
 
     # Pinch Joint
     T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0, 0, -1))
     # Pinch Joint in Origin
     T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
-    # Get the x vector
-    Rx_PinchJoint_0 = T_PinchJoint_0.M.UnitX()
-    # Get the angle between the computed X vector and the origin's z vector
-    angle = get_angle(Rx_PinchJoint_0, Vector(0, 0, 1))
 
-    # print("Rx: ", Rx_PinchJoint_0)
-    # print("Angle: ", angle)
+    # It appears from the geometry of the robot, that the palm joint is always in the ZY
+    # plane of the end effector frame (7th Frame)
+    # This is the logic that should give us the direction of the palm link and then
+    # we know the length of the palm link so we can keep going back to find the shaftTip (PalmJoint)
+    # position
 
-    if angle == 0 or angle == np.pi:
-        # Due to the geometry of the PSM, in such cases, the correction is always
-        # tangential to the global z axes.
-        x = -T_7_0.p[0]
-        y = -T_7_0.p[1]
-        z = 0.0
-        N_PalmJoint_PinchJoint_0 = Vector(x, y, z)
-        N_PalmJoint_PinchJoint_0.Normalize()
-    else:
-        # Take the cross product with the world z axes to get the tangential
-        orthognal_dir = Rx_PinchJoint_0 * Vector(0, 0, 1)
-        # Take another cross product to get the vector along the Palm link
-        N_PalmJoint_PinchJoint_0 = orthognal_dir * Rx_PinchJoint_0
-        # Lets make sure this vector is normalized
-        N_PalmJoint_PinchJoint_0.Normalize()
+    # Convert the vector from base to pinch joint in the pinch joint frame
+    # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
+    P_0_PinchJoint = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
+    # print("P_0_PinchJoint: ", round_vec(P_0_PinchJoint))
+    # Now we can trim the value along the x axis to get a project along the YZ plane as mentioned above
+    N_PalmJoint_PinchJoint = -P_0_PinchJoint
+    N_PalmJoint_PinchJoint[0] = 0
+    N_PalmJoint_PinchJoint.Normalize()
+    # We can check the angle to see if things make sense
+    angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
+    print("Palm Link Angle in Pinch YZ Plane: ", angle)
 
-    # Reorient in the Palm Link Frame
-    R_PinchJoint_0 = T_PinchJoint_0.M
-    N_PalmJoint_PinchJoint = R_PinchJoint_0.Inverse() * N_PalmJoint_PinchJoint_0
+
     # Add another frame to account for Palm link length
+    print("N_PalmJoint_PinchJoint: ", round_vec(N_PalmJoint_PinchJoint))
     T_PalmJoint_PinchJoint = Frame(Rotation.RPY(0, 0, 0), N_PalmJoint_PinchJoint * palm_length)
+    print("P_PalmJoint_PinchJoint: ", round_vec(T_PalmJoint_PinchJoint.p))
     # Get the shaft tip or the Palm's Joint position
     T_PalmJoint_0 = T_7_0 * T_PinchJoint_7 * T_PalmJoint_PinchJoint
 
+    print("T_PalmJoint_0: ", round_vec(T_PalmJoint_0.p))
     # Now this should be the position of the point along the RC
     # print("Point Along the SHAFT: ", T_PalmJoint_0.p)
 
@@ -140,7 +137,7 @@ def compute_IK(T_7_0):
     # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
     j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
 
-    j3 = -T_PalmJoint_0.p[2]
+    j3 = -T_PalmJoint_0.p[2] + tool_rcm_offset
 
     # Calculate j4
     # The x vector or y vector of the Pinch Joint rotation mat can be used to calculate the 4th, or tool roll angle
@@ -198,7 +195,7 @@ def compute_IK(T_7_0):
 
     # print('P_Pinch_Tip_PinchJoint_non_rotated :', round_vec(P_Pinch_Tip_PinchJoint_non_rotated))
 
-    j6 = - np.sign(D_PinchTip_PinchJoint_local[0]) * get_angle(D_PinchJoint_PalmJoint_local, D_PinchTip_PinchJoint_local)
+    j6 = np.sign(D_PinchTip_PinchJoint_local[0]) * get_angle(D_PinchJoint_PalmJoint_local, D_PinchTip_PinchJoint_local)
 
     str = '\n*************************'*3
     print(str)
@@ -209,16 +206,16 @@ def compute_IK(T_7_0):
     print("Joint 5: ", round(j5, 3))
     print("Joint 6: ", round(j6, 3))
 
-    # T_7_0_req = convert_frame_to_mat(T_7_0)
-    # T_7_0_req = round_transform(T_7_0_req, 3)
-    # print 'Requested Pose: \n', T_7_0_req
-    # T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6])
-    # round_transform(T_7_0_computed, 3)
-    # print'Computed Pose: \n', T_7_0_computed
+    T_7_0_req = convert_frame_to_mat(T_7_0)
+    T_7_0_req = round_transform(T_7_0_req, 3)
+    print 'Requested Pose: \n', T_7_0_req
+    T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6])
+    round_transform(T_7_0_computed, 3)
+    print'Computed Pose: \n', T_7_0_computed
 
 
-rx = Rotation.RPY(0.0, 0.0, 0.0)
-ry = Rotation.RPY(0.0, 1.0, 0.0)
+rx = Rotation.RPY(np.pi/2, 0.0, 0.0)
+ry = Rotation.RPY(0.0, 0.0, 0.0)
 rz = Rotation.RPY(0.0, 0.0, 0.0)
 
 tip_offset_rot = Rotation.RPY(np.pi, 0, np.pi/2)
