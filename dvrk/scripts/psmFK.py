@@ -35,6 +35,8 @@ def compute_FK(joint_pos):
     T_6_0 = np.matmul(T_5_0, T_6_5)
     T_7_0 = np.matmul(T_6_0, T_7_6)
 
+    print("RETURNING FK FOR LINK ", len(joint_pos))
+
     if len(joint_pos) == 1:
         return T_1_0
 
