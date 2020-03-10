@@ -4,6 +4,18 @@ import math
 from psmFK import *
 import rospy
 
+# THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
+# SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE
+# MTM's DH PARAMETERS IN THE MANUAL, THERE IS A FAULT IN THE PSM's DH AS WELL. CHECK THE FK
+# FILE TO FIND THE CORRECT DH PARAMS BASED ON THE FRAME ATTACHMENT IN THE DVRK MANUAL
+
+# ALSO, NOTICE THAT AT HOME CONFIGURATION THE TIP OF THE PSM HAS THE FOLLOWING
+# ROTATION OFFSET W.R.T THE BASE. THIS IS IMPORTANT FOR IK PURPOSES.
+# R_7_0 = [ 0,  1,  0 ]
+#       = [ 1,  0,  0 ]
+#       = [ 0,  0, -1 ]
+# Basically, x_7 is along y_0, y_7 is along x_0 and z_7 is along -z_0.
+
 # Read the frames, positions and rotation as follows, T_A_B, means that this
 # is a Transfrom of frame A with respect to frame B. Similarly P_A_B is the
 # Position Vector of frame A's origin with respect to frame B's origin. And finally
