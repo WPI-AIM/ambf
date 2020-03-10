@@ -1,16 +1,16 @@
 import numpy as np
-import numpy.linalg as la
-
-PI = np.pi
-PI_2 = np.pi/2
+from utilities import *
 
 
 # You need to provide a list of joint positions. If the list is less that the number of joint
 # i.e. the robot has 6 joints, but only provide 3 joints. The FK till the 3+1 link will be provided
 def compute_FK(joint_pos):
-    j = [0, 0, 0, 0, 0, 0]
+    j = [0, 0, 0, 0, 0, 0, 0]
     for i in range(len(joint_pos)):
         j[i] = joint_pos[i]
+
+    # The last frame is fixed
+
     # PSM DH Params
     link1 = DH(alpha=PI_2, a=0, theta=j[0], d=0, offset=PI_2)
     link2 = DH(alpha=-PI_2, a=0, theta=j[1], d=0, offset=-PI_2)
@@ -53,23 +53,10 @@ def compute_FK(joint_pos):
         return T_5_0
 
     elif len(joint_pos) == 6:
+        return T_6_0
+
+    elif len(joint_pos) == 7:
         return T_7_0
-
-
-def round_mat(mat, rows, cols, precision=4):
-    for i in range(0, rows):
-        for j in range(0, cols):
-            mat[i, j] = round(mat[i, j], precision)
-
-    return mat
-
-
-def round_transform(mat, precision=4):
-    return round_mat(mat, 4, 4, precision)
-
-
-def round_vec(vec, precision=4):
-    return round_mat(vec, 3, 1, precision)
 
 
 class DH:
