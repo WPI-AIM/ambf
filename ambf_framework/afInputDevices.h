@@ -235,8 +235,8 @@ public:
     cFrequencyCounter m_freq_ctr;
 
 public:
-    double K_lh;                    //Linear Haptic Stiffness Gain
-    double K_ah;                    //Angular Haptic Stiffness Gain
+    cVector3d K_lh;                    //Linear Haptic Stiffness Gain
+    cVector3d K_ah;                    //Angular Haptic Stiffness Gain
 
     double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
     double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
@@ -340,17 +340,21 @@ public:
     void closeDevices();
 
     // Increment gains (haptic mean physical device and controller means simulated gripper)
-    double increment_K_lh(double a_offset); // Stifness linear haptic
+    cVector3d increment_K_lh(double a_offset); // Stifness linear haptic
 
-    double increment_K_ah(double a_offset); // Stifness angular haptic
+    cVector3d increment_K_ah(double a_offset); // Stifness angular haptic
 
-    double increment_P_lc(double a_offset); // Stifness linear controller
+    cVector3d increment_P_lc(double a_offset); // Stifness linear controller
 
-    double increment_P_ac(double a_offset); // Stifness angular controller
+    cVector3d increment_P_ac(double a_offset); // Stifness angular controller
 
-    double increment_D_lc(double a_offset); // Damping linear controller
+    cVector3d increment_D_lc(double a_offset); // Damping linear controller
 
-    double increment_D_ac(double a_offset); // Damping angular controller
+    cVector3d increment_D_ac(double a_offset); // Damping angular controller
+
+    cVector3d increment_gain(double a_offset, cVector3d gain);
+
+    cVector3d increment_gain(cVector3d a_offset, cVector3d gain);
 
     void nextMode();
     void prevMode();

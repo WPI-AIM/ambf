@@ -246,23 +246,29 @@ public:
 
 public:
     // Get Controller Gains
-    inline double getP_lin(){return P_lin;}
-    inline double getD_lin(){return D_lin;}
-    inline double getP_ang(){return P_ang;}
-    inline double getD_ang(){return D_ang;}
+    inline cVector3d getP_lin(){return P_lin;}
+    inline cVector3d getI_lin(){return I_lin;}
+    inline cVector3d getD_lin(){return D_lin;}
+
+    inline cVector3d getP_ang(){return P_ang;}
+    inline cVector3d getI_ang(){return I_ang;}
+    inline cVector3d getD_ang(){return D_ang;}
 
 public:
     inline void enable(bool a_enable){m_enabled = a_enable;}
     inline bool isEnabled(){return m_enabled;}
 
-    void setLinearGains(double a_P, double a_I, double a_D);
-    void setAngularGains(double a_P, double a_I, double a_D);
+    void setLinearGains(cVector3d a_P, cVector3d a_I, cVector3d a_D);
+    void setAngularGains(cVector3d a_P, cVector3d a_I, cVector3d a_D);
 
     // Set Controller Gains
-    inline void setP_lin(double a_P) {P_lin = a_P;}
-    inline void setD_lin(double a_D) {D_lin = a_D;}
-    inline void setP_ang(double a_P) {P_ang = a_P;}
-    inline void setD_ang(double a_D) {D_ang = a_D;}
+    inline void setP_lin(cVector3d a_P) {P_lin = a_P;}
+    inline void setI_lin(cVector3d a_I) {I_lin = a_I;}
+    inline void setD_lin(cVector3d a_D) {D_lin = a_D;}
+
+    inline void setP_ang(cVector3d a_P) {P_ang = a_P;}
+    inline void setI_ang(cVector3d a_I) {I_ang = a_I;}
+    inline void setD_ang(cVector3d a_D) {D_ang = a_D;}
 
 public:
     template <typename T1, typename T2>
@@ -277,8 +283,8 @@ public:
 
 private:
     // PID Controller Gains for Linear and Angular Controller
-    double P_lin, I_lin, D_lin;
-    double P_ang, I_ang, D_ang;
+    cVector3d P_lin, I_lin, D_lin;
+    cVector3d P_ang, I_ang, D_ang;
 
 
 private:
@@ -1316,6 +1322,7 @@ protected:
 
     afWorld(){}
     std::string m_world_namespace;
+    cDirectionalLight* m_dirLight;
 
 private:
 

@@ -557,7 +557,7 @@ afCartesianController::afCartesianController(){
 /// \param a_I
 /// \param a_D
 ///
-void afCartesianController::setLinearGains(double a_P, double a_I, double a_D){
+void afCartesianController::setLinearGains(cVector3d a_P, cVector3d a_I, cVector3d a_D){
     P_lin = a_P;
     I_lin = a_I;
     D_lin = a_D;
@@ -572,7 +572,7 @@ void afCartesianController::setLinearGains(double a_P, double a_I, double a_D){
 /// \param a_I
 /// \param a_D
 ///
-void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
+void afCartesianController::setAngularGains(cVector3d a_P, cVector3d a_I, cVector3d a_D){
     P_ang = a_P;
     I_ang = a_I;
     D_ang = a_D;
@@ -597,7 +597,10 @@ btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVec
         m_dPos = set_point - process_val;
         _ddPos = (m_dPos - _dPos_prev) / dt;
 
-        _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
+        for (int i = 0 ; i < 3 ; i++){
+            _output.m_floats[i] = P_lin.get(i) * m_dPos.m_floats[i]* ts + D_lin.get(i) * _ddPos.m_floats[i];
+        }
+
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
@@ -630,7 +633,9 @@ btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btM
     m_dRot.getRotation(_dRotQuat);
     _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
 
-    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
+    for (int i = 0 ; i < 3 ; i++){
+        _output.m_floats[i] = (P_ang.get(i) * _error_cur.m_floats[i] * ts) + (D_ang.get(i) * (_error_cur.m_floats[i] - _error_prev.m_floats[i]) / dt);
+    }
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -659,7 +664,9 @@ cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVect
         m_dPos_cvec = set_point - process_val;
         _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
 
-        _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
+        for (int i = 0 ; i < 3 ; i++){
+            _output(i) = P_lin.get(i) * m_dPos_cvec.get(i) * ts + D_lin.get(i) * _ddPos.get(i);
+        }
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
@@ -690,7 +697,9 @@ cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatr
     m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
     _error_cur = _e_axis * _e_angle;
 
-    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
+    for (int i = 0 ; i < 3 ; i++){
+        _output(i)  = (P_ang.get(i) * _error_cur.get(i) * ts) + (D_ang.get(i) * (_error_cur.get(i)- _error_prev.get(i)) / dt);
+    }
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
@@ -1753,19 +1762,81 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     if(bodyController.IsDefined()){
         // Check if the linear controller is defined
         if (bodyController["linear"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["linear"]["P"].as<double>();
-            _D = bodyController["linear"]["D"].as<double>();
-            m_controller.setLinearGains(_P, 0, _D);
+            cVector3d _P, _I, _D;
+            if (bodyController["linear"]["P"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _P(i) = bodyController["linear"]["P"].as<double>();
+                }
+            }
+            else if (bodyController["linear"]["P"].Type() == YAML::NodeType::Map){
+                _P(0) = bodyController["linear"]["P"]["x"].as<double>();
+                _P(1) = bodyController["linear"]["P"]["y"].as<double>();
+                _P(2) = bodyController["linear"]["P"]["z"].as<double>();
+            }
+
+            if (bodyController["linear"]["I"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _I(i) = bodyController["linear"]["I"].as<double>();
+                }
+            }
+            else if (bodyController["linear"]["I"].Type() == YAML::NodeType::Map){
+                _I(0) = bodyController["linear"]["I"]["x"].as<double>();
+                _I(1) = bodyController["linear"]["I"]["y"].as<double>();
+                _I(2) = bodyController["linear"]["I"]["z"].as<double>();
+            }
+
+            if (bodyController["linear"]["D"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _D(i) = bodyController["linear"]["D"].as<double>();
+                }
+            }
+            else if (bodyController["linear"]["D"].Type() == YAML::NodeType::Map){
+                _D(0) = bodyController["linear"]["D"]["x"].as<double>();
+                _D(1) = bodyController["linear"]["D"]["y"].as<double>();
+                _D(2) = bodyController["linear"]["D"]["z"].as<double>();
+            }
+
+            m_controller.setLinearGains(_P, _I, _D);
             _lin_gains_computed = true;
         }
 
         // Check if the angular controller is defined
         if(bodyController["angular"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["angular"]["P"].as<double>();
-            _D = bodyController["angular"]["D"].as<double>();
-            m_controller.setAngularGains(_P, 0, _D);
+            cVector3d _P, _I, _D;
+            if (bodyController["angular"]["P"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _P(i) = bodyController["angular"]["P"].as<double>();
+                }
+            }
+            else if (bodyController["angular"]["P"].Type() == YAML::NodeType::Map){
+                _P(0) = bodyController["angular"]["P"]["x"].as<double>();
+                _P(1) = bodyController["angular"]["P"]["y"].as<double>();
+                _P(2) = bodyController["angular"]["P"]["z"].as<double>();
+            }
+
+            if (bodyController["angular"]["I"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _I(i) = bodyController["angular"]["I"].as<double>();
+                }
+            }
+            else if (bodyController["angular"]["I"].Type() == YAML::NodeType::Map){
+                _I(0) = bodyController["angular"]["I"]["x"].as<double>();
+                _I(1) = bodyController["angular"]["I"]["y"].as<double>();
+                _I(2) = bodyController["angular"]["I"]["z"].as<double>();
+            }
+
+            if (bodyController["angular"]["D"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _D(i) = bodyController["angular"]["D"].as<double>();
+                }
+            }
+            else if (bodyController["angular"]["D"].Type() == YAML::NodeType::Map){
+                _D(0) = bodyController["angular"]["D"]["x"].as<double>();
+                _D(1) = bodyController["angular"]["D"]["y"].as<double>();
+                _D(2) = bodyController["angular"]["D"]["z"].as<double>();
+            }
+
+            m_controller.setAngularGains(_P, _I, _D);
             _ang_gains_computed = true;
         }
     }
@@ -2036,7 +2107,7 @@ void afRigidBody::computeControllerGains(){
         return;
     }
 
-    double P_lin, D_lin, P_ang, D_ang;
+    cVector3d P_lin, D_lin, P_ang, D_ang;
     double lumped_mass = m_mass;
     cVector3d lumped_intertia = m_inertia;
     std::vector<afChildJointPair>::iterator sjIt;
@@ -2045,17 +2116,17 @@ void afRigidBody::computeControllerGains(){
         lumped_intertia += sjIt->m_childBody->getInertia();
     }
     if (!_lin_gains_computed){
-        P_lin = lumped_mass * 20;
+        P_lin = cVector3d(1, 1, 1) * lumped_mass * 20;
         D_lin = P_lin / 100;
-        m_controller.setLinearGains(P_lin, 0, D_lin);
+        m_controller.setLinearGains(P_lin, cVector3d(0, 0, 0), D_lin);
         _lin_gains_computed = true;
     }
     // TODO
     // Need a better way of estimating angular gains
     if (!_ang_gains_computed){
-        P_ang = lumped_mass * 10;
-        D_ang = lumped_mass;
-        m_controller.setAngularGains(P_ang, 0, D_ang);
+        P_ang = cVector3d(1, 1, 1) * lumped_mass * 10;
+        D_ang = cVector3d(1, 1, 1) * lumped_mass;
+        m_controller.setAngularGains(P_ang, cVector3d(0, 0, 0), D_ang);
         _ang_gains_computed = true;
     }
 }
@@ -4132,7 +4203,7 @@ bool afWorld::createDefaultWorld(){
 
         // define some material properties and apply to mesh
         bulletGround->m_material->m_emission.setGrayLevel(0.3);
-        bulletGround->m_material->setWhiteAzure();
+        bulletGround->m_material->setGreenChartreuse();
         bulletGround->m_bulletRigidBody->setFriction(0.9);
         bulletGround->m_bulletRigidBody->setRollingFriction(0.05);
         bulletGround->m_bulletRigidBody->setDamping(0.5, 0.1);
@@ -4179,6 +4250,11 @@ bool afWorld::createDefaultWorld(){
         boundaryWalls[4]->m_bulletRigidBody->setRollingFriction(0.05);
         boundaryWalls[4]->m_bulletRigidBody->setDamping(0.5, 0.1);
     }
+
+//    m_dirLight = new cDirectionalLight(s_bulletWorld);
+//    m_dirLight->setDir(0 ,-1, -1);
+//    m_dirLight->setEnabled(true);
+//    s_bulletWorld->addChild(m_dirLight);
 }
 
 
@@ -4221,33 +4297,33 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
 
     createDefaultWorld();
 
-    if (worldLightsData.IsDefined()){
-        size_t n_lights = worldLightsData.size();
-        for (size_t idx = 0 ; idx < n_lights; idx++){
-            std::string light_name = worldLightsData[idx].as<std::string>();
-            afLightPtr lightPtr = new afLight(this);
-            YAML::Node lightNode = worldNode[light_name];
-            if (lightPtr->loadLight(&lightNode, light_name, this)){
-                addAFLight(lightPtr, light_name);
-                lightPtr->afObjectCreate(lightPtr->m_name,
-                                         lightPtr->getNamespace(),
-                                         lightPtr->getMinPublishFrequency(),
-                                         lightPtr->getMaxPublishFrequency());
-            }
-        }
-    }
+//    if (worldLightsData.IsDefined()){
+//        size_t n_lights = worldLightsData.size();
+//        for (size_t idx = 0 ; idx < n_lights; idx++){
+//            std::string light_name = worldLightsData[idx].as<std::string>();
+//            afLightPtr lightPtr = new afLight(this);
+//            YAML::Node lightNode = worldNode[light_name];
+//            if (lightPtr->loadLight(&lightNode, light_name, this)){
+//                addAFLight(lightPtr, light_name);
+//                lightPtr->afObjectCreate(lightPtr->m_name,
+//                                         lightPtr->getNamespace(),
+//                                         lightPtr->getMinPublishFrequency(),
+//                                         lightPtr->getMaxPublishFrequency());
+//            }
+//        }
+//    }
 
-    if (m_afLightMap.size() == 0){
-        // No Valid Lights defined, so use the default light
-        afLightPtr lightPtr = new afLight(this);
-        if (lightPtr->createDefaultLight()){
-            addAFLight(lightPtr, "default_light");
-            lightPtr->afObjectCreate(lightPtr->m_name,
-                                     lightPtr->getNamespace(),
-                                     lightPtr->getMinPublishFrequency(),
-                                     lightPtr->getMaxPublishFrequency());
-        }
-    }
+//    if (m_afLightMap.size() == 0){
+//        // No Valid Lights defined, so use the default light
+//        afLightPtr lightPtr = new afLight(this);
+//        if (lightPtr->createDefaultLight()){
+//            addAFLight(lightPtr, "default_light");
+//            lightPtr->afObjectCreate(lightPtr->m_name,
+//                                     lightPtr->getNamespace(),
+//                                     lightPtr->getMinPublishFrequency(),
+//                                     lightPtr->getMaxPublishFrequency());
+//        }
+//    }
 
     if (showGUI){
         if (worldCamerasData.IsDefined()){

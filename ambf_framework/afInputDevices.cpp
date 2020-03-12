@@ -172,8 +172,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDPairCameras = physicaDeviceNode["pair cameras"];
 
     std::string _hardwareName = "";
-    K_lh = 0;
-    K_ah = 0;
+    K_lh = cVector3d(0, 0, 0);
+    K_ah = cVector3d(0, 0, 0);
     // Initialize Default Buttons
     m_buttons.A1 = 0;
     m_buttons.A2 = 1;
@@ -279,12 +279,44 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
 
     if (pDHapticGain.IsDefined()){
-        K_lh = pDHapticGain["linear"].as<double>();
-        K_ah = pDHapticGain["angular"].as<double>();
+
+        if (pDHapticGain["linear"].IsDefined()){
+            cVector3d _P;
+            if (pDHapticGain["linear"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _P(i) = pDHapticGain["linear"].as<double>();
+                }
+            }
+            else if (pDHapticGain["linear"].Type() == YAML::NodeType::Map){
+                _P(0) = pDHapticGain["linear"]["x"].as<double>();
+                _P(1) = pDHapticGain["linear"]["y"].as<double>();
+                _P(2) = pDHapticGain["linear"]["z"].as<double>();
+            }
+            K_lh = _P;
+        }
+
+        // Check if the angular controller is defined
+        if(pDHapticGain["angular"].IsDefined()){
+
+            cVector3d _P;
+            if (pDHapticGain["angular"].Type() == YAML::NodeType::Scalar){
+                for(int i = 0 ; i < 3 ; i++){
+                    _P(i) = pDHapticGain["angular"].as<double>();
+                }
+            }
+            else if (pDHapticGain["angular"].Type() == YAML::NodeType::Map){
+                _P(0) = pDHapticGain["angular"]["x"].as<double>();
+                _P(1) = pDHapticGain["angular"]["y"].as<double>();
+                _P(2) = pDHapticGain["angular"]["z"].as<double>();
+            }
+            K_ah = _P;
+        }
 
         // clamp the force output gain to the max device stiffness
         double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
-        K_lh = cMin(K_lh, _maxStiffness);
+        for (int i = 0 ; i < 3 ; i++){
+            K_lh(i) = cMin(K_lh(i), _maxStiffness);
+        }
     }
     else{
         std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
@@ -356,19 +388,81 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
             // Check if the linear controller is defined
             if (pDControllerGain["linear"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["linear"]["P"].as<double>();
-                _D = pDControllerGain["linear"]["D"].as<double>();
-                m_controller.setLinearGains(_P, 0, _D);
+                cVector3d _P, _I, _D;
+                if (pDControllerGain["linear"]["P"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _P(i) = pDControllerGain["linear"]["P"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["linear"]["P"].Type() == YAML::NodeType::Map){
+                    _P(0) = pDControllerGain["linear"]["P"]["x"].as<double>();
+                    _P(1) = pDControllerGain["linear"]["P"]["y"].as<double>();
+                    _P(2) = pDControllerGain["linear"]["P"]["z"].as<double>();
+                }
+
+                if (pDControllerGain["linear"]["I"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _I(i) = pDControllerGain["linear"]["I"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["linear"]["I"].Type() == YAML::NodeType::Map){
+                    _I(0) = pDControllerGain["linear"]["I"]["x"].as<double>();
+                    _I(1) = pDControllerGain["linear"]["I"]["y"].as<double>();
+                    _I(2) = pDControllerGain["linear"]["I"]["z"].as<double>();
+                }
+
+                if (pDControllerGain["linear"]["D"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _D(i) = pDControllerGain["linear"]["D"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["linear"]["D"].Type() == YAML::NodeType::Map){
+                    _D(0) = pDControllerGain["linear"]["D"]["x"].as<double>();
+                    _D(1) = pDControllerGain["linear"]["D"]["y"].as<double>();
+                    _D(2) = pDControllerGain["linear"]["D"]["z"].as<double>();
+                }
+
+                m_controller.setLinearGains(_P, _I, _D);
                 linGainsDefined = true;
             }
 
             // Check if the angular controller is defined
             if(pDControllerGain["angular"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["angular"]["P"].as<double>();
-                _D = pDControllerGain["angular"]["D"].as<double>();
-                m_controller.setAngularGains(_P, 0, _D);
+                cVector3d _P, _I, _D;
+                if (pDControllerGain["angular"]["P"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _P(i) = pDControllerGain["angular"]["P"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["angular"]["P"].Type() == YAML::NodeType::Map){
+                    _P(0) = pDControllerGain["angular"]["P"]["x"].as<double>();
+                    _P(1) = pDControllerGain["angular"]["P"]["y"].as<double>();
+                    _P(2) = pDControllerGain["angular"]["P"]["z"].as<double>();
+                }
+
+                if (pDControllerGain["angular"]["I"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _I(i) = pDControllerGain["angular"]["I"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["angular"]["I"].Type() == YAML::NodeType::Map){
+                    _I(0) = pDControllerGain["angular"]["I"]["x"].as<double>();
+                    _I(1) = pDControllerGain["angular"]["I"]["y"].as<double>();
+                    _I(2) = pDControllerGain["angular"]["I"]["z"].as<double>();
+                }
+
+                if (pDControllerGain["angular"]["D"].Type() == YAML::NodeType::Scalar){
+                    for(int i = 0 ; i < 3 ; i++){
+                        _D(i) = pDControllerGain["angular"]["D"].as<double>();
+                    }
+                }
+                else if (pDControllerGain["angular"]["D"].Type() == YAML::NodeType::Map){
+                    _D(0) = pDControllerGain["angular"]["D"]["x"].as<double>();
+                    _D(1) = pDControllerGain["angular"]["D"]["y"].as<double>();
+                    _D(2) = pDControllerGain["angular"]["D"]["z"].as<double>();
+                }
+
+                m_controller.setAngularGains(_P, _I, _D);
                 angGainsDefined = true;
             }
         }
@@ -376,14 +470,14 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             // If not controller gains defined for this physical device's simulated body,
             // copy over the gains from the Physical device
             m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
-                                        0,
+                                        simDevice->m_rootLink->m_controller.getI_lin(),
                                         simDevice->m_rootLink->m_controller.getD_lin());
         }
         if (!angGainsDefined){
             // If not controller gains defined for this physical device's simulated body,
             // copy over the gains from the Physical device
             m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
-                                         0,
+                                         simDevice->m_rootLink->m_controller.getI_ang(),
                                          simDevice->m_rootLink->m_controller.getD_ang());
         }
 
@@ -1122,27 +1216,40 @@ void afCollateralControlManager::closeDevices(){
 }
 
 
+cVector3d afCollateralControlManager::increment_gain(double increment, cVector3d gain){
+    return increment_gain(cVector3d(1, 1, 1) * increment, gain);
+}
+
+
+cVector3d afCollateralControlManager::increment_gain(cVector3d increment, cVector3d gain){
+    cVector3d temp = gain + increment;
+    bool zero_gain = false;
+    for(int i = 0 ; i < 3 ; i++){
+        if (temp(i) <= 0){
+            temp(i) = 0;
+            gain(i) = 0;
+            zero_gain = true;
+        }
+    }
+
+    return temp;
+}
+
+
 ///
 /// \brief afInputDevices::increment_K_lh
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_K_lh(double a_offset){
+cVector3d afCollateralControlManager::increment_K_lh(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh + a_offset <= 0)
-        {
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh = 0.0;
-        }
-        else{
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh += a_offset;
-        }
+        cVector3d new_gain = m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh;
+        new_gain = increment_gain(a_offset, new_gain);
+        m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh = new_gain;
     }
-    //Set the return value to the gain of the last device
-    if(m_numDevices > 0){
-        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_lh;
-        g_btn_action_str = "K_lh = " + cStr(a_offset, 4);
-    }
-    return a_offset;
+    g_btn_action_str = "K_lh = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 ///
@@ -1150,21 +1257,15 @@ double afCollateralControlManager::increment_K_lh(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_K_ah(double a_offset){
+cVector3d afCollateralControlManager::increment_K_ah(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah + a_offset <=0){
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah = 0.0;
-        }
-        else{
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah += a_offset;
-        }
+        cVector3d new_gain = m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah;
+        new_gain = increment_gain(a_offset, new_gain);
+        m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah = new_gain;
     }
-    //Set the return value to the gain of the last device
-    if(m_numDevices > 0){
-        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_ah;
-        g_btn_action_str = "K_ah = " + cStr(a_offset, 4);
-    }
-    return a_offset;
+    g_btn_action_str = "K_ah = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 ///
@@ -1172,23 +1273,16 @@ double afCollateralControlManager::increment_K_ah(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_P_lc(double a_offset){
-    double _temp = a_offset;
+cVector3d afCollateralControlManager::increment_P_lc(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
-        double _gain = sG->m_controller.getP_lin();
-        if (_gain + a_offset <=0){
-            sG->m_controller.setP_lin(0.0);
-            _temp = 0.0;
-        }
-        else{
-            sG->m_controller.setP_lin( _gain + a_offset);
-            _temp = _gain + a_offset;
-        }
+        cVector3d new_gain = sG->m_controller.getP_lin();
+        new_gain = increment_gain(a_offset, new_gain);
+        sG->m_controller.setP_lin(new_gain);
     }
-
-    g_btn_action_str = "P_lc = " + cStr(_temp, 4);
-    return _temp;
+    g_btn_action_str = "P_lc = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 ///
@@ -1196,23 +1290,16 @@ double afCollateralControlManager::increment_P_lc(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_P_ac(double a_offset){
-    double _temp = a_offset;
+cVector3d afCollateralControlManager::increment_P_ac(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
-        double _gain = sG->m_controller.getP_ang();
-        if (_gain + a_offset <=0){
-            sG->m_controller.setP_ang(0.0);
-            _temp = 0.0;
-        }
-        else{
-            sG->m_controller.setP_ang( _gain + a_offset);
-            _temp = _gain + a_offset;
-        }
+        cVector3d new_gain = sG->m_controller.getP_ang();
+        new_gain = increment_gain(a_offset, new_gain);
+        sG->m_controller.setP_ang(new_gain);
     }
-
-    g_btn_action_str = "P_ac = " + cStr(_temp, 4);
-    return _temp;
+    g_btn_action_str = "P_ac = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 ///
@@ -1220,24 +1307,16 @@ double afCollateralControlManager::increment_P_ac(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_D_lc(double a_offset){
-    double _temp = a_offset;
+cVector3d afCollateralControlManager::increment_D_lc(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
-        double _gain = sG->m_controller.getD_lin();
-        if (_gain + a_offset <=0.01){
-            // Keep a small value of Angular gain to avoid controller singularity
-            sG->m_controller.setD_lin(0.01);
-            _temp = 0.01;
-        }
-        else{
-            sG->m_controller.setD_lin( _gain + a_offset);
-            _temp = _gain + a_offset;
-        }
+        cVector3d new_gain = sG->m_controller.getD_lin();
+        new_gain = increment_gain(a_offset, new_gain);
+        sG->m_controller.setD_lin(new_gain);
     }
-
-    g_btn_action_str = "D_lc = " + cStr(_temp, 4);
-    return _temp;
+    g_btn_action_str = "D_lc = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 ///
@@ -1245,23 +1324,16 @@ double afCollateralControlManager::increment_D_lc(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afCollateralControlManager::increment_D_ac(double a_offset){
-    double _temp = a_offset;
+cVector3d afCollateralControlManager::increment_D_ac(double a_offset){
+    cVector3d new_gain;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
         afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
-        double _gain = sG->m_controller.getD_ang();
-        if (_gain + a_offset <=0){
-            sG->m_controller.setD_ang(0.0);
-            _temp = 0.0;
-        }
-        else{
-            sG->m_controller.setD_ang( _gain + a_offset);
-            _temp = _gain + a_offset;
-        }
+        cVector3d new_gain = sG->m_controller.getD_ang();
+        new_gain = increment_gain(a_offset, new_gain);
+        sG->m_controller.setD_ang(new_gain);
     }
-
-    g_btn_action_str = "D_ac = " + cStr(_temp, 4);
-    return _temp;
+    g_btn_action_str = "D_ac = " + cStr(new_gain.x(), 4) + ", " + cStr(new_gain.y(), 4) + ", " + cStr(new_gain.z(), 4);
+    return new_gain;
 }
 
 }

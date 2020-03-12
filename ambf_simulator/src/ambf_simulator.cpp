@@ -1797,10 +1797,10 @@ void updateHapticDevice(void* a_arg){
             simDev->updateMeasuredPose();
 
 
-            double P_lin = simDev->m_rootLink->m_controller.getP_lin();
-            double D_lin = simDev->m_rootLink->m_controller.getD_lin();
-            double P_ang = simDev->m_rootLink->m_controller.getP_ang();
-            double D_ang = simDev->m_rootLink->m_controller.getD_ang();
+            cVector3d P_lin = simDev->m_rootLink->m_controller.getP_lin();
+            cVector3d D_lin = simDev->m_rootLink->m_controller.getD_lin();
+            cVector3d P_ang = simDev->m_rootLink->m_controller.getP_ang();
+            cVector3d D_ang = simDev->m_rootLink->m_controller.getD_ang();
 
             dposLast = dpos;
             dpos = simDev->getPosRef() - simDev->m_pos;
@@ -1817,8 +1817,10 @@ void updateHapticDevice(void* a_arg){
 
             force_prev = force;
             torque_prev = torque_prev;
-            force  = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-            torque = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
+            for (int i = 0 ; i < 3 ; i++){
+                force(i)  = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin(i) * dpos(i) + D_lin(i) * ddpos(i));
+                torque(i) = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang(i) * angle * axis(i));
+            }
 
 //            if ((force - force_prev).length() > phyDev->m_maxJerk){
 //                cVector3d normalized_force = force;
@@ -1845,22 +1847,26 @@ void updateHapticDevice(void* a_arg){
 
             phyDev->applyWrench(force, torque);
 
-            if (phyDev->K_lh_ramp < phyDev->K_lh)
-            {
-                phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->K_lh;
-            }
-            else
-            {
-                phyDev->K_lh_ramp = phyDev->K_lh;
-            }
+            for (int i = 0 ; i < 3 ; i++){
 
-            if (phyDev->K_ah_ramp < phyDev->K_ah)
-            {
-                phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->K_ah;
-            }
-            else
-            {
-                phyDev->K_ah_ramp = phyDev->K_ah;
+                if (phyDev->K_lh_ramp < phyDev->K_lh(i))
+                {
+                    phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->K_lh(i);
+                }
+                else
+                {
+                    phyDev->K_lh_ramp = phyDev->K_lh(i);
+                }
+
+                if (phyDev->K_ah_ramp < phyDev->K_ah(i))
+                {
+                    phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->K_ah(i);
+                }
+                else
+                {
+                    phyDev->K_ah_ramp = phyDev->K_ah(i);
+                }
+
             }
 
         }

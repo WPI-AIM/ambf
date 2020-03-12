@@ -29,6 +29,16 @@ BODY Chassis:
   damping: {angular: 0.1, linear: 0.04}
   restitution: 0
   collision groups: [0]
+  controller: {
+    linear: {
+      P: {x: 0, y: 5000, z: 0},
+      D: {x: 1, y: 100, z: 1}
+      },
+    angular: {
+      P: {x: 10, y: 10, z: 10},
+      D: {x: 1, y: 1, z: 1}
+      },
+    }
   color components:
     ambient: {level: 1.0}
     diffuse: {b: 0.6619, g: 0.0908, r: 0.2876}
