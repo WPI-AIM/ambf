@@ -63,6 +63,7 @@ class Client:
         self._rate = 0
         self._world_name = ''
         self._client_name = client_name
+        self._world_handle = None
         pass
 
     def create_objs_from_rostopics(self):
@@ -85,14 +86,15 @@ class Client:
                             obj._sub = rospy.Subscriber(self._ros_topics[i][j], WorldState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=WorldCmd, queue_size=10)
+                            self._world_handle = obj
+
                         else:
                             obj = Object(obj_name)
                             obj.set_name(obj_name)
                             obj._sub = rospy.Subscriber(self._ros_topics[i][j], ObjectState, obj.ros_cb)
                             pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
                             obj._pub = rospy.Publisher(name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
-
-                        self._objects_dict[obj_name] = obj
+                            self._objects_dict[obj_name] = obj
 
     def connect(self):
         self.create_objs_from_rostopics()
@@ -104,6 +106,9 @@ class Client:
 
     def start(self):
         self._start_pubs()
+
+    def get_world_handle(self):
+        return self._world_handle
 
     def get_obj_names(self):
         obj_names = []
@@ -117,9 +122,9 @@ class Client:
             obj.set_active()
             obj.set_publish_children_names_flag(True)
             obj.set_publish_joint_names_flag(True)
-            obj.set_publish_joint_pos_flag(True)
+            obj.set_publish_joint_positions_flag(True)
         else:
-            print a_name, 'named object not found'
+            print(a_name, 'named object not found')
         return obj
 
     def get_obj_pose(self, a_name):
@@ -146,23 +151,23 @@ class Client:
             self._rate.sleep()
 
     def print_active_topics(self):
-        print self._ros_topics
+        print(self._ros_topics)
         pass
 
     def print_summary(self):
-        print '_________________________________________________________'
-        print '---------------------------------------------------------'
-        print 'CLIENT FOR CREATING OBJECTS FROM ROSTOPICS'
-        print 'Searching Object names from ros topics with'
-        print 'Prefix: ', self._search_prefix_str
-        print 'Suffix: ', self._search_suffix_str
-        print 'Number of OBJECTS found', len(self._objects_dict)
+        print('_________________________________________________________')
+        print('---------------------------------------------------------')
+        print('CLIENT FOR CREATING OBJECTS FROM ROSTOPICS')
+        print('Searching Object names from ros topics with')
+        print('Prefix: ', self._search_prefix_str)
+        print('Suffix: ', self._search_suffix_str)
+        print('Number of OBJECTS found', len(self._objects_dict))
         for key, value in self._objects_dict.items():
-            print key
-        print '---------------------------------------------------------'
+            print(key)
+        print('---------------------------------------------------------')
 
     def clean_up(self):
-        for key, val in self._objects_dict.iteritems():
+        for key, val in self._objects_dict.items():
             val.pub_flag = False
-            print 'Closing publisher for: ', key
+            print('Closing publisher for: ', key)
         self._objects_dict.clear()

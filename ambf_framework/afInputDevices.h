@@ -63,8 +63,8 @@ const int MAX_DEVICES = 10;
 //---------------------------------------------------------------------------
 class afPhysicalDevice;
 class afSimulatedDevice;
-class afInputDevices;
-struct InputControlUnit;
+class afCollateralControlManager;
+struct afCollateralControlUnit;
 
 ///
 /// \brief The SoftBodyGrippingConstraint struct
@@ -110,15 +110,25 @@ protected:
 class afSimulatedDevice: public afSharedDataStructure, public afMultiBody{
 public:
     afSimulatedDevice(afWorldPtr a_afWorld);
+
     ~afSimulatedDevice(){}
+
     cVector3d measuredPos();
+
     cMatrix3d measuredRot();
+
     void updateMeasuredPose();
+
     inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
+
     inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+
     bool isWrenchSet();
+
     void clearWrench();
+
     void offsetGripperAngle(double offset);
+
     void setGripperAngle(double angle, double dt=0.001);
 
 public:
@@ -140,8 +150,8 @@ public:
     // Root link for this simulated device hhhhhhh
     afRigidBodyPtr m_rootLink;
 
-//private:
-//    std::mutex m_mutex;
+    //private:
+    //    std::mutex m_mutex;
 };
 
 
@@ -162,28 +172,52 @@ struct afButtons{
 ///
 class afPhysicalDevice{
 public:
-    afPhysicalDevice(){}
+    afPhysicalDevice(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
     ~afPhysicalDevice();
-    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
-    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD);
+    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
+
+    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
+
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
+
+    inline void enableJointControl(bool a_enable){m_jointControlEnable = a_enable;}
+
+    inline bool isJointControlEnabled(){return m_jointControlEnable;}
+
     cVector3d measuredPos();
+
     cMatrix3d measuredRot();
+
     cVector3d measuredPosPreclutch();
+
     cMatrix3d measuredRotPreclutch();
+
     void setPosPreclutch(cVector3d a_pos);
+
     void setRotPreclutch(cMatrix3d a_rot);
+
     cVector3d measuredPosCamPreclutch();
+
     cMatrix3d measuredRotCamPreclutch();
+
     void setPosCamPreclutch(cVector3d a_pos);
+
     void setRotCamPreclutch(cMatrix3d a_rot);
+
     cVector3d measuredVelLin();
+
     cVector3d mearuredVelAng();
+
     double measuredGripperAngle();
+
     void applyWrench(cVector3d a_force, cVector3d a_torque);
+
     bool isButtonPressed(int button_index);
+
     bool isButtonPressRisingEdge(int button_index);
+
     bool isButtonPressFallingEdge(int button_index);
+
     void enableForceFeedback(bool enable){m_dev_force_enabled = enable;}
 
 public:
@@ -223,12 +257,34 @@ public:
     // Initial offset between the simulated end effector and the
     // physical device
     cMatrix3d m_simRotInitial;
+
     // A transform between simulated and pyhsical devices' frame
     // to store any intended offset
     cMatrix3d m_simRotOffset;
 
+    // Flag to enable disable showing of reference marker
+    bool m_showMarker;
+
+    // Marker size to display
+    double m_markerSize;
+
+    // Visual Marker to show the target position of the device
+    cMesh* m_refSphere = new cMesh();
+
+    // Declare a controller for the physical device as well
+    afCartesianController m_controller;
+
+    // Flag to enable and disable the joint control of simulated end effector
+    // for this physical device
+    bool m_jointControlEnable;
+
+    // The names of camera that this device can control. The first camera in the
+    // list the parent of this device for hand-eye coordination.
+    std::vector<std::string> m_pairedCameraNames;
+
 private:
-    afInputDevices* m_iDPtr; // Ptr to the Device Handler class
+    afCollateralControlManager* m_iDPtr; // Ptr to the Device Handler class
+    afWorldPtr m_afWorld; // Ref to world ptr
 };
 
 ///
@@ -246,10 +302,12 @@ enum MODES{ CAM_CLUTCH_CONTROL,
 
 ///
 /// \brief The InputControlUnit struct
+/// Basically a struct of an IID, its SDE and all the
+/// controllable cameras by that SDE-IID
 ///
-struct InputControlUnit{
-    afPhysicalDevice* m_physicalDevice = NULL;
-    afSimulatedDevice* m_simulatedDevice = NULL;
+struct afCollateralControlUnit{
+    afPhysicalDevice* m_physicalDevicePtr = NULL;
+    afSimulatedDevice* m_simulatedDevicePtr = NULL;
     // The cameras that this particular device Gripper Pair control
     std::vector<afCameraPtr> m_cameras;
 
@@ -263,15 +321,19 @@ struct InputControlUnit{
 /// \brief This is a higher level class that queries the number of haptics devices available on the sytem
 /// and on the Network for dVRK devices and creates a Simulated and Physical Device Handle
 ///
-class afInputDevices{
+class afCollateralControlManager{
 public:
-    afInputDevices(afWorldPtr a_afWorld);
-    ~afInputDevices();
+    afCollateralControlManager(afWorldPtr a_afWorld);
+    ~afCollateralControlManager();
 
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
 
-    virtual bool loadInputDevices(std::string a_inputdevice_config, int a_max_load_devs = MAX_DEVICES);
+    virtual bool loadInputDevices(std::string a_input_devices_config, int a_max_load_devs = MAX_DEVICES);
+
+    virtual bool loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices);
+
+    bool pairCamerasToCCU(afCollateralControlUnit& a_ccu);
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 
@@ -279,17 +341,23 @@ public:
 
     // Increment gains (haptic mean physical device and controller means simulated gripper)
     double increment_K_lh(double a_offset); // Stifness linear haptic
+
     double increment_K_ah(double a_offset); // Stifness angular haptic
+
     double increment_P_lc(double a_offset); // Stifness linear controller
+
     double increment_P_ac(double a_offset); // Stifness angular controller
+
     double increment_D_lc(double a_offset); // Damping linear controller
+
     double increment_D_ac(double a_offset); // Damping angular controller
 
     void nextMode();
     void prevMode();
 
-    std::vector<InputControlUnit*> getDeviceGripperPairs(std::vector<std::string> a_device_names);
-    std::vector<InputControlUnit*> getAllDeviceGripperPairs();
+    std::vector<afCollateralControlUnit*> getCollateralControlUnits(std::vector<std::string> a_device_names);
+
+    std::vector<afCollateralControlUnit*> getAllCollateralControlUnits();
 
     // Add the index of a claimed device
     void addClaimedDeviceIndex(int a_idx);
@@ -299,7 +367,7 @@ public:
 
 public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
-    std::vector<InputControlUnit> m_psDevicePairs;
+    std::vector<afCollateralControlUnit> m_collateralControlUnits;
 
     uint m_numDevices;
 

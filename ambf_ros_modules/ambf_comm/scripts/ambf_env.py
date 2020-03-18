@@ -99,7 +99,7 @@ class AmbfEnv:
 
     def make(self, a_name):
         self.obj_handle = self.ambf_client.get_obj_handle(a_name)
-        self.world_handle = self.ambf_client.get_obj_handle('World')
+        self.world_handle = self.ambf_client.get_world_handle()
         self.world_handle.enable_throttling(self.enable_step_throttling)
         self.world_handle.set_num_step_skips(self.n_skip_steps)
         if self.obj_handle is None or self.world_handle is None:

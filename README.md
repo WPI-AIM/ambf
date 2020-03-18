@@ -24,6 +24,17 @@ AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few ext
 
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support. 
 
+### AMBF Network Setup:
+In order to subscribe and publish data using AMBF over multiple machines, the following steps would need to be followed:
+1. Check the connectivity between the machines (example: using ssh and ping)
+2. Edit the `/etc/hosts` and add the hostnames of the machines, so that the machines can find each other over the network (example: similar to [Adding host name to /etc/hosts](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/))
+3. Set the ROS environment variable in local machine to the host using `export ROS_MASTER_URI=http://hostIPaddress:11311` (ex: export ROS_MASTER_URI=http://112.115.256.121:11311)
+4. Now you should be able to send and receive ROS messages over the two machines and control AMBF. 
+5. If you face any firewall issues or if you are unable to receive/publish any ROS topics over the two machines, follow the next step.
+6. Open a terminal and type the command:  `sudo apt-get install gufw` 
+7. Next type `sudo gufw` (type the password when prompted) and ensure both the Incoming and Outgoing traffic is allowed.
+
+
 ### Building:
 On Linux machines, you might need to install the `libasound2-dev` package and external libraries dependencies.
 
@@ -75,13 +86,35 @@ cd ~/ambf/bin/<os>
 ```
 
 #### Launching Specific Multibodies:
-The -l command line argument can be used to launch a specific multibody at launch. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the -l command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the -l flag with the integer index of the multi-body as follows:
+There are two ways to launch multibodies:
+1. Using the integer index of the filename specified in the launch file
+2. Providing the explicit filename(s).
+##### 1. Using the Integer Index in the launch file
+The -l command line argument can be used to launch a specific multibody at launch using indexing. The multibodies are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. As a default behaviour, launching the simulator without the `-l` command line argument loads the first multi-body defined in the `launch.yaml`. To launch a specific multi-body you can use the `-l` flag with the integer index of the multi-body as follows:
 
 ```
 cd ~/ambf/bin/<os>
 ./ambf_simulator -l 4
 ```
 This command will launch the 4th body defined in the `launch.yaml` file. To launch multiple multi-bodies, you can use a comma separated list (without spaces in between) of integers indices e.g.`./ambf_simulator -l 1,6,10`. This in turn would load the multi-bodies defined at 1, 6 and the 10th index in the `launch.yaml` file. 
+
+##### 2. Providing the fully qualified filename
+The second option is to use the `-a` flag. For example, if one has an AMBF description file in the home directory `/users/potato/tests/robot.yaml`, this file can be launched directly as follows
+
+```
+cd ~/ambf/bin/<os>
+./ambf_simulator -a /users/potato/tests/robot.yaml
+```
+
+Similarly, as it the case with the `-l` flag, multiple filenames can be launch by comma separated values. E.g.
+
+
+```
+cd ~/ambf/bin/<os>
+./ambf_simulator -a /users/potato/tests/robot.yaml,/users/potato/tests/car.yaml
+```
+
+Lastly, the `-l` and `-a` flags can be used together to launch some files based on the index and some based on the filenames.
 
 ### Note:
 The AMBF Simulator uses the yaml file located in `ambf/ambf_models/descriptions/launch.yaml` to
@@ -181,9 +214,18 @@ See [here](/ambf_controller/README.md) for more information.
 ## Citation
 If this work is helpful for your research, please use the following reference for citation:
 ```
-Munawar, Adnan, Wang, Yan, Gondokaryono, Radian & Gregory Fischer. "A Real-Time Dynamic Simulator and
-an Associated Front-End Representation Format for Simulating Complex Robots and Environments" 2019
-IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). IEEE, 2019
+@INPROCEEDINGS{8968568,
+author={A. {Munawar} and Y. {Wang} and R. {Gondokaryono} and G. S. {Fischer}},
+booktitle={2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+title={A Real-Time Dynamic Simulator and an Associated Front-End Representation Format for Simulating Complex Robots and Environments},
+year={2019},
+volume={},
+number={},
+pages={1875-1882},
+keywords={},
+doi={10.1109/IROS40897.2019.8968568},
+ISSN={2153-0858},
+month={Nov},}
 ```
 
 
