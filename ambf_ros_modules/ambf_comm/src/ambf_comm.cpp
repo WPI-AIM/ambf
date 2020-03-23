@@ -50,9 +50,9 @@ ChaiEnv::ChaiEnv(){
 }
 
 
-void ChaiEnv::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq){
+void ChaiEnv::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
     if(!object_exists(name)){
-        m_objectMap[name] = boost::shared_ptr<ambf_comm::Object>(new ambf_comm::Object(name, a_namespace, a_min_freq, a_max_freq));
+        m_objectMap[name] = boost::shared_ptr<ambf_comm::Object>(new ambf_comm::Object(name, a_namespace, a_min_freq, a_max_freq, time_out));
     }
     else{
         std::cerr<< "ERROR!, OBJECT: \""<< name << "\" ALREADY EXISTS. IGNORING" << std::endl;

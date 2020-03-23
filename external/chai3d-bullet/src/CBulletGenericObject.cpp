@@ -330,9 +330,9 @@ void cBulletGenericObject::addExternalTorque(const cVector3d& a_torque)
     \param  a_name  af Namespace.
 */
 //==============================================================================
-void cBulletGenericObject::afObjectCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq){
+void cBulletGenericObject::afObjectCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afObjectPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq));
+    m_afObjectPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
 #endif
 }
 

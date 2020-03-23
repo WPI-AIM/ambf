@@ -147,7 +147,6 @@ class Object(WatchDog):
         else:
             return None
 
-
     def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
