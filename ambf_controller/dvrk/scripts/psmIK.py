@@ -1,4 +1,4 @@
-from PyKDL import Vector, Rotation, Frame, dot
+from tf_utils import Vector, Rotation, Frame, Twist
 import numpy as np
 import math
 from psmFK import *
@@ -48,113 +48,134 @@ import rospy
 #
 # is the direction between the difference of A and B expressed in C.
 
+
 def compute_IK(T_7_0):
-    palm_length = 0.0091 # Fixed length from the palm joint to the pinch joint
-    pinch_length = 0.0102 # Fixed length from the pinch joint to the pinch tip
-    tool_rcm_offset = 0.0156 # Delta between tool tip and the Remote Center of Motion
+  palm_length = 0.0091  # Fixed length from the palm joint to the pinch joint
+  pinch_length = 0.0102  # Fixed length from the pinch joint to the pinch tip
+  tool_rcm_offset = 0.0156  # Delta between tool tip and the Remote Center of Motion
 
-    # Pinch Joint
-    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0, 0, -1))
-    # Pinch Joint in Origin
-    T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
+  # Pinch Joint
+  T_PinchJoint_7 = Frame(
+    Rotation.RPY(0,
+                 0,
+                 0),
+    pinch_length * Vector(0,
+                          0,
+                          -1)
+  )
+  # Pinch Joint in Origin
+  T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
 
-    # It appears from the geometry of the robot, that the palm joint is always in the ZY
-    # plane of the end effector frame (7th Frame)
-    # This is the logic that should give us the direction of the palm link and then
-    # we know the length of the palm link so we can keep going back to find the shaftTip (PalmJoint)
-    # position
+  # It appears from the geometry of the robot, that the palm joint is always in the ZY
+  # plane of the end effector frame (7th Frame)
+  # This is the logic that should give us the direction of the palm link and then
+  # we know the length of the palm link so we can keep going back to find the shaftTip (PalmJoint)
+  # position
 
-    # Convert the vector from base to pinch joint in the pinch joint frame
-    # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
-    P_PinchJoint_local = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
-    # print("P_PinchJoint_local: ", round_vec(P_PinchJoint_local))
-    # Now we can trim the value along the x axis to get a projection along the YZ plane as mentioned above
-    N_PalmJoint_PinchJoint = P_PinchJoint_local
-    N_PalmJoint_PinchJoint[0] = 0
-    N_PalmJoint_PinchJoint.Normalize()
-    # We can check the angle to see if things make sense
-    angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
-    # print("Palm Link Angle in Pinch YZ Plane: ", angle)
+  # Convert the vector from base to pinch joint in the pinch joint frame
+  # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
+  P_PinchJoint_local = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
+  # print("P_PinchJoint_local: ", round_vec(P_PinchJoint_local))
+  # Now we can trim the value along the x axis to get a projection along the YZ plane as mentioned above
+  N_PalmJoint_PinchJoint = P_PinchJoint_local
+  N_PalmJoint_PinchJoint[0] = 0
+  N_PalmJoint_PinchJoint.Normalize()
+  # We can check the angle to see if things make sense
+  angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
+  # print("Palm Link Angle in Pinch YZ Plane: ", angle)
 
-    # If the angle between the two vectors is > 90 Degree, we should move in the opposite direction
-    if angle > np.pi/2:
-        N_PalmJoint_PinchJoint = -N_PalmJoint_PinchJoint
+  # If the angle between the two vectors is > 90 Degree, we should move in the opposite direction
+  if angle > np.pi / 2:
+    N_PalmJoint_PinchJoint = -N_PalmJoint_PinchJoint
 
-    # Add another frame to account for Palm link length
-    # print("N_PalmJoint_PinchJoint: ", round_vec(N_PalmJoint_PinchJoint))
-    T_PalmJoint_PinchJoint = Frame(Rotation.RPY(0, 0, 0), N_PalmJoint_PinchJoint * palm_length)
-    # print("P_PalmJoint_PinchJoint: ", round_vec(T_PalmJoint_PinchJoint.p))
-    # Get the shaft tip or the Palm's Joint position
-    T_PalmJoint_0 = T_7_0 * T_PinchJoint_7 * T_PalmJoint_PinchJoint
+  # Add another frame to account for Palm link length
+  # print("N_PalmJoint_PinchJoint: ", round_vec(N_PalmJoint_PinchJoint))
+  T_PalmJoint_PinchJoint = Frame(
+    Rotation.RPY(0,
+                 0,
+                 0),
+    N_PalmJoint_PinchJoint * palm_length
+  )
+  # print("P_PalmJoint_PinchJoint: ", round_vec(T_PalmJoint_PinchJoint.p))
+  # Get the shaft tip or the Palm's Joint position
+  T_PalmJoint_0 = T_7_0 * T_PinchJoint_7 * T_PalmJoint_PinchJoint
 
-    # print("P_PalmJoint_0: ", round_vec(T_PalmJoint_0.p))
-    # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
-    # Now this should be the position of the point along the RC
-    # print("Point Along the SHAFT: ", T_PalmJoint_0.p)
+  # print("P_PalmJoint_0: ", round_vec(T_PalmJoint_0.p))
+  # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
+  # Now this should be the position of the point along the RC
+  # print("Point Along the SHAFT: ", T_PalmJoint_0.p)
 
-    # Now having the end point of the shaft or the PalmJoint, we can calculate some
-    # angles as follows
-    # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
-    # # print ('XZ Diagonal: ', xz_diagonal)
-    # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
-    j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
+  # Now having the end point of the shaft or the PalmJoint, we can calculate some
+  # angles as follows
+  # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
+  # # print ('XZ Diagonal: ', xz_diagonal)
+  # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
+  j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
 
-    # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
-    # # print('YZ Diagonal: ', yz_diagonal)
-    # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
-    j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
+  # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
+  # # print('YZ Diagonal: ', yz_diagonal)
+  # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
+  j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
 
-    j3 = T_PalmJoint_0.p.Norm() + tool_rcm_offset
+  j3 = T_PalmJoint_0.p.Norm() + tool_rcm_offset
 
-    # Calculate j4
-    # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
-    # we need to construct a plane based on the vectors Rx_7_0 and D_PinchJoint_PalmJoint_0 since these are
-    # the only two vectors that are orthogonal at all configurations of the EE.
-    cross_palmlink_x7_0 = T_7_0.M.UnitX() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
+  # Calculate j4
+  # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
+  # we need to construct a plane based on the vectors Rx_7_0 and D_PinchJoint_PalmJoint_0 since these are
+  # the only two vectors that are orthogonal at all configurations of the EE.
+  cross_palmlink_x7_0 = T_7_0.M.UnitX() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
 
-    # To get j4, compare the above vector with Y axes of T_3_0
-    T_3_0 = convert_mat_to_frame(compute_FK([j1, j2, j3]))
-    j4 = get_angle(cross_palmlink_x7_0, T_3_0.M.UnitY(), up_vector=-T_3_0.M.UnitZ())
+  # To get j4, compare the above vector with Y axes of T_3_0
+  T_3_0 = convert_mat_to_frame(compute_FK([j1, j2, j3]))
+  j4 = get_angle(
+    cross_palmlink_x7_0,
+    T_3_0.M.UnitY(),
+    up_vector=-T_3_0.M.UnitZ()
+  )
 
-    # Calculate j5
-    # This should be simple, just compute the angle between Rz_4_0 and D_PinchJoint_PalmJoint_0
-    T_4_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4]))
-    j5 = get_angle(T_PinchJoint_0.p - T_PalmJoint_0.p, T_4_0.M.UnitZ(), up_vector=-T_4_0.M.UnitY())
+  # Calculate j5
+  # This should be simple, just compute the angle between Rz_4_0 and D_PinchJoint_PalmJoint_0
+  T_4_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4]))
+  j5 = get_angle(
+    T_PinchJoint_0.p - T_PalmJoint_0.p,
+    T_4_0.M.UnitZ(),
+    up_vector=-T_4_0.M.UnitY()
+  )
 
-    # Calculate j6
-    # This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
-    T_5_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4, j5]))
-    j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
+  # Calculate j6
+  # This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
+  T_5_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4, j5]))
+  j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
 
-    str = '\n**********************************'*3
-    print(str)
-    print("Joint 1: ", round(j1, 3))
-    print("Joint 2: ", round(j2, 3))
-    print("Joint 3: ", round(j3, 3))
-    print("Joint 4: ", round(j4, 3))
-    print("Joint 5: ", round(j5, 3))
-    print("Joint 6: ", round(j6, 3))
+  str = '\n**********************************' * 3
+  print(str)
+  print("Joint 1: ", round(j1, 3))
+  print("Joint 2: ", round(j2, 3))
+  print("Joint 3: ", round(j3, 3))
+  print("Joint 4: ", round(j4, 3))
+  print("Joint 5: ", round(j5, 3))
+  print("Joint 6: ", round(j6, 3))
 
-    T_7_0_req = convert_frame_to_mat(T_7_0)
-    T_7_0_req = round_transform(T_7_0_req, 3)
-    print 'Requested Pose: \n', T_7_0_req
-    T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
-    round_transform(T_7_0_computed, 3)
-    print'Computed Pose: \n', T_7_0_computed
+  T_7_0_req = convert_frame_to_mat(T_7_0)
+  T_7_0_req = round_transform(T_7_0_req, 3)
+  print 'Requested Pose: \n', T_7_0_req
+  T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
+  round_transform(T_7_0_computed, 3)
+  print 'Computed Pose: \n', T_7_0_computed
 
 
 def test_ik(x, y, z, rx, ry, rz):
-    Rx = Rotation.RPY(rx, 0.0, 0.0)
-    Ry = Rotation.RPY(0.0, ry, 0.0)
-    Rz = Rotation.RPY(0.0, 0.0, rz)
+  Rx = Rotation.RPY(rx, 0.0, 0.0)
+  Ry = Rotation.RPY(0.0, ry, 0.0)
+  Rz = Rotation.RPY(0.0, 0.0, rz)
 
-    tip_offset_rot = Rotation.RPY(np.pi, 0, np.pi/2)
-    req_rot = tip_offset_rot * Rz * Ry * Rx
-    req_pos = Vector(x, y, z)
-    T_7_0 = Frame(req_rot, req_pos)
-    # print "REQ POSE \n", round_transform(convert_frame_to_mat(T_7_0), 3), "\n\n--------\n\n"
-    compute_IK(T_7_0)
+  tip_offset_rot = Rotation.RPY(np.pi, 0, np.pi / 2)
+  req_rot = tip_offset_rot * Rz * Ry * Rx
+  req_pos = Vector(x, y, z)
+  T_7_0 = Frame(req_rot, req_pos)
+  # print "REQ POSE \n", round_transform(convert_frame_to_mat(T_7_0), 3), "\n\n--------\n\n"
+  compute_IK(T_7_0)
 
 
 if __name__ == "__main__":
-    test_ik(-0.1, -0.1, -0.3, 0, PI_2, PI/4)
+  test_ik(-0.1, -0.1, -0.3, 0, PI_2, PI / 4)
