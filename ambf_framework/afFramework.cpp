@@ -1218,6 +1218,23 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             height *= m_scale;
             cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
         }
+        else if (_visual_shape_str.compare("Plane") == 0 || _visual_shape_str.compare("plane") == 0 || _visual_shape_str.compare("PLANE") == 0){
+            double offset = bodyGeometry["offset"].as<double>();
+
+            double nx = bodyGeometry["normal"]["x"].as<double>();
+            double ny = bodyGeometry["normal"]["y"].as<double>();
+            double nz = bodyGeometry["normal"]["z"].as<double>();
+
+            offset *= m_scale;
+            cVector3d pos;
+            cVector3d normal(nx, ny, nz);
+            normal.normalize();
+            pos = normal * offset;
+            cQuaternion rot_quat = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(cVector3d(0, 0, 1), normal);
+            cMatrix3d rot_mat;
+            rot_quat.toRotMat(rot_mat);
+            cCreatePlane(tempMesh, 100, 100, pos, rot_mat);
+        }
         m_meshes->push_back(tempMesh);
     }
 
@@ -1373,6 +1390,15 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             z *= m_scale;
             btVector3 halfExtents(x/2, y/2, z/2);
             m_bulletCollisionShape = new btBoxShape(halfExtents);
+        }
+        else if (_shape_str.compare("Plane") == 0 || _shape_str.compare("plane") == 0 ||_shape_str.compare("PLANE") == 0){
+            double offset = bodyCollisionGeometry["offset"].as<double>();
+
+            double nx = bodyCollisionGeometry["normal"]["x"].as<double>();
+            double ny = bodyCollisionGeometry["normal"]["y"].as<double>();
+            double nz = bodyCollisionGeometry["normal"]["z"].as<double>();
+            offset *= m_scale;
+            m_bulletCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();

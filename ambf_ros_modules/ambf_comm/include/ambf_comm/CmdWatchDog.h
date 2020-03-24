@@ -49,8 +49,8 @@
 
 class CmdWatchDog{
 public:
-    CmdWatchDog(const int &a_freq_min, const int &a_freq_max , double time_out = 0.5): m_freq_min(a_freq_min), m_freq_max(a_freq_max){
-        m_expire_duration.fromSec(time_out);
+    CmdWatchDog(const int &a_freq_min, const int &a_freq_max , const double &time_out): m_freq_min(a_freq_min), m_freq_max(a_freq_max), m_time_out(time_out){
+        m_expire_duration.fromSec(m_time_out);
         m_initialized = false;
         _m_minRatePtr.reset(new ros::Rate(m_freq_min));
         _m_maxRatePtr.reset(new ros::Rate(m_freq_max));
@@ -76,6 +76,7 @@ public:
 
 protected:
     int m_freq_min, m_freq_max;
+    double m_time_out;
 
 private:
     boost::shared_ptr<ros::Rate> _m_minRatePtr, _m_maxRatePtr;

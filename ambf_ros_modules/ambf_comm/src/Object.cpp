@@ -45,7 +45,7 @@
 #include "ambf_comm/Object.h"
 namespace ambf_comm{
 
-Object::Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max): ObjectRosCom(a_name, a_namespace, a_freq_min, a_freq_max){
+Object::Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): ObjectRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
   m_objectCommand.enable_position_controller = false;
 }
 
@@ -120,8 +120,8 @@ void Object::set_joint_positions(std::vector<float> joint_positions){
 
 extern "C"{
 
-Object* create_object(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000){
-    return new Object(a_name, a_namespace, a_min_freq, a_max_freq);
+Object* create_object(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5){
+    return new Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out);
 }
 
 void destroy_object(Object* obj){

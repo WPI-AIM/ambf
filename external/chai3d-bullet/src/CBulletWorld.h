@@ -156,7 +156,7 @@ public:
     // AFMB API BEGIN
 
     //! This method create as afCommunication Instance with the specified namespace
-    virtual void afWorldCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000);
+    virtual void afWorldCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     //! AF World Ptr

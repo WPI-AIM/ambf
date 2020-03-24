@@ -169,9 +169,9 @@ cVector3d cBulletWorld::getGravity()
     \param  a_name  af Namespace.
 */
 //==============================================================================
-void cBulletWorld::afWorldCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq){
+void cBulletWorld::afWorldCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afWorldPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq));
+    m_afWorldPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
 #endif
 }
 

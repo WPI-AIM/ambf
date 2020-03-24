@@ -56,7 +56,7 @@
 template <class T_state, class T_cmd>
 class RosComBase{
 public:
-    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max)
+    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
     {
         m_name = a_name;
         m_ambf_namespace = a_namespace;
@@ -67,7 +67,7 @@ public:
         nodePtr.reset(new ros::NodeHandle);
         aspinPtr.reset(new ros::AsyncSpinner(1));
         nodePtr->setCallbackQueue(&m_custom_queue);
-        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max));
+        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
     }
     virtual void init() = 0;
     virtual void run_publishers();

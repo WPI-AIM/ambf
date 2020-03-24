@@ -66,3 +66,6 @@ class WatchDog(object):
         if self._initialized:
             print('Watch Dog Expired, Resetting {} command'.format(class_name))
             self._initialized = False
+
+    def set_timeout(self, time_out):
+        self._expire_duration = rospy.Duration.from_sec(time_out)

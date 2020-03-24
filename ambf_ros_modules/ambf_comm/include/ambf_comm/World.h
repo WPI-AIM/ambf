@@ -51,7 +51,7 @@
 namespace ambf_comm{
 class World: public WorldRosCom{
 public:
-    World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max);
+    World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     void set_wall_time(double a_sec);
     void increment_sim_step();
     inline void set_sim_time(double a_sec){m_State.sim_time = a_sec;}
