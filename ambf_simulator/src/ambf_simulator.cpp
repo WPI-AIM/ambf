@@ -1393,15 +1393,15 @@ void updateLabels(){
 ///
 double compute_dt(bool adjust_int_steps = false){
     double dt = g_clockWorld.getCurrentTimeSeconds() - g_bulletWorld->getSimulationTime();
-    int min_steps = 2;
-    int max_steps = 10;
+    int min_iterations = 2;
+    int max_iterations = g_afWorld->getMaxIterations();
     if (adjust_int_steps){
-        if (dt >= g_bulletWorld->getIntegrationTimeStep() * min_steps){
+        if (dt >= g_bulletWorld->getIntegrationTimeStep() * min_iterations){
             int int_steps_max =  dt / g_bulletWorld->getIntegrationTimeStep();
-            if (int_steps_max > max_steps){
-                int_steps_max = max_steps;
+            if (int_steps_max > max_iterations){
+                int_steps_max = max_iterations;
             }
-            g_bulletWorld->setIntegrationMaxIterations(int_steps_max + min_steps);        }
+            g_bulletWorld->setIntegrationMaxIterations(int_steps_max + min_iterations);        }
     }
     return dt;
 }

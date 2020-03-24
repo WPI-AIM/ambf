@@ -72,6 +72,7 @@ cBulletWorld* afWorld::s_bulletWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
+int afWorld::m_maxIterations;
 
 GLFWwindow* afCamera::s_mainWindow = NULL;
 GLFWmonitor** afCamera::s_monitors;
@@ -3992,6 +3993,7 @@ afJoint::~afJoint(){
 ///
 afWorld::afWorld(cBulletWorld* a_chaiWorld){
     s_bulletWorld = a_chaiWorld;
+    m_maxIterations = 10;
     m_encl_length = 4.0;
     m_encl_width = 4.0;
     m_encl_height = 3.0;
@@ -4230,6 +4232,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
     YAML::Node worldNamespace = worldNode["namespace"];
+    YAML::Node worldMaxIterations = worldNode["max iterations"];
 
     if (worldNamespace.IsDefined()){
         m_world_namespace = worldNamespace.as<std::string>();
@@ -4237,6 +4240,17 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     else{
         // Use the default namespace
         m_world_namespace = "/ambf/env/";
+    }
+
+    if(worldMaxIterations.IsDefined()){
+        if (worldMaxIterations.as<int>() > 1){
+            m_maxIterations = worldMaxIterations.as<int>();
+            std::cerr << "INFO! SETTING SIMULATION MAX ITERATIONS TO : " << m_maxIterations << std::endl;
+        }
+        else{
+            std::cerr << "ERROR! USER SPECIFIED MAX ITERATIONS < 2 : " << worldMaxIterations.as<int>()<< std::endl;
+            std::cerr << "INFO! IGNORING AND USING MAX ITERATIONS : " << m_maxIterations << std::endl;
+        }
     }
 
     if (worldEnclosureData.IsDefined()){

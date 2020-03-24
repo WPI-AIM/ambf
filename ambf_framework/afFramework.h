@@ -1258,6 +1258,7 @@ public:
     bool isPhysicsPaused(){return m_pausePhx;}
     void resetCameras();
     void resetDynamicBodies(bool reset_time=false);
+    int getMaxIterations(){return m_maxIterations;}
 
     static cBulletWorld *s_bulletWorld;
     GLFWwindow* m_mainWindow;
@@ -1322,6 +1323,8 @@ private:
     static double m_encl_length;
     static double m_encl_width;
     static double m_encl_height;
+    static int m_maxIterations;
+    cPositionalLight* m_light;
 
 private:
     // Global flag to pause simulation
