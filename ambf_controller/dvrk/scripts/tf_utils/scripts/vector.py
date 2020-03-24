@@ -127,7 +127,35 @@ class Vector(np.ndarray):
         @return Vector
         """
 
-        return Vector.cross(self, v2)
+        if isinstance(v2, Vector):
+            return Vector.cross(self, v2)
+        elif isinstance(v2, float):
+            return np.multiply(v2, self)
+
+    def __sub__(self, args):
+        v2 = None
+        output = None
+        try:
+            if len(args) == 1:
+                # Vector
+                input_array = args[0]
+                if len(input_array) > 1:
+                    v2 = Vector(input_array)
+                else:
+                    raise AssertionError
+            else:
+                v2 = Vector(args)
+
+            output = np.subtract(self, v2)
+        except AssertionError as error:
+            sys.exit()
+
+        return Vector(output)
+
+    def __neg__(self):
+        
+        return self.ReverseSign()
+        
     
     def dot(self, v2):
         """
@@ -146,7 +174,7 @@ class Vector(np.ndarray):
 
         v = np.cross(v1, v2)
 
-        return v
+        return Vector(v)
     
     @staticmethod
     def _dot(v1, v2):

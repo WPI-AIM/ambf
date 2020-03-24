@@ -16,6 +16,36 @@ class Frame(object):
   p = Vector()
 
   @staticmethod
+  def make_Frame(HTM):
+    """
+    Return a frame from a 4x4 Homogenous transformaiton matrix
+
+    @param 4x4mat Homogenous TF Matrix
+
+    @return Frame
+    """
+
+    frame = Frame(HTM[:3, :3], HTM[0:3, 3])
+    return frame
+
+  @staticmethod
+  def make_HTM(f):
+    """
+    Return a 4x4 Homogenous Transformation Matrix from a Frame
+
+    @param Frame f
+    
+    @return 4x4mat Homogenous TF Matrix
+    """
+    
+    mat_44 = np.ndarray((4, 4))
+    mat_44[:3, :3] = f.M
+    mat_44[3:, :4] = np.array([0, 0, 0, 1])
+    mat_44[:3, 3] = f.p
+
+    return mat_44
+
+  @staticmethod
   def Identity():
     """
         Constructs an identity frame
@@ -119,10 +149,10 @@ class Frame(object):
     super(Frame, self).__init__()
 
     if rot is not None:
-      self.M = rot
+      self.M = Rotation(rot)
 
     if pos is not None:
-      self.p = pos
+      self.p = Vector(pos)
 
     return
 
@@ -145,3 +175,26 @@ class Frame(object):
     self.p = -self.M * self.p
 
     return self
+
+  def __mul__(self, f):
+
+    self.mat_44 = Frame.make_HTM(self)
+    f.mat_44 = Frame.make_HTM(f)
+
+    mul = np.matmul(self.mat_44, f.mat_44)
+
+    frame = Frame.make_Frame(mul)
+
+    return frame
+
+
+def test():
+  f1 = Frame()
+  f2 = Frame()
+  f = f1 * f2
+  print(f.p)
+  print(f.M)
+
+
+if __name__ == '__main__':
+  test()

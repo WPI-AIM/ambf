@@ -235,6 +235,10 @@ class Rotation(np.ndarray):
             mat = Rotation.is_valid(mat)
             obj = np.asarray(mat).view(cls)
             obj.info = args[9]
+        elif len(args) == 1:
+            mat = Rotation.is_valid(args[0])
+            obj = np.asarray(mat).view(cls)
+            obj.info = "Rotation of type Rotation"
         else:
             # identity
             mat = np.identity(3)
@@ -407,7 +411,7 @@ class Rotation(np.ndarray):
         """
 
         (axis, angle) = self.GetRotAngle()
-        return axis*angle
+        return Vector(axis*angle)
 
     def GetRotAngle(self):
         """
@@ -491,7 +495,7 @@ class Rotation(np.ndarray):
         @return Rotation
         """
 
-        return np.transpose(self)
+        return Rotation(np.transpose(self))
     
     def SetInverse(self):
         """
@@ -538,7 +542,7 @@ class Rotation(np.ndarray):
                 """
                 Changes the reference frame of a Vector. The norm of the vector does not change.
                 """
-                return arg*self
+                return Vector(arg.dot(self))
                 
             elif isinstance(arg, Twist):
                 """
@@ -559,7 +563,7 @@ class Rotation(np.ndarray):
                 Changes the reference frame of a Wrench
                 """
                 
-                return np.matmul(self, arg)
+                return Rotation(np.matmul(self, arg))
 
             else:
                 raise TypeError("arg is not supported for this multiplication")

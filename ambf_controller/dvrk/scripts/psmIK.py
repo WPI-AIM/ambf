@@ -2,7 +2,7 @@ from tf_utils import Vector, Rotation, Frame, Twist
 import numpy as np
 import math
 from psmFK import *
-import rospy
+# import rospy
 
 # THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
 # SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE
@@ -74,6 +74,7 @@ def compute_IK(T_7_0):
 
   # Convert the vector from base to pinch joint in the pinch joint frame
   # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
+  T_PinchJoint_0.M.Inverse()
   P_PinchJoint_local = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
   # print("P_PinchJoint_local: ", round_vec(P_PinchJoint_local))
   # Now we can trim the value along the x axis to get a projection along the YZ plane as mentioned above
@@ -158,10 +159,10 @@ def compute_IK(T_7_0):
 
   T_7_0_req = convert_frame_to_mat(T_7_0)
   T_7_0_req = round_transform(T_7_0_req, 3)
-  print 'Requested Pose: \n', T_7_0_req
+  print('Requested Pose: \n', T_7_0_req)
   T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
   round_transform(T_7_0_computed, 3)
-  print 'Computed Pose: \n', T_7_0_computed
+  print('Computed Pose: \n', T_7_0_computed)
 
 
 def test_ik(x, y, z, rx, ry, rz):
