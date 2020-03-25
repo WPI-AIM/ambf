@@ -19,7 +19,7 @@ BODY Plane:
     position:
       x: 0.0
       y: 0.0
-      z: -1.2
+      z: -1.5
     orientation:
       r: 0.0
       p: -0.0
