@@ -147,7 +147,9 @@ template <typename T>
 T toRPY(YAML::Node* node);
 
 
-
+///
+/// \brief The afUtils class
+///
 class afUtils{
 public:
 
@@ -157,6 +159,9 @@ public:
 
     template<typename T1, typename T2>
     static T1 convertDataType(const T2 &r);
+
+    template <typename T>
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
 };
 
 
@@ -338,6 +343,7 @@ class afRigidBody: public cBulletMultiMesh{
 
     friend class afMultiBody;
     friend class afJoint;
+    friend class afWorld;
 
 public:
 
@@ -1273,6 +1279,10 @@ public:
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
+    // This method build the collision graph based on the collision group numbers
+    // defined in the bodies
+    void buildCollisionGroups();
+
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
@@ -1299,9 +1309,20 @@ public:
     afSensorVec getAFSensors();
     afMultiBodyVec getAFMultiBodies();
 
+    // The collision groups are sorted by integer indices. A group is an array of
+    // rigid bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
+
+    // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
+    bool loadADF(std::string a_adf_filepath, bool enable_comm);
+    bool loadADF(int i, bool enable_comm);
+    void loadAllADFs(bool enable_com);
 
 protected:
 
@@ -1382,11 +1403,12 @@ class afMultiBody{
 public:
 
     afMultiBody();
+
     afMultiBody(afWorldPtr a_afWorld);
+
     virtual ~afMultiBody();
-    virtual bool loadMultiBody(int i, bool enable_comm);
+
     virtual bool loadMultiBody(std::string a_multibody_config, bool enable_comm);
-    void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
 
@@ -1400,10 +1422,6 @@ public:
     // There isn't a direct way in bullet to disable collision
     // between all these bodies connected in a tree
     void removeOverlappingCollisionChecking();
-
-    // This method build the collision graph based on the collision group numbers
-    // defined in the bodies
-    void buildCollisionGroups();
 
     //Remove collision checking for this entire multi-body, mostly for
     // debugging purposes
@@ -1437,17 +1455,8 @@ protected:
 
     cMaterial mat;
     template <typename T>
-    std::string remapBodyName(std::string a_body_name, const T* tMap);
-    std::string remapJointName(std::string a_joint_name);
-    std::string remapSensorName(std::string a_sensor_name);
+    std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
     void remapName(std::string &name, std::string remap_idx_str);
-
-protected:
-    // The collision groups are sorted by integer indices. A group is an array of
-    // rigid bodies that collide with each other. The bodies in one group
-    // are not meant to collide with bodies from another group. Lastly
-    // the a body can be a part of multiple groups
-    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
 private:
     // The world has a list of all the bodies and joints belonging to all multibodies

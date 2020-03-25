@@ -170,6 +170,31 @@ cVector3d toCvec(const btVector3 &bVec){
 }
 
 
+template<typename T>
+///
+/// \brief afUtils::getNonCollidingIdx
+/// \param a_body_name
+/// \param tMap
+/// \return
+///
+std::string afUtils::getNonCollidingIdx(std::string a_body_name, const T* tMap){
+    int occurances = 0;
+    std::string remap_string = "" ;
+    std::stringstream ss;
+    if (tMap->find(a_body_name) == tMap->end()){
+        return remap_string;
+    }
+    do{
+        ss.str(std::string());
+        occurances++;
+        ss << occurances;
+        remap_string = ss.str();
+    }
+    while(tMap->find(a_body_name + remap_string) != tMap->end() && occurances < 100);
+    return remap_string;
+}
+
+
 template<>
 ///
 /// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
@@ -2018,7 +2043,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             int gNum = bodyCollisionGroups[gIdx].as<int>();
             // Sanity check for the group number
             if (gNum >= 0 && gNum <= 999){
-                mB->m_collisionGroups[gNum].push_back(this);
+                mB->m_afWorld->m_collisionGroups[gNum].push_back(this);
                 m_collisionGroupsIdx.push_back(gNum);
             }
             else{
@@ -4324,6 +4349,53 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
 
 }
 
+
+///
+/// \brief afWorld::loadAllADFs
+/// \param enable_comm
+///
+void afWorld::loadAllADFs(bool enable_comm){
+    for (int i = 0 ; i < getNumMBConfigs(); i++){
+        loadADF(i, enable_comm);
+    }
+}
+
+
+///
+/// \brief afWorld::loadADF
+/// \param i
+/// \param enable_comm
+/// \return
+///
+bool afWorld::loadADF(int i, bool enable_comm){
+    if (i >= getNumMBConfigs()){
+        std::cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
+                     getNumMBConfigs() - 1 << " INDEXED MULTI-BODIES DEFINED" << std::endl;
+        return 0;
+    }
+
+    std::string adf_filepath = getMultiBodyConfig(i);
+    loadADF(adf_filepath, enable_comm);
+}
+
+
+///
+/// \brief afWorld::loadADF
+/// \param a_multibody_config_file
+/// \return
+///
+bool afWorld::loadADF(std::string a_adf_filepath, bool enable_comm){
+    afMultiBodyPtr mB(new afMultiBody(this));
+    bool success = mB->loadMultiBody(a_adf_filepath, enable_comm);
+    if (success){
+        boost::filesystem::path p(a_adf_filepath);
+        addAFMultiBody(mB, p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), &m_afMultiBodyMap));
+        buildCollisionGroups();
+    }
+    return success;
+}
+
+
 ///
 /// \brief afWorld::addLight
 /// \param a_name
@@ -4400,6 +4472,40 @@ bool afWorld::addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name){
     m_afMultiBodyMap[a_name] = a_multiBody;
     return true;
 }
+
+
+///
+/// \brief afWorld::buildCollisionGroups
+///
+void afWorld::buildCollisionGroups(){
+    if (m_collisionGroups.size() > 0){
+        std::vector<int> groupNumbers;
+
+        std::map<int, std::vector<afRigidBodyPtr> >::iterator cgIt;
+        for(cgIt = m_collisionGroups.begin() ; cgIt != m_collisionGroups.end() ; ++cgIt){
+            groupNumbers.push_back(cgIt->first);
+        }
+
+        for (int i = 0 ; i < groupNumbers.size() - 1 ; i++){
+            int aIdx = groupNumbers[i];
+            std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+            for (int j = i + 1 ; j < groupNumbers.size() ; j ++){
+                int bIdx = groupNumbers[j];
+                std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
+
+                for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+                    afRigidBodyPtr bodyA = grpA[aBodyIdx];
+                    for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
+                        afRigidBodyPtr bodyB = grpB[bBodyIdx];
+                        if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroupsIdx))
+                            bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 ///
 /// \brief afWorld::getAFLighs
@@ -5398,117 +5504,20 @@ void afMultiBody::remapName(std::string &name, std::string remap_idx_str){
     }
 }
 
-template<typename T>
-///
-/// \brief afMultiBody::remapBodyName
-/// \param a_body_name
-/// \param tMap
-/// \return
-///
-std::string afMultiBody::remapBodyName(std::string a_body_name, const T* tMap){
-    int occurances = 0;
-    std::string remap_string = "" ;
-    std::stringstream ss;
-    if (tMap->find(a_body_name) == tMap->end()){
-        return remap_string;
-    }
-    do{
-        ss.str(std::string());
-        occurances++;
-        ss << occurances;
-        remap_string = ss.str();
-    }
-    while(tMap->find(a_body_name + remap_string) != tMap->end() && occurances < 100);
-    return remap_string;
-}
-
-///
-/// \brief afMultiBody::remapJointName
-/// \param a_joint_name
-/// \return
-///
-std::string afMultiBody::remapJointName(std::string a_joint_name){
-    int occurances = 0;
-    std::string remap_string = "" ;
-    std::stringstream ss;
-    afJointMap _jntMap = *(m_afWorld->getAFJointMap());
-    if (_jntMap.find(a_joint_name) == _jntMap.end()){
-        return remap_string;
-    }
-
-    do{
-        ss.str(std::string());
-        occurances++;
-        ss << occurances;
-        remap_string = ss.str();
-    }
-    while(_jntMap.find(a_joint_name + remap_string) != _jntMap.end() && occurances < 100);
-    return remap_string;
-}
-
-///
-/// \brief afMultiBody::remapSensorName
-/// \param a_sensor_name
-/// \return
-///
-std::string afMultiBody::remapSensorName(std::string a_sensor_name){
-    int occurances = 0;
-    std::string remap_string = "" ;
-    std::stringstream ss;
-    afSensorMap _sensorMap = *(m_afWorld->getAFSensorMap());
-    if (_sensorMap.find(a_sensor_name) == _sensorMap.end()){
-        return remap_string;
-    }
-
-    do{
-        ss.str(std::string());
-        occurances++;
-        ss << occurances;
-        remap_string = ss.str();
-    }
-    while(_sensorMap.find(a_sensor_name + remap_string) != _sensorMap.end() && occurances < 100);
-    return remap_string;
-}
-
-///
-/// \brief afMultiBody::loadAllMultiBodies
-///
-void afMultiBody::loadAllMultiBodies(bool enable_comm){
-    for (int i = 0 ; i < m_afWorld->getNumMBConfigs(); i++){
-        loadMultiBody(i, enable_comm);
-    }
-}
 
 ///
 /// \brief afMultiBody::loadMultiBody
-/// \param i
+/// \param a_multibody_config_file
+/// \param enable_comm
 /// \return
 ///
-bool afMultiBody::loadMultiBody(int i, bool enable_comm){
-    if (i >= m_afWorld->getNumMBConfigs()){
-        std::cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
-                     m_afWorld->getNumMBConfigs() - 1 << " INDEXED MULTI-BODIES DEFINED" << std::endl;
-        return 0;
-    }
-    std::string multibody_config = m_afWorld->getMultiBodyConfig(i);
-    return loadMultiBody(multibody_config, enable_comm);
-}
-
-///
-/// \brief afMultiBody::loadMultiBody
-/// \param a_multibody_config
-/// \return
-///
-bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable_comm){
-    if (a_multibody_config_file.empty()){
-        a_multibody_config_file = m_afWorld->getMultiBodyConfig();
-    }
+bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     YAML::Node multiBodyNode;
     try{
-        multiBodyNode = YAML::LoadFile(a_multibody_config_file);
+        multiBodyNode = YAML::LoadFile(a_adf_filepath);
     }catch (std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_multibody_config_file << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD ADF FILE: " << a_adf_filepath << std::endl;
         return 0;
     }
 
@@ -5524,7 +5533,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
     YAML::Node multiBodyJointCFM = multiBodyNode["joint cfm"];
     YAML::Node multiBodyIgnoreInterCollision = multiBodyNode["ignore inter-collision"];
 
-    boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_multibody_config_file).parent_path();
+    boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_adf_filepath).parent_path();
     m_multibody_path = mb_cfg_dir.c_str();
 
     /// Loading Rigid Bodies
@@ -5561,7 +5570,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         std::string rb_name = multiBodyRidigBodies[i].as<std::string>();
         YAML::Node rb_node = multiBodyNode[rb_name];
         if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
-            std::string remap_str = remapBodyName(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
+            std::string remap_str = afUtils::getNonCollidingIdx(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
             m_afWorld->addAFRigidBody(rBodyPtr, rBodyPtr->getNamespace() + rb_name + remap_str);
             m_afRigidBodyMapLocal[rBodyPtr->getNamespace() + rb_name] = rBodyPtr;
             if (enable_comm){
@@ -5589,7 +5598,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         std::string sb_name = multiBodySoftBodies[i].as<std::string>();
         YAML::Node sb_node = multiBodyNode[sb_name];
         if (sBodyPtr->loadSoftBody(&sb_node, sb_name, this)){
-            std::string remap_str = remapBodyName(sb_name, m_afWorld->getAFSoftBodyMap());
+            std::string remap_str = afUtils::getNonCollidingIdx(sb_name, m_afWorld->getAFSoftBodyMap());
             m_afWorld->addAFSoftBody(sBodyPtr, sBodyPtr->getNamespace() + sb_name + remap_str);
             m_afSoftBodyMapLocal[sBodyPtr->getNamespace() + sb_name] = sBodyPtr;
             //            tmpSoftBody->createAFObject(tmpSoftBody->m_name + remap_str);
@@ -5601,7 +5610,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
         std::string sensor_name = multiBodySensors[i].as<std::string>();
-        std::string remap_str = remapSensorName(m_mb_namespace + sensor_name);
+        std::string remap_str = afUtils::getNonCollidingIdx(m_mb_namespace + sensor_name, m_afWorld->getAFSensorMap());
         YAML::Node sensor_node = multiBodyNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
@@ -5615,7 +5624,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
                 sensorPtr = new afResistanceSensor(m_afWorld);
             }
 
-            // Finally load the sensor from afmb config data
+            // Finally load the sensor from ambf config data
             if (sensorPtr){
                 if (sensorPtr->loadSensor(&sensor_node, sensor_name, this, remap_str)){
                     m_afWorld->addAFSensor(sensorPtr, m_mb_namespace + sensor_name + remap_str);
@@ -5641,7 +5650,7 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         jntPtr = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         YAML::Node jnt_node = multiBodyNode[jnt_name];
-        std::string remap_str = remapJointName(m_mb_namespace + jnt_name);
+        std::string remap_str = afUtils::getNonCollidingIdx(m_mb_namespace + jnt_name, m_afWorld->getAFJointMap());
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
             m_afWorld->addAFJoint(jntPtr, m_mb_namespace + jnt_name + remap_str);
             m_afJointMapLocal[m_mb_namespace + jnt_name] = jntPtr;
@@ -5655,11 +5664,6 @@ bool afMultiBody::loadMultiBody(std::string a_multibody_config_file, bool enable
         if (_ignoreInterCollision){
             ignoreCollisionChecking();
         }
-    }
-    // If the ignore_inter_collision flag is false, then ignore collision based on collision
-    // groups
-    if (! _ignoreInterCollision){
-        buildCollisionGroups();
     }
 
     //    removeOverlappingCollisionChecking();
@@ -5717,37 +5721,6 @@ void afMultiBody::ignoreCollisionChecking(){
     }
 }
 
-///
-/// \brief afMultiBody::buildCollisionGroups
-///
-void afMultiBody::buildCollisionGroups(){
-    if (m_collisionGroups.size() > 0){
-        std::vector<int> groupNumbers;
-
-        std::map<int, std::vector<afRigidBodyPtr> >::iterator cgIt;
-        for(cgIt = m_collisionGroups.begin() ; cgIt != m_collisionGroups.end() ; ++cgIt){
-            groupNumbers.push_back(cgIt->first);
-        }
-
-        for (int i = 0 ; i < groupNumbers.size() - 1 ; i++){
-            int aIdx = groupNumbers[i];
-            std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-            for (int j = i + 1 ; j < groupNumbers.size() ; j ++){
-                int bIdx = groupNumbers[j];
-                std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
-
-                for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
-                    afRigidBodyPtr bodyA = grpA[aBodyIdx];
-                    for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
-                        afRigidBodyPtr bodyB = grpB[bBodyIdx];
-                        if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroupsIdx))
-                            bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
-                    }
-                }
-            }
-        }
-    }
-}
 
 ///
 /// \brief afMultiBody::removeOverlappingCollisionChecking
