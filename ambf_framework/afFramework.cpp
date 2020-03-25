@@ -4256,6 +4256,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
+    YAML::Node worldEnvironment = worldNode["environment"];
     YAML::Node worldNamespace = worldNode["namespace"];
     YAML::Node worldMaxIterations = worldNode["max iterations"];
 
@@ -4284,7 +4285,25 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_encl_height = worldEnclosureData["height"].as<double>();
     }
 
-    createDefaultWorld();
+    m_light = new cPositionalLight(s_bulletWorld);
+    m_light->setLocalPos(2, 2, 5);
+    m_light->setShowEnabled(true);
+    m_light->setEnabled(true);
+    s_bulletWorld->addChild(m_light);
+
+    bool env_defined = false;
+    if(worldEnvironment.IsDefined()){
+        std::string world_adf = worldEnvironment.as<std::string>();
+        boost::filesystem::path p(world_adf);
+        if (p.is_relative()){
+            p = boost::filesystem::path(a_world_config).parent_path() / p;
+        }
+        env_defined = loadADF(p.string(), false);
+    }
+
+    if (!env_defined){
+        createDefaultWorld();
+    }
 
     if (worldLightsData.IsDefined()){
         size_t n_lights = worldLightsData.size();
