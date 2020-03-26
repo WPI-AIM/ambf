@@ -68,7 +68,7 @@ std::string afConfigHandler::s_worldConfigFileName;
 std::string afConfigHandler::s_inputDevicesConfigFileName;
 YAML::Node afConfigHandler::s_colorsNode;
 
-cBulletWorld* afWorld::s_bulletWorld;
+cBulletWorld* afWorld::s_chaiBulletWorld;
 double afWorld::m_encl_length;
 double afWorld::m_encl_width;
 double afWorld::m_encl_height;
@@ -744,7 +744,7 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 /// \brief afBody::afBody
 /// \param a_world
 ///
-afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_bulletWorld){
+afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_chaiBulletWorld){
     m_afWorld = a_afWorld;
     setFrameSize(0.5);
     m_mesh_name.clear();
@@ -845,7 +845,7 @@ void afRigidBody::remove(){
     updateUpwardHeirarchyForRemoval();
 
     if (m_bulletRigidBody){
-        m_afWorld->s_bulletWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
     }
     m_meshes->clear();
 }
@@ -1929,7 +1929,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         if (bodyResistiveSurface["mesh"].IsDefined()){
             std::string _resistiveMeshName = bodyResistiveSurface["mesh"].as<std::string>();
             _resistiveMeshName = high_res_path + _resistiveMeshName;
-            cMultiMesh* resistiveMesh = new cBulletMultiMesh(m_afWorld->s_bulletWorld);
+            cMultiMesh* resistiveMesh = new cBulletMultiMesh(m_afWorld->s_chaiBulletWorld);
             if (resistiveMesh->loadFromFile(_resistiveMeshName)){
                 _sourceMesh = (*resistiveMesh->m_meshes)[0];
             }
@@ -2055,7 +2055,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     setConfigProperties(this, &m_surfaceProps);
-    m_afWorld->s_bulletWorld->addChild(this);
+    m_afWorld->s_chaiBulletWorld->addChild(this);
     return true;
 }
 
@@ -2506,7 +2506,7 @@ afRigidBody::~afRigidBody(){
 /// \brief afSoftBody::afSoftBody
 /// \param a_chaiWorld
 ///
-afSoftBody::afSoftBody(afWorldPtr a_afWorld): afSoftMultiMesh(a_afWorld->s_bulletWorld){
+afSoftBody::afSoftBody(afWorldPtr a_afWorld): afSoftMultiMesh(a_afWorld->s_chaiBulletWorld){
     m_afWorld = a_afWorld;
 }
 
@@ -2831,7 +2831,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (softBodyRandomizeConstraints.as<bool>() == true)
             m_bulletSoftBody->randomizeConstraints();
 
-    m_afWorld->s_bulletWorld->addChild(this);
+    m_afWorld->s_chaiBulletWorld->addChild(this);
     return true;
 }
 
@@ -2854,22 +2854,22 @@ void afSoftBody::setConfigProperties(const afSoftBodyPtr a_body, const afSoftBod
 /// \return
 ///
 double afJointController::computeOutput(double process_val, double set_point, double current_time){
-    for (size_t i = n-1 ; i >= 1 ; i--){
-        t[i] = t[i-1];
-        e[i] = e[i-1];
-        de[i] = de[i-1];
+    int n = queue_length - 1;
+    for (size_t i = 0 ; i < n ; i++){
+        t[i] = t[i+1];
+        e[i] = e[i+1];
+        de[i] = de[i+1];
+        ie[i] = ie[i+1];
     }
-    t[0] = current_time;
-    e[0] = set_point - process_val;
-    double dt = t[0] - t[1];
-    if (!dt > 0.0001 || !dt > 0.0){
-        dt = 0.0001;
+    t[n] = current_time;
+    e[n] = set_point - process_val;
+    double dt = t[n] - t[n-1];
+    if (dt <= 0.0){
+        dt = 0.0000001;
     }
-    de[0] = de[0] + ( (de[0] - de[1]) / dt );
-    dde[0] = (e[0] - e[1]) / dt;
-    output = (P * e[0]) + (I * de[0]) + (D * dde[0]);
-    //        boundImpulse(output);
-    //        std::cerr << "Output " << output << std::endl ;
+    de[n] = (e[n] - e[n-1]) / dt;
+    ie[n] = ie[n-1] + ((e[n] - e[n-1]) * dt);
+    output = (P * e[n]) + (I * ie[n]) + (D * de[n]);
     return output;
 }
 
@@ -3269,7 +3269,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         m_btConstraint = m_hinge;
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildJointPair(afBodyB, this);
     }
     // If the joint is slider, prismatic or linear
@@ -3292,7 +3292,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         m_btConstraint = m_slider;
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildJointPair(afBodyB, this);
     }
 
@@ -3373,7 +3373,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
 
         m_btConstraint = m_spring;
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
         afBodyA->addChildJointPair(afBodyB, this);
     }
@@ -3392,14 +3392,14 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         m_btConstraint = m_p2p;
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildJointPair(afBodyB, this);
     }
     else if (m_jointType == JointType::fixed){
         m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-        m_afWorld->s_bulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         afBodyA->addChildJointPair(afBodyB, this);
     }
     return true;
@@ -3408,7 +3408,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
 void afJoint::remove(){
     if (m_btConstraint){
-        m_afWorld->s_bulletWorld->m_bulletWorld->removeConstraint(m_btConstraint);
+        m_afWorld->s_chaiBulletWorld->m_bulletWorld->removeConstraint(m_btConstraint);
     }
 }
 
@@ -3433,14 +3433,14 @@ void afJoint::commandPosition(double &position_cmd){
     // if it was set to be enabled in the first place
     if (m_enableActuator){
         if (m_jointType == JointType::revolute){
-            double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_mB->m_wallClock.getCurrentTimeSeconds());
+            double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_afWorld->s_chaiBulletWorld->getSimulationTime());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
             m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * effort_command);
             m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * effort_command);
         }
         else if(m_jointType == JointType::prismatic){
-            double effort_command = m_controller.computeOutput(m_slider->getLinearPos(), position_cmd,  m_mB->m_wallClock.getCurrentTimeSeconds());
+            double effort_command = m_controller.computeOutput(m_slider->getLinearPos(), position_cmd,  m_afWorld->s_chaiBulletWorld->getSimulationTime());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
             const btVector3 relPos(0,0,0);
@@ -3640,7 +3640,7 @@ void afRayTracerSensor::updateSensor(){
     }
 
     btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
-    m_afWorld->s_bulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
+    m_afWorld->s_chaiBulletWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
     if (_rayCallBack.hasHit()){
         if (m_showSensor){
             m_hitSphereMesh->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
@@ -3724,9 +3724,9 @@ void afRayTracerSensor::enableVisualization(){
     cCreateSphere(m_hitSphereMesh, m_visibilitySphereRadius);
     cCreateSphere(m_fromSphereMesh, m_visibilitySphereRadius);
     cCreateSphere(m_toSphereMesh, m_visibilitySphereRadius);
-    m_afWorld->s_bulletWorld->addChild(m_hitSphereMesh);
-    m_afWorld->s_bulletWorld->addChild(m_fromSphereMesh);
-    m_afWorld->s_bulletWorld->addChild(m_toSphereMesh);
+    m_afWorld->s_chaiBulletWorld->addChild(m_hitSphereMesh);
+    m_afWorld->s_chaiBulletWorld->addChild(m_fromSphereMesh);
+    m_afWorld->s_chaiBulletWorld->addChild(m_toSphereMesh);
     m_hitSphereMesh->m_material->setPinkHot();
     m_fromSphereMesh->m_material->setRed();
     m_toSphereMesh->m_material->setGreen();
@@ -3746,7 +3746,7 @@ void afRayTracerSensor::enableVisualization(){
                  m_visibilitySphereRadius*1,
                  m_visibilitySphereRadius*0.8,
                  false);
-    m_afWorld->s_bulletWorld->addChild(m_hitNormalMesh);
+    m_afWorld->s_chaiBulletWorld->addChild(m_hitNormalMesh);
     m_hitNormalMesh->m_material->setGreenForest();
     m_hitNormalMesh->setShowEnabled(false);
     m_hitNormalMesh->setUseDisplayList(true);
@@ -4017,7 +4017,7 @@ afJoint::~afJoint(){
 /// \param a_chaiWorld
 ///
 afWorld::afWorld(cBulletWorld* a_chaiWorld){
-    s_bulletWorld = a_chaiWorld;
+    s_chaiBulletWorld = a_chaiWorld;
     m_maxIterations = 10;
     m_encl_length = 4.0;
     m_encl_width = 4.0;
@@ -4030,7 +4030,7 @@ afWorld::afWorld(cBulletWorld* a_chaiWorld){
     m_pickSphere->markForUpdate(false);
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
-    s_bulletWorld->addChild(m_pickSphere);
+    s_chaiBulletWorld->addChild(m_pickSphere);
     m_pickColor.setOrangeTomato();
     m_pickColor.setTransparencyLevel(0.3);
 }
@@ -4113,6 +4113,27 @@ void afWorld::resetDynamicBodies(bool reset_time){
     pausePhysics(false);
 }
 
+
+///
+/// \brief afWorld::compute_step_size
+/// \param adjust_int_steps
+/// \return
+///
+double afWorld::computeStepSize(bool adjust_intetration_steps){
+    double step_size = g_wallClock.getCurrentTimeSeconds() - s_chaiBulletWorld->getSimulationTime();
+    if (adjust_intetration_steps){
+        int min_iterations = 2;
+        if (step_size >= s_chaiBulletWorld->getIntegrationTimeStep() * min_iterations){
+            int int_steps_max =  step_size / s_chaiBulletWorld->getIntegrationTimeStep();
+            if (int_steps_max > getMaxIterations()){
+                int_steps_max = getMaxIterations();
+            }
+            s_chaiBulletWorld->setIntegrationMaxIterations(int_steps_max + min_iterations);        }
+    }
+    return step_size;
+}
+
+
 ///
 /// \brief afWorld::createDefaultWorld
 /// \return
@@ -4134,10 +4155,10 @@ bool afWorld::createDefaultWorld(){
 
         cBulletStaticPlane* bulletBoxWall[4];
 
-        bulletBoxWall[0] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * box_w);
-        bulletBoxWall[1] = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * box_w);
-        bulletBoxWall[2] = new cBulletStaticPlane(s_bulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
-        bulletBoxWall[3] = new cBulletStaticPlane(s_bulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
+        bulletBoxWall[0] = new cBulletStaticPlane(s_chaiBulletWorld, cVector3d(0.0, -1.0, 0.0), -0.5 * box_w);
+        bulletBoxWall[1] = new cBulletStaticPlane(s_chaiBulletWorld, cVector3d(0.0, 1.0, 0.0), -0.5 * box_w);
+        bulletBoxWall[2] = new cBulletStaticPlane(s_chaiBulletWorld, cVector3d(-1.0, 0.0, 0.0), -0.5 * box_l);
+        bulletBoxWall[3] = new cBulletStaticPlane(s_chaiBulletWorld, cVector3d(1.0, 0.0, 0.0), -0.5 * box_l);
 
         cVector3d nz(0.0, 0.0, 1.0);
         cMaterial matPlane;
@@ -4164,7 +4185,7 @@ bool afWorld::createDefaultWorld(){
             if (i == 0) wall->setTransparencyLevel(0.3, true, true);
             else wall->setTransparencyLevel(0.5, true, true);
 
-            s_bulletWorld->addChild(wall);
+            s_chaiBulletWorld->addChild(wall);
         }
 
 
@@ -4173,10 +4194,10 @@ bool afWorld::createDefaultWorld(){
         //////////////////////////////////////////////////////////////////////////
 
         // create ground plane
-        bulletGround = new cBulletStaticPlane(s_bulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * box_h);
+        bulletGround = new cBulletStaticPlane(s_chaiBulletWorld, cVector3d(0.0, 0.0, 1.0), -0.5 * box_h);
 
         // add plane to world as we will want to make it visibe
-        s_bulletWorld->addChild(bulletGround);
+        s_chaiBulletWorld->addChild(bulletGround);
 
         // create a mesh plane where the static plane is located
         cCreatePlane(bulletGround, box_l + 0.4, box_w + 0.8,
@@ -4198,11 +4219,11 @@ bool afWorld::createDefaultWorld(){
         box_w = box_w + thickness;
         box_h = box_h + thickness;
 
-        boundaryWalls[0] = new cBulletBox(s_bulletWorld, box_l, thickness, box_h); // Right Wall
-        boundaryWalls[1] = new cBulletBox(s_bulletWorld, box_l, thickness, box_h); // Left Wall
-        boundaryWalls[2] = new cBulletBox(s_bulletWorld, thickness, box_w, box_h); // Back Wall
-        boundaryWalls[3] = new cBulletBox(s_bulletWorld, thickness, box_w, box_h); // Front Wall
-        boundaryWalls[4] = new cBulletBox(s_bulletWorld, box_l + 0.5, box_w + 0.5, thickness); // Front Wall
+        boundaryWalls[0] = new cBulletBox(s_chaiBulletWorld, box_l, thickness, box_h); // Right Wall
+        boundaryWalls[1] = new cBulletBox(s_chaiBulletWorld, box_l, thickness, box_h); // Left Wall
+        boundaryWalls[2] = new cBulletBox(s_chaiBulletWorld, thickness, box_w, box_h); // Back Wall
+        boundaryWalls[3] = new cBulletBox(s_chaiBulletWorld, thickness, box_w, box_h); // Front Wall
+        boundaryWalls[4] = new cBulletBox(s_chaiBulletWorld, box_l + 0.5, box_w + 0.5, thickness); // Front Wall
 
         boundaryWalls[0]->setLocalPos(0, box_w/2, 0);
         boundaryWalls[1]->setLocalPos(0, -box_w/2, 0);
@@ -4214,7 +4235,7 @@ bool afWorld::createDefaultWorld(){
             boundaryWalls[i]->m_material->setWhiteIvory();
             boundaryWalls[i]->setTransparencyLevel(0.5, true, true);
             boundaryWalls[i]->m_material->setShininess(1);
-            s_bulletWorld->addChild(boundaryWalls[i]);
+            s_chaiBulletWorld->addChild(boundaryWalls[i]);
             boundaryWalls[i]->setMass(0.0);
             boundaryWalls[i]->estimateInertia();
             boundaryWalls[i]->buildDynamicModel();
@@ -4285,11 +4306,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_encl_height = worldEnclosureData["height"].as<double>();
     }
 
-    m_light = new cPositionalLight(s_bulletWorld);
+    m_light = new cPositionalLight(s_chaiBulletWorld);
     m_light->setLocalPos(2, 2, 5);
     m_light->setShowEnabled(true);
     m_light->setEnabled(true);
-    s_bulletWorld->addChild(m_light);
+    s_chaiBulletWorld->addChild(m_light);
 
     bool env_defined = false;
     if(worldEnvironment.IsDefined()){
@@ -4642,7 +4663,7 @@ afMultiBodyVec afWorld::getAFMultiBodies(){
 /// \return
 ///
 bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_chaiBulletWorld->m_bulletWorld;
     if (m_dynamicsWorld == 0)
         return false;
 
@@ -4775,7 +4796,7 @@ bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &ray
 /// \brief afMultiBody::removePickingConstraint
 ///
 void afWorld::removePickingConstraint(){
-    btDynamicsWorld* m_dynamicsWorld = s_bulletWorld->m_bulletWorld;
+    btDynamicsWorld* m_dynamicsWorld = s_chaiBulletWorld->m_bulletWorld;
     if (m_pickedConstraint)
     {
         m_pickSphere->setShowEnabled(false);
@@ -4914,7 +4935,7 @@ cVector3d afCamera::getTargetPos(){
 bool afCamera::createDefaultCamera(){
     std::cerr << "INFO: USING DEFAULT CAMERA" << std::endl;
 
-    m_camera = new cCamera(m_afWorld->s_bulletWorld);
+    m_camera = new cCamera(m_afWorld->s_chaiBulletWorld);
     addChild(m_camera);
 
     // Set a default name
@@ -4986,7 +5007,7 @@ bool afCamera::createDefaultCamera(){
     s_cameraIdx++;
 
     // Assign the Window Camera Handles
-    m_afWorld->s_bulletWorld->addChild(this);
+    m_afWorld->s_chaiBulletWorld->addChild(this);
 
     // Make sure to set the mass to 0 as this is a kinematic body
     m_mass = 0.0;
@@ -5121,7 +5142,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
 
     if(_is_valid){
-        m_camera = new cCamera(a_world->s_bulletWorld);
+        m_camera = new cCamera(a_world->s_chaiBulletWorld);
         addChild(m_camera);
 
         bool _overrideParent = false;
@@ -5139,7 +5160,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
             }
         }
         if (! _overrideParent){
-            a_world->s_bulletWorld->addChild(this);
+            a_world->s_chaiBulletWorld->addChild(this);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -5326,7 +5347,7 @@ afLight::afLight(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
 ///
 bool afLight::createDefaultLight(){
     std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << std::endl;
-    m_spotLight = new cSpotLight(m_afWorld->s_bulletWorld);
+    m_spotLight = new cSpotLight(m_afWorld->s_chaiBulletWorld);
     m_name = "default_light";
     addChild(m_spotLight);
     m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
@@ -5336,7 +5357,7 @@ bool afLight::createDefaultLight(){
     m_spotLight->setShadowMapEnabled(true);
     m_spotLight->m_shadowMap->setQualityVeryHigh();
     m_spotLight->setEnabled(true);
-    m_afWorld->s_bulletWorld->addChild(m_spotLight);
+    m_afWorld->s_chaiBulletWorld->addChild(m_spotLight);
 
     m_mass = 0.0;
     buildDynamicModel();
@@ -5418,7 +5439,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
     }
 
     if (_is_valid){
-        m_spotLight = new cSpotLight(a_world->s_bulletWorld);
+        m_spotLight = new cSpotLight(a_world->s_chaiBulletWorld);
         addChild(m_spotLight);
 
         bool _overrideDefaultParenting = false;
@@ -5435,7 +5456,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
             }
         }
         if (! _overrideDefaultParenting){
-            a_world->s_bulletWorld->addChild(this);
+            a_world->s_chaiBulletWorld->addChild(this);
         }
 
         m_spotLight->setLocalPos(_location);
@@ -5479,11 +5500,9 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
 /// \brief afMultiBody::afMultiBody
 ///
 afMultiBody::afMultiBody(){
-    m_wallClock.start(true);
 }
 
 afMultiBody::afMultiBody(afWorldPtr a_afWorld){
-    m_wallClock.start(true);
     m_afWorld = a_afWorld;
 
     //    m_pickDragVector = new cMesh();

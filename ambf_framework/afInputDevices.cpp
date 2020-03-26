@@ -508,7 +508,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_refSphere->m_material->setRed();
         m_refSphere->setShowFrame(true);
         m_refSphere->setFrameSize(m_markerSize * 5);
-        m_afWorld->s_bulletWorld->addChild(m_refSphere);
+        m_afWorld->s_chaiBulletWorld->addChild(m_refSphere);
     }
 
 
@@ -525,14 +525,14 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 /// \param maxPF
 ///
 void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
-    m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
+    m_afCursor = new cBulletSphere(a_afWorld->s_chaiBulletWorld, 0.05);
     m_afCursor->setShowEnabled(true);
     m_afCursor->setShowFrame(true);
     m_afCursor->setFrameSize(0.1);
     cMaterial mat;
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
-    a_afWorld->s_bulletWorld->addChild(m_afCursor);
+    a_afWorld->s_chaiBulletWorld->addChild(m_afCursor);
     m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
     m_afWorld = a_afWorld;
 }

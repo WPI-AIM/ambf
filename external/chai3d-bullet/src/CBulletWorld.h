@@ -153,6 +153,9 @@ public:
     //! This method returns the current simulation time
     double getSimulationTime(void);
 
+    //! This method gets the time difference between current time and last simulation time
+    double getSimulationDeltaTime();
+
     // AFMB API BEGIN
 
     //! This method create as afCommunication Instance with the specified namespace
@@ -208,6 +211,9 @@ protected:
 
     //! Wall Clock in Secs
     double m_wallClock;
+
+    //! Last Simulation Time
+    double m_lastSimulationTime;
 
     //! Maximum number of iterations.
     int m_integrationMaxIterations;

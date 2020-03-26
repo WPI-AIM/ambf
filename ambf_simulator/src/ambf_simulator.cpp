@@ -108,8 +108,6 @@ struct CommandLineOptions{
 // Global struct for command line options
 CommandLineOptions g_cmdOpts;
 
-cPrecisionClock g_clockWorld;
-
 // Info for mouse events in case a body is picked
 bool g_pickBody = false;
 cVector3d g_pickFrom, g_pickTo;
@@ -605,7 +603,7 @@ int main(int argc, char* argv[])
         }
 
         else{
-            std::cerr << "\nRunning Headless (-g option provided) t = " << g_clockWorld.getCurrentTimeSeconds() << " sec" << std::endl;
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
     }
@@ -1348,8 +1346,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time: " + cStr(g_chaiBulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_chaiBulletWorld->getSimulationTime(), 2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1384,26 +1382,6 @@ void updateLabels(){
 }
 
 ///
-/// \brief Function to fix time dilation
-/// \param adjust_int_steps
-/// \return
-///
-double compute_dt(bool adjust_int_steps = false){
-    double dt = g_clockWorld.getCurrentTimeSeconds() - g_chaiBulletWorld->getSimulationTime();
-    int min_iterations = 2;
-    int max_iterations = g_afWorld->getMaxIterations();
-    if (adjust_int_steps){
-        if (dt >= g_chaiBulletWorld->getIntegrationTimeStep() * min_iterations){
-            int int_steps_max =  dt / g_chaiBulletWorld->getIntegrationTimeStep();
-            if (int_steps_max > max_iterations){
-                int_steps_max = max_iterations;
-            }
-            g_chaiBulletWorld->setIntegrationMaxIterations(int_steps_max + min_iterations);        }
-    }
-    return dt;
-}
-
-///
 /// \brief updateBulletSim
 ///
 void updatePhysics(){
@@ -1411,7 +1389,7 @@ void updatePhysics(){
     g_simulationFinished = false;
 
     // start haptic device
-    g_clockWorld.start(true);
+    g_afWorld->g_wallClock.start(true);
 
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
@@ -1441,12 +1419,12 @@ void updatePhysics(){
                 g_afWorld->removePickingConstraint();
             }
 
-            double dt;
+            double step_size;
             if (g_cmdOpts.useFixedPhxTimeStep){
-                dt = 1.0 / g_cmdOpts.phxFrequency;
+                step_size = 1.0 / g_cmdOpts.phxFrequency;
             }
             else{
-                dt = compute_dt(true);
+                step_size = g_afWorld->computeStepSize(true);
             }
 
             for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
@@ -1557,7 +1535,8 @@ void updatePhysics(){
 
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
-                double ts = dt_fixed / dt;
+                double ts = dt_fixed / step_size;
+                double dt = g_chaiBulletWorld->getSimulationDeltaTime();
                 force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
                 force = simDev->P_lc_ramp * force;
 
@@ -1587,7 +1566,7 @@ void updatePhysics(){
                     simDev->P_ac_ramp = 1.0;
                 }
             }
-            g_chaiBulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+            g_chaiBulletWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
         }
             rateSleep.sleep();
     }
@@ -1661,7 +1640,7 @@ void updateHapticDevice(void* a_arg){
                 dt = 1.0 / g_cmdOpts.htxFrequency;
             }
             else{
-                dt = compute_dt();
+                dt = g_afWorld->computeStepSize();
             }
             phyDev->m_pos = phyDev->measuredPos();
             phyDev->m_rot = phyDev->measuredRot();
@@ -1745,7 +1724,7 @@ void updateHapticDevice(void* a_arg){
             }
 
 
-            if (g_clockWorld.getCurrentTimeSeconds() < wait_time){
+            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->m_posClutched = phyDev->m_pos;
             }
 

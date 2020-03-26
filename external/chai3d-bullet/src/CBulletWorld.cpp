@@ -72,6 +72,9 @@ cBulletWorld::cBulletWorld(std::string a_worldName)
     // maximum number of iterations
     m_integrationMaxIterations = 5;
 
+    // Set the last simulation time to 0
+    m_lastSimulationTime = 0.0;
+
     // setup broad phase collision detection
     m_bulletBroadphase = new btDbvtBroadphase();
 
@@ -198,13 +201,14 @@ void cBulletWorld::updateDynamics(double a_interval, double a_wallClock, double 
         }
     }
 #endif
+
     // apply wrench from ROS
     list<cBulletGenericObject*>::iterator i;
 
     for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
     {
         cBulletGenericObject* nextItem = *i;
-        nextItem->afObjectCommandExecute(a_interval);
+        nextItem->afObjectCommandExecute(getSimulationDeltaTime());
     }
 
     // integrate simulation during an certain interval
@@ -252,6 +256,17 @@ void cBulletWorld::updatePositionFromDynamics()
 //==============================================================================
 double cBulletWorld::getSimulationTime(){
     return m_simulationTime;
+}
+
+//==============================================================================
+/*!
+    This method gets the time difference between current time and last simulation time
+*/
+//==============================================================================
+double cBulletWorld::getSimulationDeltaTime(){
+    double dt = m_simulationTime - m_lastSimulationTime;
+    m_lastSimulationTime = m_simulationTime;
+    return dt;
 }
 
 //------------------------------------------------------------------------------

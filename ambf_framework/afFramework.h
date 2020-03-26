@@ -670,10 +670,10 @@ public:
     double I = 0;
     double D = 50;
     double e[4] = {0, 0, 0, 0};
+    double ie[4] = {0, 0, 0, 0};
     double de[4] = {0, 0, 0, 0};
-    double dde[4] = {0, 0, 0, 0};
     double t[4]= {0, 0, 0, 0};
-    size_t n = 4;
+    size_t queue_length = 4;
     double output;
     double max_impulse;
     double max_effort;
@@ -1265,8 +1265,9 @@ public:
     void resetCameras();
     void resetDynamicBodies(bool reset_time=false);
     int getMaxIterations(){return m_maxIterations;}
+    double computeStepSize(bool adjust_intetration_steps = false);
 
-    static cBulletWorld *s_bulletWorld;
+    static cBulletWorld *s_chaiBulletWorld;
     GLFWwindow* m_mainWindow;
 
 public:
@@ -1378,6 +1379,8 @@ public:
     double m_oldPickingDist;
     cMesh* m_pickSphere;
 
+    cPrecisionClock g_wallClock;
+
     //    cMesh* m_pickDragVector;
 
 };
@@ -1436,8 +1439,6 @@ public:
     // with most children. This method is similar to the corresponding afWorld
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
-
-    cPrecisionClock m_wallClock;
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
