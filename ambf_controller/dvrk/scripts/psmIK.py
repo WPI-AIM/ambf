@@ -137,11 +137,11 @@ def compute_IK(T_7_0):
 
     T_7_0_req = convert_frame_to_mat(T_7_0)
     T_7_0_req = round_transform(T_7_0_req, 3)
-    print 'Requested Pose: \n', T_7_0_req
+    print('Requested Pose: \n', T_7_0_req)
     T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
     round_transform(T_7_0_computed, 3)
-    print'Computed Pose: \n', T_7_0_computed
-
+    print('Computed Pose: \n', T_7_0_computed)
+    return round(j1, 3), round(j2, 3), round(j3, 3), round(j4, 3), round(j5, 3), round(j6, 3)
 
 def test_ik(x, y, z, rx, ry, rz):
     Rx = Rotation.RPY(rx, 0.0, 0.0)
