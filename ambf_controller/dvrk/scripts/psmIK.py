@@ -97,14 +97,15 @@ def compute_IK(T_7_0):
     # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print ('XZ Diagonal: ', xz_diagonal)
     # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
-    j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
+    j1 = math.atan2(T_PalmJoint_0.p[0], sign * T_PalmJoint_0.p[2])
 
     # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print('YZ Diagonal: ', yz_diagonal)
     # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
-    j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
+    j2 = -math.atan2(T_PalmJoint_0.p[1], sign * T_PalmJoint_0.p[2])
 
-    j3 = T_PalmJoint_0.p.Norm() + tool_rcm_offset
+    j3 = insertion_depth + tool_rcm_offset
+
 
     # Calculate j4
     # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
@@ -127,16 +128,17 @@ def compute_IK(T_7_0):
     j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
 
     str = '\n**********************************'*3
-    print(str)
-    print("Joint 1: ", round(j1, 3))
-    print("Joint 2: ", round(j2, 3))
-    print("Joint 3: ", round(j3, 3))
-    print("Joint 4: ", round(j4, 3))
-    print("Joint 5: ", round(j5, 3))
-    print("Joint 6: ", round(j6, 3))
+    # print(str)
+    # print("Joint 1: ", round(j1, 3))
+    # print("Joint 2: ", round(j2, 3))
+    # print("Joint 3: ", round(j3, 3))
+    # print("Joint 4: ", round(j4, 3))
+    # print("Joint 5: ", round(j5, 3))
+    # print("Joint 6: ", round(j6, 3))
 
     T_7_0_req = convert_frame_to_mat(T_7_0)
     T_7_0_req = round_transform(T_7_0_req, 3)
+<<<<<<< HEAD
     print('Requested Pose: \n', T_7_0_req)
     T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
     round_transform(T_7_0_computed, 3)
@@ -155,6 +157,11 @@ def test_ik(x, y, z, rx, ry, rz):
     # print "REQ POSE \n", round_transform(convert_frame_to_mat(T_7_0), 3), "\n\n--------\n\n"
     compute_IK(T_7_0)
 
+=======
+    # print('Requested Pose: \n', T_7_0_req)
+    T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
+    round_transform(T_7_0_computed, 3)
+    # print('Computed Pose: \n', T_7_0_computed)
+>>>>>>> upstream/master
 
-if __name__ == "__main__":
-    test_ik(-0.1, -0.1, -0.3, 0, PI_2, PI/4)
+    return [j1, j2, j3, j4, j5, j6]

@@ -51,7 +51,7 @@
 
 class WorldRosCom: public RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>{
 public:
-    WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max);
+    WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~WorldRosCom();
     virtual void init();
 

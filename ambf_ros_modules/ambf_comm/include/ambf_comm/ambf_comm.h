@@ -61,7 +61,7 @@ class ChaiEnv{
 public:
     ChaiEnv();
     ~ChaiEnv();
-    void add_object(std::string name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000);
+    void add_object(std::string name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
     ambf_comm::Object* get_object_handle(std::string name);
     bool object_cur_position(std::string name, double px, double py, double pz);
     bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);

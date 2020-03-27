@@ -84,9 +84,8 @@ bool mirroredDisplay = false;
 //---------------------------------------------------------------------------
 
 // bullet world
-cBulletWorld* g_bulletWorld;
+cBulletWorld* g_chaiBulletWorld;
 
-afMultiBody *g_afMultiBody;
 afWorld *g_afWorld;
 
 struct CommandLineOptions{
@@ -108,8 +107,6 @@ struct CommandLineOptions{
 
 // Global struct for command line options
 CommandLineOptions g_cmdOpts;
-
-cPrecisionClock g_clockWorld;
 
 // Info for mouse events in case a body is picked
 bool g_pickBody = false;
@@ -373,25 +370,24 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------
 
     // create a dynamic world.
-    g_bulletWorld = new cBulletWorld("World");
+    g_chaiBulletWorld = new cBulletWorld("World");
 
     // set the background color of the environment
-    g_bulletWorld->m_backgroundColor.setWhite();
+    g_chaiBulletWorld->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
     //////////////////////////////////////////////////////////////////////////
     // set some gravity
-    g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+    g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
 
 
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    g_afWorld = new afWorld(g_bulletWorld);
+    g_afWorld = new afWorld(g_chaiBulletWorld);
     if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
-        g_afMultiBody = new afMultiBody(g_afWorld);
 
         // Process the loadMultiBodyFiles string
         if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -406,7 +402,7 @@ int main(int argc, char* argv[])
                 mbFileNames.push_back(mbFilename);
             }
             for (int idx = 0 ; idx < mbFileNames.size() ; idx++){
-                g_afMultiBody->loadMultiBody(mbFileNames[idx], true);
+                g_afWorld->loadADF(mbFileNames[idx], true);
             }
         }
 
@@ -423,7 +419,7 @@ int main(int argc, char* argv[])
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
-                g_afMultiBody->loadMultiBody(mbIndexes[idx], true);
+                g_afWorld->loadADF(mbIndexes[idx], true);
             }
         }
 
@@ -431,7 +427,7 @@ int main(int argc, char* argv[])
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
         g_cameras = g_afWorld->getAFCameras();
 
-        g_bulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
+        g_chaiBulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
     else{
         // Safely exit the program
@@ -529,7 +525,7 @@ int main(int argc, char* argv[])
         btVector3 p2( s, -s, 0);
         btVector3 p3(-s,  s, 0);
         btVector3 p4( s,  s, 0);
-        btSoftBody* btPatch = btSoftBodyHelpers::CreatePatch(*g_bulletWorld->m_bulletSoftBodyWorldInfo,
+        btSoftBody* btPatch = btSoftBodyHelpers::CreatePatch(*g_chaiBulletWorld->m_bulletSoftBodyWorldInfo,
                                                              p1,
                                                              p2,
                                                              p3,
@@ -542,14 +538,14 @@ int main(int argc, char* argv[])
 
         cGELSkeletonNode::s_default_radius = g_cmdOpts.softPatchMargin;
 
-        afSoftMultiMesh* cloth = new afSoftMultiMesh(g_bulletWorld);
+        afSoftMultiMesh* cloth = new afSoftMultiMesh(g_chaiBulletWorld);
         cloth->setSoftBody(btPatch);
         cloth->createGELSkeleton();
         cloth->setMass(1);
         cloth->m_gelMesh.connectVerticesToSkeleton(false);
         cloth->buildDynamicModel();
         //    g_afWorld->addSoftBody(cloth, "cloth");
-        g_bulletWorld->addChild(cloth);
+        g_chaiBulletWorld->addChild(cloth);
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -607,7 +603,7 @@ int main(int argc, char* argv[])
         }
 
         else{
-            std::cerr << "\nRunning Headless (-g option provided) t = " << g_clockWorld.getCurrentTimeSeconds() << " sec" << std::endl;
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
     }
@@ -647,7 +643,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
             if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
-                g_afMultiBody->loadMultiBody(paths[i], true);
+                g_afWorld->loadADF(paths[i], true);
             }
             else{
                 std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
@@ -906,7 +902,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_1)
         {
             // enable gravity
-            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
             printf("gravity ON:\n");
         }
 
@@ -914,7 +910,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_2)
         {
             // disable gravity
-            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
+            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
             printf("gravity OFF:\n");
         }
 
@@ -1273,9 +1269,8 @@ void close(void)
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         delete g_hapticsThreads[i];
     }
-    delete g_bulletWorld;
+    delete g_chaiBulletWorld;
     delete g_afWorld;
-    delete g_afMultiBody;
 }
 
 
@@ -1285,7 +1280,7 @@ void close(void)
 void updateGraphics()
 {
     // Update shadow maps once
-    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
+    g_chaiBulletWorld->updateShadowMaps(false, mirroredDisplay);
 
     for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end(); ++ g_cameraIt){
         afCameraPtr cameraPtr = (*g_cameraIt);
@@ -1351,8 +1346,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_chaiBulletWorld->getSimulationTime(), 2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1387,26 +1382,6 @@ void updateLabels(){
 }
 
 ///
-/// \brief Function to fix time dilation
-/// \param adjust_int_steps
-/// \return
-///
-double compute_dt(bool adjust_int_steps = false){
-    double dt = g_clockWorld.getCurrentTimeSeconds() - g_bulletWorld->getSimulationTime();
-    int min_steps = 2;
-    int max_steps = 10;
-    if (adjust_int_steps){
-        if (dt >= g_bulletWorld->getIntegrationTimeStep() * min_steps){
-            int int_steps_max =  dt / g_bulletWorld->getIntegrationTimeStep();
-            if (int_steps_max > max_steps){
-                int_steps_max = max_steps;
-            }
-            g_bulletWorld->setIntegrationMaxIterations(int_steps_max + min_steps);        }
-    }
-    return dt;
-}
-
-///
 /// \brief updateBulletSim
 ///
 void updatePhysics(){
@@ -1414,7 +1389,7 @@ void updatePhysics(){
     g_simulationFinished = false;
 
     // start haptic device
-    g_clockWorld.start(true);
+    g_afWorld->g_wallClock.start(true);
 
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
@@ -1444,12 +1419,12 @@ void updatePhysics(){
                 g_afWorld->removePickingConstraint();
             }
 
-            double dt;
+            double step_size;
             if (g_cmdOpts.useFixedPhxTimeStep){
-                dt = 1.0 / g_cmdOpts.phxFrequency;
+                step_size = 1.0 / g_cmdOpts.phxFrequency;
             }
             else{
-                dt = compute_dt(true);
+                step_size = g_afWorld->computeStepSize(true);
             }
 
             for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
@@ -1476,7 +1451,7 @@ void updatePhysics(){
                                             simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
-                                            g_bulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                            g_chaiBulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                         }
                                     }
                                 }
@@ -1533,7 +1508,7 @@ void updatePhysics(){
                             }
                             else{
                                 if(simDev->m_rigidGrippingConstraints[sIdx]){
-                                    g_bulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                    g_chaiBulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                     simDev->m_rigidGrippingConstraints[sIdx] = 0;
                                 }
                                 if(simDev->m_softGrippingConstraints[sIdx]){
@@ -1560,7 +1535,8 @@ void updatePhysics(){
 
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
-                double ts = dt_fixed / dt;
+                double ts = dt_fixed / step_size;
+                double dt = g_chaiBulletWorld->getSimulationDeltaTime();
                 force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
                 force = simDev->P_lc_ramp * force;
 
@@ -1590,7 +1566,7 @@ void updatePhysics(){
                     simDev->P_ac_ramp = 1.0;
                 }
             }
-            g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+            g_chaiBulletWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
         }
             rateSleep.sleep();
     }
@@ -1664,7 +1640,7 @@ void updateHapticDevice(void* a_arg){
                 dt = 1.0 / g_cmdOpts.htxFrequency;
             }
             else{
-                dt = compute_dt();
+                dt = g_afWorld->computeStepSize();
             }
             phyDev->m_pos = phyDev->measuredPos();
             phyDev->m_rot = phyDev->measuredRot();
@@ -1748,7 +1724,7 @@ void updateHapticDevice(void* a_arg){
             }
 
 
-            if (g_clockWorld.getCurrentTimeSeconds() < wait_time){
+            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->m_posClutched = phyDev->m_pos;
             }
 
