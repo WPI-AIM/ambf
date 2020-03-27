@@ -4697,10 +4697,10 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
                     m_dynamicsWorld->addConstraint(p2p, true);
                     m_pickedConstraint = p2p;
-                    btScalar mousePickClamping = 30.f;
+                    btScalar mousePickClamping = 1/body->getInvMass();
                     p2p->m_setting.m_impulseClamp = mousePickClamping;
                     //very weak constraint for picking
-                    p2p->m_setting.m_tau = 0.001f;
+                    p2p->m_setting.m_tau = 1/body->getInvMass();
                 }
             }
         }
