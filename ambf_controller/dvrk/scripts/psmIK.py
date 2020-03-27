@@ -48,13 +48,14 @@ import rospy
 #
 # is the direction between the difference of A and B expressed in C.
 
+
 def compute_IK(T_7_0):
     palm_length = 0.0091 # Fixed length from the palm joint to the pinch joint
     pinch_length = 0.0102 # Fixed length from the pinch joint to the pinch tip
     tool_rcm_offset = 0.0156 # Delta between tool tip and the Remote Center of Motion
 
     # Pinch Joint
-    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0, 0, -1))
+    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0.0, 0.0, -1.0))
     # Pinch Joint in Origin
     T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
 
