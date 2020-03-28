@@ -25,7 +25,7 @@ def get_angle(vec_a, vec_b, up_vector=None):
 
     if up_vector is not None:
         same_dir = np.sign(dot(cross_ab, up_vector))
-        if same_dir < 0:
+        if same_dir < 0.0:
             angle = -angle
 
     return angle

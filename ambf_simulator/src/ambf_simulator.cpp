@@ -1037,6 +1037,12 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
+            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+            double speed_scale = 1.0;
+            if (state == GLFW_PRESS)
+            {
+                speed_scale = 0.1;
+            }
             afCamera* devCam = (*g_cameraIt);
             (*g_cameraIt)->mouse_x[1] = (*g_cameraIt)->mouse_x[0];
             (*g_cameraIt)->mouse_x[0] = a_xpos;
@@ -1052,8 +1058,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 }
                 else{
                     double scale = 0.01;
-                    double x_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                    double y_vel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                    double x_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
+                    double y_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                     if (g_mouse_inverted_y){
                         y_vel = -y_vel;
                     }
@@ -1066,8 +1072,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_r_clicked ){
                 cMatrix3d camRot;
                 double scale = 0.3;
-                double yawVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
-                double pitchVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
+                double yawVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
+                double pitchVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
                 if (g_mouse_inverted_y){
                     pitchVel = -pitchVel;
                 }
@@ -1092,8 +1098,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_scroll_clicked){
 //                devCam->showTargetPos(true);
                 double scale = 0.03;
-                double horizontalVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                double verticalVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                double horizontalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
+                double verticalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                 if (g_mouse_inverted_y){
                     verticalVel = -verticalVel;
                 }
@@ -1134,12 +1140,18 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
+            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+            double speed_scale = 1.0;
+            if (state == GLFW_PRESS)
+            {
+                speed_scale = 0.1;
+            }
             afCameraPtr cameraPtr = (*g_cameraIt);
             (*g_cameraIt)->mouse_scroll[1] = (*g_cameraIt)->mouse_scroll[0];
             (*g_cameraIt)->mouse_scroll[0] = -a_ypos;
 
             double scale = 0.1;
-            cVector3d camVelAlongLook(scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
+            cVector3d camVelAlongLook(speed_scale * scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
             cVector3d _targetPos = cameraPtr->getTargetPos();
             cVector3d _newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
             cVector3d dPos = _newPos - _targetPos;
