@@ -43,13 +43,18 @@
 #     \version   0.1
 # */
 # //==============================================================================
+# Initial python2 code, but had few errors while importing in python3
+# from tf import transformations
+# Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
+
 from tf import transformations
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
 import rospy
 from geometry_msgs.msg import Pose, Wrench
-
+from collections import deque
+import numpy as np
 
 class Object(WatchDog):
     def __init__(self, a_name):
@@ -57,16 +62,21 @@ class Object(WatchDog):
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(time_out=0.1) # Set duration of Watchdog expiry
+        super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
         self._name = ''
         self._state = ObjectState()
         self._cmd = ObjectCmd()
         self._pub = None
         self._sub = None
         self.pub_flag = True
+        self._start_flag = False
         self._active = False
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
+        self._joint_velocity = None
+        self._dt = 0.0
+        self._vel_que = deque()
+        self._queue_size = 5
 
     def ros_cb(self, data):
         """
@@ -74,14 +84,63 @@ class Object(WatchDog):
         :param data:
         :return:
         """
-        self._state = data
 
+        if not len(self._vel_que):
+            num = len(data.joint_positions)
+            self._vel_que = deque(maxlen=self._queue_size)
+            for i in xrange(self._queue_size):
+                self._vel_que.append((num*[0.0],0.0))
+
+
+        self._state = data
+        point = (np.array(data.joint_positions), self.get_wall_time())
+        self._vel_que.append(point)
+
+        self._calc_joint_velocity()
+    
     def is_active(self):
         """
         Flag to check if the cb for this Object is active or not
         :return:
         """
         return self._active
+
+    def is_joint_idx_valid(self, joint_idx):
+        """
+        :param joint_idx:
+        :return:
+        """
+        n_jnts = len(self._state.joint_positions)
+        if joint_idx in range(n_jnts):
+            return True
+        else:
+            # Index invalid
+            print('ERROR! Requested Joint Idx of \"' + str(joint_idx) +
+                  '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
+            return False
+
+    def get_joint_idx_from_name(self, joint_name):
+        """
+        :param joint_name:
+        :return:
+        """
+        joint_names = self._state.joint_names
+        if joint_name in joint_names:
+            joint_idx = joint_names.index(joint_name)
+            return joint_idx
+        else:
+            print('ERROR! Requested Joint \"' + str(joint_name) + '\" not found in list of joints:')
+            print(joint_names)
+            return None
+
+    def get_joint_name_from_idx(self, joint_idx):
+        """
+        :param joint_idx:
+        :return:
+        """
+        if self.is_joint_idx_valid(joint_idx):
+            joint_name = self._state.joint_names[joint_idx]
+            return joint_name
 
     def get_sim_step(self):
         """
@@ -90,7 +149,56 @@ class Object(WatchDog):
         """
         return self._state.sim_step
 
+
+    def get_wall_time(self):
+        """
+        get the wall time
+        """
+        return self._state.wall_time
+
+    def get_dt(self):
+        """
+        Gets the time delta
+        :return: delta time
+        """
+        dt = self.get_wall_time() - last_time 
+        
+        if dt < 0:
+        
+            return 0 
+        
+        return dt
+
     def get_joint_pos(self, idx):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_positions[joint_idx]
+        else:
+            return None
+
+    def get_all_joint_pos(self):
+        """
+                Get the joint position of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in xrange(n_jnts):
+            joints.append(self._state.joint_positions[idx])
+
+        return joints
+
+    def get_joint_vel(self, idx):
         """
         Get the joint position of a specific joint at idx. Check joint names to see indexes
         :param idx:
@@ -103,9 +211,9 @@ class Object(WatchDog):
             print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
             return
 
-        return self._state.joint_positions[idx]
+        return self._joint_velocity[idx]
 
-    def get_all_joint_pos(self):
+    def get_all_joint_vel(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
                 :param idx:
@@ -114,7 +222,7 @@ class Object(WatchDog):
         n_jnts = len(self._state.joint_positions)
         joints = []
         for idx in xrange(n_jnts):
-            joints.append(self._state.joint_positions[idx])
+            joints.append(self._joint_velocity[idx])
 
         return joints
 
@@ -171,7 +279,10 @@ class Object(WatchDog):
         :return:
         """
         quat = self._state.pose.orientation
-        rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        # Edited python3 code
+        rpy = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        # Initial python2 code
+        # rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         return rpy
 
     def get_pose(self):
@@ -181,7 +292,10 @@ class Object(WatchDog):
         """
         quat = self._state.pose.orientation
         explicit_quat = [quat.x, quat.y, quat.z, quat.w]
-        rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
+        # Edited python3 code
+        rpy = euler_from_quaternion(explicit_quat, 'szyx')
+        # Initial python2 code
+        # rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
         pose = [self._state.pose.position.x,
                 self._state.pose.position.y,
                 self._state.pose.position.z,
@@ -213,7 +327,7 @@ class Object(WatchDog):
         :return:
         """
         if self._pose_cmd_set:
-            return self._cmd.pose.orientation
+            return self._cmd.fpose.orientation
         else:
             return self._state.pose.orientation
 
@@ -230,6 +344,45 @@ class Object(WatchDog):
         :return:
         """
         return self._cmd.wrench.torque
+
+    def get_publish_children_name_flag(self):
+        """
+        Check if the object is publishing children names
+        :return:
+        """
+        return self._cmd.publish_children_names
+
+    def get_publish_joint_names_flag(self):
+        """
+        Check if the object is publishing joint names
+        :return:
+        """
+        return self._cmd.publish_joint_names
+
+    def get_publish_joint_positions_flag(self):
+        """
+        Check if the object is publishing joint poisitions
+        :return:
+        """
+        return self._cmd.publish_joint_positions
+
+    def set_publish_children_names_flag(self, state):
+        """
+        Set children name publishing state
+        """
+        self._cmd.publish_children_names = state
+
+    def set_publish_joint_names_flag(self, state):
+        """
+        set joint name publishing state
+        """
+        self._cmd.publish_joint_names = state
+
+    def set_publish_joint_positions_flag(self, state):
+        """
+        set joint position publishing state
+        """
+        self._cmd.publish_joint_positions = state
 
     def set_name(self, name):
         """
@@ -271,7 +424,10 @@ class Object(WatchDog):
         :param yaw:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'sxyz')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
         self.set_rot(quat)
 
     def set_rot(self, quat):
@@ -303,42 +459,29 @@ class Object(WatchDog):
         self._apply_command()
         self._pose_cmd_set = True
 
-    def set_joint_pos(self, joint, pos):
+    def set_joint_pos(self, joint_name_or_idx, q):
         """
         Set the joint position based on the index or names. Check the get_joint_names to see the list of
         joint names for indexes
-        :param joint:
-        :param pos:
+        :param joint_name_or_idx:
+        :param q:
         :return:
         """
-
-        if isinstance(joint, basestring):
-            
-            joint_names = self._state.joint_names
-            if joint not in joint_names:
-                print joint +  " is not a joint"
-            idx = joint_names.index(joint)
+        # edited python3 code
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
         else:
-            idx = joint
+            joint_idx = joint_name_or_idx
 
-        n_jnts = len(self._state.joint_positions)
+        if self.is_joint_idx_valid(joint_idx):
+            n_jnts = self.get_num_joints()
+            if len(self._cmd.joint_cmds) != n_jnts:
+                self._cmd.joint_cmds = [0.0]*n_jnts
+                self._cmd.position_controller_mask = [0]*n_jnts
 
-        if not 0 <= idx < n_jnts:
-            # Index invalid
-            print 'Joint Index {} should be between 0-{}'.format(idx, n_jnts)
-            return
-
-        if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0]*n_jnts
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
-            self._cmd.position_controller_mask = [0]*n_jnts
-
-        self._cmd.joint_cmds[idx] = pos
-        self._cmd.position_controller_mask[idx] = True
-
-        self._apply_command()
-
+            self._cmd.joint_cmds[joint_idx] = q
+            self._cmd.position_controller_mask[joint_idx] = True
+            self._apply_command()
 
     def set_force(self, fx, fy, fz):
         """
@@ -380,12 +523,14 @@ class Object(WatchDog):
         :param effort:
         :return:
         """
+        # edited python3 code
+        if isinstance(joint, str):
+            # Initial code for python2
+            # if isinstance(joint, basestring):
 
-        if isinstance(joint, basestring):
-            
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint +  " is not a joint"
+                print(joint + " is not a joint")
                 return
             idx = joint_names.index(joint)
         else:
@@ -395,13 +540,11 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
+            print('Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0] * n_jnts 
-            for j_idx in range(0, n_jnts):
-                self._cmd.joint_cmds[j_idx] = 0.0
+            self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
@@ -433,7 +576,10 @@ class Object(WatchDog):
         :param jnt_cmds:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
         self._cmd.enable_position_controller = True
         self._cmd.pose.position.x = px
         self._cmd.pose.position.y = py
@@ -446,19 +592,6 @@ class Object(WatchDog):
         self._cmd.joint_cmds = [jnt for jnt in jnt_cmds]
 
         self._apply_command()
-        self._pose_cmd_set
-
-    def set_force(self, fx, fy, fz):
-        nx = self._cmd.wrench.torque.x
-        ny = self._cmd.wrench.torque.y
-        nz = self._cmd.wrench.torque.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
-
-    def set_torque(self, nx, ny, nz):
-        fx = self._cmd.wrench.force.x
-        fy = self._cmd.wrench.force.y
-        fz = self._cmd.wrench.force.z
-        self.wrench_command(fx, fy, fz, nx, ny, nz)
 
     def wrench_command(self, fx, fy, fz, nx, ny, nz):
         """
@@ -491,6 +624,32 @@ class Object(WatchDog):
         self._pub.publish(self._cmd)
         self.acknowledge_wd()
 
+    def _calc_joint_velocity(self):
+        """
+        calculates the joint state
+        :param last_joints_state: last joint state
+        :return:
+        """
+
+        vels = list(self._vel_que)
+        joint_velocities = np.array(len(self._state.joint_positions)*[0.0])
+        total_w = 0
+        for w, i in enumerate(xrange(len(vels)-1)):
+            total_w += w
+            curr_state = vels[i]
+            next_state = vels[i+1]
+
+            dt = next_state[1] - curr_state[1]
+            if not dt:
+                joint_velocities = joint_velocities + np.array(len(self._state.joint_positions)*[0.0])
+            else:
+                joint_velocities = joint_velocities + w*(next_state[0] - curr_state[0]) / dt
+
+
+        joint_velocities = joint_velocities/total_w 
+
+        self._joint_velocity = joint_velocities # tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
+    
     def _clear_command(self):
         """
         Clear wrench if watchdog is expired
@@ -514,3 +673,8 @@ class Object(WatchDog):
                 self._clear_command()
             self._pub.publish(self._cmd)
 
+    def get_inertia(self):
+        """
+        Get the inertia the body
+        """
+        return self._state.pInertia
