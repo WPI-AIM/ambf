@@ -103,6 +103,7 @@ struct CommandLineOptions{
     std::string multiBodyFilesToLoad = ""; // A string list of multibody files to load
     std::string launchFilePath; // A string of Path of launch file to load
     bool showGUI = true; //
+    std::string prepend_namespace = ""; // Override the default world namespace
 };
 
 // Global struct for command line options
@@ -272,11 +273,9 @@ int main(int argc, char* argv[])
             ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
-/////////////////////////////////////////////////////////////////////////////////////////
-//        Only for debugging, shall be deprecated later in later Revisions
-            ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
-            ("show_patch,s", p_opt::value<bool>(), "Show Soft Cloth Patch")
-            ("show_gui,g", p_opt::value<bool>(), "Show GUI");
+            ("show_gui,g", p_opt::value<bool>(), "Show GUI")
+            ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace");
+
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
     p_opt::notify(var_map);
@@ -298,10 +297,6 @@ int main(int argc, char* argv[])
 
     if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
 
-    if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
-
-    if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
-
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
 
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
@@ -317,6 +312,9 @@ int main(int argc, char* argv[])
         g_cmdOpts.launchFilePath = "../../ambf_models/descriptions/launch.yaml";
     }
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
+
+
+    if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
     // Process the loadMultiBodies string
 
@@ -370,7 +368,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------
 
     // create a dynamic world.
-    g_chaiBulletWorld = new cBulletWorld("World");
+    g_chaiBulletWorld = new cBulletWorld();
 
     // set the background color of the environment
     g_chaiBulletWorld->m_backgroundColor.setWhite();
@@ -385,9 +383,12 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    g_afWorld = new afWorld(g_chaiBulletWorld);
+    g_afWorld = new afWorld(g_chaiBulletWorld, g_cmdOpts.prepend_namespace);
     if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
+        std::string world_filename = g_afWorld->getWorldConfig();
+        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+        g_cameras = g_afWorld->getAFCameras();
 
         // Process the loadMultiBodyFiles string
         if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -421,11 +422,7 @@ int main(int argc, char* argv[])
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
                 g_afWorld->loadADF(mbIndexes[idx], true);
             }
-        }
-
-        std::string world_filename = g_afWorld->getWorldConfig();
-        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
-        g_cameras = g_afWorld->getAFCameras();
+        }       
 
         g_chaiBulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
@@ -515,37 +512,6 @@ int main(int argc, char* argv[])
     }
     else{
         g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
-    }
-
-
-    if (g_cmdOpts.showSoftPatch){
-        const btScalar s = 0.6;
-        const int r = 5;
-        btVector3 p1(-s, -s, 0);
-        btVector3 p2( s, -s, 0);
-        btVector3 p3(-s,  s, 0);
-        btVector3 p4( s,  s, 0);
-        btSoftBody* btPatch = btSoftBodyHelpers::CreatePatch(*g_chaiBulletWorld->m_bulletSoftBodyWorldInfo,
-                                                             p1,
-                                                             p2,
-                                                             p3,
-                                                             p4, r, r, 1+4, true);
-        btPatch->getCollisionShape()->setMargin(g_cmdOpts.softPatchMargin);
-        btSoftBody::Material* pm = btPatch->appendMaterial();
-        pm->m_kLST = 0.001;
-        //    btPatch->m_cfg.collisions |= btSoftBody::fCollision::VF_SS;
-        btPatch->generateBendingConstraints(2, pm);
-
-        cGELSkeletonNode::s_default_radius = g_cmdOpts.softPatchMargin;
-
-        afSoftMultiMesh* cloth = new afSoftMultiMesh(g_chaiBulletWorld);
-        cloth->setSoftBody(btPatch);
-        cloth->createGELSkeleton();
-        cloth->setMass(1);
-        cloth->m_gelMesh.connectVerticesToSkeleton(false);
-        cloth->buildDynamicModel();
-        //    g_afWorld->addSoftBody(cloth, "cloth");
-        g_chaiBulletWorld->addChild(cloth);
     }
 
     //-----------------------------------------------------------------------------------------------------------

@@ -162,6 +162,9 @@ public:
 
     template <typename T>
     static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
+
+    static std::string removeAdjacentBackSlashes(std::string a_name);
+    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
 };
 
 
@@ -446,7 +449,7 @@ public:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
-    std::string m_namespace;
+    std::string m_namespace = "";
 
 protected:
 
@@ -1252,7 +1255,7 @@ class afWorld: public afConfigHandler{
     friend class afMultiBody;
 
 public:
-    afWorld(cBulletWorld *bulletWorld);
+    afWorld(cBulletWorld *bulletWorld, std::string a_global_namespace);
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
     bool createDefaultWorld();
@@ -1292,7 +1295,13 @@ public:
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
     afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
-    std::string getNamespace(){return m_world_namespace;}
+    std::string getNamespace(){return m_namespace;}
+    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
+
+    std::string getGlobalNamespace(){return m_global_namespace;}
+    void setGlobalNamespace(std::string a_namespace);
+
+    std::string getFullyQualifiedName(std::string a_name);
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
@@ -1338,7 +1347,11 @@ protected:
 protected:
 
     afWorld(){}
-    std::string m_world_namespace;
+    std::string m_namespace;
+
+    // If this string is set, it will force itself to preeced all nampespaces
+    // regardless of whether any namespace starts with a '/' or not.
+    std::string m_global_namespace;
 
 private:
 
@@ -1419,7 +1432,7 @@ public:
 
     inline std::string getMultiBodyPath(){return m_multibody_path;}
 
-    inline std::string getNamespace(){return m_mb_namespace;}
+    inline std::string getNamespace(){return m_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -1449,7 +1462,7 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_mb_namespace;
+    std::string m_namespace="";
     std::string m_multibody_path;
 
 protected:

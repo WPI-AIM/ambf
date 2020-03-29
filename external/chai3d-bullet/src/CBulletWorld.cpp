@@ -58,11 +58,8 @@ namespace chai3d {
     Constructor of cBulletWorld.
 */
 //==============================================================================
-cBulletWorld::cBulletWorld(std::string a_worldName)
+cBulletWorld::cBulletWorld()
 {
-    if(!a_worldName.empty()){
-        afWorldCreate(a_worldName);
-    }
     // reset simulation time
     m_simulationTime = 0.0;
 
@@ -172,9 +169,9 @@ cVector3d cBulletWorld::getGravity()
     \param  a_name  af Namespace.
 */
 //==============================================================================
-void cBulletWorld::afWorldCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+void cBulletWorld::afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afWorldPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+    m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
 #endif
 }
 
@@ -195,8 +192,8 @@ void cBulletWorld::updateDynamics(double a_interval, double a_wallClock, double 
     m_wallClock = a_wallClock;
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afWorldPtr.get() != nullptr){
-        while (!m_afWorldPtr->step_sim()){
+    if(m_afWorldCommPtr.get() != nullptr){
+        while (!m_afWorldCommPtr->step_sim()){
             usleep(1);
         }
     }
@@ -218,11 +215,11 @@ void cBulletWorld::updateDynamics(double a_interval, double a_wallClock, double 
     m_simulationTime = m_simulationTime + a_interval;
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afWorldPtr.get() != nullptr){
-        m_afWorldPtr->set_sim_time(m_simulationTime);
-        m_afWorldPtr->set_wall_time(m_wallClock);
-        m_afWorldPtr->set_loop_freq(a_loopFreq);
-        m_afWorldPtr->set_num_devices(a_numDevices);
+    if (m_afWorldCommPtr.get() != nullptr){
+        m_afWorldCommPtr->set_sim_time(m_simulationTime);
+        m_afWorldCommPtr->set_wall_time(m_wallClock);
+        m_afWorldCommPtr->set_loop_freq(a_loopFreq);
+        m_afWorldCommPtr->set_num_devices(a_numDevices);
     }
 #endif
 

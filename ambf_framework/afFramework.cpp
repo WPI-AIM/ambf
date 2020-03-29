@@ -405,6 +405,48 @@ btTransform afUtils::convertDataType<btTransform, cTransform>(const cTransform &
     return btMat;
 }
 
+
+///
+/// \brief afUtils::removeDoubleBackSlashes
+/// \param a_name
+/// \return
+///
+std::string afUtils::removeAdjacentBackSlashes(std::string a_name){
+    std::string cleaned_name;
+    int last_back_slash_idx = -2;
+    for (int i = 0; i < a_name.length() ; i++){
+        if (a_name[i] == '/'){
+            if (i - last_back_slash_idx > 1){
+                cleaned_name.push_back(a_name[i]);
+            }
+            last_back_slash_idx = i;
+        }
+        else{
+            cleaned_name.push_back(a_name[i]);
+        }
+    }
+    return cleaned_name;
+}
+
+
+///
+/// \brief afUtils::mergeNamespace
+/// \param a_namespace1
+/// \return
+///
+std::string afUtils::mergeNamespace(std::string a_namespace1, std::string a_namespace2){
+    a_namespace1 = removeAdjacentBackSlashes(a_namespace1);
+    a_namespace2 = removeAdjacentBackSlashes(a_namespace2);
+
+    if(a_namespace2.find('/') == 0){
+        return a_namespace2;
+    }
+    else{
+        return a_namespace1 + a_namespace2;
+    }
+}
+
+
 ///////////////////////////////////////////////
 
 ///
@@ -835,7 +877,7 @@ void afRigidBody::remove(){
         m_bulletRigidBody->clearForces();
     }
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectPtr){
+    if (m_afObjectCommPtr){
 //        m_afObjectPtr->cleanUp();
 //        m_afObjectPtr.reset();
     }
@@ -1756,11 +1798,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     if (bodyNamespace.IsDefined()){
-        m_namespace = bodyNamespace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(bodyNamespace.as<std::string>());
     }
-    else{
-        m_namespace = mB->getNamespace();
-    }
+    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
+    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     btTransform iOffTrans;
     btQuaternion iOffQuat;
@@ -2164,22 +2205,22 @@ void afRigidBody::updatePositionFromDynamics()
 
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+    if(m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
         q.fromRotMat(m_localRot);
-        m_afObjectPtr->cur_orientation(q.x, q.y, q.z, q.w);
+        m_afObjectCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         // Since the mass and inertia aren't going to change that often, write them
         // out intermittently
         if (m_write_count % 2000 == 0){
-            m_afObjectPtr->set_mass(getMass());
-            m_afObjectPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
+            m_afObjectCommPtr->set_mass(getMass());
+            m_afObjectCommPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
 
         // We can set this body to publish it's children joint names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_joint_names == true || m_afObjectPtr->m_objectCommand.publish_joint_names == true){
+        if (m_publish_joint_names == true || m_afObjectCommPtr->m_objectCommand.publish_joint_names == true){
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -2189,13 +2230,13 @@ void afRigidBody::updatePositionFromDynamics()
 
         // We can set this body to publish joint positions in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_joint_positions == true || m_afObjectPtr->m_objectCommand.publish_joint_positions == true){
+        if (m_publish_joint_positions == true || m_afObjectCommPtr->m_objectCommand.publish_joint_positions == true){
             afObjectSetJointPositions();
         }
 
         // We can set this body to publish it's children names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_children_names == true || m_afObjectPtr->m_objectCommand.publish_children_names == true){
+        if (m_publish_children_names == true || m_afObjectCommPtr->m_objectCommand.publish_children_names == true){
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -2243,10 +2284,10 @@ bool afRigidBody::updateBodySensors(int threadIdx){
 ///
 void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->update_af_cmd();
+    if (m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->update_af_cmd();
         btVector3 force, torque;
-        ObjectCommand m_afCommand = m_afObjectPtr->m_objectCommand;
+        ObjectCommand m_afCommand = m_afObjectCommPtr->m_objectCommand;
         m_af_enable_position_controller = m_afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
         if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
@@ -2318,14 +2359,14 @@ void afRigidBody::afObjectCommandExecute(double dt){
 void afRigidBody::afObjectStateSetChildrenNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_children = m_childAndJointPairs.size();
-    if (num_children > 0 && m_afObjectPtr != NULL){
+    if (num_children > 0 && m_afObjectCommPtr != NULL){
         std::vector<std::string> children_names;
 
         children_names.resize(num_children);
         for (size_t i = 0 ; i < num_children ; i++){
             children_names[i] = m_childAndJointPairs[i].m_childBody->m_name;
         }
-        m_afObjectPtr->set_children_names(children_names);
+        m_afObjectCommPtr->set_children_names(children_names);
     }
 #endif
 }
@@ -2336,13 +2377,13 @@ void afRigidBody::afObjectStateSetChildrenNames(){
 void afRigidBody::afObjectStateSetJointNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_joints = m_childAndJointPairs.size();
-    if (num_joints > 0 && m_afObjectPtr != NULL){
+    if (num_joints > 0 && m_afObjectCommPtr != NULL){
         std::vector<std::string> joint_names;
         joint_names.resize(num_joints);
         for (size_t i = 0 ; i < num_joints ; i++){
             joint_names[i] = m_childAndJointPairs[i].m_childJoint->m_name;
         }
-        m_afObjectPtr->set_joint_names(joint_names);
+        m_afObjectCommPtr->set_joint_names(joint_names);
     }
 #endif
 }
@@ -2353,14 +2394,14 @@ void afRigidBody::afObjectStateSetJointNames(){
 void afRigidBody::afObjectSetJointPositions(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_jnts = m_childAndJointPairs.size();
-    if (num_jnts > 0 && m_afObjectPtr != NULL){
+    if (num_jnts > 0 && m_afObjectCommPtr != NULL){
         if(m_joint_positions.size() != num_jnts){
             m_joint_positions.resize(num_jnts);
         }
         for (size_t i = 0 ; i < num_jnts ; i++){
             m_joint_positions[i] = m_childAndJointPairs[i].m_childJoint->getPosition();
         }
-        m_afObjectPtr->set_joint_positions(m_joint_positions);
+        m_afObjectCommPtr->set_joint_positions(m_joint_positions);
     }
 #endif
 }
@@ -2675,11 +2716,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     }
 
     if(softBodyNameSpace.IsDefined()){
-        m_namespace = softBodyNameSpace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(softBodyNameSpace.as<std::string>());
     }
-    else{
-        m_namespace = mB->getNamespace();
-    }
+    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
+    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     if(softBodyMass.IsDefined()){
         m_mass = softBodyMass.as<double>();
@@ -3004,14 +3044,17 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // First we should search in the local MultiBody space and if we don't find the body.
     // On then we find the world space
 
-    afBodyA = mB->getAFRigidBodyLocal(mB->getNamespace() + m_parentName, true);
-    afBodyB = mB->getAFRigidBodyLocal(mB->getNamespace() + m_childName, true);
+    std::string qualified_name_a = m_afWorld->getFullyQualifiedName(mB->getNamespace() + m_parentName);
+    std::string qualified_name_b= m_afWorld->getFullyQualifiedName(mB->getNamespace() + m_childName);
+
+    afBodyA = mB->getAFRigidBodyLocal(qualified_name_a, true);
+    afBodyB = mB->getAFRigidBodyLocal(qualified_name_b, true);
 
     if (!afBodyA){
-        afBodyA = m_afWorld->getAFRigidBody(mB->getNamespace() + m_parentName + name_remapping, true);
+        afBodyA = m_afWorld->getAFRigidBody(qualified_name_a + name_remapping, true);
     }
     if (!afBodyB){
-        afBodyB = m_afWorld->getAFRigidBody(mB->getNamespace() + m_childName + name_remapping, true);
+        afBodyB = m_afWorld->getAFRigidBody(qualified_name_b + name_remapping, true);
     }
 
     bool _ignore_inter_collision = true;
@@ -4005,6 +4048,7 @@ void afResistanceSensor::updateSensor(){
     }
 }
 
+
 ///
 /// \brief afJoint::~afJoint
 ///
@@ -4012,11 +4056,13 @@ afJoint::~afJoint(){
     delete m_btConstraint;
 }
 
+
 ///
 /// \brief afWorld::afWorld
 /// \param a_chaiWorld
+/// \param a_global_namespace
 ///
-afWorld::afWorld(cBulletWorld* a_chaiWorld){
+afWorld::afWorld(cBulletWorld* a_chaiWorld, std::string a_global_namespace){
     s_chaiBulletWorld = a_chaiWorld;
     m_maxIterations = 10;
     m_encl_length = 4.0;
@@ -4033,7 +4079,10 @@ afWorld::afWorld(cBulletWorld* a_chaiWorld){
     s_chaiBulletWorld->addChild(m_pickSphere);
     m_pickColor.setOrangeTomato();
     m_pickColor.setTransparencyLevel(0.3);
+    m_namespace = "";
+    setGlobalNamespace(a_global_namespace);
 }
+
 
 ///
 /// \brief afWorld::get_enclosure_length
@@ -4043,6 +4092,7 @@ double afWorld::getEnclosureLength(){
     return m_encl_length;
 }
 
+
 ///
 /// \brief afWorld::get_enclosure_width
 /// \return
@@ -4051,6 +4101,7 @@ double afWorld::getEnclosureWidth(){
     return m_encl_width;
 }
 
+
 ///
 /// \brief afWorld::get_enclosure_height
 /// \return
@@ -4058,6 +4109,7 @@ double afWorld::getEnclosureWidth(){
 double afWorld::getEnclosureHeight(){
     return m_encl_height;
 }
+
 
 ///
 /// \brief afWorld::get_enclosure_extents
@@ -4069,6 +4121,30 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     length = m_encl_length;
     width = m_encl_width;
     height = m_encl_height;
+}
+
+
+///
+/// \brief afWorld::getFullyQualifiedName
+/// \param a_name
+/// \return
+///
+std::string afWorld::getFullyQualifiedName(std::string a_name){
+    std::string fully_qualified_name = getGlobalNamespace() + afUtils::mergeNamespace(getNamespace(), a_name);
+    fully_qualified_name = afUtils::removeAdjacentBackSlashes(fully_qualified_name);
+    return fully_qualified_name;
+}
+
+
+///
+/// \brief afWorld::setGlobalNamespace
+/// \param a_global_namespace
+///
+void afWorld::setGlobalNamespace(std::string a_global_namespace){
+    m_global_namespace = a_global_namespace;
+    if (!m_global_namespace.empty()){
+        std::cerr << " INFO! FORCE PREPENDING GLOBAL NAMESPACE \"" << m_global_namespace << "\" \n" ;
+    }
 }
 
 
@@ -4282,12 +4358,15 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     YAML::Node worldMaxIterations = worldNode["max iterations"];
 
     if (worldNamespace.IsDefined()){
-        m_world_namespace = worldNamespace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
     }
-    else{
-        // Use the default namespace
-        m_world_namespace = "/ambf/env/";
-    }
+
+
+    s_chaiBulletWorld->afWorldCommCreate("World",
+                                         getFullyQualifiedName(m_namespace),
+                                         50,
+                                         2000,
+                                         10.0);
 
     if(worldMaxIterations.IsDefined()){
         if (worldMaxIterations.as<int>() > 1){
@@ -4334,7 +4413,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name, this)){
                 addAFLight(lightPtr, light_name);
-                lightPtr->afObjectCreate(lightPtr->m_name,
+                lightPtr->afObjectCommCreate(lightPtr->m_name,
                                          lightPtr->getNamespace(),
                                          lightPtr->getMinPublishFrequency(),
                                          lightPtr->getMaxPublishFrequency());
@@ -4347,8 +4426,8 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createDefaultLight()){
             addAFLight(lightPtr, "default_light");
-            lightPtr->afObjectCreate(lightPtr->m_name,
-                                     lightPtr->getNamespace(),
+            lightPtr->afObjectCommCreate(lightPtr->m_name,
+                                     getFullyQualifiedName(m_namespace),
                                      lightPtr->getMinPublishFrequency(),
                                      lightPtr->getMaxPublishFrequency());
         }
@@ -4362,7 +4441,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 YAML::Node cameraNode = worldNode[camera_name];
                 if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                     addAFCamera(cameraPtr, camera_name);
-                    cameraPtr->afObjectCreate(cameraPtr->m_name,
+                    cameraPtr->afObjectCommCreate(cameraPtr->m_name,
                                               cameraPtr->getNamespace(),
                                               cameraPtr->getMinPublishFrequency(),
                                               cameraPtr->getMaxPublishFrequency());
@@ -4376,8 +4455,8 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createDefaultCamera()){
                 addAFCamera(cameraPtr, "default_camera");
-                cameraPtr->afObjectCreate(cameraPtr->m_name,
-                                          cameraPtr->getNamespace(),
+                cameraPtr->afObjectCommCreate(cameraPtr->m_name,
+                                          getFullyQualifiedName(m_namespace),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
@@ -5061,11 +5140,9 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
 
     if (cameraNamespace.IsDefined()){
-        m_namespace = cameraNamespace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(cameraNamespace.as<std::string>());
     }
-    else{
-        m_namespace = a_world->getNamespace();
-    }
+    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     if (cameraLocationData.IsDefined()){
         _location = toXYZ<cVector3d>(&cameraLocationData);
@@ -5396,11 +5473,9 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
     }
 
     if (lightNamespace.IsDefined()){
-        m_namespace = lightNamespace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(lightNamespace.as<std::string>());
     }
-    else{
-        m_namespace = a_world->getNamespace();
-    }
+    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     if (lightLocationData.IsDefined()){
         _location = toXYZ<cVector3d>(&lightLocationData);
@@ -5596,11 +5671,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         m_multibody_low_res_meshes_path = "../resources/models/puzzle/low_res/";
     }
     if (multiBodyNameSpace.IsDefined()){
-        m_mb_namespace = multiBodyNameSpace.as<std::string>();
+        m_namespace = afUtils::removeAdjacentBackSlashes(multiBodyNameSpace.as<std::string>());
     }
-    else{
-        m_mb_namespace = "/ambf/env/";
-    }
+    std::string qualified_mb_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
@@ -5619,7 +5692,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                     continue;
                 }
                 else{
-                    rBodyPtr->afObjectCreate(rBodyPtr->m_name + remap_str,
+                    rBodyPtr->afObjectCommCreate(rBodyPtr->m_name + remap_str,
                                              rBodyPtr->getNamespace(),
                                              rBodyPtr->getMinPublishFrequency(),
                                              rBodyPtr->getMaxPublishFrequency());
@@ -5636,10 +5709,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         std::string sb_name = multiBodySoftBodies[i].as<std::string>();
         YAML::Node sb_node = multiBodyNode[sb_name];
         if (sBodyPtr->loadSoftBody(&sb_node, sb_name, this)){
-            std::string remap_str = afUtils::getNonCollidingIdx(sb_name, m_afWorld->getAFSoftBodyMap());
+            std::string remap_str = afUtils::getNonCollidingIdx(sBodyPtr->getNamespace() + sb_name, m_afWorld->getAFSoftBodyMap());
             m_afWorld->addAFSoftBody(sBodyPtr, sBodyPtr->getNamespace() + sb_name + remap_str);
             m_afSoftBodyMapLocal[sBodyPtr->getNamespace() + sb_name] = sBodyPtr;
-            //            tmpSoftBody->createAFObject(tmpSoftBody->m_name + remap_str);
         }
     }
 
@@ -5648,7 +5720,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
         std::string sensor_name = multiBodySensors[i].as<std::string>();
-        std::string remap_str = afUtils::getNonCollidingIdx(m_mb_namespace + sensor_name, m_afWorld->getAFSensorMap());
+        std::string remap_str = afUtils::getNonCollidingIdx(qualified_mb_namespace + sensor_name, m_afWorld->getAFSensorMap());
         YAML::Node sensor_node = multiBodyNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
@@ -5665,7 +5737,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
             // Finally load the sensor from ambf config data
             if (sensorPtr){
                 if (sensorPtr->loadSensor(&sensor_node, sensor_name, this, remap_str)){
-                    m_afWorld->addAFSensor(sensorPtr, m_mb_namespace + sensor_name + remap_str);
+                    m_afWorld->addAFSensor(sensorPtr, qualified_mb_namespace + sensor_name + remap_str);
                 }
             }
         }
@@ -5688,10 +5760,10 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         jntPtr = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         YAML::Node jnt_node = multiBodyNode[jnt_name];
-        std::string remap_str = afUtils::getNonCollidingIdx(m_mb_namespace + jnt_name, m_afWorld->getAFJointMap());
+        std::string remap_str = afUtils::getNonCollidingIdx(qualified_mb_namespace + jnt_name, m_afWorld->getAFJointMap());
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
-            m_afWorld->addAFJoint(jntPtr, m_mb_namespace + jnt_name + remap_str);
-            m_afJointMapLocal[m_mb_namespace + jnt_name] = jntPtr;
+            m_afWorld->addAFJoint(jntPtr, qualified_mb_namespace + jnt_name + remap_str);
+            m_afJointMapLocal[qualified_mb_namespace + jnt_name] = jntPtr;
         }
     }
 

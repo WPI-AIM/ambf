@@ -95,7 +95,7 @@ class cBulletWorld : public chai3d::cWorld
 public:
 
     //! Constructor of cBulletWorld.
-    cBulletWorld(std::string a_worldName="");
+    cBulletWorld();
 
     //! Destructor of cBulletWorld.
     virtual ~cBulletWorld();
@@ -159,11 +159,11 @@ public:
     // AFMB API BEGIN
 
     //! This method create as afCommunication Instance with the specified namespace
-    virtual void afWorldCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
+    virtual void afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     //! AF World Ptr
-    std::shared_ptr<ambf_comm::World> m_afWorldPtr;
+    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
 
     // AFMB API END

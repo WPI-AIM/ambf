@@ -26,7 +26,7 @@ def test_ambf_psm():
     #  'yawlink-pitchbacklink', 1
     #  'pitchendlink-maininsertionlink', 2
     #  'maininsertionlink-toolrolllink', 3
-    #  'toolrolllink-toolpitchlink'z, 4
+    #  'toolrolllink-toolpitchlink', 4
     #  'toolpitchlink-toolgripper1link', 5a
     #  'toolpitchlink-toolgripper2link', 5b
 

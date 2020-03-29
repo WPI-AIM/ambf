@@ -418,7 +418,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afObjectCreate(_sDevName,
+            simDevice->m_rootLink->afObjectCommCreate(_sDevName,
                                                   simDevice->getNamespace(),
                                                   simDevice->m_rootLink->getMinPublishFrequency(),
                                                   simDevice->m_rootLink->getMaxPublishFrequency());
@@ -533,7 +533,7 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
     a_afWorld->s_chaiBulletWorld->addChild(m_afCursor);
-    m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
+    m_afCursor->afObjectCommCreate(a_name, m_afWorld->getFullyQualifiedName(a_namespace), minPF, maxPF);
     m_afWorld = a_afWorld;
 }
 
@@ -639,8 +639,8 @@ void afPhysicalDevice::updateCursorPose(){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        m_afCursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
-        m_afCursor->m_afObjectPtr->set_userdata(m_freq_ctr.getFrequency());
+        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
+        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
     }
 }

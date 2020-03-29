@@ -59,7 +59,7 @@ public:
     RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
     {
         m_name = a_name;
-        m_ambf_namespace = a_namespace;
+        m_namespace = a_namespace;
 
         int argc = 0;
         char **argv = 0;
@@ -78,7 +78,7 @@ protected:
     boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
     boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
 
-    std::string m_ambf_namespace;
+    std::string m_namespace;
     std::string m_name;
     ros::Publisher m_pub;
     ros::Subscriber m_sub;

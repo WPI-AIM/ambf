@@ -15,7 +15,7 @@ light1:
   cutoff angle: 0.7
 
 light2:
-  namespace: /ambf/env/lights/
+  namespace: lights/
   name: light_right
   location: {x: 0.5, y: -1, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
@@ -32,6 +32,7 @@ light3:
   parent: /ambf/env/BODY LightCone
 
 camera1:
+  namespace: cameras/
   name: default_camera
   location: {x: 4.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
@@ -42,7 +43,7 @@ camera1:
   # multipass: True
 
 camera2:
-  namespace: /ambf/env/cameras/
+  namespace: cameras/
   name: openhmd
   location: {x: 3.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -1.0}
@@ -56,6 +57,7 @@ camera2:
   # device: Razer Hydra
 
 camera3:
+  namespace: cameras/
   name: normal_camera
   location: {x: -3.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
