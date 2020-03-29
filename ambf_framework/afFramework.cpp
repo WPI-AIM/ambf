@@ -1801,7 +1801,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_namespace = afUtils::removeAdjacentBackSlashes(bodyNamespace.as<std::string>());
     }
     m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
-    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     btTransform iOffTrans;
     btQuaternion iOffQuat;
@@ -2719,7 +2718,6 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         m_namespace = afUtils::removeAdjacentBackSlashes(softBodyNameSpace.as<std::string>());
     }
     m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
-    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
 
     if(softBodyMass.IsDefined()){
         m_mass = softBodyMass.as<double>();
@@ -3044,8 +3042,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // First we should search in the local MultiBody space and if we don't find the body.
     // On then we find the world space
 
-    std::string qualified_name_a = m_afWorld->getFullyQualifiedName(mB->getNamespace() + m_parentName);
-    std::string qualified_name_b= m_afWorld->getFullyQualifiedName(mB->getNamespace() + m_childName);
+    std::string qualified_name_a = mB->getNamespace() + m_parentName;
+    std::string qualified_name_b = mB->getNamespace() + m_childName;
 
     afBodyA = mB->getAFRigidBodyLocal(qualified_name_a, true);
     afBodyB = mB->getAFRigidBodyLocal(qualified_name_b, true);
@@ -4129,8 +4127,8 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
 /// \param a_name
 /// \return
 ///
-std::string afWorld::getFullyQualifiedName(std::string a_name){
-    std::string fully_qualified_name = getGlobalNamespace() + afUtils::mergeNamespace(getNamespace(), a_name);
+std::string afWorld::resolveGlobalNamespace(std::string a_name){
+    std::string fully_qualified_name = getGlobalNamespace() + a_name;
     fully_qualified_name = afUtils::removeAdjacentBackSlashes(fully_qualified_name);
     return fully_qualified_name;
 }
@@ -4361,9 +4359,8 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
     }
 
-
     s_chaiBulletWorld->afWorldCommCreate("World",
-                                         getFullyQualifiedName(m_namespace),
+                                         resolveGlobalNamespace(m_namespace),
                                          50,
                                          2000,
                                          10.0);
@@ -4414,7 +4411,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             if (lightPtr->loadLight(&lightNode, light_name, this)){
                 addAFLight(lightPtr, light_name);
                 lightPtr->afObjectCommCreate(lightPtr->m_name,
-                                         lightPtr->getNamespace(),
+                                         resolveGlobalNamespace(lightPtr->getNamespace()),
                                          lightPtr->getMinPublishFrequency(),
                                          lightPtr->getMaxPublishFrequency());
             }
@@ -4427,7 +4424,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         if (lightPtr->createDefaultLight()){
             addAFLight(lightPtr, "default_light");
             lightPtr->afObjectCommCreate(lightPtr->m_name,
-                                     getFullyQualifiedName(m_namespace),
+                                     resolveGlobalNamespace(lightPtr->getNamespace()),
                                      lightPtr->getMinPublishFrequency(),
                                      lightPtr->getMaxPublishFrequency());
         }
@@ -4442,7 +4439,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                     addAFCamera(cameraPtr, camera_name);
                     cameraPtr->afObjectCommCreate(cameraPtr->m_name,
-                                              cameraPtr->getNamespace(),
+                                              resolveGlobalNamespace(cameraPtr->getNamespace()),
                                               cameraPtr->getMinPublishFrequency(),
                                               cameraPtr->getMaxPublishFrequency());
                 }
@@ -4456,7 +4453,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             if (cameraPtr->createDefaultCamera()){
                 addAFCamera(cameraPtr, "default_camera");
                 cameraPtr->afObjectCommCreate(cameraPtr->m_name,
-                                          getFullyQualifiedName(m_namespace),
+                                          resolveGlobalNamespace(cameraPtr->getNamespace()),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
             }
@@ -5017,6 +5014,8 @@ bool afCamera::createDefaultCamera(){
     m_camera = new cCamera(m_afWorld->s_chaiBulletWorld);
     addChild(m_camera);
 
+    m_namespace = m_afWorld->getNamespace();
+
     // Set a default name
     m_name = "default_camera";
 
@@ -5142,7 +5141,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     if (cameraNamespace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(cameraNamespace.as<std::string>());
     }
-    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
+    m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
 
     if (cameraLocationData.IsDefined()){
         _location = toXYZ<cVector3d>(&cameraLocationData);
@@ -5425,6 +5424,7 @@ afLight::afLight(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
 bool afLight::createDefaultLight(){
     std::cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << std::endl;
     m_spotLight = new cSpotLight(m_afWorld->s_chaiBulletWorld);
+    m_namespace = m_afWorld->getNamespace();
     m_name = "default_light";
     addChild(m_spotLight);
     m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
@@ -5475,7 +5475,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
     if (lightNamespace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(lightNamespace.as<std::string>());
     }
-    m_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
+    m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
 
     if (lightLocationData.IsDefined()){
         _location = toXYZ<cVector3d>(&lightLocationData);
@@ -5673,7 +5673,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     if (multiBodyNameSpace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(multiBodyNameSpace.as<std::string>());
     }
-    std::string qualified_mb_namespace = m_afWorld->getFullyQualifiedName(m_namespace);
+    m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
 
     size_t totalRigidBodies = multiBodyRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
@@ -5693,7 +5693,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                 }
                 else{
                     rBodyPtr->afObjectCommCreate(rBodyPtr->m_name + remap_str,
-                                             rBodyPtr->getNamespace(),
+                                             m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
                                              rBodyPtr->getMinPublishFrequency(),
                                              rBodyPtr->getMaxPublishFrequency());
                 }
@@ -5720,7 +5720,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
         std::string sensor_name = multiBodySensors[i].as<std::string>();
-        std::string remap_str = afUtils::getNonCollidingIdx(qualified_mb_namespace + sensor_name, m_afWorld->getAFSensorMap());
+        std::string remap_str = afUtils::getNonCollidingIdx(m_namespace + sensor_name, m_afWorld->getAFSensorMap());
         YAML::Node sensor_node = multiBodyNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
@@ -5737,7 +5737,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
             // Finally load the sensor from ambf config data
             if (sensorPtr){
                 if (sensorPtr->loadSensor(&sensor_node, sensor_name, this, remap_str)){
-                    m_afWorld->addAFSensor(sensorPtr, qualified_mb_namespace + sensor_name + remap_str);
+                    m_afWorld->addAFSensor(sensorPtr, m_namespace + sensor_name + remap_str);
                 }
             }
         }
@@ -5760,10 +5760,10 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         jntPtr = new afJoint(m_afWorld);
         std::string jnt_name = multiBodyJoints[i].as<std::string>();
         YAML::Node jnt_node = multiBodyNode[jnt_name];
-        std::string remap_str = afUtils::getNonCollidingIdx(qualified_mb_namespace + jnt_name, m_afWorld->getAFJointMap());
+        std::string remap_str = afUtils::getNonCollidingIdx(m_namespace + jnt_name, m_afWorld->getAFJointMap());
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
-            m_afWorld->addAFJoint(jntPtr, qualified_mb_namespace + jnt_name + remap_str);
-            m_afJointMapLocal[qualified_mb_namespace + jnt_name] = jntPtr;
+            m_afWorld->addAFJoint(jntPtr, m_namespace + jnt_name + remap_str);
+            m_afJointMapLocal[m_namespace + jnt_name] = jntPtr;
         }
     }
 

@@ -1301,7 +1301,7 @@ public:
     std::string getGlobalNamespace(){return m_global_namespace;}
     void setGlobalNamespace(std::string a_namespace);
 
-    std::string getFullyQualifiedName(std::string a_name);
+    std::string resolveGlobalNamespace(std::string a_name);
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}

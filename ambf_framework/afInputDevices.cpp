@@ -419,7 +419,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
             simDevice->m_rootLink->afObjectCommCreate(_sDevName,
-                                                  simDevice->getNamespace(),
+                                                  m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
                                                   simDevice->m_rootLink->getMinPublishFrequency(),
                                                   simDevice->m_rootLink->getMaxPublishFrequency());
         }
@@ -533,7 +533,7 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
     a_afWorld->s_chaiBulletWorld->addChild(m_afCursor);
-    m_afCursor->afObjectCommCreate(a_name, m_afWorld->getFullyQualifiedName(a_namespace), minPF, maxPF);
+    m_afCursor->afObjectCommCreate(a_name, m_afWorld->resolveGlobalNamespace(a_namespace), minPF, maxPF);
     m_afWorld = a_afWorld;
 }
 
