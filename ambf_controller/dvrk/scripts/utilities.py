@@ -1,4 +1,17 @@
-from tf_utils import Vector, Rotation, Frame
+import os
+import sys
+
+if "./tf_utils/scripts/" not in sys.path:
+  sys.path.append("./tf_utils/scripts/")
+
+from vector import Vector
+from rotation import Rotation
+
+if "./tf_utils/" not in sys.path:
+  sys.path.append("./tf_utils/")
+from frames import Frame
+
+#from tf_utils import Vector, Rotation, Frame
 import numpy as np
 from numpy import dot
 import math
@@ -85,9 +98,11 @@ def convert_mat_to_frame(mat):
   static method: Frame.make_Frame(HTM)
   """
   frame = Frame(Rotation.RPY(0, 0, 0), Vector(0, 0, 0))
+#  print(frame.M[0, 0])
   for i in range(3):
     for j in range(3):
-      frame[(i, j)] = mat[i, j]
+#      frame[(i, j)] = mat[i, j]
+       frame.M[i, j] = mat[i, j]
 
   for i in range(3):
     frame.p[i] = mat[i, 3]

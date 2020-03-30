@@ -1,7 +1,21 @@
-from tf_utils import Vector, Rotation, Frame, Twist
 import numpy as np
 import math
 from psmFK import *
+
+import os
+import sys
+
+if "./tf_utils/scripts/" not in sys.path:
+  sys.path.append("./tf_utils/scripts/")
+
+from vector import Vector
+from frame import Frame
+from rotation import Rotation
+from twist import Twist
+
+
+#from tf_utils import Vector, Rotation, Frame, Twist
+
 # import rospy
 
 # THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
@@ -127,6 +141,7 @@ def compute_IK(T_7_0):
   cross_palmlink_x7_0 = T_7_0.M.UnitX() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
 
   # To get j4, compare the above vector with Y axes of T_3_0
+  #print(compute_FK([j1, j2, j3]))
   T_3_0 = convert_mat_to_frame(compute_FK([j1, j2, j3]))
   j4 = get_angle(
     cross_palmlink_x7_0,

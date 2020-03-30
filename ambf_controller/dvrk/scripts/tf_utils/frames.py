@@ -2,15 +2,27 @@
 
 import numpy as np
 from numpy import pi, sin, cos, tan, arctan2
+#from vector import Vector
+#from twist import Twist
+#from wrench import Wrench
+#from rotation import Rotation
+
+import os
+import sys
+
+if "./scripts/" not in sys.path:
+  sys.path.append("./scripts/")
+
 from vector import Vector
+from frame import Frame
+from rotation import Rotation
 from twist import Twist
 from wrench import Wrench
-from rotation import Rotation
+
 from warnings import warn
 import sys
 
 class Frame(object):
-    
     M = Rotation()
     p = Vector()
 
@@ -102,7 +114,7 @@ class Frame(object):
         
         if pos is not None:
             self.p = pos
-        
+
         return
     
     def Integrate(self, twist, frequency):
