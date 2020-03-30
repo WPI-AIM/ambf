@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#!/usr/bin/env python
+# !/usr/bin/env python
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
@@ -56,6 +56,7 @@ from geometry_msgs.msg import Pose, Wrench
 from collections import deque
 import numpy as np
 
+
 class Object(WatchDog):
     def __init__(self, a_name):
         """
@@ -89,15 +90,14 @@ class Object(WatchDog):
             num = len(data.joint_positions)
             self._vel_que = deque(maxlen=self._queue_size)
             for i in xrange(self._queue_size):
-                self._vel_que.append((num*[0.0],0.0))
-
+                self._vel_que.append((num * [0.0], 0.0))
 
         self._state = data
-        point = (np.array(data.joint_positions), self.get_wall_time())
+        point = (np.array(data.joint_positions), self.get_sim_step())
         self._vel_que.append(point)
 
         self._calc_joint_velocity()
-    
+
     def is_active(self):
         """
         Flag to check if the cb for this Object is active or not
@@ -149,7 +149,6 @@ class Object(WatchDog):
         """
         return self._state.sim_step
 
-
     def get_wall_time(self):
         """
         get the wall time
@@ -161,12 +160,11 @@ class Object(WatchDog):
         Gets the time delta
         :return: delta time
         """
-        dt = self.get_wall_time() - last_time 
-        
+        dt = self.get_wall_time() - last_time
+
         if dt < 0:
-        
-            return 0 
-        
+            return 0
+
         return dt
 
     def get_all_joint_pos(self):
@@ -182,12 +180,7 @@ class Object(WatchDog):
 
         return joints
 
-    def get_joint_vel(self, idx):
-        """
-        Get the joint position of a specific joint at idx. Check joint names to see indexes
-        :param idx:
-
-    def get_joint_pos(self, join_name_or_idx):
+    def get_joint_pos(self, joint_name_or_idx):
         """
         Get the joint position of a specific joint at idx. Check joint names to see indexes
         :param joint_name_or_idx:
@@ -197,8 +190,6 @@ class Object(WatchDog):
             joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
         else:
             joint_idx = joint_name_or_idx
-
-        return self._joint_velocity[idx]
 
         if self.is_joint_idx_valid(joint_idx):
             return self._state.joint_positions[joint_idx]
@@ -217,6 +208,22 @@ class Object(WatchDog):
             joints.append(self._joint_velocity[idx])
 
         return joints
+
+    def get_joint_vel(self, join_name_or_idx):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        if isinstance(join_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(join_name_or_idx)
+        else:
+            joint_idx = join_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._joint_velocity[joint_idx]
+        else:
+            return None
 
     def get_num_joints(self):
         """
@@ -319,7 +326,7 @@ class Object(WatchDog):
         :return:
         """
         if self._pose_cmd_set:
-            return self._cmd.fpose.orientation
+            return self._cmd.pose.orientation
         else:
             return self._state.pose.orientation
 
@@ -468,8 +475,8 @@ class Object(WatchDog):
         if self.is_joint_idx_valid(joint_idx):
             n_jnts = self.get_num_joints()
             if len(self._cmd.joint_cmds) != n_jnts:
-                self._cmd.joint_cmds = [0.0]*n_jnts
-                self._cmd.position_controller_mask = [0]*n_jnts
+                self._cmd.joint_cmds = [0.0] * n_jnts
+                self._cmd.position_controller_mask = [0] * n_jnts
 
             self._cmd.joint_cmds[joint_idx] = q
             self._cmd.position_controller_mask[joint_idx] = True
@@ -537,7 +544,7 @@ class Object(WatchDog):
 
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.position_controller_mask = [0]*n_jnts
+            self._cmd.position_controller_mask = [0] * n_jnts
 
         self._cmd.joint_cmds[idx] = effort
         self._cmd.position_controller_mask[idx] = False
@@ -624,24 +631,23 @@ class Object(WatchDog):
         """
 
         vels = list(self._vel_que)
-        joint_velocities = np.array(len(self._state.joint_positions)*[0.0])
+        joint_velocities = np.array(len(self._state.joint_positions) * [0.0])
         total_w = 0
-        for w, i in enumerate(xrange(len(vels)-1)):
+        for w, i in enumerate(xrange(len(vels) - 1)):
             total_w += w
             curr_state = vels[i]
-            next_state = vels[i+1]
+            next_state = vels[i + 1]
 
             dt = next_state[1] - curr_state[1]
             if not dt:
-                joint_velocities = joint_velocities + np.array(len(self._state.joint_positions)*[0.0])
+                joint_velocities = joint_velocities + np.array(len(self._state.joint_positions) * [0.0])
             else:
-                joint_velocities = joint_velocities + w*(next_state[0] - curr_state[0]) / dt
+                joint_velocities = joint_velocities + w * (next_state[0] - curr_state[0]) / dt
 
+        joint_velocities = joint_velocities / total_w
 
-        joint_velocities = joint_velocities/total_w 
+        self._joint_velocity = joint_velocities  # tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
 
-        self._joint_velocity = joint_velocities # tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
-    
     def _clear_command(self):
         """
         Clear wrench if watchdog is expired
