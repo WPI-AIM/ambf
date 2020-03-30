@@ -93,7 +93,7 @@ class Object(WatchDog):
                 self._vel_que.append((num * [0.0], 0.0))
 
         self._state = data
-        point = (np.array(data.joint_positions), self.get_sim_step())
+        point = (np.array(data.joint_positions), self._state.sim_time)
         self._vel_que.append(point)
 
         self._calc_joint_velocity()
