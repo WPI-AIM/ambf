@@ -62,7 +62,7 @@ class Object(WatchDog):
         :param a_name:
         """
         super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
-        self._name = ''
+        self._name = a_name
         self._state = ObjectState()
         self._cmd = ObjectCmd()
         self._pub = None

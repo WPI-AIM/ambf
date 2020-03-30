@@ -18,8 +18,10 @@ def test_ik():
 def test_ambf_psm():
     c = Client()
     c.connect()
-    b = c.get_obj_handle('psm/baselink')
+    time.sleep(2.0)
+    print(c.get_obj_names())
     time.sleep(1.0)
+    b = c.get_obj_handle('psm/baselink')
 
     # The following are the names of the controllable joints.
     #  'baselink-yawlink', 0
