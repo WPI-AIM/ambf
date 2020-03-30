@@ -551,6 +551,21 @@ class Object(WatchDog):
 
         self._apply_command()
 
+    def set_all_joint_effort(self, efforts):
+
+        n_jnts = len(self._state.joint_positions)
+
+        if n_jnts > len(efforts) or n_jnts < len(efforts):
+            print "Not correct amoutn efforts"
+            return
+        else:
+            self._cmd.joint_cmds = efforts
+
+        self._cmd.position_controller_mask = [0] * n_jnts
+
+        self._apply_command()
+
+
     def set_wrench(self, wrench):
         """
         Set the wrench for this object in the parent frame
