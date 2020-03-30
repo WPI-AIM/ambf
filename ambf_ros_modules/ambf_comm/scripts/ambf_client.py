@@ -48,21 +48,21 @@ import threading
 from geometry_msgs.msg import WrenchStamped
 from ambf_object import Object
 from ambf_world import World
+from difflib import SequenceMatcher
 
 
 class Client:
     def __init__(self, client_name='ambf_client'):
         self._ros_topics = []
-        self._search_prefix_str = '/ambf/env/'
-        self._search_suffix_str = '/State'
-        self._string_cmd = '/Command'
         self._sub_list = []
         self._objects_dict = {}
         self._sub_thread = []
         self._pub_thread = []
         self._rate = 0
         self._world_name = ''
+        self._common_obj_namespace = ''
         self._client_name = client_name
+        self._world_handle = None
         pass
 
     def create_objs_from_rostopics(self):
@@ -70,29 +70,43 @@ class Client:
         rospy.on_shutdown(self.clean_up)
         self._rate = rospy.Rate(1000)
         self._ros_topics = rospy.get_published_topics()
+        # Find the common longest substring to make the object names shorter
+        first_run = True
         for i in range(len(self._ros_topics)):
-            for j in range(len(self._ros_topics[i])):
-                prefix_ind = self._ros_topics[i][j].find(self._search_prefix_str)
-                if prefix_ind >= 0:
-                    search_ind = self._ros_topics[i][j].find(self._search_suffix_str)
-                    if search_ind >= 0:
-                        # Searching the active topics between the end of prefix:/ambf/env/ and start of /State
-                        obj_name = self._ros_topics[i][j][
-                                     prefix_ind + len(self._search_prefix_str):search_ind]
-                        if obj_name == 'World' or obj_name == 'world':
-                            self._world_name = obj_name
-                            obj = World(obj_name)
-                            obj._sub = rospy.Subscriber(self._ros_topics[i][j], WorldState, obj.ros_cb)
-                            pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
-                            obj._pub = rospy.Publisher(name=pub_topic_str, data_class=WorldCmd, queue_size=10)
-                        else:
-                            obj = Object(obj_name)
-                            obj.set_name(obj_name)
-                            obj._sub = rospy.Subscriber(self._ros_topics[i][j], ObjectState, obj.ros_cb)
-                            pub_topic_str = self._search_prefix_str + obj_name + self._string_cmd
-                            obj._pub = rospy.Publisher(name=pub_topic_str, data_class=ObjectCmd, tcp_nodelay=True, queue_size=10)
+            topic_name = self._ros_topics[i][0]
+            msg_type = self._ros_topics[i][1]
+            if msg_type == 'ambf_msgs/ObjectState':
+                if first_run:
+                    first_run = False
+                    self._common_obj_namespace = topic_name
+                else:
+                    seq_match = SequenceMatcher(None, self._common_obj_namespace, topic_name)
+                    match = seq_match.find_longest_match(0, len(self._common_obj_namespace), 0, len(topic_name))
+                    if match.size != 0:
+                        self._common_obj_namespace = self._common_obj_namespace[match.a: match.a + match.size]
+                    else:
+                        print('No common object namespace found, aborting search')
+                        self._common_obj_namespace = ''
+        print('Found Common Object Namespace as: ', self._common_obj_namespace)
 
-                        self._objects_dict[obj_name] = obj
+        for i in range(len(self._ros_topics)):
+            topic_name = self._ros_topics[i][0]
+            msg_type = self._ros_topics[i][1]
+            if msg_type == 'ambf_msgs/WorldState':
+                self._world_name = 'World'
+                world_obj = World(self._world_name)
+                world_obj._sub = rospy.Subscriber(topic_name, WorldState, world_obj.ros_cb)
+                world_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=WorldCmd,
+                                                 queue_size=10)
+                self._world_handle = world_obj
+            elif msg_type == 'ambf_msgs/ObjectState':
+                pre_trimmed_name = topic_name.replace(self._common_obj_namespace, '')
+                post_trimmed_name = pre_trimmed_name.replace('/State', '')
+                body_obj = Object(post_trimmed_name)
+                body_obj._sub = rospy.Subscriber(topic_name, ObjectState, body_obj.ros_cb)
+                body_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=ObjectCmd,
+                                                tcp_nodelay=True, queue_size=10)
+                self._objects_dict[body_obj.get_name()] = body_obj
 
     def connect(self):
         self.create_objs_from_rostopics()
@@ -104,6 +118,12 @@ class Client:
 
     def start(self):
         self._start_pubs()
+
+    def get_common_namespace(self):
+        return self._common_obj_namespace
+
+    def get_world_handle(self):
+        return self._world_handle
 
     def get_obj_names(self):
         obj_names = []
@@ -119,7 +139,7 @@ class Client:
             obj.set_publish_joint_names_flag(True)
             obj.set_publish_joint_positions_flag(True)
         else:
-            print a_name, 'named object not found'
+            print(a_name, 'named object not found')
         return obj
 
     def get_obj_pose(self, a_name):
@@ -146,23 +166,23 @@ class Client:
             self._rate.sleep()
 
     def print_active_topics(self):
-        print self._ros_topics
+        print(self._ros_topics)
         pass
 
     def print_summary(self):
-        print '_________________________________________________________'
-        print '---------------------------------------------------------'
-        print 'CLIENT FOR CREATING OBJECTS FROM ROSTOPICS'
-        print 'Searching Object names from ros topics with'
-        print 'Prefix: ', self._search_prefix_str
-        print 'Suffix: ', self._search_suffix_str
-        print 'Number of OBJECTS found', len(self._objects_dict)
+        print('_________________________________________________________')
+        print('---------------------------------------------------------')
+        print('CLIENT FOR CREATING OBJECTS FROM ROSTOPICS')
+        print('Searching Object names from ros topics with')
+        print('Prefix: ', self._search_prefix_str)
+        print('Suffix: ', self._search_suffix_str)
+        print('Number of OBJECTS found', len(self._objects_dict))
         for key, value in self._objects_dict.items():
-            print key
-        print '---------------------------------------------------------'
+            print(key)
+        print('---------------------------------------------------------')
 
     def clean_up(self):
-        for key, val in self._objects_dict.iteritems():
+        for key, val in self._objects_dict.items():
             val.pub_flag = False
-            print 'Closing publisher for: ', key
+            print('Closing publisher for: ', key)
         self._objects_dict.clear()

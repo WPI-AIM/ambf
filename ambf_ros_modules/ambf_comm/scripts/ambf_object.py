@@ -43,7 +43,11 @@
 #     \version   0.1
 # */
 # //==============================================================================
-from tf import transformations
+# Initial python2 code, but had few errors while importing in python3
+# from tf import transformations
+# Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
+
+from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
@@ -58,7 +62,7 @@ class Object(WatchDog):
         :param a_name:
         """
         super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
-        self._name = ''
+        self._name = a_name
         self._state = ObjectState()
         self._cmd = ObjectCmd()
         self._pub = None
@@ -83,6 +87,43 @@ class Object(WatchDog):
         """
         return self._active
 
+    def is_joint_idx_valid(self, joint_idx):
+        """
+        :param joint_idx:
+        :return:
+        """
+        n_jnts = len(self._state.joint_positions)
+        if joint_idx in range(n_jnts):
+            return True
+        else:
+            # Index invalid
+            print('ERROR! Requested Joint Idx of \"' + str(joint_idx) +
+                  '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
+            return False
+
+    def get_joint_idx_from_name(self, joint_name):
+        """
+        :param joint_name:
+        :return:
+        """
+        joint_names = self._state.joint_names
+        if joint_name in joint_names:
+            joint_idx = joint_names.index(joint_name)
+            return joint_idx
+        else:
+            print('ERROR! Requested Joint \"' + str(joint_name) + '\" not found in list of joints:')
+            print(joint_names)
+            return None
+
+    def get_joint_name_from_idx(self, joint_idx):
+        """
+        :param joint_idx:
+        :return:
+        """
+        if self.is_joint_idx_valid(joint_idx):
+            joint_name = self._state.joint_names[joint_idx]
+            return joint_name
+
     def get_sim_step(self):
         """
         The step of AMBF Simulator
@@ -90,20 +131,21 @@ class Object(WatchDog):
         """
         return self._state.sim_step
 
-    def get_joint_pos(self, idx):
+    def get_joint_pos(self, joint_name_or_idx):
         """
         Get the joint position of a specific joint at idx. Check joint names to see indexes
-        :param idx:
+        :param joint_name_or_idx:
         :return:
         """
-        n_jnts = len(self._state.joint_positions)
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
 
-        if not 0 <= idx < n_jnts:
-            # Index invalid
-            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
-            return
-
-        return self._state.joint_positions[idx]
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_positions[joint_idx]
+        else:
+            return None
 
     def get_all_joint_pos(self):
         """
@@ -171,7 +213,10 @@ class Object(WatchDog):
         :return:
         """
         quat = self._state.pose.orientation
-        rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        # Edited python3 code
+        rpy = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+        # Initial python2 code
+        # rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         return rpy
 
     def get_pose(self):
@@ -181,7 +226,10 @@ class Object(WatchDog):
         """
         quat = self._state.pose.orientation
         explicit_quat = [quat.x, quat.y, quat.z, quat.w]
-        rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
+        # Edited python3 code
+        rpy = euler_from_quaternion(explicit_quat, 'szyx')
+        # Initial python2 code
+        # rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
         pose = [self._state.pose.position.x,
                 self._state.pose.position.y,
                 self._state.pose.position.z,
@@ -310,7 +358,10 @@ class Object(WatchDog):
         :param yaw:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'sxyz')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
         self.set_rot(quat)
 
     def set_rot(self, quat):
@@ -342,39 +393,29 @@ class Object(WatchDog):
         self._apply_command()
         self._pose_cmd_set = True
 
-    def set_joint_pos(self, joint, pos):
+    def set_joint_pos(self, joint_name_or_idx, q):
         """
         Set the joint position based on the index or names. Check the get_joint_names to see the list of
         joint names for indexes
-        :param joint:
-        :param pos:
+        :param joint_name_or_idx:
+        :param q:
         :return:
         """
-
-        if isinstance(joint, basestring):
-
-            joint_names = self._state.joint_names
-            if joint not in joint_names:
-                print joint + " is not a joint"
-            idx = joint_names.index(joint)
+        # edited python3 code
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
         else:
-            idx = joint
+            joint_idx = joint_name_or_idx
 
-        n_jnts = len(self._state.joint_positions)
+        if self.is_joint_idx_valid(joint_idx):
+            n_jnts = self.get_num_joints()
+            if len(self._cmd.joint_cmds) != n_jnts:
+                self._cmd.joint_cmds = [0.0]*n_jnts
+                self._cmd.position_controller_mask = [0]*n_jnts
 
-        if not 0 <= idx < n_jnts:
-            # Index invalid
-            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
-            return
-
-        if len(self._cmd.joint_cmds) != n_jnts:
-            self._cmd.joint_cmds = [0.0]*n_jnts
-            self._cmd.position_controller_mask = [0]*n_jnts
-
-        self._cmd.joint_cmds[idx] = pos
-        self._cmd.position_controller_mask[idx] = True
-
-        self._apply_command()
+            self._cmd.joint_cmds[joint_idx] = q
+            self._cmd.position_controller_mask[joint_idx] = True
+            self._apply_command()
 
     def set_force(self, fx, fy, fz):
         """
@@ -416,12 +457,14 @@ class Object(WatchDog):
         :param effort:
         :return:
         """
-
-        if isinstance(joint, basestring):
+        # edited python3 code
+        if isinstance(joint, str):
+            # Initial code for python2
+            # if isinstance(joint, basestring):
 
             joint_names = self._state.joint_names
             if joint not in joint_names:
-                print joint +  " is not a joint"
+                print(joint + " is not a joint")
                 return
             idx = joint_names.index(joint)
         else:
@@ -431,7 +474,7 @@ class Object(WatchDog):
 
         if not 0 <= idx < n_jnts:
             # Index invalid
-            print 'Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']'
+            print('Requested Joint Index ' + str(idx) + ' outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return
 
         if len(self._cmd.joint_cmds) != n_jnts:
@@ -467,7 +510,10 @@ class Object(WatchDog):
         :param jnt_cmds:
         :return:
         """
-        quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
         self._cmd.enable_position_controller = True
         self._cmd.pose.position.x = px
         self._cmd.pose.position.y = py
@@ -534,3 +580,9 @@ class Object(WatchDog):
                 # self.console_print(self._name)
                 self._clear_command()
             self._pub.publish(self._cmd)
+
+    def get_inertia(self):
+        """
+        Get the inertia the body
+        """
+        return self._state.pInertia

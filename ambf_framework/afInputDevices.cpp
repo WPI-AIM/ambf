@@ -56,7 +56,7 @@ namespace ambf {
 using namespace chai3d;
 //------------------------------------------------------------------------------
 
-int afInputDevices::s_inputDeviceCount = 0;
+int afCollateralControlManager::s_inputDeviceCount = 0;
 
 ///
 /// \brief afSharedDataStructure::afSharedDataStructure
@@ -122,7 +122,7 @@ afPhysicalDevice::~afPhysicalDevice(){
 /// \param a_iD
 /// \return
 ///
-bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
+bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD){
     YAML::Node baseNode;
     try{
         baseNode = YAML::LoadFile(pd_config_file);
@@ -146,7 +146,7 @@ bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::strin
 /// \param a_iD
 /// \return
 ///
-bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afInputDevices* a_iD){
+bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD){
     YAML::Node physicaDeviceNode = *pd_node;
     if (physicaDeviceNode.IsNull()){
         std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -156,6 +156,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
     YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
     YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
+    YAML::Node pDEnableJointControl = physicaDeviceNode["enable joint control"];
     YAML::Node pDDeadband = physicaDeviceNode["deadband"];
     YAML::Node pDMaxForce = physicaDeviceNode["max force"];
     YAML::Node pDMaxJerk = physicaDeviceNode["max jerk"];
@@ -168,6 +169,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     YAML::Node pDVisible = physicaDeviceNode["visible"];
     YAML::Node pDVisibleSize = physicaDeviceNode["visible size"];
     YAML::Node pDVisibleColor = physicaDeviceNode["visible color"];
+    YAML::Node pDPairCameras = physicaDeviceNode["pair cameras"];
 
     std::string _hardwareName = "";
     K_lh = 0;
@@ -203,6 +205,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     bool _simulatedMBDefined = false;
     bool _rootLinkDefined = false;
+    bool _enableJointControl = true; // Be default enable the joint control of simulated dynamic body
 
     if (pDHardwareName.IsDefined()){
         _hardwareName = pDHardwareName.as<std::string>();
@@ -306,6 +309,10 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             m_maxForce = _maxForce;
         }
     }
+    else{
+        // If not specified, use the value specified in the devices source file
+        m_maxForce = m_hInfo.m_maxLinearForce;
+    }
 
     if (pDMaxJerk.IsDefined()){
         double _maxJerk = pDMaxJerk.as<double>();
@@ -341,13 +348,19 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     if (simDevice->m_rootLink){
         // Now check if the controller gains have been defined. If so, override the controller gains
         // defined for the rootlink of simulate end effector
+        bool linGainsDefined = false;
+        bool angGainsDefined = false;
         if (pDControllerGain.IsDefined()){
+            // Should we consider disable the controller for the physical device if a controller has been
+            // defined using the Physical device??
+
             // Check if the linear controller is defined
             if (pDControllerGain["linear"].IsDefined()){
                 double _P, _D;
                 _P = pDControllerGain["linear"]["P"].as<double>();
                 _D = pDControllerGain["linear"]["D"].as<double>();
-                simDevice->m_rootLink->m_controller.setLinearGains(_P, 0, _D);
+                m_controller.setLinearGains(_P, 0, _D);
+                linGainsDefined = true;
             }
 
             // Check if the angular controller is defined
@@ -355,12 +368,34 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 double _P, _D;
                 _P = pDControllerGain["angular"]["P"].as<double>();
                 _D = pDControllerGain["angular"]["D"].as<double>();
-                simDevice->m_rootLink->m_controller.setAngularGains(_P, 0, _D);
+                m_controller.setAngularGains(_P, 0, _D);
+                angGainsDefined = true;
             }
+        }
+        if(!linGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
+                                        0,
+                                        simDevice->m_rootLink->m_controller.getD_lin());
+        }
+        if (!angGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
+                                         0,
+                                         simDevice->m_rootLink->m_controller.getD_ang());
+        }
+
+        // Read the flag to enable disable the joint control of SDE from this input device
+        // Defaults to enabled
+        if (pDEnableJointControl.IsDefined()){
+            _enableJointControl = pDEnableJointControl.as<bool>();
         }
 
         simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
         simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        enableJointControl(_enableJointControl);
         // Initialize all the constraint to null ptr
         for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
             simDevice->m_rigidGrippingConstraints[sIdx] = 0;
@@ -383,8 +418,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afObjectCreate(_sDevName,
-                                                  simDevice->getNamespace(),
+            simDevice->m_rootLink->afObjectCommCreate(_sDevName,
+                                                  m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
                                                   simDevice->m_rootLink->getMinPublishFrequency(),
                                                   simDevice->m_rootLink->getMaxPublishFrequency());
         }
@@ -449,6 +484,14 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
 
+    if(pDPairCameras.IsDefined()){
+        for(int i = 0 ; i < pDPairCameras.size() ; i++){
+            std::string camName = pDPairCameras[i].as<std::string>();
+            afCameraPtr cameraPtr = m_afWorld->getAFCamera(camName);
+            m_pairedCameraNames.push_back(camName);
+        }
+    }
+
     m_showMarker = false;
     m_markerSize = 0.05;
     if (pDVisible.IsDefined()){
@@ -465,7 +508,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_refSphere->m_material->setRed();
         m_refSphere->setShowFrame(true);
         m_refSphere->setFrameSize(m_markerSize * 5);
-        m_afWorld->s_bulletWorld->addChild(m_refSphere);
+        m_afWorld->s_chaiBulletWorld->addChild(m_refSphere);
     }
 
 
@@ -482,15 +525,15 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 /// \param maxPF
 ///
 void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
-    m_afCursor = new cBulletSphere(a_afWorld->s_bulletWorld, 0.05);
+    m_afCursor = new cBulletSphere(a_afWorld->s_chaiBulletWorld, 0.05);
     m_afCursor->setShowEnabled(true);
     m_afCursor->setShowFrame(true);
     m_afCursor->setFrameSize(0.1);
     cMaterial mat;
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
-    a_afWorld->s_bulletWorld->addChild(m_afCursor);
-    m_afCursor->afObjectCreate(a_name, a_namespace, minPF, maxPF);
+    a_afWorld->s_chaiBulletWorld->addChild(m_afCursor);
+    m_afCursor->afObjectCommCreate(a_name, m_afWorld->resolveGlobalNamespace(a_namespace), minPF, maxPF);
     m_afWorld = a_afWorld;
 }
 
@@ -596,8 +639,8 @@ void afPhysicalDevice::updateCursorPose(){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        m_afCursor->m_afObjectPtr->set_userdata_desc("haptics frequency");
-        m_afCursor->m_afObjectPtr->set_userdata(m_freq_ctr.getFrequency());
+        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
+        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
     }
 }
@@ -787,7 +830,7 @@ void afSimulatedDevice::clearWrench(){
 /// \brief afInputDevices::afInputDevices
 /// \param a_afWorld
 ///
-afInputDevices::afInputDevices(afWorldPtr a_afWorld){
+afCollateralControlManager::afCollateralControlManager(afWorldPtr a_afWorld){
     m_deviceHandler = NULL;
     m_afWorld = a_afWorld;
 
@@ -800,11 +843,11 @@ afInputDevices::afInputDevices(afWorldPtr a_afWorld){
 ///
 /// \brief afInputDevices::~afInputDevices
 ///
-afInputDevices::~afInputDevices(){
+afCollateralControlManager::~afCollateralControlManager(){
 }
 
 
-void afInputDevices::addClaimedDeviceIndex(int a_devIdx){
+void afCollateralControlManager::addClaimedDeviceIndex(int a_devIdx){
     if (!checkClaimedDeviceIdx(a_devIdx)){
         m_devicesClaimed.push_back(a_devIdx);
     }
@@ -815,7 +858,7 @@ void afInputDevices::addClaimedDeviceIndex(int a_devIdx){
 /// \param a_devIdx
 /// \return
 ///
-bool afInputDevices::checkClaimedDeviceIdx(int a_devIdx){
+bool afCollateralControlManager::checkClaimedDeviceIdx(int a_devIdx){
     bool _claimed = false;
     for (int idx = 0 ; idx < m_devicesClaimed.size() ; idx++){
         if (a_devIdx == m_devicesClaimed[idx]){
@@ -826,6 +869,54 @@ bool afInputDevices::checkClaimedDeviceIdx(int a_devIdx){
     return _claimed;
 }
 
+bool afCollateralControlManager::pairCamerasToCCU(afCollateralControlUnit& a_ccuPtr){
+    afPhysicalDevice* pD = a_ccuPtr.m_physicalDevicePtr;
+
+    for(int i = 0 ; i < pD->m_pairedCameraNames.size() ; i++){
+        std::string camName = pD->m_pairedCameraNames[i];
+        afCameraPtr camPtr = m_afWorld->getAFCamera(camName);
+        if(camPtr){
+            // Create labels for the contextual controlling devices for each Window-Camera Pair
+            cFontPtr font = NEW_CFONTCALIBRI20();
+            cLabel* devFreqLabel = new cLabel(font);
+            devFreqLabel->m_fontColor.setBlack();
+            devFreqLabel->setFontScale(0.8);
+            devFreqLabel->m_fontColor.setGreenLime();
+            a_ccuPtr.m_devFreqLabel = devFreqLabel;
+            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
+            camPtr->getFrontLayer()->addChild(devFreqLabel);
+
+            camPtr->m_controllingDevNames.push_back(
+                        a_ccuPtr.m_name);
+
+            a_ccuPtr.m_cameras.push_back(camPtr);
+        }
+    }
+
+    // If no cameras are specified, maybe pair all the cameras?
+    // Can be commented out.
+    if(pD->m_pairedCameraNames.size() == 0){
+        afCameraVec camVec = m_afWorld->getAFCameras();
+        for(int i = 0 ; i < camVec.size() ; i++){
+            afCameraPtr camPtr = camVec[i];
+            // Create labels for the contextual controlling devices for each Window-Camera Pair
+            cFontPtr font = NEW_CFONTCALIBRI20();
+            cLabel* devFreqLabel = new cLabel(font);
+            devFreqLabel->m_fontColor.setBlack();
+            devFreqLabel->setFontScale(0.8);
+            devFreqLabel->m_fontColor.setGreenLime();
+            a_ccuPtr.m_devFreqLabel = devFreqLabel;
+            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
+            camPtr->getFrontLayer()->addChild(devFreqLabel);
+
+            camPtr->m_controllingDevNames.push_back(
+                        a_ccuPtr.m_name);
+
+            a_ccuPtr.m_cameras.push_back(camPtr);
+        }
+    }
+}
+
 
 ///
 /// \brief afInputDevices::loadInputDevices
@@ -833,7 +924,7 @@ bool afInputDevices::checkClaimedDeviceIdx(int a_devIdx){
 /// \param a_max_load_devs
 /// \return
 ///
-bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
+bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
     if (a_input_devices_config.empty()){
         a_input_devices_config = m_afWorld->getInputDevicesConfig();
     }
@@ -860,7 +951,7 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
         //        std::cerr << "Num of devices " << m_num_devices << std::endl;
         for (uint devIdx = 0; devIdx < a_max_load_devs; devIdx++){
 
-            afPhysicalDevice* pD = new afPhysicalDevice();
+            afPhysicalDevice* pD = new afPhysicalDevice(m_afWorld);
             afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
 
             // Load the device specified in the afInputDevice yaml file
@@ -868,14 +959,15 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
             YAML::Node devNode = inputDevicesNode[devKey];
 
             if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
-                InputControlUnit dgPair;
-                dgPair.m_physicalDevice = pD;
-                dgPair.m_simulatedDevice = sD;
-                dgPair.m_name = devKey;
-                m_psDevicePairs.push_back(dgPair);
+                afCollateralControlUnit ccu;
+                ccu.m_physicalDevicePtr = pD;
+                ccu.m_simulatedDevicePtr = sD;
+                ccu.m_name = devKey;
+                pairCamerasToCCU(ccu);
+                m_collateralControlUnits.push_back(ccu);
             }
         }
-        m_numDevices = m_psDevicePairs.size();
+        m_numDevices = m_collateralControlUnits.size();
     }
     else{
         m_numDevices = 0;
@@ -886,18 +978,86 @@ bool afInputDevices::loadInputDevices(std::string a_input_devices_config, int a_
     m_mode_idx = 0;
 }
 
+
+///
+/// \brief afInputDevices::loadInputDevices
+/// \param a_inputdevice_config
+/// \param a_device_indices
+/// \return
+///
+bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices){
+    if (a_input_devices_config.empty()){
+        a_input_devices_config = m_afWorld->getInputDevicesConfig();
+    }
+    YAML::Node inputDevicesNode;
+    try{
+        inputDevicesNode = YAML::LoadFile(a_input_devices_config);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
+        return 0;
+    }
+
+    YAML::Node inputDevices = inputDevicesNode["input devices"];
+
+    m_basePath = boost::filesystem::path(a_input_devices_config).parent_path();
+
+    if (!inputDevices.IsDefined()){
+        return 0;
+    }
+
+    if (a_device_indices.size() >= 0 && a_device_indices.size() <= inputDevices.size()){
+        m_deviceHandler.reset(new cHapticDeviceHandler());
+        for (int i = 0; i < a_device_indices.size(); i++){
+            int devIdx = a_device_indices[i];
+            if (devIdx >=0 && devIdx < inputDevices.size()){
+                afPhysicalDevice* pD = new afPhysicalDevice(m_afWorld);
+                afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
+
+                // Load the device specified in the afInputDevice yaml file
+                std::string devKey = inputDevices[devIdx].as<std::string>();
+                YAML::Node devNode = inputDevicesNode[devKey];
+
+                if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
+                    afCollateralControlUnit ccu;
+                    ccu.m_physicalDevicePtr = pD;
+                    ccu.m_simulatedDevicePtr = sD;
+                    ccu.m_name = devKey;
+                    m_collateralControlUnits.push_back(ccu);
+                }
+                else
+                {
+                    std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devKey << "\"\n";
+                }
+            }
+            else{
+                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevices.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+            }
+        }
+    }
+    else{
+        std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+    }
+    m_numDevices = m_collateralControlUnits.size();
+    m_use_cam_frame_rot = true;
+    m_simModes = CAM_CLUTCH_CONTROL;
+    m_mode_str = "CAM_CLUTCH_CONTROL";
+    m_mode_idx = 0;
+}
+
+
 ///
 /// \brief afInputDevices::getDeviceGripperPairs
 /// \param a_device_names
 /// \return
 ///
-std::vector<InputControlUnit*> afInputDevices::getDeviceGripperPairs(std::vector<std::string> a_device_names){
-    std::vector<InputControlUnit*> req_dg_Pairs;
-    std::vector<InputControlUnit>::iterator dgIt;
+std::vector<afCollateralControlUnit*> afCollateralControlManager::getCollateralControlUnits(std::vector<std::string> a_device_names){
+    std::vector<afCollateralControlUnit*> req_dg_Pairs;
+    std::vector<afCollateralControlUnit>::iterator dgIt;
     for(int req_name_Idx = 0 ; req_name_Idx < a_device_names.size() ; req_name_Idx++){
         std::string req_dev_name = a_device_names[req_name_Idx];
         bool _found_req_device = false;
-        for(dgIt = m_psDevicePairs.begin(); dgIt != m_psDevicePairs.end() ; ++dgIt){
+        for(dgIt = m_collateralControlUnits.begin(); dgIt != m_collateralControlUnits.end() ; ++dgIt){
             if( dgIt->m_name.compare(req_dev_name) == 0 ){
                 req_dg_Pairs.push_back(&(*dgIt));
                 _found_req_device = true;
@@ -917,10 +1077,10 @@ std::vector<InputControlUnit*> afInputDevices::getDeviceGripperPairs(std::vector
 /// \brief afInputDevices::getAllDeviceGripperPairs
 /// \return
 ///
-std::vector<InputControlUnit*> afInputDevices::getAllDeviceGripperPairs(){
-    std::vector<InputControlUnit*> req_dg_Pairs;
-    std::vector<InputControlUnit>::iterator dgIt;
-    for(dgIt = m_psDevicePairs.begin(); dgIt != m_psDevicePairs.end() ; ++dgIt){
+std::vector<afCollateralControlUnit*> afCollateralControlManager::getAllCollateralControlUnits(){
+    std::vector<afCollateralControlUnit*> req_dg_Pairs;
+    std::vector<afCollateralControlUnit>::iterator dgIt;
+    for(dgIt = m_collateralControlUnits.begin(); dgIt != m_collateralControlUnits.end() ; ++dgIt){
         req_dg_Pairs.push_back(&(*dgIt));
     }
     return req_dg_Pairs;
@@ -929,7 +1089,7 @@ std::vector<InputControlUnit*> afInputDevices::getAllDeviceGripperPairs(){
 ///
 /// \brief afInputDevices::nextMode
 ///
-void afInputDevices::nextMode(){
+void afCollateralControlManager::nextMode(){
     m_mode_idx = (m_mode_idx + 1) % m_modes_enum_vec.size();
     m_simModes = m_modes_enum_vec[m_mode_idx];
     m_mode_str = m_modes_enum_str[m_mode_idx];
@@ -942,7 +1102,7 @@ void afInputDevices::nextMode(){
 ///
 /// \brief afInputDevices::prevMode
 ///
-void afInputDevices::prevMode(){
+void afCollateralControlManager::prevMode(){
     m_mode_idx = (m_mode_idx - 1) % m_modes_enum_vec.size();
     m_simModes = m_modes_enum_vec[m_mode_idx];
     m_mode_str = m_modes_enum_str[m_mode_idx];
@@ -955,9 +1115,9 @@ void afInputDevices::prevMode(){
 ///
 /// \brief afInputDevices::closeDevices
 ///
-void afInputDevices::closeDevices(){
+void afCollateralControlManager::closeDevices(){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        m_psDevicePairs[devIdx].m_physicalDevice->m_hDevice->close();
+        m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_hDevice->close();
     }
 }
 
@@ -967,19 +1127,19 @@ void afInputDevices::closeDevices(){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_K_lh(double a_offset){
+double afCollateralControlManager::increment_K_lh(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_psDevicePairs[devIdx].m_physicalDevice->K_lh + a_offset <= 0)
+        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh + a_offset <= 0)
         {
-            m_psDevicePairs[devIdx].m_physicalDevice->K_lh = 0.0;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh = 0.0;
         }
         else{
-            m_psDevicePairs[devIdx].m_physicalDevice->K_lh += a_offset;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_lh;
+        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_lh;
         g_btn_action_str = "K_lh = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -990,18 +1150,18 @@ double afInputDevices::increment_K_lh(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_K_ah(double a_offset){
+double afCollateralControlManager::increment_K_ah(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_psDevicePairs[devIdx].m_physicalDevice->K_ah + a_offset <=0){
-            m_psDevicePairs[devIdx].m_physicalDevice->K_ah = 0.0;
+        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah + a_offset <=0){
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah = 0.0;
         }
         else{
-            m_psDevicePairs[devIdx].m_physicalDevice->K_ah += a_offset;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_psDevicePairs[m_numDevices-1].m_physicalDevice->K_ah;
+        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_ah;
         g_btn_action_str = "K_ah = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -1012,10 +1172,10 @@ double afInputDevices::increment_K_ah(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_P_lc(double a_offset){
+double afCollateralControlManager::increment_P_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
         double _gain = sG->m_controller.getP_lin();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_lin(0.0);
@@ -1036,10 +1196,10 @@ double afInputDevices::increment_P_lc(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_P_ac(double a_offset){
+double afCollateralControlManager::increment_P_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
         double _gain = sG->m_controller.getP_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setP_ang(0.0);
@@ -1060,10 +1220,10 @@ double afInputDevices::increment_P_ac(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_D_lc(double a_offset){
+double afCollateralControlManager::increment_D_lc(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
         double _gain = sG->m_controller.getD_lin();
         if (_gain + a_offset <=0.01){
             // Keep a small value of Angular gain to avoid controller singularity
@@ -1085,10 +1245,10 @@ double afInputDevices::increment_D_lc(double a_offset){
 /// \param a_offset
 /// \return
 ///
-double afInputDevices::increment_D_ac(double a_offset){
+double afCollateralControlManager::increment_D_ac(double a_offset){
     double _temp = a_offset;
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        afRigidBodyPtr sG = m_psDevicePairs[devIdx].m_simulatedDevice->m_rootLink;
+        afRigidBodyPtr sG = m_collateralControlUnits[devIdx].m_simulatedDevicePtr->m_rootLink;
         double _gain = sG->m_controller.getD_ang();
         if (_gain + a_offset <=0){
             sG->m_controller.setD_ang(0.0);

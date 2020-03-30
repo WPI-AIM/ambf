@@ -46,7 +46,7 @@
 
 namespace ambf_comm{
 
-World::World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max): WorldRosCom(a_name, a_namespace, a_freq_min, a_freq_max){
+World::World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): WorldRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     m_num_skip_steps = 10;
     m_skip_steps_ctr = 0;
 }
@@ -73,8 +73,8 @@ void World::increment_sim_step(){
 
 extern "C"{
 
-World* create_world(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000){
-    return new World(a_name, a_namespace, a_min_freq, a_max_freq);
+World* create_world(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=10.0){
+    return new World(a_name, a_namespace, a_min_freq, a_max_freq, time_out);
 }
 
 void destroy_world(World* obj){

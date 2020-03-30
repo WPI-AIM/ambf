@@ -86,7 +86,7 @@ public:
 
     //! Constructor of cBulletSphere.
     cBulletSphere(cBulletWorld* a_world,
-        const double& a_radius, std::string a_objName = "");
+        const double& a_radius);
 
     //! Destructor of cBulletSphere.
     virtual ~cBulletSphere() {};

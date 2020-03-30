@@ -86,7 +86,7 @@ class cBulletMultiMesh : public cMultiMesh, public cBulletGenericObject
 public:
 
     //! Constructor of cBulletMultiMesh.
-    cBulletMultiMesh(cBulletWorld* a_world, std::string a_objName = "") : cBulletGenericObject(a_world, a_objName), cMultiMesh() {
+    cBulletMultiMesh(cBulletWorld* a_world) : cBulletGenericObject(a_world), cMultiMesh() {
     }
 
     //! Destructor of cBulletMultiMesh.

@@ -85,9 +85,8 @@ bool mirroredDisplay = false;
 //---------------------------------------------------------------------------
 
 // bullet world
-cBulletWorld* g_bulletWorld;
+cBulletWorld* g_chaiBulletWorld;
 
-afMultiBody *g_afMultiBody;
 afWorld *g_afWorld;
 
 struct CommandLineOptions{
@@ -97,6 +96,7 @@ struct CommandLineOptions{
     int htxFrequency = 1000; // Physics Update Frequency
     bool enableForceFeedback = true; // Enable Force Feedback
     int numDevicesToLoad; // Number of Devices to Load
+    std::string devicesToLoad = ""; // A string of device indexes to load
 //////////////////////////////////////////////////////////////////////////
     double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
     bool showSoftPatch = false; // Show Soft Patch
@@ -104,12 +104,11 @@ struct CommandLineOptions{
     std::string multiBodyFilesToLoad = ""; // A string list of multibody files to load
     std::string launchFilePath; // A string of Path of launch file to load
     bool showGUI = true; //
+    std::string prepend_namespace = ""; // Override the default world namespace
 };
 
 // Global struct for command line options
 CommandLineOptions g_cmdOpts;
-
-cPrecisionClock g_clockWorld;
 
 // Info for mouse events in case a body is picked
 bool g_pickBody = false;
@@ -241,7 +240,7 @@ cShaderProgramPtr g_lightingShader;
 cShaderProgramPtr g_lampShader;
 
 
-std::shared_ptr<afInputDevices> g_inputDevices;
+std::shared_ptr<afCollateralControlManager> g_inputDevices;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,6 +265,7 @@ int main(int argc, char* argv[])
     cmd_opts.add_options()
             ("help,h", "Show help")
             ("ndevs,n", p_opt::value<int>(), "Number of Haptic Devices to Load")
+            ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
             ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
             ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
             ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
@@ -277,26 +277,32 @@ int main(int argc, char* argv[])
             ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
-/////////////////////////////////////////////////////////////////////////////////////////
-//        Only for debugging, shall be deprecated later in later Revisions
-            ("margin,m", p_opt::value<double>(), "Soft Cloth Collision Margin")
-            ("show_patch,s", p_opt::value<bool>(), "Show Soft Cloth Patch")
-            ("show_gui,g", p_opt::value<bool>(), "Show GUI");
+            ("show_gui,g", p_opt::value<bool>(), "Show GUI")
+            ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace");
+
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
     p_opt::notify(var_map);
 
     g_cmdOpts.numDevicesToLoad = MAX_DEVICES;
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
+
     if(var_map.count("ndevs")){ g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();}
+
+    if(var_map.count("load_devices")){ g_cmdOpts.devicesToLoad = var_map["load_devices"].as<std::string>();}
+
     if(var_map.count("phx_frequency")){ g_cmdOpts.phxFrequency = var_map["phx_frequency"].as<int>();}
+
     if(var_map.count("htx_frequency")){ g_cmdOpts.htxFrequency = var_map["htx_frequency"].as<int>();}
+
     if(var_map.count("fixed_phx_timestep")){ g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();}
+
     if(var_map.count("fixed_htx_timestep")){ g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();}
+
     if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
-    if(var_map.count("margin")){ g_cmdOpts.softPatchMargin = var_map["margin"].as<double>();}
-    if(var_map.count("show_patch")){ g_cmdOpts.showSoftPatch = var_map["show_patch"].as<bool>();}
+
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
+
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
     else{
         if (g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -310,6 +316,9 @@ int main(int argc, char* argv[])
         g_cmdOpts.launchFilePath = "../../ambf_models/descriptions/launch.yaml";
     }
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
+
+
+    if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
     // Process the loadMultiBodies string
 
@@ -363,31 +372,33 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------
 
     // create a dynamic world.
-    g_bulletWorld = new cBulletWorld("World");
+    g_chaiBulletWorld = new cBulletWorld();
 
     // set the background color of the environment
-    g_bulletWorld->m_backgroundColor.setWhite();
+    g_chaiBulletWorld->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
     //////////////////////////////////////////////////////////////////////////
     // set some gravity
-    g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+    g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
 
 
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    g_afWorld = new afWorld(g_bulletWorld);
+    g_afWorld = new afWorld(g_chaiBulletWorld, g_cmdOpts.prepend_namespace);
     if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
-        g_afMultiBody = new afMultiBody(g_afWorld);
+        std::string world_filename = g_afWorld->getWorldConfig();
+        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+        g_cameras = g_afWorld->getAFCameras();
 
         // Process the loadMultiBodyFiles string
         if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
             std::vector<std::string> mbFileNames;
             std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
-            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
+//            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
             std::stringstream ss(loadMBFilenames);
             while(ss.good() )
             {
@@ -396,7 +407,7 @@ int main(int argc, char* argv[])
                 mbFileNames.push_back(mbFilename);
             }
             for (int idx = 0 ; idx < mbFileNames.size() ; idx++){
-                g_afMultiBody->loadMultiBody(mbFileNames[idx], true);
+                g_afWorld->loadADF(mbFileNames[idx], true);
             }
         }
 
@@ -413,15 +424,11 @@ int main(int argc, char* argv[])
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
-                g_afMultiBody->loadMultiBody(mbIndexes[idx], true);
+                g_afWorld->loadADF(mbIndexes[idx], true);
             }
-        }
+        }       
 
-        std::string world_filename = g_afWorld->getWorldConfig();
-        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
-        g_cameras = g_afWorld->getAFCameras();
-
-        g_bulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
+        g_chaiBulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
     else{
         // Safely exit the program
@@ -493,90 +500,22 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
-    g_inputDevices = std::make_shared<afInputDevices>(g_afWorld);
-    g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
-
-    //-----------------------------------------------------------------------------------------------------------
-    // START: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
-    //-----------------------------------------------------------------------------------------------------------
-    for (g_cameraIt = g_cameras.begin() ;  g_cameraIt !=  g_cameras.end() ; ++ g_cameraIt){
-        std::vector<std::string> _controllingDevices = (*g_cameraIt)->m_controllingDevNames;
-        (*g_cameraIt)->m_controllingDevNames.clear();
-        unsigned long int n_controlling_devs = _controllingDevices.size();
-
-        // If no controlling devices are defined for the camera context, add all
-        // the current haptics devices specified for the simulation to each Window-Camera pair
-        if(n_controlling_devs == 0){
-            std::vector<InputControlUnit*> dgPairs = g_inputDevices->getAllDeviceGripperPairs();
-            for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
-                dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
-
-                // Create labels for the contextual controlling devices for each Window-Camera Pair
-                cFontPtr font = NEW_CFONTCALIBRI20();
-                cLabel* devFreqLabel = new cLabel(font);
-                devFreqLabel->m_fontColor.setBlack();
-                devFreqLabel->setFontScale(0.8);
-                devFreqLabel->m_fontColor.setGreenLime();
-                dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
-                (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
-                (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
-
-                (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_name);
-            }
+    g_inputDevices = std::make_shared<afCollateralControlManager>(g_afWorld);
+    if (!g_cmdOpts.devicesToLoad.empty()){
+        std::vector<int> devIndices;
+        std::string loadDevIndices = g_cmdOpts.devicesToLoad;
+        loadDevIndices.erase(std::remove(loadDevIndices.begin(), loadDevIndices.end(), ' '), loadDevIndices.end());
+        std::stringstream ss(loadDevIndices);
+        while(ss.good() )
+        {
+            string devIndex;
+            getline( ss, devIndex, ',' );
+            devIndices.push_back(std::stoi(devIndex));
         }
-        else{
-            // Pass the names of the controlling devices to only get the controlling devices
-            // defined for the window camera pair in the context
-            std::vector<InputControlUnit*> dgPairs  = g_inputDevices->getDeviceGripperPairs(_controllingDevices);
-            for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
-                dgPairs[dgPairIdx]->m_cameras.push_back(*g_cameraIt);
-                // Create labels for the contextual controlling devices for each Window-Camera Pair
-                cFontPtr font = NEW_CFONTCALIBRI20();
-                cLabel* devFreqLabel = new cLabel(font);
-                devFreqLabel->m_fontColor.setBlack();
-                devFreqLabel->setFontScale(0.8);
-                devFreqLabel->m_fontColor.setGreenLime();
-                dgPairs[dgPairIdx]->m_devFreqLabel = devFreqLabel;
-                (*g_cameraIt)->m_devHapticFreqLabels.push_back(devFreqLabel);
-                (*g_cameraIt)->getFrontLayer()->addChild(devFreqLabel);
-
-
-                (*g_cameraIt)->m_controllingDevNames.push_back(
-                            dgPairs[dgPairIdx]->m_name);
-            }
-        }
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), devIndices);
     }
-
-
-    if (g_cmdOpts.showSoftPatch){
-        const btScalar s = 0.6;
-        const int r = 5;
-        btVector3 p1(-s, -s, 0);
-        btVector3 p2( s, -s, 0);
-        btVector3 p3(-s,  s, 0);
-        btVector3 p4( s,  s, 0);
-        btSoftBody* btPatch = btSoftBodyHelpers::CreatePatch(*g_bulletWorld->m_bulletSoftBodyWorldInfo,
-                                                             p1,
-                                                             p2,
-                                                             p3,
-                                                             p4, r, r, 1+4, true);
-        btPatch->getCollisionShape()->setMargin(g_cmdOpts.softPatchMargin);
-        btSoftBody::Material* pm = btPatch->appendMaterial();
-        pm->m_kLST = 0.001;
-        //    btPatch->m_cfg.collisions |= btSoftBody::fCollision::VF_SS;
-        btPatch->generateBendingConstraints(2, pm);
-
-        cGELSkeletonNode::s_default_radius = g_cmdOpts.softPatchMargin;
-
-        afSoftMultiMesh* cloth = new afSoftMultiMesh(g_bulletWorld);
-        cloth->setSoftBody(btPatch);
-        cloth->createGELSkeleton();
-        cloth->setMass(1);
-        cloth->m_gelMesh.connectVerticesToSkeleton(false);
-        cloth->buildDynamicModel();
-        //    g_afWorld->addSoftBody(cloth, "cloth");
-        g_bulletWorld->addChild(cloth);
+    else{
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -740,7 +679,7 @@ int main(int argc, char* argv[])
         }
 
         else{
-            std::cerr << "\nRunning Headless (-g option provided) t = " << g_clockWorld.getCurrentTimeSeconds() << " sec" << std::endl;
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
     }
@@ -780,7 +719,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
             if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
-                g_afMultiBody->loadMultiBody(paths[i], true);
+                g_afWorld->loadADF(paths[i], true);
             }
             else{
                 std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
@@ -858,10 +797,10 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
             // Reset the clutched position of all Physical devices to their
             // simulated dynamic end-effectors
-            std::vector<InputControlUnit*> dgPairs  = g_inputDevices->getAllDeviceGripperPairs();
-            for (int dgPairIdx = 0 ; dgPairIdx < dgPairs.size() ; dgPairIdx++){
-                afPhysicalDevice* pDev = dgPairs[dgPairIdx]->m_physicalDevice;
-                afSimulatedDevice* sDev = dgPairs[dgPairIdx]->m_simulatedDevice;
+            std::vector<afCollateralControlUnit*> ccu_vec  = g_inputDevices->getAllCollateralControlUnits();
+            for (int ccuIdx = 0 ; ccuIdx < ccu_vec.size() ; ccuIdx++){
+                afPhysicalDevice* pDev = ccu_vec[ccuIdx]->m_physicalDevicePtr;
+                afSimulatedDevice* sDev = ccu_vec[ccuIdx]->m_simulatedDevicePtr;
                 pDev->m_posClutched = pDev->m_pos;
                 pDev->m_rotClutched = pDev->m_rot;
                 sDev->setPosRef(sDev->m_rootLink->getInitialPosition());
@@ -1039,7 +978,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_1)
         {
             // enable gravity
-            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
             printf("gravity ON:\n");
         }
 
@@ -1047,7 +986,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_2)
         {
             // disable gravity
-            g_bulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
+            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
             printf("gravity OFF:\n");
         }
 
@@ -1174,6 +1113,12 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
+            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+            double speed_scale = 1.0;
+            if (state == GLFW_PRESS)
+            {
+                speed_scale = 0.1;
+            }
             afCamera* devCam = (*g_cameraIt);
             (*g_cameraIt)->mouse_x[1] = (*g_cameraIt)->mouse_x[0];
             (*g_cameraIt)->mouse_x[0] = a_xpos;
@@ -1189,8 +1134,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 }
                 else{
                     double scale = 0.01;
-                    double x_vel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                    double y_vel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                    double x_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
+                    double y_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                     if (g_mouse_inverted_y){
                         y_vel = -y_vel;
                     }
@@ -1203,8 +1148,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_r_clicked ){
                 cMatrix3d camRot;
                 double scale = 0.3;
-                double yawVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
-                double pitchVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
+                double yawVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
+                double pitchVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
                 if (g_mouse_inverted_y){
                     pitchVel = -pitchVel;
                 }
@@ -1229,8 +1174,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             if( devCam->mouse_scroll_clicked){
 //                devCam->showTargetPos(true);
                 double scale = 0.03;
-                double horizontalVel = scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                double verticalVel = scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                double horizontalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
+                double verticalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
                 if (g_mouse_inverted_y){
                     verticalVel = -verticalVel;
                 }
@@ -1271,12 +1216,18 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
+            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+            double speed_scale = 1.0;
+            if (state == GLFW_PRESS)
+            {
+                speed_scale = 0.1;
+            }
             afCameraPtr cameraPtr = (*g_cameraIt);
             (*g_cameraIt)->mouse_scroll[1] = (*g_cameraIt)->mouse_scroll[0];
             (*g_cameraIt)->mouse_scroll[0] = -a_ypos;
 
             double scale = 0.1;
-            cVector3d camVelAlongLook(scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
+            cVector3d camVelAlongLook(speed_scale * scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
             cVector3d _targetPos = cameraPtr->getTargetPos();
             cVector3d _newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
             cVector3d dPos = _newPos - _targetPos;
@@ -1406,9 +1357,8 @@ void close(void)
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         delete g_hapticsThreads[i];
     }
-    delete g_bulletWorld;
+    delete g_chaiBulletWorld;
     delete g_afWorld;
-    delete g_afMultiBody;
 }
 
 
@@ -1418,7 +1368,7 @@ void close(void)
 void updateGraphics()
 {
     // Update shadow maps once
-    g_bulletWorld->updateShadowMaps(false, mirroredDisplay);
+    g_chaiBulletWorld->updateShadowMaps(false, mirroredDisplay);
 
     for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end(); ++ g_cameraIt){
         afCameraPtr cameraPtr = (*g_cameraIt);
@@ -1473,7 +1423,6 @@ void updateLabels(){
     afCameraVec::iterator cameraIt;
     for (cameraIt = g_cameras.begin(); cameraIt != g_cameras.end(); ++ cameraIt){
         afCameraPtr cameraPtr = *cameraIt;
-//        int n_devsAttached = cameraPtr->m_deviceGripperPairs.size();
         int width = cameraPtr->m_width;
         int height = cameraPtr->m_height;
 
@@ -1485,8 +1434,8 @@ void updateLabels(){
         std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
 
         // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time: " + cStr(g_clockWorld.getCurrentTimeSeconds(),2) + " s";
-        std::string simTimeStr = "Sim Time: " + cStr(g_bulletWorld->getSimulationTime(),2) + " s";
+        std::string wallTimeStr = "Wall Time: " + cStr(g_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_chaiBulletWorld->getSimulationTime(), 2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1521,26 +1470,6 @@ void updateLabels(){
 }
 
 ///
-/// \brief Function to fix time dilation
-/// \param adjust_int_steps
-/// \return
-///
-double compute_dt(bool adjust_int_steps = false){
-    double dt = g_clockWorld.getCurrentTimeSeconds() - g_bulletWorld->getSimulationTime();
-    int min_steps = 2;
-    int max_steps = 10;
-    if (adjust_int_steps){
-        if (dt >= g_bulletWorld->getIntegrationTimeStep() * min_steps){
-            int int_steps_max =  dt / g_bulletWorld->getIntegrationTimeStep();
-            if (int_steps_max > max_steps){
-                int_steps_max = max_steps;
-            }
-            g_bulletWorld->setIntegrationMaxIterations(int_steps_max + min_steps);        }
-    }
-    return dt;
-}
-
-///
 /// \brief updateBulletSim
 ///
 void updatePhysics(){
@@ -1548,7 +1477,7 @@ void updatePhysics(){
     g_simulationFinished = false;
 
     // start haptic device
-    g_clockWorld.start(true);
+    g_afWorld->g_wallClock.start(true);
 
     RateSleep rateSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
@@ -1578,17 +1507,18 @@ void updatePhysics(){
                 g_afWorld->removePickingConstraint();
             }
 
-            double dt;
+            double step_size;
             if (g_cmdOpts.useFixedPhxTimeStep){
-                dt = 1.0 / g_cmdOpts.phxFrequency;
+                step_size = 1.0 / g_cmdOpts.phxFrequency;
             }
             else{
-                dt = compute_dt(true);
+                step_size = g_afWorld->computeStepSize(true);
             }
 
             for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
                 // update position of simulate gripper
-                afSimulatedDevice * simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
+                afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
+                afPhysicalDevice * phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
                 afRigidBodyPtr rootLink = simDev->m_rootLink;
                 simDev->updateMeasuredPose();
 
@@ -1609,7 +1539,7 @@ void updatePhysics(){
                                             simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
-                                            g_bulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                            g_chaiBulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                         }
                                     }
                                 }
@@ -1666,7 +1596,7 @@ void updatePhysics(){
                             }
                             else{
                                 if(simDev->m_rigidGrippingConstraints[sIdx]){
-                                    g_bulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                    g_chaiBulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                     simDev->m_rigidGrippingConstraints[sIdx] = 0;
                                 }
                                 if(simDev->m_softGrippingConstraints[sIdx]){
@@ -1693,14 +1623,18 @@ void updatePhysics(){
 
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
-                double ts = dt_fixed / dt;
-                force = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
+                double ts = dt_fixed / step_size;
+                double dt = g_chaiBulletWorld->getSimulationDeltaTime();
+                force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
                 force = simDev->P_lc_ramp * force;
 
-                torque = rootLink->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
+                torque = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
                 simDev->applyForce(force);
                 simDev->applyTorque(torque);
-                simDev->setGripperAngle(simDev->m_gripper_angle, dt);
+                // Control simulated body joints only if joint control of this physical device has been enabled
+                if (phyDev->isJointControlEnabled()){
+                    simDev->setGripperAngle(simDev->m_gripper_angle, dt);
+                }
 
                 if (simDev->P_lc_ramp < 1.0)
                 {
@@ -1720,7 +1654,7 @@ void updatePhysics(){
                     simDev->P_ac_ramp = 1.0;
                 }
             }
-            g_bulletWorld->updateDynamics(dt, g_clockWorld.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+            g_chaiBulletWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
         }
             rateSleep.sleep();
     }
@@ -1740,12 +1674,12 @@ void updateHapticDevice(void* a_arg){
     RateSleep rateSleep(g_cmdOpts.htxFrequency);
 
     // update position and orientation of simulated gripper
-    std::string identifyingName = g_inputDevices->m_psDevicePairs[devIdx].m_name;
-    afPhysicalDevice *phyDev = g_inputDevices->m_psDevicePairs[devIdx].m_physicalDevice;
-    afSimulatedDevice* simDev = g_inputDevices->m_psDevicePairs[devIdx].m_simulatedDevice;
-    std::vector<afCameraPtr> devCams = g_inputDevices->m_psDevicePairs[devIdx].m_cameras;
-    cLabel* devFreqLabel = g_inputDevices->m_psDevicePairs[devIdx].m_devFreqLabel;
-    if (g_inputDevices->m_psDevicePairs[devIdx].m_cameras.size() == 0){
+    std::string identifyingName = g_inputDevices->m_collateralControlUnits[devIdx].m_name;
+    afPhysicalDevice *phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
+    afSimulatedDevice* simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
+    std::vector<afCameraPtr> devCams = g_inputDevices->m_collateralControlUnits[devIdx].m_cameras;
+    cLabel* devFreqLabel = g_inputDevices->m_collateralControlUnits[devIdx].m_devFreqLabel;
+    if (g_inputDevices->m_collateralControlUnits[devIdx].m_cameras.size() == 0){
         cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
         devCams = g_cameras;
     }
@@ -1794,7 +1728,7 @@ void updateHapticDevice(void* a_arg){
                 dt = 1.0 / g_cmdOpts.htxFrequency;
             }
             else{
-                dt = compute_dt();
+                dt = g_afWorld->computeStepSize();
             }
             phyDev->m_pos = phyDev->measuredPos();
             phyDev->m_rot = phyDev->measuredRot();
@@ -1878,7 +1812,7 @@ void updateHapticDevice(void* a_arg){
             }
 
 
-            if (g_clockWorld.getCurrentTimeSeconds() < wait_time){
+            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->m_posClutched = phyDev->m_pos;
             }
 
@@ -1947,18 +1881,18 @@ void updateHapticDevice(void* a_arg){
 
             force_prev = force;
             torque_prev = torque_prev;
-            force  = - g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-            torque = - g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
+            force  = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+            torque = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
 
-            if ((force - force_prev).length() > phyDev->m_maxJerk){
-                cVector3d normalized_force = force;
-                normalized_force.normalize();
-                double _sign = 1.0;
-                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
-                    _sign = 1.0;
-                }
-                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
-            }
+//            if ((force - force_prev).length() > phyDev->m_maxJerk){
+//                cVector3d normalized_force = force;
+//                normalized_force.normalize();
+//                double _sign = 1.0;
+//                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
+//                    _sign = 1.0;
+//                }
+//                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
+//            }
 
             if (force.length() < phyDev->m_deadBand){
                 force.set(0,0,0);
