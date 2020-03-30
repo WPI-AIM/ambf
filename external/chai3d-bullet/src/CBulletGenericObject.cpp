@@ -123,8 +123,8 @@ void cBulletGenericObject::setMass(const double a_mass)
 {
     m_mass = a_mass;
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->set_mass(a_mass);
+    if(m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->set_mass(a_mass);
     }
 #endif
 }
@@ -141,8 +141,8 @@ void cBulletGenericObject::setInertia(const cVector3d& a_inertia)
 {
     m_inertia = a_inertia;
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->set_principal_intertia(a_inertia(0),
+    if(m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->set_principal_intertia(a_inertia(0),
                                               a_inertia(1),
                                               a_inertia(2));
     }
@@ -213,8 +213,8 @@ void cBulletGenericObject::estimateInertia()
         m_inertia(2) = inertia[2];
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        if(m_afObjectPtr.get() != nullptr){
-            m_afObjectPtr->set_principal_intertia(m_inertia(0),
+        if(m_afObjectCommPtr.get() != nullptr){
+            m_afObjectCommPtr->set_principal_intertia(m_inertia(0),
                                                   m_inertia(1),
                                                   m_inertia(2));
         }
@@ -238,8 +238,8 @@ void cBulletGenericObject::setStatic(bool a_static)
         m_bulletRigidBody->activate(!a_static);
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        if(m_afObjectPtr.get() != nullptr){
-            m_afObjectPtr->set_mass(0);
+        if(m_afObjectCommPtr.get() != nullptr){
+            m_afObjectCommPtr->set_mass(0);
         }
 #endif
     }
@@ -330,9 +330,9 @@ void cBulletGenericObject::addExternalTorque(const cVector3d& a_torque)
     \param  a_name  af Namespace.
 */
 //==============================================================================
-void cBulletGenericObject::afObjectCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+void cBulletGenericObject::afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afObjectPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+    m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
 #endif
 }
 
@@ -347,9 +347,9 @@ void cBulletGenericObject::afObjectCreate(std::string a_name, std::string a_name
 //==============================================================================
 void cBulletGenericObject::afObjectSetTime(const double *a_wall_time, const double *a_sim_time){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->set_wall_time(*a_wall_time);
-        m_afObjectPtr->set_sim_time(*a_sim_time);
+    if (m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->set_wall_time(*a_wall_time);
+        m_afObjectCommPtr->set_sim_time(*a_sim_time);
     }
 #endif
 }
@@ -361,10 +361,10 @@ void cBulletGenericObject::afObjectSetTime(const double *a_wall_time, const doub
 //==============================================================================
 void cBulletGenericObject::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectPtr.get() != nullptr){
-        m_afObjectPtr->update_af_cmd();
+    if (m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->update_af_cmd();
         cVector3d force, torque;
-        if (m_afObjectPtr->m_objectCommand.enable_position_controller){
+        if (m_afObjectCommPtr->m_objectCommand.enable_position_controller){
             cVector3d cur_pos, cmd_pos, rot_axis;
             cQuaternion cur_rot, cmd_rot;
             cMatrix3d cur_rot_mat, cmd_rot_mat;
@@ -383,14 +383,14 @@ void cBulletGenericObject::afObjectCommandExecute(double dt){
             cur_rot.w = b_trans.getRotation().getW();
             cur_rot.toRotMat(cur_rot_mat);
 
-            cmd_pos.set(m_afObjectPtr->m_objectCommand.px,
-                        m_afObjectPtr->m_objectCommand.py,
-                        m_afObjectPtr->m_objectCommand.pz);
+            cmd_pos.set(m_afObjectCommPtr->m_objectCommand.px,
+                        m_afObjectCommPtr->m_objectCommand.py,
+                        m_afObjectCommPtr->m_objectCommand.pz);
 
-            cmd_rot.x = m_afObjectPtr->m_objectCommand.qx;
-            cmd_rot.y = m_afObjectPtr->m_objectCommand.qy;
-            cmd_rot.z = m_afObjectPtr->m_objectCommand.qz;
-            cmd_rot.w = m_afObjectPtr->m_objectCommand.qw;
+            cmd_rot.x = m_afObjectCommPtr->m_objectCommand.qx;
+            cmd_rot.y = m_afObjectCommPtr->m_objectCommand.qy;
+            cmd_rot.z = m_afObjectCommPtr->m_objectCommand.qz;
+            cmd_rot.w = m_afObjectCommPtr->m_objectCommand.qw;
             cmd_rot.toRotMat(cmd_rot_mat);
 
             m_dpos_prev = m_dpos;
@@ -405,12 +405,12 @@ void cBulletGenericObject::afObjectCommandExecute(double dt){
         }
         else{
 
-            force.set(m_afObjectPtr->m_objectCommand.fx,
-                      m_afObjectPtr->m_objectCommand.fy,
-                      m_afObjectPtr->m_objectCommand.fz);
-            torque.set(m_afObjectPtr->m_objectCommand.tx,
-                       m_afObjectPtr->m_objectCommand.ty,
-                       m_afObjectPtr->m_objectCommand.tz);
+            force.set(m_afObjectCommPtr->m_objectCommand.fx,
+                      m_afObjectCommPtr->m_objectCommand.fy,
+                      m_afObjectCommPtr->m_objectCommand.fz);
+            torque.set(m_afObjectCommPtr->m_objectCommand.tx,
+                       m_afObjectCommPtr->m_objectCommand.ty,
+                       m_afObjectCommPtr->m_objectCommand.tz);
         }
         addExternalForce(force);
         addExternalTorque(torque);

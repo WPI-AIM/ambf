@@ -147,7 +147,9 @@ template <typename T>
 T toRPY(YAML::Node* node);
 
 
-
+///
+/// \brief The afUtils class
+///
 class afUtils{
 public:
 
@@ -157,6 +159,12 @@ public:
 
     template<typename T1, typename T2>
     static T1 convertDataType(const T2 &r);
+
+    template <typename T>
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
+
+    static std::string removeAdjacentBackSlashes(std::string a_name);
+    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
 };
 
 
@@ -338,6 +346,7 @@ class afRigidBody: public cBulletMultiMesh{
 
     friend class afMultiBody;
     friend class afJoint;
+    friend class afWorld;
 
 public:
 
@@ -440,7 +449,7 @@ public:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
-    std::string m_namespace;
+    std::string m_namespace = "";
 
 protected:
 
@@ -664,10 +673,10 @@ public:
     double I = 0;
     double D = 50;
     double e[4] = {0, 0, 0, 0};
+    double ie[4] = {0, 0, 0, 0};
     double de[4] = {0, 0, 0, 0};
-    double dde[4] = {0, 0, 0, 0};
     double t[4]= {0, 0, 0, 0};
-    size_t n = 4;
+    size_t queue_length = 4;
     double output;
     double max_impulse;
     double max_effort;
@@ -1246,7 +1255,7 @@ class afWorld: public afConfigHandler{
     friend class afMultiBody;
 
 public:
-    afWorld(cBulletWorld *bulletWorld);
+    afWorld(cBulletWorld *bulletWorld, std::string a_global_namespace);
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
     bool createDefaultWorld();
@@ -1258,8 +1267,10 @@ public:
     bool isPhysicsPaused(){return m_pausePhx;}
     void resetCameras();
     void resetDynamicBodies(bool reset_time=false);
+    int getMaxIterations(){return m_maxIterations;}
+    double computeStepSize(bool adjust_intetration_steps = false);
 
-    static cBulletWorld *s_bulletWorld;
+    static cBulletWorld *s_chaiBulletWorld;
     GLFWwindow* m_mainWindow;
 
 public:
@@ -1272,6 +1283,10 @@ public:
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
+    // This method build the collision graph based on the collision group numbers
+    // defined in the bodies
+    void buildCollisionGroups();
+
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
@@ -1280,7 +1295,13 @@ public:
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
     afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
-    std::string getNamespace(){return m_world_namespace;}
+    std::string getNamespace(){return m_namespace;}
+    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
+
+    std::string getGlobalNamespace(){return m_global_namespace;}
+    void setGlobalNamespace(std::string a_namespace);
+
+    std::string resolveGlobalNamespace(std::string a_name);
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
@@ -1298,9 +1319,20 @@ public:
     afSensorVec getAFSensors();
     afMultiBodyVec getAFMultiBodies();
 
+    // The collision groups are sorted by integer indices. A group is an array of
+    // rigid bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
+
+    // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
+    bool loadADF(std::string a_adf_filepath, bool enable_comm);
+    bool loadADF(int i, bool enable_comm);
+    void loadAllADFs(bool enable_com);
 
 protected:
 
@@ -1315,13 +1347,19 @@ protected:
 protected:
 
     afWorld(){}
-    std::string m_world_namespace;
+    std::string m_namespace;
+
+    // If this string is set, it will force itself to preeced all nampespaces
+    // regardless of whether any namespace starts with a '/' or not.
+    std::string m_global_namespace;
 
 private:
 
     static double m_encl_length;
     static double m_encl_width;
     static double m_encl_height;
+    static int m_maxIterations;
+    cPositionalLight* m_light;
 
 private:
     // Global flag to pause simulation
@@ -1354,6 +1392,8 @@ public:
     double m_oldPickingDist;
     cMesh* m_pickSphere;
 
+    cPrecisionClock g_wallClock;
+
     //    cMesh* m_pickDragVector;
 
 };
@@ -1379,11 +1419,12 @@ class afMultiBody{
 public:
 
     afMultiBody();
+
     afMultiBody(afWorldPtr a_afWorld);
+
     virtual ~afMultiBody();
-    virtual bool loadMultiBody(int i, bool enable_comm);
+
     virtual bool loadMultiBody(std::string a_multibody_config, bool enable_comm);
-    void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
 
@@ -1391,16 +1432,12 @@ public:
 
     inline std::string getMultiBodyPath(){return m_multibody_path;}
 
-    inline std::string getNamespace(){return m_mb_namespace;}
+    inline std::string getNamespace(){return m_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
     // between all these bodies connected in a tree
     void removeOverlappingCollisionChecking();
-
-    // This method build the collision graph based on the collision group numbers
-    // defined in the bodies
-    void buildCollisionGroups();
 
     //Remove collision checking for this entire multi-body, mostly for
     // debugging purposes
@@ -1416,8 +1453,6 @@ public:
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
 
-    cPrecisionClock m_wallClock;
-
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
     double m_jointCFM = 0.1;
@@ -1427,24 +1462,15 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_mb_namespace;
+    std::string m_namespace="";
     std::string m_multibody_path;
 
 protected:
 
     cMaterial mat;
     template <typename T>
-    std::string remapBodyName(std::string a_body_name, const T* tMap);
-    std::string remapJointName(std::string a_joint_name);
-    std::string remapSensorName(std::string a_sensor_name);
+    std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
     void remapName(std::string &name, std::string remap_idx_str);
-
-protected:
-    // The collision groups are sorted by integer indices. A group is an array of
-    // rigid bodies that collide with each other. The bodies in one group
-    // are not meant to collide with bodies from another group. Lastly
-    // the a body can be a part of multiple groups
-    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
 private:
     // The world has a list of all the bodies and joints belonging to all multibodies

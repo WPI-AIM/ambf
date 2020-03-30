@@ -107,7 +107,7 @@ class afSoftMultiMesh : public cBulletMultiMesh
 public:
 
     //! Constructor of afSoftMultiMesh.
-    afSoftMultiMesh(cBulletWorld* a_world, std::string a_objName = "") : cBulletMultiMesh(a_world, a_objName) {
+    afSoftMultiMesh(cBulletWorld* a_world) : cBulletMultiMesh(a_world) {
     }
 
     //! Destructor of afSoftMultiMesh.

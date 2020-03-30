@@ -85,7 +85,7 @@ public:
     //! Constructor of cBulletCylinder.
     cBulletCylinder(cBulletWorld* a_world,
         const double& a_height, 
-        const double& a_radius, std::string a_objName = "");
+        const double& a_radius);
 
     //! Destructor of cBulletBox.
     virtual ~cBulletCylinder() {};
