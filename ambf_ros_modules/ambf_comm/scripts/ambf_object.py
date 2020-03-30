@@ -47,7 +47,7 @@
 # from tf import transformations
 # Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
 
-from tf import transformations
+from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
@@ -63,7 +63,7 @@ class Object(WatchDog):
         :param a_name:
         """
         super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
-        self._name = ''
+        self._name = a_name
         self._state = ObjectState()
         self._cmd = ObjectCmd()
         self._pub = None
@@ -169,22 +169,6 @@ class Object(WatchDog):
         
         return dt
 
-    def get_joint_pos(self, idx):
-        """
-        Get the joint position of a specific joint at idx. Check joint names to see indexes
-        :param joint_name_or_idx:
-        :return:
-        """
-        if isinstance(joint_name_or_idx, str):
-            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
-        else:
-            joint_idx = joint_name_or_idx
-
-        if self.is_joint_idx_valid(joint_idx):
-            return self._state.joint_positions[joint_idx]
-        else:
-            return None
-
     def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
@@ -202,16 +186,24 @@ class Object(WatchDog):
         """
         Get the joint position of a specific joint at idx. Check joint names to see indexes
         :param idx:
+
+    def get_joint_pos(self, join_name_or_idx):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
         :return:
         """
-        n_jnts = len(self._state.joint_positions)
-
-        if not 0 <= idx < n_jnts:
-            # Index invalid
-            print 'Joint Index %s should be between 0-%s'.format(idx, n_jnts)
-            return
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
 
         return self._joint_velocity[idx]
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_positions[joint_idx]
+        else:
+            return None
 
     def get_all_joint_vel(self):
         """

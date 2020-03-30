@@ -27,3 +27,4 @@ multibody configs:
   - "./multi-bodies/environments/KnotEnv2/env.yaml" #20
   - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
   - "./multi-bodies/environments/TexturedGround/env.yaml" #22
+

@@ -72,8 +72,8 @@ def main():
     global openhmd_state, occulus_state, openhmd_state_valid, occulus_state_valid
     rospy.init_node('occulus_view')
     openhmd_sub = rospy.Subscriber("/openhmd/pose", Pose, openhmd_cb)
-    occulus_sub = rospy.Subscriber("/ambf/env/openhmd/State", ObjectState, occulus_cb, queue_size=1)
-    occulus_pub = rospy.Publisher("/ambf/env/openhmd/Command", ObjectCmd, queue_size=1)
+    occulus_sub = rospy.Subscriber("/ambf/env/default_camera/State", ObjectState, occulus_cb, queue_size=1)
+    occulus_pub = rospy.Publisher("/ambf/env/default_camera/Command", ObjectCmd, queue_size=1)
 
     rate = rospy.Rate(60)
     counter = 0

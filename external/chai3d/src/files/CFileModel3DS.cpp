@@ -174,7 +174,7 @@ bool cLoadFile3DS(cMultiMesh* a_object, const std::string& a_filename)
             int useTwoSides = f_material->two_sided;
             if (useTwoSides == 0)
             {
-                matRecord.m_useCulling = true;
+//                matRecord.m_useCulling = true;
             }
             else
             {
