@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
         // initialize GLFW library
         if (!glfwInit())
         {
-            cout << "failed initialization" << endl;
+            cout << "ERROR! FAILED TO INITIALIZE GLFW LIBRARY" << endl;
             cSleepMs(1000);
             return 1;
         }
@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
         GLFWmonitor* monitorPtr = (*g_cameraIt)->m_monitor;
         if (!windowPtr)
         {
-            cout << "failed to create window" << endl;
+            cout << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
             cSleepMs(1000);
             glfwTerminate();
             return 1;
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
 #ifdef GLEW_VERSION
         if (glewInit() != GLEW_OK)
         {
-            cout << "failed to initialize GLEW library" << endl;
+            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
             glfwTerminate();
             return 1;
         }
