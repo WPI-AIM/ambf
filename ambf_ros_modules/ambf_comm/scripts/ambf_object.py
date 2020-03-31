@@ -77,7 +77,8 @@ class Object(WatchDog):
         self._joint_velocity = None
         self._dt = 0.0
         self._vel_que = deque()
-        self._queue_size = 5
+        self._queue_size = 100
+        self._window_size = 5
 
     def ros_cb(self, data):
         """
@@ -85,18 +86,17 @@ class Object(WatchDog):
         :param data:
         :return:
         """
-
+        self._state = data
         if not len(self._vel_que):
             num = len(data.joint_positions)
             self._vel_que = deque(maxlen=self._queue_size)
             for i in xrange(self._queue_size):
-                self._vel_que.append((num * [0.0], 0.0))
+                self._vel_que.append((np.array(self._state.joint_positions), self._state.sim_time))
 
-        self._state = data
+        
         point = (np.array(data.joint_positions), self._state.sim_time)
         self._vel_que.append(point)
 
-        self._calc_joint_velocity()
 
     def is_active(self):
         """
@@ -202,6 +202,8 @@ class Object(WatchDog):
                 :param idx:
                 :return:
                 """
+        self._calc_joint_velocity()
+
         n_jnts = len(self._state.joint_positions)
         joints = []
         for idx in xrange(n_jnts):
@@ -215,6 +217,8 @@ class Object(WatchDog):
         :param joint_name_or_idx:
         :return:
         """
+        self._calc_joint_velocity()
+
         if isinstance(join_name_or_idx, str):
             joint_idx = self.get_joint_idx_from_name(join_name_or_idx)
         else:
@@ -394,6 +398,10 @@ class Object(WatchDog):
     def set_active(self):
         """Mark this object as active"""
         self._active = True
+
+
+    def set_window_size(self, size):
+        self._window_size = size
 
     def set_pos(self, px, py, pz):
         """
@@ -646,18 +654,20 @@ class Object(WatchDog):
         """
 
         vels = list(self._vel_que)
+        vels.reverse()
         joint_velocities = np.array(len(self._state.joint_positions) * [0.0])
         total_w = 0
-        for w, i in enumerate(xrange(len(vels) - 1)):
+        weights = range(self._window_size)
+        for i in xrange(self._window_size):
+            w = weights[i]
             total_w += w
             curr_state = vels[i]
             next_state = vels[i + 1]
-
             dt = next_state[1] - curr_state[1]
             if not dt:
                 joint_velocities = joint_velocities + np.array(len(self._state.joint_positions) * [0.0])
             else:
-                joint_velocities = joint_velocities + w * (next_state[0] - curr_state[0]) / dt
+                joint_velocities = joint_velocities + i * (next_state[0] - curr_state[0]) / dt
 
         joint_velocities = joint_velocities / total_w
 
