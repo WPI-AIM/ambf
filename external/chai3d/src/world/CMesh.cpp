@@ -76,7 +76,7 @@ namespace chai3d {
 cMesh::cMesh(cMaterialPtr a_material)
 {
     // create vertex array
-    m_vertices = cVertexArray::create(true, true, true, true, true, false);
+    m_vertices = cVertexArray::create(true, true, false, false, false, false);
 
     // create triangle array
     m_triangles = cTriangleArray::create(m_vertices);
@@ -1501,6 +1501,9 @@ void cMesh::renderMesh(cRenderOptions& a_options)
     {
         // enable shader
         m_shaderProgram->use(this, a_options);
+
+        double* bodyTrans = (double*)getLocalTransform().getData();
+        glUniformMatrix4dv(m_shaderProgram->getAttributeLocation("model"), 1, GL_FALSE, bodyTrans);
 
         // render normal texture if enabled
         if (m_normalMap != nullptr)

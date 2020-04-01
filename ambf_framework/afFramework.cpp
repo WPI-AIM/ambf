@@ -4382,11 +4382,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_encl_height = worldEnclosureData["height"].as<double>();
     }
 
-    m_light = new cPositionalLight(s_chaiBulletWorld);
-    m_light->setLocalPos(2, 2, 5);
-    m_light->setShowEnabled(true);
-    m_light->setEnabled(true);
-    s_chaiBulletWorld->addChild(m_light);
+//    m_light = new cPositionalLight(s_chaiBulletWorld);
+//    m_light->setLocalPos(2, 2, 5);
+//    m_light->setShowEnabled(true);
+//    m_light->setEnabled(true);
+//    s_chaiBulletWorld->addChild(m_light);
 
     bool env_defined = false;
     if(worldEnvironment.IsDefined()){
