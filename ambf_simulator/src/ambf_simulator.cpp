@@ -89,21 +89,33 @@ cBulletWorld* g_chaiBulletWorld;
 afWorld *g_afWorld;
 
 struct CommandLineOptions{
+    // Control whether to use a fixed physics timestep or not
     bool useFixedPhxTimeStep = 0;
+    // Control whether to use a fixed haptics timestep or not
     bool useFixedHtxTimeStep = 0;
-    int phxFrequency = 1000; // Physics Update Frequency
-    int htxFrequency = 1000; // Physics Update Frequency
-    bool enableForceFeedback = true; // Enable Force Feedback
-    int numDevicesToLoad; // Number of Devices to Load
-    std::string devicesToLoad = ""; // A string of device indexes to load
-//////////////////////////////////////////////////////////////////////////
-    double softPatchMargin = 0.02; // Show Soft Patch (Only for debugging)
-    bool showSoftPatch = false; // Show Soft Patch
-    std::string multiBodiesToLoad; // A string list of multibody indexes to load
-    std::string multiBodyFilesToLoad = ""; // A string list of multibody files to load
-    std::string launchFilePath; // A string of Path of launch file to load
+    // Physics Update Frequency
+    int phxFrequency = 1000;
+    // Haptics Update Frequency
+    int htxFrequency = 1000;
+    // Enable Force Feedback
+    bool enableForceFeedback = true;
+    // Number of Devices to Load
+    int numDevicesToLoad;
+    // A string of device indexes to load
+    std::string devicesToLoad = "";
+    // A string list of multibody indexes to load
+    std::string multiBodiesToLoad;
+    // A string list of multibody files to load
+    std::string multiBodyFilesToLoad = "";
+    // A string of Path of launch file to load
+    std::string launchFilePath = "../../ambf_models/descriptions/launch.yaml";
+    // Control whether to run headless or not
     bool showGUI = true; //
-    std::string prepend_namespace = ""; // Override the default world namespace
+    // Override the default world namespace
+    std::string prepend_namespace = "";
+    // The running speed of the simulation. 1.0 indicates a stepping of one second.
+    double simulation_speed = 1.0;
+
 };
 
 // Global struct for command line options
@@ -274,7 +286,8 @@ int main(int argc, char* argv[])
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
             ("show_gui,g", p_opt::value<bool>(), "Show GUI")
-            ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace");
+            ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace")
+            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of simulation by a specified factor (Default 1.0)");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
@@ -307,14 +320,16 @@ int main(int argc, char* argv[])
         }
     }
     if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
-    else{
-        // load default launch file if no path is given
-        g_cmdOpts.launchFilePath = "../../ambf_models/descriptions/launch.yaml";
-    }
+
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
 
 
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
+
+    if(var_map.count("sim_speed_factor")){
+        g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
+        std::cerr << "INFO! SETTING SIMULATION SPEED FACTOR TO: " << g_cmdOpts.simulation_speed << std::endl;
+    }
 
     // Process the loadMultiBodies string
 
@@ -1399,7 +1414,7 @@ void updatePhysics(){
 
             double step_size;
             if (g_cmdOpts.useFixedPhxTimeStep){
-                step_size = 1.0 / g_cmdOpts.phxFrequency;
+                step_size = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.phxFrequency);
             }
             else{
                 step_size = g_afWorld->computeStepSize(true);
@@ -1615,7 +1630,7 @@ void updateHapticDevice(void* a_arg){
             double dt;
             if (g_cmdOpts.useFixedHtxTimeStep){
 
-                dt = 1.0 / g_cmdOpts.htxFrequency;
+                dt = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.htxFrequency);
             }
             else{
                 dt = g_afWorld->computeStepSize();
