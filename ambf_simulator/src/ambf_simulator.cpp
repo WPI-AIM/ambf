@@ -749,11 +749,14 @@ int main(int argc, char* argv[])
     printf("light.diffuse: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.diffuse"));
     printf("light.specular: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.specular"));
     printf("viewPos: %d \n", glGetUniformLocation(g_lightingShader->getId(), "viewPos"));
+    printf("View: %d \n", glGetUniformLocation(g_lightingShader->getId(), "view"));
+    printf("Projection: %d \n", glGetUniformLocation(g_lightingShader->getId(), "projection"));
+    printf("Model: %d \n", glGetUniformLocation(g_lightingShader->getId(), "model"));
 
-    afRigidBodyMap::iterator rbIt;
-    for (rbIt = g_afWorld->getAFRigidBodyMap()->begin() ; rbIt != g_afWorld->getAFRigidBodyMap()->end() ; ++rbIt){
-        afRigidBody* rb = (rbIt->second);
-        rb->setShaderProgram(g_lightingShader);
+
+    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+    for (int i = 3 ; i < rbVec.size() ; i++){
+        rbVec[i]->setShaderProgram(g_lightingShader);
     }
 
 //    g_afWorld->s_chaiBulletWorld->setShaderProgram(g_lightingShader);
@@ -790,7 +793,7 @@ int main(int argc, char* argv[])
             g_lightingShader->setUniformf("light.constant", 1.0);
             g_lightingShader->setUniformf("light.linear", 0.09);
             g_lightingShader->setUniformf("light.quadratic", 0.032);
-            g_lightingShader->setUniformf("material.shininess", 2.0);
+            g_lightingShader->setUniformf("material.shininess", 32.0);
             glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.diffuse"), 0);
             glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.specular"), 1);
 
@@ -812,7 +815,7 @@ int main(int argc, char* argv[])
 //            }
             for (rbIt = g_afWorld->getAFRigidBodyMap()->begin() ; rbIt != g_afWorld->getAFRigidBodyMap()->end() ; ++rbIt){
                 afRigidBody* rb = (rbIt->second);
-                rb->getMesh(0)->setLocalTransform(rb->getLocalTransform());
+//                rb->getMesh(0)->setLocalTransform(rb->getLocalTransform());
             }
 //            glfwSwapBuffers(g_afWorld->getAFCameras()[0]->m_window);
             updateGraphics();
