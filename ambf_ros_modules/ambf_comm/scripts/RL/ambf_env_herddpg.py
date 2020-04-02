@@ -159,17 +159,22 @@ class AmbfEnv(gym.GoalEnv):
         current_joint_pos = np.zeros(7)
         new_state_joint_pos = np.zeros(7)
         # print("type of actions ", type(action))
-        action = [0.01*x for x in action]
+        action = [0.1*x for x in action]
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
         # new_state = np.zeros(self.joints_to_control.shape)
         for val, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[val] = self.obj_handle.get_joint_pos(jt_name)
+            if abs(self.previous_joint_pos[val] - current_joint_pos[val]) < 0.001:
+                pass
+            else:
+                time.sleep(1)
             new_state_joint_pos[val] = np.add(current_joint_pos[val], action[val])
         # print("fk tip ", fk_tip)
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
-        # print("new state xyz pos ", new_state_xyz_pos.shape)
+        print("calculated new state pos ", new_state_joint_pos)
         if self.invalid_joint_pos(new_state_joint_pos):
             joint_pos = self.previous_joint_pos
+            print("Invalid Joint Position")
             flag = 1
             # updated_state, rewards, done, info = self._update_observation(joint_pos, action, flag=1)
         else:
@@ -191,11 +196,13 @@ class AmbfEnv(gym.GoalEnv):
         fk_tip = compute_FK(joint_pos)
         xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         self.previous_cartesian_pos = xyz_cartesian_pos
+        print("Previous pos ", self.previous_joint_pos, "Action is ", action,
+              "new pos after action ", joint_pos)
         self.previous_joint_pos = joint_pos
         # if self.count_for_print % 500 == 0:
-        print("Previous pos ", self.previous_cartesian_pos, "Action is ", action,
-              "new pos after action ", xyz_cartesian_pos)
+
         print("Reward is ", rewards)
+        time.sleep(0.1)
 
         return updated_state, rewards, done, info
 
@@ -214,7 +221,7 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         check_joint_val = np.all((-1.605 <= joint_pos[0] <= 1.5994) and (-0.93556 <= joint_pos[1] <= 0.94249)
-                                 and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
+                                 and (0.0 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
                                  and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
                                  and (-3.0498 <= joint_pos[5] <= 3.0399))
         # print("check val is ", check_val)
