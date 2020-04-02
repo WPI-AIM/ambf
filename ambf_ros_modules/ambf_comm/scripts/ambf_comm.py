@@ -46,5 +46,5 @@
 from ambf_client import Client
 from ambf_world import World
 from ambf_object import Object
-from ambf_env import AmbfEnv
+from ambf_env_herddpg import AmbfEnv
 from watch_dog import WatchDog
