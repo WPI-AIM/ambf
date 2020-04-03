@@ -242,160 +242,6 @@ cShaderProgramPtr g_lampShader;
 
 std::shared_ptr<afCollateralControlManager> g_inputDevices;
 
-//class Shader
-//{
-//public:
-//    unsigned int ID;
-//    // constructor generates the shader on the fly
-//    // ------------------------------------------------------------------------
-//    Shader(const char* vertexPath, const char* fragmentPath)
-//    {
-//        // 1. retrieve the vertex/fragment source code from filePath
-//        std::string vertexCode;
-//        std::string fragmentCode;
-//        std::ifstream vShaderFile;
-//        std::ifstream fShaderFile;
-//        // ensure ifstream objects can throw exceptions:
-//        vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-//        fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-//        try
-//        {
-//            // open files
-//            vShaderFile.open(vertexPath);
-//            fShaderFile.open(fragmentPath);
-//            std::stringstream vShaderStream, fShaderStream;
-//            // read file's buffer contents into streams
-//            vShaderStream << vShaderFile.rdbuf();
-//            fShaderStream << fShaderFile.rdbuf();
-//            // close file handlers
-//            vShaderFile.close();
-//            fShaderFile.close();
-//            // convert stream into string
-//            vertexCode = vShaderStream.str();
-//            fragmentCode = fShaderStream.str();
-//        }
-//        catch (std::ifstream::failure& e)
-//        {
-//            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-//        }
-//        const char* vShaderCode = vertexCode.c_str();
-//        const char * fShaderCode = fragmentCode.c_str();
-//        // 2. compile shaders
-//        unsigned int vertex, fragment;
-//        // vertex shader
-//        vertex = glCreateShader(GL_VERTEX_SHADER);
-//        glShaderSource(vertex, 1, &vShaderCode, NULL);
-//        glCompileShader(vertex);
-//        checkCompileErrors(vertex, "VERTEX");
-//        // fragment Shader
-//        fragment = glCreateShader(GL_FRAGMENT_SHADER);
-//        glShaderSource(fragment, 1, &fShaderCode, NULL);
-//        glCompileShader(fragment);
-//        checkCompileErrors(fragment, "FRAGMENT");
-//        // shader Program
-//        ID = glCreateProgram();
-//        glAttachShader(ID, vertex);
-//        glAttachShader(ID, fragment);
-//        glLinkProgram(ID);
-//        checkCompileErrors(ID, "PROGRAM");
-//        // delete the shaders as they're linked into our program now and no longer necessery
-//        glDeleteShader(vertex);
-//        glDeleteShader(fragment);
-
-//    }
-//    // activate the shader
-//    // ------------------------------------------------------------------------
-//    void use() const
-//    {
-//        glUseProgram(ID);
-//    }
-//    // utility uniform functions
-//    // ------------------------------------------------------------------------
-//    void setBool(const std::string &name, bool value) const
-//    {
-//        glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setInt(const std::string &name, int value) const
-//    {
-//        glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setFloat(const std::string &name, float value) const
-//    {
-//        glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setVec2(const std::string &name, const glm::vec2 &value) const
-//    {
-//        glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
-//    }
-//    void setVec2(const std::string &name, float x, float y) const
-//    {
-//        glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setVec3(const std::string &name, const glm::vec3 &value) const
-//    {
-//        glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
-//    }
-//    void setVec3(const std::string &name, float x, float y, float z) const
-//    {
-//        glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setVec4(const std::string &name, const glm::vec4 &value) const
-//    {
-//        glUniform4fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
-//    }
-//    void setVec4(const std::string &name, float x, float y, float z, float w) const
-//    {
-//        glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setMat2(const std::string &name, const glm::mat2 &mat) const
-//    {
-//        glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setMat3(const std::string &name, const glm::mat3 &mat) const
-//    {
-//        glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-//    }
-//    // ------------------------------------------------------------------------
-//    void setMat4(const std::string &name, const glm::mat4 &mat) const
-//    {
-//        glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-//    }
-
-//private:
-//    // utility function for checking shader compilation/linking errors.
-//    // ------------------------------------------------------------------------
-//    void checkCompileErrors(GLuint shader, std::string type)
-//    {
-//        GLint success;
-//        GLchar infoLog[1024];
-//        if (type != "PROGRAM")
-//        {
-//            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-//            if (!success)
-//            {
-//                glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-//                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-//            }
-//        }
-//        else
-//        {
-//            glGetProgramiv(shader, GL_LINK_STATUS, &success);
-//            if (!success)
-//            {
-//                glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-//                std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-//            }
-//        }
-//    }
-//};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -765,6 +611,7 @@ int main(int argc, char* argv[])
     printf("\n ------- \n");
 
 //    g_afWorld->s_chaiBulletWorld->setShaderProgram(g_lightingShader);
+    int cntr = 0;
 
     // main graphic loop
     while (!g_window_closed)
@@ -772,9 +619,9 @@ int main(int argc, char* argv[])
 
         if (g_cmdOpts.showGUI){
 
-            cVector3d lightPos = g_afWorld->getAFCameras()[0]->getCamera()->getLocalPos();
-            cVector3d localPos = g_afWorld->getAFCameras()[0]->getCamera()->getLocalPos();
-            cVector3d dir = -g_afWorld->getAFCameras()[0]->getLookVector();
+            cVector3d lightPos = cVector3d(0, 0, 0);
+            cVector3d camPos = g_afWorld->getAFCameras()[0]->getLocalPos();
+            cVector3d dir = cVector3d(0, 0, -1);
             cVector3d ambient = cVector3d(0.5, 0.5, 0.5);
             cVector3d diffuse = cVector3d(0.5, 0.5, 0.5);
             cVector3d specular = cVector3d(1.0, 1.0, 1.0);
@@ -786,7 +633,6 @@ int main(int argc, char* argv[])
             g_lightingShader->setUniform("light.position", lightPos);
             g_lightingShader->setUniform("light.direction", dir);
             g_lightingShader->setUniformf("light.cutOff", 0.2);
-            g_lightingShader->setUniform("viewPos", localPos);
             g_lightingShader->setUniform("light.ambient", ambient);
             g_lightingShader->setUniform("light.diffuse", diffuse);
             g_lightingShader->setUniform("light.specular", specular);
@@ -795,28 +641,36 @@ int main(int argc, char* argv[])
             g_lightingShader->setUniformf("light.quadratic", 0.032);
             g_lightingShader->setUniformf("material.shininess", 32.0);
             glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.diffuse"), 0);
-            glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.specular"), 1);
+            glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.specular"), 0);
 
-            double* modelViewMat = (double*)g_afWorld->getAFCameras()[0]->getCamera()->m_modelViewMatrix.getData();
+            cTransform lookAtMat;
+            lookAtMat.setLookAtMatrix(g_afWorld->getAFCameras()[0]->getLocalPos(),
+                    g_afWorld->getAFCameras()[0]->getLookVector(),
+                    g_afWorld->getAFCameras()[0]->getUpVector());
+            cntr++;
+
+//            if (cntr == 100){
+//                cntr = 0;
+//                std::cerr << g_afWorld->getAFCameras()[0]->getCamera()->m_modelViewMatrix.str(3);
+//                std::cerr << "-----\n";
+//                std::cerr << lookAtMat.str(3);
+//                std::cerr << "\n*****\n";
+//            }
             double* projectionMat = (double*)g_afWorld->getAFCameras()[0]->getCamera()->m_projectionMatrix.getData();
-            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, modelViewMat);
+            g_lightingShader->setUniform("viewPos", camPos);
+            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, lookAtMat.getData());
             glUniformMatrix4dv(g_lightingShader->getAttributeLocation("projection"), 1, GL_FALSE, projectionMat);
 
             g_lightingShader->disable();
 
             // Call the update graphics method
-            afRigidBodyMap::iterator rbIt;
 
-//            for (rbIt = g_afWorld->getAFRigidBodyMap()->begin() ; rbIt != g_afWorld->getAFRigidBodyMap()->end() ; ++rbIt){
-//                afRigidBody* rb = (rbIt->second);
-//                float* bodyTrans = (float*)rb->getLocalTransform().getData();
-//                glUniformMatrix4fv(g_lightingShader->getAttributeLocation("model"), 1, GL_FALSE, bodyTrans);
-////                glDrawArrays(GL_TRIANGLES,0, rb->getNumTriangles());
-//            }
-            for (rbIt = g_afWorld->getAFRigidBodyMap()->begin() ; rbIt != g_afWorld->getAFRigidBodyMap()->end() ; ++rbIt){
-                afRigidBody* rb = (rbIt->second);
-//                rb->getMesh(0)->setLocalTransform(rb->getLocalTransform());
+            afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+            for (int i = 3 ; i < rbVec.size() ; i++){
+                rbVec[i]->setShaderProgram(g_lightingShader);
+                rbVec[i]->getMesh(0)->setLocalTransform(rbVec[i]->getLocalTransform());
             }
+
 //            glfwSwapBuffers(g_afWorld->getAFCameras()[0]->m_window);
             updateGraphics();
 
