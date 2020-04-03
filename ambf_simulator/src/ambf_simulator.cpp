@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
             ("show_gui,g", p_opt::value<bool>(), "Show GUI")
             ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace")
-            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of simulation by a specified factor (Default 1.0)");
+            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
@@ -326,10 +326,7 @@ int main(int argc, char* argv[])
 
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
-    if(var_map.count("sim_speed_factor")){
-        g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
-        std::cerr << "INFO! SETTING SIMULATION SPEED FACTOR TO: " << g_cmdOpts.simulation_speed << std::endl;
-    }
+    if(var_map.count("sim_speed_factor")){g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();}
 
     // Process the loadMultiBodies string
 
@@ -344,6 +341,15 @@ int main(int argc, char* argv[])
     cout << cmd_opts << std::endl << std::endl;
     cout << "------------------------------------------------------------" << endl << endl << endl;
     cout << endl;
+
+    if(var_map.count("sim_speed_factor")){
+        if (g_cmdOpts.useFixedPhxTimeStep){
+            std::cerr << "INFO! SETTING SIMULATION SPEED FACTOR TO: " << g_cmdOpts.simulation_speed << std::endl;
+        }
+        else{
+            std::cerr << "WARNING! SIMULATION SPEED FACTOR IS ONLY CONSIDERED IN NON REAL-TIME SIMULATION\n";
+        }
+    }
 
     //-----------------------------------------------------------------------
     // OPEN GL - WINDOW DISPLAY
