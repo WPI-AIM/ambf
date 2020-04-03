@@ -147,10 +147,24 @@ class AmbfEnv(gym.GoalEnv):
 
     def reset(self):
         self.goal = self._sample_goal()
-        action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        observation, _, _, _ = self.step(action)
+        # action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        # observation, _, _, _ = self.step(action)
+        self.set_initial_pos_func()
+        observation = self.read_joint_pos_func()
         return observation
         # return self.initial_pos
+
+    def set_initial_pos_func(self):
+        for val, jt_name in enumerate(self.joints_to_control):
+            self.obj_handle.set_joint_pos(jt_name, 0)
+
+    def read_joint_pos_func(self):
+        joint_pos = np.zeros(7)
+        for joint_idx, jt_name in enumerate(self.joints_to_control):
+            joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+        updated_state, _, _, _ = self._update_observation(joint_pos, flag=0)
+
+        return updated_state
 
     def step(self, action):
         assert len(action) == 7
@@ -162,16 +176,16 @@ class AmbfEnv(gym.GoalEnv):
         action = [0.1*x for x in action]
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
         # new_state = np.zeros(self.joints_to_control.shape)
-        for val, jt_name in enumerate(self.joints_to_control):
-            current_joint_pos[val] = self.obj_handle.get_joint_pos(jt_name)
-            error_in_pos = abs(self.previous_joint_pos[val] - current_joint_pos[val])
+        for joint_idx, jt_name in enumerate(self.joints_to_control):
+            current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+            error_in_pos = abs(self.previous_joint_pos[joint_idx] - current_joint_pos[joint_idx])
             # print("Error is ", error_in_pos)
             if error_in_pos < 0.01:
                 pass
             else:
-                current_joint_pos[val] = current_joint_pos[val] + error_in_pos
+                current_joint_pos[joint_idx] = current_joint_pos[joint_idx] + error_in_pos
                 # time.sleep(0.5)
-            new_state_joint_pos[val] = np.add(current_joint_pos[val], action[val])
+            new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
         # print("fk tip ", fk_tip)
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
         # print("calculated new state pos ", new_state_joint_pos)
@@ -183,31 +197,24 @@ class AmbfEnv(gym.GoalEnv):
         else:
             joint_pos = new_state_joint_pos
 
-        updated_state, rewards, done, info = self._update_observation(joint_pos, action, flag=flag)
+        updated_state, rewards, done, info = self._update_observation(joint_pos, flag=flag)
 
-        for val, jt_name in enumerate(self.joints_to_control):
-            self.obj_handle.set_joint_pos(jt_name, joint_pos[val])
-        # req_rot = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
-        # new_state_joint_pos, _ = test_ik(xyz_cartesian_pos[0, 0], xyz_cartesian_pos[0, 1], -xyz_cartesian_pos[0, 2],
-        #                                  req_rot[0], req_rot[1], req_rot[2])
-        # print("Set value is ", new_state_joint_pos)
-        # if self.invalid_joint_pos(new_state_joint_pos):
-        #     joint_pos = self.previous_joint_pos
-        # else:
-        #     joint_pos = new_state_joint_pos
+        for joint_idx, jt_name in enumerate(self.joints_to_control):
+            self.obj_handle.set_joint_pos(jt_name, joint_pos[joint_idx])
+
         self.world_handle.update()
         fk_tip = compute_FK(joint_pos)
         xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         self.previous_cartesian_pos = xyz_cartesian_pos
-        # print("Previous pos ", self.previous_joint_pos, "Action is ", action,
-        #       "new pos after action ", joint_pos)
+        if self.count_for_print % 1000 == 0:
+            print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
+                  joint_pos, " goal is ", self.goal)
+            print("Reward is ", rewards)
         self.previous_joint_pos = joint_pos
-        if self.count_for_print % 500 == 0:
-            print("count ", self.count_for_print)
 
-        # print("Reward is ", rewards)
-        # time.sleep(1)
-
+        if self.count_for_print % 2000 == 0:
+            self.reset()
+            
         return updated_state, rewards, done, info
 
     def invalid_cartesian_pos(self, cart_pos):
@@ -237,7 +244,7 @@ class AmbfEnv(gym.GoalEnv):
     def render(self, mode):
         print(' I am {} Ironman'.format(mode))
 
-    def _update_observation(self, state, action, flag):
+    def _update_observation(self, state, flag):
         if self.enable_step_throttling:
             step_jump = 0
             while step_jump < self.n_skip_steps:
@@ -286,11 +293,13 @@ class AmbfEnv(gym.GoalEnv):
         # action_penalty = np.sum(np.square(action))
         done = False
         # reward = (prev_dist - cur_dist) - 4 * action_penalty
-        reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
-        if abs(cur_dist) < 0.001:
+        # reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
+        if abs(cur_dist) < 0.01:
             reward = 1
             done = True
             self.reset()
+        else:
+            reward = 0
         # reward = -(prev_dist - cur_dist)
         # print("Cur dist ", cur_dist)
         self.obs.dist = cur_dist
