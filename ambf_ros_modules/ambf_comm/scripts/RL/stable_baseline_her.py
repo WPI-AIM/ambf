@@ -26,7 +26,7 @@ kwargs = {
     'actor_lr': 1e-3,
     'critic_lr': 1e-3,
     'action_noise': action_noise,
-    'nb_rollout_steps': 10000,
+    'nb_rollout_steps': 1000,
     'tensorboard_log': "./ddpg_dvrk_tensorboard/",
     'gamma': 0.95
 }

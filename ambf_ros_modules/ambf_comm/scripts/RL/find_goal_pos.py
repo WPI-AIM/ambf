@@ -20,71 +20,44 @@ print('\n\n----')
 print(_client.get_obj_names())
 psm_handle = _client.get_obj_handle('psm/baselink')
 time.sleep(5)
-current_joint = np.zeros(6)
-current_joint_pos = np.zeros(6)
-edited_joint_pos = np.zeros(6)
+current_joint = np.zeros(7)
+current_joint_pos = np.zeros(7)
+edited_joint_pos = np.zeros(7)
+prev_pos = 0
 count = 0
 try:
     while True:
-         # joints_to_control = np.array(['baselink-yawlink', 'yawlink-pitchbacklink',
-                                           # 'pitchendlink-maininsertionlink', 'maininsertionlink-toolrolllink',
-                                           # 'toolrolllink-toolpitchlink', 'toolpitchlink-toolgripper2link'])
          joints_to_control = np.array(['baselink-yawlink', 'yawlink-pitchbacklink',
-                                       'pitchendlink-maininsertionlink', 'maininsertionlink-toolrolllink',
-                                       'toolrolllink-toolpitchlink', 'toolpitchlink-toolgripper2link'])
+                                            'pitchendlink-maininsertionlink', 'maininsertionlink-toolrolllink',
+                                            'toolrolllink-toolpitchlink', 'toolpitchlink-toolgripper1link',
+                                            'toolpitchlink-toolgripper2link'])
          for val, jt_name in enumerate(joints_to_control):
              current_joint_pos[val] = round(psm_handle.get_joint_pos(jt_name), 3)
-         # fk_tip = compute_FK(current_joint_pos)
-         # print("Joint pos ", current_joint_pos)
-         # # eul = euler_from_matrix(fk_tip[0:3, 0:3])
-         # # print("fka angle is  ", fk_tip)
-         # xyz_pos = fk_tip[0:3, 3].reshape((1, 3))
-         # # (-1.570821806172054, 0.000903827565258327, 3.141588156751553)
-         # req_rot = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
-         # # print("new state is ", xyz_pos, "angle is ", req_rot)
-         # new_state_joint_pos, _ = test_ik(xyz_pos[0, 0], xyz_pos[0, 1], xyz_pos[0, 2],
-         #                                  req_rot[0], req_rot[1], req_rot[2])
-         # # print("Computed joint pos ", new_state_joint_pos)
-         # edited_joint_pos = new_state_joint_pos
-         # if not -np.pi <= new_state_joint_pos[3] <= np.pi:
-         #    edited_joint_pos[3] = new_state_joint_pos[3] + np.pi
-         # if not -np.pi <= new_state_joint_pos[4] <= np.pi:
-         #    edited_joint_pos[4] = new_state_joint_pos[4] + np.pi
-         # # edited_joint_pos[5] = new_state_joint_pos[5] + np.pi
-         # print("Computed joint pos ", edited_joint_pos)
-         #
-         # comp_fk = compute_FK(new_state_joint_pos)
-         # eul2 = euler_from_matrix(comp_fk[0:3, 0:3], axes='szyx')
-         # print("Computed FK ", comp_fk[0:3, 3].reshape((1, 3)), "angle ", eul2)
-         # for val, jt_name in enumerate(joints_to_control):
-         #     psm_handle.set_joint_pos(jt_name, new_state_joint_pos[val])
-         # for val, jt_name in enumerate(joints_to_control):
-         #     psm_handle.set_joint_pos(jt_name, current_joint_pos[val])
-         # print("Current joint values ", current_joint_pos)
-         # for val, jt_name in enumerate(joints_to_control):
-         #     current_joint[val] = psm_handle.get_joint_pos(jt_name)
-         # for val, jt_name in enumerate(joints_to_control):
-         #     current_joint_pos[val] = psm_handle.get_joint_pos(jt_name)
-         # for val, jt_name in enumerate(joints_to_control):
-         val = 3
-         psm_handle.set_joint_pos(joints_to_control[val], -3.0456)
-             # if val == 2:
-             #    psm_handle.set_joint_pos(jt_name, current_joint[val] + count)
-             #    count += 0.005
-             #    if count > 0.2:
-             #        count = 0
+         print("Joint 0 pos is ", current_joint_pos[0])
+         fk_tip = compute_FK(current_joint_pos)
+         xyz_pos = fk_tip[0:3, 3].reshape((1, 3))
+         req_rot = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
+
+         for val, jt_name in enumerate(joints_to_control):
+             if val == 0:
+                # print("error is ", prev_pos-current_joint_pos[0])
+                cmd_pos = current_joint_pos[val] + count
+                psm_handle.set_joint_pos(jt_name, cmd_pos)
+
              # if val == 2:
              #     psm_handle.set_joint_pos(jt_name, 0.12)
              #     psm_handle.set_joint_pos(joints_to_control[0], 0.2)
-             # else:
-             #    psm_handle.set_joint_pos(jt_name, 0)
-         # print("Current pos ", current_joint_pos)
-         c = psm_handle.get_joint_pos(joints_to_control[val])
-         print(c)
-         # if count ==10000:
+             else:
+                 psm_handle.set_joint_pos(jt_name, 0)
 
+         count -= 0.05
+         if count < -0.5:
+             count = 0
+
+         print("Count ", count)
          # psm_handle.set_joint_pos(joints_to_control[0], c)
-         time.sleep(0.1)
+         # time.sleep(0.5)
+         prev_pos = cmd_pos
          # print(c)
 except KeyboardInterrupt:
     _client.clean_up()

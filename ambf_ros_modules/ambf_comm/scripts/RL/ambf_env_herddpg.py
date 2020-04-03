@@ -164,17 +164,20 @@ class AmbfEnv(gym.GoalEnv):
         # new_state = np.zeros(self.joints_to_control.shape)
         for val, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[val] = self.obj_handle.get_joint_pos(jt_name)
-            if abs(self.previous_joint_pos[val] - current_joint_pos[val]) < 0.001:
+            error_in_pos = abs(self.previous_joint_pos[val] - current_joint_pos[val])
+            # print("Error is ", error_in_pos)
+            if error_in_pos < 0.01:
                 pass
             else:
-                time.sleep(1)
+                current_joint_pos[val] = current_joint_pos[val] + error_in_pos
+                # time.sleep(0.5)
             new_state_joint_pos[val] = np.add(current_joint_pos[val], action[val])
         # print("fk tip ", fk_tip)
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
-        print("calculated new state pos ", new_state_joint_pos)
+        # print("calculated new state pos ", new_state_joint_pos)
         if self.invalid_joint_pos(new_state_joint_pos):
             joint_pos = self.previous_joint_pos
-            print("Invalid Joint Position")
+            # print("Invalid Joint Position")
             flag = 1
             # updated_state, rewards, done, info = self._update_observation(joint_pos, action, flag=1)
         else:
@@ -196,13 +199,14 @@ class AmbfEnv(gym.GoalEnv):
         fk_tip = compute_FK(joint_pos)
         xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         self.previous_cartesian_pos = xyz_cartesian_pos
-        print("Previous pos ", self.previous_joint_pos, "Action is ", action,
-              "new pos after action ", joint_pos)
+        # print("Previous pos ", self.previous_joint_pos, "Action is ", action,
+        #       "new pos after action ", joint_pos)
         self.previous_joint_pos = joint_pos
-        # if self.count_for_print % 500 == 0:
+        if self.count_for_print % 500 == 0:
+            print("count ", self.count_for_print)
 
-        print("Reward is ", rewards)
-        time.sleep(0.1)
+        # print("Reward is ", rewards)
+        # time.sleep(1)
 
         return updated_state, rewards, done, info
 
@@ -210,7 +214,7 @@ class AmbfEnv(gym.GoalEnv):
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
         # print("joint pos ", joint_pos)
         check_cart_val = np.all((-0.18 <= cart_pos[0, 0] <= 0.18) and (-0.1 <= cart_pos[0, 1] <= 0.1)
-                                and (-0.175 < cart_pos[0, 2] < 0.0))
+                                and (-0.175 < cart_pos[0, 2] < 0.075))
         # print("check val is ", check_val)
         if check_cart_val:
             return False
@@ -296,7 +300,7 @@ class AmbfEnv(gym.GoalEnv):
         rand_val_pos = self.np_random.uniform(-0.18, 0.18, size=3)
         rand_val_pos[0] = np.clip(rand_val_pos[0], -0.18, 0.18)
         rand_val_pos[1] = np.clip(rand_val_pos[1], -0.1, 0.1)
-        rand_val_pos[2] = np.clip(rand_val_pos[2], -0.175, 0.0)
+        rand_val_pos[2] = np.clip(rand_val_pos[2], -0.175, 0.075)
         rand_val_angle = self.np_random.uniform(-1.57, 1.57, size=3)
         # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
         # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
