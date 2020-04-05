@@ -7,6 +7,7 @@ from psmIK import compute_IK, test_ik
 from psmFK import compute_FK
 from transformations import euler_from_matrix
 import time
+import random
 
 
 _client = Client()
@@ -37,12 +38,13 @@ try:
          fk_tip = compute_FK(current_joint_pos)
          xyz_pos = fk_tip[0:3, 3].reshape((1, 3))
          req_rot = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
-
+         rand_number = np.random.uniform(-1.0, 1.0)
          for val, jt_name in enumerate(joints_to_control):
              if val == 0:
                 # print("error is ", prev_pos-current_joint_pos[0])
-                cmd_pos = current_joint_pos[val] + count
+                cmd_pos = current_joint_pos[val] - rand_number
                 psm_handle.set_joint_pos(jt_name, cmd_pos)
+                # psm_handle.set_joint_pos(jt_name, 0.2)
 
              # if val == 2:
              #     psm_handle.set_joint_pos(jt_name, 0.12)
@@ -50,14 +52,14 @@ try:
              else:
                  psm_handle.set_joint_pos(jt_name, 0)
 
-         count -= 0.05
-         if count < -0.5:
-             count = 0
+         # count -= 0.05
+         # if count < -0.3:
+         #     count = 0
 
-         print("Count ", count)
+         print("Random number is ", rand_number)
          # psm_handle.set_joint_pos(joints_to_control[0], c)
          # time.sleep(0.5)
-         prev_pos = cmd_pos
+         # prev_pos = cmd_pos
          # print(c)
 except KeyboardInterrupt:
     _client.clean_up()

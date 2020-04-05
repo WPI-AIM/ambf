@@ -40,12 +40,12 @@ def main(env):
         'actor_lr': 1e-3,
         'critic_lr': 1e-3,
         'action_noise': action_noise,
-        'nb_train_steps': 375,
-        'nb_rollout_steps': 750,
-        'nb_eval_steps': 750,
-        'tensorboard_log': "./ddpg_dvrk_tensorboard/",
+        'nb_train_steps': 500,
+        'nb_rollout_steps': 150,
+        'nb_eval_steps': 500,
         'gamma': 0.95,
-        'observation_range': (-3.05, 3.05)
+        'observation_range': (-3.05, 3.05),
+        'random_exploration': 0.05
     }
 
     # Wrap the model
@@ -54,12 +54,13 @@ def main(env):
     os.makedirs(logdir, exist_ok=True)
     env = Monitor(env, logdir, allow_early_resets=True)
 
-    model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy='future', buffer_size=int(1e6),
-                batch_size=256, **kwargs)
+    model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
+                buffer_size=int(1e6), batch_size=256, **kwargs)
     # model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
     #                                                 verbose=1, batch_size=64)
+    env.reset()
     # Train the model
-    model.learn(3000000, log_interval=10)
+    model.learn(3000000, log_interval=1, tb_log_name="./ddpg_dvrk_tensorboard/")
     # model.save(os.path.join(logdir, "HERDDPG"))
     model.save("./her_robot_env")
 
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     ENV_NAME = 'psm/baselink'
     # Get the environment and extract the number of actions.
     env = AmbfEnv()
+    time.sleep(5)
     env.make(ENV_NAME)
     env.reset()
     main(env=env)
