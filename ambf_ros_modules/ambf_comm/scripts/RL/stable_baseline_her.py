@@ -60,7 +60,7 @@ def main(env):
     #                                                 verbose=1, batch_size=64)
     env.reset()
     # Train the model
-    model.learn(3000000, log_interval=1, tb_log_name="./ddpg_dvrk_tensorboard/")
+    model.learn(500000, log_interval=1, tb_log_name="./ddpg_dvrk_tensorboard/")
     # model.save(os.path.join(logdir, "HERDDPG"))
     model.save("./her_robot_env")
 

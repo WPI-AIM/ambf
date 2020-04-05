@@ -234,7 +234,7 @@ class AmbfEnv(gym.GoalEnv):
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
         # print("joint pos ", joint_pos)
         check_cart_val = np.all((-0.18 <= cart_pos[0, 0] <= 0.18) and (-0.1 <= cart_pos[0, 1] <= 0.1)
-                                and (-0.175 < cart_pos[0, 2] < 0.075))
+                                and (-0.175 < cart_pos[0, 2] < -0.075))
         # print("check val is ", check_val)
         if check_cart_val:
             return False
@@ -244,7 +244,7 @@ class AmbfEnv(gym.GoalEnv):
     def invalid_joint_pos(self, joint_pos):
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
-        check_joint_val = np.all((-1.605 <= joint_pos[0] <= 1.5994) and (-0.93556 <= joint_pos[1] <= 0.94249)
+        check_joint_val = np.all((-1.45 <= joint_pos[0] <= 1.45) and (-0.93556 <= joint_pos[1] <= 0.94249)
                                  and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
                                  and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
                                  and (-3.0498 <= joint_pos[5] <= 3.0399))
@@ -321,9 +321,9 @@ class AmbfEnv(gym.GoalEnv):
 
     def _sample_goal(self):
         rand_val_pos = self.np_random.uniform(-0.18, 0.18, size=3)
-        rand_val_pos[0] = np.clip(rand_val_pos[0], -0.18, 0.18)
+        rand_val_pos[0] = np.clip(rand_val_pos[0], -0.15, 0.15)
         rand_val_pos[1] = np.clip(rand_val_pos[1], -0.1, 0.1)
-        rand_val_pos[2] = np.clip(rand_val_pos[2], -0.175, 0.075)
+        rand_val_pos[2] = np.clip(rand_val_pos[2], -0.175, -0.075)
         rand_val_angle = self.np_random.uniform(-1.57, 1.57, size=3)
         # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
         # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
