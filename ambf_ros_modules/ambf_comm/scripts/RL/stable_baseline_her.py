@@ -5,6 +5,7 @@ from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
 from ambf_comm import AmbfEnv
 import time
+from stable_baselines.common.callbacks import CheckpointCallback
 
 
 def main(env):
@@ -23,18 +24,17 @@ def main(env):
         'nb_eval_steps': 500,
         'gamma': 0.95,
         'observation_range': (-3.05, 3.05),
-        'random_exploration': 0.05,
-        'tensorboard_log': "./ddpg_dvrk_tensorboard/"
+        'random_exploration': 0.05
     }
 
     # Available strategies (cf paper): future, final, episode, random
     model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
-                buffer_size=int(1e6), batch_size=256, **kwargs)
+                buffer_size=int(1e6), batch_size=256, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
     # model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
     #                                                 verbose=1, batch_size=64)
     env.reset()
     # Train the model
-    model.learn(3000000, log_interval=10, tb_log_name="./ddpg_dvrk_tensorboard/")
+    model.learn(3000000, log_interval=10, callback=CheckpointCallback(save_freq=25000, save_path="./ddpg_dvrk_tensorboard/"))
     # model.save(os.path.join(logdir, "HERDDPG"))
     model.save("./her_robot_env")
 
