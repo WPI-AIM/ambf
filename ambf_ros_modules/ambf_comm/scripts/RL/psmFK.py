@@ -110,37 +110,8 @@ T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
 # print(round_mat(T_7_0, 4, 4, 3))
 
 if __name__ == "__main__":
-    # while True:
-    #     T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
-    #     print(T_7_0[0:3, 3])
+    while True:
+        T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
+        print(T_7_0[0:3, 3])
 
-    points = []
-    min_x, max_x, min_y, max_y, min_z, max_z = 0, 0, 0, 0, 0, 0
-    for i1 in np.arange(-1.605, 1.5994, 0.1):
-        for i2 in np.arange(-0.93556, 0.9429, 0.1):
-            for i3 in np.arange(-0.002444, 0.24001, 0.1):
-                for i4 in np.arange(-3.0456, 3.0485, 0.1):
-                    for i5 in np.arange(-3.0414, 3.0528, 0.1):
-                        for i6 in np.arange(-3.0481, 3.0376, 0.1):
-                            for i7 in np.arange(-3.0498, 3.0399, 0.1):
-                                temp = compute_FK([i1, i2, i3, i4, i5, i6, i7])
-                                # print(temp)
-                                point_x = temp[0, 3]
-                                point_y = temp[1, 3]
-                                point_z = temp[2, 3]
-                                if point_x < min_x:
-                                    min_x = point_x
-                                if point_y < min_y:
-                                    min_y = point_y
-                                if point_z < min_z:
-                                    min_z = point_z
-                                if point_x > max_x:
-                                    max_x = point_x
-                                if point_y > max_y:
-                                    max_y = point_y
-                                if point_z > max_z:
-                                    max_z = point_z
 
-    print("Min max value of x is ", min_x, max_x)
-    print("Min max value of y is ", min_y, max_y)
-    print("Min max value of z is ", min_z, max_z)

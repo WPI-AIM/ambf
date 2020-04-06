@@ -52,11 +52,10 @@ from gym.utils import seeding
 from ambf_world import World
 from ambf_object import Object
 from numpy import linalg as LA
-from psmIK import compute_IK, test_ik
+# from psmIK import compute_IK, test_ik
 from psmFK import compute_FK
 # from PyKDL import Vector, Rotation, Frame, dot
 from transformations import euler_from_matrix
-from pytictoc import TicToc
 
 
 class Observation:
@@ -122,7 +121,6 @@ class AmbfEnv(gym.GoalEnv):
         self.prev_sim_step = 0
         self.count_for_print = 0
         self.toc = 0
-        pass
     #  0.0457060,  -0.01173, 0.01810
 
     def skip_sim_steps(self, num):
@@ -172,49 +170,37 @@ class AmbfEnv(gym.GoalEnv):
         return updated_state
 
     def step(self, action):
-        # tic = time.clock()
-        # print("Time gap between two ", tic-self.toc)
         assert len(action) == 7
         flag = 0
-        # time.sleep(2)
         self.count_for_print += 1
         current_joint_pos = np.zeros(7)
         new_state_joint_pos = np.zeros(7)
         # print("type of actions ", type(action))
         action = [0.05*x for x in action]
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
-        # new_state = np.zeros(self.joints_to_control.shape)
+
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-            # if self.count_for_print > 1:
             error_in_pos = self.cmd_joint_pos[joint_idx] - current_joint_pos[joint_idx]
             # print("Values are ", error_in_pos)
             if abs(error_in_pos) < 0.001:
                 pass
             else:
                 current_joint_pos[joint_idx] = current_joint_pos[joint_idx] + error_in_pos
-                # time.sleep(0.5)
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
-        # print("Cmd pos ", self.cmd_joint_pos[0])
 
-        # State limit values: Z-> -0.04 || X, Y -> +-0.1
-        # print("calculated new state pos ", new_state_joint_pos)
         if self.invalid_joint_pos(new_state_joint_pos):
             joint_pos = self.previous_joint_pos
             # print("Invalid Joint Position")
             flag = 1
-            # updated_state, rewards, done, info = self._update_observation(joint_pos, action, flag=1)
         else:
             joint_pos = new_state_joint_pos
-        # print("Current pos and action and resulting pos ", flag, current_joint_pos[0], action[0],
-        #       new_state_joint_pos[0])
-        # print("Set pos of joint 0 ", joint_pos[0])
 
         updated_state, rewards, done, info = self._update_observation(joint_pos, flag=flag)
 
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             self.obj_handle.set_joint_pos(jt_name, joint_pos[joint_idx])
-            # time.sleep(0.5)
+
         self.world_handle.update()
         fk_tip = compute_FK(joint_pos)
         xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
@@ -224,10 +210,7 @@ class AmbfEnv(gym.GoalEnv):
                   joint_pos, " goal is ", self.goal)
             print("Reward is ", rewards)
         self.previous_joint_pos = joint_pos
-        # print("Actual val", self.obj_handle.get_joint_pos(0), " Error ", self.obj_handle.get_joint_pos(0)-new_state_joint_pos[0])
-        # if self.count_for_print % 2000 == 0:
-        #     self.reset()
-        # self.toc = tic
+
         return updated_state, rewards, done, info
 
     def invalid_cartesian_pos(self, cart_pos):
@@ -244,6 +227,7 @@ class AmbfEnv(gym.GoalEnv):
     def invalid_joint_pos(self, joint_pos):
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
+        # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         check_joint_val = np.all((-1.45 <= joint_pos[0] <= 1.45) and (-0.93556 <= joint_pos[1] <= 0.94249)
                                  and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
                                  and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
@@ -275,19 +259,12 @@ class AmbfEnv(gym.GoalEnv):
         fk_tip = compute_FK(state)
         cartesian_pos = fk_tip[0:3, 3]
         achieved_rot = np.array(euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')).reshape((3, 1))
-        # print("Type of stuff ", cartesian_pos, cartesian_pos.shape, achieved_rot.shape)
         achieved_goal = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy()), axis=0)).reshape(-1)
-        # print("Type of stuff ", achieved_goal, achieved_goal.shape)
         state_vel = np.random.uniform(0.0, 0.75, (1, 7))
         # state_vel = np.ones(7)
         # print("state vel is ", state_vel)
         observation = np.concatenate((state, state_vel), axis=None)
-        # state = self.obj_handle.get_pose() + [step_jump]
-        # print("Individual terms", self.obj_handle.get_pose(), self.base_handle.get_pose(), step_jump)
-        # print(type(self.obj_handle.get_pose()))
-        # state = state.tolist() + [step_jump]
-        # state = self.obj_handle.get_pose() + self.base_handle.get_pose() + [step_jump]
-        # print("state is ", self.obj_handle.get_pose(),  self.goal_state)
+
         self.obs.state.update(observation=observation.copy(), achieved_goal=achieved_goal.copy(),
                               desired_goal=self.goal.copy())
         # Flag checks if it takes it out of the observation limits. Flag=1 means it is invalid move

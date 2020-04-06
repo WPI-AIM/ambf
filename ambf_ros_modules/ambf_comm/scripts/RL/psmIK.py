@@ -160,7 +160,7 @@ def test_ik(x, y, z, rx, ry, rz):
 
 
 if __name__ == "__main__":
-    ik_pos,  T_frame = test_ik(-0.1, -0.1, -0.3, PI/4, PI_2, PI/4)
+    ik_pos,  T_frame = test_ik(-0.18, -0.1, -0.15, PI/4, PI_2, PI/4)
     goal_state = [0.5145, 0.4273, -0.6718, 2.1767, 1.5345, 2.5359]
     # ik_pos, T_frame = test_ik(0.5145, 0.4273, -0.6718, 2.1767, 1.5345, 2.5359)
     print("IK is ", ik_pos, "goal is ", goal_state)
