@@ -352,7 +352,7 @@ int main(int argc, char* argv[])
         glfwSetErrorCallback(errorCallback);
 
         // set OpenGL version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 //        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -376,7 +376,7 @@ int main(int argc, char* argv[])
     g_chaiBulletWorld = new cBulletWorld();
 
     // set the background color of the environment
-//    g_chaiBulletWorld->m_backgroundColor.setWhite();
+    g_chaiBulletWorld->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
@@ -603,6 +603,7 @@ int main(int argc, char* argv[])
     afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
     for (int i = 3 ; i < rbVec.size() ; i++){
         rbVec[i]->setShaderProgram(g_lightingShader);
+        rbVec[i]->setUseMaterial(false);
     }
 
 //    g_afWorld->s_chaiBulletWorld->setShaderProgram(g_lightingShader);
@@ -620,7 +621,6 @@ int main(int argc, char* argv[])
         if (g_cmdOpts.showGUI){
 
             cVector3d lightPos = cVector3d(0, 0, 0);
-            cVector3d camPos = g_afWorld->getAFCameras()[0]->getLocalPos();
             cVector3d dir = cVector3d(0, 0, -1);
             cVector3d ambient = cVector3d(0.5, 0.5, 0.5);
             cVector3d diffuse = cVector3d(0.5, 0.5, 0.5);
@@ -630,23 +630,31 @@ int main(int argc, char* argv[])
             cRenderOptions ro;
             g_lightingShader->use(go, ro);
 
-            g_lightingShader->setUniform("light.position", lightPos);
-            g_lightingShader->setUniform("light.direction", dir);
-            g_lightingShader->setUniformf("light.cutOff", 0.2);
-            g_lightingShader->setUniform("light.ambient", ambient);
-            g_lightingShader->setUniform("light.diffuse", diffuse);
-            g_lightingShader->setUniform("light.specular", specular);
-            g_lightingShader->setUniformf("light.constant", 1.0);
-            g_lightingShader->setUniformf("light.linear", 0.09);
-            g_lightingShader->setUniformf("light.quadratic", 0.032);
-            g_lightingShader->setUniformf("material.shininess", 32.0);
-            glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.diffuse"), 0);
-            glUniform1i(glGetUniformLocation(g_lightingShader->getId(), "material.specular"), 0);
+            cVector3d viewPos = g_afWorld->getAFCameras()[0]->getLocalPos();
 
             cTransform lookAtMat;
             lookAtMat.setLookAtMatrix(g_afWorld->getAFCameras()[0]->getLocalPos(),
                     g_afWorld->getAFCameras()[0]->getLookVector(),
                     g_afWorld->getAFCameras()[0]->getUpVector());
+
+            cTransform projectionMat = g_afWorld->getAFCameras()[0]->getCamera()->m_projectionMatrix;
+
+            g_lightingShader->setUniform("light.position", lightPos);
+            g_lightingShader->setUniform("light.direction", dir);
+            g_lightingShader->setUniformf("light.cutOff", 0.2f);
+            g_lightingShader->setUniform("light.ambient", ambient);
+            g_lightingShader->setUniform("light.diffuse", diffuse);
+            g_lightingShader->setUniform("light.specular", specular);
+            g_lightingShader->setUniformf("light.constant", 1.0f);
+            g_lightingShader->setUniformf("light.linear", 0.09f);
+            g_lightingShader->setUniformf("light.quadratic", 0.032f);
+            g_lightingShader->setUniformf("material.shininess", 32.0f);
+            g_lightingShader->setUniformi("material.diffuse", 1);
+            g_lightingShader->setUniformi("material.specular", 1);
+            g_lightingShader->setUniform("viewPos", viewPos);
+            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, lookAtMat.getData());
+            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("projection"), 1, GL_FALSE, projectionMat.getData());
+
             cntr++;
 
 //            if (cntr == 100){
@@ -656,20 +664,21 @@ int main(int argc, char* argv[])
 //                std::cerr << lookAtMat.str(3);
 //                std::cerr << "\n*****\n";
 //            }
-            double* projectionMat = (double*)g_afWorld->getAFCameras()[0]->getCamera()->m_projectionMatrix.getData();
-            g_lightingShader->setUniform("viewPos", camPos);
-            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, lookAtMat.getData());
-            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("projection"), 1, GL_FALSE, projectionMat);
+
+
 
             g_lightingShader->disable();
 
             // Call the update graphics method
 
             afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-            for (int i = 3 ; i < rbVec.size() ; i++){
-                rbVec[i]->setShaderProgram(g_lightingShader);
-                rbVec[i]->getMesh(0)->setLocalTransform(rbVec[i]->getLocalTransform());
-            }
+//            for (int i = 3 ; i < rbVec.size() ; i++){
+//                rbVec[i]->getMesh(0)->setLocalTransform(rbVec[i]->getLocalTransform());
+//                if (i == 3){
+//                    std::cerr << rbVec[i]->m_name <<  ": " << rbVec[i]->getMesh(0)->getLocalTransform().str(3) << "\n";
+//                    std::cerr << rbVec[i]->m_name <<  ": " << rbVec[i]->getLocalTransform().str(3) << "\n";
+//                }
+//            }
 
 //            glfwSwapBuffers(g_afWorld->getAFCameras()[0]->m_window);
             updateGraphics();

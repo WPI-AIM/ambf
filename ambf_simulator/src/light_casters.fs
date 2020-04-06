@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 FragColor;
+// out vec4 FragColor;
 
 struct Material {
     sampler2D diffuse;
@@ -62,11 +62,11 @@ void main()
         specular *= attenuation;
 
         vec3 result = ambient + diffuse + specular;
-        FragColor = vec4(result, 1.0);
+        gl_FragColor = vec4(result, 1.0);
     }
     else
     {
         // else, use ambient light so scene isn't completely dark outside the spotlight.
-        FragColor = vec4(light.ambient * texture(material.diffuse, TexCoords).rgb, 1.0);
+        gl_FragColor = vec4(light.ambient * texture(material.diffuse, TexCoords).rgb, 1.0);
     }
 }
