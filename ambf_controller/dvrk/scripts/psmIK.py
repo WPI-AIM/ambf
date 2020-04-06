@@ -1,22 +1,9 @@
+from PyKDL import Vector, Rotation, Frame, dot
 import numpy as np
 import math
 from psmFK import *
 
-import os
-import sys
-
-if "./tf_utils/scripts/" not in sys.path:
-  sys.path.append("./tf_utils/scripts/")
-
-from vector import Vector
-from frame import Frame
-from rotation import Rotation
-from twist import Twist
-
-
-#from tf_utils import Vector, Rotation, Frame, Twist
-
-# import rospy
+import rospy
 
 # THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
 # SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE
