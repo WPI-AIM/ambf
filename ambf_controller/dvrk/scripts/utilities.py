@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 PI = np.pi
-PI_2 = np.pi / 2
+PI_2 = np.pi/2
 
 
 # The up vector is useful to define angles > PI. Since otherwise
@@ -31,14 +31,13 @@ def get_angle(vec_a, vec_b, up_vector=None):
     return angle
 
 
-
 def round_mat(mat, rows, cols, precision=4):
     for i in range(0, rows):
         for j in range(0, cols):
             mat[i, j] = round(mat[i, j], precision)
     return mat
 
-
+  
 def round_vec(vec, precision=4):
     for i in range(3):
         vec[i] = round(vec[i], precision)
@@ -62,7 +61,7 @@ def convert_frame_to_mat(frame):
         np_mat[i, 3] = frame.p[i]
 
     return np_mat
-    
+
 
 def convert_mat_to_frame(mat):
     frame = Frame(Rotation.RPY(0, 0, 0), Vector(0, 0, 0))
