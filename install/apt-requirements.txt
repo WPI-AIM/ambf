@@ -9,6 +9,7 @@ curl
 htop
 libasound2-dev
 libusb-1.0-0-dev
+xorg-dev 
 libgl1-mesa-dev
 xorg-dev
 libyaml-cpp0.5v5
