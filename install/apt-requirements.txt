@@ -24,3 +24,4 @@ ros-melodic-cv-bridge
 python-cv-bridge
 ros-melodic-image-transport
 ros-melodic-image-transport-plugins
+ssh
