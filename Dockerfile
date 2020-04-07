@@ -39,4 +39,5 @@ RUN . /opt/ros/melodic/setup.sh && \
     make -j$(nproc)
 
 # Entrypoint for the image (command that will execute when invoking docker run)
-CMD ["bash", "/root/ambf/docker_entrypoint.sh"]
+ENTRYPOINT [ "/root/ambf/docker_entrypoint.sh" ]
+CMD ["bash"]
