@@ -9,12 +9,13 @@ RUN apt-get update && \
     apt-get -y -qq -o Dpkg::Use-Pty=0 install --no-install-recommends \
     --fix-missing apt-utils git vim && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p ${AMBF_WS}
 
 # Clone AMBF into $HOME
-WORKDIR ${HOME}
-RUN git clone https://github.com/DhruvKoolRajamani/ambf.git && \
-    cd ${AMBF_WS} && \
+COPY . ${AMBF_WS}
+WORKDIR ${AMBF_WS}
+RUN cd ${AMBF_WS} && \
     git submodule update --init --recursive && \
     git checkout docker-image
 
@@ -38,3 +39,5 @@ RUN . /opt/ros/melodic/setup.sh && \
 RUN touch /root/.bashrc && \
     echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
     echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
+
+WORKDIR ${HOME}
