@@ -15,6 +15,10 @@ libyaml-cpp-dev
 freeglut3
 freeglut3-dev
 libboost-dev
+cmake
+python-nose
+python-setuptools
+ros-melodic-catkin
 ros-melodic-cv-bridge
 ros-melodic-cv-camera
 ros-melodic-image-geometry

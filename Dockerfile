@@ -39,9 +39,9 @@ RUN mkdir -p ${AMBF_WS}/build && \
     cmake ../ && \
     make -j${CORES_AVAILABLE}
 
-# Add AMBF to ~/.bashrc
-RUN echo "source ${AMBF_WS}/build/devel/setup.bash >> ~/.bashrc" && \
-    source ~/.bashrc
+# # Add AMBF to ~/.bashrc
+# RUN echo "source ${AMBF_WS}/build/devel/setup.bash >> ~/.bashrc" && \
+#     source ~/.bashrc
 
-# Run AMBF Sim
-CMD ["bash", "${AMBF_WS}/bin/lin-x86_64/ && ./ambf_simulator"]
+# # Run AMBF Sim
+# CMD ["bash", "${AMBF_WS}/bin/lin-x86_64/ && ./ambf_simulator"]
