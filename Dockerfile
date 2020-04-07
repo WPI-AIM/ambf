@@ -2,8 +2,7 @@
 FROM ros:melodic-ros-base-bionic
 
 ENV HOME="/root" \
-    AMBF_WS="/root/ambf" \
-    CORES_AVAILABLE=1
+    AMBF_WS="/root/ambf"
 
 # Install git
 RUN apt-get update && \
@@ -37,7 +36,7 @@ RUN . /opt/ros/melodic/setup.sh && \
     mkdir -p ${AMBF_WS}/build && \
     cd ${AMBF_WS}/build && \
     cmake ../ && \
-    make -j${CORES_AVAILABLE}
+    make -j$(nproc)
 
 # # Add AMBF to ~/.bashrc
 # RUN echo "source ${AMBF_WS}/build/devel/setup.bash >> ~/.bashrc" && \
