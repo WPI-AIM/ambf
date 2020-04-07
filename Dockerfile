@@ -28,9 +28,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Source ROS_PATH
-RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash"
-
 # Build AMBF
 RUN . /opt/ros/melodic/setup.sh && \
     mkdir -p ${AMBF_WS}/build && \
@@ -38,6 +35,6 @@ RUN . /opt/ros/melodic/setup.sh && \
     cmake ../ && \
     make -j$(nproc)
 
-# Entrypoint for the image (command that will execute when invoking docker run)
-ENTRYPOINT [ "/root/ambf/docker_entrypoint.sh" ]
-CMD ["bash"]
+RUN touch /root/.bashrc && \
+    echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
+    echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
