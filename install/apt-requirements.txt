@@ -18,6 +18,15 @@ libboost-dev
 cmake
 python-nose
 python-setuptools
+ros-melodic-tf
+ros-melodic-tf2
+ros-melodic-tf2-ros
+ros-melodic-tf2-eigen
+ros-melodic-tf2-geometry-msgs
+ros-melodic-tf2-py
+ros-melodic-tf2-msgs
+ros-melodic-tf2-server
+ros-melodic-tf2-relay
 ros-melodic-catkin
 ros-melodic-cv-bridge
 ros-melodic-cv-camera

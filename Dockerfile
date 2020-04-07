@@ -1,8 +1,8 @@
 # Import base ros melodic image
 FROM ros:melodic-ros-base-bionic
 
-ENV HOME="/root/" \
-    AMBF_WS="/root/ambf/" \
+ENV HOME="/root" \
+    AMBF_WS="/root/ambf" \
     CORES_AVAILABLE=1
 
 # Install git
@@ -11,10 +11,6 @@ RUN apt-get update && \
     --fix-missing apt-utils git vim && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Add ROS_PATH to ~/.bashrc
-RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash >> ~/.bashrc"
-RUN /bin/bash -c "source ${HOME}/.bashrc"
 
 # Clone AMBF into $HOME
 WORKDIR ${HOME}
@@ -33,8 +29,12 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Source ROS_PATH
+RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash"
+
 # Build AMBF
-RUN mkdir -p ${AMBF_WS}/build && \
+RUN . /opt/ros/melodic/setup.sh && \
+    mkdir -p ${AMBF_WS}/build && \
     cd ${AMBF_WS}/build && \
     cmake ../ && \
     make -j${CORES_AVAILABLE}
