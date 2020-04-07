@@ -38,9 +38,6 @@ RUN . /opt/ros/melodic/setup.sh && \
     cmake ../ && \
     make -j$(nproc)
 
-# # Add AMBF to ~/.bashrc
-# RUN echo "source ${AMBF_WS}/build/devel/setup.bash >> ~/.bashrc" && \
-#     source ~/.bashrc
-
-# # Run AMBF Sim
-# CMD ["bash", "${AMBF_WS}/bin/lin-x86_64/ && ./ambf_simulator"]
+# Entrypoint for the image (command that will execute when invoking docker run)
+ENTRYPOINT ["${AMBF_WS}/docker_entrypoint.sh"]
+CMD ["bash"]
