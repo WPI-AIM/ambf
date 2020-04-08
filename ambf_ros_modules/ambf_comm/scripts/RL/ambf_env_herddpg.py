@@ -120,7 +120,7 @@ class AmbfEnv(gym.GoalEnv):
         # self.goal_state = [0.0, 0.0, -0.15, -1.57, 0, -3.138]
         self.goal = self._sample_goal()
         self.prev_sim_step = 0
-        self.error_threshold = 0.05
+        self.error_threshold = 0.01
         self.count_for_print = 0
 
     def skip_sim_steps(self, num):
@@ -181,19 +181,30 @@ class AmbfEnv(gym.GoalEnv):
         # Initialization of variables
         current_joint_pos = np.zeros(7)
         new_state_joint_pos = np.zeros(7)
+        # Reading current joint positions of PSM as current state
+        # for joint_idx, jt_name in enumerate(self.joints_to_control):
+        #     current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
         # print("type of actions ", type(action))
         # Scaling the action from (-1, 1) to (-0.1, 0.1)
-        action = [0.1*x for x in action]
-        # Clipping action between the action limits
+        action = [0.05*x for x in action]
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
-        # Reading current joint positions of PSM as current state
+        # check_boundary_flag, action_limit = check_boundary_condition(current_joint_pos)
+        # # Clipping action between the action limits
+        # if check_boundary_flag == 1:
+        #     action = np.clip(action_limit, self.action_lims_high)
+        # elif check_boundary_flag == 2:
+        #     action = np.clip(action, self.action_lims_low, action_limit)
+        # else:
+        #     action = np.clip(action, self.action_lims_low, self.action_lims_high)
         # Take the action from current state to reach the new state
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
+        # print("diff", current_joint_pos-self.previous_joint_pos)
         # Check if the new state has valid joint positions, if invalid then stay at the same position
         if self.invalid_joint_pos(new_state_joint_pos):
             desired_joint_pos = self.previous_joint_pos
+            # desired_joint_pos = current_joint_pos
             # print("Invalid Joint Position")
             flag = 1
         else:
@@ -213,13 +224,15 @@ class AmbfEnv(gym.GoalEnv):
             error_in_pos = np.around(np.subtract(desired_joint_pos, reached_joint_pos), decimals=3)
             # print("error ", error_in_pos)
             count_for_joint_pos += 1
+            # if np.all(np.abs(error_in_pos) <= self.error_threshold):
             if np.all(np.abs(error_in_pos) <= self.error_threshold) or count_for_joint_pos > 25:
                 break
         # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
+        # if flag != 2:
         if self.count_for_print % 10000 == 0:
-            print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
+            print(flag, "count ", self.count_for_print, "Action is ", action, " new pos after action ",
                   desired_joint_pos, " goal is ", self.goal)
             print("Reward is ", rewards)
 
@@ -251,6 +264,9 @@ class AmbfEnv(gym.GoalEnv):
             return False
         else:
             return True
+
+    # def check_boundary_condition(self, joint_pos)
+    #     if joint_pos == -1.45
 
     def render(self, mode):
         print(' I am {} Ironman'.format(mode))
@@ -288,7 +304,7 @@ class AmbfEnv(gym.GoalEnv):
         if flag == 0:
             self.obs.reward, self.obs.is_done = self._calculate_reward(self.obs.state['achieved_goal'], self.goal)
         else:
-            self.obs.reward, self.obs.is_done = -1, False
+            self.obs.reward, self.obs.is_done = 0, False
         # Update info
         self.obs.info = self._update_info()
         # Return the values to step function
@@ -305,7 +321,7 @@ class AmbfEnv(gym.GoalEnv):
         # Continuous reward
         # reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
         # Sparse reward
-        if abs(cur_dist) < 0.01:
+        if abs(cur_dist) < 0.1:
             reward = 1
             done = True
             # self.reset()

@@ -634,9 +634,9 @@ JOINT base link-yaw link:
     high: 1.599
     low: -1.605
   controller:
-    P: 750.0
+    P: 3000.0
     I: 0
-    D: 5.0
+    D: 10.0
   detached: true
   type: revolute
   damping: 5.0
@@ -665,7 +665,7 @@ JOINT main insertion link-tool roll link:
     high: 3.0543
     low: -3.0543
   controller:
-    P: 3.0
+    P: 0.035
     I: 0
     D: 0.001
   detached: true
@@ -788,9 +788,9 @@ JOINT pitch end link-main insertion link:
     high: 0.24
     low: 0.0
   controller:
-    P: 2000.0
+    P: 6000.0
     I: 0
-    D: 50.0
+    D: 10.0
   detached: true
   type: prismatic
   damping: 100.0
@@ -880,7 +880,7 @@ JOINT tool pitch link-tool gripper1 link:
     high: 1.5708
     low: -1.5708
   controller:
-    P: 3.0
+    P: 0.2
     I: 0
     D: 0.0081
   detached: true
@@ -911,7 +911,7 @@ JOINT tool pitch link-tool gripper2 link:
     high: 1.5708
     low: -1.5708
   controller:
-    P: 3.0
+    P: 0.2
     I: 0
     D: 0.0081
   detached: true
@@ -942,7 +942,7 @@ JOINT tool roll link-tool pitch link:
     high: 1.571
     low: -1.571
   controller:
-    P: 7.5
+    P: 25.0
     I: 0
     D: 0.005
   detached: true
@@ -973,7 +973,7 @@ JOINT yaw link-pitch back link:
     high: 0.7679
     low: -0.6109
   controller:
-    P: 600.0
+    P: 1200.0
     I: 0.0
     D: 3.0
   detached: true

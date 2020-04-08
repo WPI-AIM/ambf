@@ -33,8 +33,8 @@ def main(env):
     # Reset the model
     env.reset()
     # Train the model
-    model.learn(3000000, log_interval=10,
-                callback=CheckpointCallback(save_freq=25000, save_path="./ddpg_dvrk_tensorboard/"))
+    model.learn(4000000, log_interval=10,
+                callback=CheckpointCallback(save_freq=50000, save_path="./ddpg_dvrk_tensorboard/"))
     model.save("./her_robot_env")
 
 
@@ -47,7 +47,9 @@ def load_model(eval_env):
     for _ in range(1000):
         action, _ = model.predict(obs)
         obs, reward, done, _ = eval_env.step(action)
+        print(obs, reward)
         if done:
+            print("----------------It reached terminal state -------------------")
             obs = eval_env.reset()
 
 
