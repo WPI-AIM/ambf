@@ -29,19 +29,22 @@ try:
 
         desired_pos = [0.5, -0.33, 0.149, 0, 0, 0., 0.]
 
-        for joint_idx, jt_name in enumerate(joints_to_control):
-            psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
+        count = 0
+        while True:
+            reached_joint_pos = np.zeros(7)
+            for joint_idx, jt_name in enumerate(joints_to_control):
+                psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
+                reached_joint_pos[joint_idx] = psm_handle.get_joint_pos(jt_name)
 
-        for joint_idx, jt_name in enumerate(joints_to_control):
-            error_in_pos = 1
-            while abs(error_in_pos) > error_threshold:
-                error_in_pos = psm_handle.get_joint_pos(jt_name) - desired_pos[joint_idx]
-                # print("Error in pos ", joint_idx, psm_handle.get_joint_pos(jt_name), values[joint_idx], error_in_pos)
-                time.sleep(0.00001)
-
-        for joint_idx, jt_name in enumerate(joints_to_control):
-            joint_pos[joint_idx] = round(psm_handle.get_joint_pos(jt_name), 3)
-        print("Joints pos is ", joint_pos)
+            error_in_pos = np.subtract(desired_pos, reached_joint_pos)
+            print("error ", error_in_pos)
+            count += 1
+            if count > 50:
+                print("Manually being set")
+                for joint_idx, jt_name in enumerate(joints_to_control):
+                    psm_handle.set_joint_pos(jt_name, reached_joint_pos[joint_idx] + error_in_pos[joint_idx])
+            if np.all(np.abs(error_in_pos) < error_threshold):
+                break
 
 except KeyboardInterrupt:
     _client.clean_up()
