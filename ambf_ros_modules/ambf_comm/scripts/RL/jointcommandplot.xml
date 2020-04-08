@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root version="2.3.8">
+ <tabbed_widget name="Main Window" parent="main_window">
+  <plotmatrix columns="2" rows="3" tab_name="plot">
+   <plot row="0" col="0">
+    <range top="-1.393633" left="74.099057" right="79.099661" bottom="-1.500872"/>
+    <limitY/>
+    <curve G="119" B="180" R="31" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.0"/>
+    <curve G="39" B="40" R="214" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range top="0.316012" left="74.099057" right="79.099661" bottom="0.047849"/>
+    <limitY/>
+    <curve G="201" B="56" R="26" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.9"/>
+    <curve G="127" B="14" R="255" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.9"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="2" col="0">
+    <range top="0.243672" left="74.099057" right="79.099661" bottom="0.090071"/>
+    <limitY/>
+    <curve G="103" B="189" R="148" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.5"/>
+    <curve G="76" B="193" R="241" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.5"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range top="-1.227519" left="74.099057" right="79.099661" bottom="-1.618161"/>
+    <limitY/>
+    <curve G="190" B="207" R="23" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.4"/>
+    <curve G="189" B="34" R="188" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.4"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range top="1.647866" left="74.099057" right="79.099661" bottom="0.935101"/>
+    <limitY/>
+    <curve G="119" B="180" R="31" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.8"/>
+    <curve G="39" B="40" R="214" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.8"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="2" col="1">
+    <range top="-0.435646" left="74.099057" right="79.099661" bottom="-0.797263"/>
+    <limitY/>
+    <curve G="201" B="56" R="26" custom_transform="noTransform" name="/ambf/env/psm/baselink/Command/joint_cmds.6"/>
+    <curve G="127" B="14" R="255" custom_transform="noTransform" name="/ambf/env/psm/baselink/State/joint_positions.6"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default time_axis=""/>
+  </plugin>
+  <plugin ID="DataLoad ROS bags">
+   <use_header_stamp value="false"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="ROS Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+  </plugin>
+  <plugin ID="ROS /rosout Visualization" status="idle"/>
+  <plugin ID="ROS Topic Re-Publisher" status="idle"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="ROS Topic Subscriber"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

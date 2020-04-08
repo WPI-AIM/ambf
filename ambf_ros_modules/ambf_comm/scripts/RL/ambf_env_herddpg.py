@@ -201,9 +201,9 @@ class AmbfEnv(gym.GoalEnv):
                 reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
 
             error_in_pos = np.around(np.subtract(joint_pos, reached_joint_pos), decimals=3)
-            print("error ", error_in_pos)
+            # print("error ", error_in_pos)
             count += 1
-            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count > 50:
+            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count > 25:
                 break
 
 
