@@ -111,7 +111,7 @@ class AmbfEnv(gym.GoalEnv):
         # self.observation_space = spaces.Box(-100, 100, shape=(13,))
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
-        # self.observation_space = spaces.Box(self.states_lims_low, self.states_lims_high, shape=(13,), dtype=np.float32)
+        # self.observation_space = spaces.Box(self.states_lims_low, self.states_lims_high, shape=(13,),dtype=np.float32)
         self.joints_to_control = np.array(['baselink-yawlink', 'yawlink-pitchbacklink',
                                            'pitchendlink-maininsertionlink', 'maininsertionlink-toolrolllink',
                                            'toolrolllink-toolpitchlink', 'toolpitchlink-toolgripper1link',
@@ -122,7 +122,6 @@ class AmbfEnv(gym.GoalEnv):
         self.prev_sim_step = 0
         self.error_threshold = 0.05
         self.count_for_print = 0
-    #  0.0457060,  -0.01173, 0.01810
 
     def skip_sim_steps(self, num):
         self.n_skip_steps = num
@@ -147,10 +146,14 @@ class AmbfEnv(gym.GoalEnv):
         return [seed]
 
     def reset(self):
+        # Function to reset the model
+        # Samples a goal
         self.goal = self._sample_goal()
         # action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         # observation, _, _, _ = self.step(action)
+        # Sets the initial position of PSM
         self.set_initial_pos_func()
+        # Updates the observation to the initialized position
         observation = self.read_joint_pos_func()
         return observation
         # return self.initial_pos
@@ -166,56 +169,61 @@ class AmbfEnv(gym.GoalEnv):
         joint_pos = np.zeros(7)
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-        # self.cmd_joint_pos = joint_pos
         updated_state, _, _, _ = self._update_observation(joint_pos, flag=0)
         return updated_state
 
     def step(self, action):
         assert len(action) == 7
+        # Flag for checking if it was valid or invalid joint pos
         flag = 0
+        # Counter for printing position, action and reward
         self.count_for_print += 1
+        # Initialization of variables
         current_joint_pos = np.zeros(7)
         new_state_joint_pos = np.zeros(7)
         # print("type of actions ", type(action))
+        # Scaling the action from (-1, 1) to (-0.1, 0.1)
         action = [0.1*x for x in action]
+        # Clipping action between the action limits
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
-
+        # Reading current joint positions of PSM as current state
+        # Take the action from current state to reach the new state
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
-
+        # Check if the new state has valid joint positions, if invalid then stay at the same position
         if self.invalid_joint_pos(new_state_joint_pos):
-            joint_pos = self.previous_joint_pos
+            desired_joint_pos = self.previous_joint_pos
             # print("Invalid Joint Position")
             flag = 1
         else:
-            joint_pos = new_state_joint_pos
-
-        updated_state, rewards, done, info = self._update_observation(joint_pos, flag=flag)
+            desired_joint_pos = new_state_joint_pos
+        # Update state, reward, done flag and world values in the code
+        updated_state, rewards, done, info = self._update_observation(desired_joint_pos, flag=flag)
         self.world_handle.update()
-        count = 0
+        # Counter to avoid getting stuck in while loop because of very small errors in positions
+        count_for_joint_pos = 0
+        # Ensures that PSM joints reach the desired joint positions
         while True:
             reached_joint_pos = np.zeros(7)
             for joint_idx, jt_name in enumerate(self.joints_to_control):
-                self.obj_handle.set_joint_pos(jt_name, joint_pos[joint_idx])
+                self.obj_handle.set_joint_pos(jt_name, desired_joint_pos[joint_idx])
                 reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
 
-            error_in_pos = np.around(np.subtract(joint_pos, reached_joint_pos), decimals=3)
+            error_in_pos = np.around(np.subtract(desired_joint_pos, reached_joint_pos), decimals=3)
             # print("error ", error_in_pos)
-            count += 1
-            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count > 25:
+            count_for_joint_pos += 1
+            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count_for_joint_pos > 25:
                 break
-
-
-        fk_tip = compute_FK(joint_pos)
+        # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
-        # if flag == 0:
-        #     print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
-        #           joint_pos, " goal is ", self.goal)
-        #     print("Reward is ", rewards)
+        if self.count_for_print % 10000 == 0:
+            print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
+                  desired_joint_pos, " goal is ", self.goal)
+            print("Reward is ", rewards)
 
-        self.previous_joint_pos = joint_pos
+        self.previous_joint_pos = desired_joint_pos
 
         return updated_state, rewards, done, info
 
@@ -261,36 +269,42 @@ class AmbfEnv(gym.GoalEnv):
             step_jump = cur_sim_step - self.prev_sim_step
             self.prev_sim_step = cur_sim_step
 
-        # self.cmd_joint_pos = state
+        # Find the tip position and rotation by computing forward kinematics (not being used currently)
         fk_tip = compute_FK(state)
         cartesian_pos = fk_tip[0:3, 3]
         achieved_rot = np.array(euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')).reshape((3, 1))
+        # Combine tip position and rotation to a single numpy array as achieved goal
         achieved_goal = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy()), axis=0)).reshape(-1)
+        # TODO: Add function to compute velocity (currently not being used, thats why random values)
         state_vel = np.random.uniform(0.0, 0.75, (1, 7))
-        # state_vel = np.ones(7)
         # print("state vel is ", state_vel)
+        # Combine the current state positions and velocity into a single array as observation
         observation = np.concatenate((state, state_vel), axis=None)
-
+        # Update the observation dictionary
         self.obs.state.update(observation=observation.copy(), achieved_goal=achieved_goal.copy(),
                               desired_goal=self.goal.copy())
+        # Compute the reward
         # Flag checks if it takes it out of the observation limits. Flag=1 means it is invalid move
         if flag == 0:
             self.obs.reward, self.obs.is_done = self._calculate_reward(self.obs.state['achieved_goal'], self.goal)
         else:
             self.obs.reward, self.obs.is_done = -1, False
+        # Update info
         self.obs.info = self._update_info()
+        # Return the values to step function
         return self.obs.state, self.obs.reward, self.obs.is_done, self.obs.info
 
     def _calculate_reward(self, achieved_goal, goal):
         # prev_dist = self.obs.dist
-        # print("State 0;3 ", state[0:3])
-
+        # reward = (prev_dist - cur_dist) - 4 * action_penalty
+        # Find the distance between goal and achieved goal
         cur_dist = LA.norm(np.subtract(goal, achieved_goal))
 
         # action_penalty = np.sum(np.square(action))
         done = False
-        # reward = (prev_dist - cur_dist) - 4 * action_penalty
+        # Continuous reward
         # reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
+        # Sparse reward
         if abs(cur_dist) < 0.01:
             reward = 1
             done = True
@@ -303,6 +317,7 @@ class AmbfEnv(gym.GoalEnv):
         return reward, done
 
     def _sample_goal(self):
+        # Samples new goal positions and ensures its within the workspace of PSM
         rand_val_pos = self.np_random.uniform(-0.18, 0.18, size=3)
         rand_val_pos[0] = np.clip(rand_val_pos[0], -0.15, 0.15)
         rand_val_pos[1] = np.clip(rand_val_pos[1], -0.1, 0.1)
