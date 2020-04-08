@@ -200,23 +200,20 @@ class AmbfEnv(gym.GoalEnv):
                 self.obj_handle.set_joint_pos(jt_name, joint_pos[joint_idx])
                 reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
 
-            error_in_pos = np.subtract(joint_pos, reached_joint_pos)
+            error_in_pos = np.around(np.subtract(joint_pos, reached_joint_pos), decimals=3)
+            print("error ", error_in_pos)
             count += 1
-            if count > 50:
-                print("Manually being set")
-                for joint_idx, jt_name in enumerate(self.joints_to_control):
-                    self.obj_handle.set_joint_pos(jt_name, reached_joint_pos[joint_idx] + error_in_pos[joint_idx])
-            if np.all(np.abs(error_in_pos) < self.error_threshold):
+            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count > 50:
                 break
 
 
         fk_tip = compute_FK(joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
-        if flag != 2:
-            print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
-                  joint_pos, " goal is ", self.goal)
-            print("Reward is ", rewards)
+        # if flag == 0:
+        #     print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
+        #           joint_pos, " goal is ", self.goal)
+        #     print("Reward is ", rewards)
 
         self.previous_joint_pos = joint_pos
 

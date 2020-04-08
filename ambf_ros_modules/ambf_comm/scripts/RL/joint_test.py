@@ -27,7 +27,7 @@ try:
                                       'toolpitchlink-toolgripper1link',
                                       'toolpitchlink-toolgripper2link'])
 
-        desired_pos = [0.5, -0.33, 0.149, 0, 0, 0., 0.]
+        desired_pos = [1.0, -0.3, 0.19, 0, 0, 0., 0.]
 
         count = 0
         while True:
@@ -39,10 +39,6 @@ try:
             error_in_pos = np.subtract(desired_pos, reached_joint_pos)
             print("error ", error_in_pos)
             count += 1
-            if count > 50:
-                print("Manually being set")
-                for joint_idx, jt_name in enumerate(joints_to_control):
-                    psm_handle.set_joint_pos(jt_name, reached_joint_pos[joint_idx] + error_in_pos[joint_idx])
             if np.all(np.abs(error_in_pos) < error_threshold):
                 break
 
