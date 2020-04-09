@@ -233,7 +233,7 @@ class AmbfEnv(gym.GoalEnv):
         # if flag != 2:
         if self.count_for_print % 10000 == 0:
             print(flag, "count ", self.count_for_print, "Action is ", action, " new pos after action ",
-                  desired_joint_pos, " goal is ", self.goal)
+                  updated_state)
             print("Reward is ", rewards)
 
         self.previous_joint_pos = desired_joint_pos
@@ -314,7 +314,7 @@ class AmbfEnv(gym.GoalEnv):
         # prev_dist = self.obs.dist
         # reward = (prev_dist - cur_dist) - 4 * action_penalty
         # Find the distance between goal and achieved goal
-        cur_dist = LA.norm(np.subtract(goal, achieved_goal))
+        cur_dist = LA.norm(np.subtract(goal[0:3], achieved_goal[0:3]))
 
         # action_penalty = np.sum(np.square(action))
         done = False
