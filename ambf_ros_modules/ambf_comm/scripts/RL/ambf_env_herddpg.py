@@ -307,7 +307,7 @@ class AmbfEnv(gym.GoalEnv):
             self.obs.reward = self.compute_reward(self.obs.state['achieved_goal'], self.goal, self.obs.info)
             self.obs.is_done = self._check_if_done()
         else:
-            self.obs.reward = 0
+            self.obs.reward = -1
             self.obs.is_done = False
         # Return the values to step function
         return self.obs.state, self.obs.reward, self.obs.is_done, self.obs.info
