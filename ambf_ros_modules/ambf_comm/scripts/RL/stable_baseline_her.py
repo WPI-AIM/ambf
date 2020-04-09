@@ -33,7 +33,7 @@ def main(env):
     # Reset the model
     env.reset()
     # Train the model
-    model.learn(4000000, log_interval=10,
+    model.learn(3000000, log_interval=10,
                 callback=CheckpointCallback(save_freq=50000, save_path="./ddpg_dvrk_tensorboard/"))
     model.save("./her_robot_env")
 

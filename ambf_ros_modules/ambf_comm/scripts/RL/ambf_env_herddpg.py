@@ -299,38 +299,40 @@ class AmbfEnv(gym.GoalEnv):
         # Update the observation dictionary
         self.obs.state.update(observation=observation.copy(), achieved_goal=achieved_goal.copy(),
                               desired_goal=self.goal.copy())
+        # Update info
+        self.obs.info = self._update_info()
         # Compute the reward
         # Flag checks if it takes it out of the observation limits. Flag=1 means it is invalid move
         if flag == 0:
-            self.obs.reward, self.obs.is_done = self._calculate_reward(self.obs.state['achieved_goal'], self.goal)
+            self.obs.reward = self.compute_reward(self.obs.state['achieved_goal'], self.goal, self.obs.info)
+            self.obs.is_done = self._check_if_done()
         else:
-            self.obs.reward, self.obs.is_done = 0, False
-        # Update info
-        self.obs.info = self._update_info()
+            self.obs.reward = 0
+            self.obs.is_done = False
         # Return the values to step function
         return self.obs.state, self.obs.reward, self.obs.is_done, self.obs.info
 
-    def _calculate_reward(self, achieved_goal, goal):
+    def compute_reward(self, achieved_goal, goal, info):
         # prev_dist = self.obs.dist
         # reward = (prev_dist - cur_dist) - 4 * action_penalty
         # Find the distance between goal and achieved goal
         cur_dist = LA.norm(np.subtract(goal[0:3], achieved_goal[0:3]))
 
         # action_penalty = np.sum(np.square(action))
-        done = False
+        # done = False
         # Continuous reward
         # reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
         # Sparse reward
-        if abs(cur_dist) < 0.1:
+        if abs(cur_dist) < 0.01:
             reward = 1
-            done = True
+            # done = True
             # self.reset()
         else:
             reward = 0
         # reward = -(prev_dist - cur_dist)
         # print("Cur dist ", cur_dist)
         self.obs.dist = cur_dist
-        return reward, done
+        return reward
 
     def _sample_goal(self):
         # Samples new goal positions and ensures its within the workspace of PSM
@@ -345,11 +347,11 @@ class AmbfEnv(gym.GoalEnv):
         goal = np.concatenate((rand_val_pos, rand_val_angle), axis=None)
         return goal.copy()
 
-    # def _check_if_done(self, dist):
-    #     if :
-    #         return True
-    #     else:
-    #         return False
+    def _check_if_done(self):
+        if abs(self.obs.dist) < 0.01:
+            return True
+        else:
+            return False
 
     def _update_info(self):
         return {}
