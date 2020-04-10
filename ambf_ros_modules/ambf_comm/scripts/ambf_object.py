@@ -155,7 +155,7 @@ class Object(WatchDog):
                 """
         n_jnts = len(self._state.joint_positions)
         joints = []
-        for idx in xrange(n_jnts):
+        for idx in range(n_jnts):
             joints.append(self._state.joint_positions[idx])
 
         return joints

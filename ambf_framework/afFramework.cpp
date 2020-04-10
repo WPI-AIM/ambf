@@ -3474,6 +3474,8 @@ void afJoint::commandPosition(double &position_cmd){
     // if it was set to be enabled in the first place
     if (m_enableActuator){
         if (m_jointType == JointType::revolute){
+            // Sanity check
+            btClamp(position_cmd, m_hinge->getLowerLimit(), m_hinge->getUpperLimit());
             double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_afWorld->s_chaiBulletWorld->getSimulationTime());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
@@ -3481,6 +3483,8 @@ void afJoint::commandPosition(double &position_cmd){
             m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * effort_command);
         }
         else if(m_jointType == JointType::prismatic){
+            // Sanity check
+            btClamp(position_cmd, m_slider->getLowerLinLimit(), m_slider->getUpperLinLimit());
             double effort_command = m_controller.computeOutput(m_slider->getLinearPos(), position_cmd,  m_afWorld->s_chaiBulletWorld->getSimulationTime());
             btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
             const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;

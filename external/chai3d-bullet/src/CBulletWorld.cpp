@@ -212,6 +212,7 @@ void cBulletWorld::updateDynamics(double a_interval, double a_wallClock, double 
     m_bulletWorld->stepSimulation(a_interval, m_integrationMaxIterations, m_integrationTimeStep);
 
     // add time to overall simulation
+    m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -262,7 +263,6 @@ double cBulletWorld::getSimulationTime(){
 //==============================================================================
 double cBulletWorld::getSimulationDeltaTime(){
     double dt = m_simulationTime - m_lastSimulationTime;
-    m_lastSimulationTime = m_simulationTime;
     return dt;
 }
 

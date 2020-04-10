@@ -82,11 +82,12 @@ class Client:
                 else:
                     seq_match = SequenceMatcher(None, self._common_obj_namespace, topic_name)
                     match = seq_match.find_longest_match(0, len(self._common_obj_namespace), 0, len(topic_name))
-                    if match.size != 0:
+                    if match.size != 0 and match.a == 0:
                         self._common_obj_namespace = self._common_obj_namespace[match.a: match.a + match.size]
                     else:
                         print('No common object namespace found, aborting search')
                         self._common_obj_namespace = ''
+                        break
         print('Found Common Object Namespace as: ', self._common_obj_namespace)
 
         for i in range(len(self._ros_topics)):
@@ -132,15 +133,36 @@ class Client:
         return obj_names
 
     def get_obj_handle(self, a_name):
+        found_obj = None
         obj = self._objects_dict.get(a_name)
         if obj:
-            obj.set_active()
-            obj.set_publish_children_names_flag(True)
-            obj.set_publish_joint_names_flag(True)
-            obj.set_publish_joint_positions_flag(True)
+            found_obj = obj
         else:
-            print(a_name, 'named object not found')
-        return obj
+            # Try matching the object name to existing names with the closest match
+            objects = []
+            for key, item in self._objects_dict.items():
+                if key.find(a_name) >= 0:
+                    objects.append(item)
+
+            if len(objects) == 1:
+                found_obj = objects[0]
+            elif len(objects) == 0:
+                print(a_name, 'NAMED OBJECT NOT FOUND')
+                found_obj = None
+            elif len(objects) > 1:
+                print('WARNING FOUND ', len(objects), 'WITH MATCHING NAME:')
+                for i in range(len(objects)):
+                    print(objects[i].get_name())
+                print('PLEASE SPECIFY FULL NAME TO GET THE OBJECT HANDLE')
+                found_obj = None
+
+        if found_obj:
+            found_obj.set_active()
+            found_obj.set_publish_children_names_flag(True)
+            found_obj.set_publish_joint_names_flag(True)
+            found_obj.set_publish_joint_positions_flag(True)
+
+        return found_obj
 
     def get_obj_pose(self, a_name):
         obj = self._objects_dict.get(a_name)
