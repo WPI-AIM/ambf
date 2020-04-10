@@ -205,12 +205,12 @@ bool cShaderProgram::linkProgram()
         }
 
         // assign default location
-        glBindAttribLocation(m_id, C_VB_POSITION, "aPos");
+        glBindAttribLocation(m_id, C_VB_POSITION, "aPosition");
         glBindAttribLocation(m_id, C_VB_NORMAL, "aNormal");
-        glBindAttribLocation(m_id, C_VB_TEXCOORD, "aTexCoords");
-//        glBindAttribLocation(m_id, C_VB_COLOR, "aColor");
-//        glBindAttribLocation(m_id, C_VB_TANGENT, "aTangent");
-//        glBindAttribLocation(m_id, C_VB_BITANGENT, "aBitangent");
+        glBindAttribLocation(m_id, C_VB_TEXCOORD, "aTexCoord");
+        glBindAttribLocation(m_id, C_VB_COLOR, "aColor");
+        glBindAttribLocation(m_id, C_VB_TANGENT, "aTangent");
+        glBindAttribLocation(m_id, C_VB_BITANGENT, "aBitangent");
 
         // set geometry shader input/output types
         if (m_geometryShaderAttached)

@@ -155,7 +155,7 @@ std::vector<cThread*> g_hapticsThreads;
 cThread* g_bulletSimThread;
 
 // swap interval for the display context (vertical synchronization)
-int g_swapInterval = 0;
+int g_swapInterval = 1;
 
 bool g_mousePickingEnabled = false;
 
@@ -248,7 +248,7 @@ private:
     cPrecisionClock m_rateClock;
 };
 
-cShaderProgramPtr g_lightingShader;
+cShaderProgramPtr g_phongShader;
 cShaderProgramPtr g_lampShader;
 
 
@@ -579,131 +579,43 @@ int main(int argc, char* argv[])
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     signal (SIGINT, exitHandler);
-    ifstream file1;
-    ifstream file2;
-    file1.open("/home/adnan/ambf/ambf_simulator/src/light_casters.vs");
-    file2.open("/home/adnan/ambf/ambf_simulator/src/light_casters.fs");
+    ifstream vs_file;
+    ifstream fs_file;
+    vs_file.open("../../ambf_simulator/src/shader.vs");
+    fs_file.open("../../ambf_simulator/src/shader.fs");
     // create a string stream
     stringstream light_vtx_shader_file, light_frg_shader_file;
     // dump the contents of the file into it
-    light_vtx_shader_file << file1.rdbuf();
-    light_frg_shader_file << file2.rdbuf();
+    light_vtx_shader_file << vs_file.rdbuf();
+    light_frg_shader_file << fs_file.rdbuf();
     // close the file
-    file1.close();
-    file2.close();
+    vs_file.close();
+    fs_file.close();
     // convert the StringStream into a string
     std::string shaderSource1 = light_vtx_shader_file.str();
     std::string shaderSource2 = light_frg_shader_file.str();
 
-    g_lightingShader = cShaderProgram::create(shaderSource1, shaderSource2);
-    g_lightingShader->linkProgram();
+    g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
+//    g_phongShader->linkProgram();
+    cGenericObject* go;
+    cRenderOptions ro;
+    g_phongShader->use(go, ro);
+    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
 
-    printf("Shader Linked ? %d \n", g_lightingShader->linkProgram());
-
-    printf("\n ------- \n");
-
-    printf("Shader Program ID: %d \n", g_lightingShader->getId());
-    printf("Shader ID: %d \n", g_lightingShader->getId());
-
-
-    printf("material.diffuse: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.diffuse"));
-    printf("material.specular: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.specular"));
-    printf("material.shininess: %d \n", glGetUniformLocation(g_lightingShader->getId(), "material.shininess"));
-    printf("light.position: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.position"));
-    printf("light.direction: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.direction"));
-    printf("light.cutOff: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.cutOff"));
-    printf("light.ambient: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.ambient"));
-    printf("light.diffuse: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.diffuse"));
-    printf("light.specular: %d \n", glGetUniformLocation(g_lightingShader->getId(), "light.specular"));
-    printf("viewPos: %d \n", glGetUniformLocation(g_lightingShader->getId(), "viewPos"));
-    printf("View: %d \n", glGetUniformLocation(g_lightingShader->getId(), "view"));
-    printf("Projection: %d \n", glGetUniformLocation(g_lightingShader->getId(), "projection"));
-    printf("Model: %d \n", glGetUniformLocation(g_lightingShader->getId(), "model"));
-
+    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
 
     afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-    for (int i = 3 ; i < rbVec.size() ; i++){
-        rbVec[i]->setShaderProgram(g_lightingShader);
-        rbVec[i]->setUseMaterial(false);
+    for (int i = 0 ; i < rbVec.size() ; i++){
+        rbVec[i]->setShaderProgram(g_phongShader);
     }
-
-//    g_afWorld->s_chaiBulletWorld->setShaderProgram(g_lightingShader);
-
-
-    printf("\n ------- \n");
-
-//    g_afWorld->s_chaiBulletWorld->setShaderProgram(g_lightingShader);
-    int cntr = 0;
 
     // main graphic loop
     while (!g_window_closed)
     {
 
         if (g_cmdOpts.showGUI){
-
-            cVector3d lightPos = cVector3d(0, 0, 0);
-            cVector3d dir = cVector3d(0, 0, -1);
-            cVector3d ambient = cVector3d(0.5, 0.5, 0.5);
-            cVector3d diffuse = cVector3d(0.5, 0.5, 0.5);
-            cVector3d specular = cVector3d(1.0, 1.0, 1.0);
-
-            cGenericObject* go;
-            cRenderOptions ro;
-            g_lightingShader->use(go, ro);
-
-            cVector3d viewPos = g_afWorld->getAFCameras()[0]->getLocalPos();
-
-            cTransform lookAtMat;
-            lookAtMat.setLookAtMatrix(g_afWorld->getAFCameras()[0]->getLocalPos(),
-                    g_afWorld->getAFCameras()[0]->getLookVector(),
-                    g_afWorld->getAFCameras()[0]->getUpVector());
-
-            cTransform projectionMat = g_afWorld->getAFCameras()[0]->getCamera()->m_projectionMatrix;
-
-            g_lightingShader->setUniform("light.position", lightPos);
-            g_lightingShader->setUniform("light.direction", dir);
-            g_lightingShader->setUniformf("light.cutOff", 0.2f);
-            g_lightingShader->setUniform("light.ambient", ambient);
-            g_lightingShader->setUniform("light.diffuse", diffuse);
-            g_lightingShader->setUniform("light.specular", specular);
-            g_lightingShader->setUniformf("light.constant", 1.0f);
-            g_lightingShader->setUniformf("light.linear", 0.09f);
-            g_lightingShader->setUniformf("light.quadratic", 0.032f);
-            g_lightingShader->setUniformf("material.shininess", 32.0f);
-            g_lightingShader->setUniformi("material.diffuse", 1);
-            g_lightingShader->setUniformi("material.specular", 1);
-            g_lightingShader->setUniform("viewPos", viewPos);
-            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("view"), 1, GL_FALSE, lookAtMat.getData());
-            glUniformMatrix4dv(g_lightingShader->getAttributeLocation("projection"), 1, GL_FALSE, projectionMat.getData());
-
-            cntr++;
-
-//            if (cntr == 100){
-//                cntr = 0;
-//                std::cerr << g_afWorld->getAFCameras()[0]->getCamera()->m_modelViewMatrix.str(3);
-//                std::cerr << "-----\n";
-//                std::cerr << lookAtMat.str(3);
-//                std::cerr << "\n*****\n";
-//            }
-
-
-
-            g_lightingShader->disable();
-
-            // Call the update graphics method
-
-            afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-//            for (int i = 3 ; i < rbVec.size() ; i++){
-//                rbVec[i]->getMesh(0)->setLocalTransform(rbVec[i]->getLocalTransform());
-//                if (i == 3){
-//                    std::cerr << rbVec[i]->m_name <<  ": " << rbVec[i]->getMesh(0)->getLocalTransform().str(3) << "\n";
-//                    std::cerr << rbVec[i]->m_name <<  ": " << rbVec[i]->getLocalTransform().str(3) << "\n";
-//                }
-//            }
-
-//            glfwSwapBuffers(g_afWorld->getAFCameras()[0]->m_window);
+            // Update graphics
             updateGraphics();
-
 
             // process events
             glfwPollEvents();
@@ -740,7 +652,7 @@ bool g_enableGrippingAssist = true;
 void updateGraphics()
 {
     // Update shadow maps once
-//    g_chaiBulletWorld->updateShadowMaps(false, mirroredDisplay);
+    g_chaiBulletWorld->updateShadowMaps(false, mirroredDisplay);
 
     for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end(); ++ g_cameraIt){
         afCameraPtr cameraPtr = (*g_cameraIt);
