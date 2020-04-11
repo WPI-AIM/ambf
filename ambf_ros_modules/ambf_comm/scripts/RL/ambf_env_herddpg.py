@@ -91,9 +91,8 @@ class AmbfEnv(gym.GoalEnv):
         self.enable_step_throttling = False
         self.action = []
         self.obs = Observation()
-        # self.initial_pos = copy.deepcopy(self.obs.cur_observation()[0])
         self.initial_pos = copy.deepcopy(self.obs.cur_observation()[0])
-        self.previous_cartesian_pos = np.zeros((1, 3))
+        # self.previous_cartesian_pos = np.zeros((1, 3))
         self.previous_joint_pos = np.array([0., 0., 0.075, 0., 0., 0., 0.])
         self.cmd_joint_pos = np.zeros(7)
 
@@ -164,12 +163,16 @@ class AmbfEnv(gym.GoalEnv):
                 self.obj_handle.set_joint_pos(jt_name, 0.075)
             else:
                 self.obj_handle.set_joint_pos(jt_name, 0)
+        time.sleep(0.5)
 
     def read_joint_pos_func(self):
         joint_pos = np.zeros(7)
+        initial_state_vel = np.zeros(7)
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-        updated_state, _, _, _ = self._update_observation(joint_pos, flag=0)
+            initial_state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
+
+        updated_state, _, _, _ = self._update_observation(joint_pos, initial_state_vel, flag=0)
         return updated_state
 
     def step(self, action):
@@ -181,6 +184,7 @@ class AmbfEnv(gym.GoalEnv):
         # Initialization of variables
         current_joint_pos = np.zeros(7)
         new_state_joint_pos = np.zeros(7)
+        state_vel = np.zeros(7)
         # Reading current joint positions of PSM as current state
         # for joint_idx, jt_name in enumerate(self.joints_to_control):
         #     current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
@@ -199,6 +203,7 @@ class AmbfEnv(gym.GoalEnv):
         # Take the action from current state to reach the new state
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+            state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
         # print("diff", current_joint_pos-self.previous_joint_pos)
         # Check if the new state has valid joint positions, if invalid then stay at the same position
@@ -209,9 +214,7 @@ class AmbfEnv(gym.GoalEnv):
             flag = 1
         else:
             desired_joint_pos = new_state_joint_pos
-        # Update state, reward, done flag and world values in the code
-        updated_state, rewards, done, info = self._update_observation(desired_joint_pos, flag=flag)
-        self.world_handle.update()
+
         # Counter to avoid getting stuck in while loop because of very small errors in positions
         count_for_joint_pos = 0
         # Ensures that PSM joints reach the desired joint positions
@@ -227,6 +230,10 @@ class AmbfEnv(gym.GoalEnv):
             # if np.all(np.abs(error_in_pos) <= self.error_threshold):
             if np.all(np.abs(error_in_pos) <= self.error_threshold) or count_for_joint_pos > 25:
                 break
+
+        # Update state, reward, done flag and world values in the code
+        updated_state, rewards, done, info = self._update_observation(desired_joint_pos, state_vel, flag=flag)
+        self.world_handle.update()
         # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
@@ -243,8 +250,8 @@ class AmbfEnv(gym.GoalEnv):
     def invalid_cartesian_pos(self, cart_pos):
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
         # print("joint pos ", joint_pos)
-        check_cart_val = np.all((-0.18 <= cart_pos[0, 0] <= 0.18) and (-0.1 <= cart_pos[0, 1] <= 0.1)
-                                and (-0.175 < cart_pos[0, 2] < -0.075))
+        check_cart_val = np.all((-0.2 <= cart_pos[0, 0] <= 0.2) and (-0.17 <= cart_pos[0, 1] <= 0.13)
+                                and (-0.02 < cart_pos[0, 2] < -0.005))
         # print("check val is ", check_val)
         if check_cart_val:
             return False
@@ -271,7 +278,7 @@ class AmbfEnv(gym.GoalEnv):
     def render(self, mode):
         print(' I am {} Ironman'.format(mode))
 
-    def _update_observation(self, state, flag):
+    def _update_observation(self, state, state_vel, flag):
         if self.enable_step_throttling:
             step_jump = 0
             while step_jump < self.n_skip_steps:
@@ -291,8 +298,8 @@ class AmbfEnv(gym.GoalEnv):
         achieved_rot = np.array(euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')).reshape((3, 1))
         # Combine tip position and rotation to a single numpy array as achieved goal
         achieved_goal = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy()), axis=0)).reshape(-1)
-        # TODO: Add function to compute velocity (currently not being used, thats why random values)
-        state_vel = np.random.uniform(0.0, 0.75, (1, 7))
+        # Verify function to compute velocity (currently using Nathaniel's implementation)
+        # state_vel = np.random.uniform(0.0, 0.75, (1, 7))
         # print("state vel is ", state_vel)
         # Combine the current state positions and velocity into a single array as observation
         observation = np.concatenate((state, state_vel), axis=None)

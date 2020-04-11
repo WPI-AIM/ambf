@@ -36,9 +36,9 @@ try:
                                       'toolpitchlink-toolgripper1link',
                                       'toolpitchlink-toolgripper2link'])
 
-        # desired_pos = [0.5, -0.33, 0.149, 0, 0, 0., 0.]
-        # for joint_idx, jt_name in enumerate(joints_to_control):
-        #     psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
+        desired_pos = [1.45, 0.9, 0.075, 0, 0, 0., 0.]
+        for joint_idx, jt_name in enumerate(joints_to_control):
+            psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
         #
         # for joint_idx, jt_name in enumerate(joints_to_control):
         #     error_in_pos = 1
@@ -49,15 +49,15 @@ try:
 
         for joint_idx, jt_name in enumerate(joints_to_control):
             joint_pos[joint_idx] = round(psm_handle.get_joint_pos(jt_name), 3)
-        print("Joints pos is ", joint_pos)
+        # print("Joints pos is ", joint_pos)
 
 
         # for joint_idx, jt_name in enumerate(joints_to_control):
         #     current_joint_pos[joint_idx] = round(psm_handle.get_joint_pos(jt_name), 3)
         # print("Joint 0 pos is ", current_joint_pos[0])
-        # fk_tip = compute_FK(current_joint_pos)
-        # xyz_pos = fk_tip[0:3, 3].reshape((1, 3))
-        # # print("tip pos", xyz_pos, "joint pos ", current_joint_pos)
+        fk_tip = compute_FK(joint_pos)
+        xyz_pos = fk_tip[0:3, 3].reshape((1, 3))
+        print("tip pos", xyz_pos, "joint pos ", joint_pos)
         # req_rot = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
         # rand_number = np.random.uniform(-1.0, 1.0)
 

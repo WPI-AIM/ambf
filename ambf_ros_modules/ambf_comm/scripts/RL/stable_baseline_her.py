@@ -27,6 +27,13 @@ def main(env):
         'random_exploration': 0.05
     }
 
+    # NOTE:
+    # If continuing learning from previous checkpoint,
+    # Comment model=HER(''') and env.reset()  [lines 38:41] and uncomment below 2 lines:
+    # Replace the XXXXX below with the largest number present in (rl_model_) directory ./ddpg_dvrk_tensorboard/
+    # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_XXXXX_steps.zip'
+    # model = HER.load(model_log_dir, env=env)
+
     # Available strategies (cf paper): future, final, episode, random
     model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
                 buffer_size=int(1e6), batch_size=256, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
@@ -44,7 +51,7 @@ def load_model(eval_env):
     # or wrap your environment with HERGoalEnvWrapper to use the predict method
     model = HER.load('./her_robot_env', env=eval_env)
     obs = eval_env.reset()
-    for _ in range(1000):
+    for _ in range(10000):
         action, _ = model.predict(obs)
         obs, reward, done, _ = eval_env.step(action)
         print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)

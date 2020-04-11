@@ -52,6 +52,8 @@ from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from watch_dog import WatchDog
 import rospy
+import numpy as np
+from collections import deque
 from geometry_msgs.msg import Pose, Wrench
 
 
@@ -71,6 +73,10 @@ class Object(WatchDog):
         self._active = False
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
+        self._joint_velocity = None
+        self._vel_que = deque()
+        self._queue_size = 100
+        self._window_size = 5
 
     def ros_cb(self, data):
         """
@@ -79,6 +85,14 @@ class Object(WatchDog):
         :return:
         """
         self._state = data
+        if not len(self._vel_que):
+            num = len(data.joint_positions)
+            self._vel_que = deque(maxlen=self._queue_size)
+            for i in range(self._queue_size):
+                self._vel_que.append((np.array(self._state.joint_positions), self._state.sim_time))
+
+        point = (np.array(data.joint_positions), self._state.sim_time)
+        self._vel_que.append(point)
 
     def is_active(self):
         """
@@ -586,3 +600,63 @@ class Object(WatchDog):
         Get the inertia the body
         """
         return self._state.pInertia
+
+    def _calc_joint_velocity(self):
+        """
+        calculates the joint state
+        :param last_joints_state: last joint state
+        :return:
+        """
+
+        vels = list(self._vel_que)
+        vels.reverse()
+        joint_velocities = np.array(len(self._state.joint_positions) * [0.0])
+        total_w = 0
+        weights = range(self._window_size)
+        for i in range(self._window_size):
+            w = weights[i]
+            total_w += w
+            curr_state = vels[i]
+            next_state = vels[i + 1]
+            dt = next_state[1] - curr_state[1]
+            if not dt:
+                joint_velocities = joint_velocities + np.array(len(self._state.joint_positions) * [0.0])
+            else:
+                joint_velocities = joint_velocities + i * (next_state[0] - curr_state[0]) / dt
+
+        joint_velocities = joint_velocities / total_w
+
+        self._joint_velocity = joint_velocities  # tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
+
+    def get_all_joint_vel(self):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param idx:
+        :return:
+        """
+        self._calc_joint_velocity()
+
+        n_jnts = len(self._state.joint_positions)
+        joints = []
+        for idx in range(n_jnts):
+            joints.append(self._joint_velocity[idx])
+
+        return joints
+
+    def get_joint_vel(self, joint_name_or_idx):
+        """
+        Get the joint position of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        self._calc_joint_velocity()
+
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._joint_velocity[joint_idx]
+        else:
+            return None
