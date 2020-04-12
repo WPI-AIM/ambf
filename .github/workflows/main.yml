@@ -1,6 +1,6 @@
 name: CI
 
-on: push
+on: [push, pull_request]
 
 jobs:
   build_and_test:
@@ -9,4 +9,4 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build docker image
         run: |
-            docker build --tag=ambf .
+          docker build --tag=ambf .
