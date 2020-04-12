@@ -665,7 +665,7 @@ JOINT main insertion link-tool roll link:
     high: 3.0543
     low: -3.0543
   controller:
-    P: 0.035
+    P: 0.1
     I: 0
     D: 0.001
   detached: true
@@ -911,7 +911,7 @@ JOINT tool pitch link-tool gripper2 link:
     high: 1.5708
     low: -1.5708
   controller:
-    P: 0.2
+    P: 0.175
     I: 0
     D: 0.0081
   detached: true

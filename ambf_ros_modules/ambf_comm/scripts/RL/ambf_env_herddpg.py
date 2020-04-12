@@ -93,7 +93,7 @@ class AmbfEnv(gym.GoalEnv):
         self.obs = Observation()
         self.initial_pos = copy.deepcopy(self.obs.cur_observation()[0])
         # self.previous_cartesian_pos = np.zeros((1, 3))
-        self.previous_joint_pos = np.array([0., 0., 0.1, 0., 0., 0., 0.])
+        # self.previous_joint_pos = np.array([0., 0., 0.1, 0., 0., 0., 0.])
         self.cmd_joint_pos = np.zeros(7)
 
         # Action Limit values: Z-> +-0.5 || X, Y-> +-0.05
@@ -117,7 +117,9 @@ class AmbfEnv(gym.GoalEnv):
                                            'toolpitchlink-toolgripper2link'])
         #
         # self.goal_state = [0.0, 0.0, -0.15, -1.57, 0, -3.138]
+        self.target_range = 0.05
         self.goal = self._sample_goal()
+        # self.goal = np.around(self.np_random.uniform(-0.15, 0.15, size=6), decimals=4)
         self.prev_sim_step = 0
         self.error_threshold = 0.01
         self.count_for_print = 0
@@ -146,14 +148,14 @@ class AmbfEnv(gym.GoalEnv):
 
     def reset(self):
         # Function to reset the model
-        # Samples a goal
-        self.goal = self._sample_goal()
         # action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         # observation, _, _, _ = self.step(action)
         # Sets the initial position of PSM
         self.set_initial_pos_func()
         # Updates the observation to the initialized position
         observation = self.read_joint_pos_func()
+        # Samples a goal
+        self.goal = self._sample_goal()
         return observation
         # return self.initial_pos
 
@@ -172,13 +174,11 @@ class AmbfEnv(gym.GoalEnv):
             joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
             initial_state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
 
-        updated_state, _, _, _ = self._update_observation(joint_pos, initial_state_vel, flag=0)
+        updated_state, _, _, _ = self._update_observation(joint_pos, initial_state_vel)
         return updated_state
 
     def step(self, action):
         assert len(action) == 7
-        # Flag for checking if it was valid or invalid joint pos
-        flag = 0
         # Counter for printing position, action and reward
         self.count_for_print += 1
         # Initialization of variables
@@ -206,15 +206,8 @@ class AmbfEnv(gym.GoalEnv):
             state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
         # print("diff", current_joint_pos-self.previous_joint_pos)
-        # Check if the new state has valid joint positions, if invalid then stay at the same position
-        if self.invalid_joint_pos(new_state_joint_pos):
-            desired_joint_pos = self.previous_joint_pos
-            # desired_joint_pos = current_joint_pos
-            # print("Invalid Joint Position")
-            flag = 1
-        else:
-            desired_joint_pos = new_state_joint_pos
-
+        # Ensure the new state is within valid joint positions, if invalid then stay at the joint limit position
+        desired_joint_pos = self.limit_joint_pos(new_state_joint_pos)
         # Counter to avoid getting stuck in while loop because of very small errors in positions
         count_for_joint_pos = 0
         # Ensures that PSM joints reach the desired joint positions
@@ -232,18 +225,17 @@ class AmbfEnv(gym.GoalEnv):
                 break
 
         # Update state, reward, done flag and world values in the code
-        updated_state, rewards, done, info = self._update_observation(desired_joint_pos, state_vel, flag=flag)
+        updated_state, rewards, done, info = self._update_observation(desired_joint_pos, state_vel)
         self.world_handle.update()
         # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
-        # if flag != 2:
-        if self.count_for_print % 10000 == 0:
-            print(flag, "count ", self.count_for_print, "Action is ", action, " new pos after action ",
+        if self.count_for_print % 1 == 0:
+            print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
                   updated_state)
             print("Reward is ", rewards)
 
-        self.previous_joint_pos = desired_joint_pos
+        # self.previous_joint_pos = desired_joint_pos
 
         return updated_state, rewards, done, info
 
@@ -258,19 +250,18 @@ class AmbfEnv(gym.GoalEnv):
         else:
             return True
 
-    def invalid_joint_pos(self, joint_pos):
+    def limit_joint_pos(self, joint_pos):
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
-        check_joint_val = np.all((-1.0 <= joint_pos[0] <= 1.0) and (-0.8 <= joint_pos[1] <= 0.8)
-                                 and (0.1 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
-                                 and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
-                                 and (-3.0498 <= joint_pos[5] <= 3.0399))
-        # print("check val is ", check_val)
-        if check_joint_val:
-            return False
-        else:
-            return True
+        limit_joint_values = np.zeros(len(joint_pos))
+        joint_lower_limit = np.array([-1, -0.8, 0.1, -1.57, -1.57, -1.57, -1.57])
+        joint_upper_limit = np.array([1, 0.8, 0.24, 1.57, 1.57, 1.57, 1.57])
+        for joint_idx in range(len(joint_pos)):
+            limit_joint_values[joint_idx] = np.clip(joint_pos[joint_idx], joint_lower_limit[joint_idx],
+                                                    joint_upper_limit[joint_idx])
+
+        return limit_joint_values
 
     # def check_boundary_condition(self, joint_pos)
     #     if joint_pos == -1.45
@@ -278,7 +269,7 @@ class AmbfEnv(gym.GoalEnv):
     def render(self, mode):
         print(' I am {} Ironman'.format(mode))
 
-    def _update_observation(self, state, state_vel, flag):
+    def _update_observation(self, state, state_vel):
         if self.enable_step_throttling:
             step_jump = 0
             while step_jump < self.n_skip_steps:
@@ -309,13 +300,9 @@ class AmbfEnv(gym.GoalEnv):
         # Update info
         self.obs.info = self._update_info()
         # Compute the reward
-        # Flag checks if it takes it out of the observation limits. Flag=1 means it is invalid move
-        if flag == 0:
-            self.obs.reward = self.compute_reward(self.obs.state['achieved_goal'], self.goal, self.obs.info)
-            self.obs.is_done = self._check_if_done()
-        else:
-            self.obs.reward = -1
-            self.obs.is_done = False
+        self.obs.reward = self.compute_reward(self.obs.state['achieved_goal'], self.goal, self.obs.info)
+        self.obs.is_done = self._check_if_done()
+
         # Return the values to step function
         return self.obs.state, self.obs.reward, self.obs.is_done, self.obs.info
 
@@ -343,7 +330,11 @@ class AmbfEnv(gym.GoalEnv):
 
     def _sample_goal(self):
         # Samples new goal positions and ensures its within the workspace of PSM
-        rand_val_pos = self.np_random.uniform(-0.15, 0.15, size=3)
+        # observation = self.read_joint_pos_func()
+        # rand_val_pos = np.around(np.add(observation['achieved_goal'][0:3],
+        #                                 self.np_random.uniform(-self.target_range, self.target_range, size=3)),
+        #                          decimals=4)
+        rand_val_pos = self.np_random.uniform(-0.175, 0.15, size=3)
         rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.15, 0.15), decimals=4)
         rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1, 0.1), decimals=4)
         rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.175, -0.1), decimals=4)
@@ -371,6 +362,20 @@ class AmbfEnv(gym.GoalEnv):
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         check_joint_val = np.all((-1.45 <= joint_pos[0] <= 1.45) and (-0.93556 <= joint_pos[1] <= 0.94249)
                                  and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
+                                 and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
+                                 and (-3.0498 <= joint_pos[5] <= 3.0399))
+        # print("check val is ", check_val)
+        if check_joint_val:
+            return False
+        else:
+            return True
+            
+        def invalid_joint_pos(self, joint_pos):
+        # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
+        # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
+        # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
+        check_joint_val = np.all((-1.0 <= joint_pos[0] <= 1.0) and (-0.8 <= joint_pos[1] <= 0.8)
+                                 and (0.1 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
                                  and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
                                  and (-3.0498 <= joint_pos[5] <= 3.0399))
         # print("check val is ", check_val)

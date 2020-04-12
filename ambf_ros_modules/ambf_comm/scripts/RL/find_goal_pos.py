@@ -37,8 +37,8 @@ try:
                                       'toolpitchlink-toolgripper2link'])
 
         desired_pos = [0.0, 0., 0.1, 0, 0, 0., 0.]
-        for joint_idx, jt_name in enumerate(joints_to_control):
-            psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
+        # for joint_idx, jt_name in enumerate(joints_to_control):
+        #     psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
         # tip (-0.17, 0.17) (-0.16, 0.13)  (-0.1,-0.03)
         # for joint_idx, jt_name in enumerate(joints_to_control):
         #     error_in_pos = 1
