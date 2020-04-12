@@ -93,7 +93,7 @@ class AmbfEnv(gym.GoalEnv):
         self.obs = Observation()
         self.initial_pos = copy.deepcopy(self.obs.cur_observation()[0])
         # self.previous_cartesian_pos = np.zeros((1, 3))
-        self.previous_joint_pos = np.array([0., 0., 0.075, 0., 0., 0., 0.])
+        self.previous_joint_pos = np.array([0., 0., 0.1, 0., 0., 0., 0.])
         self.cmd_joint_pos = np.zeros(7)
 
         # Action Limit values: Z-> +-0.5 || X, Y-> +-0.05
@@ -160,7 +160,7 @@ class AmbfEnv(gym.GoalEnv):
     def set_initial_pos_func(self):
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             if joint_idx == 2:
-                self.obj_handle.set_joint_pos(jt_name, 0.075)
+                self.obj_handle.set_joint_pos(jt_name, 0.1)
             else:
                 self.obj_handle.set_joint_pos(jt_name, 0)
         time.sleep(0.5)
@@ -262,8 +262,8 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
-        check_joint_val = np.all((-1.45 <= joint_pos[0] <= 1.45) and (-0.93556 <= joint_pos[1] <= 0.94249)
-                                 and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
+        check_joint_val = np.all((-1.0 <= joint_pos[0] <= 1.0) and (-0.8 <= joint_pos[1] <= 0.8)
+                                 and (0.1 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
                                  and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
                                  and (-3.0498 <= joint_pos[5] <= 3.0399))
         # print("check val is ", check_val)
@@ -335,7 +335,7 @@ class AmbfEnv(gym.GoalEnv):
             # done = True
             # self.reset()
         else:
-            reward = 0
+            reward = -1
         # reward = -(prev_dist - cur_dist)
         # print("Cur dist ", cur_dist)
         self.obs.dist = cur_dist
@@ -343,10 +343,10 @@ class AmbfEnv(gym.GoalEnv):
 
     def _sample_goal(self):
         # Samples new goal positions and ensures its within the workspace of PSM
-        rand_val_pos = self.np_random.uniform(-0.18, 0.18, size=3)
-        rand_val_pos[0] = np.clip(rand_val_pos[0], -0.15, 0.15)
-        rand_val_pos[1] = np.clip(rand_val_pos[1], -0.1, 0.1)
-        rand_val_pos[2] = np.clip(rand_val_pos[2], -0.175, -0.075)
+        rand_val_pos = self.np_random.uniform(-0.15, 0.15, size=3)
+        rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.15, 0.15), decimals=4)
+        rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1, 0.1), decimals=4)
+        rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.175, -0.1), decimals=4)
         rand_val_angle = self.np_random.uniform(-1.57, 1.57, size=3)
         # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
         # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
@@ -363,3 +363,19 @@ class AmbfEnv(gym.GoalEnv):
     def _update_info(self):
         return {}
 
+    """
+    Original Invalid pos
+        def invalid_joint_pos(self, joint_pos):
+        # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
+        # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
+        # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
+        check_joint_val = np.all((-1.45 <= joint_pos[0] <= 1.45) and (-0.93556 <= joint_pos[1] <= 0.94249)
+                                 and (0.075 <= joint_pos[2] <= 0.24001) and (-3.0456 <= joint_pos[3] <= 3.0485)
+                                 and (-3.0414 <= joint_pos[4] <= 3.0528) and (-3.0481 <= joint_pos[5] <= 3.0376)
+                                 and (-3.0498 <= joint_pos[5] <= 3.0399))
+        # print("check val is ", check_val)
+        if check_joint_val:
+            return False
+        else:
+            return True
+    """

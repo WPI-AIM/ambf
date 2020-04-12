@@ -29,10 +29,16 @@ def main(env):
 
     # NOTE:
     # If continuing learning from previous checkpoint,
-    # Comment model=HER(''') and env.reset()  [lines 38:41] and uncomment below 2 lines:
+    # Comment model=HER(''') till model.save("./her_robot_env")  [lines 44:51] and uncomment below lines:
     # Replace the XXXXX below with the largest number present in (rl_model_) directory ./ddpg_dvrk_tensorboard/
+    # remaining_training_steps = 4000000 - XXXXX
     # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_XXXXX_steps.zip'
     # model = HER.load(model_log_dir, env=env)
+    # Reset the model
+    # env.reset()
+    # model.learn(remaining_training_steps, log_interval=100,
+    #             callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
+    # model.save("./her_robot_env")
 
     # Available strategies (cf paper): future, final, episode, random
     model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
