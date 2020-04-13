@@ -499,6 +499,9 @@ int main(int argc, char* argv[])
 
         glfwSwapInterval(g_swapInterval);
 
+        // Finally address all the requested parenting if any in the ADF file
+        (*g_cameraIt)->resolveParenting();
+
         // initialize GLEW library
 #ifdef GLEW_VERSION
         if (glewInit() != GLEW_OK)

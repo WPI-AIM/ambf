@@ -1059,6 +1059,12 @@ public:
     // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 
+    // Since we changed the order of ADF loading such that cameras are loaded before
+    // bodies etc. we wouldn't be able to find a body defined as a parent in the
+    // camera data-block in the ADF file. Thus after loading the bodies, this method
+    // should be called to find the parent.
+    bool resolveParenting();
+
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
     // transform of the afRigidBody surrounding the camera the same
@@ -1208,6 +1214,13 @@ private:
 
     // Flag to enable disable publishing of image as a ROS topic
     bool m_publishImage = false;
+
+    // Parent body name defined in the ADF
+    std::string m_parentName;
+
+    cVector3d m_camPos;
+    cVector3d m_camLookAt;
+    cVector3d m_camUp;
 };
 
 //-----------------------------------------------------------------------------
