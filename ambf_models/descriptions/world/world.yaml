@@ -47,7 +47,7 @@ camera1:
 # vector are with respect to the parent and not the world origin
 cameraEndoscope:
   namespace: cameras/
-  name: default_camera
+  name: endo_camera
   location: {x: 0.0, y: 0.0, z: -0.1}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 1.0, y: 0.0, z: 0.0}
