@@ -55,6 +55,46 @@ namespace chai3d {
 
 //==============================================================================
 /*!
+    This method creates an afCommunication Object
+
+    \param  a_name  af Object Name.
+    \param  a_name  af Namespace.
+*/
+//==============================================================================
+void afComm::afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+#endif
+}
+
+
+//==============================================================================
+/*!
+    //! This method applies updates Wall and Sim Time for AF State Message.
+
+    \param a_wall_time   Wall Time
+    \param a_sim_time    Sim Time
+*/
+//==============================================================================
+void afComm::afObjectSetTime(const double *a_wall_time, const double *a_sim_time){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afObjectCommPtr.get() != nullptr){
+        m_afObjectCommPtr->set_wall_time(*a_wall_time);
+        m_afObjectCommPtr->set_sim_time(*a_sim_time);
+    }
+#endif
+}
+
+//==============================================================================
+/*!
+    This method updates forces from AF Command Message. This method is called from cBulletWorld if afWorldPtr is created
+*/
+//==============================================================================
+void afComm::afObjectCommandExecute(double dt){
+}
+
+//==============================================================================
+/*!
     This method initializes the Bullet dynamic model.
 
     \param  a_world  Bullet world to which this new object belongs to.
@@ -321,102 +361,6 @@ void cBulletGenericObject::addExternalTorque(const cVector3d& a_torque)
     }
 }
 
-
-//==============================================================================
-/*!
-    This method creates an afCommunication Object
-
-    \param  a_name  af Object Name.
-    \param  a_name  af Namespace.
-*/
-//==============================================================================
-void cBulletGenericObject::afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-#endif
-}
-
-
-//==============================================================================
-/*!
-    //! This method applies updates Wall and Sim Time for AF State Message.
-
-    \param a_wall_time   Wall Time
-    \param a_sim_time    Sim Time
-*/
-//==============================================================================
-void cBulletGenericObject::afObjectSetTime(const double *a_wall_time, const double *a_sim_time){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_wall_time(*a_wall_time);
-        m_afObjectCommPtr->set_sim_time(*a_sim_time);
-    }
-#endif
-}
-
-//==============================================================================
-/*!
-    This method updates forces from AF Command Message. This method is called from cBulletWorld if afWorldPtr is created
-*/
-//==============================================================================
-void cBulletGenericObject::afObjectCommandExecute(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->update_af_cmd();
-        cVector3d force, torque;
-        if (m_afObjectCommPtr->m_objectCommand.enable_position_controller){
-            cVector3d cur_pos, cmd_pos, rot_axis;
-            cQuaternion cur_rot, cmd_rot;
-            cMatrix3d cur_rot_mat, cmd_rot_mat;
-            btTransform b_trans;
-            double rot_angle;
-            double K_lin = 10, B_lin = 1;
-            double K_ang = 5;
-            m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
-            cur_pos.set(b_trans.getOrigin().getX(),
-                        b_trans.getOrigin().getY(),
-                        b_trans.getOrigin().getZ());
-
-            cur_rot.x = b_trans.getRotation().getX();
-            cur_rot.y = b_trans.getRotation().getY();
-            cur_rot.z = b_trans.getRotation().getZ();
-            cur_rot.w = b_trans.getRotation().getW();
-            cur_rot.toRotMat(cur_rot_mat);
-
-            cmd_pos.set(m_afObjectCommPtr->m_objectCommand.px,
-                        m_afObjectCommPtr->m_objectCommand.py,
-                        m_afObjectCommPtr->m_objectCommand.pz);
-
-            cmd_rot.x = m_afObjectCommPtr->m_objectCommand.qx;
-            cmd_rot.y = m_afObjectCommPtr->m_objectCommand.qy;
-            cmd_rot.z = m_afObjectCommPtr->m_objectCommand.qz;
-            cmd_rot.w = m_afObjectCommPtr->m_objectCommand.qw;
-            cmd_rot.toRotMat(cmd_rot_mat);
-
-            m_dpos_prev = m_dpos;
-            m_dpos = cmd_pos - cur_pos;
-            m_ddpos = (m_dpos - m_dpos_prev)/dt;
-            m_drot = cMul(cTranspose(cur_rot_mat), cmd_rot_mat);
-            m_drot.toAxisAngle(rot_axis, rot_angle);
-
-            force = K_lin * m_dpos + B_lin * m_ddpos;
-            torque = cMul(K_ang * rot_angle, rot_axis);
-            cur_rot_mat.mul(torque);
-        }
-        else{
-
-            force.set(m_afObjectCommPtr->m_objectCommand.fx,
-                      m_afObjectCommPtr->m_objectCommand.fy,
-                      m_afObjectCommPtr->m_objectCommand.fz);
-            torque.set(m_afObjectCommPtr->m_objectCommand.tx,
-                       m_afObjectCommPtr->m_objectCommand.ty,
-                       m_afObjectCommPtr->m_objectCommand.tz);
-        }
-        addExternalForce(force);
-        addExternalTorque(torque);
-    }
-#endif
-}
 
 //==============================================================================
 /*!

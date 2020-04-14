@@ -782,11 +782,30 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
     // Not implemented yet
 }
 
+
+///
+/// \brief afObject::afObject
+/// \param a_afWorld
+///
+afObject::afObject(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_chaiBulletWorld){
+    m_afWorld = a_afWorld;
+}
+
+
+
+///
+/// \brief afObject::~afObject
+///
+afObject::~afObject(){
+
+}
+
+
 ///
 /// \brief afBody::afBody
 /// \param a_world
 ///
-afRigidBody::afRigidBody(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld->s_chaiBulletWorld){
+afRigidBody::afRigidBody(afWorldPtr a_afWorld): afObject(a_afWorld){
     m_afWorld = a_afWorld;
     setFrameSize(0.5);
     m_mesh_name.clear();
@@ -4903,7 +4922,7 @@ void afWorld::removePickingConstraint(){
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
+afCamera::afCamera(afWorldPtr a_afWorld): afObject(a_afWorld){
 
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_afWorld = a_afWorld;

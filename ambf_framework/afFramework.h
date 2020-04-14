@@ -339,37 +339,22 @@ struct afChildJointPair{
 };
 
 
-///
-/// \brief The afBody class
-///
-class afRigidBody: public cBulletMultiMesh{
 
-    friend class afMultiBody;
-    friend class afJoint;
-    friend class afWorld;
+class afObject: public cBulletMultiMesh{
 
 public:
-
-    afRigidBody(afWorldPtr a_afWorld);
-    virtual ~afRigidBody();
-    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
-    // In case the body is kinematic, only position cmds will be applied
-    virtual void afObjectCommandExecute(double dt);
-
-    // Load rigid body named by node_name from the a config file that may contain many bodies
-    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
-
-    // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
-
-    // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
-    virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
-
-    // This method update the AMBF position representation from the Bullet dynamics engine.
-    virtual void updatePositionFromDynamics();
+    afObject(afWorldPtr a_afWorld);
+    virtual ~afObject();
 
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
+
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
+    virtual void afObjectCommandExecute(double dt){}
+
+    // This method updates the AMBF position representation from the Bullet dynamics engine.
+    virtual void updatePositionFromDynamics(){}
 
     inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
 
@@ -380,6 +365,76 @@ public:
 
     // Get Initial Rotation of this body
     inline cMatrix3d getInitialRotation(){return m_initialRot;}
+
+    // This method toggles the viewing of frames of this rigid body.
+    inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
+
+    // Get Min/Max publishing frequency for afObjectState for this body
+    inline int getMinPublishFrequency(){return _min_publish_frequency;}
+
+    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
+
+public:
+
+    // Ptr to afWorld
+    afWorldPtr m_afWorld;
+
+protected:
+
+    // The namespace for this body, this namespace affect afComm and the stored name of the body
+    // in the internal body tree map.
+    std::string m_namespace = "";
+
+    // Initial location of Rigid Body
+    cVector3d m_initialPos;
+
+    // Initial rotation of Ridig Body
+    cMatrix3d m_initialRot;
+
+    // Min and Max publishing frequency
+    int _min_publish_frequency=50;
+    int _max_publish_frequency=1000;
+
+private:
+
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+};
+
+
+///
+/// \brief The afBody class
+///
+class afRigidBody: public afObject{
+
+    friend class afMultiBody;
+    friend class afJoint;
+    friend class afWorld;
+
+public:
+
+    afRigidBody(afWorldPtr a_afWorld);
+    virtual ~afRigidBody();
+
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
+    virtual void afObjectCommandExecute(double dt);
+
+    // This method updates the AMBF position representation from the Bullet dynamics engine.
+    virtual void updatePositionFromDynamics();
+
+    // Load rigid body named by node_name from the a config file that may contain many bodies
+    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
+
+    // Load rigid body named by from the rb_node specification
+    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
+
+    // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
+    virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
+
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
 
     // Apply force that is specified in the world frame at a point specified in world frame
     // This force is first converted into body frame and then is used to compute
@@ -408,18 +463,10 @@ public:
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
 
-    // This method toggles the viewing of frames of this rigid body.
-    inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
-
     // Cleanup this rigid body
     void remove();
 
 public:
-
-    // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return _min_publish_frequency;}
-
-    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
 
     // function to check if this rigid body is part of the collision group
     // at a_idx
@@ -446,10 +493,6 @@ public:
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
-
-    // The namespace for this body, this namespace affect afComm and the stored name of the body
-    // in the internal body tree map.
-    std::string m_namespace = "";
 
 protected:
 
@@ -1042,7 +1085,7 @@ private:
 ///
 /// \brief The afCamera class
 ///
-class afCamera: public afRigidBody{
+class afCamera: public afObject{
 public:
 
     afCamera(afWorld* a_afWorld);

@@ -84,6 +84,27 @@ enum cBulletDynamicModelType
 };
 //------------------------------------------------------------------------------
 
+
+class afComm{
+public:
+    afComm(){}
+
+    //! This method create as afCommunication Instance with the specified namespace
+    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+
+    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
+    virtual void afObjectCommandExecute(double dt=0.001);
+
+    //! This method applies updates Wall and Sim Time for AF State Message.
+    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
+
+    //! AF CHAI Env
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+#endif
+
+};
+
 //==============================================================================
 /*!
     \class      cBulletGenericObjectH
@@ -96,7 +117,7 @@ enum cBulletDynamicModelType
     cBulletGenericBody is a base class for modeling Bullet dynamic objects.
 */
 //==============================================================================
-class cBulletGenericObject
+class cBulletGenericObject: public afComm
 {
     //--------------------------------------------------------------------------
     // CONSTRUCTOR & DESTRUCTOR:
@@ -186,24 +207,6 @@ public:
     //! This method applies an external force at a given position described in global coordinates to this object.
     void addExternalForceAtPoint(const cVector3d& a_force,
                                  const cVector3d& a_relativePos);
-
-    // AFMB API BEGIN
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
-    virtual void afObjectCommandExecute(double dt=0.001);
-
-    //! This method applies updates Wall and Sim Time for AF State Message.
-    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
-
-    //! AF CHAI Env
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
-#endif
-
-    // AFMB API END
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - DAMPING:
