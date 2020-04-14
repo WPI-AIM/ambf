@@ -230,7 +230,7 @@ class AmbfEnv(gym.GoalEnv):
         # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
         # self.previous_cartesian_pos = xyz_cartesian_pos
-        if self.count_for_print % 1 == 0:
+        if self.count_for_print % 10000 == 0:
             print("count ", self.count_for_print, "Action is ", action, " new pos after action ",
                   updated_state)
             print("Reward is ", rewards)

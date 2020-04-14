@@ -24,7 +24,9 @@ def main(env):
         'nb_eval_steps': 500,
         'gamma': 0.95,
         'observation_range': (-3.05, 3.05),
-        'random_exploration': 0.05
+        'random_exploration': 0.05,
+        'normalize_observations': True,
+        'normalize_returns': True
     }
 
     # NOTE:
@@ -42,7 +44,7 @@ def main(env):
 
     # Available strategies (cf paper): future, final, episode, random
     model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
-                buffer_size=int(1e6), batch_size=256, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
+                buffer_size=int(1e6), batch_size=128, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
     # Reset the model
     env.reset()
     # Train the model
