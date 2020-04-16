@@ -5122,7 +5122,6 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraMultiPass = cameraNode["multipass"];
 
     bool _is_valid = true;
-    cVector3d _location, _up, _look_at;
     double _clipping_plane_limits[2], _field_view_angle;
     bool _enable_ortho_view = false;
     double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
@@ -5148,21 +5147,21 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
 
     if (cameraLocationData.IsDefined()){
-        _location = toXYZ<cVector3d>(&cameraLocationData);
+        m_camPos = toXYZ<cVector3d>(&cameraLocationData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
-        _look_at = toXYZ<cVector3d>(&cameraLookAtData);
+        m_camLookAt = toXYZ<cVector3d>(&cameraLookAtData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
         _is_valid = false;
     }
     if (cameraUpData.IsDefined()){
-        _up = toXYZ<cVector3d>(&cameraUpData);
+        m_camUp = toXYZ<cVector3d>(&cameraUpData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
@@ -5225,27 +5224,17 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_camera = new cCamera(a_world->s_chaiBulletWorld);
         addChild(m_camera);
 
-        bool _overrideParent = false;
-
         if (cameraParent.IsDefined()){
-            _overrideParent = true;
-            std::string parent_name = cameraParent.as<std::string>();
-            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
-            if (pBody){
-                pBody->addChild(this);
-            }
-            else{
-                std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                          << parent_name << "\"" <<std::endl;
-            }
+            m_parentName = cameraParent.as<std::string>();
         }
-        if (! _overrideParent){
+        else{
+            m_parentName = "";
             a_world->s_chaiBulletWorld->addChild(this);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
         // position and orient the camera
-        setView(_location, _look_at, _up);
+        setView(m_camPos, m_camLookAt, m_camUp);
         m_initialPos = getLocalPos();
         m_initialRot = getLocalRot();
         // set the near and far clipping planes of the camera
@@ -5376,6 +5365,34 @@ void afCamera::publishImage(){
         m_imagePublisher.publish(rosMsg);
     }
 #endif
+}
+
+
+///
+/// \brief afCamera::resolveParenting
+/// \return
+///
+bool afCamera::resolveParenting(){
+    if (!m_parentName.empty()){
+        afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
+        if (pBody){
+            pBody->addChild(this);
+            // Now also update the postion and orientation, w.r.t the parent.
+            setView(m_camPos, m_camLookAt, m_camUp);
+            m_initialPos = getLocalPos();
+            m_initialRot = getLocalRot();
+            return true;
+        }
+        else{
+            std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
+                      << m_parentName << "\"" <<std::endl;
+            return false;
+        }
+    }
+    else{
+        // No parent assigned, so report success as we have nothing to find
+        return true;
+    }
 }
 
 
