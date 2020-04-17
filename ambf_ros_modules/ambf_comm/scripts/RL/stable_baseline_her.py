@@ -33,10 +33,10 @@ def main(env):
     # If continuing learning from previous checkpoint,
     # Comment model=HER(''') till model.save("./her_robot_env")  [lines 44:51] and uncomment below lines:
     # Replace the XXXXX below with the largest number present in (rl_model_) directory ./ddpg_dvrk_tensorboard/
-    # remaining_training_steps = 4000000 - XXXXX
-    # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_XXXXX_steps.zip'
+    # remaining_training_steps = 1000000
+    # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_4000000_steps.zip'
     # model = HER.load(model_log_dir, env=env)
-    # Reset the model
+    # # Reset the model
     # env.reset()
     # model.learn(remaining_training_steps, log_interval=100,
     #             callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
@@ -58,15 +58,17 @@ def load_model(eval_env):
     # WARNING: you must pass an env
     # or wrap your environment with HERGoalEnvWrapper to use the predict method
     model = HER.load('./her_robot_env', env=eval_env)
-    obs = eval_env.reset()
-    for _ in range(10000):
-        action, _ = model.predict(obs)
-        obs, reward, done, _ = eval_env.step(action)
-        print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
-        if done:
-            print("----------------It reached terminal state -------------------")
-            time.sleep(5)
-            obs = eval_env.reset()
+    # obs = eval_env.reset()
+    for _ in range(20):
+        obs = eval_env.reset()
+        for _ in range(1000):
+            action, _ = model.predict(obs)
+            obs, reward, done, _ = eval_env.step(action)
+            print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
+            if done:
+                print("----------------It reached terminal state -------------------")
+                time.sleep(5)
+                break
 
 
 if __name__ == '__main__':

@@ -110,8 +110,36 @@ T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
 # print(round_mat(T_7_0, 4, 4, 3))
 
 if __name__ == "__main__":
+    max_x = 0.
+    max_y = 0.
+    max_z = -2.
+    min_x = 0.
+    min_y = 0.
+    min_z = 0.
     while True:
-        T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
-        print(T_7_0[0:3, 3])
+        for joint_1 in np.arange(-0.8, 0.8, 0.05):
+            for joint_2 in np.arange(-0.8, 0.8, 0.05):
+                for joint_3 in np.arange(0.1, 0.24, 0.05):
+                    T_7_0 = compute_FK([joint_1, joint_2, joint_3, 0, 0, 0])
+
+                    if T_7_0[0:3, 3][0] > max_x:
+                        max_x = T_7_0[0:3, 3][0]
+                    elif T_7_0[0:3, 3][1] > max_y:
+                        max_y = T_7_0[0:3, 3][1]
+                    elif T_7_0[0:3, 3][2] > max_z:
+                        max_z = T_7_0[0:3, 3][2]
+                    if T_7_0[0:3, 3][0] < min_x:
+                        min_x = T_7_0[0:3, 3][0]
+                    elif T_7_0[0:3, 3][1] < min_y:
+                        min_y = T_7_0[0:3, 3][1]
+                    elif T_7_0[0:3, 3][2] < min_z:
+                        min_z = T_7_0[0:3, 3][2]
+                    else:
+                        pass
+                    # print(T_7_0[0:3, 3])
+        print("Max and min vals are ", max_x, max_y, max_z, min_x, min_y, min_z)
+
+        # T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
+        # print(T_7_0[0:3, 3])
 
 

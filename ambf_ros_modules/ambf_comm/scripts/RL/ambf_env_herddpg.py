@@ -98,9 +98,9 @@ class AmbfEnv(gym.GoalEnv):
 
         # Action Limit values: Z-> +-0.5 || X, Y-> +-0.05
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
-        self.n_actions = 7
-        self.action_lims_low = np.array([-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05])
-        self.action_lims_high = np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
+        self.n_actions = 3
+        self.action_lims_low = np.array([-0.05, -0.05, -0.05])
+        self.action_lims_high = np.array([0.05, 0.05, 0.05])
         self.action_space = spaces.Box(low=-1, high=1, shape=(self.n_actions,), dtype="float32")
         self.observation_space = spaces.Dict(dict(
             desired_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
@@ -178,7 +178,7 @@ class AmbfEnv(gym.GoalEnv):
         return updated_state
 
     def step(self, action):
-        assert len(action) == 7
+        assert len(action) == 3
         # Counter for printing position, action and reward
         self.count_for_print += 1
         # Initialization of variables
@@ -204,7 +204,8 @@ class AmbfEnv(gym.GoalEnv):
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
             state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
-            new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
+            if joint_idx < 3:
+                new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
         # print("diff", current_joint_pos-self.previous_joint_pos)
         # Ensure the new state is within valid joint positions, if invalid then stay at the joint limit position
         desired_joint_pos = self.limit_joint_pos(new_state_joint_pos)
@@ -255,8 +256,8 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         limit_joint_values = np.zeros(len(joint_pos))
-        joint_lower_limit = np.array([-1, -0.8, 0.1, -1.57, -1.57, -1.57, -1.57])
-        joint_upper_limit = np.array([1, 0.8, 0.24, 1.57, 1.57, 1.57, 1.57])
+        joint_lower_limit = np.array([-0.8, -0.8, 0.1, -1.57, -1.57, -1.57, -1.57])
+        joint_upper_limit = np.array([0.8, 0.8, 0.24, 1.57, 1.57, 1.57, 1.57])
         for joint_idx in range(len(joint_pos)):
             limit_joint_values[joint_idx] = np.clip(joint_pos[joint_idx], joint_lower_limit[joint_idx],
                                                     joint_upper_limit[joint_idx])
@@ -334,10 +335,12 @@ class AmbfEnv(gym.GoalEnv):
         # rand_val_pos = np.around(np.add(observation['achieved_goal'][0:3],
         #                                 self.np_random.uniform(-self.target_range, self.target_range, size=3)),
         #                          decimals=4)
-        rand_val_pos = self.np_random.uniform(-0.175, 0.15, size=3)
-        rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.15, 0.15), decimals=4)
-        rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1, 0.1), decimals=4)
-        rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.175, -0.1), decimals=4)
+        # Cartesian limits [-0.1388084, 0.1318971] [-0.1318971, 0.1388084] [-0.1935, -0.04766373]
+        # for joint limits (-0.8, 0.8), (-0.8, 0.8), (0.1, 0.24)
+        rand_val_pos = self.np_random.uniform(-0.1935, 0.1388, size=3)
+        rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.1388, 0.1319), decimals=4)
+        rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1319, 0.1388), decimals=4)
+        rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.1935, -0.0477), decimals=4)
         rand_val_angle = self.np_random.uniform(-1.57, 1.57, size=3)
         # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
         # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
