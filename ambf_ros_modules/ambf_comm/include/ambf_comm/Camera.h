@@ -60,29 +60,110 @@ struct CameraCommand{
     }
 };
 
+enum ProjectionType{
+  PERSPECTIVE, ORTHOGONAL
+};
+
+static const char* ProjectionEnumStr[] = {"PERSPECTIVE", "ORTHOGONAL"};
+
+const std::string ProjectionEnumToStr(int enumVal)
+{
+  return std::string(ProjectionEnumStr[enumVal]);
+}
+
+enum ViewType{
+  MONO, STEREO
+};
+
+static const char* ViewEnumStr[] = {"MONO", "STEREO"};
+
+const std::string ViewTypeEnumToStr(int enumVal)
+{
+  return std::string(ViewEnumStr[enumVal]);
+}
+
+enum CameraParamsEnum{
+    look_at, up, near_plane, far_plane, parent, projection, type
+};
+
+static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_plane", "parent", "projection", "type"};
+
+const std::string CameraParamEnumToStr(int enumVal)
+{
+  return std::string(CameraParamEnumStr[enumVal]);
+}
+
+class CameraParams{
+public:
+
+    CameraParams(){
+
+        m_up.resize(3);
+        m_look_at.resize(3);
+
+        m_paramsChanged = false;
+        m_projectionType = ProjectionEnumToStr(ProjectionType::PERSPECTIVE);
+        m_viewType = ViewTypeEnumToStr(ViewType::MONO);
+    }
+
+    ~CameraParams();
+
+    inline void set_qualified_namespace(std::string a_namespace){m_qualified_namespace = a_namespace;}
+    inline bool have_params_changed(){return m_paramsChanged;}
+
+    void set_up_vector(double x, double y, double z);
+    void set_look_vector(double x, double y, double z);
+    void set_near_plane(double val);
+    void set_far_plane(double val);
+    void set_projection_type(ProjectionType type);
+    void set_view_type(ViewType type);
+
+    std::vector<double> get_up_vector(double x, double y, double z);
+    std::vector<double> get_look_vector(double x, double y, double z);
+    double get_near_plane(double val);
+    double get_far_plane(double val);
+    ProjectionType get_projection_type(ProjectionType type);
+    ViewType get_view_type(ViewType type);
+
+    std::string m_qualified_namespace;
+
+    // This a flag to check if any param has been updated
+    bool m_paramsChanged;
+
+
+    // The defined params
+    std::vector<double> m_up;
+    std::vector<double> m_look_at;
+    double m_near_plane, m_far_plane;
+
+    std::string m_projectionType;
+    std::string m_viewType;
+};
+
 namespace ambf_comm{
-class Camera: public CameraRosCom{
+class Camera: public CameraRosCom, public CameraParams{
 public:
     Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     inline void set_name(std::string name){m_State.name.data = name;}
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
-    void cur_force(double fx, double fy, double fz);
-    void cur_torque(double nx, double ny, double nz);
     void update_af_cmd();
     void set_wall_time(double a_sec);
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(float a_data);
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(std::vector<float> &a_data);
-    void set_children_names(std::vector<std::string> children_names);
-    void set_joint_names(std::vector<std::string> joint_names);
-    void set_joint_positions(std::vector<float> joint_positions);
+
+    // This method updates from the ROS param server instead of topics
+    void get_params_from_server();
+    // This method may be called when AMBF starts to load the existing
+    void set_params_on_server();
+
     CameraCommand m_CameraCommand;
+
+    // For internal use. Incremented everytime the update_af_cmd method is called. Is reset
+    // when the counter reaches a defined max
+    int m_updatedCmdCtr;
 };
 }
 
