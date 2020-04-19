@@ -19,22 +19,20 @@ def main(env):
         'actor_lr': 1e-3,
         'critic_lr': 1e-3,
         'action_noise': action_noise,
-        'nb_train_steps': 500,
+        'nb_train_steps': 300,
         'nb_rollout_steps': 150,
-        'nb_eval_steps': 500,
         'gamma': 0.95,
-        'observation_range': (-3.05, 3.05),
+        'observation_range': (-1.5, 1.5),
         'random_exploration': 0.05,
-        'normalize_observations': True,
-        'normalize_returns': True
+        'normalize_observations': True
     }
 
     # NOTE:
     # If continuing learning from previous checkpoint,
     # Comment model=HER(''') till model.save("./her_robot_env")  [lines 44:51] and uncomment below lines:
     # Replace the XXXXX below with the largest number present in (rl_model_) directory ./ddpg_dvrk_tensorboard/
-    # remaining_training_steps = 1000000
-    # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_4000000_steps.zip'
+    # remaining_training_steps = 4000000 - 700000
+    # model_log_dir = './ddpg_dvrk_tensorboard/rl_model_700000_steps.zip'
     # model = HER.load(model_log_dir, env=env)
     # # Reset the model
     # env.reset()
@@ -44,7 +42,7 @@ def main(env):
 
     # Available strategies (cf paper): future, final, episode, random
     model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
-                buffer_size=int(1e6), batch_size=128, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
+                buffer_size=int(1e5), batch_size=128, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
     # Reset the model
     env.reset()
     # Train the model
@@ -90,24 +88,4 @@ if __name__ == '__main__':
     eval_env.ambf_client.clean_up()
 
 
-'''
-def find_save_path(dir, trial_id):
-    """
-    Create a directory to save results and arguments. Adds 100 to the trial id if a directory already exists.
-    Params
-    ------
-    - dir (str)
-        Main saving directory
-    - trial_id (int)
-        Trial identifier
-    """
-    i=0
-    while True:
-        save_dir = dir+str(trial_id+i*100)+'/'
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-            break
-        i+=1
-    return save_dir
-'''
 

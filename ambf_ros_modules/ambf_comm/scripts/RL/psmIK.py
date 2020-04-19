@@ -3,7 +3,6 @@ import numpy as np
 import math
 from psmFK import *
 import rospy
-from transformations import euler_from_matrix
 
 # THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
 # SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE
@@ -49,13 +48,14 @@ from transformations import euler_from_matrix
 #
 # is the direction between the difference of A and B expressed in C.
 
+
 def compute_IK(T_7_0):
     palm_length = 0.0091 # Fixed length from the palm joint to the pinch joint
     pinch_length = 0.0102 # Fixed length from the pinch joint to the pinch tip
     tool_rcm_offset = 0.0156 # Delta between tool tip and the Remote Center of Motion
 
     # Pinch Joint
-    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0, 0, -1))
+    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0.0, 0.0, -1.0))
     # Pinch Joint in Origin
     T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
 
@@ -93,19 +93,28 @@ def compute_IK(T_7_0):
     # Now this should be the position of the point along the RC
     # print("Point Along the SHAFT: ", T_PalmJoint_0.p)
 
+    # Calculate insertion_depth to check if the tool is past the RCM
+    insertion_depth = T_PalmJoint_0.p.Norm()
+
+    if insertion_depth <= tool_rcm_offset:
+        sign = 1
+    elif insertion_depth > tool_rcm_offset:
+        sign = -1
+
     # Now having the end point of the shaft or the PalmJoint, we can calculate some
     # angles as follows
     # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print ('XZ Diagonal: ', xz_diagonal)
     # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
-    j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
+    j1 = math.atan2(T_PalmJoint_0.p[0], sign * T_PalmJoint_0.p[2])
 
     # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print('YZ Diagonal: ', yz_diagonal)
     # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
-    j2 = -math.atan2(T_PalmJoint_0.p[1], -T_PalmJoint_0.p[2])
+    j2 = -math.atan2(T_PalmJoint_0.p[1], sign * T_PalmJoint_0.p[2])
 
-    j3 = T_PalmJoint_0.p.Norm() + tool_rcm_offset
+    j3 = insertion_depth + tool_rcm_offset
+
 
     # Calculate j4
     # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
@@ -135,39 +144,12 @@ def compute_IK(T_7_0):
     # print("Joint 4: ", round(j4, 3))
     # print("Joint 5: ", round(j5, 3))
     # print("Joint 6: ", round(j6, 3))
-    # T_7_0_req = convert_frame_to_mat(T_7_0)
-    # T_7_0_req = round_transform(T_7_0_req, 3)
-    # print 'Requested Pose: \n', T_7_0_req
+
+    T_7_0_req = convert_frame_to_mat(T_7_0)
+    T_7_0_req = round_transform(T_7_0_req, 3)
+    # print('Requested Pose: \n', T_7_0_req)
     T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
     round_transform(T_7_0_computed, 3)
-    # print'Computed Pose: \n', T_7_0_computed
-    joint_values = np.array([round(j1, 3), round(j2, 3), round(j3, 3), round(j4, 3), round(j5, 3), round(j6, 3)])
-    return joint_values, T_7_0_computed
+    # print('Computed Pose: \n', T_7_0_computed)
 
-
-def test_ik(x, y, z, rx, ry, rz):
-    Rx = Rotation.RPY(rx, 0.0, 0.0)
-    Ry = Rotation.RPY(0.0, ry, 0.0)
-    Rz = Rotation.RPY(0.0, 0.0, rz)
-
-    tip_offset_rot = Rotation.RPY(np.pi, 0, np.pi/2)
-    req_rot = tip_offset_rot * Rz * Ry * Rx
-    req_pos = Vector(x, y, z)
-    T_7_0 = Frame(req_rot, req_pos)
-    # print "REQ POSE \n", round_transform(convert_frame_to_mat(T_7_0), 3), "\n\n--------\n\n"
-    ik, T_frame = compute_IK(T_7_0)
-    return ik, T_frame
-
-
-if __name__ == "__main__":
-    ik_pos,  T_frame = test_ik(-0.18, -0.1, -0.15, PI/4, PI_2, PI/4)
-    goal_state = [0.5145, 0.4273, -0.6718, 2.1767, 1.5345, 2.5359]
-    # ik_pos, T_frame = test_ik(0.5145, 0.4273, -0.6718, 2.1767, 1.5345, 2.5359)
-    print("IK is ", ik_pos, "goal is ", goal_state)
-    fk_tip = compute_FK(ik_pos)
-    # sprint("Front tip calculated is ", fk_tip)
-    euler = euler_from_matrix(fk_tip[0:3, 0:3], axes='szyx')
-    print("Angle is ", fk_tip[0:3, 3].reshape((1, 3)), euler)
-    # print("fk tip is ", fk_tip[0:3, 0:3])
-    # print("Euler angle is ", euler[0], euler[1], euler[2])
-    # print("FK is ", T_frame)
+    return np.array([j1, j2, j3, j4, j5, j6])
