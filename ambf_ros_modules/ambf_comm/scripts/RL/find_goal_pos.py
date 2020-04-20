@@ -3,7 +3,7 @@ import numpy as np
 from ambf_world import World
 from ambf_object import Object
 from numpy import linalg as LA
-from psmIK import compute_IK, test_ik
+# from psmIK import compute_IK, test_ik
 from psmFK import compute_FK
 from transformations import euler_from_matrix
 import time
@@ -36,9 +36,9 @@ try:
                                       'toolpitchlink-toolgripper1link',
                                       'toolpitchlink-toolgripper2link'])
 
-        desired_pos = [0.0, 0., 0.1, 0, 0, 0., 0.]
+        desired_pos = [0.0, 0., 0.2, 0, 0, 0., 0.]
         # for joint_idx, jt_name in enumerate(joints_to_control):
-        #     psm_handle.set_joint_pos(jt_name, desired_pos[joint_idx])
+        psm_handle.set_joint_pos(joints_to_control[2], desired_pos[2])
         # tip (-0.17, 0.17) (-0.16, 0.13)  (-0.1,-0.03)
         # for joint_idx, jt_name in enumerate(joints_to_control):
         #     error_in_pos = 1

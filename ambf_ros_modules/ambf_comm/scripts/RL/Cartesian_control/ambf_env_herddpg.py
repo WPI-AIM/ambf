@@ -220,10 +220,13 @@ class AmbfEnv(gym.GoalEnv):
                 reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
 
             error_in_pos = np.around(np.subtract(desired_joint_pos, reached_joint_pos), decimals=3)
+            error_in_pos_joint2 = np.around(np.subtract(desired_joint_pos[2], reached_joint_pos[2]), decimals=4)
             # print("error ", error_in_pos)
             count_for_joint_pos += 1
             # if np.all(np.abs(error_in_pos) <= self.error_threshold):
-            if np.all(np.abs(error_in_pos) <= self.error_threshold) or count_for_joint_pos > 25:
+            if (np.all(np.abs(error_in_pos) <= self.error_threshold) and
+                np.abs(error_in_pos_joint2) <= 0.5*self.error_threshold) \
+                    or count_for_joint_pos > 75:
                 break
 
         # Update state, reward, done flag and world values in the code
@@ -247,8 +250,8 @@ class AmbfEnv(gym.GoalEnv):
         # print("joint pos ", joint_pos)
         # Currently only controlling X, Y, Z positions
         limit_cartesian_pos_values = np.zeros(3)
-        cartesian_pos_lower_limit = np.array([-0.1, -0.1, -0.19])
-        cartesian_pos_upper_limit = np.array([0.1, 0.1, -0.04])
+        cartesian_pos_lower_limit = np.array([-0.1, -0.08, -0.2])
+        cartesian_pos_upper_limit = np.array([0.09, 0.08, -0.08])
         for axis in range(3):
             limit_cartesian_pos_values[axis] = np.clip(cart_pos[axis], cartesian_pos_lower_limit[axis],
                                                        cartesian_pos_upper_limit[axis])
@@ -259,8 +262,8 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         limit_joint_values = np.zeros(7)
-        joint_lower_limit = np.array([-0.8, -0.8, 0.1, -1.57, -1.57, -1.57, -1.57])
-        joint_upper_limit = np.array([0.8, 0.8, 0.24, 1.57, 1.57, 1.57, 1.57])
+        joint_lower_limit = np.array([-0.5, -0.4, 0.1, -1.5, -1.5, -1.5, -1.5])
+        joint_upper_limit = np.array([0.5, 0.4, 0.24, 1.5, 1.5, 1.5, 1.5])
         for joint_idx in range(len(joint_pos)):
             limit_joint_values[joint_idx] = np.clip(joint_pos[joint_idx], joint_lower_limit[joint_idx],
                                                     joint_upper_limit[joint_idx])
@@ -344,7 +347,7 @@ class AmbfEnv(gym.GoalEnv):
         # rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.1388, 0.1319), decimals=4)
         # rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1319, 0.1388), decimals=4)
         # rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.1935, -0.0477), decimals=4)
-        rand_val_angle = self.np_random.uniform(-1.57, 1.57, size=3)
+        rand_val_angle = self.np_random.uniform(-1.5, 1.5, size=3)
         # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
         # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
         # rand_val_angle[2] = np.clip(rand_val_angle[2], -0.15, 0.15)

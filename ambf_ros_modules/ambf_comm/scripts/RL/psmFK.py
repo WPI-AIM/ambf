@@ -117,8 +117,8 @@ if __name__ == "__main__":
     min_y = 0.
     min_z = 0.
     while True:
-        for joint_1 in np.arange(-0.5, 0.5, 0.025):
-            for joint_2 in np.arange(-0.4, 0.4, 0.025):
+        for joint_1 in np.arange(-0.3, 0.3, 0.025):
+            for joint_2 in np.arange(-0.3, 0.3, 0.025):
                 for joint_3 in np.arange(0.1, 0.24, 0.025):
                     T_7_0 = compute_FK([joint_1, joint_2, joint_3, 0, 0, 0])
 
