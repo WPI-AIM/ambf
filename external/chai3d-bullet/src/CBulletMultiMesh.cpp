@@ -166,16 +166,6 @@ void cBulletMultiMesh::updatePositionFromDynamics()
         // orthogonalize frame
         m_localRot.orthogonalize();
     }
-
-    // update Transform data for m_ObjectPtr
-    #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
-        cQuaternion q;
-        q.fromRotMat(m_localRot);
-        m_afObjectCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-    }
-    #endif
 }
 
 

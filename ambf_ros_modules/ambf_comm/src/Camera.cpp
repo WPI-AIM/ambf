@@ -45,6 +45,32 @@
 #include "ambf_comm/Camera.h"
 namespace ambf_comm{
 
+const std::string ProjectionEnumToStr(int enumVal)
+{
+  return std::string(ProjectionEnumStr[enumVal]);
+}
+
+const std::string ViewTypeEnumToStr(int enumVal)
+{
+  return std::string(ViewEnumStr[enumVal]);
+}
+
+const std::string CameraParamEnumToStr(int enumVal)
+{
+  return std::string(CameraParamEnumStr[enumVal]);
+}
+
+CameraParams::CameraParams(){
+
+    m_up.resize(3);
+    m_look_at.resize(3);
+
+    m_paramsChanged = false;
+    m_projectionType = ProjectionEnumToStr(ProjectionType::PERSPECTIVE);
+    m_viewType = ViewTypeEnumToStr(ViewType::MONO);
+
+}
+
 void Camera::set_params_on_server(){
     nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
     nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);

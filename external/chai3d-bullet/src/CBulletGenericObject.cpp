@@ -55,46 +55,6 @@ namespace chai3d {
 
 //==============================================================================
 /*!
-    This method creates an afCommunication Object
-
-    \param  a_name  af Object Name.
-    \param  a_name  af Namespace.
-*/
-//==============================================================================
-void afComm::afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-#endif
-}
-
-
-//==============================================================================
-/*!
-    //! This method applies updates Wall and Sim Time for AF State Message.
-
-    \param a_wall_time   Wall Time
-    \param a_sim_time    Sim Time
-*/
-//==============================================================================
-void afComm::afObjectSetTime(const double *a_wall_time, const double *a_sim_time){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_wall_time(*a_wall_time);
-        m_afObjectCommPtr->set_sim_time(*a_sim_time);
-    }
-#endif
-}
-
-//==============================================================================
-/*!
-    This method updates forces from AF Command Message. This method is called from cBulletWorld if afWorldPtr is created
-*/
-//==============================================================================
-void afComm::afObjectCommandExecute(double dt){
-}
-
-//==============================================================================
-/*!
     This method initializes the Bullet dynamic model.
 
     \param  a_world  Bullet world to which this new object belongs to.
@@ -162,11 +122,6 @@ cBulletGenericObject::~cBulletGenericObject()
 void cBulletGenericObject::setMass(const double a_mass)
 {
     m_mass = a_mass;
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_mass(a_mass);
-    }
-#endif
 }
 
 
@@ -180,13 +135,6 @@ void cBulletGenericObject::setMass(const double a_mass)
 void cBulletGenericObject::setInertia(const cVector3d& a_inertia)
 {
     m_inertia = a_inertia;
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_principal_intertia(a_inertia(0),
-                                              a_inertia(1),
-                                              a_inertia(2));
-    }
-#endif
 }
 
 
@@ -251,14 +199,6 @@ void cBulletGenericObject::estimateInertia()
         m_inertia(0) = inertia[0];
         m_inertia(1) = inertia[1];
         m_inertia(2) = inertia[2];
-
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        if(m_afObjectCommPtr.get() != nullptr){
-            m_afObjectCommPtr->set_principal_intertia(m_inertia(0),
-                                                  m_inertia(1),
-                                                  m_inertia(2));
-        }
-#endif
     }
 }
 
@@ -276,12 +216,6 @@ void cBulletGenericObject::setStatic(bool a_static)
     if (m_bulletRigidBody)
     {
         m_bulletRigidBody->activate(!a_static);
-
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        if(m_afObjectCommPtr.get() != nullptr){
-            m_afObjectCommPtr->set_mass(0);
-        }
-#endif
     }
 }
 

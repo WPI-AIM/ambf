@@ -42,8 +42,8 @@
 */
 //==============================================================================
 
-#ifndef SENSOR_H
-#define SENSOR_H
+#ifndef AFSENSORCOMM_H
+#define AFSENSORCOMM_H
 
 #include <string>
 #include "ambf_comm/SensorRosCom.h"

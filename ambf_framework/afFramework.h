@@ -65,6 +65,17 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #endif
+
+//-----------------------------------------------------------------------------
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#include <ambf_comm/Object.h>
+#include "ambf_comm/Camera.h"
+#include "ambf_comm/Sensor.h"
+#include "ambf_comm/World.h"
+#endif
+//-----------------------------------------------------------------------------
+
+
 //------------------------------------------------------------------------------
 namespace ambf {
 using namespace chai3d;
@@ -112,7 +123,7 @@ class afMultiBody;
 typedef afMultiBody* afMultiBodyPtr;
 typedef std::map<std::string, afMultiBodyPtr> afMultiBodyMap;
 typedef std::vector<afMultiBodyPtr> afMultiBodyVec;
-//-----------------------------------------------------------------------------
+
 
 ///
 /// \brief toBTvec
@@ -208,6 +219,40 @@ protected:
     static YAML::Node s_colorsNode;
 
 };
+
+
+class afComm{
+public:
+    afComm(){}
+
+    //! This method create as afCommunication Instance with the specified namespace
+    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+
+    //! This method create as afCommunication Instance with the specified namespace
+    virtual void afCameraCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5){}
+
+    //! This method create as afCommunication Instance with the specified namespace
+    virtual void afSensorCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5){}
+
+    //! This method create as afCommunication Instance with the specified namespace
+    virtual void afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
+
+    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
+    virtual void afObjectCommandExecute(double dt=0.001);
+
+    //! This method applies updates Wall and Sim Time for AF State Message.
+    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
+
+    //! AF CHAI Env
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
+    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
+    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+#endif
+
+};
+
 
 ///
 /// \brief The afBodySurfaceProperties struct
@@ -340,11 +385,11 @@ struct afChildJointPair{
 
 
 
-class afObject: public cBulletMultiMesh{
+class afBaseObject: public cBulletMultiMesh, public afComm{
 
 public:
-    afObject(afWorldPtr a_afWorld);
-    virtual ~afObject();
+    afBaseObject(afWorldPtr a_afWorld);
+    virtual ~afBaseObject();
 
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
@@ -406,7 +451,7 @@ private:
 ///
 /// \brief The afBody class
 ///
-class afRigidBody: public afObject{
+class afRigidBody: public afBaseObject{
 
     friend class afMultiBody;
     friend class afJoint;
@@ -1085,7 +1130,7 @@ private:
 ///
 /// \brief The afCamera class
 ///
-class afCamera: public afObject{
+class afCamera: public afBaseObject{
 public:
 
     afCamera(afWorld* a_afWorld);
@@ -1306,12 +1351,12 @@ private:
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afConfigHandler{
+class afWorld: public cBulletWorld, public afConfigHandler, public afComm{
 
     friend class afMultiBody;
 
 public:
-    afWorld(cBulletWorld *bulletWorld, std::string a_global_namespace);
+    afWorld(std::string a_global_namespace);
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
     bool createDefaultWorld();
@@ -1326,8 +1371,13 @@ public:
     int getMaxIterations(){return m_maxIterations;}
     double computeStepSize(bool adjust_intetration_steps = false);
 
-    static cBulletWorld *s_chaiBulletWorld;
     GLFWwindow* m_mainWindow;
+
+    //! This method updates the simulation over a time interval.
+    virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
+
+    //! This method updates the position and orientation from Bullet models to CHAI3D models.
+    virtual void updatePositionFromDynamics(void);
 
 public:
 

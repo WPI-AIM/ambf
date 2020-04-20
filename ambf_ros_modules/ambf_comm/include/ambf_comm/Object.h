@@ -42,55 +42,24 @@
 */
 //==============================================================================
 
-#ifndef OBJECT_H
-#define OBJECT_H
+#ifndef AFOBJECTCOMM_H
+#define AFOBJECTCOMM_H
 
 #include <string>
 #include "ambf_comm/ObjectRosCom.h"
+
+namespace ambf_comm{
 
 // This struct is almost identical to the data in ObjectCmd ros_msg
 // but is explicitly defined to removed ros_msgs from AMBF and a
 // layer of abstraction in between
 struct ObjectCommand{
-    ObjectCommand(){
-        fx = fy = fz = 0;
-        tx = ty = tz = 0;
-        joint_commands_size = 0;
-    }
+    ObjectCommand();
+
     // Call this update method to assign all the fields from ros_msg
     // to this struct
-    void update(const ambf_msgs::ObjectCmd* cmd){
-        px = cmd->pose.position.x;
-        py = cmd->pose.position.y;
-        pz = cmd->pose.position.z;
-        qx = cmd->pose.orientation.x;
-        qy = cmd->pose.orientation.y;
-        qz = cmd->pose.orientation.z;
-        qw = cmd->pose.orientation.w;
+    void update(const ambf_msgs::ObjectCmd* cmd);
 
-        fx = cmd->wrench.force.x;
-        fy = cmd->wrench.force.y;
-        fz = cmd->wrench.force.z;
-        tx = cmd->wrench.torque.x;
-        ty = cmd->wrench.torque.y;
-        tz = cmd->wrench.torque.z;
-        joint_commands_size = cmd->joint_cmds.size();
-        joint_commands.resize(joint_commands_size);
-        position_controller_mask.resize(joint_commands_size);
-        enable_position_controller = cmd->enable_position_controller;
-        for(size_t idx = 0; idx < joint_commands_size ; idx++){
-            joint_commands[idx] = cmd->joint_cmds[idx];
-            if (idx < cmd->position_controller_mask.size()){
-                position_controller_mask[idx] = cmd->position_controller_mask[idx];
-            }
-            else{
-                position_controller_mask[idx] = 0;
-            }
-        }
-        publish_children_names = cmd->publish_children_names;
-        publish_joint_names = cmd->publish_joint_names;
-        publish_joint_positions = cmd->publish_joint_positions;
-    }
     double px, py, pz;
     double qx, qy, qz, qw;
     double fx, fy, fz;
@@ -109,7 +78,7 @@ struct ObjectCommand{
     bool publish_joint_positions;
 };
 
-namespace ambf_comm{
+
 class Object: public ObjectRosCom{
 public:
     Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);

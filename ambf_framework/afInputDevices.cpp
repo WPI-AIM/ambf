@@ -508,7 +508,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_refSphere->m_material->setRed();
         m_refSphere->setShowFrame(true);
         m_refSphere->setFrameSize(m_markerSize * 5);
-        m_afWorld->s_chaiBulletWorld->addChild(m_refSphere);
+        m_afWorld->addChild(m_refSphere);
     }
 
 
@@ -525,15 +525,15 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 /// \param maxPF
 ///
 void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
-    m_afCursor = new cBulletSphere(a_afWorld->s_chaiBulletWorld, 0.05);
+    m_afCursor = new cBulletSphere(a_afWorld, 0.05);
     m_afCursor->setShowEnabled(true);
     m_afCursor->setShowFrame(true);
     m_afCursor->setFrameSize(0.1);
     cMaterial mat;
     mat.setGreenLightSea();
     m_afCursor->setMaterial(mat);
-    a_afWorld->s_chaiBulletWorld->addChild(m_afCursor);
-    m_afCursor->afObjectCommCreate(a_name, m_afWorld->resolveGlobalNamespace(a_namespace), minPF, maxPF);
+    a_afWorld->addChild(m_afCursor);
+//    m_afCursor->afObjectCommCreate(a_name, m_afWorld->resolveGlobalNamespace(a_namespace), minPF, maxPF);
     m_afWorld = a_afWorld;
 }
 
@@ -639,8 +639,8 @@ void afPhysicalDevice::updateCursorPose(){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
-        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
+//        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
+//        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
     }
 }

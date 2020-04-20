@@ -45,6 +45,45 @@
 #include "ambf_comm/Object.h"
 namespace ambf_comm{
 
+ObjectCommand::ObjectCommand(){
+    fx = fy = fz = 0;
+    tx = ty = tz = 0;
+    joint_commands_size = 0;
+}
+
+void ObjectCommand::update(const ambf_msgs::ObjectCmd *cmd){
+    px = cmd->pose.position.x;
+    py = cmd->pose.position.y;
+    pz = cmd->pose.position.z;
+    qx = cmd->pose.orientation.x;
+    qy = cmd->pose.orientation.y;
+    qz = cmd->pose.orientation.z;
+    qw = cmd->pose.orientation.w;
+
+    fx = cmd->wrench.force.x;
+    fy = cmd->wrench.force.y;
+    fz = cmd->wrench.force.z;
+    tx = cmd->wrench.torque.x;
+    ty = cmd->wrench.torque.y;
+    tz = cmd->wrench.torque.z;
+    joint_commands_size = cmd->joint_cmds.size();
+    joint_commands.resize(joint_commands_size);
+    position_controller_mask.resize(joint_commands_size);
+    enable_position_controller = cmd->enable_position_controller;
+    for(size_t idx = 0; idx < joint_commands_size ; idx++){
+        joint_commands[idx] = cmd->joint_cmds[idx];
+        if (idx < cmd->position_controller_mask.size()){
+            position_controller_mask[idx] = cmd->position_controller_mask[idx];
+        }
+        else{
+            position_controller_mask[idx] = 0;
+        }
+    }
+    publish_children_names = cmd->publish_children_names;
+    publish_joint_names = cmd->publish_joint_names;
+    publish_joint_positions = cmd->publish_joint_positions;
+}
+
 Object::Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): ObjectRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
   m_objectCommand.enable_position_controller = false;
 }

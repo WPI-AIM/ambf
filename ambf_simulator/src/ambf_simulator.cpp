@@ -46,6 +46,7 @@
 //---------------------------------------------------------------------------
 #include "chai3d.h"
 #include "ambf.h"
+#include "fstream"
 //---------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
@@ -82,9 +83,6 @@ bool mirroredDisplay = false;
 //---------------------------------------------------------------------------
 // BULLET MODULE VARIABLES
 //---------------------------------------------------------------------------
-
-// bullet world
-cBulletWorld* g_chaiBulletWorld;
 
 afWorld *g_afWorld;
 
@@ -389,22 +387,21 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------
 
     // create a dynamic world.
-    g_chaiBulletWorld = new cBulletWorld();
+    g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
 
     // set the background color of the environment
-    g_chaiBulletWorld->m_backgroundColor.setWhite();
+    g_afWorld->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
     //////////////////////////////////////////////////////////////////////////
     // set some gravity
-    g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+    g_afWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
 
 
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    g_afWorld = new afWorld(g_chaiBulletWorld, g_cmdOpts.prepend_namespace);
     if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
         std::string world_filename = g_afWorld->getWorldConfig();
@@ -445,7 +442,7 @@ int main(int argc, char* argv[])
             }
         }       
 
-        g_chaiBulletWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
+        g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
     else{
         // Safely exit the program
@@ -892,7 +889,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_1)
         {
             // enable gravity
-            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+            g_afWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
             printf("gravity ON:\n");
         }
 
@@ -900,7 +897,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_2)
         {
             // disable gravity
-            g_chaiBulletWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
+            g_afWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
             printf("gravity OFF:\n");
         }
 
@@ -1271,7 +1268,6 @@ void close(void)
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         delete g_hapticsThreads[i];
     }
-    delete g_chaiBulletWorld;
     delete g_afWorld;
 }
 
@@ -1282,7 +1278,7 @@ void close(void)
 void updateGraphics()
 {
     // Update shadow maps once
-    g_chaiBulletWorld->updateShadowMaps(false, mirroredDisplay);
+    g_afWorld->updateShadowMaps(false, mirroredDisplay);
 
     for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end(); ++ g_cameraIt){
         afCameraPtr cameraPtr = (*g_cameraIt);
@@ -1349,7 +1345,7 @@ void updateLabels(){
 
         // update haptic and graphic rate data
         std::string wallTimeStr = "Wall Time: " + cStr(g_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
-        std::string simTimeStr = "Sim Time: " + cStr(g_chaiBulletWorld->getSimulationTime(), 2) + " s";
+        std::string simTimeStr = "Sim Time: " + cStr(g_afWorld->getSimulationTime(), 2) + " s";
 
         std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
         std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
@@ -1453,7 +1449,7 @@ void updatePhysics(){
                                             simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
                                             simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
-                                            g_chaiBulletWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                            g_afWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                         }
                                     }
                                 }
@@ -1510,7 +1506,7 @@ void updatePhysics(){
                             }
                             else{
                                 if(simDev->m_rigidGrippingConstraints[sIdx]){
-                                    g_chaiBulletWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                    g_afWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                     simDev->m_rigidGrippingConstraints[sIdx] = 0;
                                 }
                                 if(simDev->m_softGrippingConstraints[sIdx]){
@@ -1538,7 +1534,7 @@ void updatePhysics(){
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / step_size;
-                double dt = g_chaiBulletWorld->getSimulationDeltaTime();
+                double dt = g_afWorld->getSimulationDeltaTime();
                 force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
                 force = simDev->P_lc_ramp * force;
 
@@ -1568,7 +1564,7 @@ void updatePhysics(){
                     simDev->P_ac_ramp = 1.0;
                 }
             }
-            g_chaiBulletWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+            g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
         }
             rateSleep.sleep();
     }

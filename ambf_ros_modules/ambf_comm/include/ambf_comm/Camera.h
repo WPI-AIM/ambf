@@ -42,11 +42,13 @@
 */
 //==============================================================================
 
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef AFCAMERACOMM_H
+#define AFCAMERACOMM_H
 
 #include <string>
 #include "ambf_comm/CameraRosCom.h"
+
+namespace ambf_comm{
 
 // This struct is almost identical to the data in CameraCmd ros_msg
 // but is explicitly defined to removed ros_msgs from AMBF and a
@@ -66,10 +68,6 @@ enum ProjectionType{
 
 static const char* ProjectionEnumStr[] = {"PERSPECTIVE", "ORTHOGONAL"};
 
-const std::string ProjectionEnumToStr(int enumVal)
-{
-  return std::string(ProjectionEnumStr[enumVal]);
-}
 
 enum ViewType{
   MONO, STEREO
@@ -77,10 +75,6 @@ enum ViewType{
 
 static const char* ViewEnumStr[] = {"MONO", "STEREO"};
 
-const std::string ViewTypeEnumToStr(int enumVal)
-{
-  return std::string(ViewEnumStr[enumVal]);
-}
 
 enum CameraParamsEnum{
     look_at, up, near_plane, far_plane, parent, projection, type
@@ -88,23 +82,11 @@ enum CameraParamsEnum{
 
 static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_plane", "parent", "projection", "type"};
 
-const std::string CameraParamEnumToStr(int enumVal)
-{
-  return std::string(CameraParamEnumStr[enumVal]);
-}
 
 class CameraParams{
 public:
 
-    CameraParams(){
-
-        m_up.resize(3);
-        m_look_at.resize(3);
-
-        m_paramsChanged = false;
-        m_projectionType = ProjectionEnumToStr(ProjectionType::PERSPECTIVE);
-        m_viewType = ViewTypeEnumToStr(ViewType::MONO);
-    }
+    CameraParams();
 
     ~CameraParams();
 
@@ -140,7 +122,6 @@ public:
     std::string m_viewType;
 };
 
-namespace ambf_comm{
 class Camera: public CameraRosCom, public CameraParams{
 public:
     Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);

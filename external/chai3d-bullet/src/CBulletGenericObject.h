@@ -51,10 +51,6 @@
 //------------------------------------------------------------------------------
 #include "btBulletDynamicsCommon.h"
 #include "BulletSoftBody/btSoftBody.h"
-//------------------------------------------------------------------------------
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_comm/Object.h"
-#endif
 
 //------------------------------------------------------------------------------
 namespace chai3d {
@@ -84,27 +80,6 @@ enum cBulletDynamicModelType
 };
 //------------------------------------------------------------------------------
 
-
-class afComm{
-public:
-    afComm(){}
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
-    virtual void afObjectCommandExecute(double dt=0.001);
-
-    //! This method applies updates Wall and Sim Time for AF State Message.
-    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
-
-    //! AF CHAI Env
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
-#endif
-
-};
-
 //==============================================================================
 /*!
     \class      cBulletGenericObjectH
@@ -117,7 +92,7 @@ public:
     cBulletGenericBody is a base class for modeling Bullet dynamic objects.
 */
 //==============================================================================
-class cBulletGenericObject: public afComm
+class cBulletGenericObject
 {
     //--------------------------------------------------------------------------
     // CONSTRUCTOR & DESTRUCTOR:

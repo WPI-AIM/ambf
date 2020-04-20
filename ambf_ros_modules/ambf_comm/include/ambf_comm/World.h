@@ -42,8 +42,8 @@
 */
 //==============================================================================
 
-#ifndef WORLD_H
-#define WORLD_H
+#ifndef AFWORLDCOMM_H
+#define AFWORLDCOMM_H
 
 #include <string>
 #include "ambf_comm/WorldRosCom.h"
