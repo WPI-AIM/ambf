@@ -695,7 +695,7 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
 /// \brief afComm::afObjectCommandExecute
 /// \param dt
 ///
-void afComm::afObjectCommandExecute(double dt){
+void afComm::afExecuteCommand(double dt){
 }
 
 
@@ -2395,7 +2395,7 @@ bool afRigidBody::updateBodySensors(int threadIdx){
 /// \brief afRigidBody::afCommandExecute
 /// \param dt
 ///
-void afRigidBody::afObjectCommandExecute(double dt){
+void afRigidBody::afExecuteCommand(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectCommPtr.get() != nullptr){
         btVector3 force, torque;
@@ -4349,12 +4349,12 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // Read the AF_COMM commands and apply to all different types of objects
     afRigidBodyMap::iterator rbIt;
     for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
-        (rbIt->second)->afObjectCommandExecute(dt);
+        (rbIt->second)->afExecuteCommand(dt);
     }
 
     afCameraMap::iterator camIt;
     for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
-        (camIt->second)->afObjectCommandExecute(dt);
+        (camIt->second)->afExecuteCommand(dt);
     }
 
 //    afSensorMap::iterator senIt;
@@ -5623,7 +5623,7 @@ cMatrix3d afCamera::measuredRot(){
 /// \brief afCamera::afObjectCommandExecute
 /// \param dt
 ///
-void afCamera::afObjectCommandExecute(double dt){
+void afCamera::afExecuteCommand(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
         ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
@@ -5643,6 +5643,17 @@ void afCamera::afObjectCommandExecute(double dt){
             setLocalPos(pos);
             setLocalRot(rot_mat);
         }
+        m_read_count++;
+        if(m_read_count >= 2000){
+            // We may update the params intermittently
+            m_afCameraCommPtr->update_params_from_server();
+            double near_plane = m_afCameraCommPtr->get_near_plane();
+            double far_plane = m_afCameraCommPtr->get_far_plane();
+            double field_view_angle = m_afCameraCommPtr->get_field_view_angle();
+            m_camera->setClippingPlanes(near_plane, far_plane);
+            m_camera->setFieldViewAngleRad(field_view_angle);
+            m_read_count = 0;
+        }
     }
 #endif
 }
@@ -5657,6 +5668,16 @@ void afCamera::updatePositionFromDynamics()
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afCameraCommPtr.get() != nullptr){
+        if (m_paramsSet == false){
+            m_afCameraCommPtr->set_near_plane(m_camera->getNearClippingPlane());
+            m_afCameraCommPtr->set_far_plane(m_camera->getFarClippingPlane());
+            m_afCameraCommPtr->set_field_view_angle(m_camera->getFieldViewAngleRad());
+//            m_afCameraCommPtr->set_projection_type(0);
+//            m_afCameraCommPtr->set_view_type(0);
+
+            m_afCameraCommPtr->set_params_on_server();
+            m_paramsSet = true;
+        }
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         m_afCameraCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;

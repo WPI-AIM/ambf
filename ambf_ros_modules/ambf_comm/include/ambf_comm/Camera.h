@@ -65,10 +65,10 @@ static const char* ViewEnumStr[] = {"MONO", "STEREO"};
 
 
 enum CameraParamsEnum{
-    look_at, up, near_plane, far_plane, parent, projection, type
+    look_at, up, near_plane, far_plane, field_view_angle, parent, projection, type
 };
 
-static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_plane", "parent", "projection", "type"};
+static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_plane", "field_view_angle", "parent", "projection", "type"};
 
 
 class CameraParams{
@@ -87,6 +87,7 @@ public:
     void set_look_vector(double x, double y, double z);
     void set_near_plane(double val);
     void set_far_plane(double val);
+    void set_field_view_angle(double val);
     void set_projection_type(ProjectionType type);
     void set_view_type(ViewType type);
 
@@ -95,6 +96,7 @@ public:
     std::vector<double> get_look_vector();
     double get_near_plane();
     double get_far_plane();
+    double get_field_view_angle();
     ProjectionType get_projection_type(ProjectionType type);
     ViewType get_view_type(ViewType type);
 
@@ -108,7 +110,7 @@ protected:
     // Datatyped Variables for params defined on the server
     std::vector<double> m_up;
     std::vector<double> m_look_at;
-    double m_near_plane, m_far_plane;
+    double m_near_plane, m_far_plane, m_field_view_angle;
 
     std::string m_projectionType;
     std::string m_viewType;

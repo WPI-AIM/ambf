@@ -237,8 +237,8 @@ public:
     //! This method create as afCommunication Instance with the specified namespace
     virtual void afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
 
-    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
-    virtual void afObjectCommandExecute(double dt=0.001);
+    //! This method is to retrieve all the commands for appropriate af comm instances.
+    virtual void afExecuteCommand(double dt=0.001);
 
     //! This method applies updates Wall and Sim Time for AF State Message.
     virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
@@ -250,6 +250,17 @@ public:
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
+
+    // Flag to check if the any params have been set on the server for this comm instance
+    bool m_paramsSet=false;
+
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
 
 };
 
@@ -396,7 +407,7 @@ public:
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
-    virtual void afObjectCommandExecute(double dt){}
+    virtual void afExecuteCommand(double dt){}
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics(){}
@@ -438,17 +449,7 @@ protected:
 
     // Min and Max publishing frequency
     int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;
-
-public:
-
-    // Counter for the times we have written to ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
-
-    // Counter for the times we have read from ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_read_count = 0;
+    int _max_publish_frequency=1000;  
 };
 
 
@@ -468,7 +469,7 @@ public:
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
-    virtual void afObjectCommandExecute(double dt);
+    virtual void afExecuteCommand(double dt);
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
@@ -1141,7 +1142,7 @@ public:
     ~afCamera();
 
     // Define the virtual method for camera
-    virtual void afObjectCommandExecute(double dt);
+    virtual void afExecuteCommand(double dt);
 
     // Define the virtual method for camera
     virtual void updatePositionFromDynamics();

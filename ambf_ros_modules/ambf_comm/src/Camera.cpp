@@ -69,11 +69,36 @@ CameraParams::CameraParams(){
     m_viewType = ViewTypeEnumToStr(ViewType::MONO);
 }
 
+void Camera::CameraParams::set_near_plane(double val){
+    m_near_plane = val;
+}
+
+void Camera::CameraParams::set_far_plane(double val){
+    m_far_plane = val;
+}
+
+void Camera::CameraParams::set_field_view_angle(double val){
+    m_field_view_angle = val;
+}
+
+double Camera::CameraParams::get_near_plane(){
+    return m_near_plane;
+}
+
+double Camera::CameraParams::get_far_plane(){
+    return m_far_plane;
+}
+
+double Camera::CameraParams::get_field_view_angle(){
+    return m_field_view_angle;
+}
+
 void Camera::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::field_view_angle), m_field_view_angle);
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
     nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
 
@@ -85,6 +110,7 @@ void Camera::update_params_from_server(){
     nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
     nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
     nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::field_view_angle), m_field_view_angle);
     nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
     nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
 }
