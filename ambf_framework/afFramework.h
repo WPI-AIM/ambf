@@ -226,13 +226,13 @@ public:
     afComm(){}
 
     //! This method create as afCommunication Instance with the specified namespace
-    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     //! This method create as afCommunication Instance with the specified namespace
-    virtual void afCameraCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5){}
+    virtual void afCameraCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     //! This method create as afCommunication Instance with the specified namespace
-    virtual void afSensorCommCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000, double time_out=0.5){}
+    virtual void afSensorCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     //! This method create as afCommunication Instance with the specified namespace
     virtual void afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
@@ -440,11 +440,15 @@ protected:
     int _min_publish_frequency=50;
     int _max_publish_frequency=1000;
 
-private:
+public:
 
     // Counter for the times we have written to ambf_comm API
     // This is only for internal use as it could be reset
     unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
 };
 
 
@@ -1136,6 +1140,11 @@ public:
     afCamera(afWorld* a_afWorld);
     ~afCamera();
 
+    // Define the virtual method for camera
+    virtual void afObjectCommandExecute(double dt);
+
+    // Define the virtual method for camera
+    virtual void updatePositionFromDynamics();
 
     // Initialize
     bool init();
@@ -1329,7 +1338,7 @@ enum ShadowQuality{
 ///
 /// \brief The afLight struct
 ///
-class afLight: public afRigidBody{
+class afLight: public afBaseObject{
 public:
     afLight(afWorld* a_afWorld);
 

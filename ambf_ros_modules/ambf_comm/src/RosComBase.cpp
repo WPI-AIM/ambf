@@ -46,6 +46,10 @@
 #include "ambf_comm/RosComBase.h"
 #include "ambf_msgs/ObjectCmd.h"
 #include "ambf_msgs/ObjectState.h"
+#include "ambf_msgs/SensorCmd.h"
+#include "ambf_msgs/SensorState.h"
+#include "ambf_msgs/CameraState.h"
+#include "ambf_msgs/CameraCmd.h"
 #include "ambf_msgs/WorldCmd.h"
 #include "ambf_msgs/WorldState.h"
 
@@ -59,6 +63,25 @@ void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
     m_sub.shutdown();
 }
 
+
+template<>
+///
+/// \brief RosComBase::cleanUp
+///
+void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
+    m_pub.shutdown();
+    m_sub.shutdown();
+}
+
+template<>
+///
+/// \brief RosComBase::cleanUp
+///
+void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
+    m_pub.shutdown();
+    m_sub.shutdown();
+}
+
 template<>
 ///
 /// \brief RosComBase::cleanUp
@@ -67,3 +90,4 @@ void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
     m_pub.shutdown();
     m_sub.shutdown();
 }
+

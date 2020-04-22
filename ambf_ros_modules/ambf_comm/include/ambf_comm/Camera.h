@@ -50,18 +50,6 @@
 
 namespace ambf_comm{
 
-// This struct is almost identical to the data in CameraCmd ros_msg
-// but is explicitly defined to removed ros_msgs from AMBF and a
-// layer of abstraction in between
-struct CameraCommand{
-    CameraCommand(){
-    }
-    // Call this update method to assign all the fields from ros_msg
-    // to this struct
-    void update(const ambf_msgs::CameraCmd* cmd){
-    }
-};
-
 enum ProjectionType{
   PERSPECTIVE, ORTHOGONAL
 };
@@ -84,15 +72,17 @@ static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_p
 
 
 class CameraParams{
+
+    friend class Camera;
+
 public:
 
     CameraParams();
 
-    ~CameraParams();
-
-    inline void set_qualified_namespace(std::string a_namespace){m_qualified_namespace = a_namespace;}
+    inline void set_qualified_namespace(std::string a_base_prefix){m_base_prefix = a_base_prefix;}
     inline bool have_params_changed(){return m_paramsChanged;}
 
+    // Setters
     void set_up_vector(double x, double y, double z);
     void set_look_vector(double x, double y, double z);
     void set_near_plane(double val);
@@ -100,20 +90,22 @@ public:
     void set_projection_type(ProjectionType type);
     void set_view_type(ViewType type);
 
-    std::vector<double> get_up_vector(double x, double y, double z);
-    std::vector<double> get_look_vector(double x, double y, double z);
-    double get_near_plane(double val);
-    double get_far_plane(double val);
+    // Getters
+    std::vector<double> get_up_vector();
+    std::vector<double> get_look_vector();
+    double get_near_plane();
+    double get_far_plane();
     ProjectionType get_projection_type(ProjectionType type);
     ViewType get_view_type(ViewType type);
-
-    std::string m_qualified_namespace;
 
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
 
+protected:
+    // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
+    std::string m_base_prefix;
 
-    // The defined params
+    // Datatyped Variables for params defined on the server
     std::vector<double> m_up;
     std::vector<double> m_look_at;
     double m_near_plane, m_far_plane;
@@ -129,22 +121,15 @@ public:
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
-    void update_af_cmd();
     void set_wall_time(double a_sec);
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
 
     // This method updates from the ROS param server instead of topics
-    void get_params_from_server();
+    void update_params_from_server();
     // This method may be called when AMBF starts to load the existing
     void set_params_on_server();
-
-    CameraCommand m_CameraCommand;
-
-    // For internal use. Incremented everytime the update_af_cmd method is called. Is reset
-    // when the counter reaches a defined max
-    int m_updatedCmdCtr;
 };
 }
 

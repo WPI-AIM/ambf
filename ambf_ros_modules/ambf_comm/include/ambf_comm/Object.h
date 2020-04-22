@@ -50,35 +50,6 @@
 
 namespace ambf_comm{
 
-// This struct is almost identical to the data in ObjectCmd ros_msg
-// but is explicitly defined to removed ros_msgs from AMBF and a
-// layer of abstraction in between
-struct ObjectCommand{
-    ObjectCommand();
-
-    // Call this update method to assign all the fields from ros_msg
-    // to this struct
-    void update(const ambf_msgs::ObjectCmd* cmd);
-
-    double px, py, pz;
-    double qx, qy, qz, qw;
-    double fx, fy, fz;
-    double tx, ty, tz;
-    std::vector<double> joint_commands;
-    std::vector<uint8_t> position_controller_mask;
-    size_t joint_commands_size;
-    // By default, always consider force control, unless pos_ctrl is set to true
-    bool enable_position_controller;
-
-    // Flags to enable/disable publishing of children and joint names
-    bool publish_children_names;
-    bool publish_joint_names;
-
-    // Flag to publish joint positions
-    bool publish_joint_positions;
-};
-
-
 class Object: public ObjectRosCom{
 public:
     Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
@@ -88,7 +59,7 @@ public:
     void cur_orientation(double qx, double qy, double qz, double qw);
     void cur_force(double fx, double fy, double fz);
     void cur_torque(double nx, double ny, double nz);
-    void update_af_cmd();
+    ambf_msgs::ObjectCmd get_command();
     void set_wall_time(double a_sec);
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void set_mass(double a_mass){m_State.mass = a_mass;}
@@ -106,7 +77,6 @@ public:
     void set_joint_names(std::vector<std::string> joint_names);
     inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
     void set_joint_positions(std::vector<float> joint_positions);
-    ObjectCommand m_objectCommand;
 };
 }
 

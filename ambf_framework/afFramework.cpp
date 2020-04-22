@@ -621,6 +621,35 @@ void afComm::afObjectCommCreate(std::string a_name, std::string a_namespace, int
 
 
 ///
+/// \brief afComm::afCameraCommCreate
+/// \param a_name
+/// \param a_namespace
+/// \param a_min_freq
+/// \param a_max_freq
+/// \param time_out
+///
+void afComm::afCameraCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+#endif
+}
+
+///
+/// \brief afComm::afSensorCommCreate
+/// \param a_name
+/// \param a_namespace
+/// \param a_min_freq
+/// \param a_max_freq
+/// \param time_out
+///
+void afComm::afSensorCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+#endif
+}
+
+
+///
 /// \brief afComm::afWorldCommCreate
 /// \param a_name
 /// \param a_namespace
@@ -2288,9 +2317,10 @@ void afRigidBody::updatePositionFromDynamics()
             m_afObjectCommPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
 
+        ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
         // We can set this body to publish it's children joint names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_joint_names == true || m_afObjectCommPtr->m_objectCommand.publish_joint_names == true){
+        if (m_publish_joint_names == true || afCommand.publish_joint_names == true){
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -2300,13 +2330,13 @@ void afRigidBody::updatePositionFromDynamics()
 
         // We can set this body to publish joint positions in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_joint_positions == true || m_afObjectCommPtr->m_objectCommand.publish_joint_positions == true){
+        if (m_publish_joint_positions == true || afCommand.publish_joint_positions == true){
             afObjectSetJointPositions();
         }
 
         // We can set this body to publish it's children names in either its AMBF Description file or
         // via it's afCommand using ROS Message
-        if (m_publish_children_names == true || m_afObjectCommPtr->m_objectCommand.publish_children_names == true){
+        if (m_publish_children_names == true || afCommand.publish_children_names == true){
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -2355,28 +2385,41 @@ bool afRigidBody::updateBodySensors(int threadIdx){
 void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->update_af_cmd();
         btVector3 force, torque;
-        ambf_comm::ObjectCommand m_afCommand = m_afObjectCommPtr->m_objectCommand;
-        m_af_enable_position_controller = m_afCommand.enable_position_controller;
+//        ambf_comm::ObjectCommand afCommand = m_afObjectCommPtr->get_command();
+        ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
+        m_af_enable_position_controller = afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
-        if (m_bulletRigidBody->isStaticOrKinematicObject() && m_afCommand.enable_position_controller){
+        if (m_bulletRigidBody->isStaticOrKinematicObject() && afCommand.enable_position_controller){
             btTransform _Td;
-            _Td.setOrigin(btVector3(m_afCommand.px, m_afCommand.py, m_afCommand.pz));
-            _Td.setRotation(btQuaternion(m_afCommand.qx, m_afCommand.qy, m_afCommand.qz, m_afCommand.qw));
+            _Td.setOrigin(btVector3(afCommand.pose.position.x,
+                                    afCommand.pose.position.y,
+                                    afCommand.pose.position.z));
+
+            _Td.setRotation(btQuaternion(afCommand.pose.orientation.x,
+                                         afCommand.pose.orientation.y,
+                                         afCommand.pose.orientation.z,
+                                         afCommand.pose.orientation.w));
+
             m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
         }
         else{
-            if (m_afCommand.enable_position_controller){
+            if (afCommand.enable_position_controller){
                 btVector3 _cur_pos, _cmd_pos;
-                btQuaternion _cmd_rot_quat = btQuaternion(m_afCommand.qx, m_afCommand.qy, m_afCommand.qz, m_afCommand.qw);
+                btQuaternion _cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
+                                                          afCommand.pose.orientation.y,
+                                                          afCommand.pose.orientation.z,
+                                                          afCommand.pose.orientation.w);
+
                 btMatrix3x3 _cur_rot, _cmd_rot;
                 btTransform _b_trans;
                 m_bulletRigidBody->getMotionState()->getWorldTransform(_b_trans);
 
                 _cur_pos = _b_trans.getOrigin();
                 _cur_rot.setRotation(_b_trans.getRotation());
-                _cmd_pos.setValue(m_afCommand.px, m_afCommand.py, m_afCommand.pz);
+                _cmd_pos.setValue(afCommand.pose.position.x,
+                                  afCommand.pose.position.y,
+                                  afCommand.pose.position.z);
                 if( _cmd_rot_quat.length() < 0.9 || _cmd_rot_quat.length() > 1.1 ){
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
                                                                  " not normalized" << std::endl;
@@ -2392,8 +2435,13 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
             }
             else{
-                force.setValue(m_afCommand.fx, m_afCommand.fy, m_afCommand.fz);
-                torque.setValue(m_afCommand.tx, m_afCommand.ty, m_afCommand.tz);
+                force.setValue(afCommand.wrench.force.x,
+                               afCommand.wrench.force.y,
+                               afCommand.wrench.force.z);
+
+                torque.setValue(afCommand.wrench.torque.x,
+                                afCommand.wrench.torque.y,
+                                afCommand.wrench.torque.z);
             }
 
             if (m_bulletRigidBody){
@@ -2401,7 +2449,7 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 m_bulletRigidBody->applyTorque(torque);
             }
         }
-        size_t jntCmdSize = m_afCommand.joint_commands_size;
+        size_t jntCmdSize = afCommand.joint_cmds.size();
         if (jntCmdSize > 0){
             size_t jntCmdCnt = m_childAndJointPairs.size() < jntCmdSize ? m_childAndJointPairs.size() : jntCmdSize;
             for (size_t jntIdx = 0 ; jntIdx < jntCmdCnt ; jntIdx++){
@@ -2411,11 +2459,12 @@ void afRigidBody::afObjectCommandExecute(double dt){
                 // keep this in check and still read the mask to apply it. Run
                 // effort control on the masks not specified
                 afJointPtr joint = m_childAndJointPairs[jntIdx].m_childJoint;
-                if (m_afCommand.position_controller_mask[jntIdx] == true ){
-                    joint->commandPosition(m_afCommand.joint_commands[jntIdx]);
+                double jnt_cmd = afCommand.joint_cmds[jntIdx];
+                if (afCommand.position_controller_mask[jntIdx] == true ){
+                    joint->commandPosition(jnt_cmd);
                 }
                 else{
-                    joint->commandEffort(m_afCommand.joint_commands[jntIdx]);
+                    joint->commandEffort(jnt_cmd);
                 }
             }
         }
@@ -4285,12 +4334,18 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 #endif
 
     // apply wrench from ROS
-    std::list<cBulletGenericObject*>::iterator i;
+//    std::list<cBulletGenericObject*>::iterator i;
 
-    for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
-    {
-        cBulletGenericObject* nextItem = *i;
+//    for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
+//    {
+//        cBulletGenericObject* nextItem = *i;
 //        nextItem->afObjectCommandExecute(getSimulationDeltaTime());
+//    }
+
+    afRigidBodyMap::iterator it;
+
+    for(it = m_afRigidBodyMap.begin() ; it != m_afRigidBodyMap.end() ; it++){
+        (it->second)->afObjectCommandExecute(getSimulationDeltaTime());
     }
 
     // integrate simulation during an certain interval
@@ -4580,7 +4635,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 YAML::Node cameraNode = worldNode[camera_name];
                 if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                     addAFCamera(cameraPtr, camera_name);
-                    cameraPtr->afObjectCommCreate(cameraPtr->m_name,
+                    cameraPtr->afCameraCommCreate(cameraPtr->m_name,
                                               resolveGlobalNamespace(cameraPtr->getNamespace()),
                                               cameraPtr->getMinPublishFrequency(),
                                               cameraPtr->getMaxPublishFrequency());
@@ -4594,7 +4649,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createDefaultCamera()){
                 addAFCamera(cameraPtr, "default_camera");
-                cameraPtr->afObjectCommCreate(cameraPtr->m_name,
+                cameraPtr->afCameraCommCreate(cameraPtr->m_name,
                                           resolveGlobalNamespace(cameraPtr->getNamespace()),
                                           cameraPtr->getMinPublishFrequency(),
                                           cameraPtr->getMaxPublishFrequency());
@@ -5552,6 +5607,53 @@ cMatrix3d afCamera::measuredRot(){
 
 
 ///
+/// \brief afCamera::afObjectCommandExecute
+/// \param dt
+///
+void afCamera::afObjectCommandExecute(double dt){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afCameraCommPtr.get() != nullptr){
+//        ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
+
+//        cVector3d pos(m_afCommand.pose.position.x,
+//                      m_afCommand.pose.position.y,
+//                      m_afCommand.pose.position.z);
+
+//        cQuaternion rot_quat(m_afCommand.pose.orientation.w,
+//                             m_afCommand.pose.orientation.x,
+//                             m_afCommand.pose.orientation.y,
+//                             m_afCommand.pose.orientation.z);
+
+//        cMatrix3d rot_mat;
+//        rot_quat.toRotMat(rot_mat);
+//        setLocalPos(pos);
+//        setLocalRot(rot_mat);
+    }
+#endif
+}
+
+
+///
+/// \brief afCamera::updatePositionFromDynamics
+///
+void afCamera::updatePositionFromDynamics()
+{
+
+    // update Transform data for m_ObjectPtr
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if(m_afCameraCommPtr.get() != nullptr){
+        m_afCameraCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cQuaternion q;
+        q.fromRotMat(m_localRot);
+        m_afCameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        m_write_count++;
+    }
+#endif
+}
+
+
+///
 /// \brief afCamera::~afCamera
 ///
 afCamera::~afCamera(){
@@ -5572,7 +5674,7 @@ afCamera::~afCamera(){
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(afWorldPtr a_afWorld): afRigidBody(a_afWorld){
+afLight::afLight(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_afWorld = a_afWorld;
 }
 

@@ -64,36 +64,33 @@ CameraParams::CameraParams(){
 
     m_up.resize(3);
     m_look_at.resize(3);
-
     m_paramsChanged = false;
     m_projectionType = ProjectionEnumToStr(ProjectionType::PERSPECTIVE);
     m_viewType = ViewTypeEnumToStr(ViewType::MONO);
-
 }
 
 void Camera::set_params_on_server(){
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
-    nodePtr->setParam(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
+    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
 
 
 }
 
-void Camera::get_params_from_server(){
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
-    nodePtr->getParamCached(m_qualified_namespace + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
+void Camera::update_params_from_server(){
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
+    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
 }
 
 Camera::Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): CameraRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
-    m_qualified_namespace = a_namespace + '/' + a_name;
-    m_updatedCmdCtr = 0;
+    m_base_prefix = a_namespace + '/' + a_name;
 }
 
 void Camera::cur_position(double px, double py, double pz){
@@ -114,18 +111,6 @@ void Camera::cur_orientation(double qx, double qy, double qz, double qw){
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
-
-void Camera::update_af_cmd(){
-    m_CameraCommand.update(&m_Cmd);
-
-    // Don't need to update params as fast the subscribers.
-    m_updatedCmdCtr++;
-
-    if (m_updatedCmdCtr >= m_freq_max){
-        m_updatedCmdCtr = 0;
-        get_params_from_server();
-    }
 }
 
 void Camera::set_wall_time(double a_sec){

@@ -75,6 +75,7 @@ public:
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();
+    virtual T_cmd get_command(){return m_Cmd;}
 
     int m_freq_min;
     int m_freq_max;

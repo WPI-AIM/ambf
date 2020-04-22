@@ -48,19 +48,6 @@
 #include <string>
 #include "ambf_comm/SensorRosCom.h"
 
-// This struct is almost identical to the data in SensorCmd ros_msg
-// but is explicitly defined to removed ros_msgs from AMBF and a
-// layer of abstraction in between
-struct SensorCommand{
-    SensorCommand(){
-    }
-    // Call this update method to assign all the fields from ros_msg
-    // to this struct
-    void update(const ambf_msgs::SensorCmd* cmd){
-
-    }
-};
-
 namespace ambf_comm{
 class Sensor: public SensorRosCom{
 public:
@@ -71,7 +58,6 @@ public:
     void cur_orientation(double qx, double qy, double qz, double qw);
     void cur_force(double fx, double fy, double fz);
     void cur_torque(double nx, double ny, double nz);
-    void update_af_cmd();
     void set_wall_time(double a_sec);
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
@@ -83,7 +69,6 @@ public:
     void set_children_names(std::vector<std::string> children_names);
     void set_joint_names(std::vector<std::string> joint_names);
     void set_joint_positions(std::vector<float> joint_positions);
-    SensorCommand m_SensorCommand;
 };
 }
 
