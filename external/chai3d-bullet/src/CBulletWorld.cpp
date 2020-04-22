@@ -210,6 +210,15 @@ void cBulletWorld::updatePositionFromDynamics()
     This methods returns the current simulation time.
 */
 //==============================================================================
+double cBulletWorld::getWallTime(){
+    return m_wallClock;
+}
+
+//==============================================================================
+/*!
+    This methods returns the current simulation time.
+*/
+//==============================================================================
 double cBulletWorld::getSimulationTime(){
     return m_simulationTime;
 }

@@ -119,6 +119,11 @@ void Camera::set_wall_time(double a_sec){
     m_State.header.stamp = ros::Time::now();
 }
 
+ambf_msgs::CameraCmd Camera::get_command(){
+    ambf_msgs::CameraCmd temp_cmd = m_Cmd;
+    return temp_cmd;
+}
+
 
 extern "C"{
 

@@ -669,11 +669,23 @@ void afComm::afWorldCommCreate(std::string a_name, std::string a_namespace, int 
 /// \param a_wall_time
 /// \param a_sim_time
 ///
-void afComm::afObjectSetTime(const double *a_wall_time, const double *a_sim_time){
+void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_wall_time(*a_wall_time);
-        m_afObjectCommPtr->set_sim_time(*a_sim_time);
+        m_afObjectCommPtr->set_wall_time(a_wall_time);
+        m_afObjectCommPtr->set_sim_time(a_sim_time);
+    }
+    if (m_afCameraCommPtr.get() != nullptr){
+        m_afCameraCommPtr->set_wall_time(a_wall_time);
+        m_afCameraCommPtr->set_sim_time(a_sim_time);
+    }
+    if (m_afSensorCommPtr.get() != nullptr){
+        m_afSensorCommPtr->set_wall_time(a_wall_time);
+        m_afSensorCommPtr->set_sim_time(a_sim_time);
+    }
+    if (m_afWorldCommPtr.get() != nullptr){
+        m_afWorldCommPtr->set_wall_time(a_wall_time);
+        m_afWorldCommPtr->set_sim_time(a_sim_time);
     }
 #endif
 }
@@ -2305,6 +2317,7 @@ void afRigidBody::updatePositionFromDynamics()
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afObjectCommPtr.get() != nullptr){
+        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         m_afObjectCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
         q.fromRotMat(m_localRot);
@@ -2386,7 +2399,6 @@ void afRigidBody::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectCommPtr.get() != nullptr){
         btVector3 force, torque;
-//        ambf_comm::ObjectCommand afCommand = m_afObjectCommPtr->get_command();
         ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
         m_af_enable_position_controller = afCommand.enable_position_controller;
         // If the body is kinematic, we just want to control the position
@@ -4333,20 +4345,22 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     }
 #endif
 
-    // apply wrench from ROS
-//    std::list<cBulletGenericObject*>::iterator i;
-
-//    for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
-//    {
-//        cBulletGenericObject* nextItem = *i;
-//        nextItem->afObjectCommandExecute(getSimulationDeltaTime());
-//    }
-
-    afRigidBodyMap::iterator it;
-
-    for(it = m_afRigidBodyMap.begin() ; it != m_afRigidBodyMap.end() ; it++){
-        (it->second)->afObjectCommandExecute(getSimulationDeltaTime());
+    double dt = getSimulationDeltaTime();
+    // Read the AF_COMM commands and apply to all different types of objects
+    afRigidBodyMap::iterator rbIt;
+    for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
+        (rbIt->second)->afObjectCommandExecute(dt);
     }
+
+    afCameraMap::iterator camIt;
+    for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
+        (camIt->second)->afObjectCommandExecute(dt);
+    }
+
+//    afSensorMap::iterator senIt;
+//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
+//        (senIt->second)->afObjectCommandExecute(dt);
+//    }
 
     // integrate simulation during an certain interval
     m_bulletWorld->stepSimulation(a_interval, m_integrationMaxIterations, m_integrationTimeStep);
@@ -4364,7 +4378,6 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     }
 #endif
 
-    // update CHAI3D positions for of all object
     updatePositionFromDynamics();
 }
 
@@ -4374,13 +4387,13 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 ///
 void afWorld::updatePositionFromDynamics()
 {
+    afUpdateTimes(getWallTime(), getSimulationTime());
     std::list<cBulletGenericObject*>::iterator i;
 
     for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
     {
         cBulletGenericObject* nextItem = *i;
         nextItem->updatePositionFromDynamics();
-//        nextItem->afObjectSetTime(&m_wallClock, &m_simulationTime);
     }
 }
 
@@ -5613,21 +5626,23 @@ cMatrix3d afCamera::measuredRot(){
 void afCamera::afObjectCommandExecute(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
-//        ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
+        ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
 
-//        cVector3d pos(m_afCommand.pose.position.x,
-//                      m_afCommand.pose.position.y,
-//                      m_afCommand.pose.position.z);
+        if (m_afCommand.enable_position_controller){
+            cVector3d pos(m_afCommand.pose.position.x,
+                          m_afCommand.pose.position.y,
+                          m_afCommand.pose.position.z);
 
-//        cQuaternion rot_quat(m_afCommand.pose.orientation.w,
-//                             m_afCommand.pose.orientation.x,
-//                             m_afCommand.pose.orientation.y,
-//                             m_afCommand.pose.orientation.z);
+            cQuaternion rot_quat(m_afCommand.pose.orientation.w,
+                                 m_afCommand.pose.orientation.x,
+                                 m_afCommand.pose.orientation.y,
+                                 m_afCommand.pose.orientation.z);
 
-//        cMatrix3d rot_mat;
-//        rot_quat.toRotMat(rot_mat);
-//        setLocalPos(pos);
-//        setLocalRot(rot_mat);
+            cMatrix3d rot_mat;
+            rot_quat.toRotMat(rot_mat);
+            setLocalPos(pos);
+            setLocalRot(rot_mat);
+        }
     }
 #endif
 }
@@ -5642,6 +5657,7 @@ void afCamera::updatePositionFromDynamics()
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afCameraCommPtr.get() != nullptr){
+        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         m_afCameraCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
         q.fromRotMat(m_localRot);

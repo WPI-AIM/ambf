@@ -241,7 +241,7 @@ public:
     virtual void afObjectCommandExecute(double dt=0.001);
 
     //! This method applies updates Wall and Sim Time for AF State Message.
-    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
+    virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
 
     //! AF CHAI Env
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT

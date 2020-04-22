@@ -148,6 +148,9 @@ public:
     virtual void updatePositionFromDynamics(void);
 
     //! This method returns the current simulation time
+    double getWallTime(void);
+
+    //! This method returns the current simulation time
     double getSimulationTime(void);
 
     //! This method gets the time difference between current time and last simulation time

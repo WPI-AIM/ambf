@@ -1,4 +1,5 @@
 Header header
+bool enable_position_controller
 std_msgs/String parent_name
 std_msgs/String type
 geometry_msgs/Pose pose

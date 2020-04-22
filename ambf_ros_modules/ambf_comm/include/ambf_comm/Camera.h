@@ -117,6 +117,7 @@ protected:
 class Camera: public CameraRosCom, public CameraParams{
 public:
     Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    ambf_msgs::CameraCmd get_command();
     inline void set_name(std::string name){m_State.name.data = name;}
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
