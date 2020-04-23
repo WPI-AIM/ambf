@@ -119,25 +119,30 @@ void Camera::set_params_on_server(){
 }
 
 void Camera::update_params_from_server(){
-    std::string projection_type, view_mode;
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::near_plane), m_near_plane);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::far_plane), m_far_plane);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::field_view_angle), m_field_view_angle);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), m_orthographic_view_width);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), m_stereo_eye_separation);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), m_stereo_focal_length);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_parentName);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode);
+    double np, fp, fva, ovw, ses, sfl;
+    std::string pn;
+    std::string pt, vm;
+    ProjectionType pt_enum;
+    ViewMode vm_enum;
 
-    if (projection_type.compare(projection_type_enum_to_str(ProjectionType::PERSPECTIVE)) == 0){
-        m_projectionType = ProjectionType::PERSPECTIVE;
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::near_plane), np);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::far_plane), fp);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::field_view_angle), fva);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), ovw);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), ses);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), sfl);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), pn);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), pt);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), vm);
+
+    if (pt.compare(projection_type_enum_to_str(ProjectionType::PERSPECTIVE)) == 0){
+        pt_enum = ProjectionType::PERSPECTIVE;
     }
-    else if (projection_type.compare(projection_type_enum_to_str(ProjectionType::ORTHOGRAPHIC)) == 0){
-        m_projectionType = ProjectionType::ORTHOGRAPHIC;
+    else if (pt.compare(projection_type_enum_to_str(ProjectionType::ORTHOGRAPHIC)) == 0){
+        pt_enum = ProjectionType::ORTHOGRAPHIC;
     }
     else{
-        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" PROJECTION TYPE \"" << projection_type << "\" NOT UNDERSTOOD\n";
+        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" PROJECTION TYPE \"" << pt << "\" NOT UNDERSTOOD\n";
         std::cerr << "VALID TYPES ARE: \n" <<
                      projection_type_enum_to_str(ProjectionType::PERSPECTIVE) <<
                      "\n" <<
@@ -146,20 +151,44 @@ void Camera::update_params_from_server(){
     }
 
 
-    if (view_mode.compare(view_mode_enum_to_str(ViewMode::MONO)) == 0){
-        m_viewMode = ViewMode::MONO;
+    if (vm.compare(view_mode_enum_to_str(ViewMode::MONO)) == 0){
+        vm_enum = ViewMode::MONO;
     }
-    else if (view_mode.compare(view_mode_enum_to_str(ViewMode::STEREO)) == 0){
-        m_viewMode = ViewMode::STEREO;
+    else if (vm.compare(view_mode_enum_to_str(ViewMode::STEREO)) == 0){
+        vm_enum = ViewMode::STEREO;
     }
     else{
-        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" VIEW MODE \"" << view_mode << "\" NOT UNDERSTOOD\n";
+        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" VIEW MODE \"" << vm << "\" NOT UNDERSTOOD\n";
         std::cerr << "VALID MODES ARE: \n" <<
                      view_mode_enum_to_str(ViewMode::MONO) <<
                      "\n" <<
                      view_mode_enum_to_str(ViewMode::STEREO) <<
                      "\n";
     }
+
+    if (np != m_near_plane ||
+            fp != m_far_plane ||
+            fva != m_field_view_angle ||
+            ovw != m_orthographic_view_width ||
+            ses != m_stereo_eye_separation ||
+            sfl != m_stereo_focal_length ||
+            pn.compare(m_parentName) !=0 ||
+            pt_enum != m_projectionType ||
+            vm_enum != m_viewMode){
+        m_paramsChanged = true;
+        std::cerr << "INFO! PARAMS CHANGED FOR \"" << m_name << "\"\n";
+    }
+
+    // Finally update the local copies of the params
+    m_far_plane = fp;
+    m_field_view_angle = fva;
+    m_orthographic_view_width = ovw;
+    m_stereo_eye_separation = ses;
+    m_stereo_focal_length = sfl;
+    m_parentName = pn;
+    m_projectionType = pt_enum;
+    m_viewMode = vm_enum;
+
 }
 
 Camera::Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): CameraRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){

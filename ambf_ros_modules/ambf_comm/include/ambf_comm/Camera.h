@@ -96,7 +96,6 @@ public:
     CameraParams();
 
     inline void set_qualified_namespace(std::string a_base_prefix){m_base_prefix = a_base_prefix;}
-    inline bool have_params_changed(){return m_paramsChanged;}
 
     // Setters
     void set_near_plane(double val){m_near_plane = val;}
@@ -120,10 +119,14 @@ public:
     ProjectionType get_projection_type(){return m_projectionType;}
     ViewMode get_view_mode(){return m_viewMode;}
 
+    bool have_params_changed(){return m_paramsChanged;}
+    void set_params_changed(bool val){m_paramsChanged = val;}
+
+protected:
+
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
 
-protected:
     // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
     std::string m_base_prefix;
 
