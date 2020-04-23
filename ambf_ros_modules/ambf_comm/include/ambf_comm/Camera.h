@@ -51,24 +51,40 @@
 namespace ambf_comm{
 
 enum ProjectionType{
-  PERSPECTIVE, ORTHOGONAL
+  PERSPECTIVE, ORTHOGRAPHIC
 };
 
-static const char* ProjectionEnumStr[] = {"PERSPECTIVE", "ORTHOGONAL"};
+static const char* ProjectionTypeEnumStr[] = {"PERSPECTIVE", "ORTHOGRAPHIC"};
 
 
-enum ViewType{
+enum ViewMode{
   MONO, STEREO
 };
 
-static const char* ViewEnumStr[] = {"MONO", "STEREO"};
+static const char* ViewModeEnumStr[] = {"MONO", "STEREO"};
 
 
 enum CameraParamsEnum{
-    look_at, up, near_plane, far_plane, field_view_angle, parent, projection, type
+    near_plane,
+    far_plane,
+    field_view_angle,
+    orthographic_view_width,
+    stereo_eye_separation,
+    stereo_focal_length,
+    parent_name,
+    projection,
+    mode
 };
 
-static const char* CameraParamEnumStr[] = {"look_at", "up", "near_plane", "far_plane", "field_view_angle", "parent", "projection", "type"};
+static const char* CameraParamEnumStr[] = {"near_plane",
+                                           "far_plane",
+                                           "field_view_angle",
+                                           "orthographic_view_width",
+                                           "stereo_eye_separation",
+                                           "stereo_focal_length",
+                                           "parent_name",
+                                           "projection",
+                                           "mode"};
 
 
 class CameraParams{
@@ -83,22 +99,26 @@ public:
     inline bool have_params_changed(){return m_paramsChanged;}
 
     // Setters
-    void set_up_vector(double x, double y, double z);
-    void set_look_vector(double x, double y, double z);
-    void set_near_plane(double val);
-    void set_far_plane(double val);
-    void set_field_view_angle(double val);
-    void set_projection_type(ProjectionType type);
-    void set_view_type(ViewType type);
+    void set_near_plane(double val){m_near_plane = val;}
+    void set_far_plane(double val){m_far_plane = val;}
+    void set_field_view_angle(double val){m_field_view_angle = val;}
+    void set_orthographic_view_width(double val){m_orthographic_view_width = val;}
+    void set_steteo_eye_separation(double val){m_stereo_eye_separation = val;}
+    void set_steteo_focal_length(double val){m_stereo_focal_length = val;}
+    void set_parent_name(std::string name){m_parentName = name;}
+    void set_projection_type(ProjectionType type){m_projectionType = type;}
+    void set_view_mode(ViewMode view_mode){m_viewMode = view_mode;}
 
     // Getters
-    std::vector<double> get_up_vector();
-    std::vector<double> get_look_vector();
-    double get_near_plane();
-    double get_far_plane();
-    double get_field_view_angle();
-    ProjectionType get_projection_type(ProjectionType type);
-    ViewType get_view_type(ViewType type);
+    double get_near_plane(){return m_near_plane;}
+    double get_far_plane(){return m_far_plane;}
+    double get_field_view_angle(){return m_field_view_angle;}
+    double get_orthographic_view_width(){return m_orthographic_view_width;}
+    double get_steteo_eye_separation(){return m_stereo_eye_separation;}
+    double get_steteo_focal_length(){return m_stereo_focal_length;}
+    std::string get_parent_name(){return m_parentName;}
+    ProjectionType get_projection_type(){return m_projectionType;}
+    ViewMode get_view_mode(){return m_viewMode;}
 
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
@@ -108,12 +128,16 @@ protected:
     std::string m_base_prefix;
 
     // Datatyped Variables for params defined on the server
-    std::vector<double> m_up;
-    std::vector<double> m_look_at;
-    double m_near_plane, m_far_plane, m_field_view_angle;
+    double m_near_plane;
+    double m_far_plane;
+    double m_field_view_angle;
+    double m_orthographic_view_width;
+    double m_stereo_eye_separation;
+    double m_stereo_focal_length;
 
-    std::string m_projectionType;
-    std::string m_viewType;
+    std::string m_parentName;
+    ProjectionType m_projectionType;
+    ViewMode m_viewMode;
 };
 
 class Camera: public CameraRosCom, public CameraParams{

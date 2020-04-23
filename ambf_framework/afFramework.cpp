@@ -5650,8 +5650,47 @@ void afCamera::afExecuteCommand(double dt){
             double near_plane = m_afCameraCommPtr->get_near_plane();
             double far_plane = m_afCameraCommPtr->get_far_plane();
             double field_view_angle = m_afCameraCommPtr->get_field_view_angle();
+            double orthographic_view_width = m_afCameraCommPtr->get_orthographic_view_width();
+            double stereo_eye_separation = m_afCameraCommPtr->get_steteo_eye_separation();
+            double stereo_focal_length = m_afCameraCommPtr->get_steteo_focal_length();
+
+            std::string parent_name = m_afCameraCommPtr->get_parent_name();
+
             m_camera->setClippingPlanes(near_plane, far_plane);
-            m_camera->setFieldViewAngleRad(field_view_angle);
+
+            if (!m_parentName.compare(parent_name) == 0){
+                // Parent has changed. Find the appropriate parent
+                if (getParent() != nullptr){
+                    getParent()->removeChild(this);
+                }
+                m_parentName = parent_name;
+                resolveParenting();
+            }
+
+            switch (m_afCameraCommPtr->get_projection_type()) {
+            case ambf_comm::ProjectionType::PERSPECTIVE:
+                m_camera->setFieldViewAngleRad(field_view_angle);
+                break;
+            case ambf_comm::ProjectionType::ORTHOGRAPHIC:
+                m_camera->setOrthographicView(orthographic_view_width);
+                break;
+            default:
+                break;
+            }
+
+            switch (m_afCameraCommPtr->get_view_mode()) {
+            case ambf_comm::ViewMode::MONO:
+                m_camera->setStereoMode(cStereoMode::C_STEREO_DISABLED);
+                break;
+            case ambf_comm::ViewMode::STEREO:
+                m_camera->setStereoMode(cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT);
+                m_camera->setStereoEyeSeparation(stereo_eye_separation);
+                m_camera->setStereoFocalLength(stereo_focal_length);
+                break;
+            default:
+                break;
+            }
+
             m_read_count = 0;
         }
     }
@@ -5672,8 +5711,12 @@ void afCamera::updatePositionFromDynamics()
             m_afCameraCommPtr->set_near_plane(m_camera->getNearClippingPlane());
             m_afCameraCommPtr->set_far_plane(m_camera->getFarClippingPlane());
             m_afCameraCommPtr->set_field_view_angle(m_camera->getFieldViewAngleRad());
-//            m_afCameraCommPtr->set_projection_type(0);
-//            m_afCameraCommPtr->set_view_type(0);
+            m_afCameraCommPtr->set_orthographic_view_width(m_camera->getOrthographicViewWidth());
+            m_afCameraCommPtr->set_steteo_eye_separation(m_camera->getStereoEyeSeparation());
+            m_afCameraCommPtr->set_steteo_focal_length(m_camera->getStereoFocalLength());
+            m_afCameraCommPtr->set_parent_name(m_parentName);
+            m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
+            m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
 
             m_afCameraCommPtr->set_params_on_server();
             m_paramsSet = true;

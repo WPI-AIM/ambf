@@ -45,74 +45,121 @@
 #include "ambf_comm/Camera.h"
 namespace ambf_comm{
 
-const std::string ProjectionEnumToStr(int enumVal)
+const std::string projection_type_enum_to_str(int enumVal)
 {
-  return std::string(ProjectionEnumStr[enumVal]);
+  return std::string(ProjectionTypeEnumStr[enumVal]);
 }
 
-const std::string ViewTypeEnumToStr(int enumVal)
+const std::string view_mode_enum_to_str(int enumVal)
 {
-  return std::string(ViewEnumStr[enumVal]);
+  return std::string(ViewModeEnumStr[enumVal]);
 }
 
-const std::string CameraParamEnumToStr(int enumVal)
+const std::string camera_param_enum_to_str(int enumVal)
 {
   return std::string(CameraParamEnumStr[enumVal]);
 }
 
 CameraParams::CameraParams(){
-
-    m_up.resize(3);
-    m_look_at.resize(3);
     m_paramsChanged = false;
-    m_projectionType = ProjectionEnumToStr(ProjectionType::PERSPECTIVE);
-    m_viewType = ViewTypeEnumToStr(ViewType::MONO);
+    m_projectionType = ProjectionType::PERSPECTIVE;
+    m_viewMode = ViewMode::MONO;
 }
 
-void Camera::CameraParams::set_near_plane(double val){
-    m_near_plane = val;
-}
+//void CameraParams::set_near_plane(double val){
+//    m_near_plane = val;
+//}
 
-void Camera::CameraParams::set_far_plane(double val){
-    m_far_plane = val;
-}
+//void CameraParams::set_far_plane(double val){
+//    m_far_plane = val;
+//}
 
-void Camera::CameraParams::set_field_view_angle(double val){
-    m_field_view_angle = val;
-}
+//void CameraParams::set_field_view_angle(double val){
+//    m_field_view_angle = val;
+//}
 
-double Camera::CameraParams::get_near_plane(){
-    return m_near_plane;
-}
+//void CameraParams::set_projection_type(ProjectionType type){
+//    m_projectionType = type;
+//}
 
-double Camera::CameraParams::get_far_plane(){
-    return m_far_plane;
-}
+//void CameraParams::set_view_mode(ViewMode type){
+//    m_viewMode = type;
+//}
 
-double Camera::CameraParams::get_field_view_angle(){
-    return m_field_view_angle;
-}
+//double CameraParams::get_near_plane(){
+//    return m_near_plane;
+//}
+
+//double CameraParams::get_far_plane(){
+//    return m_far_plane;
+//}
+
+//double CameraParams::get_field_view_angle(){
+//    return m_field_view_angle;
+//}
+
+//ProjectionType CameraParams::get_projection_type(){
+//    return m_projectionType;
+//}
+
+//ViewMode CameraParams::get_view_mode(){
+//    return m_viewMode;
+//}
 
 void Camera::set_params_on_server(){
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::field_view_angle), m_field_view_angle);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
-    nodePtr->setParam(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
-
-
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::near_plane), m_near_plane);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::field_view_angle), m_field_view_angle);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), m_orthographic_view_width);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), m_stereo_eye_separation);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), m_stereo_focal_length);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_parentName);
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type_enum_to_str(m_projectionType));
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode_enum_to_str(m_viewMode));
 }
 
 void Camera::update_params_from_server(){
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::look_at), m_look_at);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::up), m_up);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::near_plane), m_near_plane);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::far_plane), m_far_plane);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::field_view_angle), m_field_view_angle);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::projection), m_projectionType);
-    nodePtr->getParamCached(m_base_prefix + "/" + CameraParamEnumToStr(CameraParamsEnum::type), m_viewType);
+    std::string projection_type, view_mode;
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::near_plane), m_near_plane);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::far_plane), m_far_plane);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::field_view_angle), m_field_view_angle);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), m_orthographic_view_width);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), m_stereo_eye_separation);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), m_stereo_focal_length);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_parentName);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode);
+
+    if (projection_type.compare(projection_type_enum_to_str(ProjectionType::PERSPECTIVE)) == 0){
+        m_projectionType = ProjectionType::PERSPECTIVE;
+    }
+    else if (projection_type.compare(projection_type_enum_to_str(ProjectionType::ORTHOGRAPHIC)) == 0){
+        m_projectionType = ProjectionType::ORTHOGRAPHIC;
+    }
+    else{
+        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" PROJECTION TYPE \"" << projection_type << "\" NOT UNDERSTOOD\n";
+        std::cerr << "VALID TYPES ARE: \n" <<
+                     projection_type_enum_to_str(ProjectionType::PERSPECTIVE) <<
+                     "\n" <<
+                     projection_type_enum_to_str(ProjectionType::ORTHOGRAPHIC) <<
+                     "\n";
+    }
+
+
+    if (view_mode.compare(view_mode_enum_to_str(ViewMode::MONO)) == 0){
+        m_viewMode = ViewMode::MONO;
+    }
+    else if (view_mode.compare(view_mode_enum_to_str(ViewMode::STEREO)) == 0){
+        m_viewMode = ViewMode::STEREO;
+    }
+    else{
+        std::cerr << "ERROR! FOR CAMERA \"" << m_name << "\" VIEW MODE \"" << view_mode << "\" NOT UNDERSTOOD\n";
+        std::cerr << "VALID MODES ARE: \n" <<
+                     view_mode_enum_to_str(ViewMode::MONO) <<
+                     "\n" <<
+                     view_mode_enum_to_str(ViewMode::STEREO) <<
+                     "\n";
+    }
 }
 
 Camera::Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): CameraRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
