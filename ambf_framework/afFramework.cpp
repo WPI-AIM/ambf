@@ -5647,9 +5647,9 @@ void afCamera::afExecuteCommand(double dt){
         if(m_read_count >= 2000){
             // We may update the params intermittently
             m_afCameraCommPtr->update_params_from_server();
-            if (m_afCameraCommPtr->have_params_changed()){
+            if (m_afCameraCommPtr->m_paramsChanged){
                 // Clear the flag so it can be used for testing again
-                m_afCameraCommPtr->set_params_changed(false);
+                m_afCameraCommPtr->m_paramsChanged = false;
 
                 double near_plane = m_afCameraCommPtr->get_near_plane();
                 double far_plane = m_afCameraCommPtr->get_far_plane();
@@ -5733,6 +5733,11 @@ void afCamera::updatePositionFromDynamics()
         m_afCameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         m_write_count++;
+
+        if (m_write_count % 2000 == 0){
+            m_afCameraCommPtr->set_parent_name(m_parentName);
+            m_write_count = 0;
+        }
     }
 #endif
 }

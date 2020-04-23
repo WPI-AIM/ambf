@@ -104,7 +104,6 @@ public:
     void set_orthographic_view_width(double val){m_orthographic_view_width = val;}
     void set_steteo_eye_separation(double val){m_stereo_eye_separation = val;}
     void set_steteo_focal_length(double val){m_stereo_focal_length = val;}
-    void set_parent_name(std::string name){m_parentName = name;}
     void set_projection_type(ProjectionType type){m_projectionType = type;}
     void set_view_mode(ViewMode view_mode){m_viewMode = view_mode;}
 
@@ -115,17 +114,13 @@ public:
     double get_orthographic_view_width(){return m_orthographic_view_width;}
     double get_steteo_eye_separation(){return m_stereo_eye_separation;}
     double get_steteo_focal_length(){return m_stereo_focal_length;}
-    std::string get_parent_name(){return m_parentName;}
     ProjectionType get_projection_type(){return m_projectionType;}
     ViewMode get_view_mode(){return m_viewMode;}
 
-    bool have_params_changed(){return m_paramsChanged;}
-    void set_params_changed(bool val){m_paramsChanged = val;}
-
-protected:
-
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
+
+protected:
 
     // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
     std::string m_base_prefix;
@@ -138,7 +133,6 @@ protected:
     double m_stereo_eye_separation;
     double m_stereo_focal_length;
 
-    std::string m_parentName;
     ProjectionType m_projectionType;
     ViewMode m_viewMode;
 };
@@ -152,9 +146,12 @@ public:
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
     void set_wall_time(double a_sec);
+    void set_parent_name(std::string name){m_State.parent_name.data = name;}
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
+
+    std::string get_parent_name(){return m_State.parent_name.data;}
 
     // This method updates from the ROS param server instead of topics
     void update_params_from_server();

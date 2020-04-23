@@ -113,9 +113,9 @@ void Camera::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), m_orthographic_view_width);
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), m_stereo_eye_separation);
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), m_stereo_focal_length);
-    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_parentName);
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type_enum_to_str(m_projectionType));
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode_enum_to_str(m_viewMode));
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_State.parent_name.data);
 }
 
 void Camera::update_params_from_server(){
@@ -131,9 +131,9 @@ void Camera::update_params_from_server(){
     nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), ovw);
     nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), ses);
     nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), sfl);
-    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), pn);
     nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), pt);
     nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), vm);
+    nodePtr->getParamCached(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), pn);
 
     if (pt.compare(projection_type_enum_to_str(ProjectionType::PERSPECTIVE)) == 0){
         pt_enum = ProjectionType::PERSPECTIVE;
@@ -172,9 +172,9 @@ void Camera::update_params_from_server(){
             ovw != m_orthographic_view_width ||
             ses != m_stereo_eye_separation ||
             sfl != m_stereo_focal_length ||
-            pn.compare(m_parentName) !=0 ||
             pt_enum != m_projectionType ||
-            vm_enum != m_viewMode){
+            vm_enum != m_viewMode ||
+            pn.compare(m_State.parent_name.data) !=0){
         m_paramsChanged = true;
         std::cerr << "INFO! PARAMS CHANGED FOR \"" << m_name << "\"\n";
     }
@@ -185,10 +185,9 @@ void Camera::update_params_from_server(){
     m_orthographic_view_width = ovw;
     m_stereo_eye_separation = ses;
     m_stereo_focal_length = sfl;
-    m_parentName = pn;
     m_projectionType = pt_enum;
     m_viewMode = vm_enum;
-
+    m_State.parent_name.data = pn;
 }
 
 Camera::Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): CameraRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
