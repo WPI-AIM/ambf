@@ -45,66 +45,37 @@
 #include "ambf_comm/Camera.h"
 namespace ambf_comm{
 
-const std::string projection_type_enum_to_str(int enumVal)
+const std::string projection_type_enum_to_str(ProjectionType enumVal)
 {
-  return std::string(ProjectionTypeEnumStr[enumVal]);
+    if (enumVal == ProjectionType::PERSPECTIVE) return "PERSPECTIVE";
+    else if (enumVal == ProjectionType::ORTHOGRAPHIC) return "ORTHOGRAPHIC";
 }
 
-const std::string view_mode_enum_to_str(int enumVal)
+const std::string view_mode_enum_to_str(ViewMode enumVal)
 {
-  return std::string(ViewModeEnumStr[enumVal]);
+    if (enumVal == ViewMode::MONO) return "MONO";
+    else if (enumVal == ViewMode::STEREO) return "STEREO";
 }
 
-const std::string camera_param_enum_to_str(int enumVal)
+const std::string camera_param_enum_to_str(CameraParamsEnum enumVal)
 {
-  return std::string(CameraParamEnumStr[enumVal]);
+    if (enumVal == CameraParamsEnum::near_plane) return "near_plane";
+    else if (enumVal == CameraParamsEnum::far_plane) return "far_plane";
+    else if (enumVal == CameraParamsEnum::field_view_angle) return "field_view_angle";
+    else if (enumVal == CameraParamsEnum::orthographic_view_width) return "orthographic_view_width";
+    else if (enumVal == CameraParamsEnum::stereo_eye_separation) return "stereo_eye_separation";
+    else if (enumVal == CameraParamsEnum::stereo_focal_length) return "stereo_focal_length";
+    else if (enumVal == CameraParamsEnum::parent_name) return "parent_name";
+    else if (enumVal == CameraParamsEnum::projection) return "projection";
+    else if (enumVal == CameraParamsEnum::mode) return "mode";
+
 }
 
 CameraParams::CameraParams(){
     m_paramsChanged = false;
-    m_projectionType = ProjectionType::PERSPECTIVE;
-    m_viewMode = ViewMode::MONO;
+    m_projection_type = ProjectionType::PERSPECTIVE;
+    m_view_mode = ViewMode::MONO;
 }
-
-//void CameraParams::set_near_plane(double val){
-//    m_near_plane = val;
-//}
-
-//void CameraParams::set_far_plane(double val){
-//    m_far_plane = val;
-//}
-
-//void CameraParams::set_field_view_angle(double val){
-//    m_field_view_angle = val;
-//}
-
-//void CameraParams::set_projection_type(ProjectionType type){
-//    m_projectionType = type;
-//}
-
-//void CameraParams::set_view_mode(ViewMode type){
-//    m_viewMode = type;
-//}
-
-//double CameraParams::get_near_plane(){
-//    return m_near_plane;
-//}
-
-//double CameraParams::get_far_plane(){
-//    return m_far_plane;
-//}
-
-//double CameraParams::get_field_view_angle(){
-//    return m_field_view_angle;
-//}
-
-//ProjectionType CameraParams::get_projection_type(){
-//    return m_projectionType;
-//}
-
-//ViewMode CameraParams::get_view_mode(){
-//    return m_viewMode;
-//}
 
 void Camera::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::near_plane), m_near_plane);
@@ -113,8 +84,8 @@ void Camera::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::orthographic_view_width), m_orthographic_view_width);
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_eye_separation), m_stereo_eye_separation);
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::stereo_focal_length), m_stereo_focal_length);
-    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type_enum_to_str(m_projectionType));
-    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode_enum_to_str(m_viewMode));
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::projection), projection_type_enum_to_str(m_projection_type));
+    nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::mode), view_mode_enum_to_str(m_view_mode));
     nodePtr->setParam(m_base_prefix + "/" + camera_param_enum_to_str(CameraParamsEnum::parent_name), m_State.parent_name.data);
 }
 
@@ -172,8 +143,8 @@ void Camera::update_params_from_server(){
             ovw != m_orthographic_view_width ||
             ses != m_stereo_eye_separation ||
             sfl != m_stereo_focal_length ||
-            pt_enum != m_projectionType ||
-            vm_enum != m_viewMode ||
+            pt_enum != m_projection_type ||
+            vm_enum != m_view_mode ||
             pn.compare(m_State.parent_name.data) !=0){
         m_paramsChanged = true;
         std::cerr << "INFO! PARAMS CHANGED FOR \"" << m_name << "\"\n";
@@ -185,8 +156,8 @@ void Camera::update_params_from_server(){
     m_orthographic_view_width = ovw;
     m_stereo_eye_separation = ses;
     m_stereo_focal_length = sfl;
-    m_projectionType = pt_enum;
-    m_viewMode = vm_enum;
+    m_projection_type = pt_enum;
+    m_view_mode = vm_enum;
     m_State.parent_name.data = pn;
 }
 

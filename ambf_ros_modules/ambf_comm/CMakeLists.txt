@@ -84,18 +84,22 @@ set (ENV_SRC_FILES src/ambf_comm.cpp
 
 set (OBJ_HDR_FILES include/${PROJECT_NAME}/Object.h
 		   include/${PROJECT_NAME}/Camera.h
+                   include/${PROJECT_NAME}/Light.h
 		   include/${PROJECT_NAME}/Sensor.h
                    include/${PROJECT_NAME}/RosComBase.h
                    include/${PROJECT_NAME}/ObjectRosCom.h
                    include/${PROJECT_NAME}/CameraRosCom.h
+                   include/${PROJECT_NAME}/LightRosCom.h
                    include/${PROJECT_NAME}/SensorRosCom.h
                    include/${PROJECT_NAME}/CmdWatchDog.h)
 
 set (OBJ_SRC_FILES src/Object.cpp
                    src/Camera.cpp
+                   src/Light.cpp
                    src/Sensor.cpp
                    src/ObjectRosCom.cpp
                    src/CameraRosCom.cpp
+                   src/LightRosCom.cpp
                    src/SensorRosCom.cpp
                    src/RosComBase.cpp)
 

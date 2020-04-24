@@ -56,6 +56,8 @@ find_package(catkin REQUIRED COMPONENTS
    SensorCmd.msg
    CameraState.msg
    CameraCmd.msg
+   LightState.msg
+   LightCmd.msg
    WorldState.msg
    WorldCmd.msg
  )

@@ -68,8 +68,9 @@
 
 //-----------------------------------------------------------------------------
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include <ambf_comm/Object.h>
+#include "ambf_comm/Object.h"
 #include "ambf_comm/Camera.h"
+#include "ambf_comm/Light.h"
 #include "ambf_comm/Sensor.h"
 #include "ambf_comm/World.h"
 #endif

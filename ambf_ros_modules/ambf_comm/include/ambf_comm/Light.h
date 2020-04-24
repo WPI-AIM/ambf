@@ -42,93 +42,65 @@
 */
 //==============================================================================
 
-#ifndef AFCAMERACOMM_H
-#define AFCAMERACOMM_H
+#ifndef AFLIGHTCOMM_H
+#define AFLIGHTCOMM_H
 
 #include <string>
-#include "ambf_comm/CameraRosCom.h"
+#include "ambf_comm/LightRosCom.h"
 
 namespace ambf_comm{
 
-enum class ProjectionType{
-    PERSPECTIVE,
-    ORTHOGRAPHIC
+
+enum class LightType{
+    SPOT,
+    POINT,
+    DIRECTIONAL
 };
 
 
-enum class ViewMode{
-    MONO,
-    STEREO
-};
-
-
-enum class CameraParamsEnum{
-    near_plane,
-    far_plane,
-    field_view_angle,
-    orthographic_view_width,
-    stereo_eye_separation,
-    stereo_focal_length,
+enum class LightParamsEnum{
+    cuttoff_angle,
     parent_name,
-    projection,
-    mode
+    type
 };
 
 
-class CameraParams{
+class LightParams{
 
-    friend class Camera;
+    friend class Light;
 
 public:
 
-    CameraParams();
+    LightParams();
 
     inline void set_qualified_namespace(std::string a_base_prefix){m_base_prefix = a_base_prefix;}
 
     // Setters
-    void set_near_plane(double val){m_near_plane = val;}
-    void set_far_plane(double val){m_far_plane = val;}
-    void set_field_view_angle(double val){m_field_view_angle = val;}
-    void set_orthographic_view_width(double val){m_orthographic_view_width = val;}
-    void set_steteo_eye_separation(double val){m_stereo_eye_separation = val;}
-    void set_steteo_focal_length(double val){m_stereo_focal_length = val;}
-    void set_projection_type(ProjectionType type){m_projection_type = type;}
-    void set_view_mode(ViewMode view_mode){m_view_mode = view_mode;}
+    void set_type(LightType val){m_light_type = val;}
+    void set_cuttoff_angle(double val){m_cuttoff_angle = val;}
 
     // Getters
-    double get_near_plane(){return m_near_plane;}
-    double get_far_plane(){return m_far_plane;}
-    double get_field_view_angle(){return m_field_view_angle;}
-    double get_orthographic_view_width(){return m_orthographic_view_width;}
-    double get_steteo_eye_separation(){return m_stereo_eye_separation;}
-    double get_steteo_focal_length(){return m_stereo_focal_length;}
-    ProjectionType get_projection_type(){return m_projection_type;}
-    ViewMode get_view_mode(){return m_view_mode;}
+    LightType get_type(){return m_light_type;}
+    double get_cuttoff_angle(){return m_cuttoff_angle;}
 
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
 
 protected:
 
-    // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
+    // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Light1 = /ambf/env/Light1 -> Base Prefix
     std::string m_base_prefix;
 
     // Datatyped Variables for params defined on the server
-    double m_near_plane;
-    double m_far_plane;
-    double m_field_view_angle;
-    double m_orthographic_view_width;
-    double m_stereo_eye_separation;
-    double m_stereo_focal_length;
-
-    ProjectionType m_projection_type;
-    ViewMode m_view_mode;
+    double m_type;
+    double m_cuttoff_angle;
+    LightType m_light_type;
 };
 
-class Camera: public CameraRosCom, public CameraParams{
+class Light: public LightRosCom, public LightParams{
 public:
-    Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ambf_msgs::CameraCmd get_command();
+    Light(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    ambf_msgs::LightCmd get_command();
     inline void set_name(std::string name){m_State.name.data = name;}
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
