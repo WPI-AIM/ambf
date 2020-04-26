@@ -62,7 +62,7 @@ class Observation:
     def __init__(self):
         self.state = {
             'observation': np.zeros(20),
-            'achieved_goal': np.array([0.0, 0.0, 0.075, 0.0, 0.0, 0.0]),
+            'achieved_goal': np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0]),
             'desired_goal': np.zeros(6)
         }
         self.dist = 0
@@ -115,11 +115,11 @@ class AmbfEnv(gym.GoalEnv):
 
         self.goal_position_range = 0.05
         # self.goal = self._sample_goal(self.initial_pos)
-        self.goal = np.array([0.0, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0])
+        self.goal = np.array([0.0, 0.0, -0.1, 0.0, 0.0, 0.0])
         self.prev_sim_step = 0
         self.pos_error_threshold = 0.01
         self.count_for_print = 0
-        self.goal_error_margin = 0.0075
+        self.goal_error_margin = 0.005
 
     def skip_sim_steps(self, num):
         self.n_skip_steps = num
@@ -161,7 +161,7 @@ class AmbfEnv(gym.GoalEnv):
     def set_initial_pos_func(self):
         for joint_idx, jt_name in enumerate(self.joints_to_control):
             if joint_idx == 2:
-                self.obj_handle.set_joint_pos(jt_name, 0.075)
+                self.obj_handle.set_joint_pos(jt_name, 0.1)
             else:
                 self.obj_handle.set_joint_pos(jt_name, 0)
         time.sleep(0.5)
@@ -201,27 +201,11 @@ class AmbfEnv(gym.GoalEnv):
         for i in range(3):
             desired_end_effector_frame[i, 3] = desired_cartesian_pos[i]
         computed_joint_pos = compute_IK(convert_mat_to_frame(desired_end_effector_frame))
+        # Ensure the computed joint positions are within the limit of user set joint positions
         desired_joint_pos = self.limit_joint_pos(computed_joint_pos)
 
-        # Counter to avoid getting stuck in while loop because of very small errors in positions
-        count_for_joint_pos = 0
         # Ensures that PSM joints reach the desired joint positions
-        while True:
-            reached_joint_pos = np.zeros(7)
-            for joint_idx, jt_name in enumerate(self.joints_to_control):
-                self.obj_handle.set_joint_pos(jt_name, desired_joint_pos[joint_idx])
-                reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-
-            error_in_pos = np.around(np.subtract(desired_joint_pos, reached_joint_pos), decimals=3)
-            error_in_pos_joint2 = np.around(np.subtract(desired_joint_pos[2], reached_joint_pos[2]), decimals=4)
-            # print("error ", error_in_pos)
-            count_for_joint_pos += 1
-            # if np.all(np.abs(error_in_pos) <= self.error_threshold):
-            if (np.all(np.abs(error_in_pos) <= self.pos_error_threshold) and
-                np.abs(error_in_pos_joint2) <= 0.5*self.pos_error_threshold) \
-                    or count_for_joint_pos > 75:
-                break
-
+        self.set_commanded_joint_pos(desired_joint_pos)
         # Update state, reward, done flag and world values in the code
         updated_state, rewards, done, info = self._update_observation(desired_end_effector_frame,
                                                                       desired_joint_pos, state_vel)
@@ -238,6 +222,25 @@ class AmbfEnv(gym.GoalEnv):
         # self.previous_joint_pos = desired_joint_pos
 
         return updated_state, rewards, done, info
+
+    def set_commanded_joint_pos(self, commanded_joint_pos):
+        # Counter to avoid getting stuck in while loop because of very small errors in positions
+        count_for_joint_pos = 0
+        while True:
+            reached_joint_pos = np.zeros(7)
+            for joint_idx, jt_name in enumerate(self.joints_to_control):
+                self.obj_handle.set_joint_pos(jt_name, commanded_joint_pos[joint_idx])
+                reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+
+            error_in_pos = np.around(np.subtract(commanded_joint_pos, reached_joint_pos), decimals=3)
+            error_in_pos_joint2 = np.around(np.subtract(commanded_joint_pos[2], reached_joint_pos[2]), decimals=4)
+            # print("error ", error_in_pos)
+            count_for_joint_pos += 1
+            # if np.all(np.abs(error_in_pos) <= self.error_threshold):
+            if (np.all(np.abs(error_in_pos) <= self.pos_error_threshold) and
+                np.abs(error_in_pos_joint2) <= 0.5*self.pos_error_threshold) \
+                    or count_for_joint_pos > 75:
+                break
 
     def limit_cartesian_pos(self, cart_pos):
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
@@ -256,7 +259,7 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         limit_joint_values = np.zeros(7)
-        joint_lower_limit = np.array([-0.3, -0.3, 0.075, -1.5, -1.5, -1.5, -1.5])
+        joint_lower_limit = np.array([-0.3, -0.3, 0.1, -1.5, -1.5, -1.5, -1.5])
         joint_upper_limit = np.array([0.3, 0.3, 0.24, 1.5, 1.5, 1.5, 1.5])
         for joint_idx in range(len(joint_pos)):
             limit_joint_values[joint_idx] = np.clip(joint_pos[joint_idx], joint_lower_limit[joint_idx],
