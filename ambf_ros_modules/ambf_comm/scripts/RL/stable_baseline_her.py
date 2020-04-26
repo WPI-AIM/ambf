@@ -73,12 +73,12 @@ if __name__ == '__main__':
 
     ENV_NAME = 'psm/baselink'
     # Training
-    ambf_env = AmbfEnv()
-    time.sleep(5)
-    ambf_env.make(ENV_NAME)
-    ambf_env.reset()
-    main(env=ambf_env)
-    ambf_env.ambf_client.clean_up()
+    # ambf_env = AmbfEnv()
+    # time.sleep(5)
+    # ambf_env.make(ENV_NAME)
+    # ambf_env.reset()
+    # main(env=ambf_env)
+    # ambf_env.ambf_client.clean_up()
     # Evaluate learnt policy
     eval_env = AmbfEnv()
     time.sleep(5)

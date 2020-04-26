@@ -880,7 +880,7 @@ JOINT tool pitch link-tool gripper1 link:
     high: 1.5708
     low: -1.5708
   controller:
-    P: 0.2
+    P: 0.1
     I: 0
     D: 0.0081
   detached: true
