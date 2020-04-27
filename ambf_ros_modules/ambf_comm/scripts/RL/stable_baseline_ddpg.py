@@ -16,7 +16,7 @@ def main(env):
 
     model = DDPG(MlpPolicy, env, gamma=0.95, verbose=1, nb_train_steps=300, nb_rollout_steps=150,
                  param_noise=param_noise, batch_size=128, action_noise=action_noise, random_exploration=0.05,
-                 tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5))
+                 normalize_observations=True, tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5))
 
     model.learn(total_timesteps=4000000, log_interval=100,
                 callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))

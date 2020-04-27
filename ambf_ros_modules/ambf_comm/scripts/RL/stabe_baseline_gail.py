@@ -1,6 +1,6 @@
 from stable_baselines.gail import ExpertDataset
 import numpy as np
-from stable_baselines import HER, DDPG, PPO2
+from stable_baselines import HER, DDPG
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
 from ambf_comm import AmbfEnv
 import time
@@ -12,32 +12,22 @@ from stable_baselines.common.callbacks import CheckpointCallback
 def main(env):
 
     n_actions = env.action_space.shape[0]
-    noise_std = 0.2
-    # Currently using OU noise (need to check with NA and AP noise)
-    action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=noise_std * np.ones(n_actions))
+    param_noise = None
+    action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
 
-    kwargs = {
-        'actor_lr': 1e-3,
-        'critic_lr': 1e-3,
-        'action_noise': action_noise,
-        'nb_train_steps': 300,
-        'nb_rollout_steps': 150,
-        'gamma': 0.95,
-        'observation_range': (-1.5, 1.5),
-        'random_exploration': 0.05,
-        'normalize_observations': True
-    }
     # Using only one expert trajectory
     # you can specify `traj_limitation=-1` for using the whole dataset
     file_dir = "/home/vignesh/Thesis_Suture_data/trial2/ambf_data/"
     dataset = ExpertDataset(expert_path=file_dir + 'expert_psm_data.npz',
                             traj_limitation=1, batch_size=32)
-    model_class = DDPG  # works also with SAC, DDPG and TD3
-    # model = DDPG(MlpPolicy, env, verbose=1, **kwargs)
-    model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
-                buffer_size=int(1e5), batch_size=128, tensorboard_log="./ddpg_dvrk_tensorboard/", **kwargs)
-    # Pretrain the PPO2 model
+
+    model = DDPG(MlpPolicy, env, gamma=0.95, verbose=1, nb_train_steps=300, nb_rollout_steps=150,
+                 param_noise=param_noise, batch_size=128, action_noise=action_noise, random_exploration=0.05,
+                 normalize_observations=True, tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5))
+
     model.pretrain(dataset, n_epochs=1000)
+    # model.learn(total_timesteps=4000000, log_interval=100,
+    #             callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
     model.save("./gail_robot_env")
 
     # As an option, you can train the RL agent
