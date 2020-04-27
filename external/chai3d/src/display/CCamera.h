@@ -333,6 +333,9 @@ public:
     //! This method returns the stereo eye separation.
     double getStereoEyeSeparation() { return (m_stereoEyeSeparation); }
 
+    //! This method returns if the view mode is perspective or not for this camera
+    bool isViewModePerspective() {return m_perspectiveMode;}
+
 
     //-----------------------------------------------------------------------
     // PUBLIC METHODS - RENDERING AND IMAGING:

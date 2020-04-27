@@ -418,10 +418,11 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afObjectCommCreate(_sDevName,
-                                                  m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
-                                                  simDevice->m_rootLink->getMinPublishFrequency(),
-                                                  simDevice->m_rootLink->getMaxPublishFrequency());
+            simDevice->m_rootLink->afCreateCommInstance(afCommType::OBJECT,
+                                                        _sDevName,
+                                                        m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
+                                                        simDevice->m_rootLink->getMinPublishFrequency(),
+                                                        simDevice->m_rootLink->getMaxPublishFrequency());
         }
     }
     else{
@@ -525,15 +526,26 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 /// \param maxPF
 ///
 void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string a_namespace, int minPF, int maxPF){
-    m_afCursor = new cBulletSphere(a_afWorld, 0.05);
-    m_afCursor->setShowEnabled(true);
-    m_afCursor->setShowFrame(true);
-    m_afCursor->setFrameSize(0.1);
+    cMesh* tempMesh = new cMesh();
+    // create object
+    cCreateSphere(tempMesh, 0.05, 32, 32);
+    // create display list
+    tempMesh->setUseDisplayList(true);
+    // invalidate display list
+    tempMesh->markForUpdate(false);
+    tempMesh->setShowEnabled(true);
+    tempMesh->setShowFrame(true);
+    tempMesh->setFrameSize(0.1);
     cMaterial mat;
     mat.setGreenLightSea();
-    m_afCursor->setMaterial(mat);
+    tempMesh->setMaterial(mat);
+    m_afCursor = new afRigidBody(a_afWorld);
+    m_afCursor->m_meshes->push_back(tempMesh);
     a_afWorld->addChild(m_afCursor);
-//    m_afCursor->afObjectCommCreate(a_name, m_afWorld->resolveGlobalNamespace(a_namespace), minPF, maxPF);
+    m_afCursor->afCreateCommInstance(afCommType::OBJECT,
+                                     a_name, m_afWorld->resolveGlobalNamespace(a_namespace),
+                                     minPF,
+                                     maxPF);
     m_afWorld = a_afWorld;
 }
 
@@ -639,8 +651,8 @@ void afPhysicalDevice::updateCursorPose(){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-//        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
-//        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
+        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
+        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
     }
 }

@@ -222,21 +222,20 @@ protected:
 };
 
 
+enum afCommType{
+    OBJECT,
+    CAMERA,
+    LIGHT,
+    SENSOR,
+    WORLD
+};
+
+
 class afComm{
 public:
     afComm(){}
 
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afCameraCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afSensorCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=10.0);
+    virtual void afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     //! This method is to retrieve all the commands for appropriate af comm instances.
     virtual void afExecuteCommand(double dt=0.001);
@@ -248,6 +247,7 @@ public:
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
+    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
@@ -263,6 +263,11 @@ public:
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
 
+    // Get the type of communication instance
+    afCommType getCommType(){return m_commType;}
+
+private:
+    afCommType m_commType;
 };
 
 
@@ -431,10 +436,17 @@ public:
 
     inline int getMaxPublishFrequency(){return _max_publish_frequency;}
 
+    // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
+    // to be parented to hasn't been loaded yet.
+    virtual bool resolveParenting(std::string a_parent_name = ""){}
+
 public:
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
+
+    // Parent body name defined in the ADF
+    std::string m_parentName;
 
 protected:
 
@@ -1162,7 +1174,7 @@ public:
     // bodies etc. we wouldn't be able to find a body defined as a parent in the
     // camera data-block in the ADF file. Thus after loading the bodies, this method
     // should be called to find the parent.
-    bool resolveParenting();
+    virtual bool resolveParenting(std::string a_parent_name = "");
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -1302,6 +1314,11 @@ protected:
     static bool s_imageTransportInitialized;
 #endif
 
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::ProjectionType m_projectionType;
+    ambf_comm::ViewMode m_viewMode;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 
@@ -1313,9 +1330,6 @@ private:
 
     // Flag to enable disable publishing of image as a ROS topic
     bool m_publishImage = false;
-
-    // Parent body name defined in the ADF
-    std::string m_parentName;
 
     cVector3d m_camPos;
     cVector3d m_camLookAt;
@@ -1350,8 +1364,19 @@ public:
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
 
+    virtual bool resolveParenting(std::string a_parent_name = "");
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
 protected:
     cSpotLight* m_spotLight;
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::LightType m_lightType;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 };

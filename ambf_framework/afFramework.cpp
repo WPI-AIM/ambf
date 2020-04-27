@@ -606,60 +606,36 @@ std::vector<double> afConfigHandler::getColorRGBA(std::string a_color_name){
 
 
 ///
-/// \brief afComm::afObjectCommCreate
+/// \brief afComm::afCreateCommInstance
+/// \param type
 /// \param a_name
 /// \param a_namespace
 /// \param a_min_freq
 /// \param a_max_freq
 /// \param time_out
 ///
-void afComm::afObjectCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-#endif
-}
-
-
-///
-/// \brief afComm::afCameraCommCreate
-/// \param a_name
-/// \param a_namespace
-/// \param a_min_freq
-/// \param a_max_freq
-/// \param time_out
-///
-void afComm::afCameraCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-#endif
-}
-
-///
-/// \brief afComm::afSensorCommCreate
-/// \param a_name
-/// \param a_namespace
-/// \param a_min_freq
-/// \param a_max_freq
-/// \param time_out
-///
-void afComm::afSensorCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-#endif
-}
-
-
-///
-/// \brief afComm::afWorldCommCreate
-/// \param a_name
-/// \param a_namespace
-/// \param a_min_freq
-/// \param a_max_freq
-/// \param time_out
-///
-void afComm::afWorldCommCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+    switch (type) {
+    case afCommType::OBJECT:
+        m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    case afCommType::CAMERA:
+        m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    case afCommType::LIGHT:
+        m_afLightCommPtr.reset(new ambf_comm::Light(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    case afCommType::SENSOR:
+        m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    case afCommType::WORLD:
+        m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    default:
+        break;
+    }
+    m_commType = type;
 #endif
 }
 
@@ -678,6 +654,10 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
     if (m_afCameraCommPtr.get() != nullptr){
         m_afCameraCommPtr->set_wall_time(a_wall_time);
         m_afCameraCommPtr->set_sim_time(a_sim_time);
+    }
+    if (m_afLightCommPtr.get() != nullptr){
+        m_afLightCommPtr->set_wall_time(a_wall_time);
+        m_afLightCommPtr->set_sim_time(a_sim_time);
     }
     if (m_afSensorCommPtr.get() != nullptr){
         m_afSensorCommPtr->set_wall_time(a_wall_time);
@@ -4357,6 +4337,11 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         (camIt->second)->afExecuteCommand(dt);
     }
 
+    afLightMap::iterator lightIt;
+    for(lightIt = m_afLightMap.begin() ; lightIt != m_afLightMap.end() ; lightIt++){
+        (lightIt->second)->afExecuteCommand(dt);
+    }
+
 //    afSensorMap::iterator senIt;
 //    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
 //        (senIt->second)->afObjectCommandExecute(dt);
@@ -4569,11 +4554,12 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
     }
 
-    afWorldCommCreate("World",
-                      resolveGlobalNamespace(m_namespace),
-                      50,
-                      2000,
-                      10.0);
+    afCreateCommInstance(afCommType::WORLD,
+                         "World",
+                         resolveGlobalNamespace(m_namespace),
+                         50,
+                         2000,
+                         10.0);
 
     if(worldMaxIterations.IsDefined()){
         if (worldMaxIterations.as<int>() > 1){
@@ -4620,10 +4606,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name, this)){
                 addAFLight(lightPtr, light_name);
-                lightPtr->afObjectCommCreate(lightPtr->m_name,
-                                         resolveGlobalNamespace(lightPtr->getNamespace()),
-                                         lightPtr->getMinPublishFrequency(),
-                                         lightPtr->getMaxPublishFrequency());
+                lightPtr->afCreateCommInstance(afCommType::LIGHT,
+                                               lightPtr->m_name,
+                                               resolveGlobalNamespace(lightPtr->getNamespace()),
+                                               lightPtr->getMinPublishFrequency(),
+                                               lightPtr->getMaxPublishFrequency());
             }
         }
     }
@@ -4633,10 +4620,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createDefaultLight()){
             addAFLight(lightPtr, "default_light");
-            lightPtr->afObjectCommCreate(lightPtr->m_name,
-                                     resolveGlobalNamespace(lightPtr->getNamespace()),
-                                     lightPtr->getMinPublishFrequency(),
-                                     lightPtr->getMaxPublishFrequency());
+            lightPtr->afCreateCommInstance(afCommType::LIGHT,
+                                           lightPtr->m_name,
+                                           resolveGlobalNamespace(lightPtr->getNamespace()),
+                                           lightPtr->getMinPublishFrequency(),
+                                           lightPtr->getMaxPublishFrequency());
         }
     }
 
@@ -4648,10 +4636,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 YAML::Node cameraNode = worldNode[camera_name];
                 if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                     addAFCamera(cameraPtr, camera_name);
-                    cameraPtr->afCameraCommCreate(cameraPtr->m_name,
-                                              resolveGlobalNamespace(cameraPtr->getNamespace()),
-                                              cameraPtr->getMinPublishFrequency(),
-                                              cameraPtr->getMaxPublishFrequency());
+                    cameraPtr->afCreateCommInstance(afCommType::CAMERA,
+                                                    cameraPtr->m_name,
+                                                    resolveGlobalNamespace(cameraPtr->getNamespace()),
+                                                    cameraPtr->getMinPublishFrequency(),
+                                                    cameraPtr->getMaxPublishFrequency());
                 }
             }
         }
@@ -4662,10 +4651,11 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createDefaultCamera()){
                 addAFCamera(cameraPtr, "default_camera");
-                cameraPtr->afCameraCommCreate(cameraPtr->m_name,
-                                          resolveGlobalNamespace(cameraPtr->getNamespace()),
-                                          cameraPtr->getMinPublishFrequency(),
-                                          cameraPtr->getMaxPublishFrequency());
+                cameraPtr->afCreateCommInstance(afCommType::CAMERA,
+                                                cameraPtr->m_name,
+                                                resolveGlobalNamespace(cameraPtr->getNamespace()),
+                                                cameraPtr->getMinPublishFrequency(),
+                                                cameraPtr->getMaxPublishFrequency());
             }
 
         }
@@ -5578,7 +5568,12 @@ void afCamera::publishImage(){
 /// \brief afCamera::resolveParenting
 /// \return
 ///
-bool afCamera::resolveParenting(){
+bool afCamera::resolveParenting(std::string a_parent_name){
+    // If the parent name is not empty, override the objects parent name
+    if(!a_parent_name.empty()){
+        m_parentName = a_parent_name;
+    }
+
     if (!m_parentName.empty()){
         afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
         if (pBody){
@@ -5662,13 +5657,13 @@ void afCamera::afExecuteCommand(double dt){
 
                 m_camera->setClippingPlanes(near_plane, far_plane);
 
-                if (!m_parentName.compare(parent_name) == 0){
+                if (m_parentName.compare(parent_name) != 0){
                     // Parent has changed. Find the appropriate parent
                     if (getParent() != nullptr){
                         getParent()->removeChild(this);
                     }
-                    m_parentName = parent_name;
-                    resolveParenting();
+
+                    resolveParenting(parent_name);
                 }
 
                 switch (m_afCameraCommPtr->get_projection_type()) {
@@ -5712,6 +5707,7 @@ void afCamera::updatePositionFromDynamics()
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afCameraCommPtr.get() != nullptr){
+
         if (m_paramsSet == false){
             m_afCameraCommPtr->set_near_plane(m_camera->getNearClippingPlane());
             m_afCameraCommPtr->set_far_plane(m_camera->getFarClippingPlane());
@@ -5720,12 +5716,25 @@ void afCamera::updatePositionFromDynamics()
             m_afCameraCommPtr->set_steteo_eye_separation(m_camera->getStereoEyeSeparation());
             m_afCameraCommPtr->set_steteo_focal_length(m_camera->getStereoFocalLength());
             m_afCameraCommPtr->set_parent_name(m_parentName);
-            m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
-            m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
+
+            if (m_camera->isViewModePerspective()){
+                m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
+            }
+            else{
+                m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::ORTHOGRAPHIC);
+            }
+
+            if (m_stereMode == C_STEREO_DISABLED){
+                m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
+            }
+            else{
+                m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::STEREO);;
+            }
 
             m_afCameraCommPtr->set_params_on_server();
             m_paramsSet = true;
         }
+
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         m_afCameraCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
@@ -5868,25 +5877,20 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         m_spotLight = new cSpotLight(a_world);
         addChild(m_spotLight);
 
-        bool _overrideDefaultParenting = false;
         if (lightParent.IsDefined()){
-            _overrideDefaultParenting = true;
-            std::string parent_name = lightParent.as<std::string>();
-            afRigidBodyPtr pBody = a_world->getAFRigidBody(parent_name);
-            if (pBody){
-                pBody->addChild(this);
-            }
-            else{
-                std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                          << parent_name << "\"" <<std::endl;
-            }
+            m_parentName = lightParent.as<std::string>();
         }
-        if (! _overrideDefaultParenting){
+        else{
+            m_parentName = "";
             a_world->addChild(this);
         }
 
         m_spotLight->setLocalPos(_location);
         m_spotLight->setDir(_direction);
+
+        m_initialPos = m_spotLight->getLocalPos();
+        m_initialRot = m_spotLight->getLocalRot();
+
         m_spotLight->setSpotExponent(_spot_exponent);
         m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
         m_spotLight->setShadowMapEnabled(true);
@@ -5919,6 +5923,127 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
     }
 
     return _is_valid;
+}
+
+
+///
+/// \brief afLight::resolveParenting
+/// \return
+///
+bool afLight::resolveParenting(std::string a_parent_name){
+    // If the parent name is not empty, override the objects parent name
+    if(!a_parent_name.empty()){
+        m_parentName = a_parent_name;
+    }
+
+    if (!m_parentName.empty()){
+        afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
+        if (pBody){
+            pBody->addChild(this);
+            // Now also update the postion and orientation, w.r.t the parent.
+            setLocalPos(m_initialPos);
+            setLocalRot(m_initialRot);
+            return true;
+        }
+        else{
+            std::cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
+                      << m_parentName << "\"" <<std::endl;
+            return false;
+        }
+    }
+    else{
+        // No parent assigned, so report success as we have nothing to find
+        return true;
+    }
+
+}
+
+
+
+void afLight::afExecuteCommand(double dt){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afLightCommPtr.get() != nullptr){
+        ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
+
+        if (m_afCommand.enable_position_controller){
+            cVector3d pos(m_afCommand.pose.position.x,
+                          m_afCommand.pose.position.y,
+                          m_afCommand.pose.position.z);
+
+            cQuaternion rot_quat(m_afCommand.pose.orientation.w,
+                                 m_afCommand.pose.orientation.x,
+                                 m_afCommand.pose.orientation.y,
+                                 m_afCommand.pose.orientation.z);
+
+            cMatrix3d rot_mat;
+            rot_quat.toRotMat(rot_mat);
+            setLocalPos(pos);
+            setLocalRot(rot_mat);
+        }
+        m_read_count++;
+        if(m_read_count >= 2000){
+            // We may update the params intermittently
+            m_afLightCommPtr->update_params_from_server();
+            if (m_afLightCommPtr->m_paramsChanged){
+                // Clear the flag so it can be used for testing again
+                m_afLightCommPtr->m_paramsChanged = false;
+
+                double cutoff_angle = m_afLightCommPtr->get_cuttoff_angle();
+                std::string parent_name = m_afLightCommPtr->get_parent_name();
+
+                m_spotLight->setCutOffAngleDeg(cRadToDeg(cutoff_angle));
+
+                if (m_parentName.compare(parent_name) != 0){
+                    // Parent has changed. Find the appropriate parent
+                    if (getParent() != nullptr){
+                        getParent()->removeChild(this);
+                    }
+
+                    resolveParenting(parent_name);
+                }
+            }
+
+            m_read_count = 0;
+        }
+    }
+#endif
+}
+
+
+
+///
+/// \brief afLight::updatePositionFromDynamics
+///
+void afLight::updatePositionFromDynamics()
+{
+
+    // update Transform data for m_ObjectPtr
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if(m_afLightCommPtr.get() != nullptr){
+
+        if (m_paramsSet == false){
+            m_afLightCommPtr->set_cuttoff_angle(cDegToRad(m_spotLight->getCutOffAngleDeg()));
+            m_afLightCommPtr->set_type(ambf_comm::LightType::SPOT);
+            m_afLightCommPtr->set_parent_name(m_parentName);
+
+            m_afLightCommPtr->set_params_on_server();
+            m_paramsSet = true;
+        }
+
+        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
+        m_afLightCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cQuaternion q;
+        q.fromRotMat(m_localRot);
+        m_afLightCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        m_write_count++;
+
+        if (m_write_count % 2000 == 0){
+            m_afLightCommPtr->set_parent_name(m_parentName);
+            m_write_count = 0;
+        }
+    }
+#endif
 }
 
 
@@ -6043,10 +6168,11 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                     continue;
                 }
                 else{
-                    rBodyPtr->afObjectCommCreate(rBodyPtr->m_name + remap_str,
-                                             m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
-                                             rBodyPtr->getMinPublishFrequency(),
-                                             rBodyPtr->getMaxPublishFrequency());
+                    rBodyPtr->afCreateCommInstance(afCommType::OBJECT,
+                                                   rBodyPtr->m_name + remap_str,
+                                                   m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
+                                                   rBodyPtr->getMinPublishFrequency(),
+                                                   rBodyPtr->getMaxPublishFrequency());
                 }
             }
         }
