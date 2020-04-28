@@ -1415,8 +1415,6 @@ public:
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updatePositionFromDynamics(void);
 
-public:
-
     bool addAFLight(afLightPtr a_rb, std::string a_name);
     bool addAFCamera(afCameraPtr a_rb, std::string a_name);
     bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
@@ -1453,6 +1451,8 @@ public:
     inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
     inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
 
+    virtual void afExecuteCommand(double dt);
+
     afLightVec  getAFLighs();
     afCameraVec getAFCameras();
     afRigidBodyVec getAFRigidBodies();
@@ -1476,47 +1476,12 @@ public:
     bool loadADF(int i, bool enable_comm);
     void loadAllADFs(bool enable_com);
 
-protected:
-
-    afLightMap m_afLightMap;
-    afCameraMap m_afCameraMap;
-    afRigidBodyMap m_afRigidBodyMap;
-    afSoftBodyMap m_afSoftBodyMap;
-    afJointMap m_afJointMap;
-    afSensorMap m_afSensorMap;
-    afMultiBodyMap m_afMultiBodyMap;
-
-protected:
-
-    afWorld(){}
-    std::string m_namespace;
-
-    // If this string is set, it will force itself to preeced all nampespaces
-    // regardless of whether any namespace starts with a '/' or not.
-    std::string m_global_namespace;
-
-private:
-
-    static double m_encl_length;
-    static double m_encl_width;
-    static double m_encl_height;
-    static int m_maxIterations;
-    cPositionalLight* m_light;
-
-private:
-    // Global flag to pause simulation
-    bool m_pausePhx = false;
-
-
-public:
-
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
     bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
     void removePickingConstraint();
 
-public:
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
     afRigidBodyPtr m_lastPickedBody;
@@ -1538,6 +1503,33 @@ public:
 
     //    cMesh* m_pickDragVector;
 
+protected:
+
+    afLightMap m_afLightMap;
+    afCameraMap m_afCameraMap;
+    afRigidBodyMap m_afRigidBodyMap;
+    afSoftBodyMap m_afSoftBodyMap;
+    afJointMap m_afJointMap;
+    afSensorMap m_afSensorMap;
+    afMultiBodyMap m_afMultiBodyMap;
+
+
+    afWorld(){}
+    std::string m_namespace;
+
+    // If this string is set, it will force itself to preeced all nampespaces
+    // regardless of whether any namespace starts with a '/' or not.
+    std::string m_global_namespace;
+
+private:
+
+    static double m_encl_length;
+    static double m_encl_width;
+    static double m_encl_height;
+    static int m_maxIterations;
+    cPositionalLight* m_light;
+    // Global flag to pause simulation
+    bool m_pausePhx = false;
 };
 
 

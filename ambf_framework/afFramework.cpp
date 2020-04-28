@@ -4304,6 +4304,34 @@ void afWorld::resetDynamicBodies(bool reset_time){
 
 
 ///
+/// \brief afWorld::afExecuteCommand
+/// \param dt
+///
+void afWorld::afExecuteCommand(double dt){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+
+    // If throttling in enabled, wait here until the step clock is toggled before
+    // progressing towards next step
+    if(m_afWorldCommPtr.get() != nullptr){
+        while (!m_afWorldCommPtr->step_sim()){
+            usleep(1);
+        }
+    }
+
+    m_read_count++;
+    if(m_read_count % 2000 == 0){
+        m_afWorldCommPtr->update_params_from_server();
+        if (m_afWorldCommPtr->m_paramsChanged){
+            // Do the stuff
+        }
+        m_read_count = 0;
+    }
+
+#endif
+}
+
+
+///
 /// \brief afWorld::updateDynamics
 /// \param a_interval
 /// \param a_wallClock
@@ -4315,15 +4343,9 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // sanity check
     if (a_interval <= 0) { return; }
 
-    m_wallClock = a_wallClock;
+    afExecuteCommand(a_interval);
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afWorldCommPtr.get() != nullptr){
-        while (!m_afWorldCommPtr->step_sim()){
-            usleep(1);
-        }
-    }
-#endif
+    m_wallClock = a_wallClock;
 
     double dt = getSimulationDeltaTime();
     // Read the AF_COMM commands and apply to all different types of objects
@@ -4372,6 +4394,14 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 ///
 void afWorld::updatePositionFromDynamics()
 {
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_paramsSet == false){
+        m_afWorldCommPtr->set_params_on_server();
+        m_paramsSet = true;
+    }
+#endif
+
     afUpdateTimes(getWallTime(), getSimulationTime());
     std::list<cBulletGenericObject*>::iterator i;
 
@@ -5639,7 +5669,7 @@ void afCamera::afExecuteCommand(double dt){
             setLocalRot(rot_mat);
         }
         m_read_count++;
-        if(m_read_count >= 2000){
+        if(m_read_count % 2000 == 0){
             // We may update the params intermittently
             m_afCameraCommPtr->update_params_from_server();
             if (m_afCameraCommPtr->m_paramsChanged){
@@ -5981,7 +6011,7 @@ void afLight::afExecuteCommand(double dt){
             setLocalRot(rot_mat);
         }
         m_read_count++;
-        if(m_read_count >= 2000){
+        if(m_read_count % 2000 == 0){
             // We may update the params intermittently
             m_afLightCommPtr->update_params_from_server();
             if (m_afLightCommPtr->m_paramsChanged){

@@ -49,6 +49,25 @@
 #include "ambf_msgs/WorldState.h"
 #include "ambf_msgs/WorldCmd.h"
 
+#include "sensor_msgs/PointCloud.h"
+
+class PointCloundHandler{
+public:
+    PointCloundHandler(){}
+
+    void init(boost::shared_ptr<ros::NodeHandle> a_node , std::string a_topic_name);
+    void remove();
+
+    sensor_msgs::PointCloud get_pointcloud();
+
+private:
+    void sub_cb(sensor_msgs::PointCloudConstPtr msg);
+    ros::Subscriber m_pcSub;
+    std::string m_topicName;
+    sensor_msgs::PointCloud m_State;
+};
+
+
 class WorldRosCom: public RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>{
 public:
     WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
