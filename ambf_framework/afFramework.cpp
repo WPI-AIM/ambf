@@ -4185,14 +4185,14 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
     std::map<std::string, std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> >::iterator it;
 
     for (it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
+        std::string pc_topic_name = it->first;
         cMultiPointPtr mpPtr = it->second.first;
         ambf_comm::PointCloudHandlerPtr pchPtr = it->second.second;
 
         int mp_size = mpPtr->getNumPoints();
-        mpPtr->setPointSize(3.0);
         sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
         if(pcPtr){
-
+            mpPtr->setPointSize(10);
             int pc_size = pcPtr->points.size();
             int diff = pc_size - mp_size;
             std::string parent_name = pcPtr->header.frame_id;
@@ -4205,10 +4205,19 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
 
                 afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(parent_name);
                 if(pBody){
-                    m_parentName = parent_name;
                     pBody->addChild(mpPtr);
                 }
+                else{
+                    // Parent not found.
+                    std::cerr << "WARNING! FOR POINT CLOUD \""<< pc_topic_name <<
+                                 "\" PARENT BODY \"" << parent_name <<
+                                 "\" NOT FOUND, SETTING WORLD AS PARENT" <<
+                                 std::endl;
+                    addChild(mpPtr);
+                }
             }
+
+            m_parentName = parent_name;
 
             if (diff >= 0){
                 // PC array has either increased in size or the same size as MP array
@@ -4273,7 +4282,8 @@ afWorld::afWorld(std::string a_global_namespace){
     m_namespace = "";
     setGlobalNamespace(a_global_namespace);
 
-    m_pointCloudHandler = boost::shared_ptr<afPointCloudsHandler>(new afPointCloudsHandler(this));
+    m_pointCloudHandlerPtr = new afPointCloudsHandler(this);
+    addChild(m_pointCloudHandlerPtr);
 }
 
 
@@ -4408,10 +4418,9 @@ void afWorld::afExecuteCommand(double dt){
 
             for (int i = 0 ; i < def_topics.size() ; i++){
                 std::string topic_name = def_topics[i];
-                if (m_pointCloudHandler->m_pcMap.find(topic_name) != m_pointCloudHandler->m_pcMap.end()){
+                if (m_pointCloudHandlerPtr->m_pcMap.find(topic_name) != m_pointCloudHandlerPtr->m_pcMap.end()){
                     // Cleanup
-
-                    m_pointCloudHandler->m_pcMap.erase(topic_name);
+                    m_pointCloudHandlerPtr->m_pcMap.erase(topic_name);
                 }
             }
 
@@ -4419,11 +4428,13 @@ void afWorld::afExecuteCommand(double dt){
                 std::string topic_name = new_topics[i];
                 ambf_comm::PointCloudHandlerPtr pchPtr = m_afWorldCommPtr->get_point_clound_handler(topic_name);
                 if (pchPtr){
-                    cMultiPointPtr mpPtr = cMultiPointPtr(new cMultiPoint());
+                    cMultiPointPtr mpPtr = new cMultiPoint();
                     std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> mpPair;
                     mpPair.first = mpPtr;
                     mpPair.second = pchPtr;
-                    m_pointCloudHandler->m_pcMap[topic_name] = mpPair;
+                    m_pointCloudHandlerPtr->m_pcMap[topic_name] = mpPair;
+                    // Add as child, the header in PC message can override the parent later
+                    m_pointCloudHandlerPtr->addChild(mpPtr);
                 }
 
 

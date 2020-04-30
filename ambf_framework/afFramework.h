@@ -1554,7 +1554,7 @@ private:
     // Global flag to pause simulation
     bool m_pausePhx = false;
 
-    boost::shared_ptr<afPointCloudsHandler> m_pointCloudHandler;
+    afPointCloudsHandler* m_pointCloudHandlerPtr;
 };
 
 
