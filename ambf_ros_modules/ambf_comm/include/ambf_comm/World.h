@@ -50,6 +50,10 @@
 
 namespace ambf_comm{
 
+typedef boost::shared_ptr<PointCloundHandler> PointCloudHandlerPtr;
+typedef std::map<std::string, PointCloudHandlerPtr> PointCloudHandlerMap;
+typedef std::vector<PointCloudHandlerPtr> PointCloudHandlerVec;
+
 enum class WorldParamsEnum{
     point_cloud_topics,
     point_cloud_radii
@@ -73,6 +77,16 @@ public:
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
 
+    int get_num_point_cloud_handlers();
+
+    std::vector<PointCloudHandlerPtr> get_all_point_cloud_handlers();
+
+    PointCloudHandlerPtr get_point_clound_handler(std::string topic_name);
+
+    std::vector<std::string> get_new_topic_names(){return m_new_topic_names;}
+
+    std::vector<std::string> get_defunct_topic_names(){return m_defunct_topic_names;}
+
 protected:
 
     // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
@@ -84,7 +98,13 @@ protected:
     // This vector should be the same size as the topic names and suggests the radius of each stream of PC.
     std::vector<double> m_point_cloud_radii;
 
-    std::map<std::string, boost::shared_ptr<PointCloundHandler> > m_pointCloudHandlerMap;
+    PointCloudHandlerMap m_pointCloudHandlerMap;
+
+    // At each update, any new topics are added to this list
+    std::vector<std::string> m_new_topic_names;
+
+    // At each update, topics to be removed are added to this list
+    std::vector<std::string> m_defunct_topic_names;
 };
 
 class World: public WorldRosCom, public WorldParams{

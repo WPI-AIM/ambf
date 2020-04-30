@@ -4171,6 +4171,84 @@ afJoint::~afJoint(){
 }
 
 
+afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+
+}
+
+
+///
+/// \brief afPointCloudsHandler::updatePositionFromDynamics
+///
+void afPointCloudsHandler::updatePositionFromDynamics(){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+
+    std::map<std::string, std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> >::iterator it;
+
+    for (it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
+        cMultiPointPtr mpPtr = it->second.first;
+        ambf_comm::PointCloudHandlerPtr pchPtr = it->second.second;
+
+        int mp_size = mpPtr->getNumPoints();
+        mpPtr->setPointSize(3.0);
+        sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
+        if(pcPtr){
+
+            int pc_size = pcPtr->points.size();
+            int diff = pc_size - mp_size;
+            std::string parent_name = pcPtr->header.frame_id;
+
+            if (m_parentName.compare(parent_name) != 0 ){
+                // First remove any existing parent
+                if (mpPtr->getParent() != nullptr){
+                    mpPtr->getParent()->removeChild(mpPtr);
+                }
+
+                afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(parent_name);
+                if(pBody){
+                    m_parentName = parent_name;
+                    pBody->addChild(mpPtr);
+                }
+            }
+
+            if (diff >= 0){
+                // PC array has either increased in size or the same size as MP array
+                for (int pIdx = 0 ; pIdx < mp_size ; pIdx++){
+                    cVector3d pcPos(pcPtr->points[pIdx].x,
+                                    pcPtr->points[pIdx].y,
+                                    pcPtr->points[pIdx].z);
+                    mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+                }
+
+                // Now add the new PC points to MP
+                for (int pIdx = mp_size ; pIdx < mp_size + pc_size ; pIdx++){
+                    cVector3d pcPos(pcPtr->points[pIdx].x,
+                                    pcPtr->points[pIdx].y,
+                                    pcPtr->points[pIdx].z);
+                    mpPtr->newPoint(pcPos);
+                }
+            }
+            else{
+                // PC array has decreased in size as compared to MP array
+                for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
+                    cVector3d pcPos(pcPtr->points[pIdx].x,
+                                    pcPtr->points[pIdx].y,
+                                    pcPtr->points[pIdx].z);
+                    mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+                }
+
+                for (int pIdx = mp_size ; pIdx > pc_size ; pIdx--){
+                    mpPtr->removePoint(pIdx-1);
+                }
+            }
+
+        }
+
+    }
+#endif
+
+}
+
+
 ///
 /// \brief afWorld::afWorld
 /// \param a_chaiWorld
@@ -4194,6 +4272,8 @@ afWorld::afWorld(std::string a_global_namespace){
     m_pickColor.setTransparencyLevel(0.3);
     m_namespace = "";
     setGlobalNamespace(a_global_namespace);
+
+    m_pointCloudHandler = boost::shared_ptr<afPointCloudsHandler>(new afPointCloudsHandler(this));
 }
 
 
@@ -4323,6 +4403,32 @@ void afWorld::afExecuteCommand(double dt){
         m_afWorldCommPtr->update_params_from_server();
         if (m_afWorldCommPtr->m_paramsChanged){
             // Do the stuff
+            std::vector<std::string> new_topics = m_afWorldCommPtr->get_new_topic_names();
+            std::vector<std::string> def_topics = m_afWorldCommPtr->get_defunct_topic_names();
+
+            for (int i = 0 ; i < def_topics.size() ; i++){
+                std::string topic_name = def_topics[i];
+                if (m_pointCloudHandler->m_pcMap.find(topic_name) != m_pointCloudHandler->m_pcMap.end()){
+                    // Cleanup
+
+                    m_pointCloudHandler->m_pcMap.erase(topic_name);
+                }
+            }
+
+            for (int i = 0 ; i < new_topics.size() ; i++){
+                std::string topic_name = new_topics[i];
+                ambf_comm::PointCloudHandlerPtr pchPtr = m_afWorldCommPtr->get_point_clound_handler(topic_name);
+                if (pchPtr){
+                    cMultiPointPtr mpPtr = cMultiPointPtr(new cMultiPoint());
+                    std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> mpPair;
+                    mpPair.first = mpPtr;
+                    mpPair.second = pchPtr;
+                    m_pointCloudHandler->m_pcMap[topic_name] = mpPair;
+                }
+
+
+
+            }
         }
         m_read_count = 0;
     }

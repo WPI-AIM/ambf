@@ -58,20 +58,20 @@ void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::st
 /// \brief PointCloundHandler::sub_cb
 /// \param msg
 ///
-void PointCloundHandler::sub_cb(sensor_msgs::PointCloudConstPtr msg){
-    m_State = *msg;
+void PointCloundHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
+    m_StatePtr = msg;
 }
 
 
-sensor_msgs::PointCloud PointCloundHandler::get_pointcloud(){
-    return m_State;
+sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
+    return m_StatePtr;
 }
 
 
 void PointCloundHandler::remove(){
     m_pcSub.shutdown();
-    m_State.points.clear();
-    m_State.channels.clear();
+    m_StatePtr->points.clear();
+    m_StatePtr->channels.clear();
 }
 
 

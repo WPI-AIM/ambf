@@ -62,6 +62,37 @@ WorldParams::WorldParams(){
 }
 
 
+int WorldParams::get_num_point_cloud_handlers(){
+    return m_pointCloudHandlerMap.size();
+}
+
+///
+/// \brief WorldParams::get_all_point_cloud_handlers
+/// \return
+///
+std::vector<PointCloudHandlerPtr> WorldParams::get_all_point_cloud_handlers(){
+    PointCloudHandlerVec pVec;
+    PointCloudHandlerMap::iterator pIt;
+    for (pIt = m_pointCloudHandlerMap.begin() ; pIt != m_pointCloudHandlerMap.end() ; ++ pIt){
+        pVec.push_back(pIt->second);
+    }
+
+    return pVec;
+}
+
+
+PointCloudHandlerPtr WorldParams::get_point_clound_handler(std::string topic_name){
+    PointCloudHandlerPtr pchPtr;
+    if (m_pointCloudHandlerMap.find(topic_name) != m_pointCloudHandlerMap.end()){
+        pchPtr = m_pointCloudHandlerMap[topic_name];
+    }
+    else{
+        std::cerr << "ERROR: CAN'T FIND ANY PC HANDLER NAMED: " << topic_name << std::endl;
+    }
+    return pchPtr;
+}
+
+
 ///
 /// \brief World::set_params_on_server
 ///
@@ -80,8 +111,10 @@ void World::update_params_from_server(){
     nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), topic_names);
     nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), topic_radii);
 
-    std::vector<std::string> add_topic_names, remove_topic_names;
     std::vector<bool> keep_active_idx;
+
+    m_new_topic_names.clear();
+    m_defunct_topic_names.clear();
 
     keep_active_idx.resize(m_point_cloud_topics.size());
     for (int i = 0 ; i < keep_active_idx.size() ; i++){
@@ -105,19 +138,19 @@ void World::update_params_from_server(){
 
         if (is_new_topic == true){
             // No match found thus it is a new topic. Mark to be created anew
-            add_topic_names.push_back(new_topic);
+            m_new_topic_names.push_back(new_topic);
         }
     }
 
     for (int i = 0 ; i < m_point_cloud_topics.size() ; i++){
         if (keep_active_idx[i] == false){
-            remove_topic_names.push_back(m_point_cloud_topics[i]);
+            m_defunct_topic_names.push_back(m_point_cloud_topics[i]);
         }
     }
 
     // Lets remove topics that have been marked for removal.
-    for (int i = 0 ; i < remove_topic_names.size() ; i++){
-        std::string topic_name = remove_topic_names[i];
+    for (int i = 0 ; i < m_defunct_topic_names.size() ; i++){
+        std::string topic_name = m_defunct_topic_names[i];
         if (m_pointCloudHandlerMap.find(topic_name) != m_pointCloudHandlerMap.end()){
             (*m_pointCloudHandlerMap[topic_name]).remove();
             m_pointCloudHandlerMap.erase(topic_name);
@@ -125,21 +158,21 @@ void World::update_params_from_server(){
     }
 
     // Now add new topics
-    for (int i = 0 ; i < add_topic_names.size() ; i++){
-        std::string topic_name = add_topic_names[i];
+    for (int i = 0 ; i < m_new_topic_names.size() ; i++){
+        std::string topic_name = m_new_topic_names[i];
         if (m_pointCloudHandlerMap.find(topic_name) == m_pointCloudHandlerMap.end()){
             // Sanity check to see if the topic isn't already in the map
-            boost::shared_ptr<PointCloundHandler> pcHandler(new PointCloundHandler());
+            PointCloudHandlerPtr pcHandler(new PointCloundHandler());
             pcHandler->init(nodePtr, topic_name);
             m_pointCloudHandlerMap[topic_name] = pcHandler;
         }
     }
 
     // If any topic names need to be removed or added, then update the variable containing the list of topic names
-    if (remove_topic_names.size() > 0 || add_topic_names.size() > 0){
+    if (m_defunct_topic_names.size() > 0 || m_new_topic_names.size() > 0){
         m_paramsChanged = true;
         m_point_cloud_topics.clear();
-        std::map<std::string, boost::shared_ptr<PointCloundHandler> >::iterator pcIt;
+        PointCloudHandlerMap::iterator pcIt;
         for (pcIt = m_pointCloudHandlerMap.begin() ; pcIt != m_pointCloudHandlerMap.end() ; ++pcIt){
             m_point_cloud_topics.push_back( pcIt->first );
         }

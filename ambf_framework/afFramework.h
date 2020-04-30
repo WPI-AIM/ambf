@@ -124,6 +124,9 @@ class afMultiBody;
 typedef afMultiBody* afMultiBodyPtr;
 typedef std::map<std::string, afMultiBodyPtr> afMultiBodyMap;
 typedef std::vector<afMultiBodyPtr> afMultiBodyVec;
+//------------------------------------------------------------------------------
+class afPointCloudsHandler;
+typedef cMultiPoint* cMultiPointPtr;
 
 
 ///
@@ -1382,6 +1385,26 @@ private:
 };
 
 
+///
+/// \brief The afPointCloud class
+///
+class afPointCloudsHandler: public afBaseObject{
+
+public:
+    afPointCloudsHandler(afWorldPtr a_afWorld);
+
+    virtual void afExecuteCommand(double dt){}
+
+    virtual void updatePositionFromDynamics();
+
+public:
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    std::map<std::string, std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> > m_pcMap;
+#endif
+};
+
+
 //-----------------------------------------------------------------------------
 
 ///
@@ -1530,6 +1553,8 @@ private:
     cPositionalLight* m_light;
     // Global flag to pause simulation
     bool m_pausePhx = false;
+
+    boost::shared_ptr<afPointCloudsHandler> m_pointCloudHandler;
 };
 
 
@@ -1613,6 +1638,7 @@ private:
     afSoftBodyMap m_afSoftBodyMapLocal;
     afJointMap m_afJointMapLocal;
 };
+
 
 }
 //------------------------------------------------------------------------------
