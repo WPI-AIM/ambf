@@ -4192,7 +4192,8 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
         int mp_size = mpPtr->getNumPoints();
         sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
         if(pcPtr){
-            mpPtr->setPointSize(10);
+            double radius = pchPtr->get_radius();
+            mpPtr->setPointSize(radius);
             int pc_size = pcPtr->points.size();
             int diff = pc_size - mp_size;
             std::string frame_id = pcPtr->header.frame_id;

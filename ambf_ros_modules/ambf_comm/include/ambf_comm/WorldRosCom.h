@@ -60,8 +60,8 @@ public:
 
     sensor_msgs::PointCloudPtr get_point_cloud();
 
-    double get_width(){return m_radius;}
-    void set_width(double a_radius){m_radius = a_radius;}
+    double get_radius(){return m_radius;}
+    void set_radius(double a_radius){m_radius = abs(a_radius);}
 
 private:
     void sub_cb(sensor_msgs::PointCloudPtr msg);
@@ -69,7 +69,7 @@ private:
     std::string m_topicName;
     sensor_msgs::PointCloudPtr m_StatePtr;
 
-    double m_radius=0.005;
+    double m_radius=10;
 };
 
 

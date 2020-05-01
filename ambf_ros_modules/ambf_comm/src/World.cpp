@@ -98,7 +98,7 @@ PointCloudHandlerPtr WorldParams::get_point_clound_handler(std::string topic_nam
 ///
 void World::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), m_point_cloud_topics);
-    nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), m_point_cloud_topics);
+    nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), m_point_cloud_radii);
 }
 
 ///
@@ -178,12 +178,22 @@ void World::update_params_from_server(){
         }
     }
 
-    // DEBUG
-    std::cerr << "-----------------------\n";
-
-    for (int i = 0 ; i < m_point_cloud_topics.size() ; i++){
-        std::cerr << i << ")\t" << m_point_cloud_topics[i] << "\n";
+    // Update the topic radii
+    PointCloudHandlerMap::iterator pcIt;
+    int rIdx = 0;
+    for (pcIt = m_pointCloudHandlerMap.begin() ; pcIt != m_pointCloudHandlerMap.end() ; ++pcIt){
+        if (rIdx < topic_radii.size()){
+            pcIt->second->set_radius(topic_radii[rIdx]);
+        }
+        rIdx++;
     }
+
+    // DEBUG
+//    std::cerr << "-----------------------\n";
+
+//    for (int i = 0 ; i < m_point_cloud_topics.size() ; i++){
+//        std::cerr << i << ")\t" << m_point_cloud_topics[i] << "\n";
+//    }
 }
 
 

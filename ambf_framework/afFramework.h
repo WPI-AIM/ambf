@@ -1389,6 +1389,7 @@ private:
 /// \brief The afMultiPointUnit struct
 ///
 struct afMultiPointUnit{
+
     // The parent name for this struct
     std::string m_parentName;
 
