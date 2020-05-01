@@ -4182,12 +4182,12 @@ afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld): afBaseObject(a
 void afPointCloudsHandler::updatePositionFromDynamics(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
 
-    std::map<std::string, std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> >::iterator it;
+    std::map<std::string, afMultiPointUnit>::iterator it;
 
     for (it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
         std::string pc_topic_name = it->first;
-        cMultiPointPtr mpPtr = it->second.first;
-        ambf_comm::PointCloudHandlerPtr pchPtr = it->second.second;
+        cMultiPointPtr mpPtr = it->second.m_mpPtr;
+        ambf_comm::PointCloudHandlerPtr pchPtr = it->second.m_pchPtr;
 
         int mp_size = mpPtr->getNumPoints();
         sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
@@ -4195,29 +4195,29 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
             mpPtr->setPointSize(10);
             int pc_size = pcPtr->points.size();
             int diff = pc_size - mp_size;
-            std::string parent_name = pcPtr->header.frame_id;
+            std::string frame_id = pcPtr->header.frame_id;
 
-            if (m_parentName.compare(parent_name) != 0 ){
+            if (it->second.m_parentName.compare(frame_id) != 0 ){
                 // First remove any existing parent
                 if (mpPtr->getParent() != nullptr){
                     mpPtr->getParent()->removeChild(mpPtr);
                 }
 
-                afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(parent_name);
+                afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(frame_id);
                 if(pBody){
                     pBody->addChild(mpPtr);
                 }
                 else{
                     // Parent not found.
                     std::cerr << "WARNING! FOR POINT CLOUD \""<< pc_topic_name <<
-                                 "\" PARENT BODY \"" << parent_name <<
+                                 "\" PARENT BODY \"" << frame_id <<
                                  "\" NOT FOUND, SETTING WORLD AS PARENT" <<
                                  std::endl;
                     addChild(mpPtr);
                 }
             }
 
-            m_parentName = parent_name;
+            it->second.m_parentName = frame_id;
 
             if (diff >= 0){
                 // PC array has either increased in size or the same size as MP array
@@ -4413,14 +4413,18 @@ void afWorld::afExecuteCommand(double dt){
         m_afWorldCommPtr->update_params_from_server();
         if (m_afWorldCommPtr->m_paramsChanged){
             // Do the stuff
-            std::vector<std::string> new_topics = m_afWorldCommPtr->get_new_topic_names();
+
             std::vector<std::string> def_topics = m_afWorldCommPtr->get_defunct_topic_names();
+            std::vector<std::string> new_topics = m_afWorldCommPtr->get_new_topic_names();
 
             for (int i = 0 ; i < def_topics.size() ; i++){
                 std::string topic_name = def_topics[i];
                 if (m_pointCloudHandlerPtr->m_pcMap.find(topic_name) != m_pointCloudHandlerPtr->m_pcMap.end()){
                     // Cleanup
+                    cMultiPointPtr mpPtr = m_pointCloudHandlerPtr->m_pcMap.find(topic_name)->second.m_mpPtr;
+                    mpPtr->removeFromGraph();
                     m_pointCloudHandlerPtr->m_pcMap.erase(topic_name);
+                    delete mpPtr;
                 }
             }
 
@@ -4429,10 +4433,10 @@ void afWorld::afExecuteCommand(double dt){
                 ambf_comm::PointCloudHandlerPtr pchPtr = m_afWorldCommPtr->get_point_clound_handler(topic_name);
                 if (pchPtr){
                     cMultiPointPtr mpPtr = new cMultiPoint();
-                    std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> mpPair;
-                    mpPair.first = mpPtr;
-                    mpPair.second = pchPtr;
-                    m_pointCloudHandlerPtr->m_pcMap[topic_name] = mpPair;
+                    afMultiPointUnit mpUnit;
+                    mpUnit.m_mpPtr = mpPtr;
+                    mpUnit.m_pchPtr = pchPtr;
+                    m_pointCloudHandlerPtr->m_pcMap[topic_name] = mpUnit;
                     // Add as child, the header in PC message can override the parent later
                     m_pointCloudHandlerPtr->addChild(mpPtr);
                 }

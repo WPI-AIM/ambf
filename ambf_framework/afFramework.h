@@ -1386,6 +1386,21 @@ private:
 
 
 ///
+/// \brief The afMultiPointUnit struct
+///
+struct afMultiPointUnit{
+    // The parent name for this struct
+    std::string m_parentName;
+
+    cMultiPointPtr m_mpPtr;
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::PointCloudHandlerPtr m_pchPtr;
+#endif
+};
+
+
+///
 /// \brief The afPointCloud class
 ///
 class afPointCloudsHandler: public afBaseObject{
@@ -1397,11 +1412,8 @@ public:
 
     virtual void updatePositionFromDynamics();
 
-public:
+    std::map<std::string, afMultiPointUnit> m_pcMap;
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::map<std::string, std::pair<cMultiPointPtr, ambf_comm::PointCloudHandlerPtr> > m_pcMap;
-#endif
 };
 
 
