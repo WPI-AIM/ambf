@@ -515,35 +515,35 @@ int main(int argc, char* argv[])
         temp_lights[i]->resolveParenting();
     }
 
-    ifstream vs_file;
-    ifstream fs_file;
-    vs_file.open("/home/adnan/ambf_shaders/shader.vs");
-    fs_file.open("/home/adnan/ambf_shaders/shader.fs");
-    // create a string stream
-    stringstream light_vtx_shader_file, light_frg_shader_file;
-    // dump the contents of the file into it
-    light_vtx_shader_file << vs_file.rdbuf();
-    light_frg_shader_file << fs_file.rdbuf();
-    // close the file
-    vs_file.close();
-    fs_file.close();
-    // convert the StringStream into a string
-    std::string shaderSource1 = light_vtx_shader_file.str();
-    std::string shaderSource2 = light_frg_shader_file.str();
+//    ifstream vs_file;
+//    ifstream fs_file;
+//    vs_file.open("/home/adnan/ambf_shaders/shader.vs");
+//    fs_file.open("/home/adnan/ambf_shaders/shader.fs");
+//    // create a string stream
+//    stringstream light_vtx_shader_file, light_frg_shader_file;
+//    // dump the contents of the file into it
+//    light_vtx_shader_file << vs_file.rdbuf();
+//    light_frg_shader_file << fs_file.rdbuf();
+//    // close the file
+//    vs_file.close();
+//    fs_file.close();
+//    // convert the StringStream into a string
+//    std::string shaderSource1 = light_vtx_shader_file.str();
+//    std::string shaderSource2 = light_frg_shader_file.str();
 
-    cShaderProgramPtr g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
-    //    g_phongShader->linkProgram();
-    cGenericObject* go;
-    cRenderOptions ro;
-    g_phongShader->use(go, ro);
-    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
+//    cShaderProgramPtr g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
+//    //    g_phongShader->linkProgram();
+//    cGenericObject* go;
+//    cRenderOptions ro;
+//    g_phongShader->use(go, ro);
+//    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
 
-    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
+//    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
 
-    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-    for (int i = 0 ; i < rbVec.size() ; i++){
-        rbVec[i]->setShaderProgram(g_phongShader);
-    }
+//    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+//    for (int i = 0 ; i < rbVec.size() ; i++){
+//        rbVec[i]->setShaderProgram(g_phongShader);
+//    }
 
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
