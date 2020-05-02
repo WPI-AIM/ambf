@@ -785,6 +785,7 @@ public:
     double ie[4] = {0, 0, 0, 0};
     double de[4] = {0, 0, 0, 0};
     double t[4]= {0, 0, 0, 0};
+    double Ie_sum = 0.0;
     size_t queue_length = 4;
     double output;
     double max_impulse;
