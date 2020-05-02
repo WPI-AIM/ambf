@@ -3019,6 +3019,7 @@ double afJointController::computeOutput(double process_val, double set_point, do
     }
     de[n] = (e[n] - e[n-1]) / dt;
     ie[n] = Ie_sum + ((e[n] + e[n-1]) / 2 * dt);
+    Ie_sum = ie[n];
     output = (P * e[n]) + (I * ie[n]) + (D * de[n]);
     return output;
 }
