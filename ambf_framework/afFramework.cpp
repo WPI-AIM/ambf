@@ -4702,6 +4702,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     YAML::Node worldEnvironment = worldNode["environment"];
     YAML::Node worldNamespace = worldNode["namespace"];
     YAML::Node worldMaxIterations = worldNode["max iterations"];
+    YAML::Node worldGravity = worldNode["gravity"];
 
     if (worldNamespace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
@@ -4724,6 +4725,18 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             std::cerr << "INFO! IGNORING AND USING MAX ITERATIONS : " << m_maxIterations << std::endl;
         }
     }
+
+    cVector3d gravityVector(0, 0, -9.81);
+
+    if (worldGravity.IsDefined()){
+        double x, y, z;
+        x = worldGravity["x"].as<double>();
+        y = worldGravity["y"].as<double>();
+        z = worldGravity["z"].as<double>();
+        gravityVector.set(x, y, z);
+    }
+
+    setGravity(gravityVector);
 
     if (worldEnclosureData.IsDefined()){
         m_encl_length = worldEnclosureData["length"].as<double>();

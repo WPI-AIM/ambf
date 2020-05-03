@@ -4,6 +4,7 @@ cameras: [camera1]
 environment: "./checkered_floor.yaml"
 namespace: /ambf/env/
 max iterations: 50
+gravity: {x: 0.0, y: 0.0, z: -9.81}
 
 light1:
   namespace: /ambf/env/lights/
