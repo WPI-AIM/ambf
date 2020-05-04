@@ -5600,6 +5600,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
     if(_is_valid){
         m_camera = new cCamera(a_world);
+        m_camera->setLocalPos(0, 0, 0);
+        cMatrix3d I3;
+        I3.identity();
+        m_camera->setLocalRot(I3);
         addChild(m_camera);
 
         if (cameraParent.IsDefined()){
@@ -6057,6 +6061,10 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
 
     if (_is_valid){
         m_spotLight = new cSpotLight(a_world);
+        m_spotLight->setLocalPos(0, 0, 0);
+        cMatrix3d I3;
+        I3.identity();
+        m_spotLight->setLocalRot(I3);
         addChild(m_spotLight);
 
         if (lightParent.IsDefined()){
@@ -6067,11 +6075,11 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
             a_world->addChild(this);
         }
 
-        m_spotLight->setLocalPos(_location);
-        m_spotLight->setDir(_direction);
+        setLocalPos(_location);
+        setDir(_direction);
 
-        m_initialPos = m_spotLight->getLocalPos();
-        m_initialRot = m_spotLight->getLocalRot();
+        m_initialPos = getLocalPos();
+        m_initialRot = getLocalRot();
 
         m_spotLight->setSpotExponent(_spot_exponent);
         m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
@@ -6105,6 +6113,48 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
     }
 
     return _is_valid;
+}
+
+
+
+///
+/// \brief afLight::setDir COPIED FROM CDirectionalLight.cpp
+/// \param a_direction
+///
+void afLight::setDir(const cVector3d &a_direction){
+    // We arbitrarily point lights along the x axis of the stored
+    // rotation matrix.
+    cVector3d v0, v1, v2, z, y;
+    a_direction.copyto(v0);
+
+    // check vector
+    if (v0.lengthsq() < 0.0001) { return; }
+
+    // normalize direction vector
+    v0.normalize();
+
+    // compute 2 vector perpendicular to a_direction
+    z.set(0.0, 0.0, 1.0);
+    y.set(0.0, 1.0, 0.0);
+    double a0 = cAngle(v0, z);
+    double a1 = cAngle(v0, y);
+
+    if (sin(a0) > sin(a1))
+    {
+        v0.crossr(z, v1);
+        v0.crossr(v1, v2);
+    }
+    else
+    {
+        v0.crossr(y, v1);
+        v0.crossr(v1, v2);
+    }
+
+    v1.normalize();
+    v2.normalize();
+
+    // update rotation matrix
+    m_localRot.setCol(v0,v1,v2);
 }
 
 

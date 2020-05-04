@@ -1368,6 +1368,9 @@ public:
 
     virtual void updatePositionFromDynamics();
 
+    // Set direction of this light
+    void setDir(const cVector3d& a_direction);
+
 protected:
     cSpotLight* m_spotLight;
 
