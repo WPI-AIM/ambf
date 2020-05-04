@@ -571,12 +571,6 @@ protected:
     // cMultiMesh representation of collision mesh
     cMultiMesh m_lowResMesh;
 
-    // Initial location of Rigid Body
-    cVector3d m_initialPos;
-
-    // Initial rotation of Ridig Body
-    cMatrix3d m_initialRot;
-
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 

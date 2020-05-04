@@ -4466,6 +4466,12 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // sanity check
     if (a_interval <= 0) { return; }
 
+    if (m_pausePhx){
+        while (m_pausePhx) {
+            usleep(1000);
+        }
+    }
+
     afExecuteCommand(a_interval);
 
     m_wallClock = a_wallClock;
