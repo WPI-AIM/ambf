@@ -778,6 +778,25 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             g_afWorld->pausePhysics(false);
         }
 
+        // option - Pause Physics
+        else if (a_key == GLFW_KEY_P)
+        {
+            bool pause_phx = g_afWorld->isPhysicsPaused();
+            // Toggle;
+            pause_phx = !pause_phx;
+            g_afWorld->pausePhysics(pause_phx);
+            printf("Pausing Physics: %i\n", pause_phx);
+        }
+
+        // option - Step Physics
+        else if (a_key == GLFW_KEY_SPACE)
+        {
+            if(g_afWorld->isPhysicsPaused()){
+                g_afWorld->stepPhysicsManually(10);
+                printf("Stepping Physics by 10 Step \n");
+            }
+        }
+
     }
     else{
 
@@ -1008,6 +1027,15 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_HOME)
         {
             printf("angular damping:  %f\n", g_inputDevices->increment_D_ac(0.1));
+        }
+
+        // option - step physics
+        else if (a_key == GLFW_KEY_SPACE)
+        {
+            if(g_afWorld->isPhysicsPaused()){
+                g_afWorld->stepPhysicsManually(1);
+                printf("Stepping Physics by 1 Step \n");
+            }
         }
     }
 }
@@ -1426,7 +1454,7 @@ void updatePhysics(){
     // start haptic device
     g_afWorld->g_wallClock.start(true);
 
-    RateSleep rateSleep(g_cmdOpts.phxFrequency);
+    RateSleep phxSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
 
     double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
@@ -1436,7 +1464,6 @@ void updatePhysics(){
     torque_prev.set(0, 0, 0);
     while(g_simulationRunning)
     {
-        if (!g_afWorld->isPhysicsPaused()){
             g_freqCounterHaptics.signal(1);
 
             // Take care of any picked body by mouse
@@ -1602,8 +1629,7 @@ void updatePhysics(){
                 }
             }
             g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
-        }
-            rateSleep.sleep();
+            phxSleep.sleep();
     }
     g_simulationFinished = true;
 }
@@ -1618,7 +1644,7 @@ void updateHapticDevice(void* a_arg){
     g_simulationRunning = true;
     g_simulationFinished = false;
 
-    RateSleep rateSleep(g_cmdOpts.htxFrequency);
+    RateSleep htxSleep(g_cmdOpts.htxFrequency);
 
     // update position and orientation of simulated gripper
     std::string identifyingName = g_inputDevices->m_collateralControlUnits[devIdx].m_name;
@@ -1663,7 +1689,7 @@ void updateHapticDevice(void* a_arg){
     // main haptic simulation loop
     while(g_simulationRunning)
     {
-        if (!g_afWorld->isPhysicsPaused()){
+        if (!g_afWorld->isPhysicsPaused() || g_afWorld->getManualSteps() > 0){
             phyDev->m_freq_ctr.signal(1);
             if (devFreqLabel != NULL){
                 devFreqLabel->setText(identifyingName + " [" + phyDev->m_hInfo.m_modelName + "] " + ": " + cStr(phyDev->m_freq_ctr.getFrequency(), 0) + " Hz");
@@ -1875,7 +1901,7 @@ void updateHapticDevice(void* a_arg){
             }
 
         }
-        rateSleep.sleep();
+        htxSleep.sleep();
     }
     // exit haptics thread
 }

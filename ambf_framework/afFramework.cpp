@@ -4467,8 +4467,11 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     if (a_interval <= 0) { return; }
 
     if (m_pausePhx){
-        while (m_pausePhx) {
-            usleep(1000);
+        if (m_stepPhx > 0){
+            m_stepPhx--;
+        }
+        else{
+            return;
         }
     }
 
