@@ -113,7 +113,12 @@ void World::update_params_from_server(){
 
     std::vector<bool> keep_active_idx;
 
-    m_new_topic_names.clear();
+    if (m_new_topic_names <= m_point_cloud_topics){
+        m_new_topic_names.clear();
+    }
+    else{
+        nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), m_new_topic_names);
+    }
     m_defunct_topic_names.clear();
 
     keep_active_idx.resize(m_point_cloud_topics.size());

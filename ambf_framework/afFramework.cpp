@@ -4172,8 +4172,11 @@ afJoint::~afJoint(){
 }
 
 
+///
+/// \brief afPointCloudsHandler::afPointCloudsHandler
+/// \param a_afWorld
+///
 afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-
 }
 
 
@@ -4529,6 +4532,8 @@ void afWorld::updatePositionFromDynamics()
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_paramsSet == false){
+        // Create a default point cloud to listen to
+        m_afWorldCommPtr->append_point_cloud_topic(m_namespace + m_name + "/" + "point_cloud");
         m_afWorldCommPtr->set_params_on_server();
         m_paramsSet = true;
     }
@@ -4705,6 +4710,8 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         return 0;
     }
 
+    m_name = "World";
+
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
@@ -4718,7 +4725,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     }
 
     afCreateCommInstance(afCommType::WORLD,
-                         "World",
+                         m_name,
                          resolveGlobalNamespace(m_namespace),
                          50,
                          2000,

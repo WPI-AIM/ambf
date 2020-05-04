@@ -87,6 +87,8 @@ public:
 
     std::vector<std::string> get_defunct_topic_names(){return m_defunct_topic_names;}
 
+    void append_point_cloud_topic(std::string name){m_new_topic_names.push_back(name);}
+
 protected:
 
     // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Camera1 = /ambf/env/Camera1 -> Base Prefix
