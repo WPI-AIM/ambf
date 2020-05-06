@@ -20,8 +20,8 @@ def test_ambf_psm():
     c.connect()
     time.sleep(2.0)
     print(c.get_obj_names())
+    b = c.get_obj_handle('baselink')
     time.sleep(1.0)
-    b = c.get_obj_handle('psm/baselink')
 
     # The following are the names of the controllable joints.
     #  'baselink-yawlink', 0

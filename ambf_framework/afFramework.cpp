@@ -2314,6 +2314,10 @@ void afRigidBody::updatePositionFromDynamics()
         // We can set this body to publish it's children joint names in either its AMBF Description file or
         // via it's afCommand using ROS Message
         if (m_publish_joint_names == true || afCommand.publish_joint_names == true){
+            if (m_publish_joint_names == false){
+                m_publish_joint_names = true;
+                afObjectStateSetJointNames();
+            }
             // Since joint names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
@@ -2330,6 +2334,10 @@ void afRigidBody::updatePositionFromDynamics()
         // We can set this body to publish it's children names in either its AMBF Description file or
         // via it's afCommand using ROS Message
         if (m_publish_children_names == true || afCommand.publish_children_names == true){
+            if (m_publish_children_names == false){
+                m_publish_children_names = true;
+                afObjectStateSetChildrenNames();
+            }
             // Since children names aren't going to change that often
             // change the field less so often
             if (m_write_count % 2000 == 0){
