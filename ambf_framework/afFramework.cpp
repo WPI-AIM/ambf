@@ -1982,6 +1982,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     if(bodyPos.IsDefined()){
         m_initialPos = toXYZ<cVector3d>(&bodyPos);
+        // Account for intertial offset transform
+        m_initialPos += toCvec(m_inertialOffsetTransform.getOrigin());
         setLocalPos(m_initialPos);
     }
 
