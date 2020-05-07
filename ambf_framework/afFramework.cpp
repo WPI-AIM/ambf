@@ -2158,13 +2158,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     if (bodyPublishFrequency.IsDefined()){
-        _min_publish_frequency = bodyPublishFrequency["low"].as<int>();
-        _max_publish_frequency = bodyPublishFrequency["high"].as<int>();
-    }
-    else{
-        // Set min to 50 Hz and max to 2000 Hz
-        _min_publish_frequency = 50;
-        _max_publish_frequency = 2000;
+        m_min_publish_frequency = bodyPublishFrequency["low"].as<int>();
+        m_max_publish_frequency = bodyPublishFrequency["high"].as<int>();
     }
 
     // The collision groups are sorted by integer indices. A group is an array of

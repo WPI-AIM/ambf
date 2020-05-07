@@ -451,6 +451,12 @@ public:
     // Parent body name defined in the ADF
     std::string m_parentName;
 
+    // Min publishing frequency
+    int m_min_publish_frequency=50;
+
+    // Max publishing frequency
+    int m_max_publish_frequency=1000;
+
 protected:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
@@ -588,10 +594,6 @@ protected:
 
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
-
-    // Min and Max publishing frequency
-    int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;
 
     // Function of compute body's controllers based on lumped masses
     void computeControllerGains();
