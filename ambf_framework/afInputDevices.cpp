@@ -328,6 +328,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         if (!simDevice->loadMultiBody(_simulatedMBConfig, false)){
             return 0;
         }
+        boost::filesystem::path p(_simulatedMBConfig);
+        m_afWorld->addAFMultiBody(simDevice,
+                                  p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), m_afWorld->getAFMultiBodyMap()));
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (_rootLinkDefined){
