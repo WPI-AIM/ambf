@@ -4510,7 +4510,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 //    }
 
     // integrate simulation during an certain interval
-    m_bulletWorld->stepSimulation(a_interval, m_integrationMaxIterations, m_integrationTimeStep);
+    m_bulletWorld->stepSimulation(a_interval, m_maxIterations, m_integrationTimeStep);
 
     // add time to overall simulation
     m_lastSimulationTime = m_simulationTime;
