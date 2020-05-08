@@ -74,6 +74,99 @@ void Sensor::set_wall_time(double a_sec){
     m_State.header.stamp = ros::Time::now();
 }
 
+void Sensor::set_trigger(bool triggered){
+    if (m_State.triggered.size() == 0){
+        m_State.triggered.resize(1);
+    }
+    m_State.triggered[0] = triggered;
+
+}
+
+void Sensor::set_triggers(std::vector<bool> triggered){
+    if (m_State.triggered.size() != triggered.size()){
+        m_State.triggered.resize(triggered.size());
+    }
+
+    for (int i = 0 ; triggered.size() ; i++){
+        m_State.triggered[i] = triggered[i];
+    }
+}
+
+void Sensor::set_range(double range){
+    if (m_State.range.size() == 0){
+        m_State.range.resize(1);
+    }
+    else{
+        m_State.range[0] = range;
+    }
+}
+
+void Sensor::set_ranges(std::vector<double> range){
+    if (m_State.range.size() != range.size()){
+        m_State.range.resize(range.size());
+    }
+
+    for (int i = 0 ; range.size() ; i++){
+        m_State.range[i] = range[i];
+    }
+}
+
+void Sensor::set_measurement(double measurement){
+    if (m_State.measurement.size() == 0){
+        m_State.measurement.resize(1);
+    }
+    m_State.measurement[0] = measurement;
+}
+
+void Sensor::set_measurements(std::vector<double> measurement){
+    if (m_State.measurement.size() != measurement.size()){
+        m_State.measurement.resize(measurement.size());
+    }
+
+    for (int i = 0 ; measurement.size() ; i++){
+        m_State.measurement[i] = measurement[i];
+    }
+}
+
+void Sensor::set_sensed_object(std::string sensed_object){
+    if (m_State.sensed_objects.size() == 0){
+        m_State.sensed_objects.resize(1);
+    }
+     m_State.sensed_objects[0].data = sensed_object;
+}
+
+void Sensor::set_sensed_objects(std::vector<std::string> sensed_objects){
+    if (m_State.sensed_objects.size() != sensed_objects.size()){
+        m_State.sensed_objects.resize(sensed_objects.size());
+    }
+
+    for (int i = 0 ; sensed_objects.size() ; i++){
+        m_State.sensed_objects[i].data = sensed_objects[i];
+    }
+}
+
+void Sensor::set_sensed_object_map(int sensed_objects_map){
+    if (m_State.sensed_objects_map.size() == 0){
+        m_State.sensed_objects_map.resize(1);
+    }
+    m_State.sensed_objects_map[0] = 0;
+}
+
+void Sensor::set_sensed_objects_map(std::vector<int> sensed_objects_map){
+    if (m_State.sensed_objects_map.size() != sensed_objects_map.size()){
+        m_State.sensed_objects_map.resize(sensed_objects_map.size());
+    }
+
+    for (int i = 0 ; sensed_objects_map.size() ; i++){
+        m_State.sensed_objects_map[i] = sensed_objects_map[i];
+    }
+}
+
+
+void Sensor::set_type(std::string type){
+    m_State.type.data = type;
+}
+
 extern "C"{
 
 Sensor* create_sensor(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5){

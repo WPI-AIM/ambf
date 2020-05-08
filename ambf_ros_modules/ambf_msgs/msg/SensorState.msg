@@ -10,3 +10,5 @@ uint32 count
 bool[] triggered
 float32[] range
 float32[] measurement
+std_msgs/String[] sensed_objects
+uint8[] sensed_objects_map

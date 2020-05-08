@@ -900,10 +900,10 @@ enum afSensorType{
 ///
 /// \brief The afSensor class
 ///
-class afSensor{
+class afSensor: public afBaseObject{
     friend class afRigidBody;
 public:
-    afSensor(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
+    afSensor(afWorldPtr a_afWorld);
 
     // Load sensor from filename
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
@@ -920,25 +920,23 @@ public:
     // Get the body this sensor is a child of
     inline afRigidBodyPtr getParentBody(){return m_parentBody;}
 
-public:
-    // Name of this sensor
-    std::string m_name;
-
-    // The body this sensor is attached to.
+    // Parent Body for this sensor
     afRigidBodyPtr m_parentBody;
-
-    // Location of this sensor w.r.t the parent body.
-    cVector3d m_location;
-
-    // Ptr to afWorld
-    afWorldPtr m_afWorld;
 
     // The type this sensor?
     afSensorType m_sensorType;
 
-public:
     // Toggle visibility of this sensor
     bool m_showSensor = true;
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
+    // Go through all the parents to get the absolute world transform
+    cTransform getWorldTransform(){
+
+    }
 };
 
 
@@ -951,9 +949,6 @@ public:
     // Declare enum to find out later what type of body we sensed
     enum SensedBodyType{
         RIGID_BODY=0, SOFT_BODY=1};
-
-    // Type of sensed body, could be a rigid body or a soft body
-    SensedBodyType m_sensedBodyType;
 
 public:
     // Constructor
@@ -972,13 +967,19 @@ public:
     inline bool isTriggered(){return m_triggered;}
 
     // Get the type of sensed body
-    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;
-                                             }
-    // Return the sensed RigidBody's Ptr
-    inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
+    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;}
 
-    // Get the sensed SoftBody's Ptr
-    inline btSoftBody* getSensedSoftBody(){return m_sensedSoftBody;}
+    // Return the sensed BT RigidBody's Ptr
+    inline btRigidBody* getSensedBTRigidBody(){return m_sensedBTRigidBody;}
+
+    // Get the sensed AF Rigid Body's Ptr
+    inline afRigidBodyPtr getSensedAFRigidBody(){return m_sensedAFRigidBody;}
+
+    // Get the sensed BT SoftBody's Ptr
+    inline btSoftBody* getSensedBTSoftBody(){return m_sensedBTSoftBody;}
+
+    // Get the sensed AF Soft Body's Ptr
+    inline afSoftBodyPtr getSensedAFSoftBody(){return m_sensedAFSoftBody;}
 
     // Get the sensed SoftBody's Face
     inline btSoftBody::Face* getSensedSoftBodyFace(){return m_sensedSoftBodyFace;}
@@ -995,8 +996,6 @@ public:
     // Get the sensed point in world frame
     inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
 
-public:
-
     inline void setRayFromInLocal(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
 
     inline void setRayToInLocal(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
@@ -1009,13 +1008,19 @@ public:
 
     void enableVisualization();
 
-public:
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
 
     // Depth fraction is the penetration normalized depth of the sensor
     double m_depthFraction = 0;
 
     // Normal at Contact Point
     cVector3d m_contactNormal;
+
+    // Type of sensed body, could be a rigid body or a soft body
+    SensedBodyType m_sensedBodyType;
+
 
 protected:
     // Direction rel to parent that this sensor is looking at
@@ -1029,11 +1034,17 @@ protected:
     cVector3d m_rayFromLocal;
     cVector3d m_rayToLocal;
 
-    // The body the this proximity sensor is sensing
-    btRigidBody* m_sensedRigidBody;
+    // The rigid body that this proximity sensor is sensing
+    btRigidBody* m_sensedBTRigidBody;
 
-    // Could also be sensing a softbody
-    btSoftBody* m_sensedSoftBody;
+    // This is the AF Rigid body sensed by this sensor
+    afRigidBodyPtr m_sensedAFRigidBody = 0;
+
+    // The soft body that this proximity sensor is sensing
+    btSoftBody* m_sensedBTSoftBody;
+
+    // This is the AF Soft body sensed by this sensor
+    afSoftBodyPtr m_sensedAFSoftBody = 0;
 
     // The internal index of the face belonging to the sensed soft body
     int m_sensedSoftBodyFaceIdx = -1;
@@ -1470,7 +1481,8 @@ public:
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
     afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
-    afSoftBodyPtr getAFSoftBody(std::string a_name);
+    afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
     afJointPtr getAFJoint(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
     afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);

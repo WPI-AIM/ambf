@@ -3676,6 +3676,31 @@ double afJoint::getPosition(){
 
 
 ///
+/// \brief afSensor::afSensor
+/// \param a_afWorld
+///
+afSensor::afSensor(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+}
+
+
+///
+/// \brief afSensor::afExecuteCommand
+/// \param dt
+///
+void afSensor::afExecuteCommand(double dt){
+
+}
+
+
+///
+/// \brief afSensor::updatePositionFromDynamics
+///
+void afSensor::updatePositionFromDynamics(){
+
+}
+
+
+///
 /// \brief afRayTracerSensor
 /// \param a_afWorld
 ///
@@ -3723,9 +3748,11 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     // Declare all the yaml parameters that we want to look for
     YAML::Node sensorParentName = sensorNode["parent"];
     YAML::Node sensorName = sensorNode["name"];
+    YAML::Node sensorNamespace = sensorNode["namespace"];
     YAML::Node sensorLocation = sensorNode["location"];
     YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
+    YAML::Node sensorPublishFrequency = sensorNode["publish frequency"];
     YAML::Node sensorVisible = sensorNode["visible"];
     YAML::Node sensorVisibleSize = sensorNode["visible size"];
 
@@ -3738,13 +3765,22 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     m_name = sensorName.as<std::string>();
-    m_location = toXYZ<cVector3d>(&sensorLocation);
+    setLocalPos(toXYZ<cVector3d>(&sensorLocation));
     m_direction = toXYZ<cVector3d>(&sensorDirection);
     m_range = sensorRange.as<double>();
+
+    if(sensorNamespace.IsDefined()){
+        m_namespace = sensorNamespace.as<std::string>();
+    }
 
     if (m_range < 0.0){
         std::cerr << "ERROR! SENSOR RANGE CANNOT BE NEGATIVE" << std::endl;
         return 0;
+    }
+
+    if (sensorPublishFrequency.IsDefined()){
+        m_min_publish_frequency = sensorPublishFrequency["low"].as<int>();
+        m_max_publish_frequency = sensorPublishFrequency["high"].as<int>();
     }
 
     if (sensorVisible.IsDefined()){
@@ -3779,7 +3815,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         m_parentBody->addAFSensor(this);
     }
 
-    m_rayFromLocal = m_location;
+    m_rayFromLocal = getLocalPos();
     m_rayToLocal = m_rayFromLocal + (m_direction * m_range);
 
     return true;
@@ -3812,7 +3848,8 @@ void afRayTracerSensor::updateSensor(){
         m_triggered = true;
         if (_rayCallBack.m_collisionObject->getInternalType()
                 == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
-            m_sensedRigidBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+            m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
+            m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_sensedBTRigidBody);
             m_sensedBodyType = RIGID_BODY;
         }
         else if (_rayCallBack.m_collisionObject->getInternalType()
@@ -3843,7 +3880,8 @@ void afRayTracerSensor::updateSensor(){
             if (_sensedSoftBodyFaceIdx > -1){
                 m_sensedSoftBodyFaceIdx = _sensedSoftBodyFaceIdx;
                 m_sensedSoftBodyFace = &_sensedSoftBody->m_faces[_sensedSoftBodyFaceIdx];
-                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBTSoftBody = _sensedSoftBody;
+                m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_sensedBTSoftBody);
                 m_sensedBodyType = SOFT_BODY;
             }
             // Reset the maxDistance for node checking
@@ -3860,7 +3898,7 @@ void afRayTracerSensor::updateSensor(){
             if (_sensedSoftBodyNodeIdx > -1){
                 m_sensedSoftBodyNodeIdx = _sensedSoftBodyNodeIdx;
                 m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
-                m_sensedSoftBody = _sensedSoftBody;
+                m_sensedBTSoftBody = _sensedSoftBody;
                 m_sensedBodyType = SOFT_BODY;
             }
         }
@@ -3914,6 +3952,49 @@ void afRayTracerSensor::enableVisualization(){
     m_hitNormalMesh->setShowEnabled(false);
     m_hitNormalMesh->setUseDisplayList(true);
     m_hitNormalMesh->markForUpdate(false);
+}
+
+
+///
+/// \brief afRayTracerSensor::afExecuteCommand
+/// \param dt
+///
+void afRayTracerSensor::afExecuteCommand(double dt){
+
+}
+
+
+///
+/// \brief afRayTracerSensor::updatePositionFromDynamics
+///
+void afRayTracerSensor::updatePositionFromDynamics(){
+#if C_ENABLE_AMBF_COMM_SUPPORT
+    m_afSensorCommPtr->set_count(1);
+    m_afSensorCommPtr->set_name(m_name);
+    m_afSensorCommPtr->set_parent_name(m_parentName);
+    m_afSensorCommPtr->set_range(m_range);
+    cVector3d pos = getLocalPos();
+    cMatrix3d rot = getLocalRot();
+    cQuaternion quat;
+    quat.fromRotMat(rot);
+    m_afSensorCommPtr->cur_position(pos.x(), pos.y(), pos.z());
+    m_afSensorCommPtr->cur_orientation(quat.x, quat.y, quat.z, quat.w);
+    if (m_triggered){
+        if (m_sensedAFRigidBody){
+            m_afSensorCommPtr->set_sensed_object(m_sensedAFRigidBody->m_name);
+        }
+        if (m_sensedAFSoftBody){
+            m_afSensorCommPtr->set_sensed_object(m_sensedAFSoftBody->m_name);
+        }
+        m_afSensorCommPtr->set_sensed_object_map(0);
+        m_afSensorCommPtr->set_trigger(true);
+    }
+    else{
+        m_afSensorCommPtr->set_sensed_object("");
+        m_afSensorCommPtr->set_trigger(false);
+    }
+    m_afSensorCommPtr->set_measurement(m_depthFraction);
+#endif
 }
 
 
@@ -4040,11 +4121,11 @@ void afResistanceSensor::updateSensor(){
             btVector3 N_a = toBTvec(m_direction);
             btVector3 N_aINw = T_aINw.getBasis() * N_a;
 
-            btTransform T_bINw = getSensedRigidBody()->getWorldTransform();
+            btTransform T_bINw = getSensedBTRigidBody()->getWorldTransform();
             btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
             btVector3 P_cINb = T_wINb * P_cINw;
-            btVector3 vel_bINw = getSensedRigidBody()->getLinearVelocity();
-            btVector3 omega_bINw = getSensedRigidBody()->getAngularVelocity();
+            btVector3 vel_bINw = getSensedBTRigidBody()->getLinearVelocity();
+            btVector3 omega_bINw = getSensedBTRigidBody()->getAngularVelocity();
             btVector3 N_bINw = toBTvec(m_contactNormal);
             btVector3 N_b = T_wINb.getBasis() * N_bINw;
 
@@ -4143,15 +4224,15 @@ void afResistanceSensor::updateSensor(){
             btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
 
             btVector3 Fb = T_wINb.getBasis() * Fw;
-            btVector3 Tau_b = P_cINb.cross(Fb * getSensedRigidBody()->getLinearFactor());
+            btVector3 Tau_b = P_cINb.cross(Fb * getSensedBTRigidBody()->getLinearFactor());
             btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
 
             // Nows lets add the action and reaction friction forces to both the bodies
             getParentBody()->m_bulletRigidBody->applyCentralForce(-Fw);
             getParentBody()->m_bulletRigidBody->applyTorque(Tau_aINw);
 
-            getSensedRigidBody()->applyCentralForce(Fw);
-            getSensedRigidBody()->applyTorque(Tau_bINw);
+            getSensedBTRigidBody()->applyCentralForce(Fw);
+            getSensedBTRigidBody()->applyTorque(Tau_bINw);
         }
 
         else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){
@@ -6451,7 +6532,17 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
             // Finally load the sensor from ambf config data
             if (sensorPtr){
                 if (sensorPtr->loadSensor(&sensor_node, sensor_name, this, remap_str)){
+                    std::cerr << "LOADING SENSOR NUMBER " << i << "\n";
                     m_afWorld->addAFSensor(sensorPtr, m_namespace + sensor_name + remap_str);
+//                    if (enable_comm){
+                        std::cerr << "LOADING SENSOR COMM \n";
+                        sensorPtr->afCreateCommInstance(afCommType::SENSOR,
+                                                        sensorPtr->m_name + remap_str,
+                                                        m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
+                                                        sensorPtr->getMinPublishFrequency(),
+                                                        sensorPtr->getMaxPublishFrequency());
+                        sensorPtr->m_afSensorCommPtr->set_type(_sensor_type);
+//                    }
                 }
             }
         }
@@ -6692,6 +6783,59 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
         afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
         for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
             std::cerr << rbIt->first << std::endl;
+        }
+    }
+    return NULL;
+}
+
+
+
+///
+/// \brief afWorld::getAFSoftBody
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afSoftBodyPtr afWorld::getAFSoftBody(std::string a_name, bool suppress_warning){
+    if (m_afSoftBodyMap.find(a_name) != m_afSoftBodyMap.end()){
+        return m_afSoftBodyMap[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: \"" << a_name << "\"\n";
+
+            std::cerr <<"Existing Bodies in Map: " << m_afSoftBodyMap.size() << std::endl;
+            afSoftBodyMap::iterator sbIt = m_afSoftBodyMap.begin();
+            for (; sbIt != m_afSoftBodyMap.end() ; ++sbIt){
+                std::cerr << sbIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+///
+/// \brief afWorld::getAFSoftBody
+/// \param a_body
+/// \param suppress_warning
+/// \return
+///
+afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
+    afSoftBodyMap::iterator afIt;
+    for (afIt = m_afSoftBodyMap.begin() ; afIt != m_afSoftBodyMap.end() ; ++ afIt){
+        afSoftBodyPtr afBody = afIt->second;
+        if (a_body == afBody->m_bulletSoftBody){
+            return afBody;
+        }
+    }
+    if (!suppress_warning){
+        std::cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
+
+        std::cerr <<"Existing Bodies in Map: " << m_afSoftBodyMap.size() << std::endl;
+        afSoftBodyMap::iterator sbIt = m_afSoftBodyMap.begin();
+        for (; sbIt != m_afSoftBodyMap.end() ; ++sbIt){
+            std::cerr << sbIt->first << std::endl;
         }
     }
     return NULL;

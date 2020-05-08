@@ -56,19 +56,35 @@ public:
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
-    void cur_force(double fx, double fy, double fz);
-    void cur_torque(double nx, double ny, double nz);
     void set_wall_time(double a_sec);
+    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(float a_data);
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(std::vector<float> &a_data);
-    void set_children_names(std::vector<std::string> children_names);
-    void set_joint_names(std::vector<std::string> joint_names);
-    void set_joint_positions(std::vector<float> joint_positions);
+    inline void set_count(int count){m_State.count = count;}
+
+    void set_trigger(bool triggered);
+    void set_triggers(std::vector<bool> triggered);
+
+    void set_range(double range);
+    void set_ranges(std::vector<double> ranges);
+
+    void set_measurement(double measurements);
+    void set_measurements(std::vector<double> measurements);
+
+    void set_sensed_object(std::string sensed_object);
+    void set_sensed_objects(std::vector<std::string> sensed_objects);
+
+    void set_type(std::string type);
+
+    // We may have multiple individual sensor elements belonging to this
+    // sensor comm. And groups of sensors may be in contact with different
+    // sets of objects. This method is thus used to specify the mapping
+    // of each sensor element w.r.t. to the sensed_objects list of string.
+    void set_sensed_objects_map(std::vector<int> sensed_objects_map);
+
+    void set_sensed_object_map(int sensed_objects_map);
+
 };
 }
 
