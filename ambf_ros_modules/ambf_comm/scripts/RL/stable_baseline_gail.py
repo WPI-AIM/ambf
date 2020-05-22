@@ -26,9 +26,10 @@ def main(env):
                  normalize_observations=True, tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5))
 
     model.pretrain(dataset, n_epochs=1000)
+    model.save("./gail_robot_env")
+
     # model.learn(total_timesteps=4000000, log_interval=100,
     #             callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
-    model.save("./gail_robot_env")
 
     # As an option, you can train the RL agent
     # model.learn(int(1e5))
@@ -38,7 +39,7 @@ def load_model(eval_env):
 
     # WARNING: you must pass an env
     # or wrap your environment with HERGoalEnvWrapper to use the predict method
-    model = HER.load('./gail_robot_env', env=eval_env)
+    model = DDPG.load('./gail_robot_env', env=eval_env)
     reward_sum = 0.0
 
     # obs = eval_env.reset()
@@ -48,7 +49,7 @@ def load_model(eval_env):
             action, _ = model.predict(obs)
             obs, reward, done, _ = eval_env.step(action)
             reward_sum += reward
-            print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
+            print(obs[0:3], eval_env.goal, reward)
             if done:
                 print("----------------It reached terminal state -------------------")
                 print(reward_sum)

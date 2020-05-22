@@ -16,7 +16,8 @@ def main(env):
 
     model = DDPG(MlpPolicy, env, gamma=0.95, verbose=1, nb_train_steps=300, nb_rollout_steps=150,
                  param_noise=param_noise, batch_size=128, action_noise=action_noise, random_exploration=0.05,
-                 normalize_observations=True, tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5))
+                 normalize_observations=True, tensorboard_log="./ddpg_dvrk_tensorboard/", observation_range=(-1.5, 1.5),
+                 critic_l2_reg=0.01)
 
     model.learn(total_timesteps=4000000, log_interval=100,
                 callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
@@ -40,19 +41,27 @@ def load_model(eval_env):
 
     # WARNING: you must pass an env
     # or wrap your environment with HERGoalEnvWrapper to use the predict method
-    model = DDPG.load('./ddpg_robot_env', env=eval_env)
+    # model = DDPG.load('./ddpg_robot_env', env=eval_env)
+    model = DDPG.load('./rl_model_900000_steps', env=eval_env)
+    count = 0
+    step_num_arr = []
     # obs = eval_env.reset()
     for _ in range(20):
+        number_steps = 0
         obs = eval_env.reset()
-        for _ in range(1000):
+        for _ in range(50):
             action, _ = model.predict(obs)
             obs, reward, done, _ = eval_env.step(action)
-            print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
+            number_steps += 1
+            # print(obs[0:3], eval_env.goal, reward)
             if done:
+                count += 1
+                step_num_arr.append(number_steps)
                 print("----------------It reached terminal state -------------------")
                 time.sleep(5)
                 break
-
+    print("It reached goal position successfully ", count, " Average step count ", step_num_arr,
+          np.average(np.array(step_num_arr)))
 
 if __name__ == '__main__':
 

@@ -20,11 +20,12 @@ def main(env):
         'critic_lr': 1e-3,
         'action_noise': action_noise,
         'nb_train_steps': 300,
-        'nb_rollout_steps': 150,
+        'nb_rollout_steps': 100,
         'gamma': 0.95,
         'observation_range': (-1.5, 1.5),
         'random_exploration': 0.05,
-        'normalize_observations': True
+        'normalize_observations': True,
+        'critic_l2_reg': 0.01
     }
 
     # NOTE:
@@ -55,18 +56,28 @@ def load_model(eval_env):
 
     # WARNING: you must pass an env
     # or wrap your environment with HERGoalEnvWrapper to use the predict method
-    model = HER.load('./her_robot_env', env=eval_env)
+    model = HER.load('./rl_model_400000_steps', env=eval_env)
+    # model = HER.load('./her_robot_env', env=eval_env)
+    count = 0
+    step_num_arr = []
     # obs = eval_env.reset()
     for _ in range(20):
+        number_steps = 0
         obs = eval_env.reset()
-        for _ in range(1000):
+        for _ in range(400):
             action, _ = model.predict(obs)
             obs, reward, done, _ = eval_env.step(action)
-            print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
+            number_steps += 1
+            # print(obs['achieved_goal'][0:3], obs['desired_goal'][0:3], reward)
             if done:
+                step_num_arr.append(number_steps)
+                count += 1
+
                 print("----------------It reached terminal state -------------------")
-                time.sleep(5)
+                # time.sleep(5)
                 break
+    print("It reached goal position successfully ", count, " Average step count ", step_num_arr,
+          np.average(np.array(step_num_arr)))
 
 
 if __name__ == '__main__':
@@ -86,6 +97,5 @@ if __name__ == '__main__':
     eval_env.reset()
     load_model(eval_env=eval_env)
     eval_env.ambf_client.clean_up()
-
 
 

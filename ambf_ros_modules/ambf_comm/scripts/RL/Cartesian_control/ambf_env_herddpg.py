@@ -37,9 +37,9 @@
 #     POSSIBILITY OF SUCH DAMAGE.
 
 #     \author    <http://www.aimlab.wpi.edu>
-#     \author    <amunawar@wpi.edu>
-#     \author    Adnan Munawar
-#     \version   0.1
+#     \author    <amunawar@wpi.edu>, <vvarier@wpi.edu>
+#     \author    Adnan Munawar and Vignesh Manoj Varier
+#     \version   0.2
 # */
 # //==============================================================================
 from ambf_client import Client
@@ -101,28 +101,25 @@ class AmbfEnv(gym.GoalEnv):
         self.n_actions = 3
         self.action_lims_low = np.array([-0.05, -0.05, -0.05])
         self.action_lims_high = np.array([0.05, 0.05, 0.05])
-        self.action_space = spaces.Box(low=-1, high=1, shape=(self.n_actions,), dtype="float32")
+        self.action_space = spaces.Box(low=-0.05, high=0.05, shape=(self.n_actions,), dtype="float32")
         self.observation_space = spaces.Dict(dict(
             desired_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
             achieved_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
             observation=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['observation'].shape, dtype='float32'),
         ))
-        # self.observation_space = spaces.Box(-100, 100, shape=(13,))
-        # self.states_lims_low = np.array([-1.605, -0.93556, -0.002444, -3.0456, -3.0414, -3.0481, -3.0498])
-        # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
-        # self.observation_space = spaces.Box(self.states_lims_low, self.states_lims_high, shape=(13,),dtype=np.float32)
+
         self.joints_to_control = np.array(['baselink-yawlink', 'yawlink-pitchbacklink',
                                            'pitchendlink-maininsertionlink', 'maininsertionlink-toolrolllink',
                                            'toolrolllink-toolpitchlink', 'toolpitchlink-toolgripper1link',
                                            'toolpitchlink-toolgripper2link'])
-        #
-        # self.goal_state = [0.0, 0.0, -0.15, -1.57, 0, -3.138]
-        self.target_range = 0.05
+
+        self.goal_position_range = 0.05
         # self.goal = self._sample_goal(self.initial_pos)
-        self.goal = np.around(self.np_random.uniform(-self.target_range, self.target_range, size=6), decimals=4)
+        self.goal = np.array([0.0, 0.0, -0.1, 0.0, 0.0, 0.0])
         self.prev_sim_step = 0
-        self.error_threshold = 0.01
+        self.pos_error_threshold = 0.01
         self.count_for_print = 0
+        self.goal_error_margin = 0.0075
 
     def skip_sim_steps(self, num):
         self.n_skip_steps = num
@@ -153,7 +150,9 @@ class AmbfEnv(gym.GoalEnv):
         # Sets the initial position of PSM
         self.set_initial_pos_func()
         # Updates the observation to the initialized position
-        observation = self.read_joint_pos_func()
+        initial_joint_pos, initial_state_vel = self.get_joint_pos_vel_func()
+        end_effector_frame = compute_FK(initial_joint_pos)
+        observation, _, _, _ = self._update_observation(end_effector_frame, initial_joint_pos, initial_state_vel)
         # Samples a goal
         self.goal = self._sample_goal(observation)
         return observation
@@ -167,15 +166,14 @@ class AmbfEnv(gym.GoalEnv):
                 self.obj_handle.set_joint_pos(jt_name, 0)
         time.sleep(0.5)
 
-    def read_joint_pos_func(self):
-        joint_pos = np.zeros(7)
-        initial_state_vel = np.zeros(7)
+    def get_joint_pos_vel_func(self):
+        joint_position = np.zeros(7)
+        joint_velocity = np.zeros(7)
         for joint_idx, jt_name in enumerate(self.joints_to_control):
-            joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-            initial_state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
-        end_effector_frame = compute_FK(joint_pos)
-        updated_state, _, _, _ = self._update_observation(end_effector_frame, joint_pos, initial_state_vel)
-        return updated_state
+            joint_position[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+            joint_velocity[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
+
+        return joint_position, joint_velocity
 
     def step(self, action):
         assert len(action) == 3
@@ -185,52 +183,32 @@ class AmbfEnv(gym.GoalEnv):
         current_joint_pos = np.zeros(7)
         # new_state_joint_pos = np.zeros(7)
         state_vel = np.zeros(7)
-        # Reading current joint positions of PSM as current state
-        # for joint_idx, jt_name in enumerate(self.joints_to_control):
-        #     current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-        # print("type of actions ", type(action))
         # Scaling the action from (-1, 1) to (-0.1, 0.1)
-        action = [0.01 * x for x in action]
+        # action = [0.01 * x for x in action]
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
         # Take the action from current state to reach the new state
-        for joint_idx, jt_name in enumerate(self.joints_to_control):
-            current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-            state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
+        # for joint_idx, jt_name in enumerate(self.joints_to_control):
+        #     current_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+        #     state_vel[joint_idx] = self.obj_handle.get_joint_vel(jt_name)
+        current_joint_pos, state_vel = self.get_joint_pos_vel_func()
         current_end_effector_frame = compute_FK(current_joint_pos)
         # Since end effector frame is a numpy matrix, need to convert to an array
         new_state_joint_pos = np.add(np.asarray(current_end_effector_frame[0:3, 3]).reshape(-1), action)
         # Ensure the new state is within valid joint positions, if invalid then stay at the joint limit position
         desired_cartesian_pos = self.limit_cartesian_pos(new_state_joint_pos)
+        # For creating the new state S' frame (currently only position value is changing through action
         desired_end_effector_frame = current_end_effector_frame
-        # print(desired_end_effector_frame)
-        # print(desired_end_effector_frame[0:3, 3])
-        # print(desired_end_effector_frame[0, 3], desired_end_effector_frame[1, 3], desired_end_effector_frame[2, 3])
         for i in range(3):
             desired_end_effector_frame[i, 3] = desired_cartesian_pos[i]
         computed_joint_pos = compute_IK(convert_mat_to_frame(desired_end_effector_frame))
+        # Ensure the computed joint positions are within the limit of user set joint positions
         desired_joint_pos = self.limit_joint_pos(computed_joint_pos)
 
-        # Counter to avoid getting stuck in while loop because of very small errors in positions
-        count_for_joint_pos = 0
         # Ensures that PSM joints reach the desired joint positions
-        while True:
-            reached_joint_pos = np.zeros(7)
-            for joint_idx, jt_name in enumerate(self.joints_to_control):
-                self.obj_handle.set_joint_pos(jt_name, desired_joint_pos[joint_idx])
-                reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
-
-            error_in_pos = np.around(np.subtract(desired_joint_pos, reached_joint_pos), decimals=3)
-            error_in_pos_joint2 = np.around(np.subtract(desired_joint_pos[2], reached_joint_pos[2]), decimals=4)
-            # print("error ", error_in_pos)
-            count_for_joint_pos += 1
-            # if np.all(np.abs(error_in_pos) <= self.error_threshold):
-            if (np.all(np.abs(error_in_pos) <= self.error_threshold) and
-                np.abs(error_in_pos_joint2) <= 0.5*self.error_threshold) \
-                    or count_for_joint_pos > 75:
-                break
-
+        self.set_commanded_joint_pos(desired_joint_pos)
         # Update state, reward, done flag and world values in the code
-        updated_state, rewards, done, info = self._update_observation(desired_end_effector_frame, desired_joint_pos, state_vel)
+        updated_state, rewards, done, info = self._update_observation(desired_end_effector_frame,
+                                                                      desired_joint_pos, state_vel)
         self.world_handle.update()
         # fk_tip = compute_FK(desired_joint_pos)
         # xyz_cartesian_pos = fk_tip[0:3, 3].reshape((1, 3))
@@ -245,13 +223,32 @@ class AmbfEnv(gym.GoalEnv):
 
         return updated_state, rewards, done, info
 
+    def set_commanded_joint_pos(self, commanded_joint_pos):
+        # Counter to avoid getting stuck in while loop because of very small errors in positions
+        count_for_joint_pos = 0
+        while True:
+            reached_joint_pos = np.zeros(7)
+            for joint_idx, jt_name in enumerate(self.joints_to_control):
+                self.obj_handle.set_joint_pos(jt_name, commanded_joint_pos[joint_idx])
+                reached_joint_pos[joint_idx] = self.obj_handle.get_joint_pos(jt_name)
+
+            error_in_pos = np.around(np.subtract(commanded_joint_pos, reached_joint_pos), decimals=3)
+            error_in_pos_joint2 = np.around(np.subtract(commanded_joint_pos[2], reached_joint_pos[2]), decimals=4)
+            # print("error ", error_in_pos)
+            count_for_joint_pos += 1
+            # if np.all(np.abs(error_in_pos) <= self.error_threshold):
+            if (np.all(np.abs(error_in_pos) <= self.pos_error_threshold) and
+                np.abs(error_in_pos_joint2) <= 0.5*self.pos_error_threshold) \
+                    or count_for_joint_pos > 75:
+                break
+
     def limit_cartesian_pos(self, cart_pos):
         # State limit values: Z-> -0.04 || X, Y -> +-0.1
         # print("joint pos ", joint_pos)
         # Currently only controlling X, Y, Z positions
         limit_cartesian_pos_values = np.zeros(3)
-        cartesian_pos_lower_limit = np.array([-0.1, -0.08, -0.2])
-        cartesian_pos_upper_limit = np.array([0.09, 0.08, -0.08])
+        cartesian_pos_lower_limit = np.array([-0.04, -0.03, -0.2])
+        cartesian_pos_upper_limit = np.array([0.03, 0.04, -0.091])
         for axis in range(3):
             limit_cartesian_pos_values[axis] = np.clip(cart_pos[axis], cartesian_pos_lower_limit[axis],
                                                        cartesian_pos_upper_limit[axis])
@@ -262,16 +259,13 @@ class AmbfEnv(gym.GoalEnv):
         # self.states_lims_high = np.array([1.5994, 0.94249, 0.24001, 3.0485, 3.0528, 3.0376, 3.0399])
         # Note: Joint 5 and 6, joint pos = 0, 0 is closed jaw and 0.5, 0.5 is open
         limit_joint_values = np.zeros(7)
-        joint_lower_limit = np.array([-0.5, -0.4, 0.1, -1.5, -1.5, -1.5, -1.5])
-        joint_upper_limit = np.array([0.5, 0.4, 0.24, 1.5, 1.5, 1.5, 1.5])
+        joint_lower_limit = np.array([-0.2, -0.2, 0.1, -1.5, -1.5, -1.5, -1.5])
+        joint_upper_limit = np.array([0.2, 0.2, 0.24, 1.5, 1.5, 1.5, 1.5])
         for joint_idx in range(len(joint_pos)):
             limit_joint_values[joint_idx] = np.clip(joint_pos[joint_idx], joint_lower_limit[joint_idx],
                                                     joint_upper_limit[joint_idx])
 
         return limit_joint_values
-
-    # def check_boundary_condition(self, joint_pos)
-    #     if joint_pos == -1.45
 
     def render(self, mode):
         print(' I am {} Ironman'.format(mode))
@@ -298,7 +292,8 @@ class AmbfEnv(gym.GoalEnv):
         achieved_goal = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy()), axis=0)).reshape(-1)
         # Verify function to compute velocity (currently using Nathaniel's implementation)
         # state_vel = np.random.uniform(0.0, 0.75, (1, 7))
-        obs = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy(), joint_state.reshape((7, 1))), axis=0)).reshape(-1)
+        obs = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy(),
+                                         joint_state.reshape((7, 1))), axis=0)).reshape(-1)
         # Combine the current state positions and velocity into a single array as observation
         observation = np.concatenate((obs, state_vel), axis=None)
         # Update the observation dictionary
@@ -324,7 +319,7 @@ class AmbfEnv(gym.GoalEnv):
         # Continuous reward
         # reward = round(1 - float(abs(cur_dist)/0.3)*0.5, 5)
         # Sparse reward
-        if abs(cur_dist) < 0.01:
+        if abs(cur_dist) < self.goal_error_margin:
             reward = 1
             # done = True
             # self.reset()
@@ -339,36 +334,40 @@ class AmbfEnv(gym.GoalEnv):
         # Samples new goal positions and ensures its within the workspace of PSM
         # observation = self.read_joint_pos_func()
         rand_val_pos = np.around(np.add(observation['achieved_goal'][0:3],
-                                        self.np_random.uniform(-self.target_range, self.target_range, size=3)),
+                                        self.np_random.uniform(-self.goal_position_range,
+                                                               self.goal_position_range,
+                                                               size=3)),
                                  decimals=4)
+        rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.04, 0.03), decimals=4)
+        rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.03, 0.04), decimals=4)
+        rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.20, -0.091), decimals=4)
         # Cartesian limits [-0.1388084, 0.1318971] [-0.1318971, 0.1388084] [-0.1935, -0.04766373]
         # for joint limits (-0.8, 0.8), (-0.8, 0.8), (0.1, 0.24)
-        # rand_val_pos = self.np_random.uniform(-0.1935, 0.1388, size=3)
-        # rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.1388, 0.1319), decimals=4)
-        # rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1319, 0.1388), decimals=4)
-        # rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.1935, -0.0477), decimals=4)
+        '''
+        rand_val_pos = self.np_random.uniform(-0.1935, 0.1388, size=3)
+        rand_val_pos[0] = np.around(np.clip(rand_val_pos[0], -0.1388, 0.1319), decimals=4)
+        rand_val_pos[1] = np.around(np.clip(rand_val_pos[1], -0.1319, 0.1388), decimals=4)
+        rand_val_pos[2] = np.around(np.clip(rand_val_pos[2], -0.1935, -0.0477), decimals=4)
+        rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
+        rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
+        rand_val_angle[2] = np.clip(rand_val_angle[2], -0.15, 0.15)
+        '''
         rand_val_angle = self.np_random.uniform(-1.5, 1.5, size=3)
-        # rand_val_angle[0] = np.clip(rand_val_angle[0], -0.15, 0.15)
-        # rand_val_angle[1] = np.clip(rand_val_angle[1], -0.15, 0.15)
-        # rand_val_angle[2] = np.clip(rand_val_angle[2], -0.15, 0.15)
         goal = np.concatenate((rand_val_pos, rand_val_angle), axis=None)
         return goal.copy()
 
     def _check_if_done(self):
-        if abs(self.obs.dist) < 0.01:
+        if abs(self.obs.dist) < self.goal_error_margin:
             return True
         else:
             return False
 
     def _update_info(self):
-        info = {
-            # 'is_success': self._is_success(observation['achieved_goal'], observation['desired_goal']),
-            'is_success': self._is_success(),
-        }
+        info = {'is_success': self._is_success()}
         return info
 
     def _is_success(self):
-        if abs(self.obs.dist) < 0.01:
+        if abs(self.obs.dist) < self.goal_error_margin:
             return True
         else:
             return False

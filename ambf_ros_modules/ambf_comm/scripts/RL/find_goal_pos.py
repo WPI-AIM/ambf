@@ -38,6 +38,7 @@ try:
 
         desired_pos = [0.0, 0., 0.2, 0, 0, 0., 0.]
         # for joint_idx, jt_name in enumerate(joints_to_control):
+        psm_handle.set_joint_pos(joints_to_control[0], desired_pos[0])
         psm_handle.set_joint_pos(joints_to_control[2], desired_pos[2])
         # tip (-0.17, 0.17) (-0.16, 0.13)  (-0.1,-0.03)
         # for joint_idx, jt_name in enumerate(joints_to_control):

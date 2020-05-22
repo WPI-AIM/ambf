@@ -1,17 +1,23 @@
 from ambf_client import Client
 import numpy as np
 import time
+import pandas as pd
 from psmFK import compute_FK
 from psmIK import *
 
 
 if __name__ == "__main__":
 
-    # file = "/home/vignesh/Thesis_Suture_data/trial2/suture_data_trial2/2020-02-25_20:02:45.832953.bag"
-    # topic = "/dvrk/PSM2/position_cartesian_current"
-    # data = getData(file, topic)
-    # print(data)
-    data = np.load('rosbag_data.npy')
+    file_dir = "/home/vignesh/ambf/ambf_ros_modules/ambf_comm/scripts/RL/data/"
+    file_dir_csv = "/home/vignesh/Thesis_Suture_data/trial2/suture_data_trial2/"
+    learnt_traj_dir = "/home/vignesh/PycharmProjects/motion_planning_max_entropy_irl/RL_3d_gridsize_11/random_points_output/"
+    csv_name = "832953.csv"
+    learnt_csv = "learnt_traj.csv"
+    trajectory_data_values = pd.read_csv(file_dir_csv + csv_name).to_numpy()
+    learnt_trajectory_data_values = pd.read_csv(learnt_traj_dir + learnt_csv).to_numpy()
+    # data = learnt_trajectory_data_values
+    data = trajectory_data_values
+    # data = np.load(file_dir + 'rosbag_data.npy')
     print(data.shape)
     print(data[0])
     _client = Client()
@@ -38,13 +44,13 @@ if __name__ == "__main__":
     desired_end_effector_frame = current_end_effector_frame
     for i in range(0, data.shape[0]):
         for j in range(3):
-            print("data ij ", data[i, j])
+            # print("data ij ", data[i, j])
             desired_end_effector_frame[j, 3] = round(data[i, j], 3)
         desired_joint_pos = np.around(compute_IK(convert_mat_to_frame(desired_end_effector_frame)), 3)
         desired_joint_pos = np.append(desired_joint_pos, 0)
         # print(desired_joint_pos)
         count = 0
-
+        time.sleep(0.25)
         while True:
 
             for joint_idx, jt_name in enumerate(joints_to_control):
