@@ -939,90 +939,12 @@ public:
     }
 };
 
+// Declare enum to find out later what type of body we sensed
+enum afSensedBodyType{
+    RIGID_BODY=0, SOFT_BODY=1};
 
-class afRayTracerSensor: public afSensor{
+struct afRayTracerResult{
 
-    friend class afProximitySensor;
-    friend class afResistanceSensor;
-
-public:
-    // Declare enum to find out later what type of body we sensed
-    enum SensedBodyType{
-        RIGID_BODY=0, SOFT_BODY=1};
-
-public:
-    // Constructor
-    afRayTracerSensor(afWorldPtr a_afWorld);
-
-    // Load the sensor from ambf format
-    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Load the sensor from ambf format
-    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Update sensor is called on each update of positions of RBs and SBs
-    virtual void updateSensor();
-
-    // Check if the sensor sensed something. Depending on what type of sensor this is
-    inline bool isTriggered(){return m_triggered;}
-
-    // Get the type of sensed body
-    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;}
-
-    // Return the sensed BT RigidBody's Ptr
-    inline btRigidBody* getSensedBTRigidBody(){return m_sensedBTRigidBody;}
-
-    // Get the sensed AF Rigid Body's Ptr
-    inline afRigidBodyPtr getSensedAFRigidBody(){return m_sensedAFRigidBody;}
-
-    // Get the sensed BT SoftBody's Ptr
-    inline btSoftBody* getSensedBTSoftBody(){return m_sensedBTSoftBody;}
-
-    // Get the sensed AF Soft Body's Ptr
-    inline afSoftBodyPtr getSensedAFSoftBody(){return m_sensedAFSoftBody;}
-
-    // Get the sensed SoftBody's Face
-    inline btSoftBody::Face* getSensedSoftBodyFace(){return m_sensedSoftBodyFace;}
-
-    // Get the sensed SofyBody's Closest node the sensed point Node if any
-    inline btSoftBody::Node* getSensedSoftBodyNode(){return m_sensedSoftBodyNode;}
-
-    // Get the sensed SofyBody's Face's index if any
-    inline int getSensedSoftBodyFaceIdx(){return m_sensedSoftBodyFaceIdx;}
-
-    // Get the sensed SofyBody's Node's Idx
-    inline int getSensedSoftBodyNodeIdx(){return m_sensedSoftBodyNodeIdx;}
-
-    // Get the sensed point in world frame
-    inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
-
-    inline void setRayFromInLocal(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
-
-    inline void setRayToInLocal(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
-
-    inline void setDirection(const cVector3d& a_direction){m_direction = a_direction;}
-
-    inline void setRange(const double& a_range){m_range = a_range;}
-
-    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
-
-    void enableVisualization();
-
-    virtual void afExecuteCommand(double dt);
-
-    virtual void updatePositionFromDynamics();
-
-    // Depth fraction is the penetration normalized depth of the sensor
-    double m_depthFraction = 0;
-
-    // Normal at Contact Point
-    cVector3d m_contactNormal;
-
-    // Type of sensed body, could be a rigid body or a soft body
-    SensedBodyType m_sensedBodyType;
-
-
-protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
 
@@ -1073,6 +995,92 @@ protected:
     // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
 
+    // Depth fraction is the penetration normalized depth of the sensor
+    double m_depthFraction = 0;
+
+    // Normal at Contact Point
+    cVector3d m_contactNormal;
+
+    // Type of sensed body, could be a rigid body or a soft body
+    afSensedBodyType m_sensedBodyType;
+};
+
+
+class afRayTracerSensor: public afSensor{
+
+    friend class afProximitySensor;
+    friend class afResistanceSensor;
+
+public:
+    // Constructor
+    afRayTracerSensor(afWorldPtr a_afWorld);
+
+    // Load the sensor from ambf format
+    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load the sensor from ambf format
+    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Update sensor is called on each update of positions of RBs and SBs
+    virtual void updateSensor();
+
+    // Check if the sensor sensed something. Depending on what type of sensor this is
+    inline bool isTriggered(int idx=0){return m_sensedResults[idx].m_triggered;}
+
+    // Get the type of sensed body
+    inline afSensedBodyType getSensedBodyType(int idx=0){return m_sensedResults[idx].m_sensedBodyType;}
+
+    // Return the sensed BT RigidBody's Ptr
+    inline btRigidBody* getSensedBTRigidBody(int idx=0){return m_sensedResults[idx].m_sensedBTRigidBody;}
+
+    // Get the sensed AF Rigid Body's Ptr
+    inline afRigidBodyPtr getSensedAFRigidBody(int idx=0){return m_sensedResults[idx].m_sensedAFRigidBody;}
+
+    // Get the sensed BT SoftBody's Ptr
+    inline btSoftBody* getSensedBTSoftBody(int idx=0){return m_sensedResults[idx].m_sensedBTSoftBody;}
+
+    // Get the sensed AF Soft Body's Ptr
+    inline afSoftBodyPtr getSensedAFSoftBody(int idx=0){return m_sensedResults[idx].m_sensedAFSoftBody;}
+
+    // Get the sensed SoftBody's Face
+    inline btSoftBody::Face* getSensedSoftBodyFace(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyFace;}
+
+    // Get the sensed SofyBody's Closest node the sensed point Node if any
+    inline btSoftBody::Node* getSensedSoftBodyNode(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyNode;}
+
+    // Get the sensed SofyBody's Face's index if any
+    inline int getSensedSoftBodyFaceIdx(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyFaceIdx;}
+
+    // Get the sensed SofyBody's Node's Idx
+    inline int getSensedSoftBodyNodeIdx(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyNodeIdx;}
+
+    // Get the sensed point in world frame
+    inline cVector3d getSensedPoint(int idx=0){return m_sensedResults[idx].m_sensedLocationWorld;}
+
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom, int idx=0){m_sensedResults[idx].m_rayFromLocal = a_rayFrom;}
+
+    inline void setRayToInLocal(const cVector3d& a_rayTo, int idx=0){m_sensedResults[idx].m_rayToLocal = a_rayTo;}
+
+    inline void setDirection(const cVector3d& a_direction, int idx=0){m_sensedResults[idx].m_direction = a_direction;}
+
+    inline void setRange(const double& a_range, int idx=0){m_sensedResults[idx].m_range = a_range;}
+
+    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
+
+    void enableVisualization();
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
+    double m_range;
+
+protected:
+    // The number of ray tracing elements belonging to this sensor
+    int m_count;
+
+    std::vector<afRayTracerResult> m_sensedResults;
+
     // Size of spheres for the sensor visualization
     double m_visibilitySphereRadius;
 };
@@ -1085,6 +1093,27 @@ class afProximitySensor: public afRayTracerSensor{
 public:
     // Constructor
     afProximitySensor(afWorldPtr a_afWorld);
+};
+
+
+struct afResistanceContacts{
+    // Contact point in Body A frame
+    cVector3d m_bodyAContactPointLocal;
+
+    // Contact point in body B frame
+    cVector3d m_bodyBContactPointLocal;
+
+    // Error tangential to the contact (or sensor) normal
+    cVector3d m_tangentialError;
+
+    // Pre value of tangential contact error
+    cVector3d m_tangentialErrorLast;
+
+    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
+    bool m_contactPointsValid;
+
+    // First time the sensor made contact with another object. Computed everytime a new contact happens
+    bool m_firstTrigger = true;
 };
 
 //-----------------------------------------------------------------------------
@@ -1130,30 +1159,14 @@ private:
     // Friction due to slide, or kinetic friction
     double m_dynamicFriction;
 
-    // Contact point in Body A frame
-    cVector3d m_bodyAContactPointLocal;
-
-    // Contact point in body B frame
-    cVector3d m_bodyBContactPointLocal;
-
-    // Error tangential to the contact (or sensor) normal
-    cVector3d m_tangentialError;
-
-    // Pre value of tangential contact error
-    cVector3d m_tangentialErrorLast;
-
-    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
-    bool m_contactPointsValid;
-
     // Tolerance to slide of the contact points between two bodies
     // tangential to the direction of the sensor direction
     double m_contactArea;
 
-    // First time the sensor made contact with another object. Computed everytime a new contact happens
-    bool m_firstTrigger = true;
-
     // Use Variable Coeffecients based on the Depth Fraction
     bool m_useVariableCoeff = false;
+
+    std::vector<afResistanceContacts> m_resistanceContacts;
 };
 
 ///

@@ -513,35 +513,35 @@ int main(int argc, char* argv[])
         temp_lights[i]->resolveParenting();
     }
 
-//    ifstream vs_file;
-//    ifstream fs_file;
-//    vs_file.open("/home/adnan/ambf_shaders/shader.vs");
-//    fs_file.open("/home/adnan/ambf_shaders/shader.fs");
-//    // create a string stream
-//    stringstream light_vtx_shader_file, light_frg_shader_file;
-//    // dump the contents of the file into it
-//    light_vtx_shader_file << vs_file.rdbuf();
-//    light_frg_shader_file << fs_file.rdbuf();
-//    // close the file
-//    vs_file.close();
-//    fs_file.close();
-//    // convert the StringStream into a string
-//    std::string shaderSource1 = light_vtx_shader_file.str();
-//    std::string shaderSource2 = light_frg_shader_file.str();
+    ifstream vs;
+    ifstream fs;
+    vs.open("/home/adnan/ambf_shaders/shader.vs");
+    fs.open("/home/adnan/ambf_shaders/shader.fs");
+    // create a string stream
+    stringstream light_vtx_shader_file, light_frg_shader_file;
+    // dump the contents of the file into it
+    light_vtx_shader_file << vs.rdbuf();
+    light_frg_shader_file << fs.rdbuf();
+    // close the file
+    vs.close();
+    fs.close();
+    // convert the StringStream into a string
+    std::string shaderSource1 = light_vtx_shader_file.str();
+    std::string shaderSource2 = light_frg_shader_file.str();
 
-//    cShaderProgramPtr g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
-//    //    g_phongShader->linkProgram();
-//    cGenericObject* go;
-//    cRenderOptions ro;
-//    g_phongShader->use(go, ro);
-//    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
+    cShaderProgramPtr g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
+    //    g_phongShader->linkProgram();
+    cGenericObject* go;
+    cRenderOptions ro;
+    g_phongShader->use(go, ro);
+    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
 
-//    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
+    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
 
-//    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-//    for (int i = 0 ; i < rbVec.size() ; i++){
-//        rbVec[i]->setShaderProgram(g_phongShader);
-//    }
+    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+    for (int i = 0 ; i < rbVec.size() ; i++){
+        rbVec[i]->setShaderProgram(g_phongShader);
+    }
 
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
@@ -1056,13 +1056,13 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 //                (*g_cameraIt)->showTargetPos(true);
                 if (a_action){
                     if (g_mousePickingEnabled){
-                        g_pickBody = true;
-                        cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
+                        cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
                         double x_pos, y_pos;
                         glfwGetCursorPos(a_window, &x_pos, &y_pos);
                         cVector3d rayTo = getRayTo(x_pos, y_pos, *g_cameraIt);
                         g_pickFrom = rayFrom;
                         g_pickTo = rayTo;
+                        g_pickBody = true;
                     }
                 }
                 else{
@@ -1103,7 +1103,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
             if( devCam->mouse_l_clicked ){
                 if(g_mousePickingEnabled){
-                    cVector3d rayFrom = (*g_cameraIt)->getLocalPos();
+                    cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
                     cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
                     g_pickFrom = rayFrom;
                     g_pickTo = rayTo;
@@ -1235,8 +1235,12 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     btVector3 camPos, camTarget;
 
-    camPos = toBTvec(a_cameraPtr->getLocalPos() );
-    camTarget = toBTvec(a_cameraPtr->getTargetPos() );
+    camPos = toBTvec(a_cameraPtr->getGlobalPos());
+    cVector3d targetPosGlobal = a_cameraPtr->getTargetPos();
+    if (a_cameraPtr->getParent()){
+        targetPosGlobal = a_cameraPtr->getParent()->getLocalTransform() * targetPosGlobal;
+    }
+    camTarget = toBTvec(targetPosGlobal);
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);
@@ -1502,10 +1506,10 @@ void updatePhysics(){
                         if (sensorPtr->m_sensorType == afSensorType::proximity){
                             afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                             if (proximitySensorPtr->isTriggered() && simDev->m_gripper_angle < 0.5){
-                                if (proximitySensorPtr->m_sensedBodyType == afProximitySensor::RIGID_BODY){
+                                if (proximitySensorPtr->getSensedBodyType() == afSensedBodyType::RIGID_BODY){
                                     if (!simDev->m_rigidGrippingConstraints[sIdx]){
                                         btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
-                                        btRigidBody* bodyBPtr = proximitySensorPtr->getSensedRigidBody();
+                                        btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBTRigidBody();
                                         if (!rootLink->isChild(bodyBPtr)){
                                             cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint();
                                             btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
@@ -1518,7 +1522,7 @@ void updatePhysics(){
                                     }
                                 }
 
-                                if (proximitySensorPtr->m_sensedBodyType == afProximitySensor::SOFT_BODY){
+                                if (proximitySensorPtr->getSensedBodyType() == afSensedBodyType::SOFT_BODY){
                                     if (!simDev->m_softGrippingConstraints[sIdx]){
                                         // Here we implemented the softBody grad logic. We want to move the
                                         // soft body as we move the simulated end effector
@@ -1526,7 +1530,7 @@ void updatePhysics(){
                                         // Get the parent body that owns this sensor
                                         btRigidBody* _rBody = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
                                         // Get the sensed softbody
-                                        btSoftBody* _sBody = proximitySensorPtr->getSensedSoftBody();
+                                        btSoftBody* _sBody = proximitySensorPtr->getSensedBTSoftBody();
 
                                         simDev->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
                                         simDev->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;

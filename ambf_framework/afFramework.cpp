@@ -3755,6 +3755,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorPublishFrequency = sensorNode["publish frequency"];
     YAML::Node sensorVisible = sensorNode["visible"];
     YAML::Node sensorVisibleSize = sensorNode["visible size"];
+    YAML::Node sensorArray = sensorNode["array"];
+    YAML::Node sensorMesh = sensorNode["mesh"];
 
     std::string _parent_name;
     if (sensorParentName.IsDefined()){
@@ -3766,11 +3768,14 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 
     m_name = sensorName.as<std::string>();
     setLocalPos(toXYZ<cVector3d>(&sensorLocation));
-    m_direction = toXYZ<cVector3d>(&sensorDirection);
-    m_range = sensorRange.as<double>();
 
     if(sensorNamespace.IsDefined()){
         m_namespace = sensorNamespace.as<std::string>();
+    }
+
+    m_range = 0.0;
+    if(sensorRange.IsDefined()){
+        m_range = sensorRange.as<double>();
     }
 
     if (m_range < 0.0){
@@ -3796,10 +3801,6 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         m_visibilitySphereRadius = sensorVisibleSize.as<double>();
     }
 
-    if (m_showSensor){
-        enableVisualization();
-    }
-
     // First search in the local space.
     m_parentBody = mB->getAFRigidBodyLocal(_parent_name);
 
@@ -3815,10 +3816,82 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         m_parentBody->addAFSensor(this);
     }
 
-    m_rayFromLocal = getLocalPos();
-    m_rayToLocal = m_rayFromLocal + (m_direction * m_range);
+    bool success;
 
-    return true;
+    if (sensorArray.IsDefined()){
+        m_count = sensorArray.size();
+        m_sensedResults.resize(m_count);
+        for (int i = 0 ; i < m_count ; i++){
+            YAML::Node offsetNode = sensorArray[i]["offset"];
+            YAML::Node directionNode = sensorArray[i]["direction"];
+            cVector3d offset = toXYZ<cVector3d>(&offsetNode);
+            cVector3d dir = toXYZ<cVector3d>(&directionNode);
+            m_sensedResults[i].m_range = m_range;
+            m_sensedResults[i].m_rayFromLocal = getLocalTransform() * offset;
+            m_sensedResults[i].m_direction = getLocalRot() * dir;
+            m_sensedResults[i].m_direction.normalize();
+            m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
+
+        }
+        success = true;
+    }
+
+    else if (sensorMesh.IsDefined()){
+        std::string mesh_name = sensorMesh.as<std::string>();
+        mesh_name = mB->getHighResMeshesPath() + mesh_name;
+        cMultiMesh* multiMesh = new cBulletMultiMesh(m_afWorld);
+        if (multiMesh->loadFromFile(mesh_name)){
+            cMesh* sourceMesh = (*multiMesh->m_meshes)[0];
+            if (sourceMesh){
+                m_count = sourceMesh->m_triangles->getNumElements();
+                m_sensedResults.resize(m_count);
+                for (int i = 0 ; i < m_count ; i++ ){
+
+                    m_sensedResults[i].m_range = m_range;
+
+                    int vIdx0 = sourceMesh->m_triangles->getVertexIndex0(i);
+                    int vIdx1 = sourceMesh->m_triangles->getVertexIndex1(i);
+                    int vIdx2 = sourceMesh->m_triangles->getVertexIndex2(i);
+
+                    cVector3d v0 = sourceMesh->m_vertices->getLocalPos(vIdx0);
+                    cVector3d v1 = sourceMesh->m_vertices->getLocalPos(vIdx1);
+                    cVector3d v2 = sourceMesh->m_vertices->getLocalPos(vIdx2);
+
+                    cVector3d e1 = v1 - v0;
+                    cVector3d e2 = v2 - v1;
+
+                    cVector3d centroid = ( v0 + v1 + v2 ) / 3;
+
+                    cVector3d dir = cCross(e1, e2);
+
+                    dir.normalize();
+                    m_sensedResults[i].m_rayFromLocal = getLocalTransform() * centroid ;
+                    m_sensedResults[i].m_direction = getLocalRot() * dir;
+                    m_sensedResults[i].m_direction.normalize();
+                    m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
+                }
+            }
+            success = true;
+        }
+        else{
+            std::cerr << "ERROR! BODY \"" << m_name <<
+                         "\'s\" RESISTIVE MESH " <<
+                         mesh_name << " NOT FOUND. IGNORING\n";
+            success = false;
+        }
+    }
+
+    else{
+        m_count = 0;
+        success = false;
+    }
+
+    if (m_showSensor){
+        enableVisualization();
+    }
+
+
+    return success;
 }
 
 
@@ -3826,92 +3899,94 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 /// \brief afSensor::processSensor
 ///
 void afRayTracerSensor::updateSensor(){
-    btVector3 _rayFromWorld, _rayToWorld;
-    // Transform of World in Body
+
     cTransform T_bInw = m_parentBody->getLocalTransform();
-    _rayFromWorld = toBTvec(T_bInw *  m_rayFromLocal);
-    _rayToWorld = toBTvec(T_bInw *  m_rayToLocal);
+    for (int i = 0 ; i < m_count ; i++){
+        btVector3 rayFromWorld, rayToWorld;
+        rayFromWorld = toBTvec(T_bInw *  m_sensedResults[i].m_rayFromLocal);
+        rayToWorld = toBTvec(T_bInw *  m_sensedResults[i].m_rayToLocal);
 
-    // Check for global flag for debug visibility of this sensor
-    if (m_showSensor){
-        m_fromSphereMesh->setLocalPos(toCvec(_rayFromWorld) );
-        m_toSphereMesh->setLocalPos(toCvec(_rayToWorld) );
-    }
-
-    btCollisionWorld::ClosestRayResultCallback _rayCallBack(_rayFromWorld, _rayToWorld);
-    m_afWorld->m_bulletWorld->rayTest(_rayFromWorld, _rayToWorld, _rayCallBack);
-    if (_rayCallBack.hasHit()){
+        // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
-            m_hitSphereMesh->setLocalPos(toCvec(_rayCallBack.m_hitPointWorld));
-            m_hitSphereMesh->setShowEnabled(true);
+            m_sensedResults[i].m_fromSphereMesh->setLocalPos(toCvec(rayFromWorld) );
+            m_sensedResults[i].m_toSphereMesh->setLocalPos(toCvec(rayToWorld) );
         }
-        m_triggered = true;
-        if (_rayCallBack.m_collisionObject->getInternalType()
-                == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
-            m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(_rayCallBack.m_collisionObject);
-            m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_sensedBTRigidBody);
-            m_sensedBodyType = RIGID_BODY;
-        }
-        else if (_rayCallBack.m_collisionObject->getInternalType()
-                 == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
-            btSoftBody* _sensedSoftBody = (btSoftBody*)btSoftBody::upcast(_rayCallBack.m_collisionObject);
 
-            // Now get the node which is closest to the hit point;
-            btVector3 _hitPoint = _rayCallBack.m_hitPointWorld;
-            int _sensedSoftBodyNodeIdx = -1;
-            int _sensedSoftBodyFaceIdx = -1;
+        btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
+        m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
+        if (rayCallBack.hasHit()){
+            if (m_showSensor){
+                m_sensedResults[i].m_hitSphereMesh->setLocalPos(toCvec(rayCallBack.m_hitPointWorld));
+                m_sensedResults[i].m_hitSphereMesh->setShowEnabled(true);
+            }
+            m_sensedResults[i].m_triggered = true;
+            if (rayCallBack.m_collisionObject->getInternalType()
+                    == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
+                m_sensedResults[i].m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(rayCallBack.m_collisionObject);
+                m_sensedResults[i].m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_sensedResults[i].m_sensedBTRigidBody);
+                m_sensedResults[i].m_sensedBodyType = RIGID_BODY;
+            }
+            else if (rayCallBack.m_collisionObject->getInternalType()
+                     == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
+                btSoftBody* sensedSoftBody = (btSoftBody*)btSoftBody::upcast(rayCallBack.m_collisionObject);
 
-            double _maxDistance = 0.1;
-            for (int faceIdx = 0 ; faceIdx < _sensedSoftBody->m_faces.size() ; faceIdx++){
-                btVector3 _faceCenter(0, 0, 0);
-                // Iterate over all the three nodes of the face to find the this centroid to the hit
-                // point in world to store this face as the closest face
-                for (int nIdx = 0 ; nIdx < 3 ; nIdx++){
-                    _faceCenter += _sensedSoftBody->m_faces[faceIdx].m_n[nIdx]->m_x;
-                }
-                _faceCenter /= 3;
-                if ( (_hitPoint - _faceCenter).length() < _maxDistance ){
-                    _sensedSoftBodyFaceIdx = faceIdx;
-                    _maxDistance = (_hitPoint - _faceCenter).length();
-                }
+                // Now get the node which is closest to the hit point;
+                btVector3 hitPoint = rayCallBack.m_hitPointWorld;
+                int sensedSoftBodyNodeIdx = -1;
+                int sensedSoftBodyFaceIdx = -1;
 
-            }
-            // If sensedBodyFaceIdx is not -1, we sensed some face. Lets capture it
-            if (_sensedSoftBodyFaceIdx > -1){
-                m_sensedSoftBodyFaceIdx = _sensedSoftBodyFaceIdx;
-                m_sensedSoftBodyFace = &_sensedSoftBody->m_faces[_sensedSoftBodyFaceIdx];
-                m_sensedBTSoftBody = _sensedSoftBody;
-                m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_sensedBTSoftBody);
-                m_sensedBodyType = SOFT_BODY;
-            }
-            // Reset the maxDistance for node checking
-            _maxDistance = 0.1;
-            // Iterate over all the softbody nodes to figure out which node is closest to the
-            // hit point in world
-            for (int nodeIdx = 0 ; nodeIdx < _sensedSoftBody->m_nodes.size() ; nodeIdx++){
-                if ( (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
-                    _sensedSoftBodyNodeIdx = nodeIdx;
-                    _maxDistance = (_hitPoint - _sensedSoftBody->m_nodes[nodeIdx].m_x).length();
+                double maxDistance = 0.1;
+                for (int faceIdx = 0 ; faceIdx < sensedSoftBody->m_faces.size() ; faceIdx++){
+                    btVector3 faceCenter(0, 0, 0);
+                    // Iterate over all the three nodes of the face to find the this centroid to the hit
+                    // point in world to store this face as the closest face
+                    for (int nIdx = 0 ; nIdx < 3 ; nIdx++){
+                        faceCenter += sensedSoftBody->m_faces[faceIdx].m_n[nIdx]->m_x;
+                    }
+                    faceCenter /= 3;
+                    if ( (hitPoint - faceCenter).length() < maxDistance ){
+                        sensedSoftBodyFaceIdx = faceIdx;
+                        maxDistance = (hitPoint - faceCenter).length();
+                    }
+
+                }
+                // If sensedBodyFaceIdx is not -1, we sensed some face. Lets capture it
+                if (sensedSoftBodyFaceIdx > -1){
+                    m_sensedResults[i].m_sensedSoftBodyFaceIdx = sensedSoftBodyFaceIdx;
+                    m_sensedResults[i].m_sensedSoftBodyFace = &sensedSoftBody->m_faces[sensedSoftBodyFaceIdx];
+                    m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
+                    m_sensedResults[i].m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_sensedResults[i].m_sensedBTSoftBody);
+                    m_sensedResults[i].m_sensedBodyType = SOFT_BODY;
+                }
+                // Reset the maxDistance for node checking
+                maxDistance = 0.1;
+                // Iterate over all the softbody nodes to figure out which node is closest to the
+                // hit point in world
+                for (int nodeIdx = 0 ; nodeIdx < sensedSoftBody->m_nodes.size() ; nodeIdx++){
+                    if ( (hitPoint - sensedSoftBody->m_nodes[nodeIdx].m_x).length() < maxDistance ){
+                        sensedSoftBodyNodeIdx = nodeIdx;
+                        maxDistance = (hitPoint - sensedSoftBody->m_nodes[nodeIdx].m_x).length();
+                    }
+                }
+                // If sensedBodyNodeIdx is not -1, we sensed some node. Lets capture it
+                if (sensedSoftBodyNodeIdx > -1){
+                    m_sensedResults[i].m_sensedSoftBodyNodeIdx = sensedSoftBodyNodeIdx;
+                    m_sensedResults[i].m_sensedSoftBodyNode = &sensedSoftBody->m_nodes[sensedSoftBodyNodeIdx];
+                    m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
+                    m_sensedResults[i].m_sensedBodyType = SOFT_BODY;
                 }
             }
-            // If sensedBodyNodeIdx is not -1, we sensed some node. Lets capture it
-            if (_sensedSoftBodyNodeIdx > -1){
-                m_sensedSoftBodyNodeIdx = _sensedSoftBodyNodeIdx;
-                m_sensedSoftBodyNode = &_sensedSoftBody->m_nodes[_sensedSoftBodyNodeIdx];
-                m_sensedBTSoftBody = _sensedSoftBody;
-                m_sensedBodyType = SOFT_BODY;
+            m_sensedResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
+            m_sensedResults[i].m_contactNormal = toCvec(rayCallBack.m_hitNormalWorld);
+            m_sensedResults[i].m_sensedLocationWorld = toCvec(rayCallBack.m_hitPointWorld);
+        }
+        else{
+            if(m_showSensor){
+                m_sensedResults[i].m_hitSphereMesh->setShowEnabled(false);
             }
+            m_sensedResults[i].m_triggered = false;
+            m_sensedResults[i].m_depthFraction = 0;
         }
-        m_depthFraction = (1.0 - _rayCallBack.m_closestHitFraction);
-        m_contactNormal = toCvec(_rayCallBack.m_hitNormalWorld);
-        m_sensedLocationWorld = toCvec(_rayCallBack.m_hitPointWorld);
-    }
-    else{
-        if(m_showSensor){
-            m_hitSphereMesh->setShowEnabled(false);
-        }
-        m_triggered = false;
-        m_depthFraction = 0;
     }
 }
 
@@ -3919,39 +3994,55 @@ void afRayTracerSensor::updateSensor(){
 /// \brief afRayTracerSensor::visualize
 ///
 void afRayTracerSensor::enableVisualization(){
-    m_hitSphereMesh = new cMesh();
-    m_fromSphereMesh = new cMesh();
-    m_toSphereMesh = new cMesh();
-    cCreateSphere(m_hitSphereMesh, m_visibilitySphereRadius);
-    cCreateSphere(m_fromSphereMesh, m_visibilitySphereRadius);
-    cCreateSphere(m_toSphereMesh, m_visibilitySphereRadius);
-    m_afWorld->addChild(m_hitSphereMesh);
-    m_afWorld->addChild(m_fromSphereMesh);
-    m_afWorld->addChild(m_toSphereMesh);
-    m_hitSphereMesh->m_material->setPinkHot();
-    m_fromSphereMesh->m_material->setRed();
-    m_toSphereMesh->m_material->setGreen();
-    m_hitSphereMesh->setShowEnabled(false);
+    for (int i = 0 ; i < m_count ; i++){
+        if (m_sensedResults[i].m_hitSphereMesh == nullptr){
+            cMesh* mesh = m_sensedResults[i].m_hitSphereMesh;
+            mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setPinkHot();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+        }
 
-    m_fromSphereMesh->setUseDisplayList(true);
-    m_toSphereMesh->setUseDisplayList(true);
-    m_hitSphereMesh->setUseDisplayList(true);
+        if (m_sensedResults[i].m_fromSphereMesh == nullptr){
+            cMesh* mesh = m_sensedResults[i].m_fromSphereMesh;
+            mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setRed();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+        }
 
-    m_fromSphereMesh->markForUpdate(false);
-    m_toSphereMesh->markForUpdate(false);
-    m_hitSphereMesh->markForUpdate(false);
+        if (m_sensedResults[i].m_toSphereMesh == nullptr){
+            cMesh* mesh = m_sensedResults[i].m_toSphereMesh;
+            mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setGreen();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+        }
 
-    m_hitNormalMesh = new cMesh();
-    cCreateArrow(m_hitNormalMesh, m_visibilitySphereRadius*10,
-                 m_visibilitySphereRadius*0.5,
-                 m_visibilitySphereRadius*1,
-                 m_visibilitySphereRadius*0.8,
-                 false);
-    m_afWorld->addChild(m_hitNormalMesh);
-    m_hitNormalMesh->m_material->setGreenForest();
-    m_hitNormalMesh->setShowEnabled(false);
-    m_hitNormalMesh->setUseDisplayList(true);
-    m_hitNormalMesh->markForUpdate(false);
+        if (m_sensedResults[i].m_hitNormalMesh == nullptr){
+            cMesh* mesh = m_sensedResults[i].m_hitNormalMesh;
+            mesh = new cMesh();
+            cCreateArrow(mesh, m_visibilitySphereRadius*10,
+                         m_visibilitySphereRadius*0.5,
+                         m_visibilitySphereRadius*1,
+                         m_visibilitySphereRadius*0.8,
+                         false);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setGreenForest();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+        }
+    }
 }
 
 
@@ -3979,21 +4070,37 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     quat.fromRotMat(rot);
     m_afSensorCommPtr->cur_position(pos.x(), pos.y(), pos.z());
     m_afSensorCommPtr->cur_orientation(quat.x, quat.y, quat.z, quat.w);
-    if (m_triggered){
-        if (m_sensedAFRigidBody){
-            m_afSensorCommPtr->set_sensed_object(m_sensedAFRigidBody->m_name);
+
+    std::vector<bool> triggers;
+    triggers.resize(m_count);
+
+    std::vector<std::string> sensed_obj_names;
+    sensed_obj_names.resize(m_count);
+
+    std::vector<double> measurements;
+    measurements.resize(m_count);
+
+    for (int i = 0 ; i < m_count ; i++){
+        triggers[i] = m_sensedResults[i].m_triggered;
+        measurements[i] = m_sensedResults[i].m_depthFraction;
+        if (m_sensedResults[i].m_triggered){
+            if (m_sensedResults[i].m_sensedAFRigidBody){
+                sensed_obj_names[i] = m_sensedResults[i].m_sensedAFRigidBody->m_name;
+            }
+            if (m_sensedResults[i].m_sensedAFSoftBody){
+                sensed_obj_names[i] = m_sensedResults[i].m_sensedAFSoftBody->m_name;
+            }
         }
-        if (m_sensedAFSoftBody){
-            m_afSensorCommPtr->set_sensed_object(m_sensedAFSoftBody->m_name);
+        else{
+            sensed_obj_names[i] = "";
         }
-        m_afSensorCommPtr->set_sensed_object_map(0);
-        m_afSensorCommPtr->set_trigger(true);
     }
-    else{
-        m_afSensorCommPtr->set_sensed_object("");
-        m_afSensorCommPtr->set_trigger(false);
-    }
-    m_afSensorCommPtr->set_measurement(m_depthFraction);
+
+    m_afSensorCommPtr->set_range(m_range);
+    m_afSensorCommPtr->set_triggers(triggers);
+    m_afSensorCommPtr->set_measurements(measurements);
+    m_afSensorCommPtr->set_sensed_objects(sensed_obj_names);
+
 #endif
 }
 
@@ -4018,13 +4125,6 @@ afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_
     m_staticContactFriction = 0;
     m_dynamicFriction = 0;
 
-    m_bodyAContactPointLocal.set(0,0,0);
-    m_bodyBContactPointLocal.set(0,0,0);
-
-    m_tangentialError.set(0,0,0);
-    m_tangentialErrorLast.set(0,0,0);
-
-    m_contactPointsValid = false;
     m_contactArea = 0.1;
     m_staticContactDamping = 0.1;
 
@@ -4081,6 +4181,19 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_na
         if (sensorContactDamping.IsDefined()){
             m_contactNormalDamping = sensorContactDamping.as<double>();
         }
+
+        m_resistanceContacts.resize(m_count);
+
+        for (int i = 0 ; i < m_count ; i++){
+            m_resistanceContacts[i].m_bodyAContactPointLocal.set(0,0,0);
+            m_resistanceContacts[i].m_bodyBContactPointLocal.set(0,0,0);
+
+            m_resistanceContacts[i].m_tangentialError.set(0,0,0);
+            m_resistanceContacts[i].m_tangentialErrorLast.set(0,0,0);
+
+            m_resistanceContacts[i].m_contactPointsValid = false;
+
+        }
     }
     return result;
 }
@@ -4093,158 +4206,161 @@ void afResistanceSensor::updateSensor(){
     // Let's update the RayTracer Sensor First
     afRayTracerSensor::updateSensor();
 
-    // Find the rigid or softbody that this sensor made a contact with
-    if (isTriggered()){
-        if (m_showSensor){
-            m_hitNormalMesh->setLocalPos(getSensedPoint());
-            m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(cVector3d(0,0,1), m_contactNormal));
-            m_hitNormalMesh->setShowEnabled(true);
-        }
+    for (int i = 0 ; i < m_count ; i++){
 
-        btVector3 F_s_w(0,0,0); // Due to "stick" friction
-        btVector3 F_d_w(0,0,0); // Due to "sliding" friction
-        btVector3 F_n_w(0,0,0); // Force normal to contact point.
-
-        if (getSensedBodyType() == SensedBodyType::RIGID_BODY){
-
-            // Get the fraction of contact point penetration from the range of the sensor
-            // Subscript (a) represents parent body, which is the parent of this sensor
-            // Subscript (b) represents the sensed body, which is in contact with the resistive sensor
-            // Subscript (c) represents contact point
-            // Subscript (w) represents world
-            btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
-            btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
-            btVector3 P_cINw = toBTvec(getSensedPoint());
-            btVector3 P_cINa = T_wINa * P_cINw;
-            btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
-            btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
-            btVector3 N_a = toBTvec(m_direction);
-            btVector3 N_aINw = T_aINw.getBasis() * N_a;
-
-            btTransform T_bINw = getSensedBTRigidBody()->getWorldTransform();
-            btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
-            btVector3 P_cINb = T_wINb * P_cINw;
-            btVector3 vel_bINw = getSensedBTRigidBody()->getLinearVelocity();
-            btVector3 omega_bINw = getSensedBTRigidBody()->getAngularVelocity();
-            btVector3 N_bINw = toBTvec(m_contactNormal);
-            btVector3 N_b = T_wINb.getBasis() * N_bINw;
-
-            double depthFractionLast = m_depthFraction;
-
-            if (m_depthFraction < 0 || m_depthFraction > 1){
-                std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_depthFraction <<
-                             ". It should be between [0-1]" << std::endl;
-                std::cerr << "Ray Start: "<< m_rayFromLocal <<"\nRay End: " << m_rayToLocal <<
-                             "\nSensed Point: " << toCvec(P_cINa) << std::endl;
-                std::cerr << "----------\n";
-                m_depthFraction = 0;
+        if (isTriggered()){
+            if (m_showSensor){
+                m_sensedResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
+                m_sensedResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
+                                                                cVector3d>(cVector3d(0,0,1), m_sensedResults[i].m_contactNormal));
+                m_sensedResults[i].m_hitNormalMesh->setShowEnabled(true);
             }
 
-            // First calculate the normal contact force
-            btVector3 F_n_a = ((m_contactNormalStiffness * m_depthFraction)
-                               + m_contactNormalDamping * (m_depthFraction - depthFractionLast)) * (N_a);
-            F_n_w = T_aINw.getBasis() * F_n_a;
+            btVector3 F_s_w(0,0,0); // Due to "stick" friction
+            btVector3 F_d_w(0,0,0); // Due to "sliding" friction
+            btVector3 F_n_w(0,0,0); // Force normal to contact point.
 
-            double coeffScale = 1;
-            if (m_useVariableCoeff){
-                coeffScale = F_n_w.length();
-            }
+            if (getSensedBodyType(i) == afSensedBodyType::RIGID_BODY){
 
-            if(m_contactPointsValid){
-                btVector3 P_aINw = T_aINw * toBTvec(m_bodyAContactPointLocal);
-                btVector3 P_bINw = T_bINw * toBTvec(m_bodyBContactPointLocal);
-                btVector3 error;
-                error = P_aINw - P_bINw;
-                btVector3 orthogonalError = N_aINw.cross(error);
-                btVector3 errorDir = orthogonalError.cross(N_aINw);
-                if (errorDir.length() > 0.0001){
-                    errorDir.normalize();
+                // Get the fraction of contact point penetration from the range of the sensor
+                // Subscript (a) represents parent body, which is the parent of this sensor
+                // Subscript (b) represents the sensed body, which is in contact with the resistive sensor
+                // Subscript (c) represents contact point
+                // Subscript (w) represents world
+                btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
+                btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
+                btVector3 P_cINw = toBTvec(getSensedPoint(i));
+                btVector3 P_cINa = T_wINa * P_cINw;
+                btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
+                btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
+                btVector3 N_a = toBTvec(m_sensedResults[i].m_direction);
+                btVector3 N_aINw = T_aINw.getBasis() * N_a;
+
+                btTransform T_bINw = getSensedBTRigidBody(i)->getWorldTransform();
+                btTransform T_wINb = T_bINw.inverse(); // Invert once to save computation later
+                btVector3 P_cINb = T_wINb * P_cINw;
+                btVector3 vel_bINw = getSensedBTRigidBody(i)->getLinearVelocity();
+                btVector3 omega_bINw = getSensedBTRigidBody(i)->getAngularVelocity();
+                btVector3 N_bINw = toBTvec(m_sensedResults[i].m_contactNormal);
+                btVector3 N_b = T_wINb.getBasis() * N_bINw;
+
+                double depthFractionLast = m_sensedResults[i].m_depthFraction;
+
+                if (m_sensedResults[i].m_depthFraction < 0 || m_sensedResults[i].m_depthFraction > 1){
+                    std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_sensedResults[i].m_depthFraction <<
+                                 ". It should be between [0-1]" << std::endl;
+                    std::cerr << "Ray Start: "<< m_sensedResults[i].m_rayFromLocal <<"\nRay End: " << m_sensedResults[i].m_rayToLocal <<
+                                 "\nSensed Point: " << toCvec(P_cINa) << std::endl;
+                    std::cerr << "----------\n";
+                    m_sensedResults[i].m_depthFraction = 0;
                 }
-                double errorMag = errorDir.dot(error);
-                if (errorMag < 0.0){
-                    std::cerr << errorMag << std::endl;
+
+                // First calculate the normal contact force
+                btVector3 F_n_a = ((m_contactNormalStiffness * m_sensedResults[i].m_depthFraction)
+                                   + m_contactNormalDamping * (m_sensedResults[i].m_depthFraction - depthFractionLast)) * (N_a);
+                F_n_w = T_aINw.getBasis() * F_n_a;
+
+                double coeffScale = 1;
+                if (m_useVariableCoeff){
+                    coeffScale = F_n_w.length();
                 }
 
-                btVector3 tangentialError = errorMag * errorDir;
-                btVector3 tangentialErrorLast = toBTvec(m_tangentialErrorLast);
-                m_tangentialErrorLast = m_tangentialError;
-                m_tangentialError = toCvec(tangentialError);
+                if(m_resistanceContacts[i].m_contactPointsValid){
+                    btVector3 P_aINw = T_aINw * toBTvec(m_resistanceContacts[i].m_bodyAContactPointLocal);
+                    btVector3 P_bINw = T_bINw * toBTvec(m_resistanceContacts[i].m_bodyBContactPointLocal);
+                    btVector3 error;
+                    error = P_aINw - P_bINw;
+                    btVector3 orthogonalError = N_aINw.cross(error);
+                    btVector3 errorDir = orthogonalError.cross(N_aINw);
+                    if (errorDir.length() > 0.0001){
+                        errorDir.normalize();
+                    }
+                    double errorMag = errorDir.dot(error);
+                    if (errorMag < 0.0){
+                        std::cerr << errorMag << std::endl;
+                    }
 
-                if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
-                    F_s_w = m_staticContactFriction * coeffScale * tangentialError +
-                            m_staticContactDamping * (tangentialError - tangentialErrorLast);
+                    btVector3 tangentialError = errorMag * errorDir;
+                    btVector3 tangentialErrorLast = toBTvec(m_resistanceContacts[i].m_tangentialErrorLast);
+                    m_resistanceContacts[i].m_tangentialErrorLast = m_resistanceContacts[i].m_tangentialError;
+                    m_resistanceContacts[i].m_tangentialError = toCvec(tangentialError);
+
+                    if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
+                        F_s_w = m_staticContactFriction * coeffScale * tangentialError +
+                                m_staticContactDamping * (tangentialError - tangentialErrorLast);
+                    }
+                    else{
+                        m_resistanceContacts[i].m_contactPointsValid = false;
+                    }
+
+                    //                std::cerr << "F Static: " << F_static << std::endl;
+                    //                std::cerr << "F Normal: " << F_normal << std::endl;
+                    //                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
+                    //                std::cerr << "------------\n";
                 }
                 else{
-                    m_contactPointsValid = false;
+                    m_resistanceContacts[i].m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint(i)));
+                    m_resistanceContacts[i].m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint(i)));
+                    m_resistanceContacts[i].m_contactPointsValid = true;
                 }
 
-                //                std::cerr << "F Static: " << F_static << std::endl;
-                //                std::cerr << "F Normal: " << F_normal << std::endl;
-                //                std::cerr << "Depth Ra: " << m_depthFraction << std::endl;
-                //                std::cerr << "------------\n";
+                // Calculate the friction due to sliding velocities
+                // Get velocity of point
+                btVector3 vel_a = T_wINa.getBasis() * vel_aINw;
+                btVector3 omega_a = T_wINa.getBasis() * omega_aINw;
+                btVector3 vel_cINa = vel_a + omega_a.cross(P_cINa);
+
+                btVector3 vel_b = T_wINb.getBasis() * vel_bINw;
+                btVector3 omega_b = T_wINb.getBasis() * omega_bINw;
+                btVector3 vel_cINb = vel_b + omega_b.cross(P_cINb);
+
+                btVector3 V_aINw = T_aINw.getBasis() * vel_cINa;
+                btVector3 V_bINw = T_bINw.getBasis() * vel_cINb;
+
+                btVector3 dV = V_aINw - V_bINw;
+
+                // Check if the error is along the direction of sensor
+                btVector3 orthogonalVelError = N_bINw.cross(dV);
+                btVector3 velErrorDir = orthogonalVelError.cross(N_bINw);
+                if (velErrorDir.length() > 0.0001){
+                    velErrorDir.normalize();
+                }
+                dV = velErrorDir.dot(dV) * velErrorDir;
+
+                F_d_w = m_dynamicFriction * coeffScale * dV;
+                //                std::cerr << staticForce << std::endl;
+
+                btVector3 Fw = F_s_w + F_d_w + F_n_w;
+
+                // Lets find the added torque at the point where the force is applied
+
+                btVector3 Fa = T_wINa.getBasis() * (-Fw);
+                btVector3 Tau_a = P_cINa.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());
+                btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
+
+                btVector3 Fb = T_wINb.getBasis() * Fw;
+                btVector3 Tau_b = P_cINb.cross(Fb * getSensedBTRigidBody()->getLinearFactor());
+                btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
+
+                // Nows lets add the action and reaction friction forces to both the bodies
+                getParentBody()->m_bulletRigidBody->applyCentralForce(-Fw);
+                getParentBody()->m_bulletRigidBody->applyTorque(Tau_aINw);
+
+                getSensedBTRigidBody()->applyCentralForce(Fw);
+                getSensedBTRigidBody()->applyTorque(Tau_bINw);
             }
-            else{
-                m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint()));
-                m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint()));
-                m_contactPointsValid = true;
+
+            else if (getSensedBodyType() == afSensedBodyType::SOFT_BODY){
+
             }
-
-            // Calculate the friction due to sliding velocities
-            // Get velocity of point
-            btVector3 vel_a = T_wINa.getBasis() * vel_aINw;
-            btVector3 omega_a = T_wINa.getBasis() * omega_aINw;
-            btVector3 vel_cINa = vel_a + omega_a.cross(P_cINa);
-
-            btVector3 vel_b = T_wINb.getBasis() * vel_bINw;
-            btVector3 omega_b = T_wINb.getBasis() * omega_bINw;
-            btVector3 vel_cINb = vel_b + omega_b.cross(P_cINb);
-
-            btVector3 V_aINw = T_aINw.getBasis() * vel_cINa;
-            btVector3 V_bINw = T_bINw.getBasis() * vel_cINb;
-
-            btVector3 dV = V_aINw - V_bINw;
-
-            // Check if the error is along the direction of sensor
-            btVector3 orthogonalVelError = N_bINw.cross(dV);
-            btVector3 velErrorDir = orthogonalVelError.cross(N_bINw);
-            if (velErrorDir.length() > 0.0001){
-                velErrorDir.normalize();
-            }
-            dV = velErrorDir.dot(dV) * velErrorDir;
-
-            F_d_w = m_dynamicFriction * coeffScale * dV;
-            //                std::cerr << staticForce << std::endl;
-
-            btVector3 Fw = F_s_w + F_d_w + F_n_w;
-
-            // Lets find the added torque at the point where the force is applied
-
-            btVector3 Fa = T_wINa.getBasis() * (-Fw);
-            btVector3 Tau_a = P_cINa.cross(Fa * getParentBody()->m_bulletRigidBody->getLinearFactor());
-            btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
-
-            btVector3 Fb = T_wINb.getBasis() * Fw;
-            btVector3 Tau_b = P_cINb.cross(Fb * getSensedBTRigidBody()->getLinearFactor());
-            btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
-
-            // Nows lets add the action and reaction friction forces to both the bodies
-            getParentBody()->m_bulletRigidBody->applyCentralForce(-Fw);
-            getParentBody()->m_bulletRigidBody->applyTorque(Tau_aINw);
-
-            getSensedBTRigidBody()->applyCentralForce(Fw);
-            getSensedBTRigidBody()->applyTorque(Tau_bINw);
         }
+        else{
+            m_resistanceContacts[i].m_contactPointsValid = false;
+            m_resistanceContacts[i].m_firstTrigger = true;
 
-        else if (getSensedBodyType() == SensedBodyType::SOFT_BODY){
-
-        }
-    }
-    else{
-        m_contactPointsValid = false;
-        m_firstTrigger = true;
-
-        if(m_showSensor){
-            m_hitNormalMesh->setShowEnabled(false);
+            if(m_showSensor){
+                m_sensedResults[i].m_hitNormalMesh->setShowEnabled(false);
+            }
         }
     }
 }
