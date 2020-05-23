@@ -1,11 +1,12 @@
-from PyKDL import Vector, Rotation, Frame, dot
+# from PyKDL import Vector, Rotation, Frame, dot
 import numpy as np
 import math
 
 PI = np.pi
 PI_2 = np.pi/2
 
-
+# Commented the get_angle and convert_mat_to_frame(), since its not being used for FK. Uncomment if using IK
+'''
 # The up vector is useful to define angles > PI. Since otherwise
 # this method will only report angles <= PI.
 def get_angle(vec_a, vec_b, up_vector=None):
@@ -25,11 +26,11 @@ def get_angle(vec_a, vec_b, up_vector=None):
 
     if up_vector is not None:
         same_dir = np.sign(dot(cross_ab, up_vector))
-        if same_dir < 0.0:
+        if same_dir < 0:
             angle = -angle
 
     return angle
-
+'''
 
 def round_mat(mat, rows, cols, precision=4):
     for i in range(0, rows):
@@ -62,7 +63,7 @@ def convert_frame_to_mat(frame):
 
     return np_mat
 
-
+'''
 def convert_mat_to_frame(mat):
     frame = Frame(Rotation.RPY(0, 0, 0), Vector(0, 0, 0))
     for i in range(3):
@@ -73,3 +74,4 @@ def convert_mat_to_frame(mat):
         frame.p[i] = mat[i, 3]
 
     return frame
+'''

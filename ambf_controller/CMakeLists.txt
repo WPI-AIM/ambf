@@ -33,7 +33,7 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: Melody Su $
+#  $Author: Melody Su and Vignesh Manoj Varier$
 #  $Date:  April, 2019 $
 #  $Rev:  $
 
@@ -54,3 +54,5 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/src/main.cpp )
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk_functions)

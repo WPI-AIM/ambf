@@ -38,14 +38,17 @@
 #     POSSIBILITY OF SUCH DAMAGE.
 
 #     \author    <http://www.aimlab.wpi.edu>
-#     \author    <amunawar@wpi.edu>
-#     \author    Adnan Munawar
-#     \version   0.1
+#     \author    <amunawar@wpi.edu>, <vvarier@wpi.edu>
+#     \author    Adnan Munawar and Vignesh Manoj Varier
+#     \version   0.2
 # */
 # //==============================================================================
 from ambf_client import Client
 from ambf_world import World
 from ambf_object import Object
-# from ambf_env_ddpg import AmbfEnv
-from ambf_env_herddpg import AmbfEnv
 from watch_dog import WatchDog
+# For Reinforcement Learning: 
+# If using DDPG, uncomment the line below 
+# from ambf_env_ddpg import AmbfEnv
+# If using a technique with HER, uncomment the line below 
+from ambf_env_herddpg import AmbfEnv
