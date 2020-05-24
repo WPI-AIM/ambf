@@ -43,12 +43,12 @@
 #     \version   0.2
 # */
 # //==============================================================================
+
 from ambf_client import Client
 from ambf_world import World
 from ambf_object import Object
 from watch_dog import WatchDog
+
 # For Reinforcement Learning: 
-# If using DDPG, uncomment the line below 
-# from ambf_env_ddpg import AmbfEnv
-# If using a technique with HER, uncomment the line below 
-from ambf_env_herddpg import AmbfEnv
+from ambf_env_ddpg import AmbfEnvDDPG
+from ambf_env_herddpg import AmbfEnvHERDDPG

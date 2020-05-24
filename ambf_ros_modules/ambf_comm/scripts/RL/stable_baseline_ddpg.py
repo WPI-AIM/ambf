@@ -47,7 +47,7 @@ from stable_baselines.ddpg.policies import MlpPolicy
 import numpy as np
 from stable_baselines import HER, DDPG
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
-from ambf_comm import AmbfEnv
+from ambf_comm import AmbfEnvDDPG
 import time
 from stable_baselines.common.callbacks import CheckpointCallback
 
@@ -126,14 +126,14 @@ if __name__ == '__main__':
         'enable_step_throttling': False,
     }
     # Training
-    ambf_env = AmbfEnv(**env_kwargs)
+    ambf_env = AmbfEnvDDPG(**env_kwargs)
     time.sleep(5)
     ambf_env.make(ENV_NAME)
     ambf_env.reset()
     main(env=ambf_env)
     ambf_env.ambf_client.clean_up()
     # Evaluate learnt policy
-    eval_env = AmbfEnv(**env_kwargs)
+    eval_env = AmbfEnvDDPG(**env_kwargs)
     time.sleep(5)
     eval_env.make(ENV_NAME)
     eval_env.reset()

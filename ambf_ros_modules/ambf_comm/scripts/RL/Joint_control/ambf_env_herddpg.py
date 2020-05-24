@@ -78,10 +78,10 @@ class Observation:
         return self.state, self.reward, self.is_done, self.info
 
 
-class AmbfEnv(gym.GoalEnv):
+class AmbfEnvHERDDPG(gym.GoalEnv):
     def __init__(self, action_space_limit, joints_to_control, goal_position_range, position_error_threshold,
                  goal_error_margin, joint_limits, workspace_limits, enable_step_throttling):
-        super(AmbfEnv, self).__init__()
+        super(AmbfEnvHERDDPG, self).__init__()
         self.obj_handle = Object
         self.world_handle = World
         self.ambf_client = Client()
@@ -188,7 +188,7 @@ class AmbfEnv(gym.GoalEnv):
         action = np.clip(action, self.action_lims_low, self.action_lims_high)
         current_joint_pos, state_vel = self.get_joint_pos_vel_func()
         # Take the action from current state to reach the new state
-        for joint_idx, jt_name in enumerate(self.joints_to_control[3]):
+        for joint_idx, jt_name in enumerate(self.joints_to_control):
             new_state_joint_pos[joint_idx] = np.add(current_joint_pos[joint_idx], action[joint_idx])
         # Ensure the new state is within valid joint positions, if invalid then stay at the joint limit position
         desired_joint_pos = self.limit_joint_pos(new_state_joint_pos)
@@ -272,7 +272,7 @@ class AmbfEnv(gym.GoalEnv):
             self.prev_sim_step = cur_sim_step
 
         # Find the tip position and rotation by computing forward kinematics (not being used currently)
-        cartesian_pos = self.limit_cartesian_pos(end_effector_frame[0:3, 3])
+        cartesian_pos = self.limit_cartesian_pos(end_effector_frame[0:3, 3]).reshape((3, 1))
         achieved_rot = np.array(euler_from_matrix(end_effector_frame[0:3, 0:3], axes='szyx')).reshape((3, 1))
         # Combine tip position and rotation to a single numpy array as achieved goal
         achieved_goal = np.asarray(np.concatenate((cartesian_pos.copy(), achieved_rot.copy()), axis=0)).reshape(-1)

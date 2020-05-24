@@ -73,10 +73,10 @@ class Observation:
         return self.state, self.reward, self.is_done, self.info
 
 
-class AmbfEnv(gym.Env):
+class AmbfEnvDDPG(gym.Env):
     def __init__(self, action_space_limit, joints_to_control, goal_position_range, position_error_threshold,
                  goal_error_margin, joint_limits, workspace_limits, enable_step_throttling):
-        super(AmbfEnv, self).__init__()
+        super(AmbfEnvDDPG, self).__init__()
         self.obj_handle = Object
         self.world_handle = World
         self.ambf_client = Client()

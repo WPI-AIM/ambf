@@ -79,10 +79,10 @@ class Observation:
         return self.state, self.reward, self.is_done, self.info
 
 
-class AmbfEnv(gym.GoalEnv):
+class AmbfEnvHERDDPG(gym.GoalEnv):
     def __init__(self, action_space_limit, joints_to_control, goal_position_range, position_error_threshold,
                  goal_error_margin, joint_limits, workspace_limits, enable_step_throttling):
-        super(AmbfEnv, self).__init__()
+        super(AmbfEnvHERDDPG, self).__init__()
         # AMBF Initialization commands
         self.obj_handle = Object
         self.world_handle = World
@@ -107,8 +107,8 @@ class AmbfEnv(gym.GoalEnv):
         self.count_for_print = 0
         self.goal_error_margin = goal_error_margin
         self.n_actions = 3
-        self.action_lims_low = np.array([-action_space_limit, -action_space_limit, -action_space_limit])
-        self.action_lims_high = np.array([action_space_limit, action_space_limit, action_space_limit])
+        self.action_lims_low = -action_space_limit*np.ones(self.n_actions)
+        self.action_lims_high = action_space_limit*np.ones(self.n_actions)
         self.action_space = spaces.Box(low=-action_space_limit, high=action_space_limit,
                                        shape=(self.n_actions,), dtype="float32")
         self.observation_space = spaces.Dict(dict(
@@ -190,9 +190,9 @@ class AmbfEnv(gym.GoalEnv):
         current_end_effector_frame = compute_FK(current_joint_pos)
         # Compute the resulting state after applying the action from current state
         # Since end effector frame is a numpy matrix, converting it to an array
-        new_state_joint_pos = np.add(np.asarray(current_end_effector_frame[0:3, 3]).reshape(-1), action)
+        new_state_cartesian_pos = np.add(np.asarray(current_end_effector_frame[0:3, 3]).reshape(-1), action)
         # Ensure the new state is within valid joint positions, if invalid then stay at the joint limit position
-        desired_cartesian_pos = self.limit_cartesian_pos(new_state_joint_pos)
+        desired_cartesian_pos = self.limit_cartesian_pos(new_state_cartesian_pos)
         # Creates the frame for new state S'(in the code shown below only position value is changing through action)
         desired_end_effector_frame = current_end_effector_frame
         for i in range(3):
