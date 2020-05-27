@@ -3749,7 +3749,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorParentName = sensorNode["parent"];
     YAML::Node sensorName = sensorNode["name"];
     YAML::Node sensorNamespace = sensorNode["namespace"];
-    YAML::Node sensorLocation = sensorNode["location"];
+    YAML::Node sensorPos = sensorNode["location"]["position"];
+    YAML::Node sensorRot = sensorNode["location"]["orientation"];
     YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
     YAML::Node sensorPublishFrequency = sensorNode["publish frequency"];
@@ -3767,7 +3768,19 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     m_name = sensorName.as<std::string>();
-    setLocalPos(toXYZ<cVector3d>(&sensorLocation));
+
+    if(sensorPos.IsDefined()){
+        m_initialPos = toXYZ<cVector3d>(&sensorPos);
+        setLocalPos(m_initialPos);
+    }
+
+    if(sensorRot.IsDefined()){
+        double r = sensorRot["r"].as<double>();
+        double p = sensorRot["p"].as<double>();
+        double y = sensorRot["y"].as<double>();
+        m_initialRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
+        setLocalRot(m_initialRot);
+    }
 
     if(sensorNamespace.IsDefined()){
         m_namespace = sensorNamespace.as<std::string>();
@@ -3996,41 +4009,40 @@ void afRayTracerSensor::updateSensor(){
 void afRayTracerSensor::enableVisualization(){
     for (int i = 0 ; i < m_count ; i++){
         if (m_sensedResults[i].m_hitSphereMesh == nullptr){
-            cMesh* mesh = m_sensedResults[i].m_hitSphereMesh;
-            mesh = new cMesh();
+            cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
             mesh->m_material->setPinkHot();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
+            m_sensedResults[i].m_hitSphereMesh = mesh;
         }
 
         if (m_sensedResults[i].m_fromSphereMesh == nullptr){
-            cMesh* mesh = m_sensedResults[i].m_fromSphereMesh;
-            mesh = new cMesh();
+            cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
             mesh->m_material->setRed();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
+            m_sensedResults[i].m_fromSphereMesh = mesh;
         }
 
         if (m_sensedResults[i].m_toSphereMesh == nullptr){
-            cMesh* mesh = m_sensedResults[i].m_toSphereMesh;
-            mesh = new cMesh();
+            cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
             mesh->m_material->setGreen();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
+            m_sensedResults[i].m_toSphereMesh = mesh;
         }
 
         if (m_sensedResults[i].m_hitNormalMesh == nullptr){
-            cMesh* mesh = m_sensedResults[i].m_hitNormalMesh;
-            mesh = new cMesh();
+            cMesh* mesh = new cMesh();
             cCreateArrow(mesh, m_visibilitySphereRadius*10,
                          m_visibilitySphereRadius*0.5,
                          m_visibilitySphereRadius*1,
@@ -4041,6 +4053,7 @@ void afRayTracerSensor::enableVisualization(){
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
+            m_sensedResults[i].m_hitNormalMesh = mesh;
         }
     }
 }

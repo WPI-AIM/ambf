@@ -14,12 +14,18 @@ namespace: /ambf/env/
 # publish children names: true
 
 SENSOR Proximity0:
-  name: Proximity
+  name: Proximity0
   type: Proximity
-  location: {x: -0.14, y: 0.0, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: -0.14, y: 0.0, z: 0.0}
+  array:
+    -
+      offset: {x: 0.0, y: 0.0, z: -0.01}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
   range: 0.105
   parent: /ambf/env/BODY r_gripper_palm_link
+  visible: True
 
 SENSOR Proximity1:
   name: Proximity1

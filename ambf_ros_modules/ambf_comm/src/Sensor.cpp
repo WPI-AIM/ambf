@@ -87,7 +87,7 @@ void Sensor::set_triggers(std::vector<bool> triggered){
         m_State.triggered.resize(triggered.size());
     }
 
-    for (int i = 0 ; triggered.size() ; i++){
+    for (int i = 0 ; i < triggered.size() ; i++){
         m_State.triggered[i] = triggered[i];
     }
 }
@@ -106,7 +106,7 @@ void Sensor::set_ranges(std::vector<double> range){
         m_State.range.resize(range.size());
     }
 
-    for (int i = 0 ; range.size() ; i++){
+    for (int i = 0 ; i < range.size() ; i++){
         m_State.range[i] = range[i];
     }
 }
@@ -123,7 +123,7 @@ void Sensor::set_measurements(std::vector<double> measurement){
         m_State.measurement.resize(measurement.size());
     }
 
-    for (int i = 0 ; measurement.size() ; i++){
+    for (int i = 0 ; i < measurement.size() ; i++){
         m_State.measurement[i] = measurement[i];
     }
 }
@@ -140,7 +140,7 @@ void Sensor::set_sensed_objects(std::vector<std::string> sensed_objects){
         m_State.sensed_objects.resize(sensed_objects.size());
     }
 
-    for (int i = 0 ; sensed_objects.size() ; i++){
+    for (int i = 0 ; i < sensed_objects.size() ; i++){
         m_State.sensed_objects[i].data = sensed_objects[i];
     }
 }
@@ -157,7 +157,7 @@ void Sensor::set_sensed_objects_map(std::vector<int> sensed_objects_map){
         m_State.sensed_objects_map.resize(sensed_objects_map.size());
     }
 
-    for (int i = 0 ; sensed_objects_map.size() ; i++){
+    for (int i = 0 ; i < sensed_objects_map.size() ; i++){
         m_State.sensed_objects_map[i] = sensed_objects_map[i];
     }
 }
