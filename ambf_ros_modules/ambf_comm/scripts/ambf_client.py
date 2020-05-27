@@ -101,8 +101,8 @@ class Client:
                                                  queue_size=10)
                 self._world_handle = world_obj
             elif msg_type == 'ambf_msgs/ObjectState':
-                pre_trimmed_name = topic_name.replace(self._common_obj_namespace, '')
-                post_trimmed_name = pre_trimmed_name.replace('/State', '')
+                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
+                post_trimmed_name = topic_name.replace('/State', '')
                 body_obj = Object(post_trimmed_name)
                 body_obj._sub = rospy.Subscriber(topic_name, ObjectState, body_obj.ros_cb)
                 body_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=ObjectCmd,
