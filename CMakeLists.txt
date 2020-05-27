@@ -108,7 +108,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         message("-- *** FOUND ROS ON THIS MACHINE, ENABLING SUPPORT FOR AMBF_ROS MODULES")
         add_subdirectory(${PROJECT_SOURCE_DIR}/ambf_ros_modules)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/tf_function)
-        # add_subdirectory(${PROJECT_SOURCE_DIR}/ambf_controller/dvrk_functions)
         # Call find catkin again, with REQUIRED this time, it's okay to write over previously
         # imported catkin variables
         find_package(catkin QUIET COMPONENTS ambf_comm ambf_msgs dvrk_arm razer_hydra cv_bridge image_transport)
