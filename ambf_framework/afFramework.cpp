@@ -3605,14 +3605,13 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         return 0;
     }
 
-    bool _is_valid = true;
+    bool result = true;
     // Declare all the yaml parameters that we want to look for
     YAML::Node sensorParentName = sensorNode["parent"];
     YAML::Node sensorName = sensorNode["name"];
     YAML::Node sensorNamespace = sensorNode["namespace"];
     YAML::Node sensorPos = sensorNode["location"]["position"];
     YAML::Node sensorRot = sensorNode["location"]["orientation"];
-    YAML::Node sensorDirection = sensorNode["direction"];
     YAML::Node sensorRange = sensorNode["range"];
     YAML::Node sensorPublishFrequency = sensorNode["publish frequency"];
     YAML::Node sensorVisible = sensorNode["visible"];
@@ -3620,12 +3619,12 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorArray = sensorNode["array"];
     YAML::Node sensorMesh = sensorNode["mesh"];
 
-    std::string _parent_name;
+    std::string parent_name;
     if (sensorParentName.IsDefined()){
-        _parent_name = sensorParentName.as<std::string>();
+        parent_name = sensorParentName.as<std::string>();
     }
     else{
-        _is_valid = false;
+        result = false;
     }
 
     m_name = sensorName.as<std::string>();
@@ -3676,21 +3675,19 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(_parent_name);
+    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(_parent_name + name_remapping);
+        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
     }
 
     if (m_parentBody == NULL){
-        std::cerr << "ERROR: SENSOR'S "<< _parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
+        std::cerr << "ERROR: SENSOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }
     else{
         m_parentBody->addAFSensor(this);
     }
-
-    bool success;
 
     if (sensorArray.IsDefined()){
         m_count = sensorArray.size();
@@ -3707,7 +3704,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
             m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
 
         }
-        success = true;
+        result = true;
     }
 
     else if (sensorMesh.IsDefined()){
@@ -3745,19 +3742,19 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
                     m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
                 }
             }
-            success = true;
+            result = true;
         }
         else{
             std::cerr << "ERROR! BODY \"" << m_name <<
                          "\'s\" RESISTIVE MESH " <<
                          mesh_name << " NOT FOUND. IGNORING\n";
-            success = false;
+            result = false;
         }
     }
 
     else{
         m_count = 0;
-        success = false;
+        result = false;
     }
 
     if (m_showSensor){
@@ -3765,7 +3762,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
 
-    return success;
+    return result;
 }
 
 
@@ -3774,6 +3771,9 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 ///
 void afRayTracerSensor::updatePositionFromDynamics(){
 
+    if (m_parentBody == nullptr){
+        return;
+    }
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (int i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
@@ -4073,6 +4073,10 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_na
 void afResistanceSensor::updatePositionFromDynamics(){
     // Let's update the RayTracer Sensor First
     afRayTracerSensor::updatePositionFromDynamics();
+
+    if (m_parentBody == nullptr){
+        return;
+    }
 
     for (int i = 0 ; i < m_count ; i++){
 
