@@ -2006,145 +2006,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     if (bodyRestitution.IsDefined())
         m_surfaceProps.m_restitution = bodyRestitution.as<double>();
 
-    // Handle resistive surface features
-
-    if (bodyResistiveSurface.IsDefined()){
-        m_resistiveSurface.enable = true;
-
-        if (bodyResistiveSurface["face resolution"].IsDefined()){
-            m_resistiveSurface.faceResolution = bodyResistiveSurface["face resolution"].as<double>();
-        }
-        if (bodyResistiveSurface["edge resolution"].IsDefined()){
-            m_resistiveSurface.edgeResolution = bodyResistiveSurface["edge resolution"].as<double>();
-        }
-        if (bodyResistiveSurface["range"].IsDefined()){
-            m_resistiveSurface.range = bodyResistiveSurface["range"].as<double>();
-        }
-        if (bodyResistiveSurface["depth"].IsDefined()){
-            m_resistiveSurface.depth = bodyResistiveSurface["depth"].as<double>();
-        }
-        if (bodyResistiveSurface["contact area"].IsDefined()){
-            m_resistiveSurface.contactArea = bodyResistiveSurface["contact area"].as<double>();
-        }
-
-        if (bodyResistiveSurface["friction"].IsDefined()){
-            YAML::Node bodyResistiveFriction = bodyResistiveSurface["friction"];
-            if (bodyResistiveFriction["static"].IsDefined()){
-                m_resistiveSurface.staticContactFriction = bodyResistiveFriction["static"].as<double>();
-            }
-            if (bodyResistiveFriction["damping"].IsDefined()){
-                m_resistiveSurface.staticContactDamping = bodyResistiveFriction["damping"].as<double>();
-            }
-            if (bodyResistiveFriction["dynamic"].IsDefined()){
-                m_resistiveSurface.dynamicFriction = bodyResistiveFriction["dynamic"].as<double>();
-            }
-            if (bodyResistiveFriction["variable"].IsDefined()){
-                m_resistiveSurface.useVariableCoeff = bodyResistiveFriction["variable"].as<bool>();
-            }
-        }
-
-        if (bodyResistiveSurface["contact stiffness"].IsDefined()){
-            m_resistiveSurface.contactNormalStiffness = bodyResistiveSurface["contact stiffness"].as<double>();
-        }
-        if (bodyResistiveSurface["contact damping"].IsDefined()){
-            m_resistiveSurface.contactNormalDamping = bodyResistiveSurface["contact damping"].as<double>();
-        }
-
-        bool _showSensors = false;
-        double _visiblitySize = 0;
-        if (bodyResistiveSurface["visible"].IsDefined()){
-            _showSensors = bodyResistiveSurface["visible"].as<bool>();
-            if (bodyResistiveSurface["visible size"].IsDefined()){
-                _visiblitySize = bodyResistiveSurface["visible size"].as<double>();
-            }
-        }
-
-        cMesh* _sourceMesh = NULL;
-        if (bodyResistiveSurface["mesh"].IsDefined()){
-            std::string _resistiveMeshName = bodyResistiveSurface["mesh"].as<std::string>();
-            _resistiveMeshName = high_res_path + _resistiveMeshName;
-            cMultiMesh* resistiveMesh = new cBulletMultiMesh(m_afWorld);
-            if (resistiveMesh->loadFromFile(_resistiveMeshName)){
-                _sourceMesh = (*resistiveMesh->m_meshes)[0];
-            }
-            else{
-                std::cerr << "ERROR! BODY \"" << m_name <<
-                             "\'s\" RESISTIVE MESH " <<
-                             _resistiveMeshName << " NOT FOUND. IGNORING\n";
-            }
-        }
-        else{
-            _sourceMesh = (*m_meshes)[0];
-        }
-
-        // Lets assign a resistive sensor per each triangle face.
-        if (_sourceMesh){
-            for (int tIdx = 0 ; tIdx < _sourceMesh->m_triangles->getNumElements() ; tIdx++ ){
-                int vIdx0 = _sourceMesh->m_triangles->getVertexIndex0(tIdx);
-                int vIdx1 = _sourceMesh->m_triangles->getVertexIndex1(tIdx);
-                int vIdx2 = _sourceMesh->m_triangles->getVertexIndex2(tIdx);
-
-                cVector3d v0 = _sourceMesh->m_vertices->getLocalPos(vIdx0);
-                cVector3d v1 = _sourceMesh->m_vertices->getLocalPos(vIdx1);
-                cVector3d v2 = _sourceMesh->m_vertices->getLocalPos(vIdx2);
-
-                cVector3d e1 = v1 - v0;
-                cVector3d e2 = v2 - v1;
-
-                cVector3d centroid = ( v0 + v1 + v2 ) / 3;
-
-                cVector3d normal = cCross(e1, e2);
-
-                normal.normalize();
-                cVector3d rayFrom = centroid - (normal * m_resistiveSurface.depth);
-                cVector3d rayTo = rayFrom + (normal * m_resistiveSurface.range);
-
-                afResistanceSensor* _resistanceSensor = new afResistanceSensor(m_afWorld);
-                _resistanceSensor->setRayFromInLocal(rayFrom);
-                _resistanceSensor->setRayToInLocal(rayTo);
-                _resistanceSensor->setDirection(normal);
-                _resistanceSensor->setRange(m_resistiveSurface.range);
-                _resistanceSensor->setContactArea(m_resistiveSurface.contactArea);
-                _resistanceSensor->setStaticContactFriction(m_resistiveSurface.staticContactFriction);
-                _resistanceSensor->setStaticContactDamping(m_resistiveSurface.staticContactDamping);
-                _resistanceSensor->setDynamicFriction(m_resistiveSurface.dynamicFriction);
-                _resistanceSensor->setContactNormalStiffness(m_resistiveSurface.contactNormalStiffness);
-                _resistanceSensor->setContactNormalDamping(m_resistiveSurface.contactNormalDamping);
-                _resistanceSensor->useVariableCoeff(m_resistiveSurface.useVariableCoeff);
-
-                if (_showSensors){
-                    if (_visiblitySize <= 0){
-                        _visiblitySize = m_resistiveSurface.range / 5;
-                    }
-                    _resistanceSensor->setSensorVisibilityRadius(_visiblitySize);
-                    _resistanceSensor->enableVisualization();
-                }
-
-                _resistanceSensor->m_sensorType = afSensorType::resistance;
-
-                this->addAFSensor(_resistanceSensor);
-                std::string _sensorName = m_name + "_sensor" + std::to_string(tIdx);
-                m_afWorld->addAFSensor(_resistanceSensor, _sensorName);
-                _resistanceSensor->m_parentBody = this;
-            }
-        }
-# ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
-        // Sub-divide the sensors into the threads
-        int _nSensors = m_afSensors.size();
-        int _nBlocks = _nSensors / m_sensorThreadBlockSize;
-
-        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
-            m_threadUpdateFlags.push_back(false);
-        }
-
-        for (int bIdx = 0 ; bIdx < _nBlocks ; bIdx++){
-            std::thread* th = new std::thread(&afRigidBody::updateBodySensors, this, bIdx);
-            m_sensorThreads.push_back(th);
-        }
-#endif
-
-    }
-
     if (bodyPublishChildrenNames.IsDefined()){
         m_publish_children_names = bodyPublishChildrenNames.as<bool>();
     }
@@ -2281,15 +2142,15 @@ void afRigidBody::updatePositionFromDynamics()
     }
 
     // Update the data for sensors
-#ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
-    for (int thIdx = 0 ; thIdx < m_sensorThreads.size() ; thIdx++){
-        m_threadUpdateFlags[thIdx] = true;
-    }
-#else
-    for (int i = 0 ; i < m_afSensors.size() ; i++){
-        m_afSensors[i]->updateSensor();
-    }
-#endif
+//#ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
+//    for (int thIdx = 0 ; thIdx < m_sensorThreads.size() ; thIdx++){
+//        m_threadUpdateFlags[thIdx] = true;
+//    }
+//#else
+//    for (int i = 0 ; i < m_afSensors.size() ; i++){
+//        m_afSensors[i]->updatePositionFromDynamics();
+//    }
+//#endif
 
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -2365,7 +2226,7 @@ bool afRigidBody::updateBodySensors(int threadIdx){
         if (m_threadUpdateFlags[threadIdx] == true){
 
             for (int idx = startIdx ; idx < endIdx ; idx++){
-                m_afSensors[idx]->updateSensor();
+                m_afSensors[idx]->updatePositionFromDynamics();
             }
 
             m_threadUpdateFlags[threadIdx] = false;
@@ -3909,9 +3770,9 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 
 
 ///
-/// \brief afSensor::processSensor
+/// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
-void afRayTracerSensor::updateSensor(){
+void afRayTracerSensor::updatePositionFromDynamics(){
 
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (int i = 0 ; i < m_count ; i++){
@@ -4001,77 +3862,7 @@ void afRayTracerSensor::updateSensor(){
             m_sensedResults[i].m_depthFraction = 0;
         }
     }
-}
 
-///
-/// \brief afRayTracerSensor::visualize
-///
-void afRayTracerSensor::enableVisualization(){
-    for (int i = 0 ; i < m_count ; i++){
-        if (m_sensedResults[i].m_hitSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
-            mesh->m_material->setPinkHot();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_sensedResults[i].m_hitSphereMesh = mesh;
-        }
-
-        if (m_sensedResults[i].m_fromSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
-            mesh->m_material->setRed();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_sensedResults[i].m_fromSphereMesh = mesh;
-        }
-
-        if (m_sensedResults[i].m_toSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
-            mesh->m_material->setGreen();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_sensedResults[i].m_toSphereMesh = mesh;
-        }
-
-        if (m_sensedResults[i].m_hitNormalMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateArrow(mesh, m_visibilitySphereRadius*10,
-                         m_visibilitySphereRadius*0.5,
-                         m_visibilitySphereRadius*1,
-                         m_visibilitySphereRadius*0.8,
-                         false);
-            m_afWorld->addChild(mesh);
-            mesh->m_material->setGreenForest();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_sensedResults[i].m_hitNormalMesh = mesh;
-        }
-    }
-}
-
-
-///
-/// \brief afRayTracerSensor::afExecuteCommand
-/// \param dt
-///
-void afRayTracerSensor::afExecuteCommand(double dt){
-
-}
-
-
-///
-/// \brief afRayTracerSensor::updatePositionFromDynamics
-///
-void afRayTracerSensor::updatePositionFromDynamics(){
 #if C_ENABLE_AMBF_COMM_SUPPORT
     m_afSensorCommPtr->set_count(1);
     m_afSensorCommPtr->set_name(m_name);
@@ -4115,6 +3906,70 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     m_afSensorCommPtr->set_sensed_objects(sensed_obj_names);
 
 #endif
+}
+
+///
+/// \brief afRayTracerSensor::visualize
+///
+void afRayTracerSensor::enableVisualization(){
+    for (int i = 0 ; i < m_count ; i++){
+        if (m_sensedResults[i].m_hitSphereMesh == nullptr){
+            cMesh* mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setPinkHot();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+            m_sensedResults[i].m_hitSphereMesh = mesh;
+        }
+
+        if (m_sensedResults[i].m_fromSphereMesh == nullptr){
+            cMesh* mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setRed();
+            mesh->setShowEnabled(true);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+            m_sensedResults[i].m_fromSphereMesh = mesh;
+        }
+
+        if (m_sensedResults[i].m_toSphereMesh == nullptr){
+            cMesh* mesh = new cMesh();
+            cCreateSphere(mesh, m_visibilitySphereRadius);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setGreen();
+            mesh->setShowEnabled(true);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+            m_sensedResults[i].m_toSphereMesh = mesh;
+        }
+
+        if (m_sensedResults[i].m_hitNormalMesh == nullptr){
+            cMesh* mesh = new cMesh();
+            cCreateArrow(mesh, m_visibilitySphereRadius*10,
+                         m_visibilitySphereRadius*0.5,
+                         m_visibilitySphereRadius*1,
+                         m_visibilitySphereRadius*0.8,
+                         false);
+            m_afWorld->addChild(mesh);
+            mesh->m_material->setGreenForest();
+            mesh->setShowEnabled(false);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+            m_sensedResults[i].m_hitNormalMesh = mesh;
+        }
+    }
+}
+
+
+///
+/// \brief afRayTracerSensor::afExecuteCommand
+/// \param dt
+///
+void afRayTracerSensor::afExecuteCommand(double dt){
+
 }
 
 
@@ -4213,15 +4068,15 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_na
 
 
 ///
-/// \brief afResistanceSensor::updateSensor
+/// \brief afResistanceSensor::updatePositionFromDynamics
 ///
-void afResistanceSensor::updateSensor(){
+void afResistanceSensor::updatePositionFromDynamics(){
     // Let's update the RayTracer Sensor First
-    afRayTracerSensor::updateSensor();
+    afRayTracerSensor::updatePositionFromDynamics();
 
     for (int i = 0 ; i < m_count ; i++){
 
-        if (isTriggered()){
+        if (isTriggered(i)){
             if (m_showSensor){
                 m_sensedResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
                 m_sensedResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
@@ -4352,18 +4207,18 @@ void afResistanceSensor::updateSensor(){
                 btVector3 Tau_aINw = T_aINw.getBasis() * Tau_a;
 
                 btVector3 Fb = T_wINb.getBasis() * Fw;
-                btVector3 Tau_b = P_cINb.cross(Fb * getSensedBTRigidBody()->getLinearFactor());
+                btVector3 Tau_b = P_cINb.cross(Fb * getSensedBTRigidBody(i)->getLinearFactor());
                 btVector3 Tau_bINw = T_bINw.getBasis() * Tau_b;
 
                 // Nows lets add the action and reaction friction forces to both the bodies
                 getParentBody()->m_bulletRigidBody->applyCentralForce(-Fw);
                 getParentBody()->m_bulletRigidBody->applyTorque(Tau_aINw);
 
-                getSensedBTRigidBody()->applyCentralForce(Fw);
-                getSensedBTRigidBody()->applyTorque(Tau_bINw);
+                getSensedBTRigidBody(i)->applyCentralForce(Fw);
+                getSensedBTRigidBody(i)->applyTorque(Tau_bINw);
             }
 
-            else if (getSensedBodyType() == afSensedBodyType::SOFT_BODY){
+            else if (getSensedBodyType(i) == afSensedBodyType::SOFT_BODY){
 
             }
         }
@@ -4716,7 +4571,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
 //    afSensorMap::iterator senIt;
 //    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
-//        (senIt->second)->afObjectCommandExecute(dt);
+//        (senIt->second)->afExecuteCommand(dt);
 //    }
 
     // integrate simulation during an certain interval
@@ -4762,6 +4617,11 @@ void afWorld::updatePositionFromDynamics()
         cBulletGenericObject* nextItem = *i;
         nextItem->updatePositionFromDynamics();
     }
+
+//    afSensorMap::iterator senIt;
+//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
+//        (senIt->second)->updatePositionFromDynamics();
+//    }
 }
 
 

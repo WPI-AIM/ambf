@@ -635,8 +635,6 @@ protected:
 
 protected:
 
-    afResistiveSurface m_resistiveSurface;
-
     // pool of threads for solving the body's sensors in paralled
     std::vector<std::thread*> m_sensorThreads;
 
@@ -911,8 +909,6 @@ public:
     // Load sensor form YAML node data
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
 
-    // Upate the sensor, usually called at each dynamic tick update of the physics engine
-    virtual void updateSensor()=0;
 
     // Toggle the debug display of the sensor
     inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
@@ -931,6 +927,7 @@ public:
 
     virtual void afExecuteCommand(double dt);
 
+    // Upate the sensor, usually called at each dynamic tick update of the physics engine
     virtual void updatePositionFromDynamics();
 
     // Go through all the parents to get the absolute world transform
@@ -1022,56 +1019,57 @@ public:
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
     // Update sensor is called on each update of positions of RBs and SBs
-    virtual void updateSensor();
+    virtual void updatePositionFromDynamics();
 
     // Check if the sensor sensed something. Depending on what type of sensor this is
-    inline bool isTriggered(int idx=0){return m_sensedResults[idx].m_triggered;}
+    inline bool isTriggered(int idx){return m_sensedResults[idx].m_triggered;}
 
     // Get the type of sensed body
-    inline afSensedBodyType getSensedBodyType(int idx=0){return m_sensedResults[idx].m_sensedBodyType;}
+    inline afSensedBodyType getSensedBodyType(int idx){return m_sensedResults[idx].m_sensedBodyType;}
 
     // Return the sensed BT RigidBody's Ptr
-    inline btRigidBody* getSensedBTRigidBody(int idx=0){return m_sensedResults[idx].m_sensedBTRigidBody;}
+    inline btRigidBody* getSensedBTRigidBody(int idx){return m_sensedResults[idx].m_sensedBTRigidBody;}
 
     // Get the sensed AF Rigid Body's Ptr
-    inline afRigidBodyPtr getSensedAFRigidBody(int idx=0){return m_sensedResults[idx].m_sensedAFRigidBody;}
+    inline afRigidBodyPtr getSensedAFRigidBody(int idx){return m_sensedResults[idx].m_sensedAFRigidBody;}
 
     // Get the sensed BT SoftBody's Ptr
-    inline btSoftBody* getSensedBTSoftBody(int idx=0){return m_sensedResults[idx].m_sensedBTSoftBody;}
+    inline btSoftBody* getSensedBTSoftBody(int idx){return m_sensedResults[idx].m_sensedBTSoftBody;}
 
     // Get the sensed AF Soft Body's Ptr
-    inline afSoftBodyPtr getSensedAFSoftBody(int idx=0){return m_sensedResults[idx].m_sensedAFSoftBody;}
+    inline afSoftBodyPtr getSensedAFSoftBody(int idx){return m_sensedResults[idx].m_sensedAFSoftBody;}
 
     // Get the sensed SoftBody's Face
-    inline btSoftBody::Face* getSensedSoftBodyFace(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyFace;}
+    inline btSoftBody::Face* getSensedSoftBodyFace(int idx){return m_sensedResults[idx].m_sensedSoftBodyFace;}
 
     // Get the sensed SofyBody's Closest node the sensed point Node if any
-    inline btSoftBody::Node* getSensedSoftBodyNode(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyNode;}
+    inline btSoftBody::Node* getSensedSoftBodyNode(int idx){return m_sensedResults[idx].m_sensedSoftBodyNode;}
 
     // Get the sensed SofyBody's Face's index if any
-    inline int getSensedSoftBodyFaceIdx(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyFaceIdx;}
+    inline int getSensedSoftBodyFaceIdx(int idx){return m_sensedResults[idx].m_sensedSoftBodyFaceIdx;}
 
     // Get the sensed SofyBody's Node's Idx
-    inline int getSensedSoftBodyNodeIdx(int idx=0){return m_sensedResults[idx].m_sensedSoftBodyNodeIdx;}
+    inline int getSensedSoftBodyNodeIdx(int idx){return m_sensedResults[idx].m_sensedSoftBodyNodeIdx;}
 
     // Get the sensed point in world frame
-    inline cVector3d getSensedPoint(int idx=0){return m_sensedResults[idx].m_sensedLocationWorld;}
+    inline cVector3d getSensedPoint(int idx){return m_sensedResults[idx].m_sensedLocationWorld;}
 
-    inline void setRayFromInLocal(const cVector3d& a_rayFrom, int idx=0){m_sensedResults[idx].m_rayFromLocal = a_rayFrom;}
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom, int idx){m_sensedResults[idx].m_rayFromLocal = a_rayFrom;}
 
-    inline void setRayToInLocal(const cVector3d& a_rayTo, int idx=0){m_sensedResults[idx].m_rayToLocal = a_rayTo;}
+    inline void setRayToInLocal(const cVector3d& a_rayTo, int idx){m_sensedResults[idx].m_rayToLocal = a_rayTo;}
 
-    inline void setDirection(const cVector3d& a_direction, int idx=0){m_sensedResults[idx].m_direction = a_direction;}
+    inline void setDirection(const cVector3d& a_direction, int idx){m_sensedResults[idx].m_direction = a_direction;}
 
-    inline void setRange(const double& a_range, int idx=0){m_sensedResults[idx].m_range = a_range;}
+    inline void setRange(const double& a_range, int idx){m_sensedResults[idx].m_range = a_range;}
 
     inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
+
+    inline double getCount(){return m_count;}
 
     void enableVisualization();
 
     virtual void afExecuteCommand(double dt);
 
-    virtual void updatePositionFromDynamics();
 
     double m_range;
 
@@ -1122,7 +1120,7 @@ class afResistanceSensor: public afRayTracerSensor{
 public:
     afResistanceSensor(afWorldPtr a_afWorld);
     virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx="");
-    virtual void updateSensor();
+    virtual void updatePositionFromDynamics();
 
 public:
     inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}

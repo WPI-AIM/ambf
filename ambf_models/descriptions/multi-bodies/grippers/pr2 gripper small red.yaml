@@ -30,16 +30,26 @@ SENSOR Proximity0:
 SENSOR Proximity1:
   name: Proximity1
   type: Proximity
-  location: {x: -0.02, y: -0.03, z: 0.0}
-  direction: {x: 0.0, y: -1.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: -0.02, y: -0.03, z: 0.0}
+  array:
+    -
+      offset: {x: 0.0, y: 0.0, z: 0.0}
+      direction: {x: 0.0, y: -1.0, z: 0.0}
   range: 0.05
   parent: /ambf/env/BODY r_gripper_r_finger_tip_link
 
 SENSOR Proximity2:
   name: Proximity2
   type: Proximity
-  location: {x: 0.0, y: -0.03, z: 0.0}
-  direction: {x: 0.0, y: -1.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {{x: 0.0, y: -0.03, z: 0.0}
+  array:
+    -
+      offset: {x: 0.0, y: 0.0, z: 0.0}
+      direction: {x: 0.0, y: -1.0, z: 0.0}
   range: 0.05
   parent: /ambf/env/BODY r_gripper_l_finger_tip_link
 
