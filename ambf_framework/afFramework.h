@@ -1603,7 +1603,7 @@ public:
     void buildCollisionGroups();
 
     template <typename T, typename TMap>
-    T getObject(std::string a_name, TMap tMap, bool suppress_warning=false);
+    T getObject(std::string a_name, TMap tMap, bool suppress_warning);
 
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
