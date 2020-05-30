@@ -1507,7 +1507,7 @@ void updatePhysics(){
                             afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                             for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
                                 if (proximitySensorPtr->isTriggered(i) && simDev->m_gripper_angle < 0.5){
-                                    if (proximitySensorPtr->getSensedBodyType(i) == afSensedBodyType::RIGID_BODY){
+                                    if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
                                         if (!simDev->m_rigidGrippingConstraints[sIdx]){
                                             btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
                                             btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBTRigidBody(i);
@@ -1523,7 +1523,7 @@ void updatePhysics(){
                                         }
                                     }
 
-                                    if (proximitySensorPtr->getSensedBodyType(i) == afSensedBodyType::SOFT_BODY){
+                                    if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::SOFT_BODY){
                                         if (!simDev->m_softGrippingConstraints[sIdx]){
                                             // Here we implemented the softBody grad logic. We want to move the
                                             // soft body as we move the simulated end effector

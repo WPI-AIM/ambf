@@ -71,6 +71,7 @@
 #include "ambf_comm/Object.h"
 #include "ambf_comm/Camera.h"
 #include "ambf_comm/Light.h"
+#include "ambf_comm/Actuator.h"
 #include "ambf_comm/Sensor.h"
 #include "ambf_comm/World.h"
 #endif
@@ -119,6 +120,12 @@ class afResistanceSensor;
 typedef afSensor* afSensorPtr;
 typedef std::map<std::string, afSensorPtr> afSensorMap;
 typedef std::vector<afSensorPtr> afSensorVec;
+//------------------------------------------------------------------------------
+class afActuator;
+class afConstraintActuator;
+typedef afActuator* afActuatorPtr;
+typedef std::map<std::string, afActuatorPtr> afActuatorMap;
+typedef std::vector<afActuatorPtr> afActuatorVec;
 //------------------------------------------------------------------------------
 class afMultiBody;
 typedef afMultiBody* afMultiBodyPtr;
@@ -229,6 +236,7 @@ enum afCommType{
     OBJECT,
     CAMERA,
     LIGHT,
+    ACTUATOR,
     SENSOR,
     WORLD
 };
@@ -251,6 +259,7 @@ public:
     std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
     std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
+    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
@@ -556,6 +565,9 @@ public:
     // Add sensor to this body
     bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
 
+    // Add sensor to this body
+    bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
+
     // Get the sensors for this body
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
@@ -600,6 +612,9 @@ protected:
 
     // Sensors for this Rigid Body
     afSensorVec m_afSensors;
+
+    // Actuators for this Rigid Body
+    afActuatorVec m_afActuators;
 
 protected:
     // Internal method called for population densely connected body tree
@@ -890,6 +905,104 @@ private:
     double m_curPos;
 };
 
+
+enum afActuatorType{
+    constraint = 0
+};
+
+
+///
+/// \brief The afActuator class
+///
+class afActuator: public afBaseObject{
+public:
+    afActuator(afWorldPtr a_afWorld);
+
+    // Load actuator from filename
+    virtual bool loadActuator(std::string actuator_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    // Load actuator form YAML node data
+    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    virtual void actuate(){}
+
+    virtual void deactuate(){}
+
+    // Parent Body for this sensor
+    afRigidBodyPtr m_parentBody;
+
+    bool m_showActuator;
+
+    virtual void afExecuteCommand(double dt){}
+
+    virtual void updatePositionFromDynamics(){}
+
+protected:
+    bool m_actuate = false;
+
+};
+
+
+
+///
+/// \brief The afConstraintActuator class. First type of actuator class. Ultimately we can add things like drills, cutters, magnets
+/// etc all as actuators.
+///
+class afConstraintActuator: public afActuator{
+public:
+    afConstraintActuator(afWorldPtr a_afWorld);
+
+    // Load actuator from filename
+    virtual bool loadActuator(std::string actuator_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping = "");
+
+    // Load actuator form YAML node data
+    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping = "");
+
+    // The actuate methods will all result in the same thing. I.e. constraint a desired body or soft-body (face) to the parent body,
+    // on which this actuator is mounted. The methods will use the current position of bodies or soft-bodyies to compute the parent
+    // and child offsets for forming the constraint
+    virtual void actuate(std::string a_rigid_body_name);
+
+    virtual void actuate(afRigidBodyPtr a_rigidBody);
+
+    virtual void actuate(std::string a_softbody_name, int a_face_index);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index);
+
+    // In these actuate methods, explicit body offsets are provided.
+
+    virtual void actuate(std::string a_rigid_body_name, cVector3d a_bodyOffset);
+
+    virtual void actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset);
+
+    virtual void actuate(std::string a_softbody_name, int a_face_index, cVector3d a_bodyOffset);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset);
+
+    // Remove the constraint
+    virtual void deactuate();
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
+protected:
+
+    double m_maxImpulse = 3.0;
+    double m_tau = 0.001;
+    btPoint2PointConstraint* m_constraint = 0;
+    // Transform of actuator w.r.t. parent body
+    cTransform m_T_aINp;
+
+
+private:
+    afRigidBodyPtr m_childRigidBody = 0;
+    afSensorPtr m_childSotBody = 0;
+    int m_softBodyFaceIdx = -1;
+    // Child offset w.r.t to actuator
+    cVector3d m_P_cINp;
+};
+
 //-----------------------------------------------------------------------------
 enum afSensorType{
     proximity=0, range=1, resistance=2
@@ -937,7 +1050,7 @@ public:
 };
 
 // Declare enum to find out later what type of body we sensed
-enum afSensedBodyType{
+enum class afBodyType{
     RIGID_BODY=0, SOFT_BODY=1};
 
 struct afRayTracerResult{
@@ -999,7 +1112,7 @@ struct afRayTracerResult{
     cVector3d m_contactNormal;
 
     // Type of sensed body, could be a rigid body or a soft body
-    afSensedBodyType m_sensedBodyType;
+    afBodyType m_sensedBodyType;
 };
 
 
@@ -1025,7 +1138,7 @@ public:
     inline bool isTriggered(int idx){return m_sensedResults[idx].m_triggered;}
 
     // Get the type of sensed body
-    inline afSensedBodyType getSensedBodyType(int idx){return m_sensedResults[idx].m_sensedBodyType;}
+    inline afBodyType getSensedBodyType(int idx){return m_sensedResults[idx].m_sensedBodyType;}
 
     // Return the sensed BT RigidBody's Ptr
     inline btRigidBody* getSensedBTRigidBody(int idx){return m_sensedResults[idx].m_sensedBTRigidBody;}
@@ -1481,12 +1594,16 @@ public:
     bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
     bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
     bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+    bool addAFActuator(afActuatorPtr a_actuator, std::string a_name);
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
+
+    template <typename T, typename TMap>
+    T getObject(std::string a_name, TMap tMap, bool suppress_warning=false);
 
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
@@ -1495,6 +1612,7 @@ public:
     afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
     afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
     afJointPtr getAFJoint(std::string a_name);
+    afActuatorPtr getAFActuator(std::string a_name);
     afSensorPtr getAFSensor(std::string a_name);
     afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
     std::string getNamespace(){return m_namespace;}
@@ -1510,6 +1628,7 @@ public:
     inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
     inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
     inline afJointMap* getAFJointMap(){return &m_afJointMap;}
+    inline afActuatorMap* getAFActuatorMap(){return &m_afActuatorMap;}
     inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
     inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
 
@@ -1520,6 +1639,7 @@ public:
     afRigidBodyVec getAFRigidBodies();
     afSoftBodyVec getAFSoftBodies();
     afJointVec getAFJoints();
+    afActuatorVec getAFActuators();
     afSensorVec getAFSensors();
     afMultiBodyVec getAFMultiBodies();
 
@@ -1572,6 +1692,7 @@ protected:
     afRigidBodyMap m_afRigidBodyMap;
     afSoftBodyMap m_afSoftBodyMap;
     afJointMap m_afJointMap;
+    afActuatorMap m_afActuatorMap;
     afSensorMap m_afSensorMap;
     afMultiBodyMap m_afMultiBodyMap;
 

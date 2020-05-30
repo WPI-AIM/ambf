@@ -169,6 +169,43 @@ cVector3d toCvec(const btVector3 &bVec){
 }
 
 
+///
+/// \brief toBTtransfrom
+/// \param cTrans
+/// \return
+///
+btTransform toBTtransfrom(const cTransform &cTrans){
+    btTransform btTrans;
+    btVector3 btVec(cTrans.getLocalPos().x(), cTrans.getLocalPos().y(), cTrans.getLocalPos().z());
+    btTrans.setOrigin(btVec);
+    cQuaternion cQuat;
+    cQuat.fromRotMat(cTrans.getLocalRot());
+
+    btQuaternion btQuat(cQuat.x, cQuat.y, cQuat.z, cQuat.w);
+    btTrans.setRotation(btQuat);
+
+    return btTrans;
+}
+
+
+///
+/// \brief toCtransform
+/// \param btTrans
+/// \return
+///
+cTransform toCtransform(const btTransform &btTrans){
+    cTransform cTrans;
+    cVector3d cVec(btTrans.getOrigin().x(), btTrans.getOrigin().y(), btTrans.getOrigin().z());
+    cTrans.setLocalPos(cVec);
+
+    cQuaternion cQuat(btTrans.getRotation().w(), btTrans.getRotation().x(), btTrans.getRotation().y(), btTrans.getRotation().z());
+    cMatrix3d cRot;
+    cQuat.toRotMat(cRot);
+    cTrans.setLocalRot(cRot);
+    return cTrans;
+}
+
+
 template<typename T>
 ///
 /// \brief afUtils::getNonCollidingIdx
@@ -626,6 +663,9 @@ void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::stri
     case afCommType::LIGHT:
         m_afLightCommPtr.reset(new ambf_comm::Light(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
+    case afCommType::ACTUATOR:
+        m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
     case afCommType::SENSOR:
         m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
@@ -872,6 +912,258 @@ afBaseObject::afBaseObject(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld){
 afBaseObject::~afBaseObject(){
 
 }
+
+
+///
+/// \brief afActuator::afActuator
+/// \param a_afWorld
+///
+afActuator::afActuator(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+
+}
+
+
+///
+/// \brief afConstraintActuator::afConstraintActuator
+/// \param a_afWorld
+///
+afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld): afActuator(a_afWorld){
+
+}
+
+
+bool afConstraintActuator::loadActuator(std::string actuator_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(actuator_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO ACTUATOR CONFIG: " << actuator_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseActuatorrNode = baseNode[node_name];
+    return loadActuator(&baseActuatorrNode, node_name, mB, name_remapping);
+}
+
+
+bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping){
+    YAML::Node actuatorNode = *actuator_node;
+    if (actuatorNode.IsNull()){
+        std::cerr << "ERROR: ACTUATOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node actuatorParentName = actuatorNode["parent"];
+    YAML::Node actuatorName = actuatorNode["name"];
+    YAML::Node actuatorNamespace = actuatorNode["namespace"];
+    YAML::Node actuatorPos = actuatorNode["location"]["position"];
+    YAML::Node actuatorRot = actuatorNode["location"]["orientation"];
+    YAML::Node actuatorPublishFrequency = actuatorNode["publish frequency"];
+    YAML::Node actuatorVisible = actuatorNode["visible"];
+    YAML::Node actuatorVisibleSize = actuatorNode["visible size"];
+    YAML::Node actuatorMaxImpulse = actuatorNode["max impulse"];
+    YAML::Node actuatorTau = actuatorNode["tau"];
+
+
+    std::string parent_name;
+    if (actuatorParentName.IsDefined()){
+        parent_name = actuatorParentName.as<std::string>();
+    }
+    else{
+        result = false;
+    }
+
+    m_name = actuatorName.as<std::string>();
+
+    if(actuatorPos.IsDefined()){
+        m_initialPos = toXYZ<cVector3d>(&actuatorPos);
+        setLocalPos(m_initialPos);
+    }
+
+    if(actuatorRot.IsDefined()){
+        double r = actuatorRot["r"].as<double>();
+        double p = actuatorRot["p"].as<double>();
+        double y = actuatorRot["y"].as<double>();
+        m_initialRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
+        setLocalRot(m_initialRot);
+    }
+
+    if(actuatorNamespace.IsDefined()){
+        m_namespace = actuatorNamespace.as<std::string>();
+    }
+    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
+
+    if (actuatorPublishFrequency.IsDefined()){
+        m_min_publish_frequency = actuatorPublishFrequency["low"].as<int>();
+        m_max_publish_frequency = actuatorPublishFrequency["high"].as<int>();
+    }
+
+    if (actuatorVisible.IsDefined()){
+        m_showActuator = actuatorVisible.as<bool>();
+    }
+    else{
+        m_showActuator = false;
+    }
+
+    // First search in the local space.
+    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
+
+    if(!m_parentBody){
+        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
+    }
+
+    if (m_parentBody == NULL){
+        std::cerr << "ERROR: ACTUATOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
+        return 0;
+    }
+    else{
+        m_parentBody->addAFActuator(this);
+    }
+
+    if (actuatorMaxImpulse.IsDefined()){
+        m_maxImpulse = actuatorMaxImpulse.as<double>();
+    }
+
+    if (actuatorTau.IsDefined()){
+        m_tau = actuatorTau.as<double>();
+    }
+
+    return result;
+
+}
+
+
+void afConstraintActuator::actuate(std::string a_rigid_body_name){
+
+    afRigidBodyPtr body = m_afWorld->getAFRigidBody(a_rigid_body_name);
+    actuate(body);
+
+}
+
+void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody){
+    if (a_rigidBody){
+        // Since this method does not require an explicit offset, find the relative location
+        // of the body and then use it as its offset for the constraint
+        btTransform T_aINp = toBTtransfrom(getLocalTransform());
+        btTransform T_pINw = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform();
+        btTransform T_wINc = a_rigidBody->m_bulletRigidBody->getCenterOfMassTransform().inverse();
+        btTransform T_aINw = T_pINw * T_aINp;
+
+        btTransform T_aINc = T_wINc * T_aINw;
+
+        cVector3d P_aINc = toCvec(T_aINc.getOrigin());
+
+        actuate(a_rigidBody, P_aINc);
+    }
+
+}
+
+void afConstraintActuator::actuate(std::string a_rigid_body_name, cVector3d a_bodyOffset){
+    afRigidBodyPtr body = m_afWorld->getAFRigidBody(a_rigid_body_name);
+    actuate(body, a_bodyOffset);
+}
+
+void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset){
+    // Check if a constraint is already active
+    if (m_constraint){
+        // Check if the new requested actuation is the same as what is already
+        // actuated. In this case simple ignore the request
+
+        if (a_rigidBody == m_childRigidBody && (m_P_cINp - a_bodyOffset).length() < 0.001){
+            // We already have the same constraint. We can ignore the new request
+
+            std::cerr << "INFO! ACTUATOR \"" << m_name << "\" IS ACTIVATED WITH THE SAME BODY AND OFFSET. THEREBY "
+                                                          "IGNORING REQUEST \n";
+            return;
+        }
+        else{
+            // Deactuate the constraint first
+            deactuate();
+        }
+    }
+
+    if (a_rigidBody){
+        btVector3 pvtA = toBTvec(getLocalPos());
+        btVector3 pvtB = toBTvec(a_bodyOffset);
+        m_constraint = new btPoint2PointConstraint(*m_parentBody->m_bulletRigidBody, *a_rigidBody->m_bulletRigidBody, pvtA, pvtB);
+        m_constraint->m_setting.m_impulseClamp = m_maxImpulse;
+        m_constraint->m_setting.m_tau = m_tau;
+        m_afWorld->m_bulletWorld->addConstraint(m_constraint);
+    }
+    else{
+        // We can warn that the requested body is in valid
+    }
+}
+
+void afConstraintActuator::actuate(std::string a_softbody_name, int a_face_index){
+
+}
+
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index){
+
+}
+
+void afConstraintActuator::actuate(std::string a_softbody_name, int a_face_index, cVector3d a_bodyOffset){
+
+}
+
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset){
+
+}
+
+void afConstraintActuator::deactuate(){
+    if (m_constraint){
+        m_afWorld->m_bulletWorld->removeConstraint(m_constraint);
+        delete m_constraint;
+
+        m_constraint = 0;
+        m_childRigidBody = 0;
+        m_childSotBody = 0;
+        m_softBodyFaceIdx = -1;
+    }
+}
+
+
+///
+/// \brief afCartesianController::afExecuteCommand
+/// \param dt
+///
+void afConstraintActuator::afExecuteCommand(double dt){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afActuatorCommPtr.get() != nullptr){
+        ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
+
+        if (cmd.actuate){
+             std::string body_name = cmd.body_name.data;
+            if (cmd.use_offset){
+                cVector3d body_offset(cmd.body_offset.position.x,
+                                      cmd.body_offset.position.y,
+                                      cmd.body_offset.position.z);
+                actuate(body_name, body_offset);
+            }
+            else{
+                actuate(body_name);
+            }
+        }
+        else{
+            deactuate();
+        }
+    }
+#endif
+}
+
+
+///
+/// \brief afConstraintActuator::updatePositionFromDynamics
+///
+void afConstraintActuator::updatePositionFromDynamics(){
+
+}
+
 
 
 ///
@@ -3645,6 +3937,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     if(sensorNamespace.IsDefined()){
         m_namespace = sensorNamespace.as<std::string>();
     }
+    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
 
     m_range = 0.0;
     if(sensorRange.IsDefined()){
@@ -3798,7 +4091,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                     == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
                 m_sensedResults[i].m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(rayCallBack.m_collisionObject);
                 m_sensedResults[i].m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_sensedResults[i].m_sensedBTRigidBody);
-                m_sensedResults[i].m_sensedBodyType = RIGID_BODY;
+                m_sensedResults[i].m_sensedBodyType = afBodyType::RIGID_BODY;
             }
             else if (rayCallBack.m_collisionObject->getInternalType()
                      == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
@@ -3830,7 +4123,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                     m_sensedResults[i].m_sensedSoftBodyFace = &sensedSoftBody->m_faces[sensedSoftBodyFaceIdx];
                     m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
                     m_sensedResults[i].m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_sensedResults[i].m_sensedBTSoftBody);
-                    m_sensedResults[i].m_sensedBodyType = SOFT_BODY;
+                    m_sensedResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
                 }
                 // Reset the maxDistance for node checking
                 maxDistance = 0.1;
@@ -3847,7 +4140,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                     m_sensedResults[i].m_sensedSoftBodyNodeIdx = sensedSoftBodyNodeIdx;
                     m_sensedResults[i].m_sensedSoftBodyNode = &sensedSoftBody->m_nodes[sensedSoftBodyNodeIdx];
                     m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
-                    m_sensedResults[i].m_sensedBodyType = SOFT_BODY;
+                    m_sensedResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
                 }
             }
             m_sensedResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
@@ -4092,7 +4385,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
             btVector3 F_d_w(0,0,0); // Due to "sliding" friction
             btVector3 F_n_w(0,0,0); // Force normal to contact point.
 
-            if (getSensedBodyType(i) == afSensedBodyType::RIGID_BODY){
+            if (getSensedBodyType(i) == afBodyType::RIGID_BODY){
 
                 // Get the fraction of contact point penetration from the range of the sensor
                 // Subscript (a) represents parent body, which is the parent of this sensor
@@ -4222,7 +4515,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 getSensedBTRigidBody(i)->applyTorque(Tau_bINw);
             }
 
-            else if (getSensedBodyType(i) == afSensedBodyType::SOFT_BODY){
+            else if (getSensedBodyType(i) == afBodyType::SOFT_BODY){
 
             }
         }
@@ -4577,6 +4870,11 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 //    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
 //        (senIt->second)->afExecuteCommand(dt);
 //    }
+
+    afActuatorMap::iterator actIt;
+    for (actIt = m_afActuatorMap.begin() ; actIt != m_afActuatorMap.end() ; ++actIt){
+        (actIt->second)->afExecuteCommand(dt);
+    }
 
     // integrate simulation during an certain interval
     m_bulletWorld->stepSimulation(a_interval, m_maxIterations, m_integrationTimeStep);
@@ -5025,6 +5323,17 @@ bool afWorld::addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name){
 ///
 bool afWorld::addAFJoint(afJointPtr a_jnt, std::string a_name){
     m_afJointMap[a_name] = a_jnt;
+    return true;
+}
+
+///
+/// \brief afWorld::addAFActuator
+/// \param a_sensor
+/// \param a_name
+/// \return
+///
+bool afWorld::addAFActuator(afActuatorPtr a_sensor, std::string a_name){
+    m_afActuatorMap[a_name] = a_sensor;
     return true;
 }
 
@@ -6429,6 +6738,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     YAML::Node multiBodySoftBodies = multiBodyNode["soft bodies"];
     YAML::Node multiBodyJoints = multiBodyNode["joints"];
     YAML::Node multiBodySensors = multiBodyNode["sensors"];
+    YAML::Node multiBodyActuators = multiBodyNode["actuators"];
     YAML::Node multiBodyJointERP = multiBodyNode["joint erp"];
     YAML::Node multiBodyJointCFM = multiBodyNode["joint cfm"];
     YAML::Node multiBodyIgnoreInterCollision = multiBodyNode["ignore inter-collision"];
@@ -6512,13 +6822,13 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         YAML::Node sensor_node = multiBodyNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
-            std::string _sensor_type = sensor_node["type"].as<std::string>();
+            std::string sensor_type = sensor_node["type"].as<std::string>();
             // Check if this is a proximity sensor
             // More sensors to follow
-            if (_sensor_type.compare("Proximity") == 0 || _sensor_type.compare("proximity") == 0 || _sensor_type.compare("PROXIMITY") == 0){
+            if (sensor_type.compare("Proximity") == 0 || sensor_type.compare("proximity") == 0 || sensor_type.compare("PROXIMITY") == 0){
                 sensorPtr = new afProximitySensor(m_afWorld);
             }
-            if (_sensor_type.compare("Resistance") == 0 || _sensor_type.compare("resistance") == 0 || _sensor_type.compare("RESISTANCE") == 0){
+            if (sensor_type.compare("Resistance") == 0 || sensor_type.compare("resistance") == 0 || sensor_type.compare("RESISTANCE") == 0){
                 sensorPtr = new afResistanceSensor(m_afWorld);
             }
 
@@ -6534,7 +6844,45 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                                                         m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
                                                         sensorPtr->getMinPublishFrequency(),
                                                         sensorPtr->getMaxPublishFrequency());
-                        sensorPtr->m_afSensorCommPtr->set_type(_sensor_type);
+                        sensorPtr->m_afSensorCommPtr->set_type(sensor_type);
+//                    }
+                }
+            }
+        }
+        else{
+            continue;
+        }
+    }
+
+    /// Loading Sensors
+    afActuatorPtr actuatorPtr = 0;
+    size_t totalActuators = multiBodyActuators.size();
+    for (size_t i = 0; i < totalActuators; ++i) {
+        std::string actuator_name = multiBodyActuators[i].as<std::string>();
+        std::string remap_str = afUtils::getNonCollidingIdx(m_namespace + actuator_name, m_afWorld->getAFActuatorMap());
+        YAML::Node actuator_node = multiBodyNode[actuator_name];
+        // Check which type of sensor is this so we can cast appropriately beforehand
+        if (actuator_node["type"].IsDefined()){
+            std::string actuator_type = actuator_node["type"].as<std::string>();
+            // Check if this is a constraint sensor
+            // More actuators to follow
+            if (actuator_type.compare("Constraint") == 0 || actuator_type.compare("constraint") == 0 || actuator_type.compare("CONSTRAINT") == 0){
+                actuatorPtr = new afConstraintActuator(m_afWorld);
+            }
+
+            // Finally load the sensor from ambf config data
+            if (actuatorPtr){
+                if (actuatorPtr->loadActuator(&actuator_node, actuator_name, this, remap_str)){
+                    std::cerr << "LOADING ACTUATOR NUMBER " << i << "\n";
+                    m_afWorld->addAFActuator(actuatorPtr, m_namespace + actuator_name + remap_str);
+//                    if (enable_comm){
+                        std::cerr << "LOADING ACTUATOR COMM \n";
+                        actuatorPtr->afCreateCommInstance(afCommType::ACTUATOR,
+                                                        actuatorPtr->m_name + remap_str,
+                                                        m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
+                                                        actuatorPtr->getMinPublishFrequency(),
+                                                        actuatorPtr->getMaxPublishFrequency());
+                        actuatorPtr->m_afActuatorCommPtr->set_type(actuator_type);
 //                    }
                 }
             }
@@ -6699,6 +7047,26 @@ afLightPtr afWorld::getAFLight(std::string a_name, bool suppress_warning){
             afLightMap::iterator lightIt = m_afLightMap.begin();
             for (; lightIt != m_afLightMap.end() ; ++lightIt){
                 std::cerr << lightIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+template<typename T, typename TMap>
+T afWorld::getObject(std::string a_name, TMap map, bool suppress_warning){
+    if (map.find(a_name) != map.end()){
+        return map[a_name];
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\"\n";
+
+            std::cerr <<"Existing OBJECTS in Map: " << map.size() << std::endl;
+            typename TMap::iterator oIt = map.begin();
+            for (; oIt != map.end() ; ++oIt){
+                std::cerr << oIt->first << std::endl;
             }
         }
         return NULL;
