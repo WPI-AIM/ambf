@@ -7,7 +7,7 @@ import time
 from argparse import ArgumentParser
 
 
-# Init everthing related to SpaceNav
+# Init everything related to SpaceNav
 class SpaceNavDevice:
     # The name should include the full qualified prefix. I.e. '/Geomagic/', or '/omniR_' etc.
     def __init__(self, name, ambf_client, obj_name, camera_obj_handle=None):
