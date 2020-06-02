@@ -7041,6 +7041,30 @@ T afWorld::getObject(std::string a_name, TMap map, bool suppress_warning){
     if (map.find(a_name) != map.end()){
         return map[a_name];
     }
+    // We didn't find the object using the full name, try checking if the name is a substring of the fully qualified name
+    int matching_obj_count = 0;
+    std::vector<std::string> matching_obj_names;
+    T objHandle;
+    typename TMap::iterator oIt = map.begin();
+    for (; oIt != map.end() ; ++oIt){
+        if (oIt->first.find(a_name) != std::string::npos){
+            matching_obj_count++;
+            matching_obj_names.push_back(oIt->first);
+            objHandle = oIt->second;
+        }
+    }
+
+    if (matching_obj_count == 1){
+        // If only one object is found, return that object
+        return objHandle;
+    }
+    else if(matching_obj_count > 1){
+        std::cerr << "WARNING: MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        for (int i = 0 ; i < matching_obj_names.size() ; i++){
+            std::cerr << "\t" << i << ") " << matching_obj_names[i] << std::endl;
+        }
+        return NULL;
+    }
     else{
         if (!suppress_warning){
             std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\"\n";
