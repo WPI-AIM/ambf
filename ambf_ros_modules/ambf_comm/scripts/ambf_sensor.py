@@ -93,11 +93,11 @@ class Sensor(BaseObject):
         if idx < len(self._state.measurement):
             return self._state.measurement[idx]
 
-    def get_sensed_objects(self, idx):
+    def get_sensed_object(self, idx):
         """
         Get the name of sensed object by a specific sensor element.
         :param idx:
         :return:
         """
         if idx < len(self._state.sensed_objects):
-            return self._state.sensed_objects[idx]
+            return self._state.sensed_objects[idx].data
