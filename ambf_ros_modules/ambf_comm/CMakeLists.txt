@@ -87,12 +87,14 @@ set (OBJ_HDR_FILES include/${PROJECT_NAME}/Object.h
                    include/${PROJECT_NAME}/Light.h
 		               include/${PROJECT_NAME}/Actuator.h
 		               include/${PROJECT_NAME}/Sensor.h
+		               include/${PROJECT_NAME}/Vehicle.h
                    include/${PROJECT_NAME}/RosComBase.h
                    include/${PROJECT_NAME}/ObjectRosCom.h
                    include/${PROJECT_NAME}/CameraRosCom.h
                    include/${PROJECT_NAME}/LightRosCom.h
                    include/${PROJECT_NAME}/ActuatorRosCom.h
                    include/${PROJECT_NAME}/SensorRosCom.h
+                   include/${PROJECT_NAME}/VehicleRosCom.h
                    include/${PROJECT_NAME}/CmdWatchDog.h)
 
 set (OBJ_SRC_FILES src/Object.cpp
@@ -100,11 +102,13 @@ set (OBJ_SRC_FILES src/Object.cpp
                    src/Light.cpp
                    src/Actuator.cpp
                    src/Sensor.cpp
+                   src/Vehicle.cpp
                    src/ObjectRosCom.cpp
                    src/CameraRosCom.cpp
                    src/LightRosCom.cpp
                    src/ActuatorRosCom.cpp
                    src/SensorRosCom.cpp
+                   src/VehicleRosCom.cpp
                    src/RosComBase.cpp)
 
 

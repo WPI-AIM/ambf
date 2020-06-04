@@ -73,6 +73,7 @@
 #include "ambf_comm/Light.h"
 #include "ambf_comm/Actuator.h"
 #include "ambf_comm/Sensor.h"
+#include "ambf_comm/Vehicle.h"
 #include "ambf_comm/World.h"
 #endif
 //-----------------------------------------------------------------------------
@@ -243,6 +244,7 @@ enum afCommType{
     LIGHT,
     ACTUATOR,
     SENSOR,
+    VEHICLE,
     WORLD
 };
 
@@ -266,6 +268,7 @@ public:
     std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
+    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
 
@@ -1890,7 +1893,11 @@ struct afWheel{
     cVector3d m_downDirection;
     cVector3d m_axelDirection;
     cVector3d m_offset;
-    bool m_isFront;
+    bool m_isFront = false;
+    double m_high_steering_lim = 0.0;
+    double m_low_steering_lim = 0.0;
+    double m_max_engine_power = 0.0;
+    double m_max_brake_power = 0.0;
 };
 
 class afVehicle: public afBaseObject{

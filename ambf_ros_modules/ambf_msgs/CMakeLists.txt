@@ -60,6 +60,8 @@ find_package(catkin REQUIRED COMPONENTS
    CameraCmd.msg
    LightState.msg
    LightCmd.msg
+   VehicleState.msg
+   VehicleCmd.msg
    WorldState.msg
    WorldCmd.msg
  )

@@ -42,87 +42,43 @@
 */
 //==============================================================================
 
+#include "ambf_comm/VehicleRosCom.h"
 
-#include "ambf_comm/RosComBase.h"
-#include "ambf_msgs/ObjectCmd.h"
-#include "ambf_msgs/ObjectState.h"
-#include "ambf_msgs/ActuatorCmd.h"
-#include "ambf_msgs/ActuatorState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/CameraState.h"
-#include "ambf_msgs/CameraCmd.h"
-#include "ambf_msgs/LightState.h"
-#include "ambf_msgs/LightCmd.h"
-#include "ambf_msgs/VehicleCmd.h"
-#include "ambf_msgs/VehicleState.h"
-#include "ambf_msgs/WorldCmd.h"
-#include "ambf_msgs/WorldState.h"
-
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+VehicleRosCom::VehicleRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+    init();
 }
 
+void VehicleRosCom::init(){
+    m_State.name.data = m_name;
+    m_State.sim_step = 0;
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+    m_pub = nodePtr->advertise<ambf_msgs::VehicleState>("/" + m_namespace + "/" + m_name + "/State", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &VehicleRosCom::sub_cb, this);
+
+    m_thread = boost::thread(boost::bind(&VehicleRosCom::run_publishers, this));
+    std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+VehicleRosCom::~VehicleRosCom(){
+    ros::shutdown();
+    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
 }
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+void VehicleRosCom::reset_cmd(){
+    for (int i = 0 ; i < m_Cmd.wheel_power.size() ; i++){
+        m_Cmd.wheel_power[i] = 0.0;
+    }
+
+    for (int i = 0 ; i < m_Cmd.wheel_brake.size() ; i++){
+        m_Cmd.wheel_brake[i] = 0.0;
+    }
+
+    for (int i = 0 ; i < m_Cmd.wheel_steering.size() ; i++){
+        m_Cmd.wheel_steering[i] = 0.0;
+    }
 }
 
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+void VehicleRosCom::sub_cb(ambf_msgs::VehicleCmdConstPtr msg){
+    m_Cmd = *msg;
+    m_watchDogPtr->acknowledge_wd();
 }
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-

@@ -42,87 +42,28 @@
 */
 //==============================================================================
 
+#ifndef AFVEHICLECOMM_H
+#define AFVEHICLECOMM_H
 
-#include "ambf_comm/RosComBase.h"
-#include "ambf_msgs/ObjectCmd.h"
-#include "ambf_msgs/ObjectState.h"
-#include "ambf_msgs/ActuatorCmd.h"
-#include "ambf_msgs/ActuatorState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/CameraState.h"
-#include "ambf_msgs/CameraCmd.h"
-#include "ambf_msgs/LightState.h"
-#include "ambf_msgs/LightCmd.h"
-#include "ambf_msgs/VehicleCmd.h"
-#include "ambf_msgs/VehicleState.h"
-#include "ambf_msgs/WorldCmd.h"
-#include "ambf_msgs/WorldState.h"
+#include <string>
+#include "ambf_comm/VehicleRosCom.h"
 
+namespace ambf_comm{
+class Vehicle: public VehicleRosCom{
+public:
+    Vehicle(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    inline void set_name(std::string name){m_State.name.data = name;}
+    void cur_position(double px, double py, double pz);
+    void cur_orientation(double roll, double pitch, double yaw);
+    void cur_orientation(double qx, double qy, double qz, double qw);
+    ambf_msgs::VehicleCmd get_command();
+    void set_wall_time(double a_sec);
+    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
+    inline void increment_sim_step(){m_State.sim_step++;}
+    inline void set_sim_step(uint step){m_State.sim_step = step;}
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+    void set_type(std::string type);
+};
 }
 
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
+#endif

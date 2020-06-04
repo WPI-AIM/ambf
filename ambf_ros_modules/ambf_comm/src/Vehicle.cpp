@@ -42,87 +42,53 @@
 */
 //==============================================================================
 
+#include "ambf_comm/Vehicle.h"
+namespace ambf_comm{
 
-#include "ambf_comm/RosComBase.h"
-#include "ambf_msgs/ObjectCmd.h"
-#include "ambf_msgs/ObjectState.h"
-#include "ambf_msgs/ActuatorCmd.h"
-#include "ambf_msgs/ActuatorState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/CameraState.h"
-#include "ambf_msgs/CameraCmd.h"
-#include "ambf_msgs/LightState.h"
-#include "ambf_msgs/LightCmd.h"
-#include "ambf_msgs/VehicleCmd.h"
-#include "ambf_msgs/VehicleState.h"
-#include "ambf_msgs/WorldCmd.h"
-#include "ambf_msgs/WorldState.h"
+Vehicle::Vehicle(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): VehicleRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+}
 
+ambf_msgs::VehicleCmd Vehicle::get_command(){
+    ambf_msgs::VehicleCmd temp_cmd = m_Cmd;
+    return temp_cmd;
+}
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+void Vehicle::cur_position(double px, double py, double pz){
+    m_trans.setOrigin(tf::Vector3(px, py, pz));
+    m_State.pose.position.x = px;
+    m_State.pose.position.y = py;
+    m_State.pose.position.z = pz;
+}
+
+void Vehicle::cur_orientation(double roll, double pitch, double yaw){
+    tf::Quaternion rot_quat;
+    rot_quat.setRPY(roll, pitch, yaw);
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+}
+
+void Vehicle::cur_orientation(double qx, double qy, double qz, double qw){
+    tf::Quaternion rot_quat(qx, qy, qz, qw);
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+}
+
+void Vehicle::set_wall_time(double a_sec){
+    m_State.wall_time = a_sec;
+    increment_sim_step();
+    m_State.header.stamp = ros::Time::now();
 }
 
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+extern "C"{
+
+Vehicle* create_Vehicle(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5){
+    return new Vehicle(a_name, a_namespace, a_min_freq, a_max_freq, time_out);
 }
 
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+void destroy_Vehicle(Vehicle* obj){
+    delete obj;
 }
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
 }
-
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
 }
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-

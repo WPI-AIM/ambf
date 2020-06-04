@@ -669,6 +669,9 @@ void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::stri
     case afCommType::SENSOR:
         m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
+    case afCommType::VEHICLE:
+        m_afVehicleCommPtr.reset(new ambf_comm::Vehicle(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
     case afCommType::WORLD:
         m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
@@ -4876,6 +4879,11 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         (actIt->second)->afExecuteCommand(dt);
     }
 
+    afVehicleMap::iterator vIt;
+    for (vIt = m_afVehicleMap.begin() ; vIt != m_afVehicleMap.end() ; ++vIt){
+        (vIt->second)->afExecuteCommand(dt);
+    }
+
     // integrate simulation during an certain interval
     m_bulletWorld->stepSimulation(a_interval, m_maxIterations, m_integrationTimeStep);
 
@@ -6895,11 +6903,11 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
             m_afVehicleMapLocal[vehiclePtr->getNamespace() + veh_name] = vehiclePtr;
             if (enable_comm){
 
-//                vehiclePtr->afCreateCommInstance(afCommType::OBJECT,
-//                                                 vehiclePtr->m_name + remap_str,
-//                                                 m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
-//                                                 vehiclePtr->getMinPublishFrequency(),
-//                                                 vehiclePtr->getMaxPublishFrequency());
+                vehiclePtr->afCreateCommInstance(afCommType::VEHICLE,
+                                                 vehiclePtr->m_name + remap_str,
+                                                 m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
+                                                 vehiclePtr->getMinPublishFrequency(),
+                                                 vehiclePtr->getMaxPublishFrequency());
             }
         }
     }
@@ -7367,9 +7375,11 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
     bool result = true;
     // Declare all the yaml parameters that we want to look for
     YAML::Node vehicleMeshPathHR = vehicleNode["high resolution path"];
+    YAML::Node vehicleName = vehicleNode["name"];
     YAML::Node vehicleChassis = vehicleNode["chassis"];
     YAML::Node vehicleWheels = vehicleNode["wheels"];
 
+    m_name = vehicleName.as<std::string>();
     std::string chassis_name = vehicleChassis.as<std::string>();
 
     m_chassis = m_afWorld->getAFRigidBody(chassis_name);
@@ -7396,6 +7406,10 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
         YAML::Node axelDirNode = vehicleWheels[i]["axel direction"];
         YAML::Node offsetNode = vehicleWheels[i]["offset"];
         YAML::Node frontNode = vehicleWheels[i]["front"];
+        YAML::Node steeringLimitsNode = vehicleWheels[i]["steering limits"];
+        YAML::Node maxEnginePowerNode = vehicleWheels[i]["max engine power"];
+        YAML::Node maxBrakePowerNode = vehicleWheels[i]["max brake power"];
+
 
         if (vehicleMeshPathHR.IsDefined()){
             high_res_path = vehicleMeshPathHR.as<std::string>();
@@ -7453,6 +7467,19 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
             m_wheels[i].m_isFront = frontNode.as<bool>();
         }
 
+        if (steeringLimitsNode.IsDefined()){
+            m_wheels[i].m_high_steering_lim = steeringLimitsNode["high"].as<double>();
+            m_wheels[i].m_low_steering_lim = steeringLimitsNode["low"].as<double>();
+        }
+
+        if (maxEnginePowerNode.IsDefined()){
+            m_wheels[i].m_max_engine_power = maxEnginePowerNode.as<double>();
+        }
+
+        if (maxBrakePowerNode.IsDefined()){
+            m_wheels[i].m_max_brake_power = maxBrakePowerNode.as<double>();
+        }
+
     }
 
     m_vehicleRayCaster = new btDefaultVehicleRaycaster(m_afWorld->m_bulletWorld);
@@ -7480,6 +7507,8 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
         wheelInfo.m_frictionSlip = m_wheels[i].m_friction;
         wheelInfo.m_rollInfluence = m_wheels[i].m_rollInfluence;
     }
+
+    return result;
 }
 
 
@@ -7489,6 +7518,60 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 ///
 void afVehicle::afExecuteCommand(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
+
+    int maxWheelCount;
+
+    if (af_cmd.brake){
+        for (int i = 0 ; i < m_numWheels ; i++){
+            m_vehicle->applyEngineForce(0.0, i);
+            m_vehicle->setBrake(m_wheels[i].m_max_brake_power, i);
+        }
+    }
+
+    else{
+
+        maxWheelCount = af_cmd.wheel_power.size() <= m_numWheels ? af_cmd.wheel_power.size() : m_numWheels;
+
+        for (int i = 0 ; i < maxWheelCount ; i++){
+            double val = af_cmd.wheel_power[i];
+            val = cClamp(val, 0.0, m_wheels[i].m_max_engine_power);
+            m_vehicle->applyEngineForce(val, i);
+        }
+
+        maxWheelCount = af_cmd.wheel_brake.size() <= m_numWheels ? af_cmd.wheel_brake.size() : m_numWheels;
+
+        for (int i = 0 ; i < maxWheelCount ; i++){
+            double val = af_cmd.wheel_brake[i];
+            val = cClamp(val, 0.0, m_wheels[i].m_max_brake_power);
+            m_vehicle->setBrake(val, i);
+        }
+    }
+
+    maxWheelCount = af_cmd.wheel_steering.size() <= m_numWheels ? af_cmd.wheel_steering.size() : m_numWheels;
+
+    for (int i = 0 ; i < maxWheelCount ; i++){
+        double val = af_cmd.wheel_steering[i];
+        val = cClamp(val, m_wheels[i].m_low_steering_lim, m_wheels[i].m_high_steering_lim);
+        m_vehicle->setSteeringValue(val, i);
+    }
+
+
+
+    // Apply forces and torques on the chassis
+    btVector3 force(af_cmd.chassis_wrench.force.x,
+                    af_cmd.chassis_wrench.force.y,
+                    af_cmd.chassis_wrench.force.z);
+    btVector3 torque(af_cmd.chassis_wrench.torque.x,
+                     af_cmd.chassis_wrench.torque.y,
+                     af_cmd.chassis_wrench.torque.z);
+
+    if (force.length() > 0.0){
+        m_chassis->m_bulletRigidBody->applyCentralForce(force);
+    }
+    if (torque.length() > 0.0){
+        m_chassis->m_bulletRigidBody->applyTorque(torque);
+    }
 
 #endif
 }
@@ -7499,6 +7582,7 @@ void afVehicle::afExecuteCommand(double dt){
 ///
 void afVehicle::updatePositionFromDynamics(){
     for (int i = 0; i < m_numWheels ; i++){
+        m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
         cTransform cTrans = toCtransform(btTrans);
         m_wheels[i].m_mesh->setLocalTransform(cTrans);
