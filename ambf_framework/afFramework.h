@@ -132,6 +132,11 @@ typedef afMultiBody* afMultiBodyPtr;
 typedef std::map<std::string, afMultiBodyPtr> afMultiBodyMap;
 typedef std::vector<afMultiBodyPtr> afMultiBodyVec;
 //------------------------------------------------------------------------------
+class afVehicle;
+typedef afVehicle* afVehiclePtr;
+typedef std::map<std::string, afVehiclePtr> afVehicleMap;
+typedef std::vector<afVehiclePtr> afVehicleVec;
+//------------------------------------------------------------------------------
 class afPointCloudsHandler;
 typedef cMultiPoint* cMultiPointPtr;
 
@@ -1567,18 +1572,30 @@ public:
     virtual ~afWorld(){}
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
     bool createDefaultWorld();
+
     double getEnclosureLength();
+
     double getEnclosureWidth();
+
     double getEnclosureHeight();
+
     void getEnclosureExtents(double &length, double &width, double &height);
+
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
+
     bool isPhysicsPaused(){return m_pausePhx;}
+
     // Used when the Physics is paused
     inline void stepPhysicsManually(int a_steps){m_manualStepPhx += a_steps;}
+
     int getManualSteps(){return m_manualStepPhx;}
+
     void resetCameras();
+
     void resetDynamicBodies(bool reset_time=false);
+
     int getMaxIterations(){return m_maxIterations;}
+
     double computeStepSize(bool adjust_intetration_steps = false);
 
     GLFWwindow* m_mainWindow;
@@ -1590,58 +1607,112 @@ public:
     virtual void updatePositionFromDynamics(void);
 
     bool addAFLight(afLightPtr a_rb, std::string a_name);
+
     bool addAFCamera(afCameraPtr a_rb, std::string a_name);
+
     bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+
     bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+
     bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+
     bool addAFActuator(afActuatorPtr a_actuator, std::string a_name);
+
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
+
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
+
+    bool addAFVehicle(afVehiclePtr a_vehicle, std::string a_name);
 
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
 
+
+    template<typename T, typename TMap>
+    bool addObject(T a_obj, std::string a_name, TMap* a_map);
+
     template <typename T, typename TMap>
-    T getObject(std::string a_name, TMap tMap, bool suppress_warning);
+    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+
+    template <typename Tvec, typename TMap>
+    Tvec getObjects(TMap* tMap);
+
+
 
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
-    afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
-    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
-    afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
-    afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
-    afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
-    afJointPtr getAFJoint(std::string a_name);
-    afActuatorPtr getAFActuator(std::string a_name);
-    afSensorPtr getAFSensor(std::string a_name);
-    afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
-    std::string getNamespace(){return m_namespace;}
-    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
 
-    std::string getGlobalNamespace(){return m_global_namespace;}
-    void setGlobalNamespace(std::string a_namespace);
+    afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
+
+    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
+
+    afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
+
+    afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
+
+    afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
+
+    afJointPtr getAFJoint(std::string a_name);
+
+    afActuatorPtr getAFActuator(std::string a_name);
+
+    afSensorPtr getAFSensor(std::string a_name);
+
+    afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
+
+    afVehiclePtr getAFVehicle(std::string a_name, bool suppress_warning=false);
+
+
+    inline afLightMap* getAFLightMap(){return &m_afLightMap;}
+
+    inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
+
+    inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
+
+    inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
+
+    inline afJointMap* getAFJointMap(){return &m_afJointMap;}
+
+    inline afActuatorMap* getAFActuatorMap(){return &m_afActuatorMap;}
+
+    inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
+
+    inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
+
+    inline afVehicleMap* getAFVehicleMap(){return &m_afVehicleMap;}
+
+
+    afLightVec  getAFLighs();
+
+    afCameraVec getAFCameras();
+
+    afRigidBodyVec getAFRigidBodies();
+
+    afSoftBodyVec getAFSoftBodies();
+
+    afJointVec getAFJoints();
+
+    afActuatorVec getAFActuators();
+
+    afSensorVec getAFSensors();
+
+    afMultiBodyVec getAFMultiBodies();
+
+    afVehicleVec getAFVehicles();
+
 
     std::string resolveGlobalNamespace(std::string a_name);
 
-    inline afLightMap* getAFLightMap(){return &m_afLightMap;}
-    inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
-    inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
-    inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
-    inline afJointMap* getAFJointMap(){return &m_afJointMap;}
-    inline afActuatorMap* getAFActuatorMap(){return &m_afActuatorMap;}
-    inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
-    inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
+    std::string getNamespace(){return m_namespace;}
+
+    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
+
+    std::string getGlobalNamespace(){return m_global_namespace;}
+
+    void setGlobalNamespace(std::string a_namespace);
+
 
     virtual void afExecuteCommand(double dt);
-
-    afLightVec  getAFLighs();
-    afCameraVec getAFCameras();
-    afRigidBodyVec getAFRigidBodies();
-    afSoftBodyVec getAFSoftBodies();
-    afJointVec getAFJoints();
-    afActuatorVec getAFActuators();
-    afSensorVec getAFSensors();
-    afMultiBodyVec getAFMultiBodies();
 
     // The collision groups are sorted by integer indices. A group is an array of
     // rigid bodies that collide with each other. The bodies in one group
@@ -1695,6 +1766,7 @@ protected:
     afActuatorMap m_afActuatorMap;
     afSensorMap m_afSensorMap;
     afMultiBodyMap m_afMultiBodyMap;
+    afVehicleMap m_afVehicleMap;
 
 
     afWorld(){}
@@ -1800,7 +1872,48 @@ private:
     // The multibody has list of bodies and joints defined for this specific multibody
     afRigidBodyMap m_afRigidBodyMapLocal;
     afSoftBodyMap m_afSoftBodyMapLocal;
+    afVehicleMap m_afVehicleMapLocal;
     afJointMap m_afJointMapLocal;
+};
+
+
+struct afWheel{
+    cMultiMesh* m_mesh;
+    double m_width;
+    double m_radius;
+    double m_friction;
+    double m_suspensionStiffness;
+    double m_suspensionDamping;
+    double m_suspensionCompression;
+    double m_suspensionRestLength;
+    double m_rollInfluence;
+    cVector3d m_downDirection;
+    cVector3d m_axelDirection;
+    cVector3d m_offset;
+    bool m_isFront;
+};
+
+class afVehicle: public afBaseObject{
+public:
+    afVehicle(afWorldPtr a_afWorld);
+
+    // Load the vehicle from ambf format
+    virtual bool loadVehicle(std::string vehicle_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load the vehicle from ambf format
+    virtual bool loadVehicle(YAML::Node* vehicle_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    virtual void updatePositionFromDynamics();
+
+    virtual void afExecuteCommand(double dt);
+
+protected:
+    btDefaultVehicleRaycaster* m_vehicleRayCaster;
+    btRaycastVehicle* m_vehicle;
+    btRaycastVehicle::btVehicleTuning m_tuning;
+    afRigidBodyPtr m_chassis;
+    int m_numWheels = 0;
+    std::vector<afWheel> m_wheels;
 };
 
 

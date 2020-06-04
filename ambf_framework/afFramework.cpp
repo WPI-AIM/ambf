@@ -5278,8 +5278,7 @@ bool afWorld::loadADF(std::string a_adf_filepath, bool enable_comm){
 /// \return
 ///
 bool afWorld::addAFLight(afLightPtr a_light, std::string a_name){
-    m_afLightMap[a_name] = a_light;
-    return true;
+    return addObject<afLightPtr, afLightMap>(a_light, a_name, &m_afLightMap);
 }
 
 ///
@@ -5289,8 +5288,7 @@ bool afWorld::addAFLight(afLightPtr a_light, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFCamera(afCameraPtr a_cam, std::string a_name){
-    m_afCameraMap[a_name] = a_cam;
-    return true;
+    return addObject<afCameraPtr, afCameraMap>(a_cam, a_name, &m_afCameraMap);
 }
 
 ///
@@ -5300,8 +5298,7 @@ bool afWorld::addAFCamera(afCameraPtr a_cam, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name){
-    m_afRigidBodyMap[a_name] = a_rb;
-    return true;
+    return addObject<afRigidBodyPtr, afRigidBodyMap>(a_rb, a_name, &m_afRigidBodyMap);
 }
 
 ///
@@ -5311,8 +5308,7 @@ bool afWorld::addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name){
-    m_afSoftBodyMap[a_name] = a_sb;
-    return true;
+    return addObject<afSoftBodyPtr, afSoftBodyMap>(a_sb, a_name, &m_afSoftBodyMap);
 }
 
 ///
@@ -5322,8 +5318,7 @@ bool afWorld::addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFJoint(afJointPtr a_jnt, std::string a_name){
-    m_afJointMap[a_name] = a_jnt;
-    return true;
+    return addObject<afJointPtr, afJointMap>(a_jnt, a_name, &m_afJointMap);
 }
 
 ///
@@ -5332,9 +5327,8 @@ bool afWorld::addAFJoint(afJointPtr a_jnt, std::string a_name){
 /// \param a_name
 /// \return
 ///
-bool afWorld::addAFActuator(afActuatorPtr a_sensor, std::string a_name){
-    m_afActuatorMap[a_name] = a_sensor;
-    return true;
+bool afWorld::addAFActuator(afActuatorPtr a_actuator, std::string a_name){
+    return addObject<afActuatorPtr, afActuatorMap>(a_actuator, a_name, &m_afActuatorMap);
 }
 
 ///
@@ -5344,8 +5338,7 @@ bool afWorld::addAFActuator(afActuatorPtr a_sensor, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFSensor(afSensorPtr a_sensor, std::string a_name){
-    m_afSensorMap[a_name] = a_sensor;
-    return true;
+    return addObject<afSensorPtr, afSensorMap>(a_sensor, a_name, &m_afSensorMap);
 }
 
 ///
@@ -5355,8 +5348,18 @@ bool afWorld::addAFSensor(afSensorPtr a_sensor, std::string a_name){
 /// \return
 ///
 bool afWorld::addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name){
-    m_afMultiBodyMap[a_name] = a_multiBody;
-    return true;
+    return addObject<afMultiBodyPtr, afMultiBodyMap>(a_multiBody, a_name, &m_afMultiBodyMap);
+}
+
+
+///
+/// \brief afWorld::addAFVehicle
+/// \param a_vehicle
+/// \param a_name
+/// \return
+///
+bool afWorld::addAFVehicle(afVehiclePtr a_vehicle, std::string a_name){
+    return addObject<afVehiclePtr, afVehicleMap>(a_vehicle, a_name, &m_afVehicleMap);
 }
 
 
@@ -5398,89 +5401,52 @@ void afWorld::buildCollisionGroups(){
 /// \return
 ///
 afLightVec  afWorld::getAFLighs(){
-    afLightVec _lights;
-    afLightMap::iterator _lIt;
-
-    for (_lIt = m_afLightMap.begin() ; _lIt != m_afLightMap.end() ; _lIt++){
-        _lights.push_back(_lIt->second);
-    }
-
-    return _lights;
+    return getObjects<afLightVec, afLightMap>(&m_afLightMap);
 }
+
 
 ///
 /// \brief afWorld::getAFCameras
 /// \return
 ///
 afCameraVec afWorld::getAFCameras(){
-    afCameraVec _cams;
-    afCameraMap::iterator _cIt;
-
-    for (_cIt = m_afCameraMap.begin() ; _cIt != m_afCameraMap.end() ; _cIt++){
-        _cams.push_back(_cIt->second);
-    }
-
-    return _cams;
+    return getObjects<afCameraVec, afCameraMap>(&m_afCameraMap);
 }
+
 
 ///
 /// \brief afWorld::getAFRigidBodies
 /// \return
 ///
 afRigidBodyVec afWorld::getAFRigidBodies(){
-    afRigidBodyVec _rbs;
-    afRigidBodyMap::iterator _rbIt;
-
-    for (_rbIt = m_afRigidBodyMap.begin() ; _rbIt != m_afRigidBodyMap.end() ; _rbIt++){
-        _rbs.push_back(_rbIt->second);
-    }
-
-    return _rbs;
+    return getObjects<afRigidBodyVec, afRigidBodyMap>(&m_afRigidBodyMap);
 }
+
 
 ///
 /// \brief afWorld::getAFSoftBodies
 /// \return
 ///
 afSoftBodyVec afWorld::getAFSoftBodies(){
-    afSoftBodyVec _sbs;
-    afSoftBodyMap::iterator _sbIt;
-
-    for (_sbIt = m_afSoftBodyMap.begin() ; _sbIt != m_afSoftBodyMap.end() ; _sbIt++){
-        _sbs.push_back(_sbIt->second);
-    }
-
-    return _sbs;
+    return getObjects<afSoftBodyVec, afSoftBodyMap>(&m_afSoftBodyMap);
 }
+
 
 ///
 /// \brief afWorld::getJoints
 /// \return
 ///
 afJointVec afWorld::getAFJoints(){
-    afJointVec _jnts;
-    afJointMap::iterator _jIt;
-
-    for (_jIt = m_afJointMap.begin() ; _jIt != m_afJointMap.end() ; _jIt++){
-        _jnts.push_back(_jIt->second);
-    }
-
-    return _jnts;
+    return getObjects<afJointVec, afJointMap>(&m_afJointMap);
 }
+
 
 ///
 /// \brief afWorld::getSensors
 /// \return
 ///
 afSensorVec afWorld::getAFSensors(){
-    afSensorVec _sensors;
-    afSensorMap::iterator _sIt;
-
-    for (_sIt = m_afSensorMap.begin() ; _sIt != m_afSensorMap.end() ; _sIt++){
-        _sensors.push_back(_sIt->second);
-    }
-
-    return _sensors;
+    return getObjects<afSensorVec, afSensorMap>(&m_afSensorMap);
 }
 
 
@@ -5489,14 +5455,16 @@ afSensorVec afWorld::getAFSensors(){
 /// \return
 ///
 afMultiBodyVec afWorld::getAFMultiBodies(){
-    afMultiBodyVec _multiBodies;
-    afMultiBodyMap::iterator _mIt;
+    return getObjects<afMultiBodyVec, afMultiBodyMap>(&m_afMultiBodyMap);
+}
 
-    for (_mIt = m_afMultiBodyMap.begin() ; _mIt != m_afMultiBodyMap.end() ; _mIt++){
-        _multiBodies.push_back(_mIt->second);
-    }
 
-    return _multiBodies;
+///
+/// \brief afWorld::getAFVehicles
+/// \return
+///
+afVehicleVec afWorld::getAFVehicles(){
+    return getObjects<afVehicleVec, afVehicleMap>(&m_afVehicleMap);
 }
 
 
@@ -6736,6 +6704,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     YAML::Node multiBodyNameSpace = multiBodyNode["namespace"];
     YAML::Node multiBodyRidigBodies = multiBodyNode["bodies"];
     YAML::Node multiBodySoftBodies = multiBodyNode["soft bodies"];
+    YAML::Node multiBodyVehicles = multiBodyNode["vehicles"];
     YAML::Node multiBodyJoints = multiBodyNode["joints"];
     YAML::Node multiBodySensors = multiBodyNode["sensors"];
     YAML::Node multiBodyActuators = multiBodyNode["actuators"];
@@ -6913,6 +6882,28 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
         }
     }
 
+
+    size_t totalVehicles = multiBodyVehicles.size();
+    afVehiclePtr vehiclePtr;
+    for (size_t i = 0; i < totalVehicles; ++i) {
+        vehiclePtr = new afVehicle(m_afWorld);
+        std::string veh_name = multiBodyVehicles[i].as<std::string>();
+        YAML::Node veh_node = multiBodyNode[veh_name];
+        if (vehiclePtr->loadVehicle(&veh_node, veh_name, this)){
+            std::string remap_str = afUtils::getNonCollidingIdx(vehiclePtr->getNamespace() + veh_name, m_afWorld->getAFVehicleMap());
+            m_afWorld->addAFVehicle(vehiclePtr, vehiclePtr->getNamespace() + veh_name + remap_str);
+            m_afVehicleMapLocal[vehiclePtr->getNamespace() + veh_name] = vehiclePtr;
+            if (enable_comm){
+
+//                vehiclePtr->afCreateCommInstance(afCommType::OBJECT,
+//                                                 vehiclePtr->m_name + remap_str,
+//                                                 m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
+//                                                 vehiclePtr->getMinPublishFrequency(),
+//                                                 vehiclePtr->getMaxPublishFrequency());
+            }
+        }
+    }
+
     // This flag would ignore collision for all the multibodies in the scene
     bool _ignoreInterCollision = false;
     if (multiBodyIgnoreInterCollision.IsDefined()){
@@ -7029,7 +7020,22 @@ void afMultiBody::removeOverlappingCollisionChecking(){
 }
 
 
-template<typename T, typename TMap>
+
+template <typename T, typename TMap>
+///
+/// \brief afWorld::addObject
+/// \param a_obj
+/// \param a_name
+/// \param a_map
+/// \return
+///
+bool afWorld::addObject(T a_obj, std::string a_name, TMap* a_map){
+    (*a_map)[a_name] = a_obj;
+    return true;
+}
+
+
+template <typename T, typename TMap>
 ///
 /// \brief afWorld::getObject
 /// \param a_name
@@ -7037,16 +7043,16 @@ template<typename T, typename TMap>
 /// \param suppress_warning
 /// \return
 ///
-T afWorld::getObject(std::string a_name, TMap map, bool suppress_warning){
-    if (map.find(a_name) != map.end()){
-        return map[a_name];
+T afWorld::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
+    if (a_map->find(a_name) != a_map->end()){
+        return ((*a_map)[a_name]);
     }
     // We didn't find the object using the full name, try checking if the name is a substring of the fully qualified name
     int matching_obj_count = 0;
     std::vector<std::string> matching_obj_names;
     T objHandle;
-    typename TMap::iterator oIt = map.begin();
-    for (; oIt != map.end() ; ++oIt){
+    typename TMap::iterator oIt = a_map->begin();
+    for (; oIt != a_map->end() ; ++oIt){
         if (oIt->first.find(a_name) != std::string::npos){
             matching_obj_count++;
             matching_obj_names.push_back(oIt->first);
@@ -7069,14 +7075,32 @@ T afWorld::getObject(std::string a_name, TMap map, bool suppress_warning){
         if (!suppress_warning){
             std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\"\n";
 
-            std::cerr <<"Existing OBJECTS in Map: " << map.size() << std::endl;
-            typename TMap::iterator oIt = map.begin();
-            for (; oIt != map.end() ; ++oIt){
+            std::cerr <<"Existing OBJECTS in Map: " << a_map->size() << std::endl;
+            typename TMap::iterator oIt = a_map->begin();
+            for (; oIt != a_map->end() ; ++oIt){
                 std::cerr << oIt->first << std::endl;
             }
         }
         return NULL;
     }
+}
+
+
+template <typename TVec, typename TMap>
+///
+/// \brief afWorld::getObjects
+/// \param a_map
+/// \return
+///
+TVec afWorld::getObjects(TMap* a_map){
+    TVec _objects;
+    typename TMap::iterator _oIt;
+
+    for (_oIt = a_map->begin() ; _oIt != a_map->end() ; _oIt++){
+        _objects.push_back(_oIt->second);
+    }
+
+    return _objects;
 }
 
 
@@ -7087,7 +7111,7 @@ T afWorld::getObject(std::string a_name, TMap map, bool suppress_warning){
 /// \return
 ///
 afLightPtr afWorld::getAFLight(std::string a_name, bool suppress_warning){
-    return getObject<afLightPtr, afLightMap>(a_name, m_afLightMap, suppress_warning);
+    return getObject<afLightPtr, afLightMap>(a_name, &m_afLightMap, suppress_warning);
 }
 
 
@@ -7098,7 +7122,7 @@ afLightPtr afWorld::getAFLight(std::string a_name, bool suppress_warning){
 /// \return
 ///
 afCameraPtr afWorld::getAFCamera(std::string a_name, bool suppress_warning){
-    return getObject<afCameraPtr, afCameraMap>(a_name, m_afCameraMap, suppress_warning);
+    return getObject<afCameraPtr, afCameraMap>(a_name, &m_afCameraMap, suppress_warning);
 }
 
 
@@ -7108,7 +7132,7 @@ afCameraPtr afWorld::getAFCamera(std::string a_name, bool suppress_warning){
 /// \return
 ///
 afRigidBodyPtr afWorld::getAFRigidBody(std::string a_name, bool suppress_warning){
-    return getObject<afRigidBodyPtr, afRigidBodyMap>(a_name, m_afRigidBodyMap, suppress_warning);
+    return getObject<afRigidBodyPtr, afRigidBodyMap>(a_name, &m_afRigidBodyMap, suppress_warning);
 }
 
 
@@ -7139,7 +7163,6 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
 }
 
 
-
 ///
 /// \brief afWorld::getAFSoftBody
 /// \param a_name
@@ -7147,7 +7170,7 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
 /// \return
 ///
 afSoftBodyPtr afWorld::getAFSoftBody(std::string a_name, bool suppress_warning){
-    return getObject<afSoftBodyPtr, afSoftBodyMap>(a_name, m_afSoftBodyMap, suppress_warning);
+    return getObject<afSoftBodyPtr, afSoftBodyMap>(a_name, &m_afSoftBodyMap, suppress_warning);
 }
 
 
@@ -7178,7 +7201,6 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
 }
 
 
-
 ///
 /// \brief afWorld::getAFMultiBody
 /// \param a_name
@@ -7186,8 +7208,20 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
 /// \return
 ///
 afMultiBodyPtr afWorld::getAFMultiBody(std::string a_name, bool suppress_warning){
-    return getObject<afMultiBodyPtr, afMultiBodyMap>(a_name, m_afMultiBodyMap, suppress_warning);
+    return getObject<afMultiBodyPtr, afMultiBodyMap>(a_name, &m_afMultiBodyMap, suppress_warning);
 }
+
+
+///
+/// \brief afWorld::getAFVehicle
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afVehiclePtr afWorld::getAFVehicle(std::string a_name, bool suppress_warning){
+    return getObject<afVehiclePtr, afVehicleMap>(a_name, &m_afVehicleMap, suppress_warning);
+}
+
 
 ///
 /// \brief afMultiBody::getRootRigidBody
@@ -7303,6 +7337,178 @@ afMultiBody::~afMultiBody(){
     //        delete sIt->second;
     //    }
 }
+
+afVehicle::afVehicle(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+
+}
+
+bool afVehicle::loadVehicle(std::string vehicle_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    YAML::Node vehicleNode;
+    try{
+        vehicleNode = YAML::LoadFile(vehicle_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO VEHICLE CONFIG: " << vehicle_config_file << std::endl;
+        return 0;
+    }
+    if (vehicleNode.IsNull()) return false;
+
+    YAML::Node baseSensorNode = vehicleNode[node_name];
+    return loadVehicle(&baseSensorNode, node_name, mB, name_remapping_idx);
+}
+
+bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx){
+    YAML::Node vehicleNode = *vehicle_node;
+    if (vehicleNode.IsNull()){
+        std::cerr << "ERROR: VEHICLE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node vehicleMeshPathHR = vehicleNode["high resolution path"];
+    YAML::Node vehicleChassis = vehicleNode["chassis"];
+    YAML::Node vehicleWheels = vehicleNode["wheels"];
+
+    std::string chassis_name = vehicleChassis.as<std::string>();
+
+    m_chassis = m_afWorld->getAFRigidBody(chassis_name);
+
+    if (m_chassis == NULL){
+        result = false;
+        return result;
+    }
+
+    std::string high_res_path;
+    boost::filesystem::path high_res_filepath;
+
+    m_numWheels = vehicleWheels.size();
+    m_wheels.resize(m_numWheels);
+
+    for (int i = 0 ; i < m_numWheels ; i++){
+        std::string m_mesh_name = vehicleWheels[i]["mesh"].as<std::string>();
+        YAML::Node widthNode = vehicleWheels[i]["width"];
+        YAML::Node radiusNode = vehicleWheels[i]["radius"];
+        YAML::Node frictionNode = vehicleWheels[i]["friction"];
+        YAML::Node suspensionNode = vehicleWheels[i]["suspension"];
+        YAML::Node rollInfluenceNode = vehicleWheels[i]["roll influence"];
+        YAML::Node downDirNode = vehicleWheels[i]["down direction"];
+        YAML::Node axelDirNode = vehicleWheels[i]["axel direction"];
+        YAML::Node offsetNode = vehicleWheels[i]["offset"];
+        YAML::Node frontNode = vehicleWheels[i]["front"];
+
+        if (vehicleMeshPathHR.IsDefined()){
+            high_res_path = vehicleMeshPathHR.as<std::string>();
+            high_res_filepath = vehicleMeshPathHR.as<std::string>() + m_mesh_name;
+            if (high_res_filepath.is_relative()){
+                high_res_path = mB->getMultiBodyPath() + '/' + high_res_path;
+                high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+            }
+        }
+        else{
+            high_res_path = mB->getHighResMeshesPath();
+            high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
+        }
+
+        m_wheels[i].m_mesh = new cMultiMesh();
+        m_wheels[i].m_mesh->loadFromFile(high_res_filepath.c_str());
+        m_afWorld->addChild(m_wheels[i].m_mesh);
+
+        if (widthNode.IsDefined()){
+            m_wheels[i].m_width = widthNode.as<double>();
+        }
+
+        if (radiusNode.IsDefined()){
+            m_wheels[i].m_radius = radiusNode.as<double>();
+        }
+
+        if (frictionNode.IsDefined()){
+            m_wheels[i].m_friction = frictionNode.as<double>();
+        }
+
+        if (suspensionNode.IsDefined()){
+            m_wheels[i].m_suspensionStiffness = suspensionNode["stiffness"].as<double>();
+            m_wheels[i].m_suspensionDamping = suspensionNode["damping"].as<double>();
+            m_wheels[i].m_suspensionCompression = suspensionNode["compression"].as<double>();
+            m_wheels[i].m_suspensionRestLength = suspensionNode["rest length"].as<double>();
+        }
+
+        if (rollInfluenceNode.IsDefined()){
+            m_wheels[i].m_rollInfluence = rollInfluenceNode.as<double>();
+        }
+
+        if (downDirNode.IsDefined()){
+            m_wheels[i].m_downDirection = toXYZ<cVector3d>(&downDirNode);
+        }
+
+        if (axelDirNode.IsDefined()){
+            m_wheels[i].m_axelDirection = toXYZ<cVector3d>(&axelDirNode);
+        }
+
+        if (offsetNode.IsDefined()){
+            m_wheels[i].m_offset = toXYZ<cVector3d>(&offsetNode);
+        }
+
+        if (frontNode.IsDefined()){
+            m_wheels[i].m_isFront = frontNode.as<bool>();
+        }
+
+    }
+
+    m_vehicleRayCaster = new btDefaultVehicleRaycaster(m_afWorld->m_bulletWorld);
+    m_vehicle = new btRaycastVehicle(m_tuning, m_chassis->m_bulletRigidBody, m_vehicleRayCaster);
+
+    m_chassis->m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
+    m_afWorld->m_bulletWorld->addVehicle(m_vehicle);
+    m_afWorld->addChild(this);
+
+    m_vehicle->setCoordinateSystem(0, 1, 2);
+
+    for (int i = 0 ; i < m_numWheels ; i++){
+        btVector3 off = toBTvec(m_wheels[i].m_offset);
+        btVector3 dir = toBTvec(m_wheels[i].m_downDirection);
+        btVector3 axel_dir = toBTvec(m_wheels[i].m_axelDirection);
+
+        m_vehicle->addWheel(off, dir, axel_dir, m_wheels[i].m_suspensionRestLength, m_wheels[i].m_radius, m_tuning, m_wheels[i].m_isFront);
+    }
+
+    for (int i = 0 ; i < m_numWheels ; i++){
+        btWheelInfo& wheelInfo = m_vehicle->getWheelInfo(i);
+        wheelInfo.m_suspensionStiffness = m_wheels[i].m_suspensionStiffness;
+        wheelInfo.m_wheelsDampingRelaxation = m_wheels[i].m_suspensionDamping;
+        wheelInfo.m_wheelsDampingCompression = m_wheels[i].m_suspensionCompression;
+        wheelInfo.m_frictionSlip = m_wheels[i].m_friction;
+        wheelInfo.m_rollInfluence = m_wheels[i].m_rollInfluence;
+    }
+}
+
+
+///
+/// \brief afVehicle::afExecuteCommand
+/// \param dt
+///
+void afVehicle::afExecuteCommand(double dt){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+
+#endif
+}
+
+
+///
+/// \brief afVehicle::updatePositionFromDynamics
+///
+void afVehicle::updatePositionFromDynamics(){
+    for (int i = 0; i < m_numWheels ; i++){
+        btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
+        cTransform cTrans = toCtransform(btTrans);
+        m_wheels[i].m_mesh->setLocalTransform(cTrans);
+    }
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+
+#endif
+}
+
 
 }
 //------------------------------------------------------------------------------
