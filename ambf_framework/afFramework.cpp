@@ -7376,11 +7376,17 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
     // Declare all the yaml parameters that we want to look for
     YAML::Node vehicleMeshPathHR = vehicleNode["high resolution path"];
     YAML::Node vehicleName = vehicleNode["name"];
+    YAML::Node vehicleNameSpace = vehicleNode["namespace"];
     YAML::Node vehicleChassis = vehicleNode["chassis"];
     YAML::Node vehicleWheels = vehicleNode["wheels"];
 
     m_name = vehicleName.as<std::string>();
     std::string chassis_name = vehicleChassis.as<std::string>();
+
+    if (vehicleNameSpace.IsDefined()){
+        m_namespace = vehicleNameSpace.as<std::string>();
+    }
+    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
 
     m_chassis = m_afWorld->getAFRigidBody(chassis_name);
 
@@ -7396,7 +7402,8 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
     m_wheels.resize(m_numWheels);
 
     for (int i = 0 ; i < m_numWheels ; i++){
-        std::string m_mesh_name = vehicleWheels[i]["mesh"].as<std::string>();
+        YAML::Node rigidBodyName = vehicleWheels[i]["body"];
+        YAML::Node meshName = vehicleWheels[i]["mesh"];
         YAML::Node widthNode = vehicleWheels[i]["width"];
         YAML::Node radiusNode = vehicleWheels[i]["radius"];
         YAML::Node frictionNode = vehicleWheels[i]["friction"];
@@ -7411,22 +7418,63 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
         YAML::Node maxBrakePowerNode = vehicleWheels[i]["max brake power"];
 
 
-        if (vehicleMeshPathHR.IsDefined()){
-            high_res_path = vehicleMeshPathHR.as<std::string>();
-            high_res_filepath = vehicleMeshPathHR.as<std::string>() + m_mesh_name;
-            if (high_res_filepath.is_relative()){
-                high_res_path = mB->getMultiBodyPath() + '/' + high_res_path;
-                high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+        if (rigidBodyName.IsDefined()){
+            std::string rb_name = rigidBodyName.as<std::string>();
+            m_wheels[i].m_wheelBody = m_afWorld->getAFRigidBody(rb_name);
+            if (m_wheels[i].m_wheelBody){
+                // Since the wheel in the RayCast car in implicit. Disable the dynamic
+                // properties of this wheel.
+                m_wheels[i].m_wheelBody->setMass(0.0);
+                btVector3 inertia(0, 0, 0);
+                m_wheels[i].m_wheelBody->m_bulletRigidBody->setMassProps(0.0, inertia);
+                // Print some info here to inform the user that we are setting the mass
+                // and inertia to zero to make the wheel static.
+                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::RIGID_BODY;
             }
+            else{
+                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+                std::cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " BODY NAMED \"" << rb_name << "\" FOR VEHICLE \""
+                          << m_name << "\", SKIPPING WHEEL!" << std::endl;
+                continue;
+            }
+
+        }
+        else if (meshName.IsDefined()){
+            std::string mesh_name = meshName.as<std::string>();
+            if (vehicleMeshPathHR.IsDefined()){
+                high_res_path = vehicleMeshPathHR.as<std::string>();
+                high_res_filepath = vehicleMeshPathHR.as<std::string>() + mesh_name;
+                if (high_res_filepath.is_relative()){
+                    high_res_path = mB->getMultiBodyPath() + '/' + high_res_path;
+                    high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+                }
+            }
+            else{
+                high_res_path = mB->getHighResMeshesPath();
+                high_res_filepath = mB->getHighResMeshesPath() + mesh_name;
+            }
+
+            m_wheels[i].m_mesh = new cMultiMesh();
+            if (m_wheels[i].m_mesh->loadFromFile(high_res_filepath.c_str())){
+                m_afWorld->addChild(m_wheels[i].m_mesh);
+                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::MESH;
+            }
+            else{
+                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+                std::cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " MESH NAMED \"" << mesh_name << "\" FOR VEHICLE \""
+                          << m_name << "\", SKIPPING WHEEL!" << std::endl;
+                continue;
+            }
+
+
         }
         else{
-            high_res_path = mB->getHighResMeshesPath();
-            high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
+            m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+            std::cerr << "ERROR! UNABLE TO FIND \"MESH\" OR \"BODY\" FIELD FOR WHEEL OF VEHICLE \""
+                      << m_name << "\", SKIPPING WHEEL!" << std::endl;
+            continue;
         }
 
-        m_wheels[i].m_mesh = new cMultiMesh();
-        m_wheels[i].m_mesh->loadFromFile(high_res_filepath.c_str());
-        m_afWorld->addChild(m_wheels[i].m_mesh);
 
         if (widthNode.IsDefined()){
             m_wheels[i].m_width = widthNode.as<double>();
@@ -7489,7 +7537,7 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
     m_afWorld->m_bulletWorld->addVehicle(m_vehicle);
     m_afWorld->addChild(this);
 
-    m_vehicle->setCoordinateSystem(0, 1, 2);
+    m_vehicle->setCoordinateSystem(1, 2, 0);
 
     for (int i = 0 ; i < m_numWheels ; i++){
         btVector3 off = toBTvec(m_wheels[i].m_offset);
@@ -7522,20 +7570,22 @@ void afVehicle::afExecuteCommand(double dt){
 
     int maxWheelCount;
 
-    if (af_cmd.brake){
+    if (af_cmd.brake == true){
         for (int i = 0 ; i < m_numWheels ; i++){
             m_vehicle->applyEngineForce(0.0, i);
             m_vehicle->setBrake(m_wheels[i].m_max_brake_power, i);
         }
     }
-
     else{
+        for (int i = 0 ; i < m_numWheels ; i++){
+            m_vehicle->setBrake(0.0, i);
+        }
 
         maxWheelCount = af_cmd.wheel_power.size() <= m_numWheels ? af_cmd.wheel_power.size() : m_numWheels;
 
         for (int i = 0 ; i < maxWheelCount ; i++){
             double val = af_cmd.wheel_power[i];
-            val = cClamp(val, 0.0, m_wheels[i].m_max_engine_power);
+            val = cClamp(val, -m_wheels[i].m_max_engine_power, m_wheels[i].m_max_engine_power);
             m_vehicle->applyEngineForce(val, i);
         }
 
@@ -7585,7 +7635,17 @@ void afVehicle::updatePositionFromDynamics(){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
         cTransform cTrans = toCtransform(btTrans);
-        m_wheels[i].m_mesh->setLocalTransform(cTrans);
+        if (m_wheels[i].m_wheelBodyType == afWheel::WheelBodyType::MESH){
+            m_wheels[i].m_mesh->setLocalTransform(cTrans);
+        }
+        else if (m_wheels[i].m_wheelBodyType == afWheel::WheelBodyType::RIGID_BODY){
+//            m_wheels[i].m_wheelBody->m_bulletRigidBody->setWorldTransform(btTrans);
+            m_wheels[i].m_wheelBody->m_bulletRigidBody->getMotionState()->setWorldTransform(btTrans);
+        }
+        else{
+            // We have an invalid wheel. Skip.
+        }
+
     }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT

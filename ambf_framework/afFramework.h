@@ -1881,7 +1881,14 @@ private:
 
 
 struct afWheel{
+    enum class WheelBodyType{
+        MESH=0,
+        RIGID_BODY=1,
+        INVALID=2
+    };
+
     cMultiMesh* m_mesh;
+    afRigidBodyPtr m_wheelBody = 0;
     double m_width;
     double m_radius;
     double m_friction;
@@ -1898,6 +1905,8 @@ struct afWheel{
     double m_low_steering_lim = 0.0;
     double m_max_engine_power = 0.0;
     double m_max_brake_power = 0.0;
+
+    WheelBodyType m_wheelBodyType;
 };
 
 class afVehicle: public afBaseObject{
