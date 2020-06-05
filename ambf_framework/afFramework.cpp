@@ -7390,6 +7390,9 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_chassis = m_afWorld->getAFRigidBody(chassis_name);
 
+    // Get the inertial offset transform, so the wheels are offset properly.
+    btTransform T_oInc = m_chassis->getInertialOffsetTransform();
+
     if (m_chassis == NULL){
         result = false;
         return result;
@@ -7543,6 +7546,9 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
         btVector3 off = toBTvec(m_wheels[i].m_offset);
         btVector3 dir = toBTvec(m_wheels[i].m_downDirection);
         btVector3 axel_dir = toBTvec(m_wheels[i].m_axelDirection);
+
+        off = T_oInc.inverse() * off;
+        dir = T_oInc.getBasis().inverse() * dir;
 
         m_vehicle->addWheel(off, dir, axel_dir, m_wheels[i].m_suspensionRestLength, m_wheels[i].m_radius, m_tuning, m_wheels[i].m_isFront);
     }
