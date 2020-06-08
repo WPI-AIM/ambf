@@ -133,7 +133,7 @@ class Vehicle(BaseObject):
         if not self._steering_wheel_indices:
             print("Please set the steering wheel indices before calling this method")
         else:
-            for idx in self._powered_wheel_indices:
+            for idx in self._steering_wheel_indices:
                 self._cmd.wheel_steering[idx] = val
 
     def set_vehicle_steering_ackerman(self, val):
@@ -146,7 +146,7 @@ class Vehicle(BaseObject):
         if not self._steering_wheel_indices:
             print("Please set the steering wheel indices before calling this method")
         else:
-            for idx in self._powered_wheel_indices:
+            for idx in self._steering_wheel_indices:
                 self._cmd.wheel_steering[idx] = val
 
     def set_vehicle_power(self, val):
