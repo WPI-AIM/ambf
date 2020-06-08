@@ -706,6 +706,14 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
         m_afSensorCommPtr->set_wall_time(a_wall_time);
         m_afSensorCommPtr->set_sim_time(a_sim_time);
     }
+    if (m_afActuatorCommPtr.get() != nullptr){
+        m_afActuatorCommPtr->set_wall_time(a_wall_time);
+        m_afActuatorCommPtr->set_sim_time(a_sim_time);
+    }
+    if (m_afVehicleCommPtr.get() != nullptr){
+        m_afVehicleCommPtr->set_wall_time(a_wall_time);
+        m_afVehicleCommPtr->set_sim_time(a_sim_time);
+    }
     if (m_afWorldCommPtr.get() != nullptr){
         m_afWorldCommPtr->set_wall_time(a_wall_time);
         m_afWorldCommPtr->set_sim_time(a_sim_time);
@@ -1164,6 +1172,12 @@ void afConstraintActuator::afExecuteCommand(double dt){
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::updatePositionFromDynamics(){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afActuatorCommPtr.get() != nullptr){
+        m_afActuatorCommPtr->set_name(m_name);
+        m_afActuatorCommPtr->set_parent_name(m_parentName);
+    }
+#endif
 
 }
 
@@ -2460,7 +2474,7 @@ void afRigidBody::updatePositionFromDynamics()
         // out intermittently
         if (m_write_count % 2000 == 0){
             m_afObjectCommPtr->set_mass(getMass());
-            m_afObjectCommPtr->set_principal_intertia(getInertia().x(), getInertia().y(), getInertia().z());
+            m_afObjectCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
 
         ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
@@ -4160,7 +4174,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     }
 
 #if C_ENABLE_AMBF_COMM_SUPPORT
-    m_afSensorCommPtr->set_count(1);
+    m_afSensorCommPtr->set_count(m_count);
     m_afSensorCommPtr->set_name(m_name);
     m_afSensorCommPtr->set_parent_name(m_parentName);
     m_afSensorCommPtr->set_range(m_range);
@@ -7390,13 +7404,15 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_chassis = m_afWorld->getAFRigidBody(chassis_name);
 
-    // Get the inertial offset transform, so the wheels are offset properly.
-    btTransform T_oInc = m_chassis->getInertialOffsetTransform();
-
     if (m_chassis == NULL){
         result = false;
         return result;
     }
+
+    // Get the inertial offset transform, so the wheels are offset properly.
+    btTransform T_oInc = m_chassis->getInertialOffsetTransform();
+    m_mass = m_chassis->getMass();
+    m_inertia = m_chassis->getInertia();
 
     std::string high_res_path;
     boost::filesystem::path high_res_filepath;
@@ -7654,8 +7670,26 @@ void afVehicle::updatePositionFromDynamics(){
 
     }
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    // Update the Local Transform
+    setLocalTransform(m_chassis->getLocalTransform());
 
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (m_afVehicleCommPtr.get() != nullptr){
+
+        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
+        m_afVehicleCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cQuaternion q;
+        q.fromRotMat(m_localRot);
+        m_afVehicleCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        // Since the mass and inertia aren't going to change that often, write them
+        // out intermittently
+        if (m_write_count % 2000 == 0){
+            m_afVehicleCommPtr->set_wheel_count(m_numWheels);
+            m_afVehicleCommPtr->set_mass(m_mass);
+            m_afVehicleCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
+        }
+    }
 #endif
 }
 
