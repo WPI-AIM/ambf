@@ -2074,130 +2074,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_bulletCollisionShape = _compoundCollisionShape;
     }
 
-    else if (m_collisionGeometryType == GeometryType::compound_shape){
-        btCompoundShape* _compoundCollisionShape = new btCompoundShape();
-        for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
-            std::string _shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
-            bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
-            YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
-            double px = shapeOffset["position"]["x"].as<double>();
-            double py = shapeOffset["position"]["y"].as<double>();
-            double pz = shapeOffset["position"]["z"].as<double>();
-            double roll =  shapeOffset["orientation"]["r"].as<double>();
-            double pitch = shapeOffset["orientation"]["p"].as<double>();
-            double yaw =   shapeOffset["orientation"]["y"].as<double>();
-            btVector3 shapePos(px, py, pz);
-            btMatrix3x3 shapeRot;
-            shapeRot.setEulerZYX(roll, pitch, yaw);
-            btTransform shapeTrans(shapeRot, shapePos);
-            if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
-                double x = bodyCollisionGeometry["x"].as<double>();
-                double y = bodyCollisionGeometry["y"].as<double>();
-                double z = bodyCollisionGeometry["z"].as<double>();
-                x *= m_scale;
-                y *= m_scale;
-                z *= m_scale;
-                //                std::cerr << "---------------------" << std::endl;
-                //                std::cerr << shapeIdx << std::endl;
-                //                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-                //                std::cerr << "Location : " << std::endl;
-                //                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-                //                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-                //                std::cerr << "Scale    : "  << m_scale << std::endl;
-                btVector3 halfExtents(x/2, y/2, z/2);
-                _compoundCollisionShape->addChildShape(shapeTrans, new btBoxShape(halfExtents));
-            }
-            else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                radius *= m_scale;
-                _compoundCollisionShape->addChildShape(shapeTrans, new btSphereShape(radius));
-            }
-            else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    btVector3 halfExtents(height/2, radius, radius);
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeX(halfExtents));
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    btVector3 halfExtents(radius, height/2, radius);
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShape(halfExtents));
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    btVector3 halfExtents(radius, radius, height/2);
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    btVector3 halfExtents(radius, radius, height/2);
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCylinderShapeZ(halfExtents));
-                }
-            }
-            else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                // Adjust for height as bullet treats the height as the distance
-                // between the two spheres forming the capsule's ends.
-                height = height - 2*radius;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeX(radius, height));
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShape(radius, height));
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btCapsuleShapeZ(radius, height));
-                }
-            }
-            else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeX(radius, height));
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShape(radius, height));
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    _compoundCollisionShape->addChildShape(shapeTrans, new btConeShapeZ(radius, height));
-                }
-            }
-        }
-        m_bulletCollisionShape = _compoundCollisionShape;
-    }
-
     if (bodyNamespace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(bodyNamespace.as<std::string>());
     }
@@ -2219,11 +2095,16 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             iOffQuat.setEulerZYX(y, p, r);
         }
     }
-    else if (m_collisionGeometryType == GeometryType::mesh){
-        // Call the compute inertial offset before the build contact triangle method
-        // Sanity check, see if a mesh is defined or not
-        if (m_lowResMesh.m_meshes->size() > 0){
-            iOffPos = computeInertialOffset(m_lowResMesh.m_meshes[0][0]);
+    else{
+        if (m_collisionGeometryType == GeometryType::mesh){
+            // Call the compute inertial offset before the build contact triangle method
+            // Sanity check, see if a mesh is defined or not
+            if (m_lowResMesh.m_meshes->size() > 0){
+                iOffPos = computeInertialOffset(m_lowResMesh.m_meshes[0][0]);
+            }
+        }
+        else{
+            iOffPos.setZero();
         }
     }
 
