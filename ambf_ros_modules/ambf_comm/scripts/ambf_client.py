@@ -47,11 +47,13 @@ from ambf_msgs.msg import ObjectState, ObjectCmd
 from ambf_msgs.msg import WorldState, WorldCmd
 from ambf_msgs.msg import ActuatorState, ActuatorCmd
 from ambf_msgs.msg import SensorState, SensorCmd
+from ambf_msgs.msg import VehicleState, VehicleCmd
 import threading
 from geometry_msgs.msg import WrenchStamped
 from ambf_object import Object
 from ambf_actuator import Actuator
 from ambf_sensor import Sensor
+from ambf_vehicle import Vehicle
 from ambf_world import World
 from difflib import SequenceMatcher
 
@@ -136,6 +138,16 @@ class Client:
                 base_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=SensorCmd,
                                                 tcp_nodelay=True, queue_size=10)
                 self._objects_dict[base_obj.get_name()] = base_obj
+            elif msg_type == 'ambf_msgs/VehicleState':
+                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
+                post_trimmed_name = topic_name.replace('/State', '')
+                base_obj = Vehicle(post_trimmed_name)
+                base_obj._state = VehicleState()
+                base_obj._cmd = VehicleCmd()
+                base_obj._sub = rospy.Subscriber(topic_name, VehicleState, base_obj.ros_cb)
+                base_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=VehicleCmd,
+                                                tcp_nodelay=True, queue_size=10)
+                self._objects_dict[base_obj.get_name()] = base_obj
 
     def connect(self):
         self.create_objs_from_rostopics()
@@ -192,6 +204,8 @@ class Client:
         if type(found_obj) == Actuator:
             found_obj.set_active()
         if type(found_obj) == Sensor:
+            found_obj.set_active()
+        if type(found_obj) == Vehicle:
             found_obj.set_active()
 
         return found_obj

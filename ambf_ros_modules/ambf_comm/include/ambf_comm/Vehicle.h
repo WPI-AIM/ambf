@@ -61,6 +61,13 @@ public:
     inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
     inline void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
+    inline void set_wheel_count(int count){m_State.wheel_count = count;}
+    inline void set_mass(double mass){m_State.mass = mass;}
+    inline void set_principal_inertia(double ix, double iy, double iz){
+        m_State.pInertia.x = ix;
+        m_State.pInertia.y = iy;
+        m_State.pInertia.z = iz;
+    }
 
     void set_type(std::string type);
 };

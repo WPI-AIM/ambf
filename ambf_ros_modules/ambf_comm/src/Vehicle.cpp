@@ -79,7 +79,6 @@ void Vehicle::set_wall_time(double a_sec){
     m_State.header.stamp = ros::Time::now();
 }
 
-
 extern "C"{
 
 Vehicle* create_Vehicle(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5){
