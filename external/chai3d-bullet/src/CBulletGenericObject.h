@@ -255,8 +255,8 @@ protected:
     cVector3d m_dpos, m_dpos_prev, m_ddpos;
     cMatrix3d m_drot, m_drot_prev, m_ddrot;
 
-    //! Inetial Offset Transform
-    btTransform m_inertialOffsetTransform;
+    //! Inetial Offset Transform defined in the body frame
+    btTransform m_T_iINb;
 };
 
 //------------------------------------------------------------------------------
