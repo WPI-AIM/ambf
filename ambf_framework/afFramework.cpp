@@ -2013,9 +2013,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
-        // Make sure to reset the inertial offset transform
-        m_T_iINb.setOrigin( btVector3(0, 0, 0) );
-
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
