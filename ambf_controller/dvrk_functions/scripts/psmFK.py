@@ -79,7 +79,7 @@ class DH:
         self.offset = offset
         self.joint_type = joint_type
 
-    def mat_from_dh(self, alpha, a, theta, d, offset, type):
+    def mat_from_dh(self, alpha, a, theta, d, offset):
         ca = np.cos(alpha)
         sa = np.sin(alpha)
         if self.joint_type == 'R':
