@@ -105,7 +105,7 @@ def main():
     parsed_args = parser.parse_args()
     print('Specified Arguments')
     print parsed_args
-    oc = ObjectControl('baselink', parsed_args.enable_cartesian_control, parsed_args.enable_joint_control)
+    oc = ObjectControl(parsed_args.obj_name, parsed_args.enable_cartesian_control, parsed_args.enable_joint_control)
     oc.run()
 
 
