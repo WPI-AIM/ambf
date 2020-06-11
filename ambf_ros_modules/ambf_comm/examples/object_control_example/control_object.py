@@ -85,7 +85,11 @@ class ObjectControl:
             if self._ctrl_j_space:
                 self.jnt_gui.App.update()
                 for i in range(self._n_jnts):
-                    self.obj_handle.set_joint_pos(i, self.jnt_gui.jnt_cmd[i])
+                    if not self.jnt_gui.jnt_mode[i]:
+                        self.obj_handle.set_joint_effort(i, self.jnt_gui.jnt_cmd[i])
+                    else:
+                        self.obj_handle.set_joint_pos(i, self.jnt_gui.jnt_cmd[i])
+
             time.sleep(0.001)
 
 
@@ -101,8 +105,7 @@ def main():
     parsed_args = parser.parse_args()
     print('Specified Arguments')
     print parsed_args
-
-    oc = ObjectControl(parsed_args.obj_name, parsed_args.enable_cartesian_control, parsed_args.enable_joint_control)
+    oc = ObjectControl('baselink', parsed_args.enable_cartesian_control, parsed_args.enable_joint_control)
     oc.run()
 
 
