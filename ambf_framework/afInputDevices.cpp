@@ -808,7 +808,7 @@ void afSimulatedDevice::setGripperAngle(double angle, double dt){
     for (size_t jntIdx = 0 ; jntIdx < m_rootLink->m_childAndJointPairs.size() ; jntIdx++){
         afJointPtr joint = m_rootLink->m_childAndJointPairs[jntIdx].m_childJoint;
         double ang = joint->getLowerLimit() + clipped_angle * (joint->getUpperLimit() - joint->getLowerLimit());
-        joint->commandPosition(ang);
+        joint->commandPosition(ang, dt);
     }
 }
 

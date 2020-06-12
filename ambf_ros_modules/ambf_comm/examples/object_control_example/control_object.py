@@ -85,10 +85,14 @@ class ObjectControl:
             if self._ctrl_j_space:
                 self.jnt_gui.App.update()
                 for i in range(self._n_jnts):
-                    if not self.jnt_gui.jnt_mode[i]:
+                    if self.jnt_gui.jnt_mode[i] == 0:
                         self.obj_handle.set_joint_effort(i, self.jnt_gui.jnt_cmd[i])
-                    else:
+                    elif self.jnt_gui.jnt_mode[i] == 1:
                         self.obj_handle.set_joint_pos(i, self.jnt_gui.jnt_cmd[i])
+                    elif self.jnt_gui.jnt_mode[i] == 2:
+                        self.obj_handle.set_joint_vel(i, self.jnt_gui.jnt_cmd[i])
+                    else:
+                        print('CANNOT UNDERSTAND JOINT CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
             time.sleep(0.001)
 

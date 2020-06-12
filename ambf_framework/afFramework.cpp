@@ -654,8 +654,8 @@ std::vector<double> afConfigHandler::getColorRGBA(std::string a_color_name){
 void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     switch (type) {
-    case afCommType::OBJECT:
-        m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+    case afCommType::ACTUATOR:
+        m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
     case afCommType::CAMERA:
         m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
@@ -663,8 +663,11 @@ void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::stri
     case afCommType::LIGHT:
         m_afLightCommPtr.reset(new ambf_comm::Light(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::ACTUATOR:
-        m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+    case afCommType::OBJECT:
+        m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
+        break;
+    case afCommType::RIGID_BODY:
+        m_afRigidBodyCommPtr.reset(new ambf_comm::RigidBody(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
     case afCommType::SENSOR:
         m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
@@ -1278,9 +1281,9 @@ void afRigidBody::remove(){
         m_bulletRigidBody->clearForces();
     }
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr){
-//        m_afObjectPtr->cleanUp();
-//        m_afObjectPtr.reset();
+    if (m_afRigidBodyCommPtr){
+//        m_afRigidBodyPtr->cleanUp();
+//        m_afRigidBodyPtr.reset();
     }
 #endif
 
@@ -2355,21 +2358,28 @@ void afRigidBody::updatePositionFromDynamics()
 
     // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afObjectCommPtr.get() != nullptr){
+    if(m_afRigidBodyCommPtr.get() != nullptr){
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        m_afObjectCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         cQuaternion q;
         q.fromRotMat(m_localRot);
-        m_afObjectCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        m_afRigidBodyCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        m_afRigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        btVector3 v = m_bulletRigidBody->getLinearVelocity();
+        btVector3 a = m_bulletRigidBody->getAngularVelocity();
+
+        m_afRigidBodyCommPtr->cur_linear_velocity(v.x(), v.y(), v.z());
+        m_afRigidBodyCommPtr->cur_angular_velocity(a.x(), a.y(), a.z());
 
         // Since the mass and inertia aren't going to change that often, write them
         // out intermittently
         if (m_write_count % 2000 == 0){
-            m_afObjectCommPtr->set_mass(getMass());
-            m_afObjectCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
+            m_afRigidBodyCommPtr->set_mass(getMass());
+            m_afRigidBodyCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
 
-        ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
+        ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
         // We can set this body to publish it's children joint names in either its AMBF Description file or
         // via it's afCommand using ROS Message
         if (m_publish_joint_names == true || afCommand.publish_joint_names == true){
@@ -2388,6 +2398,7 @@ void afRigidBody::updatePositionFromDynamics()
         // via it's afCommand using ROS Message
         if (m_publish_joint_positions == true || afCommand.publish_joint_positions == true){
             afObjectSetJointPositions();
+            afObjectSetJointVelocities();
         }
 
         // We can set this body to publish it's children names in either its AMBF Description file or
@@ -2444,26 +2455,49 @@ bool afRigidBody::updateBodySensors(int threadIdx){
 ///
 void afRigidBody::afExecuteCommand(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
+    if (m_afRigidBodyCommPtr.get() != nullptr){
         btVector3 force, torque;
-        ambf_msgs::ObjectCmd afCommand = m_afObjectCommPtr->get_command();
-        m_af_enable_position_controller = afCommand.enable_position_controller;
-        // If the body is kinematic, we just want to control the position
-        if (m_bulletRigidBody->isStaticOrKinematicObject() && afCommand.enable_position_controller){
-            btTransform _Td;
-            _Td.setOrigin(btVector3(afCommand.pose.position.x,
-                                    afCommand.pose.position.y,
-                                    afCommand.pose.position.z));
-
-            _Td.setRotation(btQuaternion(afCommand.pose.orientation.x,
-                                         afCommand.pose.orientation.y,
-                                         afCommand.pose.orientation.z,
-                                         afCommand.pose.orientation.w));
-
-            m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+        btVector3 lin_vel, ang_vel;
+        ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
+        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+            m_af_enable_position_controller = true;
         }
         else{
-            if (afCommand.enable_position_controller){
+            m_af_enable_position_controller = false;
+        }
+
+        // IF THE COMMAND IS OF TYPE FORCE
+        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
+            if (m_bulletRigidBody){
+                force.setValue(afCommand.wrench.force.x,
+                               afCommand.wrench.force.y,
+                               afCommand.wrench.force.z);
+
+                torque.setValue(afCommand.wrench.torque.x,
+                                afCommand.wrench.torque.y,
+                                afCommand.wrench.torque.z);
+
+                m_bulletRigidBody->applyCentralForce(force);
+                m_bulletRigidBody->applyTorque(torque);
+            }
+        }
+        // IF THE COMMAND IS OF TYPE POSITION
+        else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+            // If the body is kinematic, we just want to control the position
+            if (m_bulletRigidBody->isStaticOrKinematicObject()){
+                btTransform _Td;
+                _Td.setOrigin(btVector3(afCommand.pose.position.x,
+                                        afCommand.pose.position.y,
+                                        afCommand.pose.position.z));
+
+                _Td.setRotation(btQuaternion(afCommand.pose.orientation.x,
+                                             afCommand.pose.orientation.y,
+                                             afCommand.pose.orientation.z,
+                                             afCommand.pose.orientation.w));
+
+                m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+            }
+            else{
                 btVector3 _cur_pos, _cmd_pos;
                 btQuaternion _cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
                                                           afCommand.pose.orientation.y,
@@ -2492,44 +2526,56 @@ void afRigidBody::afExecuteCommand(double dt){
                 force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
                 // Use the internal Cartesian Rotation Controller
                 torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
-            }
-            else{
-                force.setValue(afCommand.wrench.force.x,
-                               afCommand.wrench.force.y,
-                               afCommand.wrench.force.z);
 
-                torque.setValue(afCommand.wrench.torque.x,
-                                afCommand.wrench.torque.y,
-                                afCommand.wrench.torque.z);
-            }
-
-            if (m_bulletRigidBody){
                 m_bulletRigidBody->applyCentralForce(force);
                 m_bulletRigidBody->applyTorque(torque);
             }
         }
+        // IF THE COMMAND IS OF TYPE VELOCITY
+        else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+            if (m_bulletRigidBody){
+                lin_vel.setValue(afCommand.twist.linear.x,
+                                 afCommand.twist.linear.y,
+                                 afCommand.twist.linear.z);
+
+                ang_vel.setValue(afCommand.twist.angular.x,
+                                 afCommand.twist.angular.y,
+                                 afCommand.twist.angular.z);
+
+                m_bulletRigidBody->setLinearVelocity(lin_vel);
+                m_bulletRigidBody->setAngularVelocity(ang_vel);
+            }
+        }
+
         size_t jntCmdSize = afCommand.joint_cmds.size();
         if (jntCmdSize > 0){
             size_t jntCmdCnt = m_childAndJointPairs.size() < jntCmdSize ? m_childAndJointPairs.size() : jntCmdSize;
             for (size_t jntIdx = 0 ; jntIdx < jntCmdCnt ; jntIdx++){
-                // If the enable position controllers flag is set, run
-                // position control on all joints
-                // The size of pos ctrl mask can be less than the num of joint commands
-                // keep this in check and still read the mask to apply it. Run
-                // effort control on the masks not specified
+                // A joint can be controller in three different modes, Effort, Positon or Velocity.
                 afJointPtr joint = m_childAndJointPairs[jntIdx].m_childJoint;
                 double jnt_cmd = afCommand.joint_cmds[jntIdx];
-                if (afCommand.position_controller_mask[jntIdx] == true ){
-                    joint->commandPosition(jnt_cmd);
-                }
-                else{
+                if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
                     joint->commandEffort(jnt_cmd);
                 }
+                else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+                    joint->commandPosition(jnt_cmd, dt);
+                }
+                else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+                    joint->commandVelocity(jnt_cmd);
+                }
+                else{
+                    std::cerr << "WARNING! FOR JOINT \"" <<
+                                 m_childAndJointPairs[jntIdx].m_childJoint->getName() <<
+                                 " \" COMMAND TYPE NOT UNDERSTOOD, SUPPORTED TYPES ARE 0 -> FORCE, 1 -> POSITION, 2 -> VELOCITY " <<
+                                 std::endl;
+                }
+
             }
         }
     }
 #endif
 }
+
 
 ///
 /// \brief afRigidBody::afObjectSetChildrenNames
@@ -2537,17 +2583,18 @@ void afRigidBody::afExecuteCommand(double dt){
 void afRigidBody::afObjectStateSetChildrenNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_children = m_childAndJointPairs.size();
-    if (num_children > 0 && m_afObjectCommPtr != NULL){
+    if (num_children > 0 && m_afRigidBodyCommPtr != NULL){
         std::vector<std::string> children_names;
 
         children_names.resize(num_children);
         for (size_t i = 0 ; i < num_children ; i++){
             children_names[i] = m_childAndJointPairs[i].m_childBody->m_name;
         }
-        m_afObjectCommPtr->set_children_names(children_names);
+        m_afRigidBodyCommPtr->set_children_names(children_names);
     }
 #endif
 }
+
 
 ///
 /// \brief afRigidBody::afObjectStateSetJointNames
@@ -2555,16 +2602,17 @@ void afRigidBody::afObjectStateSetChildrenNames(){
 void afRigidBody::afObjectStateSetJointNames(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_joints = m_childAndJointPairs.size();
-    if (num_joints > 0 && m_afObjectCommPtr != NULL){
+    if (num_joints > 0 && m_afRigidBodyCommPtr != NULL){
         std::vector<std::string> joint_names;
         joint_names.resize(num_joints);
         for (size_t i = 0 ; i < num_joints ; i++){
             joint_names[i] = m_childAndJointPairs[i].m_childJoint->m_name;
         }
-        m_afObjectCommPtr->set_joint_names(joint_names);
+        m_afRigidBodyCommPtr->set_joint_names(joint_names);
     }
 #endif
 }
+
 
 ///
 /// \brief afRigidBody::afObjectSetJointPositions
@@ -2572,14 +2620,33 @@ void afRigidBody::afObjectStateSetJointNames(){
 void afRigidBody::afObjectSetJointPositions(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int num_jnts = m_childAndJointPairs.size();
-    if (num_jnts > 0 && m_afObjectCommPtr != NULL){
+    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
         if(m_joint_positions.size() != num_jnts){
             m_joint_positions.resize(num_jnts);
         }
         for (size_t i = 0 ; i < num_jnts ; i++){
             m_joint_positions[i] = m_childAndJointPairs[i].m_childJoint->getPosition();
         }
-        m_afObjectCommPtr->set_joint_positions(m_joint_positions);
+        m_afRigidBodyCommPtr->set_joint_positions(m_joint_positions);
+    }
+#endif
+}
+
+
+///
+/// \brief afRigidBody::afObjectSetJointVelocities
+///
+void afRigidBody::afObjectSetJointVelocities(){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    int num_jnts = m_childAndJointPairs.size();
+    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
+        if(m_joint_velocities.size() != num_jnts){
+            m_joint_velocities.resize(num_jnts);
+        }
+        for (size_t i = 0 ; i < num_jnts ; i++){
+            m_joint_velocities[i] = m_childAndJointPairs[i].m_childJoint->getVelocity();
+        }
+        m_afRigidBodyCommPtr->set_joint_velocities(m_joint_velocities);
     }
 #endif
 }
@@ -2607,14 +2674,16 @@ void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const
 
 }
 
+
 ///
 /// \brief afRigidBody::setAngle
 /// \param angle
+/// \param dt
 ///
-void afRigidBody::setAngle(double &angle){
+void afRigidBody::setAngle(double &angle, double dt){
     if (m_parentBodies.size() == 0){
         for (size_t jnt = 0 ; jnt < m_childAndJointPairs.size() ; jnt++){
-            m_childAndJointPairs[jnt].m_childJoint->commandPosition(angle);
+            m_childAndJointPairs[jnt].m_childJoint->commandPosition(angle, dt);
         }
 
     }
@@ -2623,12 +2692,13 @@ void afRigidBody::setAngle(double &angle){
 ///
 /// \brief afRigidBody::setAngle
 /// \param angles
+/// \param dt
 ///
-void afRigidBody::setAngle(std::vector<double> &angles){
+void afRigidBody::setAngle(std::vector<double> &angles, double dt){
     if (m_parentBodies.size() == 0){
         double jntCmdSize = m_childAndJointPairs.size() < angles.size() ? m_childAndJointPairs.size() : angles.size();
         for (size_t jntIdx = 0 ; jntIdx < jntCmdSize ; jntIdx++){
-            m_childAndJointPairs[jntIdx].m_childJoint->commandPosition(angles[jntIdx]);
+            m_childAndJointPairs[jntIdx].m_childJoint->commandPosition(angles[jntIdx], dt);
         }
 
     }
@@ -3117,8 +3187,8 @@ void afJointController::boundImpulse(double &effort_cmd){
 ///
 afJoint::afJoint(afWorldPtr a_afWorld){
     m_afWorld = a_afWorld;
-    m_curPos = 0.0; // Initialize Cur Joint position to 0
-    m_prevPos = 0.0; // Initialize Prev Joint position to 0
+    m_posArray.resize(m_jpSize);
+    m_dtArray.resize(m_jpSize);
 }
 
 ///
@@ -3366,6 +3436,15 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_controller.I = jointController["I"].as<double>();
         if( (jointController["D"]).IsDefined())
             m_controller.D = jointController["D"].as<double>();
+
+        // If the PID controller in defined, the gains will be used to command the joint
+        m_usePIDController = true;
+    }
+    else{
+        // If the controller gains are not defined, a velocity based control will be used.
+        // The tracking velocity can be controller by setting "max motor impulse" field
+        // for the joint data-block in the ADF file.
+        m_usePIDController = false;
     }
 
     // Bullet takes the x axis as the default for prismatic joints
@@ -3481,8 +3560,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // Don't enable motor yet, only enable when set position is called
         // this keeps the joint behave freely when it's launched
         if(jointMaxMotorImpulse.IsDefined()){
-            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            m_hinge->setMaxMotorImpulse(m_controller.max_impulse);
+            double max_impulse = jointMaxMotorImpulse.as<double>();
+            m_hinge->enableAngularMotor(false, 0.0, max_impulse);
+        }
+        else{
+            m_hinge->enableAngularMotor(false, 0.0, 0.1);
         }
 
         if(jointLimits.IsDefined()){
@@ -3510,6 +3592,16 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if(jointLimits.IsDefined()){
             m_slider->setLowerLinLimit(m_lowerLimit);
             m_slider->setUpperLinLimit(m_upperLimit);
+        }
+
+        if(jointMaxMotorImpulse.IsDefined()){
+            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            m_slider->setMaxLinMotorForce(m_controller.max_impulse);
+        }
+        else{
+            // Default to 1000.0
+            m_slider->setMaxLinMotorForce(1000);
+            m_slider->setPoweredLinMotor(false);
         }
 
         m_btConstraint = m_slider;
@@ -3639,38 +3731,40 @@ void afJoint::remove(){
 ///
 void afJoint::applyDamping(const double &dt){
     // First lets configure what type of joint is this.
-    m_prevPos = m_curPos;
-    m_curPos = getPosition();
-    double effort = - m_jointDamping * (m_curPos - m_prevPos)/dt;
-    commandEffort(effort);
+    for (int i = 0 ; i < m_jpSize-1 ; i++){
+        m_posArray[i] = m_posArray[i+1];
+        m_dtArray[i] = m_dtArray[i+1];
+    }
+    m_posArray[m_jpSize-1] = getPosition();
+    m_dtArray[m_jpSize-1] = dt;
+    double effort = - m_jointDamping * getVelocity();
+    // Since we are applying damping internally, don't disable the motor
+    // as an external controller may be using the motor.
+    commandEffort(effort, false);
 }
 
+
 ///
-/// \brief afJoint::command_position
-/// \param cmd
+/// \brief afJoint::commandPosition
+/// \param position_cmd
+/// \param dt
 ///
-void afJoint::commandPosition(double &position_cmd){
+void afJoint::commandPosition(double &position_cmd, double dt){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enableActuator){
-        if (m_jointType == JointType::revolute){
+        if (m_jointType == JointType::revolute || m_jointType == JointType::prismatic){
             // Sanity check
-            btClamp(position_cmd, m_hinge->getLowerLimit(), m_hinge->getUpperLimit());
-            double effort_command = m_controller.computeOutput(m_hinge->getHingeAngle(), position_cmd, m_afWorld->getSimulationTime());
-            btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
-            btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
-            m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * effort_command);
-            m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * effort_command);
-        }
-        else if(m_jointType == JointType::prismatic){
-            // Sanity check
-            btClamp(position_cmd, m_slider->getLowerLinLimit(), m_slider->getUpperLinLimit());
-            double effort_command = m_controller.computeOutput(m_slider->getLinearPos(), position_cmd,  m_afWorld->getSimulationTime());
-            btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
-            const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
-            const btVector3 relPos(0,0,0);
-            m_rbodyA->applyForce(-sliderAxisInWorld * effort_command, relPos);
-            m_rbodyB->applyForce(sliderAxisInWorld * effort_command, relPos);
+            btClamp(position_cmd, m_lowerLimit, m_upperLimit);
+            double position_cur = getPosition();
+            if (m_usePIDController){
+                double effort_command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
+                commandEffort(effort_command);
+            }
+            else{
+                double velocity_command = 10.0 * (position_cmd - position_cur);
+                commandVelocity(velocity_command);
+            }
         }
     }
     else{
@@ -3679,22 +3773,46 @@ void afJoint::commandPosition(double &position_cmd){
 }
 
 ///
-/// \brief afJoint::command_torque
+/// \brief afJoint::commandEffort
 /// \param cmd
+/// \param disable_motor
 ///
-void afJoint::commandEffort(double &cmd){
+void afJoint::commandEffort(double &cmd, bool disable_motor){
     if (m_jointType == JointType::revolute || m_jointType == JointType::torsion_spring){
+        if (m_jointType == JointType::revolute){
+            m_hinge->enableMotor(!disable_motor);
+        }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
         m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * cmd);
         m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * cmd);
     }
     else if (m_jointType == JointType::prismatic || m_jointType == JointType::linear_spring){
+        if (m_jointType == JointType::prismatic){
+            m_slider->setPoweredLinMotor(!disable_motor);
+        }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
         const btVector3 relPos(0,0,0);
         m_rbodyA->applyForce(-sliderAxisInWorld * cmd, relPos);
         m_rbodyB->applyForce(sliderAxisInWorld * cmd, relPos);
+    }
+}
+
+
+///
+/// \brief afJoint::commandVelocity
+/// \param cmd
+///
+void afJoint::commandVelocity(double &velocity_cmd){
+    if (m_jointType == JointType::revolute){
+        m_hinge->enableMotor(true);
+        m_hinge->setMotorTargetVelocity(velocity_cmd);
+
+    }
+    else if (m_jointType == JointType::prismatic){
+        m_slider->setPoweredLinMotor(true);
+        m_slider->setTargetLinMotorVelocity(velocity_cmd);
     }
 }
 
@@ -3734,6 +3852,19 @@ double afJoint::getPosition(){
         btScalar angle = btAtan2(swingAxis.dot(refAxis0), swingAxis.dot(refAxis1));
         return -1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
     }
+}
+
+
+///
+/// \brief afJoint::getVelocity
+/// \return
+///
+double afJoint::getVelocity(){
+    // TODO: Implement higher order discrete velocity computation methods
+    double p_a = m_posArray[m_jpSize - 1];
+    double p_b = m_posArray[m_jpSize - 2];
+    double dt_n = m_dtArray[m_jpSize - 1];
+    return (p_a - p_b) / dt_n;
 }
 
 
@@ -6672,7 +6803,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                     continue;
                 }
                 else{
-                    rBodyPtr->afCreateCommInstance(afCommType::OBJECT,
+                    rBodyPtr->afCreateCommInstance(afCommType::RIGID_BODY,
                                                    rBodyPtr->m_name + remap_str,
                                                    m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
                                                    rBodyPtr->getMinPublishFrequency(),

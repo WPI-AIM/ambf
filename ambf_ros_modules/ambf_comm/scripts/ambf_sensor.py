@@ -43,16 +43,10 @@
 #     \version   0.1
 # */
 # //==============================================================================
-# Initial python2 code, but had few errors while importing in python3
-# from tf import transformations
-# Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
 
-from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import SensorState
 from ambf_msgs.msg import SensorCmd
 from ambf_base_object import BaseObject
-import rospy
-from geometry_msgs.msg import Pose, Wrench
 
 
 class Sensor(BaseObject):
@@ -69,7 +63,11 @@ class Sensor(BaseObject):
         :return:
         """
 
-    def get_cound(self):
+    def get_count(self):
+        """
+        Get the number of sensing elements part of this sensor
+        :return:
+        """
         return self._state.count
 
     def is_triggered(self, idx):
@@ -81,8 +79,12 @@ class Sensor(BaseObject):
         if idx < len(self._state.triggered):
             return self._state.triggered[idx]
 
-    def get_range(self):
-        return self._state.range[0]
+    def get_range(self, idx):
+        """
+        Get the range of an element belonging to this sensor
+        :return:
+        """
+        return self._state.range[idx]
 
     def get_measurement(self, idx):
         """

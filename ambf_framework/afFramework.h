@@ -68,10 +68,11 @@
 
 //-----------------------------------------------------------------------------
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_comm/Object.h"
+#include "ambf_comm/Actuator.h"
 #include "ambf_comm/Camera.h"
 #include "ambf_comm/Light.h"
-#include "ambf_comm/Actuator.h"
+#include "ambf_comm/Object.h"
+#include "ambf_comm/RigidBody.h"
 #include "ambf_comm/Sensor.h"
 #include "ambf_comm/Vehicle.h"
 #include "ambf_comm/World.h"
@@ -239,10 +240,12 @@ protected:
 
 
 enum afCommType{
-    OBJECT,
+    ACTUATOR,
     CAMERA,
     LIGHT,
-    ACTUATOR,
+    OBJECT,
+    RIGID_BODY,
+    SOFT_BODY,
     SENSOR,
     VEHICLE,
     WORLD
@@ -263,10 +266,11 @@ public:
 
     //! AF CHAI Env
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
     std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
-    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
+    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
@@ -541,10 +545,10 @@ public:
     std::vector<afRigidBodyPtr> m_parentBodies;
 
     // Set the angle of all the child joints
-    virtual void setAngle(double &angle);
+    virtual void setAngle(double &angle, double dt);
 
     // Set the angles based on the num elements in the argument vector
-    virtual void setAngle(std::vector<double> &angle);
+    virtual void setAngle(std::vector<double> &angle, double dt);
 
     // Set the config properties, this include, damping, friction restitution
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
@@ -649,6 +653,9 @@ protected:
     // Update the joint positions of children in afObject State Message
     virtual void afObjectSetJointPositions();
 
+    // Update the joint velocitess of children in afObject State Message
+    virtual void afObjectSetJointVelocities();
+
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
@@ -683,6 +690,9 @@ private:
 
     // Positions of all child joints
     std::vector<float> m_joint_positions;
+
+    // Velocities of all child joints
+    std::vector<float> m_joint_velocities;
 
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
@@ -854,10 +864,13 @@ public:
     void applyDamping(const double &dt=0.001);
 
     // Set open loop effort for this joint
-    void commandEffort(double &effort_cmd);
+    void commandEffort(double &effort_cmd, bool disable_motor=true);
+
+    // Set velocity for this joint
+    void commandVelocity(double &velocity_cmd);
 
     // Set position target for this joint that is handeled by it's joint controller
-    void commandPosition(double &position_cmd);
+    void commandPosition(double &position_cmd, double dt);
 
     // Get the internal bullet constraint
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
@@ -871,11 +884,16 @@ public:
     // Get the position of this joint
     double getPosition();
 
+    // Get the velocity of this joint
+    double getVelocity();
+
     // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
     // Method to remove the afJoint
     void remove();
+
+    std::string getName(){return m_name;}
 
 protected:
 
@@ -893,6 +911,9 @@ protected:
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
 
+    // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
+    bool m_usePIDController = false;
+
 protected:
 
     btTypedConstraint *m_btConstraint;
@@ -908,9 +929,10 @@ private:
     afMultiBodyPtr m_mB;
     afJointController m_controller;
 
-    // Previous Joint Position. This value is used for explicit damping
-    double m_prevPos;
-    double m_curPos;
+    // Vector of joint positions containing the last n joint values.
+    int m_jpSize = 2;
+    std::vector<double> m_posArray;
+    std::vector<double> m_dtArray;
 };
 
 

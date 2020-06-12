@@ -43,11 +43,7 @@
 #     \version   0.1
 # */
 # //==============================================================================
-# Initial python2 code, but had few errors while importing in python3
-# from tf import transformations
-# Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
 
-from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ActuatorState
 from ambf_msgs.msg import ActuatorCmd
 from ambf_base_object import BaseObject

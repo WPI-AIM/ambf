@@ -44,21 +44,22 @@
 # //==============================================================================
 
 from transformations import quaternion_from_euler, euler_from_quaternion
-from ambf_msgs.msg import ObjectState
-from ambf_msgs.msg import ObjectCmd
+from ambf_msgs.msg import RigidBodyState
+from ambf_msgs.msg import RigidBodyCmd
 from ambf_base_object import BaseObject
-from geometry_msgs.msg import Pose, Wrench
+from geometry_msgs.msg import Pose, Wrench, Twist
 
 
-class Object(BaseObject):
+class RigidBody(BaseObject):
     def __init__(self, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
-        self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
-        self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
+        super(RigidBody, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set
+        self._pose_cmd_set = False  # Flag to check if a Pose command has been set
+        self._twist_cmd_set = False  # Flag to check if a Twist command has been set
 
     def is_joint_idx_valid(self, joint_idx):
         """
@@ -73,6 +74,20 @@ class Object(BaseObject):
             print('ERROR! Requested Joint Idx of \"' + str(joint_idx) +
                   '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return False
+
+    def get_linear_velocity(self):
+        """
+        Get the linear velocity of this body
+        :return:
+        """
+        return self._state.twist.linear
+
+    def get_angular_velocity(self):
+        """
+        Get the angular velocity of this body
+        :return:
+        """
+        return self._state.twist.angular
 
     def get_joint_idx_from_name(self, joint_name):
         """
@@ -113,6 +128,22 @@ class Object(BaseObject):
         else:
             return None
 
+    def get_joint_vel(self, joint_name_or_idx):
+        """
+        Get the joint velocity of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_velocities[joint_idx]
+        else:
+            return None
+
     def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
@@ -120,11 +151,24 @@ class Object(BaseObject):
                 :return:
                 """
         n_jnts = len(self._state.joint_positions)
-        joints = []
+        positions = []
         for idx in range(n_jnts):
-            joints.append(self._state.joint_positions[idx])
+            positions.append(self._state.joint_positions[idx])
 
-        return joints
+        return positions
+
+    def get_all_joint_velocities(self):
+        """
+                Get the joint velocities of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_velocities)
+        velocities = []
+        for idx in range(n_jnts):
+            velocities.append(self._state.joint_velocities[idx])
+
+        return velocities
 
     def get_num_joints(self):
         """
@@ -176,6 +220,26 @@ class Object(BaseObject):
         """
         return self._cmd.wrench.torque
 
+    def get_linear_velocity_command(self):
+        """
+        Get the commanded linear velocity of this object
+        :return:
+        """
+        if self._twist_cmd_set:
+            return self._cmd.twist.linear
+        else:
+            return self._state.twist.linear
+
+    def get_angular_velocity_command(self):
+        """
+        Get the commanded angular velocity of this object
+        :return:
+        """
+        if self._twist_cmd_set:
+            return self._cmd.twist.angular
+        else:
+            return self._state.twist.angular
+
     def get_publish_children_name_flag(self):
         """
         Check if the object is publishing children names
@@ -224,6 +288,50 @@ class Object(BaseObject):
         Get the inertia the body
         """
         return self._state.pInertia
+
+    def set_force(self, fx, fy, fz):
+        """
+        Set the Force for of this object in parent frame. If a previous Wrench command had been
+        set, the torque from that command will be used
+        :param fx:
+        :param fy:
+        :param fz:
+        :return:
+        """
+        _wrench_cmd = Wrench()
+        _wrench_cmd.force.x = fx
+        _wrench_cmd.force.y = fy
+        _wrench_cmd.force.z = fz
+        _wrench_cmd.torque = self.get_torque_command()
+        self.set_wrench(_wrench_cmd)
+
+    def set_torque(self, nx, ny, nz):
+        """
+        Set the Torque for of this object in parent frame. If a previous Wrench command had been
+        set, the force from that command will be used
+        :param nx:
+        :param ny:
+        :param nz:
+        :return:
+        """
+        _wrench_cmd = Wrench()
+        _wrench_cmd.force = self.get_force_command()
+        _wrench_cmd.torque.x = nx
+        _wrench_cmd.torque.y = ny
+        _wrench_cmd.torque.z = nz
+        self.set_wrench(_wrench_cmd)
+
+    def set_wrench(self, wrench):
+        """
+        Set the wrench for this object in the parent frame
+        :param wrench:
+        :return:
+        """
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_FORCE
+        self._cmd.wrench = wrench
+
+        self._apply_command()
+        self._wrench_cmd_set = True
 
     def set_pos(self, px, py, pz):
         """
@@ -282,37 +390,13 @@ class Object(BaseObject):
         :param pose:
         :return:
         """
-        self._cmd.enable_position_controller = True
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_POSITION
         self._cmd.pose = pose
 
         self._apply_command()
         self._pose_cmd_set = True
 
-    def set_joint_pos(self, joint_name_or_idx, q):
-        """
-        Set the joint position based on the index or names. Check the get_joint_names to see the list of
-        joint names for indexes
-        :param joint_name_or_idx:
-        :param q:
-        :return:
-        """
-        # edited python3 code
-        if isinstance(joint_name_or_idx, str):
-            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
-        else:
-            joint_idx = joint_name_or_idx
-
-        if self.is_joint_idx_valid(joint_idx):
-            n_jnts = self.get_num_joints()
-            if len(self._cmd.joint_cmds) != n_jnts:
-                self._cmd.joint_cmds = [0.0]*n_jnts
-                self._cmd.position_controller_mask = [0]*n_jnts
-
-            self._cmd.joint_cmds[joint_idx] = q
-            self._cmd.position_controller_mask[joint_idx] = True
-            self._apply_command()
-
-    def set_force(self, fx, fy, fz):
+    def set_linear_vel(self, vx, vy, vz):
         """
         Set the Force for of this object in parent frame. If a previous Wrench command had been
         set, the torque from that command will be used
@@ -321,14 +405,14 @@ class Object(BaseObject):
         :param fz:
         :return:
         """
-        _wrench_cmd = Wrench()
-        _wrench_cmd.force.x = fx
-        _wrench_cmd.force.y = fy
-        _wrench_cmd.force.z = fz
-        _wrench_cmd.torque = self.get_torque_command()
-        self.set_wrench(_wrench_cmd)
+        _twist_cmd = Twist()
+        _twist_cmd.linear.x = vx
+        _twist_cmd.linear.y = vy
+        _twist_cmd.linear.z = vz
+        _twist_cmd.angular = self.get_angular_velocity_command()
+        self.set_twist(_twist_cmd)
 
-    def set_torque(self, nx, ny, nz):
+    def set_angular_vel(self, ax, ay, az):
         """
         Set the Torque for of this object in parent frame. If a previous Wrench command had been
         set, the force from that command will be used
@@ -337,12 +421,97 @@ class Object(BaseObject):
         :param nz:
         :return:
         """
-        _wrench_cmd = Wrench()
-        _wrench_cmd.force = self.get_force_command()
-        _wrench_cmd.torque.x = nx
-        _wrench_cmd.torque.y = ny
-        _wrench_cmd.torque.z = nz
-        self.set_wrench(_wrench_cmd)
+        _twist_cmd = Twist()
+        _twist_cmd.linear = self.get_linear_velocity_command()
+        _twist_cmd.angular.x = ax
+        _twist_cmd.angular.y = ay
+        _twist_cmd.angular.z = az
+        self.set_twist(_twist_cmd)
+
+    def set_twist(self, twist):
+        """
+        Set the wrench for this object in the parent frame
+        :param wrench:
+        :return:
+        """
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_VELOCITY
+        self._cmd.twist = twist
+
+        self._apply_command()
+        self._twist_cmd_set = True
+
+    def wrench_command(self, fx, fy, fz, nx, ny, nz):
+        """
+        Same as set_wrench but customized for OpenAI's GYM for a single call method
+        :param fx:
+        :param fy:
+        :param fz:
+        :param nx:
+        :param ny:
+        :param nz:
+        :return:
+        """
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_FORCE
+        self._cmd.wrench.force.x = fx
+        self._cmd.wrench.force.y = fy
+        self._cmd.wrench.force.z = fz
+        self._cmd.wrench.torque.x = nx
+        self._cmd.wrench.torque.y = ny
+        self._cmd.wrench.torque.z = nz
+
+        self._apply_command()
+        self._wrench_cmd_set = True
+
+    def pose_command(self, px, py, pz, roll, pitch, yaw, *jnt_cmds):
+        """
+        Same as set_pose but customized of OpenAI's GYM for a single call set method
+        :param px:
+        :param py:
+        :param pz:
+        :param roll:
+        :param pitch:
+        :param yaw:
+        :param jnt_cmds:
+        :return:
+        """
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_POSITION
+        self._cmd.pose.position.x = px
+        self._cmd.pose.position.y = py
+        self._cmd.pose.position.z = pz
+        self._cmd.pose.orientation.x = quat[0]
+        self._cmd.pose.orientation.y = quat[1]
+        self._cmd.pose.orientation.z = quat[2]
+        self._cmd.pose.orientation.w = quat[3]
+
+        # self._cmd.joint_cmds = [jnt for jnt in jnt_cmds]
+
+        self._apply_command()
+
+    def velocity_command(self, vx, vy, vz, ax, ay, az):
+        """
+        Same as set_wrench but customized for OpenAI's GYM for a single call method
+        :param vx:
+        :param vy:
+        :param vz:
+        :param tx:
+        :param ty:
+        :param tz:
+        :return:
+        """
+        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_VELOCITY
+        self._cmd.twist.x = vx
+        self._cmd.twist.y = vy
+        self._cmd.twist.z = vz
+        self._cmd.twist.x = ax
+        self._cmd.twist.y = ay
+        self._cmd.twist.z = az
+
+        self._apply_command()
+        self._twist_cmd_set = True
 
     def set_joint_effort(self, joint, effort):
         """
@@ -374,81 +543,67 @@ class Object(BaseObject):
 
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.position_controller_mask = [0]*n_jnts
+            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
-        self._cmd.position_controller_mask[idx] = False
+        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_FORCE
 
         self._apply_command()
 
-    def set_wrench(self, wrench):
+    def set_joint_pos(self, joint_name_or_idx, q):
         """
-        Set the wrench for this object in the parent frame
-        :param wrench:
+        Set the joint position based on the index or names. Check the get_joint_names to see the list of
+        joint names for indexes
+        :param joint_name_or_idx:
+        :param q:
         :return:
         """
-        self._cmd.enable_position_controller = False
-        self._cmd.wrench = wrench
+        # edited python3 code
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
 
-        self._apply_command()
-        self._wrench_cmd_set = True
+        if self.is_joint_idx_valid(joint_idx):
+            n_jnts = self.get_num_joints()
+            if len(self._cmd.joint_cmds) != n_jnts:
+                self._cmd.joint_cmds = [0.0]*n_jnts
+                self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
-    def pose_command(self, px, py, pz, roll, pitch, yaw, *jnt_cmds):
+            self._cmd.joint_cmds[joint_idx] = q
+            self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_POSITION
+            self._apply_command()
+
+    def set_joint_vel(self, joint_name_or_idx, q):
         """
-        Same as set_pose but customized of OpenAI's GYM for a single call set method
-        :param px:
-        :param py:
-        :param pz:
-        :param roll:
-        :param pitch:
-        :param yaw:
-        :param jnt_cmds:
+        Set the joint velocity based on the index or names. Check the get_joint_names to see the list of
+        joint names for indexes
+        :param joint_name_or_idx:
+        :param q:
         :return:
         """
-        # Edited python3 code
-        quat = quaternion_from_euler(roll, pitch, yaw, 'szyx')
-        # Initial python2 code
-        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
-        self._cmd.enable_position_controller = True
-        self._cmd.pose.position.x = px
-        self._cmd.pose.position.y = py
-        self._cmd.pose.position.z = pz
-        self._cmd.pose.orientation.x = quat[0]
-        self._cmd.pose.orientation.y = quat[1]
-        self._cmd.pose.orientation.z = quat[2]
-        self._cmd.pose.orientation.w = quat[3]
+        # edited python3 code
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
 
-        self._cmd.joint_cmds = [jnt for jnt in jnt_cmds]
+        if self.is_joint_idx_valid(joint_idx):
+            n_jnts = self.get_num_joints()
+            if len(self._cmd.joint_cmds) != n_jnts:
+                self._cmd.joint_cmds = [0.0]*n_jnts
+                self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
-        self._apply_command()
-
-    def wrench_command(self, fx, fy, fz, nx, ny, nz):
-        """
-        Same as set_wrench but customized for OpenAI's GYM for a single call method
-        :param fx:
-        :param fy:
-        :param fz:
-        :param nx:
-        :param ny:
-        :param nz:
-        :return:
-        """
-        self._cmd.enable_position_controller = False
-        self._cmd.wrench.force.x = fx
-        self._cmd.wrench.force.y = fy
-        self._cmd.wrench.force.z = fz
-        self._cmd.wrench.torque.x = nx
-        self._cmd.wrench.torque.y = ny
-        self._cmd.wrench.torque.z = nz
-
-        self._apply_command()
-        self._wrench_cmd_set = True
+            self._cmd.joint_cmds[joint_idx] = q
+            self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_VELOCITY
+            self._apply_command()
 
     def _clear_command(self):
         """
         Clear wrench if watchdog is expired
         :return:
         """
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
         self._cmd.wrench.force.x = 0
         self._cmd.wrench.force.y = 0
         self._cmd.wrench.force.z = 0
