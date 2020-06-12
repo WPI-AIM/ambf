@@ -1,4 +1,3 @@
-from mimic import ProxyMTM
 import rospy
 import time
 from Tkinter import *
