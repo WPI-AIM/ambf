@@ -79,8 +79,17 @@ class ObjectControl:
 
             if self._ctrl_c_space:
                 self.obj_gui.App.update()
-                self.obj_handle.set_pos(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                self.obj_handle.set_rpy(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                if self.obj_gui.cartesian_mode == 0:
+                    self.obj_handle.set_force(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
+                    self.obj_handle.set_torque(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                elif self.obj_gui.cartesian_mode == 1:
+                    self.obj_handle.set_pos(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
+                    self.obj_handle.set_rpy(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                elif self.obj_gui.cartesian_mode == 2:
+                    self.obj_handle.set_linear_vel(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
+                    self.obj_handle.set_angular_vel(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                else:
+                    print('CANNOT UNDERSTAND CARTESIAN CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
             if self._ctrl_j_space:
                 self.jnt_gui.App.update()

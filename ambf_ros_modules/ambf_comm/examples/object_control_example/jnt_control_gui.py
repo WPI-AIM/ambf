@@ -1,8 +1,4 @@
-
-import rospy
-import time
 import functools
-import Tkinter as tk
 from Tkinter import *
 
 App = Tk()

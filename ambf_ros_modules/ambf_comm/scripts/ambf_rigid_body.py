@@ -327,7 +327,7 @@ class RigidBody(BaseObject):
         :param wrench:
         :return:
         """
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_FORCE
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
         self._cmd.wrench = wrench
 
         self._apply_command()
@@ -390,7 +390,7 @@ class RigidBody(BaseObject):
         :param pose:
         :return:
         """
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_POSITION
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_POSITION
         self._cmd.pose = pose
 
         self._apply_command()
@@ -434,7 +434,7 @@ class RigidBody(BaseObject):
         :param wrench:
         :return:
         """
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_VELOCITY
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_VELOCITY
         self._cmd.twist = twist
 
         self._apply_command()
@@ -451,7 +451,7 @@ class RigidBody(BaseObject):
         :param nz:
         :return:
         """
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_FORCE
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
         self._cmd.wrench.force.x = fx
         self._cmd.wrench.force.y = fy
         self._cmd.wrench.force.z = fz
@@ -478,7 +478,7 @@ class RigidBody(BaseObject):
         quat = quaternion_from_euler(roll, pitch, yaw, 'szyx')
         # Initial python2 code
         # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'szyx')
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_POSITION
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_POSITION
         self._cmd.pose.position.x = px
         self._cmd.pose.position.y = py
         self._cmd.pose.position.z = pz
@@ -502,7 +502,7 @@ class RigidBody(BaseObject):
         :param tz:
         :return:
         """
-        self._cmd.cartesian_command_type = RigidBodyCmd.TYPE_VELOCITY
+        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_VELOCITY
         self._cmd.twist.x = vx
         self._cmd.twist.y = vy
         self._cmd.twist.z = vz
