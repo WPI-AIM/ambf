@@ -216,6 +216,10 @@ void exitHandler(int s){
            g_window_closed = true;
 }
 
+cFrameBuffer g_frameBuffer;
+cImagePtr g_bufferColorImage;
+cImagePtr g_bufferDepthImage;
+
 ///
 /// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
 /// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
@@ -271,6 +275,10 @@ int main(int argc, char* argv[])
     cmd_opts.add_options()
             ("help,h", "Show help")
             ("ndevs,n", p_opt::value<int>(), "Number of Haptic Devices to Load")
+            ("far,z", p_opt::value<double>(), "Far")
+            ("near,x", p_opt::value<double>(), "Near")
+            ("method,q", p_opt::value<int>(), "Method")
+            ("type,w", p_opt::value<int>(), "Type")
             ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
             ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
             ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
@@ -325,6 +333,21 @@ int main(int argc, char* argv[])
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
     if(var_map.count("sim_speed_factor")){g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();}
+
+    int cntr = 0;
+    int type = 0;
+    int method = 0;
+    double near = 0.1;
+    double far = 5.0;
+
+    if(var_map.count("near")){near = var_map["near"].as<double>();}
+
+    if(var_map.count("far")){far = var_map["far"].as<double>();}
+
+    if(var_map.count("method")){method = var_map["method"].as<int>();}
+
+    if(var_map.count("type")){type = var_map["type"].as<int>();}
+
 
     // Process the loadMultiBodies string
 
@@ -610,12 +633,123 @@ int main(int argc, char* argv[])
 
     RateSleep graphicsSleep(120);
 
+    g_frameBuffer.setup(g_cameras[0]->getCamera(), 1024, 768, true, true);
+    g_bufferColorImage = cImage::create();
+    g_bufferDepthImage = cImage::create();
+
     // main graphic loop
     while (!g_window_closed)
     {
         if (g_cmdOpts.showGUI){
         // Call the update graphics method
         updateGraphics();
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        g_frameBuffer.renderView();
+        g_frameBuffer.copyImageBuffer(g_bufferColorImage);
+        g_frameBuffer.copyDepthBuffer(g_bufferDepthImage);
+
+//        updateGraphics();
+
+        unsigned char * depthImage = g_bufferDepthImage->getData();
+
+        int w = 1024;
+        int h = 768;
+        const int bytes = 4;
+        double min_arr[bytes] = {255, 255, 255, 255};
+        double max_arr[bytes] = {0, 0, 0, 0};
+        double avg_arr[bytes] = {0, 0, 0, 0};
+        unsigned int val_arr[bytes];
+        unsigned int norm_val_arr[bytes];
+
+        std::string eqn;
+
+        if (cntr % 10 == 0){
+
+            for (int pIdx = 0 ; pIdx < (w*h) ; pIdx++){
+                //            int n_val = val;
+                for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
+
+                    // CHOOSE THE WAY OF FETCHING THE PIXEL
+                    if (type == 0){
+                     val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx];
+                    }
+                    else if (type == 1){
+                     val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0;
+                    }
+                    else if (type == 2){
+                     val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx]);
+                    }
+
+                    // CHOOSE THE METHOD OF NORMALIZING THE PIXEL
+                    if (method == 0){
+                        eqn = "norm_val[i] = val[j]";
+                        norm_val_arr[arrIdx] = val_arr[arrIdx];
+                    }
+                    else if (method == 1){
+                        eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                        norm_val_arr[arrIdx] = near * far / (val_arr[arrIdx] * (far - near) - far);
+                    }
+                    else if (method == 2){
+                        eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                        norm_val_arr[arrIdx] = near * far / ( (val_arr[arrIdx]/255.0) * (far - near) - far);
+                    }
+                    else if (method == 3){
+                        eqn = "(2.0 * near) / (far + near - val[j] * (far - near))";
+                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - val_arr[arrIdx] * (far - near));
+                    }
+                    else if (method == 4){
+                        eqn = "(2.0 * near) / (far + near - ((double)val[j] / 255.0) * (far - near))";
+                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - (val_arr[arrIdx] / 255.0) * (far - near));
+                    }
+                    else if (method == 5){
+                        eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                        norm_val_arr[arrIdx] = ( val_arr[arrIdx] - (-near) ) / ( -far - (-near) );
+                    }
+                    else if (method == 6){
+                        eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                        norm_val_arr[arrIdx] = ( (val_arr[arrIdx]/255.0) - (-near) ) / ( -far - (-near) );
+                    }
+
+                    if (val_arr[arrIdx] <= min_arr[arrIdx]){
+                        min_arr[arrIdx] = val_arr[arrIdx];
+                    }
+
+                    if (val_arr[arrIdx] >= max_arr[arrIdx]){
+                        max_arr[arrIdx] = val_arr[arrIdx];
+                    }
+
+                    avg_arr[arrIdx] += norm_val_arr[arrIdx];
+                }
+
+                //            dpData[i*bytes + 0] = n_val;
+                //            dpData[i*bytes + 1] = 0;
+                //            dpData[i*bytes + 2] = 0;
+                //            dpData[i*bytes + 3] = 255;
+
+            }
+
+
+            std::cerr << "TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
+            std::cerr << "METHOD --> " << eqn << " <--" << std::endl;
+            for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
+                avg_arr[arrIdx] = avg_arr[arrIdx] / (w * h);
+                std::cerr << "depthImage[" << arrIdx << "]: Min: " << min_arr[arrIdx] << ", Max: " << max_arr[arrIdx] << ", Avg: " << avg_arr[arrIdx] << std::endl;
+//                std::cerr << "------\n";
+            }
+            std::cerr << "___________________\n-------------------\n";
+        }
+
+        cntr++;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // process events
         glfwPollEvents();
@@ -1358,8 +1492,8 @@ void updateGraphics()
         glfwGetWindowSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
 
         // Update the Labels in a separate sub-routine
-        if (g_updateLabels)
-            updateLabels();
+//        if (g_updateLabels)
+//            updateLabels();
 
         // render world
         cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
