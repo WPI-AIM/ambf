@@ -1,180 +1,207 @@
 import functools
 from Tkinter import *
 
-App = Tk()
-x = 0
-y = 0
-z = 0
-roll = 0
-pitch = 0
-yaw = 0
-x_slider = None
-y_slider = None
-z_slider = None
-roll_slider = None
-pitch_slider = None
-yaw_slider = None
-cartesian_mode = 0
 
+class ObjectGUI:
+    def __init__(self, obj_name):
+        self.App = Tk()
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
+        self.x_slider = None
+        self.y_slider = None
+        self.z_slider = None
+        self.roll_slider = None
+        self.pitch_slider = None
+        self.yaw_slider = None
+        self.cartesian_mode = 0
+        self.create_gui(self.App, obj_name)
 
-def init(obj_name):
-    global x, y, z
-    global roll, pitch, yaw
-    global App
-    create_gui(App, obj_name)
+    # Def Init Function
+    def get_app_handle(self):
+        return self.App
 
+    # Define Callbacks for Tkinter GUI Sliders
+    def x_cb(self, val):
+        self.x = float(val)
 
-# Def Init Function
-def get_app_handle():
-    global App
-    return App
+    def y_cb(self, val):
+        global y
+        self.y = float(val)
 
+    def z_cb(self, val):
+        global z
+        self.z = float(val)
 
-# Define Callbacks for Tkinter GUI Sliders
-def x_cb(val):
-    global x
-    x = float(val)
+    def roll_cb(self, val):
+        global roll
+        self.roll = float(val)
 
+    def pitch_cb(self, val):
+        global pitch
+        self.pitch = float(val)
 
-def y_cb(val):
-    global y
-    y = float(val)
+    def yaw_cb(self, val):
+        global yaw
+        self.yaw = float(val)
 
+    def zero_all_cb(self):
+        self.zero_xyz_cb()
+        self.zero_rpy_cb()
 
-def z_cb(val):
-    global z
-    z = float(val)
+    def zero_xyz_cb(self):
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.x_slider.set(0)
+        self.y_slider.set(0)
+        self.z_slider.set(0)
 
+    def zero_rpy_cb(self):
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
+        self.roll_slider.set(0)
+        self.pitch_slider.set(0)
+        self.yaw_slider.set(0)
 
-def roll_cb(val):
-    global roll
-    roll = float(val)
+    # Define Callbacks for Tkinter GUI Slider
+    def effort_button_cb(self):
+        global cartesian_mode
+        self.cartesian_mode = 0
 
+    # Define Callbacks for Tkinter GUI Slider
+    def position_button_cb(self):
+        global cartesian_mode
+        self.cartesian_mode = 1
 
-def pitch_cb(val):
-    global pitch
-    pitch = float(val)
+    # Define Callbacks for Tkinter GUI Slider
+    def velocity_button_cb(self):
+        global cartesian_mode
+        self.cartesian_mode = 2
 
+    def create_gui(self, app, obj_name):
+        _width = 20
+        _length = 300
+        _resolution = 0.001
+        # Define Sliders and Labels
 
-def yaw_cb(val):
-    global yaw
-    yaw = float(val)
+        row_count = 0
+        obj_label = Label(app, text='CONTROLLING OBJECT: ' + obj_name, fg="Red")
+        obj_label.grid(row=row_count, columnspan=2, pady=5)
 
+        row_count = row_count + 1
 
-def zero_all_cb():
-    zero_xyz_cb()
-    zero_rpy_cb()
+        v = IntVar(value=0)
+        eff_cb = Radiobutton(app, text="Effort", variable=v, indicatoron=False, value=0,
+                             command=self.effort_button_cb)
+        eff_cb.grid(row=row_count, column=0)
 
+        pos_cb = Radiobutton(app, text="Position", variable=v, indicatoron=False, value=1,
+                             command=self.position_button_cb)
+        pos_cb.grid(row=row_count, column=1)
 
-def zero_xyz_cb():
-    global x, y, z, roll, pitch, yaw
-    global x_slider, y_slider, z_slider, roll_slider, pitch_slider, yaw_slider
-    x = 0
-    y = 0
-    z = 0
-    x_slider.set(0)
-    y_slider.set(0)
-    z_slider.set(0)
+        vel_cb = Radiobutton(app, text="Velocity", variable=v, indicatoron=False, value=2,
+                             command=self.velocity_button_cb)
+        vel_cb.grid(row=row_count, column=2)
 
+        row_count = row_count + 1
 
-def zero_rpy_cb():
-    global x, y, z, roll, pitch, yaw
-    global x_slider, y_slider, z_slider, roll_slider, pitch_slider, yaw_slider
-    roll = 0
-    pitch = 0
-    yaw = 0
-    roll_slider.set(0)
-    pitch_slider.set(0)
-    yaw_slider.set(0)
+        min = -100
+        max = 100
+        self.x_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                         command=self.x_cb)
+        self.x_slider.grid(row=row_count, column=1)
 
+        row_count = row_count + 1
 
-# Define Callbacks for Tkinter GUI Slider
-def effort_button_cb():
-    global cartesian_mode
-    cartesian_mode = 0
+        x_label = Label(app, text="x")
+        x_label.grid(row=row_count, column=1, pady=5)
 
+        row_count = row_count + 1
 
-# Define Callbacks for Tkinter GUI Slider
-def position_button_cb():
-    global cartesian_mode
-    cartesian_mode = 1
+        self.y_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                         command=self.y_cb)
+        self.y_slider.grid(row=row_count, column=1)
 
+        row_count = row_count + 1
 
-# Define Callbacks for Tkinter GUI Slider
-def velocity_button_cb():
-    global cartesian_mode
-    cartesian_mode = 2
+        y_label = Label(app, text="y")
+        y_label.grid(row=row_count, column=1)
 
+        row_count = row_count + 1
 
-def create_gui(app, obj_name):
-    global x_slider, y_slider, z_slider, roll_slider, pitch_slider, yaw_slider, cartesian_mode
-    _width = 20
-    _length = 300
-    _resolution = 0.001
-    # Define Sliders and Labels
+        self.z_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                         command=self.z_cb)
+        self.z_slider.grid(row=row_count, column=1)
 
-    v = IntVar(value=0)
-    eff_cb = Radiobutton(app, text="Effort", variable=v, indicatoron=False, value=0,
-                         command=effort_button_cb)
-    eff_cb.grid(row=0, column=0)
+        row_count = row_count + 1
 
-    pos_cb = Radiobutton(app, text="Position", variable=v, indicatoron=False, value=1,
-                         command=position_button_cb)
-    pos_cb.grid(row=0, column=1)
+        z_label = Label(app, text="z")
+        z_label.grid(row=row_count, column=1)
 
-    vel_cb = Radiobutton(app, text="Velocity", variable=v, indicatoron=False, value=2,
-                         command=velocity_button_cb)
-    vel_cb.grid(row=0, column=2)
+        row_count = row_count + 1
 
-    min = -100
-    max = 100
-    x_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                     command=x_cb)
-    x_slider.grid(row=1, column=1)
-    x_label = Label(app, text="x")
-    x_label.grid(row=2, column=1)
+        zero_xyz = Button(app, width=_width, command=self.zero_xyz_cb)
+        zero_xyz.grid(row=row_count, column=1)
 
-    y_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                     command=y_cb)
-    y_slider.grid(row=3, column=1)
-    y_label = Label(app, text="y")
-    y_label.grid(row=4, column=1)
+        row_count = row_count + 1
 
-    z_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                     command=z_cb)
-    z_slider.grid(row=5, column=1)
-    z_label = Label(app, text="z")
-    z_label.grid(row=6, column=1)
+        zero_xyz_label = Label(app, text="ZERO XYZ")
+        zero_xyz_label.grid(row=row_count, column=1)
 
-    zero_xyz = Button(app, width=_width, command=zero_xyz_cb)
-    zero_xyz.grid(row=7, column=1)
-    zero_xyz_label = Label(app, text="ZERO XYZ")
-    zero_xyz_label.grid(row=8, column=1)
+        row_count = row_count + 1
 
-    roll_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                        command=roll_cb)
-    roll_slider.grid(row=9, column=1)
-    roll_label = Label(app, text="roll")
-    roll_label.grid(row=10, column=1)
+        self.roll_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                            command=self.roll_cb)
+        self.roll_slider.grid(row=row_count, column=1)
 
-    pitch_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                         command=pitch_cb)
-    pitch_slider.grid(row=11, column=1)
-    pitch_label = Label(app, text="pitch")
-    pitch_label.grid(row=12, column=1)
+        row_count = row_count + 1
 
-    yaw_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                       command=yaw_cb)
-    yaw_slider.grid(row=13, column=1)
-    yaw_label = Label(app, text="yaw")
-    yaw_label.grid(row=14, column=1)
+        roll_label = Label(app, text="roll")
+        roll_label.grid(row=row_count, column=1)
 
-    zero_rpy = Button(app, width=_width, command=zero_rpy_cb)
-    zero_rpy.grid(row=15, column=1)
-    zero_rpy_label = Label(app, text="ZERO RPY")
-    zero_rpy_label.grid(row=16, column=1)
+        row_count = row_count + 1
 
-    zero_all = Button(app, width=_width, command=zero_all_cb)
-    zero_all.grid(row=17, column=1)
-    zero_all_label = Label(app, text="ZERO")
-    zero_all_label.grid(row=18, column=1)
+        self.pitch_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                             command=self.pitch_cb)
+        self.pitch_slider.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        pitch_label = Label(app, text="pitch")
+        pitch_label.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        self.yaw_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+                           command=self.yaw_cb)
+        self.yaw_slider.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        yaw_label = Label(app, text="yaw")
+        yaw_label.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        zero_rpy = Button(app, width=_width, command=self.zero_rpy_cb)
+        zero_rpy.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        zero_rpy_label = Label(app, text="ZERO RPY")
+        zero_rpy_label.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        zero_all = Button(app, width=_width, command=self.zero_all_cb)
+        zero_all.grid(row=row_count, column=1)
+
+        row_count = row_count + 1
+
+        zero_all_label = Label(app, text="ZERO")
+        zero_all_label.grid(row=row_count, column=1)

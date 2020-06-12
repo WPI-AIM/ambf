@@ -45,8 +45,8 @@
 
 from ambf_client import Client
 import time
-import obj_control_gui as ObjCtrlGUI
-import jnt_control_gui as JntCtrlGUI
+from obj_control_gui import ObjectGUI
+from jnt_control_gui import JointGUI
 import rospy
 from argparse import ArgumentParser
 
@@ -63,16 +63,14 @@ class ObjectControl:
         self._ctrl_j_space = j_space_ctrl
 
         if self._ctrl_c_space:
-            self.obj_gui = ObjCtrlGUI
-            self.obj_gui.init(obj_name)
+            self.obj_gui = ObjectGUI(obj_name)
 
         self._n_jnts = 0
 
         if self._ctrl_j_space:
             jnt_names = self.obj_handle.get_joint_names()
             self._n_jnts = len(jnt_names)
-            self.jnt_gui = JntCtrlGUI
-            self.jnt_gui.init(obj_name, self._n_jnts, jnt_names)
+            self.jnt_gui = JointGUI(obj_name, self._n_jnts, jnt_names)
 
     def run(self):
         while not rospy.is_shutdown():
