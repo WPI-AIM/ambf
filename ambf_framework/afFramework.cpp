@@ -6858,7 +6858,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                                                         m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
                                                         sensorPtr->getMinPublishFrequency(),
                                                         sensorPtr->getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
                         sensorPtr->m_afSensorCommPtr->set_type(sensor_type);
+#endif
 //                    }
                 }
             }
@@ -6896,7 +6898,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                                                         m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
                                                         actuatorPtr->getMinPublishFrequency(),
                                                         actuatorPtr->getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
                         actuatorPtr->m_afActuatorCommPtr->set_type(actuator_type);
+#endif
 //                    }
                 }
             }

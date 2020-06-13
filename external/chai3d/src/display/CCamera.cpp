@@ -1678,8 +1678,11 @@ void cCamera::renderView(const int a_windowWidth,
         // (4.6) RENDER FRONT PLANE
         //-------------------------------------------------------------------
 
-        // clear depth buffer
-        glClear(GL_DEPTH_BUFFER_BIT);
+        if (a_defaultBuffer){
+
+            // clear depth buffer
+            glClear(GL_DEPTH_BUFFER_BIT);
+        }
 
         // render the 'front' 2d object layer; it will set up its own
         // projection matrix

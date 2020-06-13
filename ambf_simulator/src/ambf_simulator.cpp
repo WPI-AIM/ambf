@@ -79,6 +79,8 @@ bool fullscreen = false;
 // mirrored display
 bool mirroredDisplay = false;
 
+double g_widthRatio = 1.0;
+double g_heightRatio = 1.0;
 
 //---------------------------------------------------------------------------
 // BULLET MODULE VARIABLES
@@ -334,23 +336,6 @@ int main(int argc, char* argv[])
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
     if(var_map.count("sim_speed_factor")){g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();}
-
-    int cntr = 0;
-    int type = 0;
-    int buffer_type = 0;
-    int method = 0;
-    double near = 0.1;
-    double far = 5.0;
-
-    if(var_map.count("near")){near = var_map["near"].as<double>();}
-
-    if(var_map.count("far")){far = var_map["far"].as<double>();}
-
-    if(var_map.count("method")){method = var_map["method"].as<int>();}
-
-    if(var_map.count("type")){type = var_map["type"].as<int>();}
-
-    if(var_map.count("buffer")){buffer_type = var_map["buffer"].as<int>();}
 
 
     // Process the loadMultiBodies string
@@ -642,6 +627,23 @@ int main(int argc, char* argv[])
     g_bufferColorImage = cImage::create();
     g_bufferDepthImage = cImage::create();
 
+    int cntr = 0;
+    int type = 0;
+    int buffer_type = 0;
+    int method = 0;
+    double near = cam->getNearClippingPlane();
+    double far = cam->getFarClippingPlane();
+
+    if(var_map.count("near")){near = var_map["near"].as<double>();}
+
+    if(var_map.count("far")){far = var_map["far"].as<double>();}
+
+    if(var_map.count("method")){method = var_map["method"].as<int>();}
+
+    if(var_map.count("type")){type = var_map["type"].as<int>();}
+
+    if(var_map.count("buffer")){buffer_type = var_map["buffer"].as<int>();}
+
     // main graphic loop
     while (!g_window_closed)
     {
@@ -661,13 +663,19 @@ int main(int argc, char* argv[])
 
             //        updateGraphics();
 
-            unsigned char * depthImage;
+            unsigned char * bufferImage;
+
+            std::string type_eqn;
+            std::string method_eqn;
+            std::string buffer_type_name;
 
             if (buffer_type == 0){
-                depthImage = g_bufferDepthImage->getData();
+                bufferImage = g_bufferDepthImage->getData();
+                buffer_type_name = "DEPTH";
             }
             else if (buffer_type == 1){
-                depthImage = g_bufferColorImage->getData();
+                bufferImage = g_bufferColorImage->getData();
+                buffer_type_name = "COLOR";
             }
 
             int w =  g_cameras[0]->m_width;
@@ -679,10 +687,7 @@ int main(int argc, char* argv[])
             unsigned int val_arr[bytes];
             unsigned int norm_val_arr[bytes];
 
-            std::string type_eqn;
-            std::string method_eqn;
-
-            if (cntr % 10 == 0){
+            if (cntr % 30 == 0){
 
                 for (int pIdx = 0 ; pIdx < (w*h) ; pIdx++){
                     //            int n_val = val;
@@ -691,15 +696,15 @@ int main(int argc, char* argv[])
                         // CHOOSE THE WAY OF FETCHING THE PIXEL
                         if (type == 0){
                             type_eqn = "val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx]";
-                            val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx];
+                            val_arr[arrIdx] = (unsigned int)bufferImage[pIdx*bytes + arrIdx];
                         }
                         else if (type == 1){
                             type_eqn = "val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0";
-                            val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0;
+                            val_arr[arrIdx] = (unsigned int)(bufferImage[pIdx*bytes + arrIdx]) / 255.0;
                         }
                         else if (type == 2){
                             type_eqn = "val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx])";
-                            val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx]);
+                            val_arr[arrIdx] = (float)(bufferImage[pIdx*bytes + arrIdx]);
                         }
 
                         // CHOOSE THE METHOD OF NORMALIZING THE PIXEL
@@ -751,8 +756,8 @@ int main(int argc, char* argv[])
                 }
 
 
-            std::cerr << "BUFFER TYPE -> " << buffer_type << ", TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
-            std::cerr << "TYPE EQUATION \t\t[ " << type_eqn << " ]" << std::endl;
+            std::cerr << "BUFFER TYPE -> " << buffer_type_name << ", TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
+            std::cerr << "TYPE EQUATION \t[ " << type_eqn << " ]" << std::endl;
             std::cerr << "METHOD EQUATION \t[ " << method_eqn << " ]" << std::endl;
             for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
                 avg_arr[arrIdx] = avg_arr[arrIdx] / (w * h);
@@ -1417,8 +1422,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     vertical *= 2.f * farPlane * tanfov;
 
     btScalar aspect;
-    float width = float(a_cameraPtr->m_width);
-    float height = float(a_cameraPtr->m_height);
+    float width = g_widthRatio*float(a_cameraPtr->m_width);
+    float height = g_heightRatio*float(a_cameraPtr->m_height);
 
     aspect = width / height;
 
@@ -1429,8 +1434,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 dVert = vertical * 1.f / height;
 
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += btScalar(x) * dHor;
-    rayTo -= btScalar(y) * dVert;
+    rayTo += btScalar(g_heightRatio*x) * dHor;
+    rayTo -= btScalar(g_widthRatio*y) * dVert;
     cVector3d cRay = toCvec(rayTo);
     return cRay;
 }
@@ -1509,12 +1514,19 @@ void updateGraphics()
         // get width and height of window
         glfwGetWindowSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
 
+        int width, height;
+
+        glfwGetFramebufferSize(cameraPtr->m_window, &width, &height);
+
+        g_widthRatio = width / cameraPtr->m_width;
+        g_heightRatio = height / cameraPtr->m_height;
+
         // Update the Labels in a separate sub-routine
 //        if (g_updateLabels)
 //            updateLabels();
 
         // render world
-        cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
+        cameraPtr->renderView(width, height);
 
         // swap buffers
         glfwSwapBuffers(cameraPtr->m_window);
