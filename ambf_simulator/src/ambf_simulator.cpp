@@ -279,6 +279,7 @@ int main(int argc, char* argv[])
             ("near,x", p_opt::value<double>(), "Near")
             ("method,q", p_opt::value<int>(), "Method")
             ("type,w", p_opt::value<int>(), "Type")
+            ("buffer,b", p_opt::value<int>(), "Buffer Type")
             ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
             ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
             ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
@@ -336,6 +337,7 @@ int main(int argc, char* argv[])
 
     int cntr = 0;
     int type = 0;
+    int buffer_type = 0;
     int method = 0;
     double near = 0.1;
     double far = 5.0;
@@ -347,6 +349,8 @@ int main(int argc, char* argv[])
     if(var_map.count("method")){method = var_map["method"].as<int>();}
 
     if(var_map.count("type")){type = var_map["type"].as<int>();}
+
+    if(var_map.count("buffer")){buffer_type = var_map["buffer"].as<int>();}
 
 
     // Process the loadMultiBodies string
@@ -633,7 +637,8 @@ int main(int argc, char* argv[])
 
     RateSleep graphicsSleep(120);
 
-    g_frameBuffer.setup(g_cameras[0]->getCamera(), 1024, 768, true, true);
+    cCamera* cam = g_cameras[0]->getCamera();
+    g_frameBuffer.setup(cam, g_cameras[0]->m_width, g_cameras[0]->m_height, true, true);
     g_bufferColorImage = cImage::create();
     g_bufferDepthImage = cImage::create();
 
@@ -641,101 +646,114 @@ int main(int argc, char* argv[])
     while (!g_window_closed)
     {
         if (g_cmdOpts.showGUI){
-        // Call the update graphics method
-        updateGraphics();
+            // Call the update graphics method
+            updateGraphics();
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        g_frameBuffer.renderView();
-        g_frameBuffer.copyImageBuffer(g_bufferColorImage);
-        g_frameBuffer.copyDepthBuffer(g_bufferDepthImage);
+//            glClear(GL_DEPTH_BUFFER_BIT);
+            g_frameBuffer.renderView();
+            g_frameBuffer.copyImageBuffer(g_bufferColorImage);
+            g_frameBuffer.copyDepthBuffer(g_bufferDepthImage);
 
-//        updateGraphics();
+            //        updateGraphics();
 
-        unsigned char * depthImage = g_bufferDepthImage->getData();
+            unsigned char * depthImage;
 
-        int w = 1024;
-        int h = 768;
-        const int bytes = 4;
-        double min_arr[bytes] = {255, 255, 255, 255};
-        double max_arr[bytes] = {0, 0, 0, 0};
-        double avg_arr[bytes] = {0, 0, 0, 0};
-        unsigned int val_arr[bytes];
-        unsigned int norm_val_arr[bytes];
-
-        std::string eqn;
-
-        if (cntr % 10 == 0){
-
-            for (int pIdx = 0 ; pIdx < (w*h) ; pIdx++){
-                //            int n_val = val;
-                for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
-
-                    // CHOOSE THE WAY OF FETCHING THE PIXEL
-                    if (type == 0){
-                     val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx];
-                    }
-                    else if (type == 1){
-                     val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0;
-                    }
-                    else if (type == 2){
-                     val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx]);
-                    }
-
-                    // CHOOSE THE METHOD OF NORMALIZING THE PIXEL
-                    if (method == 0){
-                        eqn = "norm_val[i] = val[j]";
-                        norm_val_arr[arrIdx] = val_arr[arrIdx];
-                    }
-                    else if (method == 1){
-                        eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
-                        norm_val_arr[arrIdx] = near * far / (val_arr[arrIdx] * (far - near) - far);
-                    }
-                    else if (method == 2){
-                        eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
-                        norm_val_arr[arrIdx] = near * far / ( (val_arr[arrIdx]/255.0) * (far - near) - far);
-                    }
-                    else if (method == 3){
-                        eqn = "(2.0 * near) / (far + near - val[j] * (far - near))";
-                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - val_arr[arrIdx] * (far - near));
-                    }
-                    else if (method == 4){
-                        eqn = "(2.0 * near) / (far + near - ((double)val[j] / 255.0) * (far - near))";
-                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - (val_arr[arrIdx] / 255.0) * (far - near));
-                    }
-                    else if (method == 5){
-                        eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
-                        norm_val_arr[arrIdx] = ( val_arr[arrIdx] - (-near) ) / ( -far - (-near) );
-                    }
-                    else if (method == 6){
-                        eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
-                        norm_val_arr[arrIdx] = ( (val_arr[arrIdx]/255.0) - (-near) ) / ( -far - (-near) );
-                    }
-
-                    if (val_arr[arrIdx] <= min_arr[arrIdx]){
-                        min_arr[arrIdx] = val_arr[arrIdx];
-                    }
-
-                    if (val_arr[arrIdx] >= max_arr[arrIdx]){
-                        max_arr[arrIdx] = val_arr[arrIdx];
-                    }
-
-                    avg_arr[arrIdx] += norm_val_arr[arrIdx];
-                }
-
-                //            dpData[i*bytes + 0] = n_val;
-                //            dpData[i*bytes + 1] = 0;
-                //            dpData[i*bytes + 2] = 0;
-                //            dpData[i*bytes + 3] = 255;
-
+            if (buffer_type == 0){
+                depthImage = g_bufferDepthImage->getData();
+            }
+            else if (buffer_type == 1){
+                depthImage = g_bufferColorImage->getData();
             }
 
+            int w =  g_cameras[0]->m_width;
+            int h =  g_cameras[0]->m_height;
+            const int bytes = 4;
+            double min_arr[bytes] = {255, 255, 255, 255};
+            double max_arr[bytes] = {0, 0, 0, 0};
+            double avg_arr[bytes] = {0, 0, 0, 0};
+            unsigned int val_arr[bytes];
+            unsigned int norm_val_arr[bytes];
 
-            std::cerr << "TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
-            std::cerr << "METHOD --> " << eqn << " <--" << std::endl;
+            std::string type_eqn;
+            std::string method_eqn;
+
+            if (cntr % 10 == 0){
+
+                for (int pIdx = 0 ; pIdx < (w*h) ; pIdx++){
+                    //            int n_val = val;
+                    for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
+
+                        // CHOOSE THE WAY OF FETCHING THE PIXEL
+                        if (type == 0){
+                            type_eqn = "val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx]";
+                            val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx];
+                        }
+                        else if (type == 1){
+                            type_eqn = "val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0";
+                            val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0;
+                        }
+                        else if (type == 2){
+                            type_eqn = "val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx])";
+                            val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx]);
+                        }
+
+                        // CHOOSE THE METHOD OF NORMALIZING THE PIXEL
+                        if (method == 0){
+                            method_eqn = "norm_val[i] = val[j]";
+                            norm_val_arr[arrIdx] = val_arr[arrIdx];
+                        }
+                        else if (method == 1){
+                            method_eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                            norm_val_arr[arrIdx] = near * far / (val_arr[arrIdx] * (far - near) - far);
+                        }
+                        else if (method == 2){
+                            method_eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                            norm_val_arr[arrIdx] = near * far / ( (val_arr[arrIdx]/255.0) * (far - near) - far);
+                        }
+                        else if (method == 3){
+                            method_eqn = "(2.0 * near) / (far + near - val[j] * (far - near))";
+                            norm_val_arr[arrIdx] = (2.0 * near) / (far + near - val_arr[arrIdx] * (far - near));
+                        }
+                        else if (method == 4){
+                            method_eqn = "(2.0 * near) / (far + near - ((double)val[j] / 255.0) * (far - near))";
+                            norm_val_arr[arrIdx] = (2.0 * near) / (far + near - (val_arr[arrIdx] / 255.0) * (far - near));
+                        }
+                        else if (method == 5){
+                            method_eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                            norm_val_arr[arrIdx] = ( val_arr[arrIdx] - (-near) ) / ( -far - (-near) );
+                        }
+                        else if (method == 6){
+                            method_eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                            norm_val_arr[arrIdx] = ( (val_arr[arrIdx]/255.0) - (-near) ) / ( -far - (-near) );
+                        }
+
+                        if (val_arr[arrIdx] <= min_arr[arrIdx]){
+                            min_arr[arrIdx] = val_arr[arrIdx];
+                        }
+
+                        if (val_arr[arrIdx] >= max_arr[arrIdx]){
+                            max_arr[arrIdx] = val_arr[arrIdx];
+                        }
+
+                        avg_arr[arrIdx] += norm_val_arr[arrIdx];
+                    }
+
+                    //            dpData[i*bytes + 0] = n_val;
+                    //            dpData[i*bytes + 1] = 0;
+                    //            dpData[i*bytes + 2] = 0;
+                    //            dpData[i*bytes + 3] = 255;
+
+                }
+
+
+            std::cerr << "BUFFER TYPE -> " << buffer_type << ", TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
+            std::cerr << "TYPE EQUATION \t\t[ " << type_eqn << " ]" << std::endl;
+            std::cerr << "METHOD EQUATION \t[ " << method_eqn << " ]" << std::endl;
             for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
                 avg_arr[arrIdx] = avg_arr[arrIdx] / (w * h);
                 std::cerr << "depthImage[" << arrIdx << "]: Min: " << min_arr[arrIdx] << ", Max: " << max_arr[arrIdx] << ", Avg: " << avg_arr[arrIdx] << std::endl;

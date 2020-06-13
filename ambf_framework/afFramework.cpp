@@ -5858,11 +5858,11 @@ bool afCamera::createDefaultCamera(){
     m_controllingDeviceLabel->m_fontColor.setBlack();
     m_controllingDeviceLabel->setFontScale(0.8);
 
-    m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-    m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
-    m_camera->m_frontLayer->addChild(m_devicesModesLabel);
-    m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
-    m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
+//    m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+//    m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
+//    m_camera->m_frontLayer->addChild(m_devicesModesLabel);
+//    m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
+//    m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
 
     s_windowIdx++;
     s_cameraIdx++;
@@ -6094,11 +6094,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_controllingDeviceLabel->m_fontColor.setBlack();
         m_controllingDeviceLabel->setFontScale(0.8);
 
-        m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-        m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
-        m_camera->m_frontLayer->addChild(m_devicesModesLabel);
-        m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
-        m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
+//        m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+//        m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
+//        m_camera->m_frontLayer->addChild(m_devicesModesLabel);
+//        m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
+//        m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
 
         s_windowIdx++;
         s_cameraIdx++;
