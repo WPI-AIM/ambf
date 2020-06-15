@@ -805,8 +805,8 @@ void afSimulatedDevice::setGripperAngle(double angle, double dt){
     // We override the set angle method for grippers to simplify the angle bound. 0 for closed
     // and 1 for open and everything in between is scaled.
     double clipped_angle = cClamp(angle, 0.0, 1.0);
-    for (size_t jntIdx = 0 ; jntIdx < m_rootLink->m_childAndJointPairs.size() ; jntIdx++){
-        afJointPtr joint = m_rootLink->m_childAndJointPairs[jntIdx].m_childJoint;
+    for (size_t jntIdx = 0 ; jntIdx < m_rootLink->m_CJ_PairsAll.size() ; jntIdx++){
+        afJointPtr joint = m_rootLink->m_CJ_PairsAll[jntIdx].m_childJoint;
         double ang = joint->getLowerLimit() + clipped_angle * (joint->getUpperLimit() - joint->getLowerLimit());
         joint->commandPosition(ang, dt);
     }

@@ -421,7 +421,8 @@ struct afChildJointPair{
     }
     afRigidBodyPtr m_childBody;
     afJointPtr m_childJoint;
-    bool m_directConnection = false; // Flag for checking if the body is connected directly or not to another body
+    // Flag for checking if the body is connected directly or not to the parent body
+    bool m_directConnection = false;
 };
 
 
@@ -464,6 +465,10 @@ public:
     // to be parented to hasn't been loaded yet.
     virtual bool resolveParenting(std::string a_parent_name = ""){}
 
+    bool isPassive(){return m_passive;}
+
+    void setPassive(bool a_passive){m_passive = a_passive;}
+
 public:
 
     // Ptr to afWorld
@@ -492,7 +497,11 @@ protected:
 
     // Min and Max publishing frequency
     int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;  
+    int _max_publish_frequency=1000;
+
+    // If passive, this instance will not be reported
+    // for communication purposess.
+    bool m_passive = false;
 };
 
 
@@ -539,7 +548,11 @@ public:
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
     // children (children's children ... and so on also count as children)
-    std::vector<afChildJointPair> m_childAndJointPairs;
+    std::vector<afChildJointPair> m_CJ_PairsAll;
+
+    // This vector contains the list of only the bodies connected via active joints. A joint can
+    // be set as passive in the ADF file.
+    std::vector<afChildJointPair> m_CJ_PairsActive;
 
     // A vector of all the parent bodies (not just the immediate parents but all the way up to the root parent)
     std::vector<afRigidBodyPtr> m_parentBodies;
@@ -895,6 +908,8 @@ public:
 
     std::string getName(){return m_name;}
 
+    bool isPassive(){return m_passive;}
+
 protected:
 
     std::string m_name;
@@ -913,6 +928,10 @@ protected:
 
     // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
     bool m_usePIDController = false;
+
+    // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
+    // for communication purposess.
+    bool m_passive = false;
 
 protected:
 
