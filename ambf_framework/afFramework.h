@@ -1439,6 +1439,12 @@ public:
     int m_width, m_height;
     int m_win_x, m_win_y;
 
+    int type = 0;
+    int buffer_type = 0;
+    int method = 0;
+    double near = 0.1;
+    double far = 50.0;
+
 public:
     std::vector<std::string> m_controllingDevNames;
 
@@ -1464,6 +1470,9 @@ protected:
 
     // Image to Convert the FrameBuffer into an image
     cImagePtr m_imageFromBuffer;
+
+    // Image to Convert the FrameBuffer into an image
+    cImagePtr m_depthFromBuffer;
 
     // Open CV Image Matrix
     cv::Mat m_imageMatrix;

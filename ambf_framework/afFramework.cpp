@@ -6113,6 +6113,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         if (m_publishImage){
             m_frameBuffer = new cFrameBuffer();
             m_imageFromBuffer = cImage::create();
+            m_depthFromBuffer = cImage::create();
 
             if (s_imageTransportInitialized == false){
                 s_imageTransportInitialized = true;
@@ -6133,6 +6134,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 }
 
 
+int cntr = 0;
 ///
 /// \brief afCamera::publishImage
 ///
@@ -6142,10 +6144,127 @@ void afCamera::publishImage(){
         m_frameBuffer->renderView();
         m_frameBuffer->copyImageBuffer(m_imageFromBuffer);
         m_imageFromBuffer->flipHorizontal();
-        m_imageMatrix = cv::Mat(m_imageFromBuffer->getHeight(), m_imageFromBuffer->getWidth(), CV_8UC4, m_imageFromBuffer->getData());
-        cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
-        sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
+
+
+        m_frameBuffer->copyDepthBuffer(m_depthFromBuffer);
+        m_depthFromBuffer->flipHorizontal();
+
+        unsigned char * bufferImage;
+
+        std::string type_eqn;
+        std::string method_eqn;
+        std::string buffer_type_name;
+
+        if (buffer_type == 0){
+            bufferImage = m_depthFromBuffer->getData();
+            buffer_type_name = "DEPTH";
+        }
+        else if (buffer_type == 1){
+            bufferImage = m_imageFromBuffer->getData();
+            buffer_type_name = "COLOR";
+        }
+
+        int w =  m_width;
+        int h =  m_height;
+        const int bytes = 4;
+        double min_arr[bytes] = {255, 255, 255, 255};
+        double max_arr[bytes] = {0, 0, 0, 0};
+        double avg_arr[bytes] = {0, 0, 0, 0};
+        unsigned int val_arr[bytes];
+        unsigned int norm_val_arr[bytes];
+
+        if (cntr % 30 == 0){
+
+            for (int pIdx = 0 ; pIdx < (w*h) ; pIdx++){
+                //            int n_val = val;
+                for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
+
+                    // CHOOSE THE WAY OF FETCHING THE PIXEL
+                    if (type == 0){
+                        type_eqn = "val_arr[arrIdx] = (unsigned int)depthImage[pIdx*bytes + arrIdx]";
+                        val_arr[arrIdx] = (unsigned int)bufferImage[pIdx*bytes + arrIdx];
+                    }
+                    else if (type == 1){
+                        type_eqn = "val_arr[arrIdx] = (unsigned int)(depthImage[pIdx*bytes + arrIdx]) / 255.0";
+                        val_arr[arrIdx] = (unsigned int)(bufferImage[pIdx*bytes + arrIdx]) / 255.0;
+                    }
+                    else if (type == 2){
+                        type_eqn = "val_arr[arrIdx] = (float)(depthImage[pIdx*bytes + arrIdx])";
+                        val_arr[arrIdx] = (float)(bufferImage[pIdx*bytes + arrIdx]);
+                    }
+                    else if (type == 3){
+                        type_eqn = "(float)(bufferImage[pIdx*bytes + arrIdx]) / 255.0 * 2.0 - 1.0";
+                        float val = (float)(bufferImage[pIdx*bytes + arrIdx]) / 255.0;
+                        val_arr[arrIdx] = (val * 2.0 - 1.0);
+                    }
+
+                    // CHOOSE THE METHOD OF NORMALIZING THE PIXEL
+                    if (method == 0){
+                        method_eqn = "norm_val[i] = val[j]";
+                        norm_val_arr[arrIdx] = val_arr[arrIdx];
+                    }
+                    else if (method == 1){
+                        method_eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                        norm_val_arr[arrIdx] = near * far / (val_arr[arrIdx] * (far - near) - far);
+                    }
+                    else if (method == 2){
+                        method_eqn = "norm_val[j] = near * far / ( val[j] * (far - near) - far)";
+                        norm_val_arr[arrIdx] = near * far / ( (val_arr[arrIdx]/255.0) * (far - near) - far);
+                    }
+                    else if (method == 3){
+                        method_eqn = "(2.0 * near) / (far + near - val[j] * (far - near))";
+                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - val_arr[arrIdx] * (far - near));
+                    }
+                    else if (method == 4){
+                        method_eqn = "(2.0 * near) / (far + near - ((double)val[j] / 255.0) * (far - near))";
+                        norm_val_arr[arrIdx] = (2.0 * near) / (far + near - (val_arr[arrIdx] / 255.0) * (far - near));
+                    }
+                    else if (method == 5){
+                        method_eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                        norm_val_arr[arrIdx] = ( val_arr[arrIdx] - (-near) ) / ( -far - (-near) );
+                    }
+                    else if (method == 6){
+                        method_eqn = "( (val[j]/255.0) - (-near) ) / ( -far - (-near) )";
+                        norm_val_arr[arrIdx] = ( (val_arr[arrIdx]/255.0) - (-near) ) / ( -far - (-near) );
+                    }
+
+                    if (val_arr[arrIdx] <= min_arr[arrIdx]){
+                        min_arr[arrIdx] = val_arr[arrIdx];
+                    }
+
+                    if (val_arr[arrIdx] >= max_arr[arrIdx]){
+                        max_arr[arrIdx] = val_arr[arrIdx];
+                    }
+
+                    avg_arr[arrIdx] += norm_val_arr[arrIdx];
+                }
+
+                bufferImage[pIdx*bytes + 0] = int(norm_val_arr[0]);
+                bufferImage[pIdx*bytes + 1] = int(norm_val_arr[0]);
+                bufferImage[pIdx*bytes + 2] = int(norm_val_arr[0]);
+                bufferImage[pIdx*bytes + 3] = 255;
+
+            }
+
+
+        std::cerr << "BUFFER TYPE -> " << buffer_type_name << ", TYPE -> " << type << ", METHOD -> " << method << ", Near: " << near << ", Far: " << far << std::endl;
+        std::cerr << "TYPE EQUATION \t[ " << type_eqn << " ]" << std::endl;
+        std::cerr << "METHOD EQUATION \t[ " << method_eqn << " ]" << std::endl;
+        for (int arrIdx = 0 ; arrIdx < bytes ; arrIdx++){
+            avg_arr[arrIdx] = avg_arr[arrIdx] / (w * h);
+            std::cerr << "depthImage[" << arrIdx << "]: Min: " << min_arr[arrIdx] << ", Max: " << max_arr[arrIdx] << ", Avg: " << avg_arr[arrIdx] << std::endl;
+//                std::cerr << "------\n";
+        }
+        std::cerr << "___________________\n-------------------\n";
+
+        m_imageMatrix = cv::Mat(m_height, m_width, CV_8UC4, bufferImage);
+        cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
+        sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
         m_imagePublisher.publish(rosMsg);
+    }
+
+    cntr++;
+
     }
 #endif
 }
