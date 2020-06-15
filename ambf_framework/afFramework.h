@@ -1444,6 +1444,8 @@ public:
     int method = 0;
     double near = 0.1;
     double far = 50.0;
+    bool enable_buffer_debug = false;
+    int skip_frames = 1;
 
 public:
     std::vector<std::string> m_controllingDevNames;

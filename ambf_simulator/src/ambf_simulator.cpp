@@ -282,6 +282,7 @@ int main(int argc, char* argv[])
             ("method,q", p_opt::value<int>(), "Method")
             ("type,w", p_opt::value<int>(), "Type")
             ("buffer,b", p_opt::value<int>(), "Buffer Type")
+            ("enable_buffer_debug,k", p_opt::value<bool>(), "Enable Buffer Debug")
             ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
             ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
             ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
@@ -632,6 +633,11 @@ int main(int argc, char* argv[])
     if(var_map.count("type")){g_cameras[0]->type = var_map["type"].as<int>();}
 
     if(var_map.count("buffer")){g_cameras[0]->buffer_type = var_map["buffer"].as<int>();}
+
+    if(var_map.count("enable_buffer_debug")){
+        g_cameras[0]->enable_buffer_debug = var_map["enable_buffer_debug"].as<bool>();
+        g_cameras[0]->skip_frames = 10;
+    }
 
     // main graphic loop
     while (!g_window_closed)
