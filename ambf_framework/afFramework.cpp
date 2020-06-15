@@ -3738,9 +3738,9 @@ void afJoint::applyDamping(const double &dt){
     m_posArray[m_jpSize-1] = getPosition();
     m_dtArray[m_jpSize-1] = dt;
     double effort = - m_jointDamping * getVelocity();
-    // Since we are applying damping internally, don't disable the motor
-    // as an external controller may be using the motor.
-    commandEffort(effort, false);
+    // Since we are applying damping internally, don't override the motor
+    // enable/disable as an external controller may be using the motor.
+    commandEffort(effort, true);
 }
 
 
@@ -3773,14 +3773,16 @@ void afJoint::commandPosition(double &position_cmd, double dt){
 }
 
 ///
-/// \brief afJoint::commandEffort
+/// \brief afJoint::commandEffort. The option skip motor check is to ignore the enabling / diasbling of
+/// motor. This is useful is one wants to apply an effort without disabling the motor if it was enabled
+/// or without enabling it if was disabled.
 /// \param cmd
-/// \param disable_motor
+/// \param skip_motor_check
 ///
-void afJoint::commandEffort(double &cmd, bool disable_motor){
+void afJoint::commandEffort(double &cmd, bool skip_motor_check){
     if (m_jointType == JointType::revolute || m_jointType == JointType::torsion_spring){
-        if (m_jointType == JointType::revolute){
-            m_hinge->enableMotor(!disable_motor);
+        if (m_jointType == JointType::revolute && ! skip_motor_check){
+            m_hinge->enableMotor(false);
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         btVector3 hingeAxisInWorld = trA.getBasis()*m_axisA;
@@ -3788,8 +3790,8 @@ void afJoint::commandEffort(double &cmd, bool disable_motor){
         m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * cmd);
     }
     else if (m_jointType == JointType::prismatic || m_jointType == JointType::linear_spring){
-        if (m_jointType == JointType::prismatic){
-            m_slider->setPoweredLinMotor(!disable_motor);
+        if (m_jointType == JointType::prismatic && ! skip_motor_check){
+            m_slider->setPoweredLinMotor(false);
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
@@ -3864,7 +3866,8 @@ double afJoint::getVelocity(){
     double p_a = m_posArray[m_jpSize - 1];
     double p_b = m_posArray[m_jpSize - 2];
     double dt_n = m_dtArray[m_jpSize - 1];
-    return (p_a - p_b) / dt_n;
+    double vel = (p_a - p_b) / dt_n;
+    return vel;
 }
 
 

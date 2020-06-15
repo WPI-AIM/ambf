@@ -863,8 +863,8 @@ public:
     // Apply damping to this joint
     void applyDamping(const double &dt=0.001);
 
-    // Set open loop effort for this joint
-    void commandEffort(double &effort_cmd, bool disable_motor=true);
+    // Set open loop effort for this joint.
+    void commandEffort(double &effort_cmd, bool skip_motor_check=false);
 
     // Set velocity for this joint
     void commandVelocity(double &velocity_cmd);
