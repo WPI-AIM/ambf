@@ -92,12 +92,18 @@ class ObjectControl:
             if self._ctrl_j_space:
                 self.jnt_gui.App.update()
                 for i in range(self._n_jnts):
+                    try:
+                        cmd_scale = float(self.jnt_gui.cmd_scales[i].get())
+                    except ValueError:
+                        cmd_scale = 1.0
+
+                    scaled_cmd = cmd_scale * self.jnt_gui.jnt_cmds[i]
                     if self.jnt_gui.jnt_mode[i] == 0:
-                        self.obj_handle.set_joint_effort(i, self.jnt_gui.jnt_cmd[i])
+                        self.obj_handle.set_joint_effort(i, scaled_cmd)
                     elif self.jnt_gui.jnt_mode[i] == 1:
-                        self.obj_handle.set_joint_pos(i, self.jnt_gui.jnt_cmd[i])
+                        self.obj_handle.set_joint_pos(i, scaled_cmd)
                     elif self.jnt_gui.jnt_mode[i] == 2:
-                        self.obj_handle.set_joint_vel(i, self.jnt_gui.jnt_cmd[i])
+                        self.obj_handle.set_joint_vel(i, scaled_cmd)
                     else:
                         print('CANNOT UNDERSTAND JOINT CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
