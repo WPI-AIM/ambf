@@ -1085,7 +1085,7 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
     // Check if a constraint is already active
     if (m_constraint){
         // Check if the new requested actuation is the same as what is already
-        // actuated. In this case simple ignore the request
+        // actuated. In this case simply ignore the request
 
         if (a_rigidBody == m_childRigidBody && (m_P_cINp - a_bodyOffset).length() < 0.001){
             // We already have the same constraint. We can ignore the new request
@@ -4019,6 +4019,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorVisibleSize = sensorNode["visible size"];
     YAML::Node sensorArray = sensorNode["array"];
     YAML::Node sensorMesh = sensorNode["mesh"];
+    YAML::Node sensorParametric = sensorNode["parametric"];
 
     std::string parent_name;
     if (sensorParentName.IsDefined()){
@@ -4153,7 +4154,58 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
             result = false;
         }
     }
+    else if (sensorParametric.IsDefined()){
+        YAML::Node resolutionNode = sensorParametric["resolution"];
+        YAML::Node horSpanNode = sensorParametric["horizontal angle"];
+        YAML::Node verSpanNode = sensorParametric["vertical angle"];
+        YAML::Node startOffsetNode = sensorParametric["start offset"];
 
+        int resolution = resolutionNode.as<int>();
+        double horizontal_span = horSpanNode.as<double>();
+        double vertical_span = verSpanNode.as<double>();
+        double start_offset = startOffsetNode.as<double>();
+
+        if (resolution < 2){
+            std::cerr << "ERROR! FOR SENSOR \"" << m_name << "\" RESOLUTION MUST BE GREATER THAN EQUAL TO 2. IGNORING! \n";
+            return false;
+        }
+
+        double h_start = -horizontal_span / 2.0;
+        double v_start = -vertical_span / 2.0;
+        double h_step = horizontal_span / (resolution - 1);
+        double v_step = vertical_span / (resolution - 1);
+        m_count = resolution * resolution;
+        m_sensedResults.resize(m_count);
+
+        // Choose an initial point facing the +ve x direction
+        cVector3d point(1, 0, 0);
+        for (int i = 0 ; i < resolution ; i++){
+            double h_angle = h_start + i * h_step;
+            for (int j = 0 ; j < resolution ; j++){
+                double v_angle = v_start + j * v_step;
+
+                cMatrix3d mat;
+                mat.setExtrinsicEulerRotationRad(0, v_angle, h_angle, cEulerOrder::C_EULER_ORDER_XYZ);
+
+                cVector3d start_point = point * start_offset;
+                cVector3d ray_from = mat * start_point;
+                cVector3d dir = mat * point;
+                cVector3d ray_to = ray_from + dir * m_range;
+
+                dir.normalize();
+                int sIdx = resolution * i + j;
+                m_sensedResults[sIdx].m_range = m_range;
+                m_sensedResults[sIdx].m_rayFromLocal = getLocalTransform() * ray_from ;
+                m_sensedResults[sIdx].m_direction = getLocalRot() * dir;
+                m_sensedResults[sIdx].m_direction.normalize();
+                m_sensedResults[sIdx].m_rayToLocal = m_sensedResults[sIdx].m_rayFromLocal +
+                        m_sensedResults[sIdx].m_direction *
+                        m_sensedResults[sIdx].m_range;
+            }
+
+        }
+
+    }
     else{
         m_count = 0;
         result = false;
