@@ -52,8 +52,12 @@ from argparse import ArgumentParser
 
 
 class ObjectControl:
-    def __init__(self, obj_name, c_space_ctrl, j_space_ctrl):
-        self.client = Client()
+    def __init__(self, obj_name, client_name, c_space_ctrl, j_space_ctrl, initial_xyz=None,
+                 initial_rpy=None, range_xyz=None, range_rpy=None, resolution=None):
+        if client_name:
+            self.client = Client(client_name)
+        else:
+            self.client = Client()
         self.client.connect()
         time.sleep(0.3)
         self.obj_handle = self.client.get_obj_handle(obj_name)
@@ -63,7 +67,7 @@ class ObjectControl:
         self._ctrl_j_space = j_space_ctrl
 
         if self._ctrl_c_space:
-            self.obj_gui = ObjectGUI(obj_name)
+            self.obj_gui = ObjectGUI(obj_name, initial_xyz, initial_rpy, range_xyz, range_rpy, resolution)
 
         self._n_jnts = 0
 
@@ -79,13 +83,13 @@ class ObjectControl:
                 self.obj_gui.App.update()
                 if self.obj_gui.cartesian_mode == 0:
                     self.obj_handle.set_force(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_torque(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                    self.obj_handle.set_torque(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
                 elif self.obj_gui.cartesian_mode == 1:
                     self.obj_handle.set_pos(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_rpy(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                    self.obj_handle.set_rpy(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
                 elif self.obj_gui.cartesian_mode == 2:
                     self.obj_handle.set_linear_vel(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_angular_vel(self.obj_gui.roll, self.obj_gui.pitch, self.obj_gui.yaw)
+                    self.obj_handle.set_angular_vel(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
                 else:
                     print('CANNOT UNDERSTAND CARTESIAN CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
@@ -118,11 +122,38 @@ def main():
                         default=False)
     parser.add_argument('-j', action='store', dest='enable_joint_control', help='Enable Control of Joint Space',
                         default=True)
+    parser.add_argument('-a', action='store', dest='client_name', help='Client Name',
+                        default=None)
+    parser.add_argument('--ixyz', action='store', dest='initial_xyz', help='Initial XYZ',
+                        default='0, 0, 0')
+    parser.add_argument('--irpy', action='store', dest='initial_rpy', help='Initial RPY',
+                        default='0, 0, 0')
+    parser.add_argument('--rxyz', action='store', dest='range_xyz', help='Range XYZ',
+                        default='1')
+    parser.add_argument('--rrpy', action='store', dest='range_rpy', help='Range RPY',
+                        default='3.14')
+    parser.add_argument('--res', action='store', dest='resolution', help='Resolution',
+                        default='0.001')
 
     parsed_args = parser.parse_args()
     print('Specified Arguments')
     print parsed_args
-    oc = ObjectControl(parsed_args.obj_name, parsed_args.enable_cartesian_control, parsed_args.enable_joint_control)
+
+    initial_xyz = [float(f) for f in parsed_args.initial_xyz.split(',')]
+    initial_rpy = [float(f) for f in parsed_args.initial_rpy.split(',')]
+    range_xyz = float(parsed_args.range_xyz)
+    range_rpy = float(parsed_args.range_rpy)
+    resolution = float(parsed_args.resolution)
+
+    oc = ObjectControl(parsed_args.obj_name,
+                       parsed_args.client_name,
+                       parsed_args.enable_cartesian_control,
+                       parsed_args.enable_joint_control,
+                       initial_xyz,
+                       initial_rpy,
+                       range_xyz,
+                       range_rpy,
+                       resolution)
     oc.run()
 
 

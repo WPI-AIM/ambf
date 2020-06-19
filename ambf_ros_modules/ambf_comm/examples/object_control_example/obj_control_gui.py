@@ -3,20 +3,46 @@ from Tkinter import *
 
 
 class ObjectGUI:
-    def __init__(self, obj_name):
+    def __init__(self, obj_name, initial_xyz, initial_rpy, range_xyz, range_rpy, resolution):
         self.App = Tk()
-        self.x = 0
-        self.y = 0
-        self.z = 0
-        self.roll = 0
-        self.pitch = 0
-        self.yaw = 0
+        if initial_xyz:
+            self.initial_xyz = initial_xyz
+        else:
+            self.initial_xyz = [0.0, 0.0, 0.0]
+
+        if initial_rpy:
+            self.initial_rpy = initial_rpy
+        else:
+            self.initial_rpy = [0, 0, 0]
+
+        if range_xyz:
+            self.range_xyz = range_xyz
+        else:
+            self.range_xyz = 1.0
+
+        if range_rpy:
+            self.range_rpy = range_rpy
+        else:
+            self.range_rpy = 3.14
+
+        if resolution:
+            self.resolution = resolution
+        else:
+            self.resolution = 0.0001
+
+        self.x = self.initial_xyz[0]
+        self.y = self.initial_xyz[1]
+        self.z = self.initial_xyz[2]
+        self.ro = self.initial_rpy[0]
+        self.pi = self.initial_rpy[1]
+        self.ya = self.initial_rpy[2]
         self.x_slider = None
         self.y_slider = None
         self.z_slider = None
-        self.roll_slider = None
-        self.pitch_slider = None
-        self.yaw_slider = None
+        self.ro_slider = None
+        self.pi_slider = None
+        self.ya_slider = None
+
         self.cartesian_mode = 0
         self.create_gui(self.App, obj_name)
 
@@ -29,44 +55,39 @@ class ObjectGUI:
         self.x = float(val)
 
     def y_cb(self, val):
-        global y
         self.y = float(val)
 
     def z_cb(self, val):
-        global z
         self.z = float(val)
 
     def roll_cb(self, val):
-        global roll
-        self.roll = float(val)
+        self.ro = float(val)
 
     def pitch_cb(self, val):
-        global pitch
-        self.pitch = float(val)
+        self.pi = float(val)
 
     def yaw_cb(self, val):
-        global yaw
-        self.yaw = float(val)
+        self.ya = float(val)
 
     def zero_all_cb(self):
         self.zero_xyz_cb()
         self.zero_rpy_cb()
 
     def zero_xyz_cb(self):
-        self.x = 0
-        self.y = 0
-        self.z = 0
-        self.x_slider.set(0)
-        self.y_slider.set(0)
-        self.z_slider.set(0)
+        self.x = self.initial_xyz[0]
+        self.y = self.initial_xyz[1]
+        self.z = self.initial_xyz[2]
+        self.x_slider.set(self.x)
+        self.y_slider.set(self.y)
+        self.z_slider.set(self.z)
 
     def zero_rpy_cb(self):
-        self.roll = 0
-        self.pitch = 0
-        self.yaw = 0
-        self.roll_slider.set(0)
-        self.pitch_slider.set(0)
-        self.yaw_slider.set(0)
+        self.ro = self.initial_rpy[0]
+        self.pi = self.initial_rpy[1]
+        self.ya = self.initial_rpy[2]
+        self.ro_slider.set(self.ro)
+        self.pi_slider.set(self.pi)
+        self.ya_slider.set(self.ya)
 
     # Define Callbacks for Tkinter GUI Slider
     def effort_button_cb(self):
@@ -86,7 +107,7 @@ class ObjectGUI:
     def create_gui(self, app, obj_name):
         _width = 20
         _length = 300
-        _resolution = 0.001
+        _resolution = 0.0001
         # Define Sliders and Labels
 
         row_count = 0
@@ -110,11 +131,13 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        min = -100
-        max = 100
-        self.x_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+        min_v = self.initial_xyz[0] - self.range_xyz / 2.0
+        max_v = self.initial_xyz[0] + self.range_xyz / 2.0
+        self.x_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
                          command=self.x_cb)
         self.x_slider.grid(row=row_count, column=1)
+
+        self.x_slider.set(self.x)
 
         row_count = row_count + 1
 
@@ -123,9 +146,13 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        self.y_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+        min_v = self.initial_xyz[1] - self.range_xyz / 2.0
+        max_v = self.initial_xyz[1] + self.range_xyz / 2.0
+        self.y_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
                          command=self.y_cb)
         self.y_slider.grid(row=row_count, column=1)
+
+        self.y_slider.set(self.y)
 
         row_count = row_count + 1
 
@@ -133,10 +160,12 @@ class ObjectGUI:
         y_label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
-
-        self.z_slider = Scale(app, from_=min, to=max, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
+        min_v = self.initial_xyz[2] - self.range_xyz / 2.0
+        max_v = self.initial_xyz[2] + self.range_xyz / 2.0
+        self.z_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
                          command=self.z_cb)
         self.z_slider.grid(row=row_count, column=1)
+        self.z_slider.set(self.z)
 
         row_count = row_count + 1
 
@@ -150,14 +179,17 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        zero_xyz_label = Label(app, text="ZERO XYZ")
+        zero_xyz_label = Label(app, text="Reset Position")
         zero_xyz_label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        self.roll_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                            command=self.roll_cb)
-        self.roll_slider.grid(row=row_count, column=1)
+        min_v = self.initial_rpy[0] - self.range_rpy / 2.0
+        max_v = self.initial_rpy[0] + self.range_rpy / 2.0
+        self.ro_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.roll_cb)
+        self.ro_slider.grid(row=row_count, column=1)
+        self.ro_slider.set(self.ro)
 
         row_count = row_count + 1
 
@@ -166,9 +198,12 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        self.pitch_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                             command=self.pitch_cb)
-        self.pitch_slider.grid(row=row_count, column=1)
+        min_v = self.initial_rpy[1] - self.range_rpy / 2.0
+        max_v = self.initial_rpy[1] + self.range_rpy / 2.0
+        self.pi_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.pitch_cb)
+        self.pi_slider.grid(row=row_count, column=1)
+        self.pi_slider.set(self.pi)
 
         row_count = row_count + 1
 
@@ -177,9 +212,12 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        self.yaw_slider = Scale(app, from_=-2, to=2, resolution=_resolution, width=_width, length=_length, orient=HORIZONTAL,
-                           command=self.yaw_cb)
-        self.yaw_slider.grid(row=row_count, column=1)
+        min_v = self.initial_rpy[2] - self.range_rpy / 2.0
+        max_v = self.initial_rpy[2] + self.range_rpy / 2.0
+        self.ya_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.yaw_cb)
+        self.ya_slider.grid(row=row_count, column=1)
+        self.ya_slider.set(self.ya)
 
         row_count = row_count + 1
 
@@ -193,7 +231,7 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        zero_rpy_label = Label(app, text="ZERO RPY")
+        zero_rpy_label = Label(app, text="Reset Rotation")
         zero_rpy_label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
@@ -203,5 +241,5 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        zero_all_label = Label(app, text="ZERO")
+        zero_all_label = Label(app, text="Reset All")
         zero_all_label.grid(row=row_count, column=1)
