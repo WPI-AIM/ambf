@@ -140,6 +140,7 @@ class Client:
                 base_obj._sub = rospy.Subscriber(topic_name, CameraState, base_obj.ros_cb)
                 base_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=CameraCmd,
                                                 tcp_nodelay=True, queue_size=10)
+                self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/LightState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
@@ -149,6 +150,7 @@ class Client:
                 base_obj._sub = rospy.Subscriber(topic_name, LightState, base_obj.ros_cb)
                 base_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=LightCmd,
                                                 tcp_nodelay=True, queue_size=10)
+                self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/ObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
@@ -158,6 +160,7 @@ class Client:
                 base_obj._sub = rospy.Subscriber(topic_name, ObjectState, base_obj.ros_cb)
                 base_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=ObjectCmd,
                                                 tcp_nodelay=True, queue_size=10)
+                self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/RigidBodyState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
