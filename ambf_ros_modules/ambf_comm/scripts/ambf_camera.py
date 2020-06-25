@@ -56,3 +56,5 @@ class Camera(BaseObject):
         :param a_name:
         """
         super(Camera, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "CAMERA"
+        self.body_type = "KINEMATIC"

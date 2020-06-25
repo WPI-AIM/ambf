@@ -57,3 +57,5 @@ class Light(BaseObject):
         :param a_name:
         """
         super(Light, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "LIGHT"
+        self.body_type = "KINEMATIC"

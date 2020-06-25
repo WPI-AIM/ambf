@@ -57,7 +57,8 @@ class Object(BaseObject):
         :param a_name:
         """
         super(Object, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
-        self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
+        self.object_type = "DEFAULT_OBJECT"
+        self.body_type = "DYNAMIC"
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
 
     def is_joint_idx_valid(self, joint_idx):
@@ -142,26 +143,6 @@ class Object(BaseObject):
         jnt_names = self._state.joint_names
         return jnt_names
 
-    def get_pos_command(self):
-        """
-        Get the commanded position of this object
-        :return:
-        """
-        if self._pose_cmd_set:
-            return self._cmd.pose.position
-        else:
-            return self._state.pose.position
-
-    def get_rot_command(self):
-        """
-        Get the rotation command of this object
-        :return:
-        """
-        if self._pose_cmd_set:
-            return self._cmd.pose.orientation
-        else:
-            return self._state.pose.orientation
-
     def get_force_command(self):
         """
         Get the commanded force of this object
@@ -224,69 +205,6 @@ class Object(BaseObject):
         Get the inertia the body
         """
         return self._state.pInertia
-
-    def set_pos(self, px, py, pz):
-        """
-        Set the Position of this object in parent frame. If a previous Pose command had been
-        set, the orientation from that command will be used, else, the orientation of the actual
-        object that is retrieved from it's state shall be used
-        :param px:
-        :param py:
-        :param pz:
-        :return:
-        """
-        _pose_cmd = Pose()
-        _pose_cmd.position.x = px
-        _pose_cmd.position.y = py
-        _pose_cmd.position.z = pz
-        _pose_cmd.orientation = self.get_rot_command()
-
-        self.set_pose(_pose_cmd)
-
-    def set_rpy(self, roll, pitch, yaw):
-        """
-        Set the Rotation in RPY of this object in parent frame. If a previous Pose command had been
-        set, the position from that command will be used, else, the position of the actual
-        object that is retrieved from it's state shall be used
-        :param roll:
-        :param pitch:
-        :param yaw:
-        :return:
-        """
-        # Edited python3 code
-        quat = quaternion_from_euler(roll, pitch, yaw, 'sxyz')
-        # Initial python2 code
-        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
-        self.set_rot(quat)
-
-    def set_rot(self, quat):
-        """
-        Set the Rotation in Quaternion of this object in parent frame. If a previous Pose command had been
-        set, the position from that command will be used, else, the position of the actual
-        object that is retrieved from it's state shall be used
-        :param quat:
-        :return:
-        """
-        _pose_cmd = Pose()
-        _pose_cmd.position = self.get_pos_command()
-        _pose_cmd.orientation.x = quat[0]
-        _pose_cmd.orientation.y = quat[1]
-        _pose_cmd.orientation.z = quat[2]
-        _pose_cmd.orientation.w = quat[3]
-
-        self.set_pose(_pose_cmd)
-
-    def set_pose(self, pose):
-        """
-        Set the pose of this object in parent frame
-        :param pose:
-        :return:
-        """
-        self._cmd.enable_position_controller = True
-        self._cmd.pose = pose
-
-        self._apply_command()
-        self._pose_cmd_set = True
 
     def set_joint_pos(self, joint_name_or_idx, q):
         """

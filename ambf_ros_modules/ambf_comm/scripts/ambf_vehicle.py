@@ -56,6 +56,8 @@ class Vehicle(BaseObject):
         :param a_name:
         """
         super(Vehicle, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "VEHICLE"
+        self.body_type = "DYNAMIC"
 
         # The vehicle can have many wheels, set the appropriate wheel indexes which are meant to be steered
         self._steering_wheel_indices = []
