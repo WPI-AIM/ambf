@@ -57,6 +57,7 @@
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <thread>
+#include <fstream>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 
@@ -572,8 +573,6 @@ public:
     // Cleanup this rigid body
     void remove();
 
-public:
-
     // function to check if this rigid body is part of the collision group
     // at a_idx
     bool checkCollisionGroupIdx(int a_idx);
@@ -596,12 +595,13 @@ public:
     // Get the sensors for this body
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
-public:
     // If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
+
+    void enableShaderProgram();
 
 protected:
 
@@ -641,7 +641,6 @@ protected:
     // Actuators for this Rigid Body
     afActuatorVec m_afActuators;
 
-protected:
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
 
@@ -672,11 +671,8 @@ protected:
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
-protected:
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
-
-protected:
 
     // pool of threads for solving the body's sensors in paralled
     std::vector<std::thread*> m_sensorThreads;
@@ -696,6 +692,11 @@ protected:
 
     // Global flag for all sensor threads
     bool m_keepSensorThreadsAlive = true;
+
+    bool m_shaderProgramDefined = false;
+    cShaderProgramPtr m_shaderProgram;
+    std::string m_vsFileName;
+    std::string m_fsFileName;
 
 private:
     // Ptr to afWorld
@@ -1050,6 +1051,8 @@ private:
     int m_softBodyFaceIdx = -1;
     // Child offset w.r.t to actuator
     cVector3d m_P_cINp;
+
+    bool m_active = false;
 };
 
 //-----------------------------------------------------------------------------
@@ -1755,6 +1758,8 @@ public:
 
     void setGlobalNamespace(std::string a_namespace);
 
+    void enableShaderProgram();
+
 
     virtual void afExecuteCommand(double dt);
 
@@ -1819,6 +1824,11 @@ protected:
     // If this string is set, it will force itself to preeced all nampespaces
     // regardless of whether any namespace starts with a '/' or not.
     std::string m_global_namespace;
+
+    bool m_shaderProgramDefined = false;
+    cShaderProgramPtr m_shaderProgram;
+    std::string m_vsFileName;
+    std::string m_fsFileName;
 
 private:
 

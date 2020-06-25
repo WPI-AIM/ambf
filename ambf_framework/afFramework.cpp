@@ -1107,6 +1107,7 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
         m_constraint->m_setting.m_impulseClamp = m_maxImpulse;
         m_constraint->m_setting.m_tau = m_tau;
         m_afWorld->m_bulletWorld->addConstraint(m_constraint);
+        m_active = true;
     }
     else{
         // We can warn that the requested body is in valid
@@ -1139,6 +1140,7 @@ void afConstraintActuator::deactuate(){
         m_childSotBody = 0;
         m_softBodyFaceIdx = -1;
     }
+    m_active = false;
 }
 
 
@@ -1152,6 +1154,10 @@ void afConstraintActuator::afExecuteCommand(double dt){
         ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
 
         if (cmd.actuate){
+            if (m_active){
+                // Constraint is active. Ignore request
+                return;
+            }
              std::string body_name = cmd.body_name.data;
             if (cmd.use_offset){
                 cVector3d body_offset(cmd.body_offset.position.x,
@@ -1537,6 +1543,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyPublishFrequency = bodyNode["publish frequency"];
     YAML::Node bodyCollisionGroups = bodyNode["collision groups"];
     YAML::Node bodyPassive = bodyNode["passive"];
+    YAML::Node bodyShaders = bodyNode["shaders"];
 
 
     if(bodyName.IsDefined()){
@@ -1892,6 +1899,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
         setMaterial(_mat);
         setTransparencyLevel(rgba[3]);
+    }
+
+    // Load any shader that have been defined
+    if (bodyShaders.IsDefined()){
+        std::string shader_path = bodyShaders["path"].as<std::string>();
+        m_vsFileName = bodyShaders["vertex"].as<std::string>();
+        m_fsFileName = bodyShaders["fragment"].as<std::string>();
+
+        m_vsFileName = shader_path + m_vsFileName;
+        m_fsFileName = shader_path + m_fsFileName;
+
+        m_shaderProgramDefined = true;
     }
 
     // Load the inertial offset. If the body is a componnd shape, the "inertial offset"
@@ -2339,6 +2358,44 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     m_afWorld->addChild(this);
     return true;
 }
+
+
+///
+/// \brief afRigidBody::enableShaderProgram
+///
+void afRigidBody::enableShaderProgram(){
+    if (m_shaderProgramDefined){
+
+        std::ifstream vsFile;
+        std::ifstream fsFile;
+        vsFile.open(m_vsFileName);
+        fsFile.open(m_fsFileName);
+        // create a string stream
+        std::stringstream vsBuffer, fsBuffer;
+        // dump the contents of the file into it
+        vsBuffer << vsFile.rdbuf();
+        fsBuffer << fsFile.rdbuf();
+        // close the files
+        vsFile.close();
+        fsFile.close();
+
+        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        // Just empty Pts to let us use the shader
+        cGenericObject* go;
+        cRenderOptions ro;
+        m_shaderProgram->use(go, ro);
+        // Set the ID for shadow and normal maps.
+        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+
+        std::cerr << "USING BODY SHADER FILES: " <<
+                     "\n \t VERTEX: " << m_vsFileName <<
+                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+
+        setShaderProgram(m_shaderProgram);
+    }
+}
+
 
 ///
 /// \brief afRigidBody::computeInertialOffset
@@ -5288,6 +5345,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
     YAML::Node worldNamespace = worldNode["namespace"];
     YAML::Node worldMaxIterations = worldNode["max iterations"];
     YAML::Node worldGravity = worldNode["gravity"];
+    YAML::Node worldShaders = worldNode["shaders"];
 
     if (worldNamespace.IsDefined()){
         m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
@@ -5410,10 +5468,61 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             }
 
         }
+
+        if (worldShaders.IsDefined()){
+            std::string shader_path = worldShaders["path"].as<std::string>();
+            m_vsFileName = worldShaders["vertex"].as<std::string>();
+            m_fsFileName = worldShaders["fragment"].as<std::string>();
+
+            m_vsFileName = shader_path + m_vsFileName;
+            m_fsFileName = shader_path + m_fsFileName;
+
+            m_shaderProgramDefined = true;
+        }
     }
 
     return true;
 
+}
+
+
+///
+/// \brief afWorld::enableShaderProgram
+///
+void afWorld::enableShaderProgram(){
+    if (m_shaderProgramDefined){
+        std::ifstream vsFile;
+        std::ifstream fsFile;
+        vsFile.open(m_vsFileName);
+        fsFile.open(m_fsFileName);
+        // create a string stream
+        std::stringstream vsBuffer, fsBuffer;
+        // dump the contents of the file into it
+        vsBuffer << vsFile.rdbuf();
+        fsBuffer << fsFile.rdbuf();
+        // close the files
+        vsFile.close();
+        fsFile.close();
+
+        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+
+        // Just empty Pts to let us use the shader
+        cGenericObject* go;
+        cRenderOptions ro;
+        m_shaderProgram->use(go, ro);
+        // Set the ID for shadow and normal maps.
+        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+
+        std::cerr << "USING WORLD SHADER FILES: " <<
+                     "\n \t VERTEX: " << m_vsFileName <<
+                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+
+        afRigidBodyVec rbVec = getAFRigidBodies();
+        for (int i = 0 ; i < rbVec.size() ; i++){
+            rbVec[i]->setShaderProgram(m_shaderProgram);
+        }
+    }
 }
 
 
