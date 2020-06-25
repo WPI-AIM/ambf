@@ -102,7 +102,7 @@ if you are using an algorithm and don't want to bother with hidden implementatio
 and frame transformations.
 
 In this example, we are going to be relying on the features of the AMBF client
-which are meant for generic control puroses.
+which are meant for generic control purposes.
 
 1. Since we are not using the AMBF Device interface, we shall have to spawn
 the gripper in the simulation manually. To do this, we can just add its multibody
@@ -134,6 +134,6 @@ the default coordinate frame of AMBF so it is easier to adopt in your code.
 `ambf/ambf_models/descriptions/multi-bodies/grippers/pr2 gripper.yaml` we have
 defined a proximity sensor and a constraint actuator. You can inspect the code
 in the file `gripper_control_via_client_ifc.py` as well. As you shall find out,
-we are manually checking if a sensor is triggered, and if it is triggered,
+we are manually checking if a sensor is triggered, and if triggered,
 we get the name of the body that is sensed and then use this sensed body's name in
 the actuator to attach the body to the actuator.
