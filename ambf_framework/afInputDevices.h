@@ -229,7 +229,7 @@ public:
     cMatrix3d m_rotCamPreClutch;
     cVector3d m_vel, m_avel;
     double m_workspaceScale;
-    cBulletSphere* m_afCursor = NULL;
+    afRigidBody* m_afCursor = NULL;
     bool m_btn_prev_state_rising[10] = {false};
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;

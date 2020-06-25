@@ -61,6 +61,9 @@ public:
         m_name = a_name;
         m_namespace = a_namespace;
 
+        m_freq_min = a_freq_min;
+        m_freq_max = a_freq_max;
+
         int argc = 0;
         char **argv = 0;
         ros::init(argc, argv, "ambf_comm_node");
@@ -72,6 +75,10 @@ public:
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();
+    virtual T_cmd get_command(){return m_Cmd;}
+
+    int m_freq_min;
+    int m_freq_max;
 
 protected:
     boost::shared_ptr<ros::NodeHandle> nodePtr;

@@ -5,24 +5,51 @@
 bodies: [BODY Cylinder, BODY LeftL1, BODY LeftL2, BODY RightL1, BODY RightL2]
 joints: [JOINT Cylinder-LeftL1, JOINT Cylinder-RightL1, JOINT LeftL1-LeftL2, JOINT
     RightL1-RightL2, JOINT LeftL2-RightL2]
+sensors: [RPL2, RPR2]
 high resolution path: ./high_res/
 low resolution path: ./low_res/
 ignore inter-collision: false
-namespace: /ambf/env/
+namespace: /ambf/env/gripper/
 
-default_resistive: &default_resistive {
-  range: 0.03,
-  contact area: 0.001,
+RPL2:
+  name: ResistancePatchL2
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: -0.0, z: 0.0}
+  mesh: resistive_plate.STL
+  range: 0.03
+  visible: true
+  visible size: 0.01
   friction: {
     static: 10000,
     damping: 0,
     dynamic: 5,
-    variable: true},
-  visible: true,
-  mesh: resistive_plate.STL,
-  contact stiffness: 3,
-  contact damping: 0
-  }
+    variable: true}
+  contact area: 0.001
+  contact stiffness: 3
+  contact damping: 0.0
+  parent: /ambf/env/gripper/BODY LeftL2
+
+RPR2:
+  name: ResistancePatchR2
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: -0.0, z: 0.0}
+  mesh: resistive_plate.STL
+  range: 0.03
+  visible: true
+  visible size: 0.01
+  friction: {
+    static: 10000,
+    damping: 0,
+    dynamic: 5,
+    variable: true}
+  contact area: 0.001
+  contact stiffness: 3
+  contact damping: 0.0
+  parent: /ambf/env/gripper/BODY RightL2
 
 BODY Cylinder:
   name: Cylinder
@@ -90,7 +117,6 @@ BODY LeftL2:
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.1, linear: 0.3}
   restitution: 0
-  resistive surface: *default_resistive
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.147, y: 0.071, z: 0.073}
@@ -137,7 +163,6 @@ BODY RightL2:
   friction: {rolling: 0.01, static: 0.5}
   damping: {angular: 0.1, linear: 0.3}
   restitution: 0
-  resistive surface: *default_resistive
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.147, y: 0.071, z: 0.073}

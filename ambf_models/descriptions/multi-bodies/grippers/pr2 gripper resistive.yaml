@@ -5,7 +5,7 @@
 bodies: [BODY r_gripper_palm_link]
 joints: [JOINT r_gripper_palm_link-r_gripper_l_finger_link, JOINT r_gripper_l_finger_link-r_gripper_l_finger_tip_link,
   JOINT r_gripper_palm_link-r_gripper_r_finger_link, JOINT r_gripper_r_finger_link-r_gripper_r_finger_tip_link]
-sensors: [RP0, RP1, RP2, RP3, RP4, RP5, RP6, RP7, RP8]
+sensors: [RP0]
 high resolution path: ../../../meshes/grippers/pr2_gripper/high_res/
 low resolution path: ../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true
@@ -25,10 +25,39 @@ negative_default_offset: &ndo -0.05
 positive_default_offset: &pdo 0.05
 
 RP0:
-  name: Proximity
+  name: ResistancePatch0
   type: Resistance
-  location: {x: *xl, y: 0.0, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  array:
+    -
+      offset: {x: *xl, y: 0.0, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
   visible: true
   contact area: *cta
@@ -36,117 +65,22 @@ RP0:
   friction: *default_friction
   parent: /ambf/env/BODY r_gripper_palm_link
 
-RP1:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP2:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP3:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP4:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP5:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP6:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP7:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-RP8:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  parent: /ambf/env/BODY r_gripper_palm_link
-
-SENSOR Proximity1:
-  name: Proximity1
-  type: Proximity
-  location: {x: -0.02, y: -0.03, z: 0.0}
-  direction: {x: 0.0, y: -1.0, z: 0.0}
-  range: 0.05
-  parent: /ambf/env/BODY r_gripper_r_finger_tip_link
-
-SENSOR Proximity2:
-  name: Proximity2
-  type: Proximity
-  location: {x: 0.0, y: -0.03, z: 0.0}
-  direction: {x: 0.0, y: -1.0, z: 0.0}
-  range: 0.05
-  parent: /ambf/env/BODY r_gripper_l_finger_tip_link
+  SENSOR Proximity0:
+    name: Proximity0
+    type: Proximity
+    location:
+      orientation: {p: 0.0, r: 0.0, y: 0.0}
+      position: {x: -0.02, y: -0.03, z: 0.0}
+    array:
+      -
+        offset: {x: 0.0, y: 0.0, z: 0.0}
+        direction: {x: 0.0, y: -1.0, z: 0.0}
+      -
+        offset: {x: 0.0, y: -0.03, z: 0.0}
+        direction: {x: 0.0, y: -1.0, z: 0.0}
+    range: 0.05
+    parent: /ambf/env/BODY r_gripper_l_finger_tip_link
+    visible: True
 
 BODY r_gripper_palm_link:
   name: r_gripper_palm_link

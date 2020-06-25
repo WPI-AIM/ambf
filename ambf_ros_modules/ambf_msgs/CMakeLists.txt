@@ -52,6 +52,18 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    ObjectState.msg
    ObjectCmd.msg
+   ActuatorState.msg
+   ActuatorCmd.msg
+   SensorState.msg
+   SensorCmd.msg
+   CameraState.msg
+   CameraCmd.msg
+   LightState.msg
+   LightCmd.msg
+   RigidBodyState.msg
+   RigidBodyCmd.msg
+   VehicleState.msg
+   VehicleCmd.msg
    WorldState.msg
    WorldCmd.msg
  )

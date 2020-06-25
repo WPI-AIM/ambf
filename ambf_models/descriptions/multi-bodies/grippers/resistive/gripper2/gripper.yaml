@@ -4,10 +4,53 @@
 # Generated on: 2019-08-20 23:28:17
 bodies: [BODY Cylinder, BODY FingerL, BODY FingerR]
 joints: [JOINT Cylinder-FingerL, JOINT Cylinder-FingerR]
+sensors: [RP1, RP2]
 high resolution path: ./high_res/
 low resolution path: ./low_res/
 ignore inter-collision: true
-namespace: /ambf/gripper2/
+namespace: /ambf/env/gripper/
+
+RP1:
+  name: ResistancePatch1
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: -0.01, z: 0.0}
+  mesh: CurveL.STL
+  range: 0.05
+  visible: true
+  visible size: 0.005
+  friction: {
+    static: 15000,
+    damping: 0,
+    dynamic: 0,
+    variable: true}
+  contact area: 0.001
+  contact stiffness: 0.5
+  contact damping: 1.0
+  parent: /ambf/env/gripper/BODY FingerL
+
+RP2:
+  name: ResistancePatch2
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  mesh: CurveR.STL
+  range: 0.05
+  visible: true
+  visible size: 0.005
+  friction: {
+    static: 15000,
+    damping: 0,
+    dynamic: 1,
+    variable: true}
+  contact area: 0.001
+  contact stiffness: 0.5
+  contact damping: 1
+  parent: /ambf/env/gripper/BODY FingerR
+
+
 BODY Cylinder:
   name: Cylinder
   mesh: Cylinder.STL

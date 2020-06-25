@@ -1,9 +1,10 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
-lights: [light1, light2]
+lights: [light1]
 cameras: [camera1]
 environment: "./checkered_floor.yaml"
 namespace: /ambf/env/
 max iterations: 50
+gravity: {x: 0.0, y: 0.0, z: -9.81}
 
 light1:
   namespace: /ambf/env/lights/
@@ -20,7 +21,7 @@ light2:
   location: {x: 0.5, y: -1, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
   spot exponent: 0.3
-  shadow quality: 5
+  shadow quality: 2
   cutoff angle: 0.7
 
 light3:

@@ -71,30 +71,65 @@ catkin_package( INCLUDE_DIRS include
 ## Your package locations should be listed before other locations
 include_directories( include ${catkin_INCLUDE_DIRS})
 
-set (ENV_HDR_FILES include/${PROJECT_NAME}/ambf_comm.h
-                   include/${PROJECT_NAME}/Object.h
-                   include/${PROJECT_NAME}/RosComBase.h
-                   include/${PROJECT_NAME}/ObjectRosCom.h
-                   include/${PROJECT_NAME}/CmdWatchDog.h)
+set (ENV_HDR_FILES
+    include/${PROJECT_NAME}/ambf_comm.h
+    include/${PROJECT_NAME}/Object.h
+    include/${PROJECT_NAME}/RosComBase.h
+    include/${PROJECT_NAME}/ObjectRosCom.h
+    include/${PROJECT_NAME}/CmdWatchDog.h )
 
-set (ENV_SRC_FILES src/ambf_comm.cpp
-                   src/Object.cpp
-                   src/ObjectRosCom.cpp
-                   src/RosComBase.cpp)
+set (ENV_SRC_FILES
+    src/ambf_comm.cpp
+    src/Object.cpp
+    src/ObjectRosCom.cpp
+    src/RosComBase.cpp)
 
-set (OBJ_HDR_FILES include/${PROJECT_NAME}/Object.h
-                   include/${PROJECT_NAME}/RosComBase.h
-                   include/${PROJECT_NAME}/ObjectRosCom.h
-                   include/${PROJECT_NAME}/CmdWatchDog.h)
+set (OBJ_HDR_FILES
+    include/${PROJECT_NAME}/Actuator.h
+    include/${PROJECT_NAME}/Camera.h
+    include/${PROJECT_NAME}/Light.h
+    include/${PROJECT_NAME}/Object.h
+    include/${PROJECT_NAME}/RigidBody.h
+    include/${PROJECT_NAME}/Sensor.h
+    include/${PROJECT_NAME}/Vehicle.h
+    include/${PROJECT_NAME}/RosComBase.h
+    include/${PROJECT_NAME}/ActuatorRosCom.h
+    include/${PROJECT_NAME}/CameraRosCom.h
+    include/${PROJECT_NAME}/LightRosCom.h
+    include/${PROJECT_NAME}/ObjectRosCom.h
+    include/${PROJECT_NAME}/RigidBodyRosCom.h
+    include/${PROJECT_NAME}/SensorRosCom.h
+    include/${PROJECT_NAME}/VehicleRosCom.h
+    include/${PROJECT_NAME}/CmdWatchDog.h )
 
-set (OBJ_SRC_FILES src/Object.cpp src/ObjectRosCom.cpp src/RosComBase.cpp)
+set (OBJ_SRC_FILES
+    src/Actuator.cpp
+    src/Camera.cpp
+    src/Light.cpp
+    src/Object.cpp
+    src/RigidBody.cpp
+    src/Sensor.cpp
+    src/Vehicle.cpp
+    src/ActuatorRosCom.cpp
+    src/CameraRosCom.cpp
+    src/LightRosCom.cpp
+    src/ObjectRosCom.cpp
+    src/RigidBodyRosCom.cpp
+    src/SensorRosCom.cpp
+    src/VehicleRosCom.cpp
+    src/RosComBase.cpp )
 
-set (WORLD_HDR_FILES include/${PROJECT_NAME}/World.h
-                     include/${PROJECT_NAME}/RosComBase.h
-                     include/${PROJECT_NAME}/WorldRosCom.h
-                     include/${PROJECT_NAME}/CmdWatchDog.h  )
 
-set (WORLD_SRC_FILES src/World.cpp src/WorldRosCom.cpp src/RosComBase.cpp)
+set (WORLD_HDR_FILES
+    include/${PROJECT_NAME}/World.h
+    include/${PROJECT_NAME}/RosComBase.h
+    include/${PROJECT_NAME}/WorldRosCom.h
+    include/${PROJECT_NAME}/CmdWatchDog.h )
+
+set (WORLD_SRC_FILES
+    src/World.cpp
+    src/WorldRosCom.cpp
+    src/RosComBase.cpp )
 
 ## Declare a C++ library
 add_library(ambf_comm ${ENV_HDR_FILES} ${ENV_SRC_FILES})

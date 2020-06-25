@@ -4,27 +4,56 @@
 # Generated on: 2019-09-06 14:39:03
 bodies: [BODY LeftTip, BODY RightTip, BODY Wrist, BODY WristVertical]
 joints: [JOINT Wrist-LeftTip, JOINT Wrist-RightTip, JOINT Wrist-WristVertical]
+sensors: [RP1, RP2]
 high resolution path: ./high_res/
 low resolution path: ./low_res/
 ignore inter-collision: false
 namespace: /ambf/env/gripper/
 
-default resistive surface: &default_resistive_surface
-  {
-    range: 0.03,
-    contact area: 0.005,
-    mesh: TipPatch.STL,
-    contact stiffness: 1.0,
-    contact damping: 0.1,
-    visible: True,
-    visible size: 0.005,
-    friction: {
-      static: 1000,
-      damping: 0,
-      dynamic: 0.5,
-      variable: True
-      }
+RP1:
+  name: ResistancePatch1
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  mesh: TipPatch.STL
+  range: 0.03
+  visible: true
+  visible size: 0.01
+  friction: {
+    static: 1000,
+    damping: 0,
+    dynamic: 0.5,
+    variable: True
     }
+  contact area: 0.005
+  contact stiffness: 1.0
+  contact damping: 0.1
+  variable: True
+  parent: /ambf/env/gripper/BODY LeftTip
+
+RP2:
+  name: ResistancePatch2
+  type: Resistance
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  mesh: TipPatch.STL
+  range: 0.03
+  visible: true
+  visible size: 0.01
+  friction: {
+    static: 1000,
+    damping: 0,
+    dynamic: 0.5,
+    variable: True
+    }
+  contact area: 0.005
+  contact stiffness: 1.0
+  contact damping: 0.1
+  variable: True
+  parent: /ambf/env/gripper/BODY RightTip
+
 
 BODY LeftTip:
   name: LeftTip
@@ -41,7 +70,6 @@ BODY LeftTip:
   friction: {rolling: 0.00, static: 0.0}
   damping: {angular: 0.1, linear: 0.04}
   restitution: 0
-  resistive surface: *default_resistive_surface
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.282, y: 0.036, z: 0.078}
@@ -50,6 +78,7 @@ BODY LeftTip:
     diffuse: {b: 0.4, g: 0.4, r: 0.4}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
+
 BODY RightTip:
   name: RightTip
   mesh: RightTip.STL
@@ -65,7 +94,6 @@ BODY RightTip:
   friction: {rolling: 0.00, static: 0.0}
   damping: {angular: 0.1, linear: 0.04}
   restitution: 0
-  resistive surface: *default_resistive_surface
   collision groups: [0]
   collision shape: BOX
   collision geometry: {x: 0.282, y: 0.036, z: 0.078}
@@ -74,6 +102,7 @@ BODY RightTip:
     diffuse: {b: 0.4, g: 0.4, r: 0.4}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
+
 BODY Wrist:
   name: Wrist
   mesh: Wrist.STL
@@ -100,6 +129,7 @@ BODY Wrist:
   controller: {
     linear: {P: 1500, D: 40},
     angular: {P: 50, D: 1}}
+
 BODY WristVertical:
   name: WristVertical
   mesh: WristVertical.STL
@@ -131,7 +161,7 @@ JOINT Wrist-LeftTip:
   parent pivot: {x: -0.153, y: -0.075, z: 0.0}
   child axis: {x: 0.0, y: 1.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  joint limits: {high: 0.0, low: -0.04}
+  joint limits: {high: 0.1, low: -0.04}
   controller: {D: 20, I: 0, P: 1000.0}
   type: prismatic
   offset: 3.142
@@ -143,7 +173,7 @@ JOINT Wrist-RightTip:
   parent pivot: {x: -0.153, y: 0.075, z: 0.0}
   child axis: {x: 0.0, y: 1.0, z: 0.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
-  joint limits: {high: 0.0, low: -0.04}
+  joint limits: {high: 0.1, low: -0.04}
   controller: {D: 20, I: 0, P: 1000.0}
   type: prismatic
 JOINT Wrist-WristVertical:

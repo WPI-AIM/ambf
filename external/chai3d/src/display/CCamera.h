@@ -303,6 +303,9 @@ public:
     //! This method sets the camera in orthographic mode
     void setOrthographicView(double a_viewWidth);
 
+    //! This method gets the camera's orthographic view width
+    double getOrthographicViewWidth(){ return m_orthographicWidth;}
+
     //! This method sets the field of view angle (in degrees).
     void setFieldViewAngleDeg(double a_fieldViewAngleDeg);
 
@@ -329,6 +332,9 @@ public:
 
     //! This method returns the stereo eye separation.
     double getStereoEyeSeparation() { return (m_stereoEyeSeparation); }
+
+    //! This method returns if the view mode is perspective or not for this camera
+    bool isViewModePerspective() {return m_perspectiveMode;}
 
 
     //-----------------------------------------------------------------------

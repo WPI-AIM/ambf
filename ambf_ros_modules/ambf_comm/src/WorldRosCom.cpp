@@ -44,10 +44,53 @@
 
 #include "ambf_comm/WorldRosCom.h"
 
+///
+/// \brief PointCloundHandler::init
+/// \param a_node
+/// \param a_topic_name
+///
+void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::string a_topic_name){
+    m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloundHandler::sub_cb, this);
+}
+
+
+///
+/// \brief PointCloundHandler::sub_cb
+/// \param msg
+///
+void PointCloundHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
+    m_StatePtr = msg;
+}
+
+
+sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
+    return m_StatePtr;
+}
+
+
+void PointCloundHandler::remove(){
+    m_pcSub.shutdown();
+    m_StatePtr->points.clear();
+    m_StatePtr->channels.clear();
+}
+
+
+///
+/// \brief WorldRosCom::WorldRosCom
+/// \param a_name
+/// \param a_namespace
+/// \param a_freq_min
+/// \param a_freq_max
+/// \param time_out
+///
 WorldRosCom::WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     init();
 }
 
+
+///
+/// \brief WorldRosCom::init
+///
 void WorldRosCom::init(){
     m_State.sim_step = 0;
     m_enableSimThrottle = false;
@@ -60,16 +103,29 @@ void WorldRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
+
+///
+/// \brief WorldRosCom::~WorldRosCom
+///
 WorldRosCom::~WorldRosCom(){
     ros::shutdown();
     std::cerr << "Thread Shutdown: " << m_name << std::endl;
 }
 
+
+///
+/// \brief WorldRosCom::reset_cmd
+///
 void WorldRosCom::reset_cmd(){
     m_enableSimThrottle = false;
     m_stepSim = true;
 }
 
+
+///
+/// \brief WorldRosCom::sub_cb
+/// \param msg
+///
 void WorldRosCom::sub_cb(ambf_msgs::WorldCmdConstPtr msg){
     m_CmdPrev = m_Cmd;
     m_Cmd = *msg;

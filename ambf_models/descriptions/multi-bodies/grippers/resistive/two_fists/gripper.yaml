@@ -4,8 +4,7 @@
 # Generated on: 2019-03-06 00:41:02
 bodies: [BODY Fist1, BODY Fist2]
 joints: [JOINT Fist1-Fist2]
-sensors: [RP10, RP11, RP12, RP13, RP14, RP15, RP16, RP17, RP18, RP20, RP21, RP22, RP23, RP24, RP25, RP26, RP27, RP28]
-# sensors: [RP10, RP20]
+sensors: [RP1, RP2]
 high resolution path: ../../../../../meshes/grippers/pr2_gripper/high_res/
 low resolution path: ../../../../../meshes/grippers/pr2_gripper/low_res/
 ignore inter-collision: true
@@ -29,254 +28,88 @@ contact area: &cta 0.001
 parent1: &parent1 /ambf/env/BODY Fist1
 parent2: &parent2 /ambf/env/BODY Fist2
 
-RP10:
-  name: Proximity
+RP1:
+  name: ResistancePatch1
   type: Resistance
-  location: {x: *xl, y: 0.0, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  array:
+    -
+      offset: {x: *xl, y: 0.0, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
   visible: true
-  contact area: *cta
   visible size: *visibility
   friction: *default_friction
+  contact area: *cta
   contact stiffness: *ctf
   contact damping: *ctd
   parent: *parent1
 
-RP11:
-  name: Proximity
+RP2:
+  name: ResistancePatch2
   type: Resistance
-  location: {x: *xl, y: *pdo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  array:
+    -
+      offset: {x: *xl, y: 0.0, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
-  contact area: *cta
   visible: true
   visible size: *visibility
   friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP12:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
   contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP13:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP14:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP15:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP16:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP17:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP18:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent1
-
-RP20:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  visible: true
-  contact area: *cta
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP21:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP22:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP23:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP24:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP25:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP26:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP27:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent2
-
-RP28:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
   contact stiffness: *ctf
   contact damping: *ctd
   parent: *parent2

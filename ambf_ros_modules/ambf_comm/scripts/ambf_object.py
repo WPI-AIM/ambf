@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# !/usr/bin/env python
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
@@ -37,41 +36,29 @@
 #     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #     POSSIBILITY OF SUCH DAMAGE.
 
-#     \author    <http://www.aimlab.wpi.edu>
+#     \author    <http://aimlab.wpi.edu>
 #     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
 #     \version   0.1
 # */
 # //==============================================================================
-# Initial python2 code, but had few errors while importing in python3
-# from tf import transformations
-# Edited python3 code, taken from tf.transformations.py code written by Christoph Gohlke (University of California)
 
 from transformations import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
-from watch_dog import WatchDog
-import rospy
+from ambf_base_object import BaseObject
 from geometry_msgs.msg import Pose, Wrench
 from collections import deque
 import numpy as np
 
 
-class Object(WatchDog):
-    def __init__(self, a_name):
+class Object(BaseObject):
+    def __init__(self, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super(Object, self).__init__(time_out=0.1)  # Set duration of Watchdog expiry
-        self._name = a_name
-        self._state = ObjectState()
-        self._cmd = ObjectCmd()
-        self._pub = None
-        self._sub = None
-        self.pub_flag = True
-        self._start_flag = False
-        self._active = False
+        super(Object, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
         self._joint_velocity = None
@@ -79,31 +66,6 @@ class Object(WatchDog):
         self._vel_que = deque()
         self._queue_size = 100
         self._window_size = 5
-
-    def ros_cb(self, data):
-        """
-        Call function for ROS topics
-        :param data:
-        :return:
-        """
-        self._state = data
-        if not len(self._vel_que):
-            num = len(data.joint_positions)
-            self._vel_que = deque(maxlen=self._queue_size)
-            for i in xrange(self._queue_size):
-                self._vel_que.append((np.array(self._state.joint_positions), self._state.sim_time))
-
-        
-        point = (np.array(data.joint_positions), self._state.sim_time)
-        self._vel_que.append(point)
-
-
-    def is_active(self):
-        """
-        Flag to check if the cb for this Object is active or not
-        :return:
-        """
-        return self._active
 
     def is_joint_idx_valid(self, joint_idx):
         """
@@ -141,44 +103,6 @@ class Object(WatchDog):
         if self.is_joint_idx_valid(joint_idx):
             joint_name = self._state.joint_names[joint_idx]
             return joint_name
-
-    def get_sim_step(self):
-        """
-        The step of AMBF Simulator
-        :return:
-        """
-        return self._state.sim_step
-
-    def get_wall_time(self):
-        """
-        get the wall time
-        """
-        return self._state.wall_time
-
-    def get_dt(self):
-        """
-        Gets the time delta
-        :return: delta time
-        """
-        dt = self.get_wall_time() - last_time
-
-        if dt < 0:
-            return 0
-
-        return dt
-
-    def get_all_joint_pos(self):
-        """
-                Get the joint position of a specific joint at idx. Check joint names to see indexes
-                :param idx:
-                :return:
-                """
-        n_jnts = len(self._state.joint_positions)
-        joints = []
-        for idx in xrange(n_jnts):
-            joints.append(self._state.joint_positions[idx])
-
-        return joints
 
     def get_joint_pos(self, joint_name_or_idx):
         """
@@ -236,14 +160,6 @@ class Object(WatchDog):
         """
         return len(self._state.joint_positions)
 
-    def get_num_of_children(self):
-        """
-        Get the number of children that this object has. Make sure the children reporting is enabled in the
-        AMBF Config file by setting the "publish children names: True" in the object description
-        :return:
-        """
-        return len(self._state.children_names)
-
     def get_joint_names(self):
         """
         Get the joint names if any for this object. Make sure the joint name reporting is enabled in the
@@ -252,67 +168,6 @@ class Object(WatchDog):
         """
         jnt_names = self._state.joint_names
         return jnt_names
-
-    def get_children_names(self):
-        """
-        Get the name of children of this object. Make sure the children reporting is enabled in the
-        AMBF Config file by setting the "publish children names: True" in the object description
-        :return:
-        """
-        children_names = self._state.children_names
-        return children_names
-
-    def get_pos(self):
-        """
-        Get the position in the parent frame for this object in parent frame
-        :return:
-        """
-        return self._state.pose.position
-
-    def get_rot(self):
-        """
-        Get the rotation as quaternion for this object in parent frame
-        :return:
-        """
-        return self._state.pose.orientation
-
-    def get_rpy(self):
-        """
-        Get the rotation as Fixed RPY for this object
-        :return:
-        """
-        quat = self._state.pose.orientation
-        # Edited python3 code
-        rpy = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
-        # Initial python2 code
-        # rpy = transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
-        return rpy
-
-    def get_pose(self):
-        """
-        Get the pose as Geometry_msgs/Pose of this object in it's parent frame
-        :return:
-        """
-        quat = self._state.pose.orientation
-        explicit_quat = [quat.x, quat.y, quat.z, quat.w]
-        # Edited python3 code
-        rpy = euler_from_quaternion(explicit_quat, 'szyx')
-        # Initial python2 code
-        # rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
-        pose = [self._state.pose.position.x,
-                self._state.pose.position.y,
-                self._state.pose.position.z,
-                rpy[0],
-                rpy[1],
-                rpy[2]]
-        return pose
-
-    def get_name(self):
-        """
-        Get the name of this object
-        :return:
-        """
-        return self._name
 
     def get_pos_command(self):
         """
@@ -387,21 +242,15 @@ class Object(WatchDog):
         """
         self._cmd.publish_joint_positions = state
 
-    def set_name(self, name):
-        """
-        Set the name for this object
-        :param name:
-        :return:
-        """
-        self._name = name
-
     def set_active(self):
         """Mark this object as active"""
         self._active = True
 
-
-    def set_window_size(self, size):
-        self._window_size = size
+    def get_inertia(self):
+        """
+        Get the inertia the body
+        """
+        return self._state.pInertia
 
     def set_pos(self, px, py, pz):
         """
@@ -637,42 +486,6 @@ class Object(WatchDog):
         self._apply_command()
         self._wrench_cmd_set = True
 
-    def _apply_command(self):
-        """
-        Internal function to synchronized with the publisher and update watchdog
-        :return:
-        """
-        self._cmd.header.stamp = rospy.Time.now()
-        self._pub.publish(self._cmd)
-        self.acknowledge_wd()
-
-    def _calc_joint_velocity(self):
-        """
-        calculates the joint state
-        :param last_joints_state: last joint state
-        :return:
-        """
-
-        vels = list(self._vel_que)
-        vels.reverse()
-        joint_velocities = np.array(len(self._state.joint_positions) * [0.0])
-        total_w = 0
-        weights = range(self._window_size)
-        for i in xrange(self._window_size):
-            w = weights[i]
-            total_w += w
-            curr_state = vels[i]
-            next_state = vels[i + 1]
-            dt = next_state[1] - curr_state[1]
-            if not dt:
-                joint_velocities = joint_velocities + np.array(len(self._state.joint_positions) * [0.0])
-            else:
-                joint_velocities = joint_velocities + i * (next_state[0] - curr_state[0]) / dt
-
-        joint_velocities = joint_velocities / total_w
-
-        self._joint_velocity = joint_velocities  # tuple(np.subtract(self._state.joint_positions , last_joints_state ) / self.get_dt() )
-
     def _clear_command(self):
         """
         Clear wrench if watchdog is expired
@@ -684,20 +497,3 @@ class Object(WatchDog):
         self._cmd.wrench.torque.x = 0
         self._cmd.wrench.torque.y = 0
         self._cmd.wrench.torque.z = 0
-
-    def run_publisher(self):
-        """
-        Run the publisher in a thread
-        :return:
-        """
-        if self.pub_flag:
-            if self.is_wd_expired():
-                # self.console_print(self._name)
-                self._clear_command()
-            self._pub.publish(self._cmd)
-
-    def get_inertia(self):
-        """
-        Get the inertia the body
-        """
-        return self._state.pInertia
