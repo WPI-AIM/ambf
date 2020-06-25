@@ -202,6 +202,20 @@ class ObjectControl:
         self.obj_handle = self.client.get_obj_handle(obj_name)
         time.sleep(0.3)
 
+        if self.obj_handle.object_type == 'RIGID_BODY':
+            self._wrench_supported = True
+            self._pose_supported = True
+            self._twist_supported = True
+        else:
+            self._wrench_supported = False
+            self._pose_supported = True
+            self._twist_supported = False
+
+        print('The Object is of type', self.obj_handle.object_type)
+        print('\tWrench Supported ?', self._wrench_supported)
+        print('\tPose Supported ?', self._pose_supported)
+        print('\tTwist Supported ?', self._twist_supported)
+
         # Scaling for F/P/V modes. Change at will
         self.force_scale = 500
         self.pose_scale = 1
@@ -223,17 +237,20 @@ class ObjectControl:
         while not rospy.is_shutdown():
 
             if self.control_ifc.control_mode == 0: # Force Control
-                x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.force_scale)
-                self.obj_handle.set_force(x, y, z)
-                self.obj_handle.set_torque(ro, pi, ya)
+                if self._wrench_supported:
+                    x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.force_scale)
+                    self.obj_handle.set_force(x, y, z)
+                    self.obj_handle.set_torque(ro, pi, ya)
             elif self.control_ifc.control_mode == 1: # Position Control
-                x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.pose_scale)
-                self.obj_handle.set_pos(x, y, z)
-                self.obj_handle.set_rpy(ro, pi, ya)
+                if self._pose_supported:
+                    x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.pose_scale)
+                    self.obj_handle.set_pos(x, y, z)
+                    self.obj_handle.set_rpy(ro, pi, ya)
             elif self.control_ifc.control_mode == 2: # Velocity Control
-                x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.velocity_scale)
-                self.obj_handle.set_linear_vel(x, y, z)
-                self.obj_handle.set_angular_vel(ro, pi, ya)
+                if self._twist_supported:
+                    x, y, z, ro, pi, ya = self.scale_input(self.control_ifc, self.velocity_scale)
+                    self.obj_handle.set_linear_vel(x, y, z)
+                    self.obj_handle.set_angular_vel(ro, pi, ya)
             else:
                 print('CANNOT UNDERSTAND CARTESIAN CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
