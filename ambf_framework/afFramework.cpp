@@ -2244,7 +2244,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         if (bodyController["linear"].IsDefined()){
             double P, I, D;
             P = bodyController["linear"]["P"].as<double>();
-            I = bodyController["linear"]["I"].as<double>();
+            // For legacy where we didn't define the I term
+            if (bodyController["linear"]["I"].IsDefined()){
+                I = bodyController["linear"]["I"].as<double>();
+            }
+            else{
+                I = 0;
+            }
             D = bodyController["linear"]["D"].as<double>();
             m_controller.setLinearGains(P, I, D);
             _lin_gains_computed = true;
@@ -2254,7 +2260,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         if(bodyController["angular"].IsDefined()){
             double P, I, D;
             P = bodyController["angular"]["P"].as<double>();
-            I= bodyController["angular"]["I"].as<double>();
+            // For legacy where we didn't define the I term
+            if (bodyController["angular"]["I"].IsDefined()){
+                I = bodyController["angular"]["I"].as<double>();
+            }
+            else{
+                I = 0;
+            }
             D = bodyController["angular"]["D"].as<double>();
             m_controller.setAngularGains(P, I, D);
             _ang_gains_computed = true;
