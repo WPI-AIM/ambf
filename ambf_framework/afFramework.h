@@ -684,6 +684,9 @@ protected:
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
 
+    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
+    bool m_usePIDController = false;
+
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
     // endIdx = startIdx + m_sensorThreadBlockSize - 1

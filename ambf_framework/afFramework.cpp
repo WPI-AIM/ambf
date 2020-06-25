@@ -2242,19 +2242,21 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     if(bodyController.IsDefined()){
         // Check if the linear controller is defined
         if (bodyController["linear"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["linear"]["P"].as<double>();
-            _D = bodyController["linear"]["D"].as<double>();
-            m_controller.setLinearGains(_P, 0, _D);
+            double P, I, D;
+            P = bodyController["linear"]["P"].as<double>();
+            I = bodyController["linear"]["I"].as<double>();
+            D = bodyController["linear"]["D"].as<double>();
+            m_controller.setLinearGains(P, I, D);
             _lin_gains_computed = true;
         }
 
         // Check if the angular controller is defined
         if(bodyController["angular"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["angular"]["P"].as<double>();
-            _D = bodyController["angular"]["D"].as<double>();
-            m_controller.setAngularGains(_P, 0, _D);
+            double P, I, D;
+            P = bodyController["angular"]["P"].as<double>();
+            I= bodyController["angular"]["I"].as<double>();
+            D = bodyController["angular"]["D"].as<double>();
+            m_controller.setAngularGains(P, I, D);
             _ang_gains_computed = true;
         }
     }
@@ -2262,7 +2264,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     // If no controller gains are defined, compute based on lumped mass
     // and intertia
     if(!_lin_gains_computed || !_ang_gains_computed){
-        computeControllerGains();
+        // Use preset values for the controller since we are going to be using its output for the
+        // internal velocity controller
+        m_controller.setLinearGains(10, 0, 0);
+        m_controller.setAngularGains(10, 0, 0);
+        m_usePIDController = false;
+    }
+    else{
+        m_usePIDController = true;
     }
 
     if(m_mass == 0.0){
@@ -2642,37 +2651,50 @@ void afRigidBody::afExecuteCommand(double dt){
                 m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
             }
             else{
-                btVector3 _cur_pos, _cmd_pos;
-                btQuaternion _cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
-                                                          afCommand.pose.orientation.y,
-                                                          afCommand.pose.orientation.z,
-                                                          afCommand.pose.orientation.w);
+                btVector3 cur_pos, cmd_pos;
+                btQuaternion cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
+                                                         afCommand.pose.orientation.y,
+                                                         afCommand.pose.orientation.z,
+                                                         afCommand.pose.orientation.w);
 
-                btMatrix3x3 _cur_rot, _cmd_rot;
-                btTransform _b_trans;
-                m_bulletRigidBody->getMotionState()->getWorldTransform(_b_trans);
+                btMatrix3x3 cur_rot, cmd_rot;
+                btTransform b_trans;
+                m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
 
-                _cur_pos = _b_trans.getOrigin();
-                _cur_rot.setRotation(_b_trans.getRotation());
-                _cmd_pos.setValue(afCommand.pose.position.x,
-                                  afCommand.pose.position.y,
-                                  afCommand.pose.position.z);
-                if( _cmd_rot_quat.length() < 0.9 || _cmd_rot_quat.length() > 1.1 ){
+                cur_pos = b_trans.getOrigin();
+                cur_rot.setRotation(b_trans.getRotation());
+                cmd_pos.setValue(afCommand.pose.position.x,
+                                 afCommand.pose.position.y,
+                                 afCommand.pose.position.z);
+                if( cmd_rot_quat.length() < 0.9 || cmd_rot_quat.length() > 1.1 ){
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
                                                                  " not normalized" << std::endl;
-                    if (_cmd_rot_quat.length() < 0.1){
-                        _cmd_rot_quat.setW(1.0); // Invalid Quaternion
+                    if (cmd_rot_quat.length() < 0.1){
+                        cmd_rot_quat.setW(1.0); // Invalid Quaternion
                     }
                 }
-                _cmd_rot.setRotation(_cmd_rot_quat);
+                cmd_rot.setRotation(cmd_rot_quat);
 
-                // Use the internal Cartesian Position Controller
-                force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
-                // Use the internal Cartesian Rotation Controller
-                torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
+                btVector3 pCommand, rCommand;
+                // Use the internal Cartesian Position Controller to Compute Output
+                pCommand = m_controller.computeOutput<btVector3>(cur_pos, cmd_pos, dt);
+                // Use the internal Cartesian Rotation Controller to Compute Output
+                rCommand = m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
 
-                m_bulletRigidBody->applyCentralForce(force);
-                m_bulletRigidBody->applyTorque(torque);
+                if (m_usePIDController){
+                    // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
+                    // Use the internal Cartesian Position Controller
+                    m_bulletRigidBody->applyCentralForce(pCommand);
+                    m_bulletRigidBody->applyTorque(rCommand);
+                }
+                else{
+                    // ELSE USE THE VELOCITY INTERFACE
+                    m_bulletRigidBody->setLinearVelocity(pCommand);
+                    m_bulletRigidBody->setAngularVelocity(rCommand);
+
+                }
+
+
             }
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
@@ -3589,6 +3611,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // If the controller gains are not defined, a velocity based control will be used.
         // The tracking velocity can be controller by setting "max motor impulse" field
         // for the joint data-block in the ADF file.
+        m_controller.P = 10;
+        m_controller.I = 0;
+        m_controller.D = 0;
         m_usePIDController = false;
     }
 
@@ -3906,13 +3931,12 @@ void afJoint::commandPosition(double &position_cmd, double dt){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
+            double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
             if (m_usePIDController){
-                double effort_command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
-                commandEffort(effort_command);
+                commandEffort(command);
             }
             else{
-                double velocity_command = 10.0 * (position_cmd - position_cur);
-                commandVelocity(velocity_command);
+                commandVelocity(command);
             }
         }
     }
