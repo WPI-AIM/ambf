@@ -5521,6 +5521,8 @@ void afWorld::enableShaderProgram(){
         afRigidBodyVec rbVec = getAFRigidBodies();
         for (int i = 0 ; i < rbVec.size() ; i++){
             rbVec[i]->setShaderProgram(m_shaderProgram);
+//            rbVec[i]->m_shaderProgram = m_shaderProgram;
+//            rbVec[i]->m_shaderProgramDefined = true;
         }
     }
 }

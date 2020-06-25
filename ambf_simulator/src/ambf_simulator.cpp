@@ -692,6 +692,7 @@ void errorCallback(int a_error, const char* a_description)
 
 bool g_updateLabels = true;
 bool g_enableGrippingAssist = true;
+bool g_enableNormalMapping = true;
 
 ///
 /// \brief keyCallback
@@ -776,6 +777,20 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             }
         }
 
+    }
+    else if (a_mods == GLFW_MOD_SHIFT){
+        if (a_key == GLFW_KEY_N){
+            afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+            g_enableNormalMapping = ! g_enableNormalMapping;
+            printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
+            for (int i = 0 ; i < rbVec.size() ; i++){
+                if (rbVec[i]->m_shaderProgramDefined){
+                    if (rbVec[i]->m_shaderProgram){
+                        rbVec[i]->m_shaderProgram->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
+                    }
+                }
+            }
+        }
     }
     else{
 

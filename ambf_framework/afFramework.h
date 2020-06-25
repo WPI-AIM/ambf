@@ -603,6 +603,10 @@ public:
 
     void enableShaderProgram();
 
+
+    bool m_shaderProgramDefined = false;
+    cShaderProgramPtr m_shaderProgram;
+
 protected:
 
     // Scale of mesh
@@ -693,8 +697,6 @@ protected:
     // Global flag for all sensor threads
     bool m_keepSensorThreadsAlive = true;
 
-    bool m_shaderProgramDefined = false;
-    cShaderProgramPtr m_shaderProgram;
     std::string m_vsFileName;
     std::string m_fsFileName;
 
@@ -1805,6 +1807,10 @@ public:
 
     //    cMesh* m_pickDragVector;
 
+
+    bool m_shaderProgramDefined = false;
+    cShaderProgramPtr m_shaderProgram;
+
 protected:
 
     afLightMap m_afLightMap;
@@ -1825,8 +1831,6 @@ protected:
     // regardless of whether any namespace starts with a '/' or not.
     std::string m_global_namespace;
 
-    bool m_shaderProgramDefined = false;
-    cShaderProgramPtr m_shaderProgram;
     std::string m_vsFileName;
     std::string m_fsFileName;
 
