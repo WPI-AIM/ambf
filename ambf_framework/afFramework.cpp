@@ -1903,12 +1903,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     // Load any shader that have been defined
     if (bodyShaders.IsDefined()){
-        std::string shader_path = bodyShaders["path"].as<std::string>();
-        m_vsFileName = bodyShaders["vertex"].as<std::string>();
-        m_fsFileName = bodyShaders["fragment"].as<std::string>();
+        boost::filesystem::path shader_path = bodyShaders["path"].as<std::string>();
 
-        m_vsFileName = shader_path + m_vsFileName;
-        m_fsFileName = shader_path + m_fsFileName;
+        if (shader_path.is_relative()){
+            shader_path = mB->getMultiBodyPath() / shader_path;
+        }
+
+        m_vsFilePath = shader_path / bodyShaders["vertex"].as<std::string>();
+        m_fsFilePath = shader_path / bodyShaders["fragment"].as<std::string>();
 
         m_shaderProgramDefined = true;
     }
@@ -2389,8 +2391,8 @@ void afRigidBody::enableShaderProgram(){
 
         std::ifstream vsFile;
         std::ifstream fsFile;
-        vsFile.open(m_vsFileName);
-        fsFile.open(m_fsFileName);
+        vsFile.open(m_vsFilePath.c_str());
+        fsFile.open(m_fsFilePath.c_str());
         // create a string stream
         std::stringstream vsBuffer, fsBuffer;
         // dump the contents of the file into it
@@ -2400,20 +2402,31 @@ void afRigidBody::enableShaderProgram(){
         vsFile.close();
         fsFile.close();
 
-        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-        // Just empty Pts to let us use the shader
-        cGenericObject* go;
-        cRenderOptions ro;
-        m_shaderProgram->use(go, ro);
-        // Set the ID for shadow and normal maps.
-        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        if (shaderProgram->linkProgram()){
+            // Just empty Pts to let us use the shader
+            cGenericObject* go;
+            cRenderOptions ro;
+            shaderProgram->use(go, ro);
+            // Set the ID for shadow and normal maps.
+            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
 
-        std::cerr << "USING BODY SHADER FILES: " <<
-                     "\n \t VERTEX: " << m_vsFileName <<
-                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+            std::cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
 
-        setShaderProgram(m_shaderProgram);
+            setShaderProgram(shaderProgram);
+        }
+        else{
+            std::cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
+
+            m_shaderProgramDefined = false;
+        }
+
     }
 }
 
@@ -5506,12 +5519,14 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         }
 
         if (worldShaders.IsDefined()){
-            std::string shader_path = worldShaders["path"].as<std::string>();
-            m_vsFileName = worldShaders["vertex"].as<std::string>();
-            m_fsFileName = worldShaders["fragment"].as<std::string>();
+            boost::filesystem::path shader_path = worldShaders["path"].as<std::string>();
 
-            m_vsFileName = shader_path + m_vsFileName;
-            m_fsFileName = shader_path + m_fsFileName;
+            if (shader_path.is_relative()){
+                shader_path = getBasePath() / shader_path;
+            }
+
+            m_vsFilePath = shader_path / worldShaders["vertex"].as<std::string>();
+            m_fsFilePath = shader_path / worldShaders["fragment"].as<std::string>();
 
             m_shaderProgramDefined = true;
         }
@@ -5529,8 +5544,8 @@ void afWorld::enableShaderProgram(){
     if (m_shaderProgramDefined){
         std::ifstream vsFile;
         std::ifstream fsFile;
-        vsFile.open(m_vsFileName);
-        fsFile.open(m_fsFileName);
+        vsFile.open(m_vsFilePath.c_str());
+        fsFile.open(m_fsFilePath.c_str());
         // create a string stream
         std::stringstream vsBuffer, fsBuffer;
         // dump the contents of the file into it
@@ -5540,25 +5555,35 @@ void afWorld::enableShaderProgram(){
         vsFile.close();
         fsFile.close();
 
-        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        if (shaderProgram->linkProgram()){
+            // Just empty Pts to let us use the shader
+            cGenericObject* go;
+            cRenderOptions ro;
+            shaderProgram->use(go, ro);
+            // Set the ID for shadow and normal maps.
+            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
 
-        // Just empty Pts to let us use the shader
-        cGenericObject* go;
-        cRenderOptions ro;
-        m_shaderProgram->use(go, ro);
-        // Set the ID for shadow and normal maps.
-        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            std::cerr << "USING WORLD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
 
-        std::cerr << "USING WORLD SHADER FILES: " <<
-                     "\n \t VERTEX: " << m_vsFileName <<
-                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+            afRigidBodyVec rbVec = getAFRigidBodies();
+            for (int i = 0 ; i < rbVec.size() ; i++){
+                rbVec[i]->setShaderProgram(shaderProgram);
+                //            rbVec[i]->m_shaderProgram = m_shaderProgram;
+                //            rbVec[i]->m_shaderProgramDefined = true;
+            }
 
-        afRigidBodyVec rbVec = getAFRigidBodies();
-        for (int i = 0 ; i < rbVec.size() ; i++){
-            rbVec[i]->setShaderProgram(m_shaderProgram);
-//            rbVec[i]->m_shaderProgram = m_shaderProgram;
-//            rbVec[i]->m_shaderProgramDefined = true;
+        }
+        else{
+            std::cerr << "ERROR! FOR WORLD FAILED TO LOAD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
+
+            m_shaderProgramDefined = false;
         }
     }
 }
