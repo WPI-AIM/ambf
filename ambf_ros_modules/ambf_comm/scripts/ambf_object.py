@@ -413,7 +413,7 @@ class Object(BaseObject):
         n_jnts = len(self._state.joint_positions)
 
         if n_jnts > len(efforts) or n_jnts < len(efforts):
-            print "Not correct amoutn efforts"
+            print("Not correct amoutn efforts")
             return
         else:
             self._cmd.joint_cmds = efforts
