@@ -48,8 +48,6 @@ from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
 from ambf_base_object import BaseObject
 from geometry_msgs.msg import Pose, Wrench
-from collections import deque
-import numpy as np
 
 
 class Object(BaseObject):
@@ -62,11 +60,6 @@ class Object(BaseObject):
         self.object_type = "DEFAULT_OBJECT"
         self.body_type = "DYNAMIC"
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
-        self._joint_velocity = None
-        self._dt = 0.0
-        self._vel_que = deque()
-        self._queue_size = 100
-        self._window_size = 5
 
     def is_joint_idx_valid(self, joint_idx):
         """
@@ -121,38 +114,18 @@ class Object(BaseObject):
         else:
             return None
 
-    def get_all_joint_vel(self):
+    def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
                 :param idx:
                 :return:
                 """
-        self._calc_joint_velocity()
-
         n_jnts = len(self._state.joint_positions)
         joints = []
-        for idx in xrange(n_jnts):
-            joints.append(self._joint_velocity[idx])
+        for idx in range(n_jnts):
+            joints.append(self._state.joint_positions[idx])
 
         return joints
-
-    def get_joint_vel(self, join_name_or_idx):
-        """
-        Get the joint position of a specific joint at idx. Check joint names to see indexes
-        :param joint_name_or_idx:
-        :return:
-        """
-        self._calc_joint_velocity()
-
-        if isinstance(join_name_or_idx, str):
-            joint_idx = self.get_joint_idx_from_name(join_name_or_idx)
-        else:
-            joint_idx = join_name_or_idx
-
-        if self.is_joint_idx_valid(joint_idx):
-            return self._joint_velocity[joint_idx]
-        else:
-            return None
 
     def get_num_joints(self):
         """
@@ -250,8 +223,8 @@ class Object(BaseObject):
         if self.is_joint_idx_valid(joint_idx):
             n_jnts = self.get_num_joints()
             if len(self._cmd.joint_cmds) != n_jnts:
-                self._cmd.joint_cmds = [0.0] * n_jnts
-                self._cmd.position_controller_mask = [0] * n_jnts
+                self._cmd.joint_cmds = [0.0]*n_jnts
+                self._cmd.position_controller_mask = [0]*n_jnts
 
             self._cmd.joint_cmds[joint_idx] = q
             self._cmd.position_controller_mask[joint_idx] = True
@@ -319,27 +292,12 @@ class Object(BaseObject):
 
         if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.position_controller_mask = [0] * n_jnts
+            self._cmd.position_controller_mask = [0]*n_jnts
 
         self._cmd.joint_cmds[idx] = effort
         self._cmd.position_controller_mask[idx] = False
 
         self._apply_command()
-
-    def set_all_joint_effort(self, efforts):
-
-        n_jnts = len(self._state.joint_positions)
-
-        if n_jnts > len(efforts) or n_jnts < len(efforts):
-            print("Not correct amoutn efforts")
-            return
-        else:
-            self._cmd.joint_cmds = efforts
-
-        self._cmd.position_controller_mask = [0] * n_jnts
-
-        self._apply_command()
-
 
     def set_wrench(self, wrench):
         """
