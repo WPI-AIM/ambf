@@ -57,6 +57,8 @@ class RigidBody(BaseObject):
         :param a_name:
         """
         super(RigidBody, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "RIGID_BODY"
+        self.body_type = "DYNAMIC"
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set
         self._twist_cmd_set = False  # Flag to check if a Twist command has been set

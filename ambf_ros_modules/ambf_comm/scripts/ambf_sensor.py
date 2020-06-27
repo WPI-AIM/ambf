@@ -56,6 +56,8 @@ class Sensor(BaseObject):
         :param a_name:
         """
         super(Sensor, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "SENSOR"
+        self.body_type = "KINEMATIC"
 
     def _clear_command(self):
         """

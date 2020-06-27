@@ -65,6 +65,9 @@ class BaseObject(WatchDog):
         self._sub = None
         self.pub_flag = True
         self._active = False
+        self._pose_cmd_set = False  # Flag to check if a Pose command has been set from the Object
+        self.object_type = "BASE_OBJECT"
+        self.body_type = "KINEMATIC"
 
     def ros_cb(self, data):
         """
@@ -150,6 +153,26 @@ class BaseObject(WatchDog):
                 rpy[2]]
         return pose
 
+    def get_pos_command(self):
+        """
+        Get the commanded position of this object
+        :return:
+        """
+        if self._pose_cmd_set:
+            return self._cmd.pose.position
+        else:
+            return self._state.pose.position
+
+    def get_rot_command(self):
+        """
+        Get the rotation command of this object
+        :return:
+        """
+        if self._pose_cmd_set:
+            return self._cmd.pose.orientation
+        else:
+            return self._state.pose.orientation
+
     def get_name(self):
         """
         Get the name of this object
@@ -175,6 +198,69 @@ class BaseObject(WatchDog):
     def set_active(self):
         """Mark this object as active"""
         self._active = True
+
+    def set_pos(self, px, py, pz):
+        """
+        Set the Position of this object in parent frame. If a previous Pose command had been
+        set, the orientation from that command will be used, else, the orientation of the actual
+        object that is retrieved from it's state shall be used
+        :param px:
+        :param py:
+        :param pz:
+        :return:
+        """
+        _pose_cmd = Pose()
+        _pose_cmd.position.x = px
+        _pose_cmd.position.y = py
+        _pose_cmd.position.z = pz
+        _pose_cmd.orientation = self.get_rot_command()
+
+        self.set_pose(_pose_cmd)
+
+    def set_rpy(self, roll, pitch, yaw):
+        """
+        Set the Rotation in RPY of this object in parent frame. If a previous Pose command had been
+        set, the position from that command will be used, else, the position of the actual
+        object that is retrieved from it's state shall be used
+        :param roll:
+        :param pitch:
+        :param yaw:
+        :return:
+        """
+        # Edited python3 code
+        quat = quaternion_from_euler(roll, pitch, yaw, 'sxyz')
+        # Initial python2 code
+        # quat = transformations.quaternion_from_euler(roll, pitch, yaw, 'sxyz')
+        self.set_rot(quat)
+
+    def set_rot(self, quat):
+        """
+        Set the Rotation in Quaternion of this object in parent frame. If a previous Pose command had been
+        set, the position from that command will be used, else, the position of the actual
+        object that is retrieved from it's state shall be used
+        :param quat:
+        :return:
+        """
+        _pose_cmd = Pose()
+        _pose_cmd.position = self.get_pos_command()
+        _pose_cmd.orientation.x = quat[0]
+        _pose_cmd.orientation.y = quat[1]
+        _pose_cmd.orientation.z = quat[2]
+        _pose_cmd.orientation.w = quat[3]
+
+        self.set_pose(_pose_cmd)
+
+    def set_pose(self, pose):
+        """
+        Set the pose of this object in parent frame
+        :param pose:
+        :return:
+        """
+        self._cmd.enable_position_controller = True
+        self._cmd.pose = pose
+
+        self._apply_command()
+        self._pose_cmd_set = True
 
     def _apply_command(self):
         """

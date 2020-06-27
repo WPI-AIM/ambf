@@ -224,6 +224,8 @@ public:
     // Get the nuber of multibody config files defined in launch config file
     inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
 
+    std::string getBasePath(){return s_basePath.c_str();}
+
 private:
 
     static boost::filesystem::path s_basePath;
@@ -470,8 +472,6 @@ public:
 
     void setPassive(bool a_passive){m_passive = a_passive;}
 
-public:
-
     // Ptr to afWorld
     afWorldPtr m_afWorld;
 
@@ -483,6 +483,15 @@ public:
 
     // Max publishing frequency
     int m_max_publish_frequency=1000;
+
+    // Enable Shader Program Associate with this object
+    virtual void enableShaderProgram(){}
+
+    // Flag for the Shader Program
+    bool m_shaderProgramDefined = false;
+
+    boost::filesystem::path m_vsFilePath;
+    boost::filesystem::path m_fsFilePath;
 
 protected:
 
@@ -592,6 +601,8 @@ public:
     // Add sensor to this body
     bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
+    virtual void enableShaderProgram();
+
     // Get the sensors for this body
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
@@ -600,8 +611,6 @@ public:
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
-
-    void enableShaderProgram();
 
 protected:
 
@@ -680,6 +689,9 @@ protected:
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
 
+    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
+    bool m_usePIDController = false;
+
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
     // endIdx = startIdx + m_sensorThreadBlockSize - 1
@@ -692,11 +704,6 @@ protected:
 
     // Global flag for all sensor threads
     bool m_keepSensorThreadsAlive = true;
-
-    bool m_shaderProgramDefined = false;
-    cShaderProgramPtr m_shaderProgram;
-    std::string m_vsFileName;
-    std::string m_fsFileName;
 
 private:
     // Ptr to afWorld
@@ -1758,9 +1765,6 @@ public:
 
     void setGlobalNamespace(std::string a_namespace);
 
-    void enableShaderProgram();
-
-
     virtual void afExecuteCommand(double dt);
 
     // The collision groups are sorted by integer indices. A group is an array of
@@ -1803,6 +1807,12 @@ public:
 
     cPrecisionClock g_wallClock;
 
+    virtual void enableShaderProgram();
+
+    bool m_shaderProgramDefined = false;
+
+    boost::filesystem::path m_vsFilePath;
+    boost::filesystem::path m_fsFilePath;
     //    cMesh* m_pickDragVector;
 
 protected:
@@ -1824,11 +1834,6 @@ protected:
     // If this string is set, it will force itself to preeced all nampespaces
     // regardless of whether any namespace starts with a '/' or not.
     std::string m_global_namespace;
-
-    bool m_shaderProgramDefined = false;
-    cShaderProgramPtr m_shaderProgram;
-    std::string m_vsFileName;
-    std::string m_fsFileName;
 
 private:
 

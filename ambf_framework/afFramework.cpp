@@ -1903,12 +1903,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     // Load any shader that have been defined
     if (bodyShaders.IsDefined()){
-        std::string shader_path = bodyShaders["path"].as<std::string>();
-        m_vsFileName = bodyShaders["vertex"].as<std::string>();
-        m_fsFileName = bodyShaders["fragment"].as<std::string>();
+        boost::filesystem::path shader_path = bodyShaders["path"].as<std::string>();
 
-        m_vsFileName = shader_path + m_vsFileName;
-        m_fsFileName = shader_path + m_fsFileName;
+        if (shader_path.is_relative()){
+            shader_path = mB->getMultiBodyPath() / shader_path;
+        }
+
+        m_vsFilePath = shader_path / bodyShaders["vertex"].as<std::string>();
+        m_fsFilePath = shader_path / bodyShaders["fragment"].as<std::string>();
 
         m_shaderProgramDefined = true;
     }
@@ -2242,19 +2244,33 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     if(bodyController.IsDefined()){
         // Check if the linear controller is defined
         if (bodyController["linear"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["linear"]["P"].as<double>();
-            _D = bodyController["linear"]["D"].as<double>();
-            m_controller.setLinearGains(_P, 0, _D);
+            double P, I, D;
+            P = bodyController["linear"]["P"].as<double>();
+            // For legacy where we didn't define the I term
+            if (bodyController["linear"]["I"].IsDefined()){
+                I = bodyController["linear"]["I"].as<double>();
+            }
+            else{
+                I = 0;
+            }
+            D = bodyController["linear"]["D"].as<double>();
+            m_controller.setLinearGains(P, I, D);
             _lin_gains_computed = true;
         }
 
         // Check if the angular controller is defined
         if(bodyController["angular"].IsDefined()){
-            double _P, _D;
-            _P = bodyController["angular"]["P"].as<double>();
-            _D = bodyController["angular"]["D"].as<double>();
-            m_controller.setAngularGains(_P, 0, _D);
+            double P, I, D;
+            P = bodyController["angular"]["P"].as<double>();
+            // For legacy where we didn't define the I term
+            if (bodyController["angular"]["I"].IsDefined()){
+                I = bodyController["angular"]["I"].as<double>();
+            }
+            else{
+                I = 0;
+            }
+            D = bodyController["angular"]["D"].as<double>();
+            m_controller.setAngularGains(P, I, D);
             _ang_gains_computed = true;
         }
     }
@@ -2262,7 +2278,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     // If no controller gains are defined, compute based on lumped mass
     // and intertia
     if(!_lin_gains_computed || !_ang_gains_computed){
-        computeControllerGains();
+        // Use preset values for the controller since we are going to be using its output for the
+        // internal velocity controller
+        m_controller.setLinearGains(10, 0, 0);
+        m_controller.setAngularGains(10, 0, 0);
+        m_usePIDController = false;
+    }
+    else{
+        m_usePIDController = true;
     }
 
     if(m_mass == 0.0){
@@ -2368,8 +2391,8 @@ void afRigidBody::enableShaderProgram(){
 
         std::ifstream vsFile;
         std::ifstream fsFile;
-        vsFile.open(m_vsFileName);
-        fsFile.open(m_fsFileName);
+        vsFile.open(m_vsFilePath.c_str());
+        fsFile.open(m_fsFilePath.c_str());
         // create a string stream
         std::stringstream vsBuffer, fsBuffer;
         // dump the contents of the file into it
@@ -2379,20 +2402,31 @@ void afRigidBody::enableShaderProgram(){
         vsFile.close();
         fsFile.close();
 
-        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-        // Just empty Pts to let us use the shader
-        cGenericObject* go;
-        cRenderOptions ro;
-        m_shaderProgram->use(go, ro);
-        // Set the ID for shadow and normal maps.
-        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        if (shaderProgram->linkProgram()){
+            // Just empty Pts to let us use the shader
+            cGenericObject* go;
+            cRenderOptions ro;
+            shaderProgram->use(go, ro);
+            // Set the ID for shadow and normal maps.
+            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
 
-        std::cerr << "USING BODY SHADER FILES: " <<
-                     "\n \t VERTEX: " << m_vsFileName <<
-                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+            std::cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
 
-        setShaderProgram(m_shaderProgram);
+            setShaderProgram(shaderProgram);
+        }
+        else{
+            std::cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
+
+            m_shaderProgramDefined = false;
+        }
+
     }
 }
 
@@ -2642,37 +2676,50 @@ void afRigidBody::afExecuteCommand(double dt){
                 m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
             }
             else{
-                btVector3 _cur_pos, _cmd_pos;
-                btQuaternion _cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
-                                                          afCommand.pose.orientation.y,
-                                                          afCommand.pose.orientation.z,
-                                                          afCommand.pose.orientation.w);
+                btVector3 cur_pos, cmd_pos;
+                btQuaternion cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
+                                                         afCommand.pose.orientation.y,
+                                                         afCommand.pose.orientation.z,
+                                                         afCommand.pose.orientation.w);
 
-                btMatrix3x3 _cur_rot, _cmd_rot;
-                btTransform _b_trans;
-                m_bulletRigidBody->getMotionState()->getWorldTransform(_b_trans);
+                btMatrix3x3 cur_rot, cmd_rot;
+                btTransform b_trans;
+                m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
 
-                _cur_pos = _b_trans.getOrigin();
-                _cur_rot.setRotation(_b_trans.getRotation());
-                _cmd_pos.setValue(afCommand.pose.position.x,
-                                  afCommand.pose.position.y,
-                                  afCommand.pose.position.z);
-                if( _cmd_rot_quat.length() < 0.9 || _cmd_rot_quat.length() > 1.1 ){
+                cur_pos = b_trans.getOrigin();
+                cur_rot.setRotation(b_trans.getRotation());
+                cmd_pos.setValue(afCommand.pose.position.x,
+                                 afCommand.pose.position.y,
+                                 afCommand.pose.position.z);
+                if( cmd_rot_quat.length() < 0.9 || cmd_rot_quat.length() > 1.1 ){
                     std::cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
                                                                  " not normalized" << std::endl;
-                    if (_cmd_rot_quat.length() < 0.1){
-                        _cmd_rot_quat.setW(1.0); // Invalid Quaternion
+                    if (cmd_rot_quat.length() < 0.1){
+                        cmd_rot_quat.setW(1.0); // Invalid Quaternion
                     }
                 }
-                _cmd_rot.setRotation(_cmd_rot_quat);
+                cmd_rot.setRotation(cmd_rot_quat);
 
-                // Use the internal Cartesian Position Controller
-                force = m_controller.computeOutput<btVector3>(_cur_pos, _cmd_pos, dt);
-                // Use the internal Cartesian Rotation Controller
-                torque = m_controller.computeOutput<btVector3>(_cur_rot, _cmd_rot, dt);
+                btVector3 pCommand, rCommand;
+                // Use the internal Cartesian Position Controller to Compute Output
+                pCommand = m_controller.computeOutput<btVector3>(cur_pos, cmd_pos, dt);
+                // Use the internal Cartesian Rotation Controller to Compute Output
+                rCommand = m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
 
-                m_bulletRigidBody->applyCentralForce(force);
-                m_bulletRigidBody->applyTorque(torque);
+                if (m_usePIDController){
+                    // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
+                    // Use the internal Cartesian Position Controller
+                    m_bulletRigidBody->applyCentralForce(pCommand);
+                    m_bulletRigidBody->applyTorque(rCommand);
+                }
+                else{
+                    // ELSE USE THE VELOCITY INTERFACE
+                    m_bulletRigidBody->setLinearVelocity(pCommand);
+                    m_bulletRigidBody->setAngularVelocity(rCommand);
+
+                }
+
+
             }
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
@@ -3589,6 +3636,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // If the controller gains are not defined, a velocity based control will be used.
         // The tracking velocity can be controller by setting "max motor impulse" field
         // for the joint data-block in the ADF file.
+        m_controller.P = 10;
+        m_controller.I = 0;
+        m_controller.D = 0;
         m_usePIDController = false;
     }
 
@@ -3906,13 +3956,12 @@ void afJoint::commandPosition(double &position_cmd, double dt){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
+            double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
             if (m_usePIDController){
-                double effort_command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
-                commandEffort(effort_command);
+                commandEffort(command);
             }
             else{
-                double velocity_command = 10.0 * (position_cmd - position_cur);
-                commandVelocity(velocity_command);
+                commandVelocity(command);
             }
         }
     }
@@ -5470,12 +5519,14 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         }
 
         if (worldShaders.IsDefined()){
-            std::string shader_path = worldShaders["path"].as<std::string>();
-            m_vsFileName = worldShaders["vertex"].as<std::string>();
-            m_fsFileName = worldShaders["fragment"].as<std::string>();
+            boost::filesystem::path shader_path = worldShaders["path"].as<std::string>();
 
-            m_vsFileName = shader_path + m_vsFileName;
-            m_fsFileName = shader_path + m_fsFileName;
+            if (shader_path.is_relative()){
+                shader_path = getBasePath() / shader_path;
+            }
+
+            m_vsFilePath = shader_path / worldShaders["vertex"].as<std::string>();
+            m_fsFilePath = shader_path / worldShaders["fragment"].as<std::string>();
 
             m_shaderProgramDefined = true;
         }
@@ -5493,8 +5544,8 @@ void afWorld::enableShaderProgram(){
     if (m_shaderProgramDefined){
         std::ifstream vsFile;
         std::ifstream fsFile;
-        vsFile.open(m_vsFileName);
-        fsFile.open(m_fsFileName);
+        vsFile.open(m_vsFilePath.c_str());
+        fsFile.open(m_fsFilePath.c_str());
         // create a string stream
         std::stringstream vsBuffer, fsBuffer;
         // dump the contents of the file into it
@@ -5504,23 +5555,35 @@ void afWorld::enableShaderProgram(){
         vsFile.close();
         fsFile.close();
 
-        m_shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        if (shaderProgram->linkProgram()){
+            // Just empty Pts to let us use the shader
+            cGenericObject* go;
+            cRenderOptions ro;
+            shaderProgram->use(go, ro);
+            // Set the ID for shadow and normal maps.
+            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
 
-        // Just empty Pts to let us use the shader
-        cGenericObject* go;
-        cRenderOptions ro;
-        m_shaderProgram->use(go, ro);
-        // Set the ID for shadow and normal maps.
-        m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        m_shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            std::cerr << "USING WORLD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
 
-        std::cerr << "USING WORLD SHADER FILES: " <<
-                     "\n \t VERTEX: " << m_vsFileName <<
-                     "\n \t FRAGMENT: " << m_fsFileName << std::endl;
+            afRigidBodyVec rbVec = getAFRigidBodies();
+            for (int i = 0 ; i < rbVec.size() ; i++){
+                rbVec[i]->setShaderProgram(shaderProgram);
+                //            rbVec[i]->m_shaderProgram = m_shaderProgram;
+                //            rbVec[i]->m_shaderProgramDefined = true;
+            }
 
-        afRigidBodyVec rbVec = getAFRigidBodies();
-        for (int i = 0 ; i < rbVec.size() ; i++){
-            rbVec[i]->setShaderProgram(m_shaderProgram);
+        }
+        else{
+            std::cerr << "ERROR! FOR WORLD FAILED TO LOAD SHADER FILES: " <<
+                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
+                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
+
+            m_shaderProgramDefined = false;
         }
     }
 }
