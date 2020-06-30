@@ -77,14 +77,14 @@ class RigidBody(BaseObject):
                   '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return False
 
-    def get_linear_velocity(self):
+    def get_all_linear_vel(self):
         """
         Get the linear velocity of this body
         :return:
         """
         return self._state.twist.linear
 
-    def get_angular_velocity(self):
+    def get_angular_vel(self):
         """
         Get the angular velocity of this body
         :return:
@@ -130,7 +130,7 @@ class RigidBody(BaseObject):
         else:
             return None
 
-    def get_joint_velocity(self, joint_name_or_idx):
+    def get_joint_vel(self, joint_name_or_idx):
         """
         Get the joint velocity of a specific joint at idx. Check joint names to see indexes
         :param joint_name_or_idx:
@@ -159,7 +159,7 @@ class RigidBody(BaseObject):
 
         return positions
 
-    def get_all_joint_velocities(self):
+    def get_all_joint_vel(self):
         """
                 Get the joint velocities of a specific joint at idx. Check joint names to see indexes
                 :param idx:
