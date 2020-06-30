@@ -1852,52 +1852,58 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
     }
 
-    cMaterial _mat;
-    double _r, _g, _b, _a;
+    cMaterial mat;
+    mat.setShininess(64);
+    double r, g, b, a;
     if(bodyColorRGBA.IsDefined()){
-        _r = bodyColorRGBA["r"].as<float>();
-        _g = bodyColorRGBA["g"].as<float>();
-        _b = bodyColorRGBA["b"].as<float>();
-        _a = bodyColorRGBA["a"].as<float>();
-        _mat.setColorf(_r, _g, _b, _a);
-        setMaterial(_mat);
-        setTransparencyLevel(_a);
+        r = bodyColorRGBA["r"].as<float>();
+        g = bodyColorRGBA["g"].as<float>();
+        b = bodyColorRGBA["b"].as<float>();
+        a = bodyColorRGBA["a"].as<float>();
+        mat.setColorf(r, g, b, a);
+        setMaterial(mat);
+        setTransparencyLevel(a);
     }
     else if(bodyColorComponents.IsDefined()){
 
         if (bodyColorComponents["diffuse"].IsDefined()){
-            _r = bodyColorComponents["diffuse"]["r"].as<float>();
-            _g = bodyColorComponents["diffuse"]["g"].as<float>();
-            _b = bodyColorComponents["diffuse"]["b"].as<float>();
-            _mat.m_diffuse.set(_r, _g, _b);
+            r = bodyColorComponents["diffuse"]["r"].as<float>();
+            g = bodyColorComponents["diffuse"]["g"].as<float>();
+            b = bodyColorComponents["diffuse"]["b"].as<float>();
+            mat.m_diffuse.set(r, g, b);
         }
         if (bodyColorComponents["ambient"].IsDefined()){
             double _level = bodyColorComponents["ambient"]["level"].as<float>();
-            _r *= _level;
-            _g *= _level;
-            _b *= _level;
-            _mat.m_ambient.set(_r, _g, _b);
+            r *= _level;
+            g *= _level;
+            b *= _level;
+            mat.m_ambient.set(r, g, b);
         }
         if (bodyColorComponents["specular"].IsDefined()){
-            _r = bodyColorComponents["specular"]["r"].as<float>();
-            _g = bodyColorComponents["specular"]["g"].as<float>();
-            _b = bodyColorComponents["specular"]["b"].as<float>();
-            _mat.m_specular.set(_r, _g, _b);
+            r = bodyColorComponents["specular"]["r"].as<float>();
+            g = bodyColorComponents["specular"]["g"].as<float>();
+            b = bodyColorComponents["specular"]["b"].as<float>();
+            mat.m_specular.set(r, g, b);
         }
         if (bodyColorComponents["emission"].IsDefined()){
-            _r = bodyColorComponents["emission"]["r"].as<float>();
-            _g = bodyColorComponents["emission"]["g"].as<float>();
-            _b = bodyColorComponents["emission"]["b"].as<float>();
-            _mat.m_emission.set(_r, _g, _b);
+            r = bodyColorComponents["emission"]["r"].as<float>();
+            g = bodyColorComponents["emission"]["g"].as<float>();
+            b = bodyColorComponents["emission"]["b"].as<float>();
+            mat.m_emission.set(r, g, b);
         }
-        _a = bodyColorComponents["transparency"].as<float>();
-        setMaterial(_mat);
-        setTransparencyLevel(_a);
+        if (bodyColorComponents["shininess"].IsDefined()){
+            double shininess;
+            shininess = bodyColorComponents["shininess"].as<int>();
+            mat.setShininess(shininess);
+        }
+        a = bodyColorComponents["transparency"].as<float>();
+        setMaterial(mat);
+        setTransparencyLevel(a);
     }
     else if(bodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(bodyColor.as<std::string>());
-        _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-        setMaterial(_mat);
+        mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
+        setMaterial(mat);
         setTransparencyLevel(rgba[3]);
     }
 
@@ -2387,6 +2393,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 /// \brief afRigidBody::enableShaderProgram
 ///
 void afRigidBody::enableShaderProgram(){
+
     if (m_shaderProgramDefined){
 
         std::ifstream vsFile;
@@ -2426,7 +2433,13 @@ void afRigidBody::enableShaderProgram(){
 
             m_shaderProgramDefined = false;
         }
-
+    }
+    // Check if the shader has been assigned by afWorld
+    else if (getShaderProgram() != nullptr){
+        m_shaderProgramDefined = true;
+    }
+    else{
+        m_shaderProgramDefined = false;
     }
 }
 
@@ -5573,8 +5586,6 @@ void afWorld::enableShaderProgram(){
             afRigidBodyVec rbVec = getAFRigidBodies();
             for (int i = 0 ; i < rbVec.size() ; i++){
                 rbVec[i]->setShaderProgram(shaderProgram);
-                //            rbVec[i]->m_shaderProgram = m_shaderProgram;
-                //            rbVec[i]->m_shaderProgramDefined = true;
             }
 
         }
