@@ -77,7 +77,7 @@ class RigidBody(BaseObject):
                   '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return False
 
-    def get_all_linear_vel(self):
+    def get_linear_vel(self):
         """
         Get the linear velocity of this body
         :return:
