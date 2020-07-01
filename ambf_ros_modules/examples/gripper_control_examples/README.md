@@ -47,7 +47,7 @@ You can test this example as follows
 
 1. First, run the python file
 
-```
+``` bash
 cd gripper_control_examples
 python gripper_control_via_device_ifc.py
 ```
@@ -57,7 +57,7 @@ gripper open and close slider.
 
 2. Then run the AMBF Simulator with the ADF file of your choice. We are going to
 use a surgical training puzzle scene in this example.
-```
+``` bash
 cd ambf/bin/<os>
 ./ambf_simulator -l16
 ```
@@ -112,7 +112,7 @@ at launch. For this example, we can use one of the grippers found here
 ambf/ambf_models/descriptions/multi-bodies/grippers/pr2 gripper.yaml
 ```
 
-```
+``` bash
 cd ambf/bin/<os>
 ./ambf_simulator -l 16 -a ambf/ambf_models/descriptions/multi-bodies/grippers/pr2 gripper.yaml
 ```
@@ -121,7 +121,7 @@ You should see the simulation with the puzzle and the gripper just laying there.
 
 2. Now run the following python code.
 
-```
+``` bash
 cd gripper_control_examples
 python gripper_control_via_client_ifc.py
 ```

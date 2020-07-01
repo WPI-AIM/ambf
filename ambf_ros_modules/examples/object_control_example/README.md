@@ -13,7 +13,7 @@ to get the object handle and all of its joints and then spawns a GUI (using
 1. We just have to load any robot in the simulation first. For this example, lets
 use the dVRK PSM. You can run this robot as:
 
-```
+``` bash
 cd ambf/bin/<os>
 ./ambf_simulator -l 5
 ```
@@ -22,7 +22,7 @@ You should see the simulation with the PSM in it.
 
 2. Now we can run the Python file as.
 
-```
+``` bash
 cd object_control_example
 python control_object.py -o baselink
 ```

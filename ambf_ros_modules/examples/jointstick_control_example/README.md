@@ -20,7 +20,7 @@ position to orientation control .
 1. We just have to load any robot in the simulation first. For this example, lets use
 a robot with a non fixed base so lets load the car example as follows:
 
-```
+``` bash
 cd ambf/bin/<os>
 ./ambf_simulator -l 1
 ```
@@ -48,7 +48,7 @@ Then run the `joy` node as:
 
 3. Now we can run the Python script in a different terminal as.
 
-```
+``` bash
 cd joystick_control_example
 python joystick.py -o Chassis
 ```
