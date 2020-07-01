@@ -7409,6 +7409,18 @@ template <typename T, typename TMap>
 ///
 bool afWorld::addObject(T a_obj, std::string a_name, TMap* a_map){
     (*a_map)[a_name] = a_obj;
+
+    // Set the size of the frame.
+    cVector3d bounds = a_obj->getBoundaryMax();
+    double frame_size;
+    if (bounds.length() > 0.001){
+        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
+        frame_size = max_axis * 1.2;
+    }
+    else{
+        frame_size = 0.5;
+    }
+    a_obj->setFrameSize(frame_size);
     return true;
 }
 

@@ -915,6 +915,14 @@ public:
 
     bool isPassive(){return m_passive;}
 
+    bool isFeedBackEnabled(){return m_feedbackEnabled;}
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for Joint
+    void setFrameSize(double size){}
+
 protected:
 
     std::string m_name;
@@ -1905,6 +1913,13 @@ public:
     // with most children. This method is similar to the corresponding afWorld
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
+
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for MB
+    void setFrameSize(double size){}
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;

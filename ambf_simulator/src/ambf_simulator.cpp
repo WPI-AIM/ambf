@@ -923,6 +923,18 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                 rbIt->second->toggleFrameVisibility();
             }
 
+            auto lMap = g_afWorld->getAFLightMap();
+            afLightMap::const_iterator lIt;
+            for (lIt = lMap->begin() ; lIt != lMap->end(); ++lIt){
+                lIt->second->toggleFrameVisibility();
+            }
+
+            auto cMap = g_afWorld->getAFCameraMap();
+            afCameraMap::const_iterator cIt;
+            for (cIt = cMap->begin() ; cIt != cMap->end(); ++cIt){
+                cIt->second->toggleFrameVisibility();
+            }
+
             auto sbMap = g_afWorld->getAFSoftBodyMap();
             afSoftBodyMap::const_iterator sbIt;
             for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
