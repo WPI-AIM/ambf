@@ -3937,6 +3937,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             }
         }
     }
+    return true;
 }
 
 
