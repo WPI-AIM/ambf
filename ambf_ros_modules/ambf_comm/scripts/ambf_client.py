@@ -120,7 +120,7 @@ class Client:
                 world_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=WorldCmd,
                                                  queue_size=10)
                 self._world_handle = world_obj
-                self._objects_dict[base_obj.get_name()] = base_obj
+                self._objects_dict[world_obj.get_name()] = world_obj
             elif msg_type == 'ambf_msgs/ActuatorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
