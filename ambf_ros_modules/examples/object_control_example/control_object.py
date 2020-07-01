@@ -131,9 +131,9 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('-o', action='store', dest='obj_name', help='Specify AMBF Obj Name')
     parser.add_argument('-c', action='store', dest='enable_cartesian_control', help='Enable Control of Cartesian Space',
-                        default=False)
+                        default='False')
     parser.add_argument('-j', action='store', dest='enable_joint_control', help='Enable Control of Joint Space',
-                        default=True)
+                        default='True')
     parser.add_argument('-a', action='store', dest='client_name', help='Client Name',
                         default=None)
     parser.add_argument('--ixyz', action='store', dest='initial_xyz', help='Initial XYZ',

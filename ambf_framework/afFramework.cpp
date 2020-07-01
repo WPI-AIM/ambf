@@ -1204,7 +1204,6 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_scale = 1.0;
 
     m_dpos.setValue(0, 0, 0);
-    m_torque.setValue(0, 0, 0);
 }
 
 
@@ -2261,7 +2260,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["linear"]["D"].as<double>();
             m_controller.setLinearGains(P, I, D);
-            _lin_gains_computed = true;
+            m_lin_gains_computed = true;
         }
 
         // Check if the angular controller is defined
@@ -2277,13 +2276,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["angular"]["D"].as<double>();
             m_controller.setAngularGains(P, I, D);
-            _ang_gains_computed = true;
+            m_ang_gains_computed = true;
         }
     }
 
     // If no controller gains are defined, compute based on lumped mass
     // and intertia
-    if(!_lin_gains_computed || !_ang_gains_computed){
+    if(!m_lin_gains_computed || !m_ang_gains_computed){
         // Use preset values for the controller since we are going to be using its output for the
         // internal velocity controller
         m_controller.setLinearGains(10, 0, 0);
@@ -2469,7 +2468,7 @@ btVector3 afRigidBody::computeInertialOffset(cMesh* mesh){
 /// \brief afBody::compute_gains
 ///
 void afRigidBody::computeControllerGains(){
-    if (_lin_gains_computed && _ang_gains_computed){
+    if (m_lin_gains_computed && m_ang_gains_computed){
         return;
     }
 
@@ -2481,19 +2480,19 @@ void afRigidBody::computeControllerGains(){
         lumped_mass += sjIt->m_childBody->getMass();
         lumped_intertia += sjIt->m_childBody->getInertia();
     }
-    if (!_lin_gains_computed){
+    if (!m_lin_gains_computed){
         P_lin = lumped_mass * 20;
         D_lin = P_lin / 100;
         m_controller.setLinearGains(P_lin, 0, D_lin);
-        _lin_gains_computed = true;
+        m_lin_gains_computed = true;
     }
     // TODO
     // Need a better way of estimating angular gains
-    if (!_ang_gains_computed){
+    if (!m_ang_gains_computed){
         P_ang = lumped_mass * 10;
         D_ang = lumped_mass;
         m_controller.setAngularGains(P_ang, 0, D_ang);
-        _ang_gains_computed = true;
+        m_ang_gains_computed = true;
     }
 }
 

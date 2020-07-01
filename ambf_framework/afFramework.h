@@ -627,10 +627,10 @@ protected:
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _lin_gains_computed = false;
+    bool m_lin_gains_computed = false;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _ang_gains_computed = false;
+    bool m_ang_gains_computed = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -724,9 +724,6 @@ private:
 
     // Last Position Error
     btVector3 m_dpos;
-
-    // Last torque or Rotational Error with Kp multiplied
-    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
@@ -1779,7 +1776,9 @@ public:
 
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
     bool loadADF(std::string a_adf_filepath, bool enable_comm);
+
     bool loadADF(int i, bool enable_comm);
+
     void loadAllADFs(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
