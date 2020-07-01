@@ -2553,12 +2553,18 @@ void afRigidBody::updatePositionFromDynamics()
         cQuaternion q;
         q.fromRotMat(m_localRot);
 
+        // Update the Pose
         m_afRigidBodyCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
         m_afRigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
+        // Update the Wrench
+        m_afRigidBodyCommPtr->cur_force(m_estimatedForce.x(), m_estimatedForce.y(), m_estimatedForce.z());
+        m_afRigidBodyCommPtr->cur_torque(m_estimatedTorque.x(), m_estimatedTorque.y(), m_estimatedTorque.z());
 
         btVector3 v = m_bulletRigidBody->getLinearVelocity();
         btVector3 a = m_bulletRigidBody->getAngularVelocity();
 
+        // Updated the Twist
         m_afRigidBodyCommPtr->cur_linear_velocity(v.x(), v.y(), v.z());
         m_afRigidBodyCommPtr->cur_angular_velocity(a.x(), a.y(), a.z());
 
@@ -3456,6 +3462,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointOrigin = jointNode["origin"];
     YAML::Node jointAxis = jointNode["axis"];
     YAML::Node jointEnableMotor = jointNode["enable motor"];
+    YAML::Node jointEnableFeedback = jointNode["enable feedback"];
     YAML::Node jointMaxMotorImpulse = jointNode["max motor impulse"];
     YAML::Node jointLimits = jointNode["joint limits"];
     YAML::Node jointERP = jointNode["joint erp"];
@@ -3489,8 +3496,6 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_jointType = JointType::revolute;
     m_jointDamping = 0.0; // Initialize damping to 0
 
-    afRigidBodyPtr afBodyA, afBodyB;
-
     m_mB = mB;
 
     // First we should search in the local MultiBody space and if we don't find the body.
@@ -3499,60 +3504,55 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     std::string qualified_name_a = mB->getNamespace() + m_parentName;
     std::string qualified_name_b = mB->getNamespace() + m_childName;
 
-    afBodyA = mB->getAFRigidBodyLocal(qualified_name_a, true);
-    afBodyB = mB->getAFRigidBodyLocal(qualified_name_b, true);
+    m_afParentBody = mB->getAFRigidBodyLocal(qualified_name_a, true);
+    m_afChildBody = mB->getAFRigidBodyLocal(qualified_name_b, true);
 
-    if (!afBodyA){
-        afBodyA = m_afWorld->getAFRigidBody(qualified_name_a + name_remapping, true);
+    if (m_afParentBody == nullptr){
+        m_afParentBody = m_afWorld->getAFRigidBody(qualified_name_a + name_remapping, true);
     }
-    if (!afBodyB){
-        afBodyB = m_afWorld->getAFRigidBody(qualified_name_b + name_remapping, true);
+    if (m_afChildBody == nullptr){
+        m_afChildBody = m_afWorld->getAFRigidBody(qualified_name_b + name_remapping, true);
     }
 
     bool _ignore_inter_collision = true;
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
-    if(afBodyA == NULL){
-        afBodyA = m_afWorld->getAFRigidBody(m_parentName, true);
+    if(m_afParentBody == nullptr){
+        m_afParentBody = m_afWorld->getAFRigidBody(m_parentName, true);
         // If any body is still not found, print error and ignore joint
-        if (afBodyA == NULL){
+        if (m_afParentBody == nullptr){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
                         "\'s\" PARENT BODY \"" << m_parentName <<
                         "\" NOT FOUND" << std::endl;
             return 0;
         }
         // If the body is not world, print what we just did
-        if ((!strcmp(afBodyA->m_name.c_str(), "world") == 0)
-                &&(!strcmp(afBodyA->m_name.c_str(), "World") == 0)
-                &&(!strcmp(afBodyA->m_name.c_str(), "WORLD") == 0)){
+        if ((!strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
+                &&(!strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
+                &&(!strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
             //            std::cerr <<"INFO: JOINT: \"" << m_name <<
             //                        "\'s\" PARENT BODY \"" << m_parent_name <<
             //                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
-    if(afBodyB == NULL){
-        afBodyB = m_afWorld->getAFRigidBody(m_childName, true);
+    if(m_afChildBody == nullptr){
+        m_afChildBody = m_afWorld->getAFRigidBody(m_childName, true);
         // If any body is still not found, print error and ignore joint
-        if (afBodyB == NULL){
+        if (m_afChildBody == nullptr){
             std::cerr <<"ERROR: JOINT: \"" << m_name <<
                         "\'s\" CHILD BODY \"" << m_childName <<
                         "\" NOT FOUND" << std::endl;
             return 0;
         }
         // If the body is not world, print what we just did
-        if ((!strcmp(afBodyB->m_name.c_str(), "world") == 0)
-                &&(!strcmp(afBodyB->m_name.c_str(), "World") == 0)
-                &&(!strcmp(afBodyB->m_name.c_str(), "WORLD") == 0)){
+        if ((!strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
+                &&(!strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
+                &&(!strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
             std::cerr <<"INFO: JOINT: \"" << m_name <<
                         "\'s\" CHILD BODY \"" << m_childName <<
                         "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
-    }
-
-    else{
-        m_rbodyA = afBodyA->m_bulletRigidBody;
-        m_rbodyB = afBodyB->m_bulletRigidBody;
     }
 
     if (jointParentPivot.IsDefined() & jointParentAxis.IsDefined() & jointChildPivot.IsDefined() & jointChildAxis.IsDefined()){
@@ -3587,11 +3587,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         // Scale the pivot before transforming as the default scale methods don't move this pivot
-        m_pvtA *= afBodyA->m_scale;
-        m_pvtA = afBodyA->getInertialOffsetTransform().inverse() * m_pvtA;
-        m_pvtB = afBodyB->getInertialOffsetTransform().inverse() * m_pvtB;
-        m_axisA = afBodyA->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
-        m_axisB = afBodyB->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
+        m_pvtA *= m_afParentBody->m_scale;
+        m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
+        m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
+        m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
+        m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
     }
     else if(jointOrigin.IsDefined()){
         btQuaternion quat;
@@ -3762,9 +3762,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     // If the joint is revolute, hinge or continous
     if (m_jointType == JointType::revolute){
 #ifdef USE_PIVOT_AXIS_METHOD
-        m_btConstraint = new btHingeConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
+        m_btConstraint = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
 #else
-        m_hinge = new btHingeConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
         m_hinge->setParam(BT_CONSTRAINT_ERP, _jointERP);
         m_hinge->setParam(BT_CONSTRAINT_CFM, _jointCFM);
 #endif
@@ -3784,11 +3784,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         m_btConstraint = m_hinge;
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildJointPair(afBodyB, this);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
     // If the joint is slider, prismatic or linear
     else if (m_jointType == JointType::prismatic){
-        m_slider = new btSliderConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_slider = new btSliderConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
         m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
         m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
 
@@ -3817,12 +3817,12 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         m_btConstraint = m_slider;
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildJointPair(afBodyB, this);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
 
     // If the joint is a spring
     else if (m_jointType == JointType::linear_spring || m_jointType == JointType::torsion_spring){
-        m_spring = new btGeneric6DofSpringConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB, true);
+        m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
 
         // Initialize all the 6 axes to 0 stiffness and damping
         // and limits also set to 0-0
@@ -3884,7 +3884,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         }
 
         // Calculcated a stiffness value based on the masses of connected bodies.
-        double _stiffness = 10 * afBodyA->getMass() + afBodyB->getMass();
+        double _stiffness = 10 * m_afParentBody->getMass() + m_afChildBody->getMass();
         // If stiffness defined, override the above value
         if (jointStiffness.IsDefined()){
             _stiffness = jointStiffness.as<double>();
@@ -3899,11 +3899,11 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_btConstraint = m_spring;
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
 
-        afBodyA->addChildJointPair(afBodyB, this);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
     else if (m_jointType == JointType::p2p){
         // p2p joint doesnt concern itself with rotations, its set using just the pivot information
-        m_p2p = new btPoint2PointConstraint(*m_rbodyA, *m_rbodyB, m_pvtA, m_pvtB);
+        m_p2p = new btPoint2PointConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB);
         m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
         m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
 
@@ -3917,16 +3917,26 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         m_btConstraint = m_p2p;
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildJointPair(afBodyB, this);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
     else if (m_jointType == JointType::fixed){
-        m_btConstraint = new btFixedConstraint(*m_rbodyA, *m_rbodyB, frameA, frameB);
+        m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        afBodyA->addChildJointPair(afBodyB, this);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-    return true;
+
+    if (jointEnableFeedback.IsDefined()){
+        if (m_btConstraint != nullptr){
+            m_feedbackEnabled = jointEnableFeedback.as<bool>();
+            if (m_feedbackEnabled){
+                m_btConstraint->enableFeedback(m_feedbackEnabled);
+                m_feedback = new btJointFeedback();
+                m_btConstraint->setJointFeedback(m_feedback);
+            }
+        }
+    }
 }
 
 
@@ -4006,8 +4016,8 @@ void afJoint::commandEffort(double &cmd, bool skip_motor_check){
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
         const btVector3 sliderAxisInWorld = trA.getBasis()*m_axisA;
         const btVector3 relPos(0,0,0);
-        m_rbodyA->applyForce(-sliderAxisInWorld * cmd, relPos);
-        m_rbodyB->applyForce(sliderAxisInWorld * cmd, relPos);
+        m_afParentBody->m_bulletRigidBody->applyForce(-sliderAxisInWorld * cmd, relPos);
+        m_afChildBody->m_bulletRigidBody->applyForce(sliderAxisInWorld * cmd, relPos);
     }
 }
 
@@ -5207,6 +5217,36 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
 
 ///
+/// \brief afWorld::estimateBodyWrenches
+///
+void afWorld::estimateBodyWrenches(){
+
+    // First clear out the wrench estimation from last iteration
+    afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
+    for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
+        rbIt->second->m_estimatedForce.setZero();
+        rbIt->second->m_estimatedTorque.setZero();
+    }
+
+
+    // Now estimate the wrenches based on joints that have feedback enabled
+    afJointMap::iterator jIt = m_afJointMap.begin();
+    for (; jIt != m_afJointMap.end() ; ++ jIt){
+        if (jIt->second->isFeedBackEnabled()){
+            afJointPtr jnt = jIt->second;
+            const btJointFeedback* fb = jnt->m_btConstraint->getJointFeedback();
+            jnt->m_afParentBody->m_estimatedForce += fb->m_appliedForceBodyA;
+            jnt->m_afChildBody->m_estimatedForce += fb->m_appliedForceBodyB;
+
+            jnt->m_afParentBody->m_estimatedTorque += fb->m_appliedTorqueBodyA;
+            jnt->m_afChildBody->m_estimatedTorque += fb->m_appliedTorqueBodyB;
+        }
+    }
+
+}
+
+
+///
 /// \brief afWorld::updatePositionFromDynamics
 ///
 void afWorld::updatePositionFromDynamics()
@@ -5223,6 +5263,8 @@ void afWorld::updatePositionFromDynamics()
 
     afUpdateTimes(getWallTime(), getSimulationTime());
     std::list<cBulletGenericObject*>::iterator i;
+
+    estimateBodyWrenches();
 
     for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
     {

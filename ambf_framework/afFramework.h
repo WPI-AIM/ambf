@@ -601,6 +601,7 @@ public:
     // Add sensor to this body
     bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
+    // Enable shader program if defined
     virtual void enableShaderProgram();
 
     // Get the sensors for this body
@@ -611,6 +612,12 @@ public:
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
+
+    // Estimated Force acting on body
+    btVector3 m_estimatedForce;
+
+    // Estimated Torque acting on body
+    btVector3 m_estimatedTorque;
 
 protected:
 
@@ -641,14 +648,14 @@ protected:
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
 
-    // Function of compute body's controllers based on lumped masses
-    void computeControllerGains();
-
     // Sensors for this Rigid Body
     afSensorVec m_afSensors;
 
     // Actuators for this Rigid Body
     afActuatorVec m_afActuators;
+
+    // Function of compute body's controllers based on lumped masses
+    void computeControllerGains();
 
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
@@ -865,6 +872,7 @@ class afJoint{
     friend class afRigidBody;
     friend class afGripperLink;
     friend class afMultiBody;
+    friend class afWorld;
 
 public:
 
@@ -935,7 +943,11 @@ protected:
     bool m_enableActuator;
     double m_lowerLimit, m_upperLimit;
     double m_jointOffset;
-    btRigidBody *m_rbodyA, *m_rbodyB;
+
+    // Store parent and child afRigidBody to prevent lookups.
+    afRigidBodyPtr m_afParentBody;
+    afRigidBodyPtr m_afChildBody;
+
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
 
@@ -945,6 +957,12 @@ protected:
     // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
     // for communication purposess.
     bool m_passive = false;
+
+    // Wrench Feedback information from the joint
+    bool m_feedbackEnabled = false;
+
+    // Bullet Joint Feedback Ptr
+    btJointFeedback* m_feedback;
 
 protected:
 
@@ -1657,7 +1675,7 @@ public:
 
     double computeStepSize(bool adjust_intetration_steps = false);
 
-    GLFWwindow* m_mainWindow;
+    void estimateBodyWrenches();
 
     //! This method updates the simulation over a time interval.
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
@@ -1794,6 +1812,8 @@ public:
     bool movePickedBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
     void removePickingConstraint();
+
+    GLFWwindow* m_mainWindow;
 
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
