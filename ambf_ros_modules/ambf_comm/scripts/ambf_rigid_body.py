@@ -146,6 +146,22 @@ class RigidBody(BaseObject):
         else:
             return None
 
+    def get_joint_effort(self, joint_name_or_idx):
+        """
+        Get the joint effort of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_efforts[joint_idx]
+        else:
+            return None
+
     def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
@@ -171,6 +187,19 @@ class RigidBody(BaseObject):
             velocities.append(self._state.joint_velocities[idx])
 
         return velocities
+
+    def get_all_joint_effort(self):
+        """
+                Get the joint velocities of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_efforts)
+        efforts = []
+        for idx in range(n_jnts):
+            efforts.append(self._state.joint_efforts[idx])
+
+        return efforts
 
     def get_num_joints(self):
         """
