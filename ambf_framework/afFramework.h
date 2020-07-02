@@ -684,6 +684,9 @@ protected:
     // Update the joint velocitess of children in afObject State Message
     virtual void afObjectSetJointVelocities();
 
+    // Update the joint efforts of children in afObject State Message
+    virtual void afObjectSetJointEfforts();
+
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
@@ -721,6 +724,9 @@ private:
 
     // Velocities of all child joints
     std::vector<float> m_joint_velocities;
+
+    // Efforts of all child joints
+    std::vector<float> m_joint_efforts;
 
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
@@ -913,6 +919,9 @@ public:
     // Get the velocity of this joint
     double getVelocity();
 
+    // Get the effort of this joint
+    double getEffort();
+
     // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
@@ -968,6 +977,9 @@ protected:
 
     btTypedConstraint *m_btConstraint;
 
+    // The estimated Effort for this joint if its a single DOF joint.
+    double m_estimatedEffort = 0.0;
+
 private:
     // Add these two pointers for faster access to constraint internals
     // rather than having to cast the m_btConstraint ptr in high speed
@@ -983,6 +995,7 @@ private:
     int m_jpSize = 2;
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
+
 };
 
 

@@ -2595,6 +2595,7 @@ void afRigidBody::updatePositionFromDynamics()
         if (m_publish_joint_positions == true || afCommand.publish_joint_positions == true){
             afObjectSetJointPositions();
             afObjectSetJointVelocities();
+            afObjectSetJointEfforts();
         }
 
         // We can set this body to publish it's children names in either its AMBF Description file or
@@ -2856,6 +2857,25 @@ void afRigidBody::afObjectSetJointVelocities(){
             m_joint_velocities[i] = m_CJ_PairsActive[i].m_childJoint->getVelocity();
         }
         m_afRigidBodyCommPtr->set_joint_velocities(m_joint_velocities);
+    }
+#endif
+}
+
+
+///
+/// \brief afRigidBody::afObjectSetJointVelocities
+///
+void afRigidBody::afObjectSetJointEfforts(){
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    int num_jnts = m_CJ_PairsActive.size();
+    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
+        if(m_joint_efforts.size() != num_jnts){
+            m_joint_efforts.resize(num_jnts);
+        }
+        for (size_t i = 0 ; i < num_jnts ; i++){
+            m_joint_efforts[i] = m_CJ_PairsActive[i].m_childJoint->getEffort();
+        }
+        m_afRigidBodyCommPtr->set_joint_efforts(m_joint_efforts);
     }
 #endif
 }
@@ -4093,6 +4113,17 @@ double afJoint::getVelocity(){
 
 
 ///
+/// \brief afJoint::getEffort
+/// \return
+///
+double afJoint::getEffort(){
+    // Only supported if the joint feedback is enabled in ADF.
+    // Only supports single DOF joints such as rev, pris, linear and torsion springs.
+    return m_estimatedEffort;
+}
+
+
+///
 /// \brief afSensor::afSensor
 /// \param a_afWorld
 ///
@@ -5236,11 +5267,32 @@ void afWorld::estimateBodyWrenches(){
         if (jIt->second->isFeedBackEnabled()){
             afJointPtr jnt = jIt->second;
             const btJointFeedback* fb = jnt->m_btConstraint->getJointFeedback();
-            jnt->m_afParentBody->m_estimatedForce += fb->m_appliedForceBodyA;
-            jnt->m_afChildBody->m_estimatedForce += fb->m_appliedForceBodyB;
+            btMatrix3x3 R_wINp = jnt->m_afParentBody->m_bulletRigidBody->getWorldTransform().getBasis().transpose();
+            btMatrix3x3 R_wINc = jnt->m_afChildBody->m_bulletRigidBody->getWorldTransform().getBasis().transpose();
 
-            jnt->m_afParentBody->m_estimatedTorque += fb->m_appliedTorqueBodyA;
-            jnt->m_afChildBody->m_estimatedTorque += fb->m_appliedTorqueBodyB;
+            btVector3 F_jINp = R_wINp * fb->m_appliedForceBodyA;
+            btVector3 F_jINc = R_wINc * fb->m_appliedForceBodyB;
+
+            jnt->m_afParentBody->m_estimatedForce += F_jINp;
+            jnt->m_afChildBody->m_estimatedForce += F_jINc;
+
+            btVector3 T_jINp = R_wINp * fb->m_appliedTorqueBodyA;
+            btVector3 T_jINc = R_wINc * fb->m_appliedTorqueBodyB;
+
+            jnt->m_afParentBody->m_estimatedTorque += T_jINp;
+            jnt->m_afChildBody->m_estimatedTorque += T_jINc;
+
+            // We can also estimate the joint effort using the parent axes.
+            if (jnt->m_jointType == revolute || jnt->m_jointType == torsion_spring){
+                jnt->m_estimatedEffort = btDot(jnt->m_axisA, T_jINp);
+            }
+            else if (jnt->m_jointType == prismatic || jnt->m_jointType == linear_spring){
+                jnt->m_estimatedEffort = btDot(jnt->m_axisA, F_jINp);
+            }
+            else{
+                // If its a multiDOF joint, we don't compute the joint effort
+            }
+
         }
     }
 

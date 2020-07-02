@@ -210,6 +210,18 @@ void RigidBody::set_joint_velocities(std::vector<float> joint_velocities){
     m_State.joint_velocities = joint_velocities;
 }
 
+
+///
+/// \brief RigidBody::set_joint_efforts
+/// \param joint_efforts
+///
+void RigidBody::set_joint_efforts(std::vector<float> joint_efforts){
+    if (m_State.joint_efforts.size() != joint_efforts.size()){
+        m_State.joint_efforts.resize(joint_efforts.size());
+    }
+    m_State.joint_efforts = joint_efforts;
+}
+
 extern "C"{
 
 RigidBody* create_RigidBody(std::string a_name, std::string a_namespace="/ambf_comm/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5){
