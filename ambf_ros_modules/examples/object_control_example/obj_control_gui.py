@@ -30,18 +30,26 @@ class ObjectGUI:
         else:
             self.resolution = 0.0001
 
-        self.x = self.initial_xyz[0]
-        self.y = self.initial_xyz[1]
-        self.z = self.initial_xyz[2]
-        self.ro = self.initial_rpy[0]
-        self.pi = self.initial_rpy[1]
-        self.ya = self.initial_rpy[2]
-        self.x_slider = None
-        self.y_slider = None
-        self.z_slider = None
-        self.ro_slider = None
-        self.pi_slider = None
-        self.ya_slider = None
+        self.px = self.initial_xyz[0]
+        self.py = self.initial_xyz[1]
+        self.pz = self.initial_xyz[2]
+        self.rx = self.initial_rpy[0]
+        self.ry = self.initial_rpy[1]
+        self.rz = self.initial_rpy[2]
+
+        self.px_slider = None
+        self.py_slider = None
+        self.pz_slider = None
+        self.rx_slider = None
+        self.ry_slider = None
+        self.rz_slider = None
+
+        self.px_scale = None
+        self.py_scale = None
+        self.pz_scale = None
+        self.rx_scale = None
+        self.ry_scale = None
+        self.rz_scale = None
 
         self.cartesian_mode = 0
         self.create_gui(self.App, obj_name)
@@ -51,43 +59,85 @@ class ObjectGUI:
         return self.App
 
     # Define Callbacks for Tkinter GUI Sliders
-    def x_cb(self, val):
-        self.x = float(val)
+    def px_cb(self, val):
+        self.px = float(val)
 
-    def y_cb(self, val):
-        self.y = float(val)
+    def py_cb(self, val):
+        self.py = float(val)
 
-    def z_cb(self, val):
-        self.z = float(val)
+    def pz_cb(self, val):
+        self.pz = float(val)
 
-    def roll_cb(self, val):
-        self.ro = float(val)
+    def rx_cb(self, val):
+        self.rx = float(val)
 
-    def pitch_cb(self, val):
-        self.pi = float(val)
+    def ry_cb(self, val):
+        self.ry = float(val)
 
-    def yaw_cb(self, val):
-        self.ya = float(val)
+    def rz_cb(self, val):
+        self.rz = float(val)
+
+    def get_px_scale(self):
+        try:
+            scale = float(self.px_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
+
+    def get_py_scale(self):
+        try:
+            scale = float(self.py_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
+
+    def get_pz_scale(self):
+        try:
+            scale = float(self.pz_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
+
+    def get_rx_scale(self):
+        try:
+            scale = float(self.rx_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
+
+    def get_ry_scale(self):
+        try:
+            scale = float(self.ry_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
+
+    def get_rz_scale(self):
+        try:
+            scale = float(self.rz_scale.get())
+        except ValueError:
+            scale = 1.0
+        return scale
 
     def zero_all_cb(self):
-        self.zero_xyz_cb()
-        self.zero_rpy_cb()
+        self.zero_p_cb()
+        self.zero_r_cb()
 
-    def zero_xyz_cb(self):
-        self.x = self.initial_xyz[0]
-        self.y = self.initial_xyz[1]
-        self.z = self.initial_xyz[2]
-        self.x_slider.set(self.x)
-        self.y_slider.set(self.y)
-        self.z_slider.set(self.z)
+    def zero_p_cb(self):
+        self.px = self.initial_xyz[0]
+        self.py = self.initial_xyz[1]
+        self.pz = self.initial_xyz[2]
+        self.px_slider.set(self.px)
+        self.py_slider.set(self.py)
+        self.pz_slider.set(self.pz)
 
-    def zero_rpy_cb(self):
-        self.ro = self.initial_rpy[0]
-        self.pi = self.initial_rpy[1]
-        self.ya = self.initial_rpy[2]
-        self.ro_slider.set(self.ro)
-        self.pi_slider.set(self.pi)
-        self.ya_slider.set(self.ya)
+    def zero_r_cb(self):
+        self.rx = self.initial_rpy[0]
+        self.ry = self.initial_rpy[1]
+        self.rz = self.initial_rpy[2]
+        self.rx_slider.set(self.rx)
+        self.ry_slider.set(self.ry)
+        self.rz_slider.set(self.rz)
 
     # Define Callbacks for Tkinter GUI Slider
     def effort_button_cb(self):
@@ -133,48 +183,75 @@ class ObjectGUI:
 
         min_v = self.initial_xyz[0] - self.range_xyz / 2.0
         max_v = self.initial_xyz[0] + self.range_xyz / 2.0
-        self.x_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                         command=self.x_cb)
-        self.x_slider.grid(row=row_count, column=1)
+        self.px_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.px_cb)
+        self.px_slider.grid(row=row_count, column=1)
 
-        self.x_slider.set(self.x)
+        self.px_slider.set(self.px)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.px_scale = sv
 
         row_count = row_count + 1
 
-        x_label = Label(app, text="x")
-        x_label.grid(row=row_count, column=1, pady=5)
+        scale_label = Label(app, text='PX Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="PX")
+        label.grid(row=row_count, column=1, pady=5)
 
         row_count = row_count + 1
 
         min_v = self.initial_xyz[1] - self.range_xyz / 2.0
         max_v = self.initial_xyz[1] + self.range_xyz / 2.0
-        self.y_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                         command=self.y_cb)
-        self.y_slider.grid(row=row_count, column=1)
+        self.py_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.py_cb)
+        self.py_slider.grid(row=row_count, column=1)
 
-        self.y_slider.set(self.y)
+        self.py_slider.set(self.py)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.py_scale = sv
 
         row_count = row_count + 1
 
-        y_label = Label(app, text="y")
-        y_label.grid(row=row_count, column=1)
+        scale_label = Label(app, text='PY Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="PY")
+        label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
         min_v = self.initial_xyz[2] - self.range_xyz / 2.0
         max_v = self.initial_xyz[2] + self.range_xyz / 2.0
-        self.z_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                         command=self.z_cb)
-        self.z_slider.grid(row=row_count, column=1)
-        self.z_slider.set(self.z)
+        self.pz_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.pz_cb)
+        self.pz_slider.grid(row=row_count, column=1)
+        self.pz_slider.set(self.pz)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.pz_scale = sv
 
         row_count = row_count + 1
 
-        z_label = Label(app, text="z")
-        z_label.grid(row=row_count, column=1)
+        scale_label = Label(app, text='PZ Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="PZ")
+        label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_xyz = Button(app, width=_width, command=self.zero_xyz_cb)
+        zero_xyz = Button(app, width=_width, command=self.zero_p_cb)
         zero_xyz.grid(row=row_count, column=1)
 
         row_count = row_count + 1
@@ -186,47 +263,74 @@ class ObjectGUI:
 
         min_v = self.initial_rpy[0] - self.range_rpy / 2.0
         max_v = self.initial_rpy[0] + self.range_rpy / 2.0
-        self.ro_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                               command=self.roll_cb)
-        self.ro_slider.grid(row=row_count, column=1)
-        self.ro_slider.set(self.ro)
+        self.rx_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.rx_cb)
+        self.rx_slider.grid(row=row_count, column=1)
+        self.rx_slider.set(self.rx)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.rx_scale = sv
 
         row_count = row_count + 1
 
-        roll_label = Label(app, text="roll")
-        roll_label.grid(row=row_count, column=1)
+        scale_label = Label(app, text='RX Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="RX")
+        label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
         min_v = self.initial_rpy[1] - self.range_rpy / 2.0
         max_v = self.initial_rpy[1] + self.range_rpy / 2.0
-        self.pi_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                               command=self.pitch_cb)
-        self.pi_slider.grid(row=row_count, column=1)
-        self.pi_slider.set(self.pi)
+        self.ry_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.ry_cb)
+        self.ry_slider.grid(row=row_count, column=1)
+        self.ry_slider.set(self.ry)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.ry_scale = sv
 
         row_count = row_count + 1
 
-        pitch_label = Label(app, text="pitch")
-        pitch_label.grid(row=row_count, column=1)
+        scale_label = Label(app, text='RY Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="RY")
+        label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
         min_v = self.initial_rpy[2] - self.range_rpy / 2.0
         max_v = self.initial_rpy[2] + self.range_rpy / 2.0
-        self.ya_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
-                               command=self.yaw_cb)
-        self.ya_slider.grid(row=row_count, column=1)
-        self.ya_slider.set(self.ya)
+        self.rz_slider = Scale(app, from_=min_v, to=max_v, resolution=self.resolution, width=_width, length=_length, orient=HORIZONTAL,
+                               command=self.rz_cb)
+        self.rz_slider.grid(row=row_count, column=1)
+        self.rz_slider.set(self.rz)
+
+        sv = StringVar()
+        scale_input = Entry(app, textvariable=sv)
+        scale_input.grid(row=row_count, column=0)
+        sv.set("1.0")
+        self.rz_scale = sv
 
         row_count = row_count + 1
 
-        yaw_label = Label(app, text="yaw")
-        yaw_label.grid(row=row_count, column=1)
+        scale_label = Label(app, text='RZ Cmd Scale')
+        scale_label.grid(row=row_count, column=0)
+
+        label = Label(app, text="RZ")
+        label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_rpy = Button(app, width=_width, command=self.zero_rpy_cb)
+        zero_rpy = Button(app, width=_width, command=self.zero_r_cb)
         zero_rpy.grid(row=row_count, column=1)
 
         row_count = row_count + 1

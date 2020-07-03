@@ -90,18 +90,24 @@ class ObjectControl:
 
             if self._ctrl_c_space is True:
                 self.obj_gui.App.update()
+                px = self.obj_gui.px * self.obj_gui.get_px_scale()
+                py = self.obj_gui.py * self.obj_gui.get_py_scale()
+                pz = self.obj_gui.pz * self.obj_gui.get_pz_scale()
+                rx = self.obj_gui.rx * self.obj_gui.get_rx_scale()
+                ry = self.obj_gui.ry * self.obj_gui.get_ry_scale()
+                rz = self.obj_gui.rz * self.obj_gui.get_rz_scale()
                 if self.obj_gui.cartesian_mode == 0:
                     if self._wrench_supported:
-                        self.obj_handle.set_force(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                        self.obj_handle.set_torque(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                        self.obj_handle.set_force(px, py, pz)
+                        self.obj_handle.set_torque(rx, ry, rz)
                 elif self.obj_gui.cartesian_mode == 1:
                     if self._pose_supported:
-                        self.obj_handle.set_pos(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                        self.obj_handle.set_rpy(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                        self.obj_handle.set_pos(px, py, pz)
+                        self.obj_handle.set_rpy(rx, ry, rz)
                 elif self.obj_gui.cartesian_mode == 2:
                     if self._twist_supported:
-                        self.obj_handle.set_linear_vel(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                        self.obj_handle.set_angular_vel(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                        self.obj_handle.set_linear_vel(px, py, pz)
+                        self.obj_handle.set_angular_vel(rx, ry, rz)
                 else:
                     print('CANNOT UNDERSTAND CARTESIAN CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 

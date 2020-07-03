@@ -634,7 +634,7 @@ class RigidBody(BaseObject):
         Clear wrench if watchdog is expired
         :return:
         """
-        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
+        # self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
         self._cmd.wrench.force.x = 0
         self._cmd.wrench.force.y = 0
         self._cmd.wrench.force.z = 0
