@@ -67,6 +67,9 @@ RUN touch /root/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
   echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
 
-WORKDIR ${HOME}
+WORKDIR ${AMBF_WS}
+
+RUN cd ${AMBF_WS}/training_scripts
+CMD ./wrapper_script.sh
 
 # CMD python3 -c "import tensorflow as tf; print(tf.reduce_sum(tf.random.normal([1000, 1000])))"
