@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:1.14.0-gpu-py3
 
 # setup timezone
 RUN echo 'Etc/UTC' > /etc/timezone && \
@@ -42,7 +42,7 @@ ENV HOME="/root" \
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
-RUN git clone https://github.com/DhruvKoolRajamani/ambf.git
+RUN git clone --single-branch --branch feat-rl https://github.com/WPI-AIM/ambf.git
 WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
