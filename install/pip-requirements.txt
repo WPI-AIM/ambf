@@ -1,7 +1,3 @@
 setuptools
 wheel
 catkin_tools
-rospkg 
-PyYAML 
-matplotlib 
-git+https://github.com/hill-a/stable-baselines

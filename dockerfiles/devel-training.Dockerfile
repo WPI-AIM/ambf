@@ -42,7 +42,7 @@ ENV HOME="/root" \
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
-RUN git clone https://github.com/DhruvKoolRajamani/ambf.git
+RUN git clone --single-branch --branch feat-rl https://github.com/WPI-AIM/ambf.git
 WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
@@ -66,7 +66,8 @@ RUN . /opt/ros/melodic/setup.sh && \
 RUN touch /root/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
   echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
-
-WORKDIR ${HOME}
+  
+WORKDIR ${AMBF_WS}/training_scripts
+# CMD ./wrapper_script.sh
 
 # CMD python3 -c "import tensorflow as tf; print(tf.reduce_sum(tf.random.normal([1000, 1000])))"

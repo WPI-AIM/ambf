@@ -14,7 +14,7 @@ RUN apt-get update && \
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
-RUN git clone https://github.com/DhruvKoolRajamani/ambf.git
+RUN git clone https://github.com/WPI-AIM/ambf.git
 WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
