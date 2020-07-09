@@ -1,8 +1,8 @@
-//===========================================================================
+//==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,13 +35,12 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
     \courtesy:  Starting point CHAI3D-BULLET examples by Francois Conti from <www.chai3d.org>
-    \version:   $
+    \version   1.0$
 */
-//===========================================================================
+//==============================================================================
 
 //---------------------------------------------------------------------------
 #include "chai3d.h"
@@ -437,7 +436,7 @@ int main(int argc, char* argv[])
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
                 g_afWorld->loadADF(mbIndexes[idx], true);
             }
-        }       
+        }
 
         g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }

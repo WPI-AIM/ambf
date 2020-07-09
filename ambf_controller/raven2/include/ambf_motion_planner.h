@@ -1,8 +1,8 @@
 //===========================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -37,7 +37,7 @@
 
     \author:    Melody Su
     \date:      April, 2019
-    \version:   $
+    \version:   1.0$
 */
 //===========================================================================
 
@@ -91,7 +91,7 @@ public:
 	bool joint_to_dhvalue(vector<float>, vector<float>&, int);
 	bool dhvalue_to_joint(vector<float>, vector<float>&, float, int);
 	bool check_incr_safety(vector<float>, vector<float>&, int);
-	
+
     bool go_home(bool,int);   			// jp command will be used
     bool sine_dance(bool, int);     	// jp command will be used
     bool trace_cube(bool, int, bool);   // cp command will be used
@@ -99,19 +99,19 @@ public:
 };
 
 
-// Raven Note: 
-// 
+// Raven Note:
+//
 // if(command.type == _jp || command.type == _jw)
 // update command.js
-// 
+//
 // if(command.type == _cp)
 // do inverse kinematics
 // update command.js
-// 
+//
 // if(command.type == _cw)
 // update command.cf
 // update command.ct
-// 
+//
 // Remember to set:
 // command.type 	= _???;
 // command.updated = true;
