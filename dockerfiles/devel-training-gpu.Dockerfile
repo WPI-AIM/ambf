@@ -37,8 +37,12 @@ RUN apt-get update && apt-get install -y \
     ros-melodic-ros-base=1.4.1-0* apt-utils git \
     && rm -rf /var/lib/apt/lists/*
 
-ENV HOME="/root" \
-  AMBF_WS="/root/ambf"
+ENV USERNAME="admin"
+
+RUN useradd -ms /bin/bash ${USERNAME}
+
+ENV HOME="/home/${USERNAME}" \
+  AMBF_WS="/home/${USERNAME}/ambf"
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
@@ -70,7 +74,7 @@ RUN apt-get update && \
 
 RUN touch /root/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
-  echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
+  echo "source /home/dhruv/ambf/build/devel/setup.bash" >> /root/.bashrc
   
 WORKDIR ${AMBF_WS}/training_scripts
 # CMD ./wrapper_script.sh
