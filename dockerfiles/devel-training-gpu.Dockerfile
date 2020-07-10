@@ -72,9 +72,9 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN touch /root/.bashrc && \
-  echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
-  echo "source /home/dhruv/ambf/build/devel/setup.bash" >> /root/.bashrc
+RUN touch ${HOME}/.bashrc && \
+  echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
+  echo "source ${HOME}/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
   
 WORKDIR ${AMBF_WS}/training_scripts
 # CMD ./wrapper_script.sh
