@@ -3824,7 +3824,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         if(jointMaxMotorImpulse.IsDefined()){
             m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            m_slider->setMaxLinMotorForce(m_controller.max_impulse);
+            // Ugly hack, divide by (default) fixed timestep to max linear motor force
+            // since m_slider does have a max impulse setting method.
+            m_slider->setMaxLinMotorForce(m_controller.max_impulse / 0.001);
         }
         else{
             // Default to 1000.0
