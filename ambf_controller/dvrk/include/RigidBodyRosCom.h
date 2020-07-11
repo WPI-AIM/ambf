@@ -45,12 +45,13 @@
 #ifndef RIGIDBODYROSCOM_H
 #define RIGIDBODYROSCOM_H
 
-#include "RosComBase.h"
+//#include "RosComBase.h"
+#include "BaseObject.h"
 #include "ambf_msgs/RigidBodyState.h"
 #include "ambf_msgs/RigidBodyCmd.h"
 
 
-class RigidBodyRosCom: public RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>{
+class RigidBodyRosCom: public BaseObject<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>{
 public:
     RigidBodyRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~RigidBodyRosCom();

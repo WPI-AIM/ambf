@@ -48,41 +48,41 @@ namespace ambf_client{
 Actuator::Actuator(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): ActuatorRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
-ambf_msgs::ActuatorCmd Actuator::get_command(){
-    ambf_msgs::ActuatorCmd temp_cmd = m_Cmd;
-    return temp_cmd;
-}
+//ambf_msgs::ActuatorCmd Actuator::get_command(){
+//    ambf_msgs::ActuatorCmd temp_cmd = m_Cmd;
+//    return temp_cmd;
+//}
 
-void Actuator::cur_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_State.pose.position.x = px;
-    m_State.pose.position.y = py;
-    m_State.pose.position.z = pz;
-}
+//void Actuator::cur_position(double px, double py, double pz){
+//    m_trans.setOrigin(tf::Vector3(px, py, pz));
+//    m_State.pose.position.x = px;
+//    m_State.pose.position.y = py;
+//    m_State.pose.position.z = pz;
+//}
 
-void Actuator::cur_orientation(double roll, double pitch, double yaw){
-    tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
+//void Actuator::cur_orientation(double roll, double pitch, double yaw){
+//    tf::Quaternion rot_quat;
+//    rot_quat.setRPY(roll, pitch, yaw);
+//    m_trans.setRotation(rot_quat);
+//    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+//}
 
-void Actuator::cur_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
+//void Actuator::cur_orientation(double qx, double qy, double qz, double qw){
+//    tf::Quaternion rot_quat(qx, qy, qz, qw);
+//    m_trans.setRotation(rot_quat);
+//    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+//}
 
-void Actuator::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
+//void Actuator::set_wall_time(double a_sec){
+//    m_State.wall_time = a_sec;
+//    increment_sim_step();
+//    m_State.header.stamp = ros::Time::now();
+//}
 
 
-void Actuator::set_type(std::string type){
-    m_State.type.data = type;
-}
+//void Actuator::set_type(std::string type){
+//    m_State.type.data = type;
+//}
 
 extern "C"{
 

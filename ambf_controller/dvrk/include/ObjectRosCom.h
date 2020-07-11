@@ -36,8 +36,8 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.aimlab.wpi.edu>
-    \author    <amunawar@wpi.edu>
-    \author    Adnan Munawar
+    \author    <amunawar@wpi.edu, schandrasekhar@wpi.edu>
+    \author    Adnan Munawar, Shreyas Chandra Sekhar
     \version   $
 */
 //==============================================================================
@@ -45,12 +45,13 @@
 #ifndef OBJECTROSCOM_H
 #define OBJECTROSCOM_H
 
-#include "RosComBase.h"
+//#include "RosComBase.h"
+#include "BaseObject.h"
 #include "ambf_msgs/ObjectState.h"
 #include "ambf_msgs/ObjectCmd.h"
 
-
-class ObjectRosCom: public RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
+//class ObjectRosCom: public RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
+class ObjectRosCom: public BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
 public:
     ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~ObjectRosCom();

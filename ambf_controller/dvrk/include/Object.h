@@ -36,8 +36,8 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.aimlab.wpi.edu>
-    \author    <amunawar@wpi.edu>
-    \author    Adnan Munawar
+    \author    <amunawar@wpi.edu, schandrasekhar@wpi.edu>
+    \author    Adnan Munawar, Shreyas Chandra Sekhar
     \version   $
 */
 //==============================================================================

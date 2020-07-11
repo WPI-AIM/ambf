@@ -36,8 +36,8 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.aimlab.wpi.edu>
-    \author    <amunawar@wpi.edu>
-    \author    Adnan Munawar
+    \author    <amunawar@wpi.edu, schandrasekhar@wpi.edu>
+    \author    Adnan Munawar, Shreyas Chandra Sekhar
     \version   $
 */
 //==============================================================================
@@ -64,9 +64,9 @@ public:
         m_freq_min = a_freq_min;
         m_freq_max = a_freq_max;
 
-        int argc = 0;
-        char **argv = 0;
-        ros::init(argc, argv, "ambf_client");
+//        int argc = 0;
+//        char **argv = 0;
+//        ros::init(argc, argv, "ambf_client");
         nodePtr.reset(new ros::NodeHandle);
         aspinPtr.reset(new ros::AsyncSpinner(1));
         nodePtr->setCallbackQueue(&m_custom_queue);
