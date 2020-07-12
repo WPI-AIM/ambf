@@ -45,17 +45,24 @@
 #ifndef AMBF_CLIENT_H
 #define AMBF_CLIENT_H
 #include <ros/ros.h>
-#include "World.h"
-#include "Object.h"
-#include "BaseObject.h"
-
 #include <tf/LinearMath/Transform.h>
 #include<geometry_msgs/WrenchStamped.h>
 
-#include<ambf_msgs/ObjectCmd.h>
-#include<ambf_msgs/ObjectState.h>
+#include "World.h"
+#include "BaseObject.h"
+#include "Object.h"
+#include "Light.h"
+#include "RigidBody.h"
+
 #include<ambf_msgs/WorldCmd.h>
 #include<ambf_msgs/WorldState.h>
+#include<ambf_msgs/ObjectCmd.h>
+#include<ambf_msgs/ObjectState.h>
+#include<ambf_msgs/LightCmd.h>
+#include<ambf_msgs/LightState.h>
+#include<ambf_msgs/RigidBodyCmd.h>
+#include<ambf_msgs/RigidBodyState.h>
+
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -89,6 +96,7 @@ public:
     bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);
     bool object_cur_force(std::string name, double fx, double fy, double fz);
     bool object_cur_torque(std::string name, double nx, double ny, double nz);
+    void clean_up();
 
 private:
     ros::master::V_TopicInfo ros_topics_;
@@ -112,9 +120,6 @@ private:
     int a_freq_min_ = 50;
     int a_freq_max_ = 100;
     double time_out_ = 10.0;
-
-//    vector<string> lv_elems_;
-//    ros::Subscriber sub_;
 
 
     bool getPublishedTopics();

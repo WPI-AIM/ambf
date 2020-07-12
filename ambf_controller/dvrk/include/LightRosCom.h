@@ -36,8 +36,9 @@
     POSSIBILITY OF SUCH DAMAGE.
 
     \author    <http://www.aimlab.wpi.edu>
-    \author    <amunawar@wpi.edu>
-    \author    Adnan Munawar
+    \author    <http://www.aimlab.wpi.edu>
+    \author    <amunawar@wpi.edu, schandrasekhar@wpi.edu>
+    \author    Adnan Munawar, Shreyas Chandra Sekhar
     \version   $
 */
 //==============================================================================
@@ -45,12 +46,12 @@
 #ifndef LIGHTROSCOM_H
 #define LIGHTROSCOM_H
 
-#include "RosComBase.h"
+#include "BaseObject.h"
 #include "ambf_msgs/LightState.h"
 #include "ambf_msgs/LightCmd.h"
 
 
-class LightRosCom: public RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>{
+class LightRosCom: public BaseObject<ambf_msgs::LightState, ambf_msgs::LightCmd>{
 public:
     LightRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~LightRosCom();
