@@ -41,8 +41,8 @@ ENV USERNAME="admin"
 
 RUN useradd -ms /bin/bash ${USERNAME}
 
-ENV HOME="/home/${USERNAME}" \
-  AMBF_WS="/home/${USERNAME}/ambf"
+ENV HOME="/tmp" \
+  AMBF_WS="/tmp/ambf"
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
@@ -74,7 +74,6 @@ RUN apt-get update && \
 
 RUN touch ${HOME}/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
-  echo "source ${HOME}/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
+  echo "source /tmp/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
   
 WORKDIR ${AMBF_WS}/training_scripts
-# CMD ./wrapper_script.sh
