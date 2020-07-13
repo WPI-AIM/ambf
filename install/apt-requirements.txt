@@ -1,4 +1,5 @@
 build-essential
+vim
 python
 python-dev
 python3
