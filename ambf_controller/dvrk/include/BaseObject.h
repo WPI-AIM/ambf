@@ -47,27 +47,25 @@ class BaseObject: public RosComBase<T_state, T_cmd>, public IBaseObject {
 //class BaseObject: public RosComBase<T_state, T_cmd> {
 public:
     BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out):
-        RosComBase<T_state, T_cmd>(a_name, a_namespace, a_freq_min, a_freq_max, time_out)
-    {
-//        m_name = a_name;
-//        m_namespace = a_namespace;
+        RosComBase<T_state, T_cmd>(a_name, a_namespace, a_freq_min, a_freq_max, time_out) {
+//    BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out) :
+//        RosComBase<T_state, T_cmd>:: a_name(name_), a_namespace(namespace_), a_freq_min(freq_min_), a_freq_max(freq_max_), time_out(time_out_)
+//    {}
+//        ROS_INFO("%s", "Inside BaseObject Constructor");
+//        name_ = a_name;
+//        namespace_ = a_namespace;
 
-//        m_freq_min = a_freq_min;
-//        m_freq_max = a_freq_max;
-
-//        BaseObject<T_state, T_cmd>::RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out);
-
-//        int argc = 0;
-//        char **argv = 0;
-//        ros::init(argc, argv, "ambf_client");
-//        nodePtr.reset(new ros::NodeHandle);
-//        aspinPtr.reset(new ros::AsyncSpinner(1));
-//        nodePtr->setCallbackQueue(&m_custom_queue);
-//        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
+        freq_min_ = a_freq_min;
+        freq_max_ = a_freq_max;
+        time_out_ = time_out;
     }
 
+    void destroy_at(T_state* t_s, T_cmd* t_c);
+//    void destroy_at(T_state* t_s, T_cmd* t_c) {
+//        t_s->~T_state();
+//        t_c->~T_cmd();
+//    }
 
-//    ~BaseObject();
 //    virtual void init() = 0;
 //    virtual void run_publishers();
     virtual void cleanUp();
@@ -77,41 +75,19 @@ public:
 //    int m_freq_max;
 
 protected:
-//    boost::shared_ptr<ros::NodeHandle> nodePtr;
-//    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
-//    boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
-
-    std::string m_namespace;
-    std::string m_name;
-//    ros::Publisher m_pub;
-//    ros::Subscriber m_sub;
 
     tf::Transform m_trans;
     T_state m_State;
     T_cmd m_Cmd;
     T_cmd m_CmdPrev;
 
-//    boost::thread m_thread;
-//    ros::CallbackQueue m_custom_queue;
-
-    virtual void reset_cmd() = 0;
+private:
+    std::string name_;
+    std::string namespace_;
+    int freq_min_;
+    int freq_max_;
+    double time_out_;
 };
-
-//template<class T_state, class T_cmd>
-//void BaseObject<T_state, T_cmd>::run_publishers(){
-//    RosComBase<T_state, T_cmd>::run_publishers();
-//    while(nodePtr->ok()){
-//        m_pub.publish(m_State);
-//        m_custom_queue.callAvailable();
-//        if(m_watchDogPtr->is_wd_expired()){
-//            m_watchDogPtr->consolePrint(m_name);
-//            reset_cmd();
-//        }
-//        m_watchDogPtr->m_ratePtr->sleep();
-//    }
-//}
-
-
 
 
 #endif // BASEOBJECT_H

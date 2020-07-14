@@ -71,6 +71,7 @@ public:
         aspinPtr.reset(new ros::AsyncSpinner(1));
         nodePtr->setCallbackQueue(&m_custom_queue);
         m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
+//        ROS_INFO("%s", "Inside RosComBase Constructor");
     }
     virtual void init() = 0;
     virtual void run_publishers();

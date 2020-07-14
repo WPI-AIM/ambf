@@ -103,7 +103,10 @@ private:
 //    vector<string> sub_list_;
 //    std::unordered_map<string, ObjectClient *> objects_map_;
 
-    std::unordered_map<string, IBaseObject *> objects_map_;
+//    std::unordered_map<string, IBaseObject *> objects_map_;
+    std::unordered_map<string, std::unordered_map<string, IBaseObject *> > objects_map_;
+    std::unordered_map<string, std::unordered_map<string, IBaseObject *> >::iterator itr_;
+    std::unordered_map<string, IBaseObject *>::iterator ptr_;
 //    vector <shared_ptr<BaseObject>> As;
 //    vector<IBaseObject *> list_;
 //    vector <shared_ptr<IBaseObject *>> list_;

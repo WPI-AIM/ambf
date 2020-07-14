@@ -61,6 +61,12 @@
 #include "ambf_msgs/WorldCmd.h"
 #include "ambf_msgs/WorldState.h"
 
+template <class T_state, class T_cmd>
+void BaseObject<T_state, T_cmd>::destroy_at(T_state* t_s, T_cmd* t_c) {
+    t_s->~T_state();
+    t_c->~T_cmd();
+}
+
 
 template<>
 ///

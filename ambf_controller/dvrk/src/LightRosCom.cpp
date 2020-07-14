@@ -52,8 +52,13 @@ void LightRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
 
+//    m_namespace = "/ambf/env";
+//    m_name = "lights/light_left";
+
     m_pub = nodePtr->advertise<ambf_msgs::LightState>("/" + m_namespace + "/" + m_name + "/State", 10);
     m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &LightRosCom::sub_cb, this);
+
+//    std::cerr << "LightRosCom.cpp - " << m_namespace << m_name << std::endl;
 
     m_thread = boost::thread(boost::bind(&LightRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;

@@ -1,4 +1,4 @@
-//==============================================================================
+/*897//==============================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2019, AMBF
@@ -56,6 +56,7 @@ Client::Client(){
 
 void Client::connect() {
     this->create_objs_from_rostopics();
+
 }
 
 
@@ -64,42 +65,30 @@ void Client::create_objs_from_rostopics()
 {
     this->getPublishedTopics();
 
+    for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
+        string msg_type = itr_->first;
 
-    string topic_name = "lights/light_left";
-    ROS_INFO("----%s %s", a_namespace_.c_str(), topic_name.c_str());
-    new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+        for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
+            string topic_name = ptr_->first.c_str();
 
-//    string trim_topic = "/State";
-//    for(int i = 0; i < ros_topics_.size(); i++)
-//    {
-//        string topic_name = ros_topics_[i].name;
-//        string msg_type = ros_topics_[i].datatype;
+            if(msg_type == "ambf_msgs/WorldState") {
+                world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/ObjectState") {
+                ROS_INFO("ObjectState - %s", topic_name.c_str());
+                objects_map_[msg_type].insert(make_pair(topic_name, new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+//                objects_map_[topic_name.c_str()] =  new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/LightState") {
+                ROS_INFO("LightBodyState - %s %s", topic_name.c_str(), a_namespace_.c_str());
+                objects_map_[msg_type].insert(make_pair(topic_name, new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+//                objects_map_[topic_name.c_str()] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+                ROS_INFO("RightBodyState - %s", topic_name.c_str());
+                objects_map_[msg_type].insert(make_pair(topic_name, new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+//                objects_map_[topic_name.c_str()] =  new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            }
+        }
+    }
 
-//        if(endsWith(topic_name, trim_topic)) {
-//            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
-//            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-
-//            ROS_INFO("----------------%s, %s", msg_type.c_str(), topic_name.c_str());
-//            if(msg_type == "ambf_msgs/WorldState") {
-////                world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//////                world_handle_ = new WorldClient(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//            } else if (msg_type == "ambf_msgs/ObjectState") {
-//                ROS_INFO("ObjectState - %s", topic_name.c_str());
-//////               BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd> *object_handle = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//////               list_.push_back(new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_));
-
-////                objects_map_[topic_name.c_str()] =  new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-
-//            } else if (msg_type == "ambf_msgs/LightState") {
-//                ROS_INFO("LightBodyState - %s", topic_name.c_str());
-////                objects_map_[topic_name.c_str()] =
-//                new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-//                ROS_INFO("RightBodyState - %s", topic_name.c_str());
-////                objects_map_[topic_name.c_str()] =  new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//            }
-//        }
-//    }
 }
 
 bool Client::getPublishedTopics(){
@@ -111,12 +100,23 @@ bool Client::getPublishedTopics(){
         return false;
     }
 
-    ros_topics_.clear();
+//    ros_topics_.clear();
 
     ROS_INFO("%d", payload.size());
+    string trim_topic = "/State";
     for (int i = 0; i < payload.size(); ++i) {
-        ROS_INFO("%s", (string(payload[i][0])).c_str());
-        ros_topics_.emplace_back(ros::master::TopicInfo(string(payload[i][0]), string(payload[i][1])));
+       string topic_name = (string(payload[i][0])).c_str();
+       string msg_type = (string(payload[i][1])).c_str();
+
+       if(endsWith(topic_name, trim_topic)) {
+           topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
+           topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
+//           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
+
+           objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
+           objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
+//        ros_topics_.emplace_back(ros::master::TopicInfo(string(payload[i][0]), string(payload[i][1])));
+       }
     }
     return true;
 }
@@ -199,11 +199,30 @@ bool Client::object_cur_torque(std::string name, double nx, double ny, double nz
 void Client::clean_up() {
 //    ros::spin();
 
-    world_handle_->~World();
+//    world_handle_->~World();
 
-//    for(std::unordered_map<string, ObjectClient *>::iterator it = objects_map_.begin(); it != objects_map_.end(); ++it) {
-//        cout << "Closing publisher for: " << it->first << "\n";
-//        it->second->~ObjectClient();
+//    for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
+//        string msg_type = itr_->first;
+
+//        for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
+//            string topic_name = ptr_->first.c_str();
+
+//            if(msg_type == "ambf_msgs/WorldState") {
+//                world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            } else if (msg_type == "ambf_msgs/ObjectState") {
+////                ROS_INFO("ObjectState - %s", topic_name.c_str());
+////                objects_map_[msg_type].insert(make_pair(topic_name, new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+////                objects_map_[topic_name.c_str()] =  new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            } else if (msg_type == "ambf_msgs/LightState") {
+////                ROS_INFO("LightBodyState - %s %s", topic_name.c_str(), a_namespace_.c_str());
+////                objects_map_[msg_type].insert(make_pair(topic_name, new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+////                objects_map_[topic_name.c_str()] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+////                ROS_INFO("RightBodyState - %s", topic_name.c_str());
+////                objects_map_[msg_type].insert(make_pair(topic_name, new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_)));
+////                objects_map_[topic_name.c_str()] =  new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            }
+//        }
 //    }
 }
 
