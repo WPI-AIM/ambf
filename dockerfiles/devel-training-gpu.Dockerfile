@@ -41,12 +41,12 @@ ENV USERNAME="admin"
 
 RUN useradd -ms /bin/bash ${USERNAME}
 
-ENV HOME="/tmp" \
-  AMBF_WS="/tmp/ambf"
+ENV HOME_DIR="/home/${USERNAME}" \
+  AMBF_WS="/home/${USERNAME}/ambf"
 
-WORKDIR ${HOME}
+WORKDIR ${HOME_DIR}
 # Make Directory AMBF_WS
-RUN git clone --single-branch --branch feat-rl https://github.com/WPI-AIM/ambf.git
+RUN git clone --branch feat-rl https://github.com/WPI-AIM/ambf.git
 WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
@@ -64,7 +64,7 @@ RUN apt-get update && \
 RUN . /opt/ros/melodic/setup.sh && \
   mkdir -p ${AMBF_WS}/build && \
   cd ${AMBF_WS}/build && \
-  cmake ../ && \
+  cmake ../ -DCMAKE_BUILD_TYPE=Debug && \
   make -j$(nproc)
 
 RUN apt-get update && \
@@ -72,8 +72,10 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN touch ${HOME}/.bashrc && \
-  echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
-  echo "source /tmp/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
+RUN touch ${HOME_DIR}/.bashrc && \
+  echo "source /opt/ros/melodic/setup.bash" >> ${HOME_DIR}/.bashrc && \
+  echo "source /home/admin/ambf/build/devel/setup.bash" >> ${HOME_DIR}/.bashrc
+
+RUN . ${HOME_DIR}/.bashrc
   
 WORKDIR ${AMBF_WS}/training_scripts
