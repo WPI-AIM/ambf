@@ -28,32 +28,16 @@
 class IBaseObject
 {
   // list of cell methods
+public:
+    virtual ~IBaseObject() = default;
 };
 
 //class ObjectRosCom: public BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
 template <class T_state, class T_cmd>
 class BaseObject: public RosComBase<T_state, T_cmd>, public IBaseObject {
-//public:
-//    BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-//    ~BaseObject();
-//    virtual void init();
-
-////protected:
-////    virtual void reset_cmd();
-////    void sub_cb(ambf_msgs::ObjectCmdConstPtr msg);
-//};
-
-
-//class BaseObject: public RosComBase<T_state, T_cmd> {
 public:
     BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out):
         RosComBase<T_state, T_cmd>(a_name, a_namespace, a_freq_min, a_freq_max, time_out) {
-//    BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out) :
-//        RosComBase<T_state, T_cmd>:: a_name(name_), a_namespace(namespace_), a_freq_min(freq_min_), a_freq_max(freq_max_), time_out(time_out_)
-//    {}
-//        ROS_INFO("%s", "Inside BaseObject Constructor");
-//        name_ = a_name;
-//        namespace_ = a_namespace;
 
         freq_min_ = a_freq_min;
         freq_max_ = a_freq_max;
@@ -66,13 +50,8 @@ public:
 //        t_c->~T_cmd();
 //    }
 
-//    virtual void init() = 0;
-//    virtual void run_publishers();
     virtual void cleanUp();
-//    virtual T_cmd get_command(){return m_Cmd;}
-
-//    int m_freq_min;
-//    int m_freq_max;
+    virtual ~BaseObject(void){}
 
 protected:
 

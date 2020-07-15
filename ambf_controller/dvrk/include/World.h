@@ -124,6 +124,7 @@ public:
     // This method may be called when AMBF starts to load the existing
     void set_params_on_server();
 };
+
 }
 
 #endif

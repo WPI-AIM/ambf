@@ -248,10 +248,12 @@ void World::increment_sim_step(){
 extern "C"{
 
 World* create_world(std::string a_name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=10.0){
+    std::cerr << "inside create_world" << std::endl;
     return new World(a_name, a_namespace, a_min_freq, a_max_freq, time_out);
 }
 
 void destroy_world(World* obj){
+    std::cerr << "inside destroy_world" << std::endl;
     delete obj;
 }
 
