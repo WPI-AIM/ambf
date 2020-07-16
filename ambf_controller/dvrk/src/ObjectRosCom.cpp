@@ -54,8 +54,11 @@ void ObjectRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
 
-    m_pub = nodePtr->advertise<ambf_msgs::ObjectState>("/" + m_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &ObjectRosCom::sub_cb, this);
+//    m_pub = nodePtr->advertise<ambf_msgs::ObjectState>("/" + m_namespace + "/" + m_name + "/State", 10);
+//    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &ObjectRosCom::sub_cb, this);
+
+    m_pub = nodePtr->advertise<ambf_msgs::ObjectCmd>("/" + m_namespace + "/" + m_name + "/Command", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/State", 10, &ObjectRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&ObjectRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
@@ -82,7 +85,12 @@ void ObjectRosCom::reset_cmd(){
     }
 }
 
-void ObjectRosCom::sub_cb(ambf_msgs::ObjectCmdConstPtr msg){
-    m_Cmd = *msg;
+//void ObjectRosCom::sub_cb(ambf_msgs::ObjectCmdConstPtr msg){
+//    m_Cmd = *msg;
+//    m_watchDogPtr->acknowledge_wd();
+//}
+
+void ObjectRosCom::sub_cb(ambf_msgs::ObjectStateConstPtr msg){
+    m_State = *msg;
     m_watchDogPtr->acknowledge_wd();
 }

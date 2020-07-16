@@ -44,108 +44,112 @@
 
 
 #include "BaseObject.h"
-#include "ambf_msgs/ActuatorCmd.h"
-#include "ambf_msgs/ActuatorState.h"
-#include "ambf_msgs/CameraState.h"
-#include "ambf_msgs/CameraCmd.h"
-#include "ambf_msgs/LightState.h"
-#include "ambf_msgs/LightCmd.h"
+//#include "ambf_msgs/ActuatorCmd.h"
+//#include "ambf_msgs/ActuatorState.h"
+//#include "ambf_msgs/CameraState.h"
+//#include "ambf_msgs/CameraCmd.h"
+//#include "ambf_msgs/LightState.h"
+//#include "ambf_msgs/LightCmd.h"
 #include "ambf_msgs/ObjectCmd.h"
 #include "ambf_msgs/ObjectState.h"
-#include "ambf_msgs/RigidBodyCmd.h"
-#include "ambf_msgs/RigidBodyState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/VehicleCmd.h"
-#include "ambf_msgs/VehicleState.h"
-#include "ambf_msgs/WorldCmd.h"
-#include "ambf_msgs/WorldState.h"
+//#include "ambf_msgs/RigidBodyCmd.h"
+//#include "ambf_msgs/RigidBodyState.h"
+//#include "ambf_msgs/SensorCmd.h"
+//#include "ambf_msgs/SensorState.h"
+//#include "ambf_msgs/VehicleCmd.h"
+//#include "ambf_msgs/VehicleState.h"
+//#include "ambf_msgs/WorldCmd.h"
+//#include "ambf_msgs/WorldState.h"
 
-template <class T_state, class T_cmd>
-void BaseObject<T_state, T_cmd>::destroy_at(T_state* t_s, T_cmd* t_c) {
-    t_s->~T_state();
-    t_c->~T_cmd();
-}
+//template <class T_state, class T_cmd>
+//void BaseObject<T_state, T_cmd>::destroy_at(T_state* t_s, T_cmd* t_c) {
+//    t_s->~T_state();
+//    t_c->~T_cmd();
+//}
 
 
-template<>
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
+
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
+
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
+
+//template<>
 ///
 /// \brief RosComBase::cleanUp
 ///
-void BaseObject<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
-    RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp();
+///
+
+//BaseObject<ambf_msgs::ObjectCmd, ambf_msgs::ObjectState>::cleanUp(){
+//void RosComBase<ambf_msgs::ObjectCmd, ambf_msgs::ObjectState>::cleanUp();
+//void BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
+//        RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp();
 //    m_pub.shutdown();
 //    m_sub.shutdown();
-}
+//}
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
-    RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-    RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
-        RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp(){
-    RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
 
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
-    RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
-    RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void BaseObject<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
-    RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp();
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-}
+//template<>
+/////
+///// \brief RosComBase::cleanUp
+/////
+//void BaseObject<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
+//    RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp();
+////    m_pub.shutdown();
+////    m_sub.shutdown();
+//}
 

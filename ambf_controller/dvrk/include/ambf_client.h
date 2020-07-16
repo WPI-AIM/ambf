@@ -51,17 +51,17 @@
 #include "World.h"
 #include "BaseObject.h"
 #include "Object.h"
-#include "Light.h"
-#include "RigidBody.h"
+//#include "Light.h"
+//#include "RigidBody.h"
 
 #include<ambf_msgs/WorldCmd.h>
 #include<ambf_msgs/WorldState.h>
 #include<ambf_msgs/ObjectCmd.h>
 #include<ambf_msgs/ObjectState.h>
-#include<ambf_msgs/LightCmd.h>
-#include<ambf_msgs/LightState.h>
-#include<ambf_msgs/RigidBodyCmd.h>
-#include<ambf_msgs/RigidBodyState.h>
+//#include<ambf_msgs/LightCmd.h>
+//#include<ambf_msgs/LightState.h>
+//#include<ambf_msgs/RigidBodyCmd.h>
+//#include<ambf_msgs/RigidBodyState.h>
 
 #include <unordered_map>
 #include <memory>
@@ -90,12 +90,12 @@ public:
     void connect();
     void create_objs_from_rostopics();
 
-    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
-    ambf_client::Object* get_object_handle(std::string name);
-    bool object_cur_position(std::string name, double px, double py, double pz);
-    bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);
-    bool object_cur_force(std::string name, double fx, double fy, double fz);
-    bool object_cur_torque(std::string name, double nx, double ny, double nz);
+//    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
+//    ambf_client::Object* get_object_handle(std::string name);
+//    bool object_cur_position(std::string name, double px, double py, double pz);
+//    bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);
+//    bool object_cur_force(std::string name, double fx, double fy, double fz);
+//    bool object_cur_torque(std::string name, double nx, double ny, double nz);
     void clean_up();
 
 private:
@@ -134,12 +134,12 @@ private:
 
     string get_common_namespace();
 
-    bool object_exists(std::string name);
-    static const int max_obj_size=10;
-    int m_numObjects;
-    std::map<std::string, boost::shared_ptr<ambf_client::Object> > m_objectMap;
-    std::map<std::string, boost::shared_ptr<ambf_client::Object> >::iterator m_objectIt;
-    boost::shared_ptr<ambf_client::Object> m_Objects[max_obj_size];
+//    bool object_exists(std::string name);
+//    static const int max_obj_size=10;
+//    int m_numObjects;
+//    std::map<std::string, boost::shared_ptr<ambf_client::Object> > m_objectMap;
+//    std::map<std::string, boost::shared_ptr<ambf_client::Object> >::iterator m_objectIt;
+//    boost::shared_ptr<ambf_client::Object> m_Objects[max_obj_size];
 };
 
 

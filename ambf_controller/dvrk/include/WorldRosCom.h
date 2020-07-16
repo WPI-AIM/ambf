@@ -73,7 +73,8 @@ private:
 };
 
 
-class WorldRosCom: public RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>{
+//class WorldRosCom: public RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>{
+class WorldRosCom: public RosComBase<ambf_msgs::WorldCmd, ambf_msgs::WorldState>{
 public:
     WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~WorldRosCom();
@@ -85,7 +86,8 @@ protected:
     int m_num_skip_steps;
     int m_skip_steps_ctr;
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::WorldCmdConstPtr msg);
+//    void sub_cb(ambf_msgs::WorldCmdConstPtr msg);
+    void sub_cb(ambf_msgs::WorldStateConstPtr msg);
 };
 
 

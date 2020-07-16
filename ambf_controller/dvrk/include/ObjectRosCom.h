@@ -51,7 +51,7 @@
 #include "ambf_msgs/ObjectCmd.h"
 
 //class ObjectRosCom: public RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
-class ObjectRosCom: public BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
+class ObjectRosCom: public BaseObject<ambf_msgs::ObjectCmd, ambf_msgs::ObjectState>{
 public:
     ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~ObjectRosCom();
@@ -59,7 +59,8 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::ObjectCmdConstPtr msg);
+//    void sub_cb(ambf_msgs::ObjectCmdConstPtr msg);
+    void sub_cb(ambf_msgs::ObjectStateConstPtr msg);
 };
 
 

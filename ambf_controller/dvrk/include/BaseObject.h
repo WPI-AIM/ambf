@@ -10,20 +10,20 @@
 #include "CmdWatchDog.h"
 #include "RosComBase.h"
 
-#include "ambf_msgs/ActuatorCmd.h"
-#include "ambf_msgs/ActuatorState.h"
-#include "ambf_msgs/CameraState.h"
-#include "ambf_msgs/CameraCmd.h"
-#include "ambf_msgs/LightState.h"
-#include "ambf_msgs/LightCmd.h"
+//#include "ambf_msgs/ActuatorCmd.h"
+//#include "ambf_msgs/ActuatorState.h"
+//#include "ambf_msgs/CameraState.h"
+//#include "ambf_msgs/CameraCmd.h"
+//#include "ambf_msgs/LightState.h"
+//#include "ambf_msgs/LightCmd.h"
 #include "ambf_msgs/ObjectCmd.h"
 #include "ambf_msgs/ObjectState.h"
-#include "ambf_msgs/RigidBodyCmd.h"
-#include "ambf_msgs/RigidBodyState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/VehicleCmd.h"
-#include "ambf_msgs/VehicleState.h"
+//#include "ambf_msgs/RigidBodyCmd.h"
+//#include "ambf_msgs/RigidBodyState.h"
+//#include "ambf_msgs/SensorCmd.h"
+//#include "ambf_msgs/SensorState.h"
+//#include "ambf_msgs/VehicleCmd.h"
+//#include "ambf_msgs/VehicleState.h"
 
 class IBaseObject
 {
@@ -33,24 +33,27 @@ public:
 };
 
 //class ObjectRosCom: public BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
-template <class T_state, class T_cmd>
-class BaseObject: public RosComBase<T_state, T_cmd>, public IBaseObject {
+//template <class T_state, class T_cmd>
+template <class T_cmd, class T_state>
+//class BaseObject: public RosComBase<T_state, T_cmd>, public IBaseObject {
+class BaseObject: public RosComBase<T_cmd, T_state>, public IBaseObject {
 public:
     BaseObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out):
-        RosComBase<T_state, T_cmd>(a_name, a_namespace, a_freq_min, a_freq_max, time_out) {
+//        RosComBase<T_state, T_cmd>(a_name, a_namespace, a_freq_min, a_freq_max, time_out) {
+        RosComBase<T_cmd, T_state>(a_name, a_namespace, a_freq_min, a_freq_max, time_out) {
 
         freq_min_ = a_freq_min;
         freq_max_ = a_freq_max;
         time_out_ = time_out;
     }
 
-    void destroy_at(T_state* t_s, T_cmd* t_c);
-//    void destroy_at(T_state* t_s, T_cmd* t_c) {
-//        t_s->~T_state();
-//        t_c->~T_cmd();
-//    }
+//    void destroy_at(T_state* t_s, T_cmd* t_c);
+////    void destroy_at(T_state* t_s, T_cmd* t_c) {
+////        t_s->~T_state();
+////        t_c->~T_cmd();
+////    }
 
-    virtual void cleanUp();
+//    virtual void cleanUp();
     virtual ~BaseObject(void){}
 
 protected:

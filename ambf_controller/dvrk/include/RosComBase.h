@@ -53,7 +53,8 @@
 #include <ros/duration.h>
 #include "CmdWatchDog.h"
 
-template <class T_state, class T_cmd>
+//template <class T_state, class T_cmd>
+template <class T_cmd, class T_state>
 class RosComBase{
 public:
     RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
@@ -77,6 +78,7 @@ public:
     virtual void run_publishers();
     virtual void cleanUp();
     virtual T_cmd get_command(){return m_Cmd;}
+//    constexpr RosComBase(const RosComBase &);
 
     int m_freq_min;
     int m_freq_max;
@@ -93,6 +95,7 @@ protected:
 
     tf::Transform m_trans;
     T_state m_State;
+    T_state m_StatePrev;
     T_cmd m_Cmd;
     T_cmd m_CmdPrev;
 
@@ -102,10 +105,25 @@ protected:
     virtual void reset_cmd() = 0;
 };
 
-template<class T_state, class T_cmd>
-void RosComBase<T_state, T_cmd>::run_publishers(){
+////template<class T_state, class T_cmd>
+//template <class T_cmd, class T_state>
+////void RosComBase<T_state, T_cmd>::run_publishers(){
+//void RosComBase<class T_cmd, class T_state>::run_publishers(){
+//    while(nodePtr->ok()){
+//        m_pub.publish(m_State);
+//        m_custom_queue.callAvailable();
+//        if(m_watchDogPtr->is_wd_expired()){
+//            m_watchDogPtr->consolePrint(m_name);
+//            reset_cmd();
+//        }
+//        m_watchDogPtr->m_ratePtr->sleep();
+//    }
+//}
+
+template <class T_cmd, class T_state>
+void RosComBase<T_cmd, T_state>::run_publishers(){
     while(nodePtr->ok()){
-        m_pub.publish(m_State);
+        m_pub.publish(m_Cmd);
         m_custom_queue.callAvailable();
         if(m_watchDogPtr->is_wd_expired()){
             m_watchDogPtr->consolePrint(m_name);

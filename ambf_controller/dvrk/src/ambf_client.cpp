@@ -46,7 +46,7 @@
 #include <string>
 
 Client::Client(){
-    m_numObjects = 0;
+//    m_numObjects = 0;
 
     int argc = 0;
     char **argv = 0;
@@ -84,10 +84,10 @@ void Client::create_objs_from_rostopics()
                 world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 objects_map_[msg_type][topic_name] = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-            } else if (msg_type == "ambf_msgs/LightState") {
-                objects_map_[msg_type][topic_name] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-                objects_map_[msg_type][topic_name] = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            } else if (msg_type == "ambf_msgs/LightState") {
+//                objects_map_[msg_type][topic_name] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+//                objects_map_[msg_type][topic_name] = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             }
         }
     }
@@ -103,10 +103,11 @@ bool Client::getPublishedTopics(){
         return false;
     }
 
-//    ros_topics_.clear();
+////    ros_topics_.clear();
 
     ROS_INFO("%d", payload.size());
     string trim_topic = "/State";
+    // Also exclude World handler from this map
     for (int i = 0; i < payload.size(); ++i) {
        string topic_name = (string(payload[i][0])).c_str();
        string msg_type = (string(payload[i][1])).c_str();
@@ -114,11 +115,11 @@ bool Client::getPublishedTopics(){
        if(endsWith(topic_name, trim_topic)) {
            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-//           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
+           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
 
            objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
            objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
-//        ros_topics_.emplace_back(ros::master::TopicInfo(string(payload[i][0]), string(payload[i][1])));
+
        }
     }
     return true;
@@ -129,78 +130,78 @@ bool Client::endsWith(const std::string& stack, const std::string& needle) {
     return stack.find(needle, stack.size() - needle.size()) != std::string::npos;
 }
 
-void Client::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-    if(!object_exists(name)){
-        m_objectMap[name] = boost::shared_ptr<ambf_client::Object>(new ambf_client::Object(name, a_namespace, a_min_freq, a_max_freq, time_out));
-    }
-    else{
-        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" ALREADY EXISTS. IGNORING" << std::endl;
-    }
-}
+//void Client::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+//    if(!object_exists(name)){
+//        m_objectMap[name] = boost::shared_ptr<ambf_client::Object>(new ambf_client::Object(name, a_namespace, a_min_freq, a_max_freq, time_out));
+//    }
+//    else{
+//        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" ALREADY EXISTS. IGNORING" << std::endl;
+//    }
+//}
 
-ambf_client::Object* Client::get_object_handle(std::string name){
-    if(object_exists(name)){
-        return m_objectMap[name].get();
-    }
-    else{
-        return NULL;
-    }
-}
+//ambf_client::Object* Client::get_object_handle(std::string name){
+//    if(object_exists(name)){
+//        return m_objectMap[name].get();
+//    }
+//    else{
+//        return NULL;
+//    }
+//}
 
-bool Client::object_exists(std::string name){
-    m_objectIt = m_objectMap.find(name);
-    if(m_objectIt != m_objectMap.end()){
-        return true;
-    }
-    else{
-        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" DOESN'T EXIST" << std::endl;
-        return false;
-    }
-}
+//bool Client::object_exists(std::string name){
+//    m_objectIt = m_objectMap.find(name);
+//    if(m_objectIt != m_objectMap.end()){
+//        return true;
+//    }
+//    else{
+//        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" DOESN'T EXIST" << std::endl;
+//        return false;
+//    }
+//}
 
-bool Client::object_cur_position(std::string name, double px, double py, double pz){
-    if(object_exists(name)){
-        m_objectMap[name]->cur_position(px, py, pz);
-        return true;
-    }
-    else{
-        return false;
-    }
-}
+//bool Client::object_cur_position(std::string name, double px, double py, double pz){
+//    if(object_exists(name)){
+//        m_objectMap[name]->cur_position(px, py, pz);
+//        return true;
+//    }
+//    else{
+//        return false;
+//    }
+//}
 
-bool Client::object_cur_orientation(std::string name, double roll, double pitch, double yaw){
-    if(object_exists(name)){
-        m_objectMap[name]->cur_orientation(roll, pitch, yaw);
-        return true;
-    }
-    else{
-        return false;
-    }
-}
+//bool Client::object_cur_orientation(std::string name, double roll, double pitch, double yaw){
+//    if(object_exists(name)){
+//        m_objectMap[name]->cur_orientation(roll, pitch, yaw);
+//        return true;
+//    }
+//    else{
+//        return false;
+//    }
+//}
 
-bool Client::object_cur_force(std::string name, double fx, double fy, double fz){
-    if(object_exists(name)){
-        m_objectMap[name]->cur_force(fx, fy, fz);
-        return true;
-    }
-    else{
-        return false;
-    }
-}
+//bool Client::object_cur_force(std::string name, double fx, double fy, double fz){
+//    if(object_exists(name)){
+//        m_objectMap[name]->cur_force(fx, fy, fz);
+//        return true;
+//    }
+//    else{
+//        return false;
+//    }
+//}
 
-bool Client::object_cur_torque(std::string name, double nx, double ny, double nz){
-    if(object_exists(name)){
-        m_objectMap[name]->cur_torque(nx, ny, nz);
-        return true;
-    }
-    else{
-        return false;
-    }
-}
+//bool Client::object_cur_torque(std::string name, double nx, double ny, double nz){
+//    if(object_exists(name)){
+//        m_objectMap[name]->cur_torque(nx, ny, nz);
+//        return true;
+//    }
+//    else{
+//        return false;
+//    }
+//}
 
 
 void Client::clean_up() {
-//    ros::spin();
+    ros::spin();
 
 
 
@@ -214,10 +215,10 @@ void Client::clean_up() {
                 world_handle_->~World();
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
-            } else if (msg_type == "ambf_msgs/LightState") {
-                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
-            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
+//            } else if (msg_type == "ambf_msgs/LightState") {
+//                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
+//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+//                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
             }
         }
     }

@@ -55,26 +55,26 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/src/main.cpp )
 
 add_executable (ambf_client    
-        dvrk/include/BaseObject.h
-	dvrk/include/RigidBodyRosCom.h
+	dvrk/include/BaseObject.h
+	#dvrk/include/RigidBodyRosCom.h
 	#dvrk/include/Sensor.h
 	dvrk/include/World.h
 	#dvrk/include/VehicleRosCom.h
 	dvrk/include/ambf_client.h
 	dvrk/include/ObjectRosCom.h
-	dvrk/include/Light.h
+	#dvrk/include/Light.h
 	dvrk/include/WorldRosCom.h
 	#dvrk/include/Vehicle.h
 	dvrk/include/CmdWatchDog.h
 	#dvrk/include/Camera.h
-	dvrk/include/LightRosCom.h
+	#dvrk/include/LightRosCom.h
 	dvrk/include/RosComBase.h
 	#dvrk/include/CameraRosCom.h
 	#dvrk/include/Actuator.h
 	#dvrk/include/SensorRosCom.h
 	dvrk/include/Object.h
 	#dvrk/include/ActuatorRosCom.h
-	dvrk/include/RigidBody.h
+	#dvrk/include/RigidBody.h
 
 	dvrk/src/BaseObject.cpp
 	#dvrk/src/Sensor.cpp
@@ -82,20 +82,21 @@ add_executable (ambf_client
 	#dvrk/src/CameraRosCom.cpp
 	#dvrk/src/VehicleRosCom.cpp
 	dvrk/src/ambf_client.cpp
-	dvrk/src/RigidBodyRosCom.cpp
+	#dvrk/src/RigidBodyRosCom.cpp
 	dvrk/src/WorldRosCom.cpp
 	dvrk/src/World.cpp
 	#dvrk/src/ActuatorRosCom.cpp
 	#dvrk/src/SensorRosCom.cpp
 	dvrk/src/main.cpp
-	dvrk/src/Light.cpp
-	dvrk/src/LightRosCom.cpp
+	#dvrk/src/Light.cpp
+	#dvrk/src/LightRosCom.cpp
 	#dvrk/src/Camera.cpp
-	dvrk/src/RigidBody.cpp
+	#dvrk/src/RigidBody.cpp
 	dvrk/src/RosComBase.cpp
 	dvrk/src/Object.cpp
 	#dvrk/src/Vehicle.cpp
-	dvrk/src/ObjectRosCom.cpp )
+	dvrk/src/ObjectRosCom.cpp 
+	)
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries (ambf_client ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
