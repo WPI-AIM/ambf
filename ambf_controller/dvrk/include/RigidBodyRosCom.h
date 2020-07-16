@@ -51,7 +51,8 @@
 #include "ambf_msgs/RigidBodyCmd.h"
 
 
-class RigidBodyRosCom: public BaseObject<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>{
+//class RigidBodyRosCom: public BaseObject<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>{
+class RigidBodyRosCom: public BaseObject<ambf_msgs::RigidBodyCmd, ambf_msgs::RigidBodyState>{
 public:
     RigidBodyRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~RigidBodyRosCom();
@@ -59,7 +60,8 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::RigidBodyCmdConstPtr msg);
+//    void sub_cb(ambf_msgs::RigidBodyCmdConstPtr msg);
+    void sub_cb(ambf_msgs::RigidBodyStateConstPtr msg);
 };
 
 

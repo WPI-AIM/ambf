@@ -56,10 +56,12 @@ void LightRosCom::init(){
 //    m_namespace = "/ambf/env";
 //    m_name = "lights/light_left";
 
-    m_pub = nodePtr->advertise<ambf_msgs::LightState>("/" + m_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &LightRosCom::sub_cb, this);
+//    m_pub = nodePtr->advertise<ambf_msgs::LightState>("/" + m_namespace + "/" + m_name + "/State", 10);
+//    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &LightRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::LightCmd>("/" + m_namespace + "/" + m_name + "/Command", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/State", 10, &LightRosCom::sub_cb, this);
 
-//    std::cerr << "LightRosCom.cpp - " << m_namespace << m_name << std::endl;
+
 
     m_thread = boost::thread(boost::bind(&LightRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
@@ -73,7 +75,12 @@ LightRosCom::~LightRosCom(){
 void LightRosCom::reset_cmd(){
 }
 
-void LightRosCom::sub_cb(ambf_msgs::LightCmdConstPtr msg){
-    m_Cmd = *msg;
+//void LightRosCom::sub_cb(ambf_msgs::LightCmdConstPtr msg){
+//    m_Cmd = *msg;
+//    m_watchDogPtr->acknowledge_wd();
+//}
+
+void LightRosCom::sub_cb(ambf_msgs::LightStateConstPtr msg){
+    m_State = *msg;
     m_watchDogPtr->acknowledge_wd();
 }

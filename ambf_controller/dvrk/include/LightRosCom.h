@@ -51,7 +51,7 @@
 #include "ambf_msgs/LightCmd.h"
 
 
-class LightRosCom: public BaseObject<ambf_msgs::LightState, ambf_msgs::LightCmd>{
+class LightRosCom: public BaseObject<ambf_msgs::LightCmd, ambf_msgs::LightState>{
 public:
     LightRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~LightRosCom();
@@ -59,7 +59,7 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::LightCmdConstPtr msg);
+    void sub_cb(ambf_msgs::LightStateConstPtr msg);
 };
 
 

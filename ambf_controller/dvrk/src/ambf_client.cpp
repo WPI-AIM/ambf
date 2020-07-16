@@ -84,10 +84,10 @@ void Client::create_objs_from_rostopics()
                 world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 objects_map_[msg_type][topic_name] = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//            } else if (msg_type == "ambf_msgs/LightState") {
-//                objects_map_[msg_type][topic_name] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-//                objects_map_[msg_type][topic_name] = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/LightState") {
+                objects_map_[msg_type][topic_name] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+                objects_map_[msg_type][topic_name] = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             }
         }
     }
@@ -201,7 +201,7 @@ bool Client::endsWith(const std::string& stack, const std::string& needle) {
 
 
 void Client::clean_up() {
-    ros::spin();
+//    ros::spin();
 
 
 
@@ -215,10 +215,10 @@ void Client::clean_up() {
                 world_handle_->~World();
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
-//            } else if (msg_type == "ambf_msgs/LightState") {
-//                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
-//            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-//                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
+            } else if (msg_type == "ambf_msgs/LightState") {
+                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
+            } else if (msg_type == "ambf_msgs/RigidBodyState") {
+                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
             }
         }
     }

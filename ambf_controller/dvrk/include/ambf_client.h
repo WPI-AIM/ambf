@@ -51,17 +51,17 @@
 #include "World.h"
 #include "BaseObject.h"
 #include "Object.h"
-//#include "Light.h"
-//#include "RigidBody.h"
+#include "Light.h"
+#include "RigidBody.h"
 
 #include<ambf_msgs/WorldCmd.h>
 #include<ambf_msgs/WorldState.h>
 #include<ambf_msgs/ObjectCmd.h>
 #include<ambf_msgs/ObjectState.h>
-//#include<ambf_msgs/LightCmd.h>
-//#include<ambf_msgs/LightState.h>
-//#include<ambf_msgs/RigidBodyCmd.h>
-//#include<ambf_msgs/RigidBodyState.h>
+#include<ambf_msgs/LightCmd.h>
+#include<ambf_msgs/LightState.h>
+#include<ambf_msgs/RigidBodyCmd.h>
+#include<ambf_msgs/RigidBodyState.h>
 
 #include <unordered_map>
 #include <memory>

@@ -48,12 +48,12 @@
 //#include "ambf_msgs/ActuatorState.h"
 //#include "ambf_msgs/CameraState.h"
 //#include "ambf_msgs/CameraCmd.h"
-//#include "ambf_msgs/LightState.h"
-//#include "ambf_msgs/LightCmd.h"
+#include "ambf_msgs/LightState.h"
+#include "ambf_msgs/LightCmd.h"
 #include "ambf_msgs/ObjectCmd.h"
 #include "ambf_msgs/ObjectState.h"
-//#include "ambf_msgs/RigidBodyCmd.h"
-//#include "ambf_msgs/RigidBodyState.h"
+#include "ambf_msgs/RigidBodyCmd.h"
+#include "ambf_msgs/RigidBodyState.h"
 //#include "ambf_msgs/SensorCmd.h"
 //#include "ambf_msgs/SensorState.h"
 //#include "ambf_msgs/VehicleCmd.h"
@@ -82,15 +82,15 @@
 //    m_sub.shutdown();
 //}
 
-//template<>
-/////
-///// \brief RosComBase::cleanUp
-/////
-////void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-//void RosComBase<ambf_msgs::LightCmd, ambf_msgs::LightState>::cleanUp(){
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-//}
+template<>
+///
+/// \brief RosComBase::cleanUp
+///
+//void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
+void RosComBase<ambf_msgs::LightCmd, ambf_msgs::LightState>::cleanUp(){
+    m_pub.shutdown();
+    m_sub.shutdown();
+}
 
 template<>
 ///
@@ -102,15 +102,15 @@ void RosComBase<ambf_msgs::ObjectCmd, ambf_msgs::ObjectState>::cleanUp(){
     m_sub.shutdown();
 }
 
-//template<>
-/////
-///// \brief RosComBase::cleanUp
-/////
-////void RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp(){
-//void RosComBase<ambf_msgs::RigidBodyCmd, ambf_msgs::RigidBodyState>::cleanUp(){
-//    m_pub.shutdown();
-//    m_sub.shutdown();
-//}
+template<>
+///
+/// \brief RosComBase::cleanUp
+///
+//void RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp(){
+void RosComBase<ambf_msgs::RigidBodyCmd, ambf_msgs::RigidBodyState>::cleanUp(){
+    m_pub.shutdown();
+    m_sub.shutdown();
+}
 
 
 //template<>
