@@ -1,27 +1,21 @@
-/*897//==============================================================================
+//==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
-
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
     All rights reserved.
-
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions
     are met:
-
     * Redistributions of source code must retain the above copyright
     notice, this list of conditions and the following disclaimer.
-
     * Redistributions in binary form must reproduce the above
     copyright notice, this list of conditions and the following
     disclaimer in the documentation and/or other materials provided
     with the distribution.
-
     * Neither the name of authors nor the names of its contributors may
     be used to endorse or promote products derived from this software
     without specific prior written permission.
-
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
     "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -34,11 +28,9 @@
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
-
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu, schandrasekhar@wpi.edu>
     \author    Adnan Munawar, Shreyas Chandra Sekhar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
@@ -58,8 +50,6 @@ void Client::connect() {
     this->create_objs_from_rostopics();
 
 }
-
-
 
 void Client::create_objs_from_rostopics()
 {
@@ -81,7 +71,7 @@ void Client::create_objs_from_rostopics()
             string topic_name = ptr_->first.c_str();
 
             if(msg_type == "ambf_msgs/WorldState") {
-                world_handle_ = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+                objects_map_[msg_type][topic_name] = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 objects_map_[msg_type][topic_name] = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/LightState") {
@@ -129,6 +119,15 @@ bool Client::getPublishedTopics(){
 bool Client::endsWith(const std::string& stack, const std::string& needle) {
     return stack.find(needle, stack.size() - needle.size()) != std::string::npos;
 }
+
+
+
+//World* Client::get_world_handle() {
+//    return world_handle_;
+//}
+
+
+
 
 //void Client::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 //    if(!object_exists(name)){
@@ -210,9 +209,8 @@ void Client::clean_up() {
 
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
             IBaseObject * handler = ptr_->second;
-
             if(msg_type == "ambf_msgs/WorldState") {
-                world_handle_->~World();
+                (dynamic_cast<WorldRosCom*>(handler))->~WorldRosCom();
             } else if (msg_type == "ambf_msgs/ObjectState") {
                 (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
             } else if (msg_type == "ambf_msgs/LightState") {
