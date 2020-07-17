@@ -3,7 +3,7 @@ FROM tensorflow/tensorflow:1.14.0-gpu-py3
 # setup timezone
 RUN echo 'Etc/UTC' > /etc/timezone && \
     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
-    apt-get update && apt-get install -q -y tzdata && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -q -y tzdata
 
 # install packages
 RUN apt-get update && apt-get install -q -y \

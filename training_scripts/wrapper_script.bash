@@ -21,8 +21,6 @@ set -m
 # Start the first process
 ./roscore.bash &
 
-sleep 3
-
 # Start the second process
 ./launch_ambf.bash &
 
