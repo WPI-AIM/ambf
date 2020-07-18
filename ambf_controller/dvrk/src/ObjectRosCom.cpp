@@ -38,7 +38,6 @@
 
 
 ObjectRosCom::ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
-//ObjectRosCom::ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): BaseObject(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     init();
 }
 

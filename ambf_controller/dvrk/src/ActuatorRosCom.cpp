@@ -44,30 +44,31 @@
 
 #include "ActuatorRosCom.h"
 
-//ActuatorRosCom::ActuatorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): BaseObject(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
-//    init();
-//}
+ActuatorRosCom::ActuatorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+    init();
+}
 
-//void ActuatorRosCom::init(){
-//    m_State.name.data = m_name;
-//    m_State.sim_step = 0;
+void ActuatorRosCom::init(){
+    m_State.name.data = m_name;
+    m_State.sim_step = 0;
 
-//    m_pub = nodePtr->advertise<ambf_msgs::ActuatorState>("/" + m_namespace + "/" + m_name + "/State", 10);
-//    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &ActuatorRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::ActuatorCmd>("/" + m_namespace + "/" + m_name + "/Command", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/State", 10, &ActuatorRosCom::sub_cb, this);
 
-//    m_thread = boost::thread(boost::bind(&ActuatorRosCom::run_publishers, this));
-//    std::cerr << "Thread Joined: " << m_name << std::endl;
-//}
 
-//ActuatorRosCom::~ActuatorRosCom(){
-//    ros::shutdown();
-//    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
-//}
+    m_thread = boost::thread(boost::bind(&ActuatorRosCom::run_publishers, this));
+    std::cerr << "Thread Joined: " << m_name << std::endl;
+}
 
-//void ActuatorRosCom::reset_cmd(){
-//}
+ActuatorRosCom::~ActuatorRosCom(){
+    ros::shutdown();
+    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+}
 
-//void ActuatorRosCom::sub_cb(ambf_msgs::ActuatorCmdConstPtr msg){
-//    m_Cmd = *msg;
-//    m_watchDogPtr->acknowledge_wd();
-//}
+void ActuatorRosCom::reset_cmd(){
+}
+
+void ActuatorRosCom::sub_cb(ambf_msgs::ActuatorStateConstPtr msg){
+    m_State = *msg;
+    m_watchDogPtr->acknowledge_wd();
+}

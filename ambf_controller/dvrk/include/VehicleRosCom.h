@@ -50,7 +50,7 @@
 #include "ambf_msgs/VehicleCmd.h"
 
 
-class VehicleRosCom: public RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>{
+class VehicleRosCom: public RosComBase<ambf_msgs::VehicleCmd, ambf_msgs::VehicleState>{
 public:
     VehicleRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~VehicleRosCom();
@@ -58,7 +58,7 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::VehicleCmdConstPtr msg);
+    void sub_cb(ambf_msgs::VehicleStateConstPtr msg);
 };
 
 

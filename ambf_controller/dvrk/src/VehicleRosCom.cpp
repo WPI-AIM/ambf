@@ -52,8 +52,8 @@ void VehicleRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
 
-    m_pub = nodePtr->advertise<ambf_msgs::VehicleState>("/" + m_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &VehicleRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::VehicleCmd>("/" + m_namespace + "/" + m_name + "/Command", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/State", 10, &VehicleRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&VehicleRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
@@ -78,7 +78,7 @@ void VehicleRosCom::reset_cmd(){
     }
 }
 
-void VehicleRosCom::sub_cb(ambf_msgs::VehicleCmdConstPtr msg){
-    m_Cmd = *msg;
+void VehicleRosCom::sub_cb(ambf_msgs::VehicleStateConstPtr msg){
+    m_State = *msg;
     m_watchDogPtr->acknowledge_wd();
 }

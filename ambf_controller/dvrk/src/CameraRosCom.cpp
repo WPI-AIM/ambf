@@ -52,8 +52,8 @@ void CameraRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
 
-    m_pub = nodePtr->advertise<ambf_msgs::CameraState>("/" + m_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &CameraRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::CameraCmd>("/" + m_namespace + "/" + m_name + "/Command", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/State", 10, &CameraRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&CameraRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
@@ -67,7 +67,7 @@ CameraRosCom::~CameraRosCom(){
 void CameraRosCom::reset_cmd(){
 }
 
-void CameraRosCom::sub_cb(ambf_msgs::CameraCmdConstPtr msg){
-    m_Cmd = *msg;
+void CameraRosCom::sub_cb(ambf_msgs::CameraStateConstPtr msg){
+    m_State = *msg;
     m_watchDogPtr->acknowledge_wd();
 }

@@ -41,12 +41,20 @@
 #include <tf/LinearMath/Transform.h>
 #include<geometry_msgs/WrenchStamped.h>
 
+#include "Actuator.h"
+#include "Camera.h"
 #include "World.h"
 #include "RosComBase.h"
 #include "Object.h"
 #include "Light.h"
 #include "RigidBody.h"
+#include "Sensor.h"
+#include "Vehicle.h"
 
+#include<ambf_msgs/ActuatorCmd.h>
+#include<ambf_msgs/ActuatorState.h>
+#include<ambf_msgs/CameraCmd.h>
+#include<ambf_msgs/CameraState.h>
 #include<ambf_msgs/WorldCmd.h>
 #include<ambf_msgs/WorldState.h>
 #include<ambf_msgs/ObjectCmd.h>
@@ -55,6 +63,10 @@
 #include<ambf_msgs/LightState.h>
 #include<ambf_msgs/RigidBodyCmd.h>
 #include<ambf_msgs/RigidBodyState.h>
+#include<ambf_msgs/SensorCmd.h>
+#include<ambf_msgs/SensorState.h>
+#include<ambf_msgs/VehicleCmd.h>
+#include<ambf_msgs/VehicleState.h>
 
 #include <unordered_map>
 #include <memory>
@@ -68,10 +80,14 @@ using namespace ambf_client;
 //------------------------------------------------------------------------------
 typedef IBaseObject* iBaseObjectPtr;
 typedef std::unordered_map<string, iBaseObjectPtr> iBaseObjectMap;
+typedef Actuator* actuatorPtr;
+typedef Camera* cameraPtr;
 typedef World* worldPtr;
 typedef Object* objectPtr;
 typedef Light* lightPtr;
 typedef RigidBody* rigidBodyPtr;
+typedef Sensor* sensorPtr;
+typedef Vehicle* vehiclePtr;
 //------------------------------------------------------------------------------
 
 struct Observation{
@@ -90,10 +106,14 @@ public:
 
     void connect();
     void createObjsFromRostopics();
+    actuatorPtr getAActuator(std::string a_name, bool suppress_warning);
+    cameraPtr getACamera(std::string a_name, bool suppress_warning);
     worldPtr getAWorld(std::string a_name, bool suppress_warning);
     objectPtr getAObject(std::string a_name, bool suppress_warning);
     lightPtr getALight(std::string a_name, bool suppress_warning);
     rigidBodyPtr getARigidBody(std::string a_name, bool suppress_warning);
+    sensorPtr getASensor(std::string a_name, bool suppress_warning);
+    vehiclePtr getAVehicle(std::string a_name, bool suppress_warning);
 
 //    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
 //    ambf_client::Object* get_object_handle(std::string name);

@@ -45,14 +45,11 @@
 #ifndef ACTUATORROSCOM_H
 #define ACTUATORROSCOM_H
 
-//#include "RosComBase.h"
-#include "BaseObject.h"
+#include "RosComBase.h"
 #include "ambf_msgs/ActuatorState.h"
 #include "ambf_msgs/ActuatorCmd.h"
 
-
-//class ActuatorRosCom: public BaseObject<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>{
-class ActuatorRosCom: public BaseObject<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
+class ActuatorRosCom: public RosComBase<ambf_msgs::ActuatorCmd, ambf_msgs::ActuatorState>{
 public:
     ActuatorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~ActuatorRosCom();
@@ -60,7 +57,7 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::ActuatorCmdConstPtr msg);
+    void sub_cb(ambf_msgs::ActuatorStateConstPtr msg);
 };
 
 

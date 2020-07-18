@@ -50,7 +50,7 @@
 #include "ambf_msgs/CameraCmd.h"
 
 
-class CameraRosCom: public RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>{
+class CameraRosCom: public RosComBase<ambf_msgs::CameraCmd, ambf_msgs::CameraState>{
 public:
     CameraRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~CameraRosCom();
@@ -58,7 +58,7 @@ public:
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::CameraCmdConstPtr msg);
+    void sub_cb(ambf_msgs::CameraStateConstPtr msg);
 };
 
 

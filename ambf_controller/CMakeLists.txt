@@ -58,11 +58,11 @@ add_executable (ambf_client
 	dvrk/include/CmdWatchDog.h
 	dvrk/include/RosComBase.h
 
-	#dvrk/include/ActuatorRosCom.h
-	#dvrk/include/Actuator.h
+	dvrk/include/ActuatorRosCom.h
+	dvrk/include/Actuator.h
 
-	#dvrk/include/Camera.h
-	#dvrk/include/CameraRosCom.h
+	dvrk/include/Camera.h
+	dvrk/include/CameraRosCom.h
 
 	dvrk/include/LightRosCom.h
 	dvrk/include/Light.h
@@ -73,11 +73,11 @@ add_executable (ambf_client
 	dvrk/include/RigidBodyRosCom.h
 	dvrk/include/RigidBody.h
 
-	#dvrk/include/SensorRosCom.h
-	#dvrk/include/Sensor.h
+	dvrk/include/SensorRosCom.h
+	dvrk/include/Sensor.h
 
-	#dvrk/include/VehicleRosCom.h
-	#dvrk/include/Vehicle.h
+	dvrk/include/VehicleRosCom.h
+	dvrk/include/Vehicle.h
 
 	dvrk/include/WorldRosCom.h
 	dvrk/include/World.h
@@ -88,11 +88,11 @@ add_executable (ambf_client
 
 	dvrk/src/RosComBase.cpp
 
-	#dvrk/src/ActuatorRosCom.cpp
-	#dvrk/src/Actuator.cpp
+	dvrk/src/ActuatorRosCom.cpp
+	dvrk/src/Actuator.cpp
 
-	#dvrk/src/CameraRosCom.cpp
-	#dvrk/src/Camera.cpp
+	dvrk/src/CameraRosCom.cpp
+	dvrk/src/Camera.cpp
 
 	dvrk/src/LightRosCom.cpp
 	dvrk/src/Light.cpp
@@ -103,11 +103,11 @@ add_executable (ambf_client
 	dvrk/src/RigidBodyRosCom.cpp
 	dvrk/src/RigidBody.cpp
 
-	#dvrk/src/SensorRosCom.cpp
-	#dvrk/src/Sensor.cpp
+	dvrk/src/SensorRosCom.cpp
+	dvrk/src/Sensor.cpp
 
-	#dvrk/src/VehicleRosCom.cpp
-	#dvrk/src/Vehicle.cpp
+	dvrk/src/VehicleRosCom.cpp
+	dvrk/src/Vehicle.cpp
 
 	dvrk/src/WorldRosCom.cpp
 	dvrk/src/World.cpp
