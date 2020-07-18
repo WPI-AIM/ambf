@@ -12,3 +12,4 @@ string[] children_names
 string[] joint_names
 float32[] joint_positions
 float32[] joint_velocities
+float32[] joint_efforts

@@ -76,6 +76,7 @@ public:
     inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
     void set_joint_positions(std::vector<float> joint_positions);
     void set_joint_velocities(std::vector<float> joint_velocities);
+    void set_joint_efforts(std::vector<float> joint_efforts);
 };
 }
 

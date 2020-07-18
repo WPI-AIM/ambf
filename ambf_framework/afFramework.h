@@ -601,6 +601,7 @@ public:
     // Add sensor to this body
     bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
+    // Enable shader program if defined
     virtual void enableShaderProgram();
 
     // Get the sensors for this body
@@ -611,6 +612,12 @@ public:
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
+
+    // Estimated Force acting on body
+    btVector3 m_estimatedForce;
+
+    // Estimated Torque acting on body
+    btVector3 m_estimatedTorque;
 
 protected:
 
@@ -627,10 +634,10 @@ protected:
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _lin_gains_computed = false;
+    bool m_lin_gains_computed = false;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _ang_gains_computed = false;
+    bool m_ang_gains_computed = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -641,14 +648,14 @@ protected:
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
 
-    // Function of compute body's controllers based on lumped masses
-    void computeControllerGains();
-
     // Sensors for this Rigid Body
     afSensorVec m_afSensors;
 
     // Actuators for this Rigid Body
     afActuatorVec m_afActuators;
+
+    // Function of compute body's controllers based on lumped masses
+    void computeControllerGains();
 
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
@@ -676,6 +683,9 @@ protected:
 
     // Update the joint velocitess of children in afObject State Message
     virtual void afObjectSetJointVelocities();
+
+    // Update the joint efforts of children in afObject State Message
+    virtual void afObjectSetJointEfforts();
 
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
@@ -715,6 +725,9 @@ private:
     // Velocities of all child joints
     std::vector<float> m_joint_velocities;
 
+    // Efforts of all child joints
+    std::vector<float> m_joint_efforts;
+
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
 
@@ -724,9 +737,6 @@ private:
 
     // Last Position Error
     btVector3 m_dpos;
-
-    // Last torque or Rotational Error with Kp multiplied
-    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
@@ -868,6 +878,7 @@ class afJoint{
     friend class afRigidBody;
     friend class afGripperLink;
     friend class afMultiBody;
+    friend class afWorld;
 
 public:
 
@@ -908,6 +919,9 @@ public:
     // Get the velocity of this joint
     double getVelocity();
 
+    // Get the effort of this joint
+    double getEffort();
+
     // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
@@ -917,6 +931,14 @@ public:
     std::string getName(){return m_name;}
 
     bool isPassive(){return m_passive;}
+
+    bool isFeedBackEnabled(){return m_feedbackEnabled;}
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for Joint
+    void setFrameSize(double size){}
 
 protected:
 
@@ -930,7 +952,11 @@ protected:
     bool m_enableActuator;
     double m_lowerLimit, m_upperLimit;
     double m_jointOffset;
-    btRigidBody *m_rbodyA, *m_rbodyB;
+
+    // Store parent and child afRigidBody to prevent lookups.
+    afRigidBodyPtr m_afParentBody;
+    afRigidBodyPtr m_afChildBody;
+
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
 
@@ -941,9 +967,18 @@ protected:
     // for communication purposess.
     bool m_passive = false;
 
+    // Wrench Feedback information from the joint
+    bool m_feedbackEnabled = false;
+
+    // Bullet Joint Feedback Ptr
+    btJointFeedback* m_feedback;
+
 protected:
 
     btTypedConstraint *m_btConstraint;
+
+    // The estimated Effort for this joint if its a single DOF joint.
+    double m_estimatedEffort = 0.0;
 
 private:
     // Add these two pointers for faster access to constraint internals
@@ -960,6 +995,7 @@ private:
     int m_jpSize = 2;
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
+
 };
 
 
@@ -1652,7 +1688,7 @@ public:
 
     double computeStepSize(bool adjust_intetration_steps = false);
 
-    GLFWwindow* m_mainWindow;
+    void estimateBodyWrenches();
 
     //! This method updates the simulation over a time interval.
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
@@ -1779,7 +1815,9 @@ public:
 
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
     bool loadADF(std::string a_adf_filepath, bool enable_comm);
+
     bool loadADF(int i, bool enable_comm);
+
     void loadAllADFs(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
@@ -1788,9 +1826,11 @@ public:
 
     void removePickingConstraint();
 
+    GLFWwindow* m_mainWindow;
+
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
-    afRigidBodyPtr m_lastPickedBody;
+    afRigidBodyPtr m_lastPickedBody=0;
     cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
     cMaterial m_pickColor; // The color to be applied to the picked body
     class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
@@ -1906,6 +1946,13 @@ public:
     // with most children. This method is similar to the corresponding afWorld
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
+
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for MB
+    void setFrameSize(double size){}
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;

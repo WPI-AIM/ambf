@@ -63,15 +63,24 @@ class ObjectControl:
         self.obj_handle = self.client.get_obj_handle(obj_name)
         time.sleep(0.3)
 
+        if self.obj_handle.object_type == 'RIGID_BODY':
+            self._wrench_supported = True
+            self._pose_supported = True
+            self._twist_supported = True
+        else:
+            self._wrench_supported = False
+            self._pose_supported = True
+            self._twist_supported = False
+
         self._ctrl_c_space = c_space_ctrl
         self._ctrl_j_space = j_space_ctrl
 
-        if self._ctrl_c_space:
+        if self._ctrl_c_space is True:
             self.obj_gui = ObjectGUI(obj_name, initial_xyz, initial_rpy, range_xyz, range_rpy, resolution)
 
         self._n_jnts = 0
 
-        if self._ctrl_j_space:
+        if self._ctrl_j_space is True:
             jnt_names = self.obj_handle.get_joint_names()
             self._n_jnts = len(jnt_names)
             self.jnt_gui = JointGUI(obj_name, self._n_jnts, jnt_names)
@@ -79,21 +88,30 @@ class ObjectControl:
     def run(self):
         while not rospy.is_shutdown():
 
-            if self._ctrl_c_space:
+            if self._ctrl_c_space is True:
                 self.obj_gui.App.update()
+                px = self.obj_gui.px * self.obj_gui.get_px_scale()
+                py = self.obj_gui.py * self.obj_gui.get_py_scale()
+                pz = self.obj_gui.pz * self.obj_gui.get_pz_scale()
+                rx = self.obj_gui.rx * self.obj_gui.get_rx_scale()
+                ry = self.obj_gui.ry * self.obj_gui.get_ry_scale()
+                rz = self.obj_gui.rz * self.obj_gui.get_rz_scale()
                 if self.obj_gui.cartesian_mode == 0:
-                    self.obj_handle.set_force(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_torque(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                    if self._wrench_supported:
+                        self.obj_handle.set_force(px, py, pz)
+                        self.obj_handle.set_torque(rx, ry, rz)
                 elif self.obj_gui.cartesian_mode == 1:
-                    self.obj_handle.set_pos(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_rpy(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                    if self._pose_supported:
+                        self.obj_handle.set_pos(px, py, pz)
+                        self.obj_handle.set_rpy(rx, ry, rz)
                 elif self.obj_gui.cartesian_mode == 2:
-                    self.obj_handle.set_linear_vel(self.obj_gui.x, self.obj_gui.y, self.obj_gui.z)
-                    self.obj_handle.set_angular_vel(self.obj_gui.ro, self.obj_gui.pi, self.obj_gui.ya)
+                    if self._twist_supported:
+                        self.obj_handle.set_linear_vel(px, py, pz)
+                        self.obj_handle.set_angular_vel(rx, ry, rz)
                 else:
                     print('CANNOT UNDERSTAND CARTESIAN CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
-            if self._ctrl_j_space:
+            if self._ctrl_j_space is True:
                 self.jnt_gui.App.update()
                 for i in range(self._n_jnts):
                     try:
@@ -119,9 +137,9 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('-o', action='store', dest='obj_name', help='Specify AMBF Obj Name')
     parser.add_argument('-c', action='store', dest='enable_cartesian_control', help='Enable Control of Cartesian Space',
-                        default=False)
+                        default='False')
     parser.add_argument('-j', action='store', dest='enable_joint_control', help='Enable Control of Joint Space',
-                        default=True)
+                        default='True')
     parser.add_argument('-a', action='store', dest='client_name', help='Client Name',
                         default=None)
     parser.add_argument('--ixyz', action='store', dest='initial_xyz', help='Initial XYZ',
@@ -141,14 +159,30 @@ def main():
 
     initial_xyz = [float(f) for f in parsed_args.initial_xyz.split(',')]
     initial_rpy = [float(f) for f in parsed_args.initial_rpy.split(',')]
+    ec = parsed_args.enable_cartesian_control
+    if ec.lower() in ['true', '1', 't']:
+        enable_c_ctrl = True
+    elif ec.lower() in ['false', '0', 'f']:
+        enable_c_ctrl = False
+    else:
+        enable_c_ctrl = False
+
+    ej = parsed_args.enable_joint_control
+    if ej.lower() in ['true', '1', 't']:
+        enable_j_ctrl = True
+    elif ej.lower() in ['false', '0', 'f']:
+        enable_j_ctrl = False
+    else:
+        enable_j_ctrl = False
+
     range_xyz = float(parsed_args.range_xyz)
     range_rpy = float(parsed_args.range_rpy)
     resolution = float(parsed_args.resolution)
 
     oc = ObjectControl(parsed_args.obj_name,
                        parsed_args.client_name,
-                       parsed_args.enable_cartesian_control,
-                       parsed_args.enable_joint_control,
+                       enable_c_ctrl,
+                       enable_j_ctrl,
                        initial_xyz,
                        initial_rpy,
                        range_xyz,
