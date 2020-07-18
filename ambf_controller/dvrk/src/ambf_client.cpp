@@ -47,11 +47,11 @@ Client::Client(){
 
 
 void Client::connect() {
-    this->create_objs_from_rostopics();
+    this->createObjsFromRostopics();
 
 }
 
-void Client::create_objs_from_rostopics()
+void Client::createObjsFromRostopics()
 {
     this->getPublishedTopics();
 
@@ -84,6 +84,66 @@ void Client::create_objs_from_rostopics()
 
 }
 
+/////
+///// \brief World::getAWorld
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+worldPtr Client::getAWorld(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/WorldState";
+    if(!checkMessageType(msg_type)) return NULL;
+
+    return dynamic_cast<worldPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
+
+
+/////
+///// \brief Object::getAObject
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+objectPtr Client::getAObject(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/ObjectState";
+    if(!checkMessageType(msg_type)) return NULL;
+    return dynamic_cast<objectPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
+
+/////
+///// \brief Object::getAFLight
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+lightPtr Client::getALight(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/LightState";
+    if(!checkMessageType(msg_type)) return NULL;
+    return dynamic_cast<lightPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
+
+/////
+///// \brief Object::getRightBody
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+rigidBodyPtr Client::getARigidBody(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/RigidBodyState";
+    if(!checkMessageType(msg_type)) return NULL;
+    return dynamic_cast<rigidBodyPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
+
+bool Client::checkMessageType(std::string msg_type){
+    itr_ = objects_map_.find (msg_type);
+    if ( itr_ == objects_map_.end() ) {
+        ROS_INFO("Object type not found");
+        return false;
+    }
+    ROS_INFO("Object type found");
+    return true;
+}
+
 bool Client::getPublishedTopics(){
     XmlRpc::XmlRpcValue args, result, payload;
     args[0] = ros::this_node::getName();
@@ -97,7 +157,6 @@ bool Client::getPublishedTopics(){
 
     ROS_INFO("%d", payload.size());
     string trim_topic = "/State";
-    // Also exclude World handler from this map
     for (int i = 0; i < payload.size(); ++i) {
        string topic_name = (string(payload[i][0])).c_str();
        string msg_type = (string(payload[i][1])).c_str();
@@ -119,6 +178,57 @@ bool Client::getPublishedTopics(){
 bool Client::endsWith(const std::string& stack, const std::string& needle) {
     return stack.find(needle, stack.size() - needle.size()) != std::string::npos;
 }
+
+template <typename T, typename TMap>
+///
+/// \brief IBaseObject::getObject
+/// \param a_name
+/// \param map
+/// \param suppress_warning
+/// \return
+///
+T Client::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
+    if (a_map->find(a_name) != a_map->end()){
+        return ((*a_map)[a_name]);
+    }
+    // We didn't find the object using the full name, try checking if the name is a substring of the fully qualified name
+    int matching_obj_count = 0;
+    std::vector<std::string> matching_obj_names;
+    T objHandle;
+    typename TMap::iterator oIt = a_map->begin();
+    for (; oIt != a_map->end() ; ++oIt){
+        if (oIt->first.find(a_name) != std::string::npos){
+            matching_obj_count++;
+            matching_obj_names.push_back(oIt->first);
+            objHandle = oIt->second;
+        }
+    }
+
+    if (matching_obj_count == 1){
+        // If only one object is found, return that object
+        return objHandle;
+    }
+    else if(matching_obj_count > 1){
+        std::cerr << "WARNING: MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        for (int i = 0 ; i < matching_obj_names.size() ; i++){
+            std::cerr << "\t" << i << ") " << matching_obj_names[i] << std::endl;
+        }
+        return NULL;
+    }
+    else{
+        if (!suppress_warning){
+            std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\"\n";
+
+            std::cerr <<"Existing OBJECTS in Map: " << a_map->size() << std::endl;
+            typename TMap::iterator oIt = a_map->begin();
+            for (; oIt != a_map->end() ; ++oIt){
+                std::cerr << oIt->first << std::endl;
+            }
+        }
+        return NULL;
+    }
+}
+
 
 
 
@@ -199,7 +309,7 @@ bool Client::endsWith(const std::string& stack, const std::string& needle) {
 //}
 
 
-void Client::clean_up() {
+void Client::cleanUp() {
 //    ros::spin();
 
 

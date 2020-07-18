@@ -42,7 +42,6 @@
 #include<geometry_msgs/WrenchStamped.h>
 
 #include "World.h"
-//#include "BaseObject.h"
 #include "RosComBase.h"
 #include "Object.h"
 #include "Light.h"
@@ -66,6 +65,14 @@
 using namespace std;
 using namespace ambf_client;
 
+//------------------------------------------------------------------------------
+typedef IBaseObject* iBaseObjectPtr;
+typedef std::unordered_map<string, iBaseObjectPtr> iBaseObjectMap;
+typedef World* worldPtr;
+typedef Object* objectPtr;
+typedef Light* lightPtr;
+typedef RigidBody* rigidBodyPtr;
+//------------------------------------------------------------------------------
 
 struct Observation{
 public:
@@ -82,7 +89,11 @@ public:
     ~Client(void);
 
     void connect();
-    void create_objs_from_rostopics();
+    void createObjsFromRostopics();
+    worldPtr getAWorld(std::string a_name, bool suppress_warning);
+    objectPtr getAObject(std::string a_name, bool suppress_warning);
+    lightPtr getALight(std::string a_name, bool suppress_warning);
+    rigidBodyPtr getARigidBody(std::string a_name, bool suppress_warning);
 
 //    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
 //    ambf_client::Object* get_object_handle(std::string name);
@@ -90,13 +101,14 @@ public:
 //    bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);
 //    bool object_cur_force(std::string name, double fx, double fy, double fz);
 //    bool object_cur_torque(std::string name, double nx, double ny, double nz);
-    void clean_up();
+    void cleanUp();
 
 private:
     ros::master::V_TopicInfo ros_topics_;
     std::unordered_map<string, std::unordered_map<string, IBaseObject *> > objects_map_;
     std::unordered_map<string, std::unordered_map<string, IBaseObject *> >::iterator itr_;
     std::unordered_map<string, IBaseObject *>::iterator ptr_;
+
 
     float rate_ = 1000;
     string world_name_ = "";
@@ -115,7 +127,12 @@ private:
     void refresh();
     void start();
 
-    string get_common_namespace();
+    string getCommonNamespace();
+
+    template <typename T, typename TMap>
+    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+    bool checkMessageType(std::string msg_type);
+
 //    World* get_world_handle();
 //    bool object_exists(std::string name);
 //    static const int max_obj_size=10;

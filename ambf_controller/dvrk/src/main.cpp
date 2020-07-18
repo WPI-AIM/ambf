@@ -41,6 +41,10 @@ int main(int argc, char* argv[])
 {
     Client client;
     client.connect();
-    client.clean_up();
+
+    std::string a_name = "World";
+    worldPtr world_handler = client.getAWorld(a_name, true);
+
+    client.cleanUp();
 	return 0;
 }

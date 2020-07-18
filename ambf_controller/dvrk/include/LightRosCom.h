@@ -37,7 +37,6 @@
 #ifndef LIGHTROSCOM_H
 #define LIGHTROSCOM_H
 
-//#include "BaseObject.h"
 #include "RosComBase.h"
 #include "ambf_msgs/LightState.h"
 #include "ambf_msgs/LightCmd.h"
