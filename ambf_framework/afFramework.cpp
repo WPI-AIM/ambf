@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,12 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \courtesy: Dejaime Antônio de Oliveira Neto at https://www.gamedev.net/profile/187867-dejaime/ for initial direction
-    \motivation: https://www.gamedev.net/articles/programming/engines-and-middleware/yaml-basics-and-parsing-with-yaml-cpp-r3508/
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
@@ -3827,7 +3824,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         if(jointMaxMotorImpulse.IsDefined()){
             m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            m_slider->setMaxLinMotorForce(m_controller.max_impulse);
+            // Ugly hack, divide by (default) fixed timestep to max linear motor force
+            // since m_slider does have a max impulse setting method.
+            m_slider->setMaxLinMotorForce(m_controller.max_impulse / 0.001);
         }
         else{
             // Default to 1000.0
@@ -7286,7 +7285,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                                                         m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
                                                         sensorPtr->getMinPublishFrequency(),
                                                         sensorPtr->getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
                         sensorPtr->m_afSensorCommPtr->set_type(sensor_type);
+#endif
 //                    }
                 }
             }
@@ -7324,7 +7325,9 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                                                         m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
                                                         actuatorPtr->getMinPublishFrequency(),
                                                         actuatorPtr->getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
                         actuatorPtr->m_afActuatorCommPtr->set_type(actuator_type);
+#endif
 //                    }
                 }
             }

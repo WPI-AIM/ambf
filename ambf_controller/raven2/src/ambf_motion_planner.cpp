@@ -1,8 +1,8 @@
 //===========================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -37,7 +37,7 @@
 
     \author:    Melody Su
     \date:      April, 2019
-    \version:   $
+    \version:   1.0$
 */
 //===========================================================================
 
@@ -75,7 +75,7 @@ AMBFRavenPlanner::~AMBFRavenPlanner()
  *
  * @param[in]  joint    The joint   (length 7)
  * @param      dhvalue  The dhvalue (length 6)
- * @param[in]  arm      The arm  
+ * @param[in]  arm      The arm
  *
  * @return     success
  */
@@ -96,8 +96,8 @@ bool AMBFRavenPlanner::joint_to_dhvalue(vector<float> joint, vector<float>& dhva
 			{
 				if(arm == 0)
 					dhvalue[i] =  (joint[i] - joint[i+1]);  // red(left) - black(right)
-				else 
-					dhvalue[i] = -(joint[i] - joint[i+1]);  // black(left) - red(right)		
+				else
+					dhvalue[i] = -(joint[i] - joint[i+1]);  // black(left) - red(right)
 			}
 			else
 				dhvalue[i] = joint[i];
@@ -136,7 +136,7 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 		if(i != 2)
 		{
 			if(i == 5)
-			{	
+			{
 				if(arm == 0)
 				{
 					joint[i+1] =  (-dhvalue[i] + gangle) / 2;  // black (right)
@@ -147,7 +147,7 @@ bool AMBFRavenPlanner::dhvalue_to_joint(vector<float> dhvalue, vector<float>& jo
 					joint[i] =    (-dhvalue[i] + gangle) / 2; // red (right)
 					joint[i+1] =  (dhvalue[i] + gangle) / 2;  // black (left)
 				}
-				
+
 			}
 			else
 				joint[i] = dhvalue[i];
@@ -207,7 +207,7 @@ bool AMBFRavenPlanner::check_incr_safety(vector<float> curr_raw, vector<float>& 
 			else
 			{
 				next_jp[i] = curr_jp[i] - min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_pos_incr);
-			}		
+			}
 		}
 		else
 		{
@@ -218,7 +218,7 @@ bool AMBFRavenPlanner::check_incr_safety(vector<float> curr_raw, vector<float>& 
 			else
 			{
 				next_jp[i] = curr_jp[i] - min(fabs(next_jp[i]-curr_jp[i]),AMBFDef::safe_ori_incr);
-			}		
+			}
 		}
 
 	}
@@ -293,7 +293,7 @@ bool AMBFRavenPlanner::fwd_kinematics(int arm, vector<float> input_jp, tf::Trans
 
 
 /**
- * @brief      computes the accumulative multiplication of homogeneous matrices 
+ * @brief      computes the accumulative multiplication of homogeneous matrices
  *             under the dh convension from frame a to frame b.
  *
  * @param[in]  a         start frame
@@ -305,20 +305,20 @@ bool AMBFRavenPlanner::fwd_kinematics(int arm, vector<float> input_jp, tf::Trans
  *
  * @return     The resultant transformation matrix
  */
-tf::Transform AMBFRavenPlanner::fwd_trans(int a, int b, vector<float> dh_alpha, vector<float> dh_theta, vector<float> dh_a, vector<float> dh_d) 
+tf::Transform AMBFRavenPlanner::fwd_trans(int a, int b, vector<float> dh_alpha, vector<float> dh_theta, vector<float> dh_a, vector<float> dh_d)
 {
-	if ((b <= a) || b == 0) 
+	if ((b <= a) || b == 0)
 		ROS_ERROR("Invalid start/end indices.");
 
-	double xx = cos(dh_theta[a]), 
-	       xy = -sin(dh_theta[a]), 
+	double xx = cos(dh_theta[a]),
+	       xy = -sin(dh_theta[a]),
 	       xz = 0;
 
-	double yx = sin(dh_theta[a]) * cos(dh_alpha[a]), 
+	double yx = sin(dh_theta[a]) * cos(dh_alpha[a]),
 	       yy = cos(dh_theta[a]) * cos(dh_alpha[a]),
 	       yz = -sin(dh_alpha[a]);
 
-	double zx = sin(dh_theta[a]) * sin(dh_alpha[a]), 
+	double zx = sin(dh_theta[a]) * sin(dh_alpha[a]),
 	       zy = cos(dh_theta[a]) * sin(dh_alpha[a]),
 	       zz = cos(dh_alpha[a]);
 
@@ -331,7 +331,7 @@ tf::Transform AMBFRavenPlanner::fwd_trans(int a, int b, vector<float> dh_alpha, 
 	xf.setOrigin(tf::Vector3(px, py, pz));
 
 	// recursively find transforms for following links
-	if (b > a + 1) 
+	if (b > a + 1)
 		xf *= fwd_trans(a + 1, b, dh_alpha, dh_theta, dh_a, dh_d);
 
 	return xf;
@@ -343,7 +343,7 @@ tf::Transform AMBFRavenPlanner::fwd_trans(int a, int b, vector<float> dh_alpha, 
  *
  * @return     success
  */
-bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float input_gangle, vector<float>& output_jp)	
+bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float input_gangle, vector<float>& output_jp)
 {
 	bool success = false;
 
@@ -365,7 +365,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 		dh_d[i] = AMBFDef::raven_dh_d[arm][i];
 	}
 
-	for (int i = 0; i < AMBFDef::raven_iksols; i++) 
+	for (int i = 0; i < AMBFDef::raven_iksols; i++)
 	{
 		iksol[i] = AMBFDef::zero_joints;
 		ikcheck[i] = true;
@@ -377,19 +377,19 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 	tf::Vector3 p05[8];
 
 	p6rcm[2] = 0;  // take projection onto x-y plane
-	for (int i = 0; i < 2; i++) 
+	for (int i = 0; i < 2; i++)
 	{
 		tf::Vector3 p65 = (-1 + 2 * i) * AMBFDef::raven_ikin_param [5] * p6rcm.normalize();
 		p05[4 * i] = p05[4 * i + 1] = p05[4 * i + 2] = p05[4 * i + 3] = xf * p65;
 	}
 
 	//  Step 2, compute displacement of prismatic joint d3
-	for (int i = 0; i < AMBFDef::raven_iksols/4; i++) 
+	for (int i = 0; i < AMBFDef::raven_iksols/4; i++)
 	{
 		float insertion = 0;
-		insertion += p05[4 * i].length(); 
+		insertion += p05[4 * i].length();
 
-		if (insertion <= AMBFDef::raven_ikin_param[5]) 
+		if (insertion <= AMBFDef::raven_ikin_param[5])
 		{
 		  ROS_ERROR("WARNING: Raven mechanism at RCM singularity (Lw: %f, ins: %f). IK failing.",
 		            AMBFDef::raven_ikin_param[5], insertion);
@@ -421,11 +421,11 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 		else if (cth2 < -1 && cth2 > -1 - Eps)
 		  cth2 = -1;
 
-		if (cth2 > 1 || cth2 < -1) 
+		if (cth2 > 1 || cth2 < -1)
 		{
 		  ikcheck[i] = ikcheck[i + 1] = false;
-		} 
-		else 
+		}
+		else
 		{
 		  iksol[i][1] = acos(cth2);
 		  iksol[i + 1][1] = -acos(cth2);
@@ -433,7 +433,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 	}
 
 	//  Step 4: Compute theta 1
-	for (int i = 0; i < AMBFDef::raven_iksols; i++) 
+	for (int i = 0; i < AMBFDef::raven_iksols; i++)
 	{
 		if (ikcheck[i] == false) continue;
 
@@ -449,9 +449,9 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 		BB2 = cth2 * AMBFDef::raven_ikin_param[1]*AMBFDef::raven_ikin_param[2]
 		      - AMBFDef::raven_ikin_param[0]*AMBFDef::raven_ikin_param[3];
 
-		if (arm == 0) 
+		if (arm == 0)
 		  Bmx.setValue(BB1, BB2, 0, -BB2, BB1, 0, 0, 0, 1);
-		else 
+		else
 		  Bmx.setValue(BB1, BB2, 0,  BB2, -BB1, 0, 0, 0, 1);
 
 		tf::Vector3 scth1 = Bmx.inverse() * xyp05 * (1 / d);
@@ -459,7 +459,7 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 	}
 
 	//  Step 5: get theta 4, 5, 6
-	for (int i = 0; i < AMBFDef::raven_iksols; i++) 
+	for (int i = 0; i < AMBFDef::raven_iksols; i++)
 	{
 		if (ikcheck[i] == false) continue;
 
@@ -476,12 +476,12 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 
 		// Compute theta 4:
 		float c4, s4;
-		if (fabs(c5) > Eps) 
+		if (fabs(c5) > Eps)
 		{
 			c4 = T36.getOrigin()[0] / (AMBFDef::raven_ikin_param[5] * c5);
 			s4 = T36.getOrigin()[1] / (AMBFDef::raven_ikin_param[5] * c5);
-		} 
-		else 
+		}
+		else
 		{
 			c4 = T36.getBasis()[0][2] / s5;
 			s4 = T36.getBasis()[1][2] / s5;
@@ -493,12 +493,12 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 
 		// Compute theta 6:
 		float s6, c6;
-		if (fabs(s5) > Eps) 
+		if (fabs(s5) > Eps)
 		{
 			c6 = T36.getBasis()[2][0] / s5;
 			s6 = -T36.getBasis()[2][1] / s5;
-		} 
-		else 
+		}
+		else
 		{
 			dh_theta[3] = iksol[i][3];
 			dh_theta[4] = iksol[i][4];
@@ -521,16 +521,16 @@ bool AMBFRavenPlanner::inv_kinematics(int arm, tf::Transform& input_cp, float in
 	int sol_idx;
 	float sol_err;
 
-	if(find_best_solution(jp_dh, iksol, ikcheck, sol_idx, sol_err)) 
+	if(find_best_solution(jp_dh, iksol, ikcheck, sol_idx, sol_err))
 	{
 		bool limited = dhvalue_to_joint(iksol[sol_idx], output_jp, input_gangle, arm);
 
 		// adjust desired cartesian positions if necessary
-		if(limited) 
+		if(limited)
 		{
 		  fwd_kinematics(arm, output_jp, xf);
 		  input_cp = xf;
-		} 
+		}
 
 		success = true;
 	}
@@ -567,7 +567,7 @@ bool AMBFRavenPlanner::apply_joint_limits(vector<float>& joint, bool& changed)
 			while(joint[i] >  M_PI)  joint[i] -= 2*M_PI;
 			while(joint[i] < -M_PI)  joint[i] += 2*M_PI;
 		}
-		
+
 		if(joint[i] < AMBFDef::raven_joint_limit[0][i])
 		{
 			joint[i] = AMBFDef::raven_joint_limit[0][i];
@@ -634,7 +634,7 @@ bool AMBFRavenPlanner::find_best_solution(vector<float> curr_jp, vector<vector<f
 
 	sol_err = best_err;
 	sol_idx = best_idx;
-	
+
 	return success;
 }
 
@@ -678,7 +678,7 @@ bool AMBFRavenPlanner::go_home(bool first_entry, int arm)
 
 	command.type 	= AMBFCmdType::_jp;
 	command.updated = true;
-	state.updated   = false;	
+	state.updated   = false;
 	count ++;
 
 	return homed;
@@ -766,7 +766,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm, bool debug_mode)
 
 		go_home(first_entry,arm);
 		kinematics_show(arm,debug_mode);
-		
+
 		success = true;
 		return success;
 	}
@@ -774,7 +774,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm, bool debug_mode)
 	if(count[arm] % duration_count == 0)
 	{
 		count[arm] = 0;
-		
+
 		do idx = rand() % 3; while(idx == last_idx[arm]);
 
 		prev_loc[arm] = next_loc[arm];
@@ -784,7 +784,7 @@ bool AMBFRavenPlanner::trace_cube(bool first_entry, int arm, bool debug_mode)
 
 		if(debug_mode)
 		{
-			ROS_INFO("Cube tracing update: arm%d start moving in %s%s direction. (x,y,z = %f,%f,%f)", 
+			ROS_INFO("Cube tracing update: arm%d start moving in %s%s direction. (x,y,z = %f,%f,%f)",
 				arm, AMBFDef::sign_name[int(next_loc[arm][idx])].c_str(), AMBFDef::axes_name[idx].c_str(),
 				state.cp.getOrigin().x(),state.cp.getOrigin().y(),state.cp.getOrigin().z());
 		}
@@ -828,29 +828,29 @@ bool AMBFRavenPlanner::kinematics_show(int arm, bool debug_mode)
 	if(debug_mode && count[arm] % 1000 == 0)
 	{
 		ROS_INFO("arm%d:",arm);
-		ROS_INFO("          jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("          jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)",
 			state.jp[0],state.jp[1],state.jp[2],state.jp[3],state.jp[4],state.jp[5],state.jp[6]);
 
-		ROS_INFO("after FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("after FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)",
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 
 
-		
+
 		vector<float> new_jp = AMBFDef::zero_joints;
 		inv_kinematics(arm, cp_trn, state.jp[5]+state.jp[6], new_jp);
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
-		ROS_INFO("after IK: jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)", 
+		ROS_INFO("after IK: jp = ( %f,\t%f,\t%f,\t%f,\t%f,\t%f,\t%f)",
 			new_jp[0],new_jp[1],new_jp[2],new_jp[3],new_jp[4],new_jp[5],new_jp[6]);
-/*		ROS_INFO("          cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)", 
+/*		ROS_INFO("          cp = (\t%f,\t%f,\t%f), ori = (\t%f,\t%f,\t%f,\t%f)",
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());*/
 
 		fwd_kinematics(arm, new_jp, cp_trn);
 		cp_pos = cp_trn.getOrigin();
 		cp_ori = cp_trn.getRotation();
 
-		ROS_INFO("again FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)\n\n", 
+		ROS_INFO("again FK: cp = ( %f,\t%f,\t%f), ori = ( %f,\t%f,\t%f,\t%f)\n\n",
 			cp_pos.x(),cp_pos.y(),cp_pos.z(),cp_ori.x(),cp_ori.y(),cp_ori.z(),cp_ori.w());
 
 		count[arm] = 0;
@@ -935,7 +935,7 @@ bool AMBFCameraPlanner::go_home(bool first_entry, int cam)
 	float pos_diff = (state.cp.getOrigin() - home_pose.getOrigin()).length();
 	float ori_diff = fabs(state.cp.getRotation().angleShortestPath(home_pose.getRotation()));
 
-	if(pos_diff < 0.1 && ori_diff < 0.1) 
+	if(pos_diff < 0.1 && ori_diff < 0.1)
 	{
 		homed = true;
 		mode = AMBFCmdMode::freefall; // change back to static mode
@@ -949,7 +949,7 @@ bool AMBFCameraPlanner::go_home(bool first_entry, int cam)
 		homed = false;
 		command.type 	= AMBFCmdType::_cp;
 		command.updated = true;
-		state.updated   = false;	
+		state.updated   = false;
 		count ++;
 	}
 
@@ -997,7 +997,7 @@ bool AMBFCameraPlanner::wander_dance(bool first_entry, int cam)
 
 	command.type 	= AMBFCmdType::_cp;
 	command.updated = true;
-	state.updated   = false;	
+	state.updated   = false;
 	count ++;
 
 	return true;

@@ -1,0 +1,67 @@
+bodies: []
+joints: []
+sensors: [SENSOR Proximity0]
+actuators: [ACTUATOR Constraint0, ACTUATOR Constraint1, ACTUATOR Constraint2, ACTUATOR Constraint3]
+high resolution path: ../
+low resolution path: ../
+ignore inter-collision: true
+namespace: /ambf/env/
+# publish children names: true
+
+parent: &default_parent link7
+
+SENSOR Proximity0:
+  name: Proximity0
+  type: Proximity
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.233}
+  array:
+    -
+      offset: {x: 0.0, y: 0.05, z: 0.0}
+      direction: {x: 0.0, y: 0.0, z: 1.0}
+    -
+      offset: {x: 0.0, y: -0.05, z: 0.0}
+      direction: {x: 0.0, y: 0.0, z: 1.0}
+    -
+      offset: {x: 0.05, y: 0.0, z: 0.0}
+      direction: {x: 0.0, y: 0.0, z: 1.0}
+    -
+      offset: {x: -0.05, y: 0.0, z: 0.0}
+      direction: {x: 0.0, y: 0.0, z: 1.0}
+  range: 0.2
+  parent: *default_parent
+  visible: True
+  visible size: 0.01
+
+ACTUATOR Constraint0:
+  name: Constraint0
+  type: Constraint
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.05, z: 0.433}
+  parent: *default_parent
+
+ACTUATOR Constraint1:
+  name: Constraint1
+  type: Constraint
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: -0.05, z: 0.433}
+  parent: *default_parent
+
+ACTUATOR Constraint2:
+  name: Constraint2
+  type: Constraint
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.05, y: 0.0, z: 0.433}
+  parent: *default_parent
+
+ACTUATOR Constraint3:
+  name: Constraint3
+  type: Constraint
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: -0.05, y: 0.0, z: 0.433}
+  parent: *default_parent
