@@ -70,39 +70,26 @@ void Client::createObjsFromRostopics()
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
             string topic_name = ptr_->first.c_str();
 
-            if(msg_type == "ambf_msgs/WorldState") {
-                objects_map_[msg_type][topic_name] = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-            } else if (msg_type == "ambf_msgs/ActuatorState") {
+            if (msg_type == "ambf_msgs/ActuatorState") {
                 objects_map_[msg_type][topic_name] = new Actuator(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/CameraState") {
                 objects_map_[msg_type][topic_name] = new Camera(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-            } else if (msg_type == "ambf_msgs/ObjectState") {
-                objects_map_[msg_type][topic_name] = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/LightState") {
                 objects_map_[msg_type][topic_name] = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if (msg_type == "ambf_msgs/ObjectState") {
+                objects_map_[msg_type][topic_name] = new Object(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/RigidBodyState") {
                 objects_map_[msg_type][topic_name] = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/SensorState") {
                 objects_map_[msg_type][topic_name] = new Sensor(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             } else if (msg_type == "ambf_msgs/VehicleState") {
                 objects_map_[msg_type][topic_name] = new Vehicle(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+            } else if(msg_type == "ambf_msgs/WorldState") {
+                objects_map_[msg_type][topic_name] = new World(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
             }
         }
     }
 
-}
-
-/////
-///// \brief Client::getAWorld
-///// \param a_name
-///// \param suppress_warning
-///// \return
-/////
-worldPtr Client::getAWorld(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/WorldState";
-    if(!checkMessageType(msg_type)) return NULL;
-
-    return dynamic_cast<worldPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
 /////
@@ -131,6 +118,17 @@ cameraPtr Client::getACamera(std::string a_name, bool suppress_warning){
     return dynamic_cast<cameraPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
+/////
+///// \brief Client::getAFLight
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+lightPtr Client::getALight(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/LightState";
+    if(!checkMessageType(msg_type)) return NULL;
+    return dynamic_cast<lightPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
 
 /////
 ///// \brief Client::getAObject
@@ -142,18 +140,6 @@ objectPtr Client::getAObject(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/ObjectState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<objectPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
-}
-
-/////
-///// \brief Client::getAFLight
-///// \param a_name
-///// \param suppress_warning
-///// \return
-/////
-lightPtr Client::getALight(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/LightState";
-    if(!checkMessageType(msg_type)) return NULL;
-    return dynamic_cast<lightPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
 /////
@@ -190,6 +176,19 @@ vehiclePtr Client::getAVehicle(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/VehicleState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<vehiclePtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
+}
+
+/////
+///// \brief Client::getAWorld
+///// \param a_name
+///// \param suppress_warning
+///// \return
+/////
+worldPtr Client::getAWorld(std::string a_name, bool suppress_warning){
+    string msg_type = "ambf_msgs/WorldState";
+    if(!checkMessageType(msg_type)) return NULL;
+
+    return dynamic_cast<worldPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
 bool Client::checkMessageType(std::string msg_type){
@@ -377,22 +376,22 @@ void Client::cleanUp() {
 
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
             IBaseObject * handler = ptr_->second;
-            if(msg_type == "ambf_msgs/WorldState") {
-                (dynamic_cast<WorldRosCom*>(handler))->~WorldRosCom();
-            } else if (msg_type == "ambf_msgs/ActuatorState") {
+            if (msg_type == "ambf_msgs/ActuatorState") {
                 (dynamic_cast<ActuatorRosCom*>(handler))->~ActuatorRosCom();
             } else if (msg_type == "ambf_msgs/CameraState") {
                 (dynamic_cast<CameraRosCom*>(handler))->~CameraRosCom();
-            } else if (msg_type == "ambf_msgs/ObjectState") {
-                (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
             } else if (msg_type == "ambf_msgs/LightState") {
                 (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
+            } else if (msg_type == "ambf_msgs/ObjectState") {
+                (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
             } else if (msg_type == "ambf_msgs/RigidBodyState") {
                 (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
             } else if (msg_type == "ambf_msgs/SensorState") {
                 (dynamic_cast<SensorRosCom*>(handler))->~SensorRosCom();
             } else if (msg_type == "ambf_msgs/VehicleState") {
                 (dynamic_cast<VehicleRosCom*>(handler))->~VehicleRosCom();
+            } else if(msg_type == "ambf_msgs/WorldState") {
+                (dynamic_cast<WorldRosCom*>(handler))->~WorldRosCom();
             }
         }
     }
