@@ -136,7 +136,7 @@ def compute_IK(T_7_0):
     T_5_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4, j5]))
     j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
 
-    str = '\n**********************************'*3
+    # str = '\n**********************************'*3
     # print(str)
     # print("Joint 1: ", round(j1, 3))
     # print("Joint 2: ", round(j2, 3))
@@ -152,4 +152,4 @@ def compute_IK(T_7_0):
     round_transform(T_7_0_computed, 3)
     # print('Computed Pose: \n', T_7_0_computed)
 
-    return [j1, j2, j3, j4, j5, j6]
+    return np.array([j1, j2, j3, j4, j5, j6])

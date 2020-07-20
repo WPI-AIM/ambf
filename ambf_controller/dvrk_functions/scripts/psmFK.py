@@ -1,7 +1,6 @@
 import numpy as np
 from utilities import *
 
-
 # THIS IS THE FK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
 # SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE
 # MTM's DH PARAMETERS IN THE MANUAL, THERE IS A FAULT IN THE PSM's DH AS WELL. BASED ON
@@ -26,7 +25,7 @@ def compute_FK(joint_pos):
     # PSM DH Params
     link1 = DH(alpha=PI_2, a=0, theta=j[0], d=0, offset=PI_2, joint_type='R')
     link2 = DH(alpha=-PI_2, a=0, theta=j[1], d=0, offset=-PI_2, joint_type='R')
-    link3 = DH(alpha=PI_2, a=0, theta=0, d=j[2], offset=-.4318, joint_type='P')
+    link3 = DH(alpha=PI_2, a=0, theta=0, d=j[2], offset=-0.4318, joint_type='P')
     link4 = DH(alpha=0, a=0, theta=j[3], d=0.4162, offset=0, joint_type='R')
     link5 = DH(alpha=-PI_2, a=0, theta=j[4], d=0, offset=-PI_2, joint_type='R')
     link6 = DH(alpha=-PI_2, a=0.0091, theta=j[5], d=0, offset=-PI_2, joint_type='R')
@@ -80,7 +79,7 @@ class DH:
         self.offset = offset
         self.joint_type = joint_type
 
-    def mat_from_dh(self, alpha, a, theta, d, offset):
+    def mat_from_dh(self, alpha, a, theta, d, offset, type):
         ca = np.cos(alpha)
         sa = np.sin(alpha)
         if self.joint_type == 'R':
@@ -101,12 +100,45 @@ class DH:
         return mat
 
     def get_trans(self):
-        return self.mat_from_dh(self.alpha, self.a, self.theta, self.d, self.offset)
+        return self.mat_from_dh(self.alpha, self.a, self.theta, self.d, self.offset, self.joint_type)
 
 
-# T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
+T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
 #
 # print T_7_0
 # print "\n AFTER ROUNDING \n"
 # print(round_mat(T_7_0, 4, 4, 3))
+
+if __name__ == "__main__":
+    max_x = 0.
+    max_y = 0.
+    max_z = -2.
+    min_x = 0.
+    min_y = 0.
+    min_z = 0.
+    for joint_1 in np.arange(-0.2, 0.2, 0.025):
+        for joint_2 in np.arange(-0.2, 0.2, 0.025):
+            for joint_3 in np.arange(0.1, 0.24, 0.025):
+                T_7_0 = compute_FK([joint_1, joint_2, joint_3, 0, 0, 0])
+
+                if T_7_0[0:3, 3][0] > max_x:
+                    max_x = T_7_0[0:3, 3][0]
+                elif T_7_0[0:3, 3][1] > max_y:
+                    max_y = T_7_0[0:3, 3][1]
+                elif T_7_0[0:3, 3][2] > max_z:
+                    max_z = T_7_0[0:3, 3][2]
+                if T_7_0[0:3, 3][0] < min_x:
+                    min_x = T_7_0[0:3, 3][0]
+                elif T_7_0[0:3, 3][1] < min_y:
+                    min_y = T_7_0[0:3, 3][1]
+                elif T_7_0[0:3, 3][2] < min_z:
+                    min_z = T_7_0[0:3, 3][2]
+                else:
+                    pass
+                # print(T_7_0[0:3, 3])
+    print("Max and min vals are ", max_x, max_y, max_z, min_x, min_y, min_z)
+
+        # T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
+        # print(T_7_0[0:3, 3])
+
 

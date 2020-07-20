@@ -131,7 +131,7 @@ BODY main insertion link:
       b: 1.0
       g: 1.0
       r: 1.0
-    transparency: 0.4
+    transparency: 1.0
 BODY pitch back link:
   name: pitch back link
   mesh: pitch back link.STL

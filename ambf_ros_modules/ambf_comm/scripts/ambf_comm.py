@@ -38,7 +38,7 @@
 #
 #     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
-#     \version   1.0
+#     \version   1.1
 # */
 # //==============================================================================
 
@@ -52,3 +52,7 @@ from ambf_sensor import Sensor
 from ambf_light import Light
 from ambf_env import AmbfEnv
 from watch_dog import WatchDog
+
+# For Reinforcement Learning:
+from ambf_env_ddpg import AmbfEnvDDPG
+from ambf_env_herddpg import AmbfEnvHERDDPG 

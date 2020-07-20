@@ -1,6 +1,6 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2020, AMBF.
-#  (https://github.com/WPI-AIM/ambf)
+#  Copyright (c) 2019, AMBF.
+#  (www.aimlab.wpi.edu)
 #
 #  All rights reserved.
 #
@@ -33,9 +33,9 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: Melody Su $
+#  $Author: Melody Su and Vignesh Manoj Varier$
 #  $Date:  April, 2019 $
-#  $Rev:  $
+#  $Rev:  0.1 $
 
 
 # common settings required to build examples
@@ -49,8 +49,10 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/include/ambf_controller.h
                                 raven2/include/ambf_motion_planner.h
                                 raven2/src/ambf_motion_planner.cpp
-                                raven2/src/ambf_controller.cpp
+                                raven2/src/ambf_controller.cpp 
                                 raven2/src/ambf_defines.cpp
                                 raven2/src/main.cpp )
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk_functions)

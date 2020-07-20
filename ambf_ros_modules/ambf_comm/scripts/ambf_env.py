@@ -131,7 +131,7 @@ class AmbfEnv:
         return self.obs.cur_observation()
 
     def render(self, mode):
-        print ' I am a {} POTATO'.format(mode)
+        print(' I am a {} POTATO'.format(mode))
 
     def _update_observation(self, action):
         if self.enable_step_throttling:
@@ -141,7 +141,7 @@ class AmbfEnv:
                 time.sleep(0.00001)
             self.prev_sim_step = self.obj_handle.get_sim_step()
             if step_jump > self.n_skip_steps:
-                print 'WARN: Jumped {} steps, Default skip limit {} Steps'.format(step_jump, self.n_skip_steps)
+                print('WARN: Jumped {} steps, Default skip limit {} Steps'.format(step_jump, self.n_skip_steps))
         else:
             cur_sim_step = self.obj_handle.get_sim_step()
             step_jump = cur_sim_step - self.prev_sim_step
