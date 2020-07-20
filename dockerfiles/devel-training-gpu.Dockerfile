@@ -1,5 +1,12 @@
 FROM tensorflow/tensorflow:1.14.0-gpu-py3
 
+ENV USERNAME="admin"
+
+RUN useradd -ms /bin/bash ${USERNAME}
+
+ENV HOME="/home/${USERNAME}" \
+  AMBF_WS="/home/${USERNAME}/ambf"
+
 # setup timezone
 RUN echo 'Etc/UTC' > /etc/timezone && \
     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
@@ -37,14 +44,7 @@ RUN apt-get update && apt-get install -y \
     ros-melodic-ros-base=1.4.1-0* apt-utils git \
     && rm -rf /var/lib/apt/lists/*
 
-ENV USERNAME="admin"
-
-RUN useradd -ms /bin/bash ${USERNAME}
-
-ENV HOME_DIR="/home/${USERNAME}" \
-  AMBF_WS="/home/${USERNAME}/ambf"
-
-WORKDIR ${HOME_DIR}
+WORKDIR ${HOME}
 # Make Directory AMBF_WS
 RUN git clone --branch feat-rl https://github.com/WPI-AIM/ambf.git
 WORKDIR ${AMBF_WS}
@@ -72,10 +72,10 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN touch ${HOME_DIR}/.bashrc && \
-  echo "source /opt/ros/melodic/setup.bash" >> ${HOME_DIR}/.bashrc && \
-  echo "source /home/admin/ambf/build/devel/setup.bash" >> ${HOME_DIR}/.bashrc
+RUN touch ${HOME}/.bashrc && \
+  echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
+  echo "source /home/admin/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
 
-RUN . ${HOME_DIR}/.bashrc
+RUN . ${HOME}/.bashrc
   
 WORKDIR ${AMBF_WS}/training_scripts
