@@ -1937,15 +1937,6 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             inertial_offset_rot.setEulerZYX(y, p, r);
         }
     }
-    else{
-        if (m_collisionGeometryType == GeometryType::mesh){
-            // Call the compute inertial offset before the build contact triangle method
-            // Sanity check, see if a mesh is defined or not
-            if (m_lowResMesh.m_meshes->size() > 0){
-                inertial_offset_pos = computeInertialOffset(m_lowResMesh.m_meshes[0][0]);
-            }
-        }
-    }
 
     inertial_offset_trans.setOrigin(inertial_offset_pos);
     inertial_offset_trans.setRotation(inertial_offset_rot);
@@ -1961,11 +1952,21 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     // Begin loading the collision geometry
     if(m_collisionGeometryType == GeometryType::mesh){
-
+        m_lowResMesh.removeAllMesh();
         if( m_lowResMesh.loadFromFile(low_res_filepath.c_str()) ){
             if(m_scale != 1.0){
                 m_lowResMesh.scale(m_scale);
             }
+
+            if (bodyInertialOffsetPos.IsDefined() == false){
+                // Call the compute inertial offset before the build contact triangle method
+                // Sanity check, see if a mesh is defined or not
+                if (m_lowResMesh.m_meshes->size() > 0){
+                    inertial_offset_pos = computeInertialOffset(m_lowResMesh.m_meshes[0][0]);
+                    setInertialOffsetTransform(inertial_offset_trans);
+                }
+            }
+
             // Use the mesh data to build the collision shape
             buildContactTriangles(collision_margin, &m_lowResMesh);
         }

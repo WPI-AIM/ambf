@@ -457,9 +457,9 @@ public:
     inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
 
     // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return _min_publish_frequency;}
+    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
 
-    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
+    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -501,10 +501,6 @@ protected:
 
     // Initial rotation of Ridig Body
     cMatrix3d m_initialRot;
-
-    // Min and Max publishing frequency
-    int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;
 
     // If passive, this instance will not be reported
     // for communication purposess.
@@ -786,8 +782,6 @@ public:
 protected:
 
     double m_scale;
-
-    double m_total_mass;
 
     std::string m_mesh_name;
 
