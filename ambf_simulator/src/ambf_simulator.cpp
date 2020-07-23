@@ -510,6 +510,10 @@ int main(int argc, char* argv[])
 #endif
     }
 
+    // Load the skybox if defined.
+    g_afWorld->loadSkyBox();
+
+
     afLightVec temp_lights = g_afWorld->getAFLighs();
     for(int i = 0 ; i < temp_lights.size() ; i++){
         temp_lights[i]->resolveParenting();
