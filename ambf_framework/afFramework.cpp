@@ -5763,10 +5763,17 @@ void afWorld::loadSkyBox(){
         bool res[6];
         res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxRight.c_str());
         res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxLeft.c_str());
-        res[2] = newTexture->m_images[2]->loadFromFile(m_skyBoxTop.c_str());
-        res[3] = newTexture->m_images[3]->loadFromFile(m_skyBoxBottom.c_str());
+        res[2] = newTexture->m_images[3]->loadFromFile(m_skyBoxTop.c_str());
+        res[3] = newTexture->m_images[2]->loadFromFile(m_skyBoxBottom.c_str());
         res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxFront.c_str());
         res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBack.c_str());
+
+//        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxFront.c_str());
+//        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxBack.c_str());
+//        res[2] = newTexture->m_images[2]->loadFromFile(m_skyBoxRight.c_str());
+//        res[3] = newTexture->m_images[3]->loadFromFile(m_skyBoxLeft.c_str());
+//        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxTop.c_str());
+//        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBottom.c_str());
 
         if (res[0] && res[1] && res[2] && res[3] && res[4] && res[5] && res[5]){
             // All images were loaded succesfully
