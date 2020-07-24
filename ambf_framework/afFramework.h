@@ -1388,6 +1388,8 @@ public:
     // are define in the AMBF config file
     bool createDefaultCamera();
 
+    cCamera* getInternalCamera(){return m_camera;}
+
     // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 

@@ -178,8 +178,13 @@ void cTextureCubeMap::renderInitialize(cRenderOptions& a_options)
     // check if materials should be rendered
     if (!a_options.m_render_textures) { return; }
 
-    // check image texture
-    if (m_image->isInitialized() == 0) return;
+    // Check skybox image textures
+    for (int iI = 0 ; iI < 6 ; iI++){
+        if (m_images[iI]->isInitialized() == 0){
+            return;
+        }
+
+    }
 
     // Only check residency in memory if we weren't going to
     // update the texture anyway...
@@ -336,7 +341,7 @@ void cTextureCubeMap::update(cRenderOptions& a_options)
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
 
         for (int i = 0 ; i < 6 ; i++){
-            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+            glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                             0,
                             0,
                             0,
