@@ -80,7 +80,14 @@ class Client:
         pass
 
     def create_objs_from_rostopics(self):
-        rospy.init_node(self._client_name)
+        
+        # Check if a node is running, if not create one
+        # else get the name of the node
+        if "/unnamed" == rospy.get_name():
+            rospy.init_node(self._client_name)
+        else:
+            self._client_name = rospy.get_name()
+
         rospy.on_shutdown(self.clean_up)
         self._rate = rospy.Rate(1000)
         self._ros_topics = rospy.get_published_topics()
