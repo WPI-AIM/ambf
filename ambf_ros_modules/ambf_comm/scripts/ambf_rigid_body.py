@@ -130,7 +130,7 @@ class RigidBody(BaseObject):
         else:
             return None
 
-    def get_joint_velocity(self, joint_name_or_idx):
+    def get_joint_vel(self, joint_name_or_idx):
         """
         Get the joint velocity of a specific joint at idx. Check joint names to see indexes
         :param joint_name_or_idx:
