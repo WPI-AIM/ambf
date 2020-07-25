@@ -5492,6 +5492,9 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         return 0;
     }
 
+    m_world_config_path = boost::filesystem::path(a_world_config).parent_path();
+    printf("INFO! WORLD CONFIG PATH: %s \n", m_world_config_path.c_str());
+
     m_name = "World";
 
     YAML::Node worldEnclosureData = worldNode["enclosure"];
@@ -5555,7 +5558,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         std::string world_adf = worldEnvironment.as<std::string>();
         boost::filesystem::path p(world_adf);
         if (p.is_relative()){
-            p = boost::filesystem::path(a_world_config).parent_path() / p;
+            p = m_world_config_path / p;
         }
         env_defined = loadADF(p.string(), false);
     }
@@ -5568,7 +5571,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         boost::filesystem::path skybox_path = worldSkyBox["path"].as<std::string>();
 
         if (skybox_path.is_relative()){
-            skybox_path = getBasePath() / skybox_path;
+            skybox_path = m_world_config_path / skybox_path;
         }
 
         if (worldSkyBox["right"].IsDefined() &&
@@ -5598,7 +5601,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 boost::filesystem::path shader_path = worldSkyBox["shaders"]["path"].as<std::string>();
 
                 if (shader_path.is_relative()){
-                    shader_path = getBasePath() / shader_path;
+                    shader_path = m_world_config_path / shader_path;
                 }
 
                 m_skyBox_vsFilePath = shader_path / worldSkyBox["shaders"]["vertex"].as<std::string>();
@@ -5678,7 +5681,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             boost::filesystem::path shader_path = worldShaders["path"].as<std::string>();
 
             if (shader_path.is_relative()){
-                shader_path = getBasePath() / shader_path;
+                shader_path = m_world_config_path / shader_path;
             }
 
             m_vsFilePath = shader_path / worldShaders["vertex"].as<std::string>();

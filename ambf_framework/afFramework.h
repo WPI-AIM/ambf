@@ -1897,6 +1897,8 @@ public:
 
     boost::filesystem::path m_skyBox_fsFilePath;
 
+    boost::filesystem::path m_world_config_path;
+
 protected:
 
     afLightMap m_afLightMap;
