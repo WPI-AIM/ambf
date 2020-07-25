@@ -1402,7 +1402,9 @@ void updateGraphics()
         cRenderOptions ro;
         g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
 
-        cTransform viewMat = cameraPtr->getLocalTransform();
+        cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+        cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+        cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
 
         g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
 

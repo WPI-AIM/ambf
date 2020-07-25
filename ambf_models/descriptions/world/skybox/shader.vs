@@ -1,3 +1,4 @@
+
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aTexCoord;
@@ -17,6 +18,6 @@ void main()
 {
     TexCoords = aPosition;
     // vec4 pos = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(aPosition, 1.0);
-    vec4 pos = gl_ProjectionMatrix * inverse(viewMat) * vec4(aPosition, 1.0);
+    vec4 pos = gl_ProjectionMatrix * viewMat * vec4(aPosition, 1.0);
     gl_Position = pos.xyww;
 }
