@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,10 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
@@ -208,6 +207,18 @@ void RigidBody::set_joint_velocities(std::vector<float> joint_velocities){
         m_State.joint_velocities.resize(joint_velocities.size());
     }
     m_State.joint_velocities = joint_velocities;
+}
+
+
+///
+/// \brief RigidBody::set_joint_efforts
+/// \param joint_efforts
+///
+void RigidBody::set_joint_efforts(std::vector<float> joint_efforts){
+    if (m_State.joint_efforts.size() != joint_efforts.size()){
+        m_State.joint_efforts.resize(joint_efforts.size());
+    }
+    m_State.joint_efforts = joint_efforts;
 }
 
 extern "C"{

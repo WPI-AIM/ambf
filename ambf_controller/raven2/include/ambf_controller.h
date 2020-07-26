@@ -1,8 +1,8 @@
 //===========================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -37,7 +37,7 @@
 
     \author:    Melody Su
     \date:      April, 2019
-    \version:   $
+    \version:   1.0$
 */
 //===========================================================================
 
@@ -53,7 +53,7 @@ private:
     mutex _mutex;
     bool print_menu;
     bool debug_mode;
-    ros::NodeHandle nh_; 
+    ros::NodeHandle nh_;
 
     vector<ros::Publisher>     raven_pubs;      // raven command publisher
     vector<ros::Subscriber>    raven_subs;      // raven state subscriber

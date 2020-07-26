@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,12 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \courtesy:  Dejaime Antônio de Oliveira Neto at https://www.gamedev.net/profile/187867-dejaime/ for initial direction
-    \motivation:https://www.gamedev.net/articles/programming/engines-and-middleware/yaml-basics-and-parsing-with-yaml-cpp-r3508/
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \version   1.0$
 */
 //==============================================================================
 
@@ -57,6 +54,7 @@
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <thread>
+#include <fstream>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 
@@ -222,6 +220,8 @@ public:
     bool loadBaseConfig(std::string file);
     // Get the nuber of multibody config files defined in launch config file
     inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
+
+    std::string getBasePath(){return s_basePath.c_str();}
 
 private:
 
@@ -421,7 +421,8 @@ struct afChildJointPair{
     }
     afRigidBodyPtr m_childBody;
     afJointPtr m_childJoint;
-    bool m_directConnection = false; // Flag for checking if the body is connected directly or not to another body
+    // Flag for checking if the body is connected directly or not to the parent body
+    bool m_directConnection = false;
 };
 
 
@@ -456,15 +457,17 @@ public:
     inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
 
     // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return _min_publish_frequency;}
+    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
 
-    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
+    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
     virtual bool resolveParenting(std::string a_parent_name = ""){}
 
-public:
+    bool isPassive(){return m_passive;}
+
+    void setPassive(bool a_passive){m_passive = a_passive;}
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -478,6 +481,15 @@ public:
     // Max publishing frequency
     int m_max_publish_frequency=1000;
 
+    // Enable Shader Program Associate with this object
+    virtual void enableShaderProgram(){}
+
+    // Flag for the Shader Program
+    bool m_shaderProgramDefined = false;
+
+    boost::filesystem::path m_vsFilePath;
+    boost::filesystem::path m_fsFilePath;
+
 protected:
 
     // The namespace for this body, this namespace affect afComm and the stored name of the body
@@ -490,9 +502,9 @@ protected:
     // Initial rotation of Ridig Body
     cMatrix3d m_initialRot;
 
-    // Min and Max publishing frequency
-    int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;  
+    // If passive, this instance will not be reported
+    // for communication purposess.
+    bool m_passive = false;
 };
 
 
@@ -539,7 +551,11 @@ public:
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
     // children (children's children ... and so on also count as children)
-    std::vector<afChildJointPair> m_childAndJointPairs;
+    std::vector<afChildJointPair> m_CJ_PairsAll;
+
+    // This vector contains the list of only the bodies connected via active joints. A joint can
+    // be set as passive in the ADF file.
+    std::vector<afChildJointPair> m_CJ_PairsActive;
 
     // A vector of all the parent bodies (not just the immediate parents but all the way up to the root parent)
     std::vector<afRigidBodyPtr> m_parentBodies;
@@ -558,8 +574,6 @@ public:
 
     // Cleanup this rigid body
     void remove();
-
-public:
 
     // function to check if this rigid body is part of the collision group
     // at a_idx
@@ -580,15 +594,23 @@ public:
     // Add sensor to this body
     bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
+    // Enable shader program if defined
+    virtual void enableShaderProgram();
+
     // Get the sensors for this body
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
-public:
     // If the Position Controller is active, disable Position Controller from Haptic Device
     bool m_af_enable_position_controller;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
+
+    // Estimated Force acting on body
+    btVector3 m_estimatedForce;
+
+    // Estimated Torque acting on body
+    btVector3 m_estimatedTorque;
 
 protected:
 
@@ -605,10 +627,10 @@ protected:
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _lin_gains_computed = false;
+    bool m_lin_gains_computed = false;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _ang_gains_computed = false;
+    bool m_ang_gains_computed = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -619,16 +641,15 @@ protected:
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
 
-    // Function of compute body's controllers based on lumped masses
-    void computeControllerGains();
-
     // Sensors for this Rigid Body
     afSensorVec m_afSensors;
 
     // Actuators for this Rigid Body
     afActuatorVec m_afActuators;
 
-protected:
+    // Function of compute body's controllers based on lumped masses
+    void computeControllerGains();
+
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
 
@@ -656,20 +677,23 @@ protected:
     // Update the joint velocitess of children in afObject State Message
     virtual void afObjectSetJointVelocities();
 
+    // Update the joint efforts of children in afObject State Message
+    virtual void afObjectSetJointEfforts();
+
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
-protected:
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
-
-protected:
 
     // pool of threads for solving the body's sensors in paralled
     std::vector<std::thread*> m_sensorThreads;
 
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
+
+    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
+    bool m_usePIDController = false;
 
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
@@ -694,6 +718,9 @@ private:
     // Velocities of all child joints
     std::vector<float> m_joint_velocities;
 
+    // Efforts of all child joints
+    std::vector<float> m_joint_efforts;
+
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
 
@@ -703,9 +730,6 @@ private:
 
     // Last Position Error
     btVector3 m_dpos;
-
-    // Last torque or Rotational Error with Kp multiplied
-    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
@@ -758,8 +782,6 @@ public:
 protected:
 
     double m_scale;
-
-    double m_total_mass;
 
     std::string m_mesh_name;
 
@@ -847,6 +869,7 @@ class afJoint{
     friend class afRigidBody;
     friend class afGripperLink;
     friend class afMultiBody;
+    friend class afWorld;
 
 public:
 
@@ -863,8 +886,8 @@ public:
     // Apply damping to this joint
     void applyDamping(const double &dt=0.001);
 
-    // Set open loop effort for this joint
-    void commandEffort(double &effort_cmd, bool disable_motor=true);
+    // Set open loop effort for this joint.
+    void commandEffort(double &effort_cmd, bool skip_motor_check=false);
 
     // Set velocity for this joint
     void commandVelocity(double &velocity_cmd);
@@ -887,6 +910,9 @@ public:
     // Get the velocity of this joint
     double getVelocity();
 
+    // Get the effort of this joint
+    double getEffort();
+
     // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
@@ -894,6 +920,16 @@ public:
     void remove();
 
     std::string getName(){return m_name;}
+
+    bool isPassive(){return m_passive;}
+
+    bool isFeedBackEnabled(){return m_feedbackEnabled;}
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for Joint
+    void setFrameSize(double size){}
 
 protected:
 
@@ -907,16 +943,33 @@ protected:
     bool m_enableActuator;
     double m_lowerLimit, m_upperLimit;
     double m_jointOffset;
-    btRigidBody *m_rbodyA, *m_rbodyB;
+
+    // Store parent and child afRigidBody to prevent lookups.
+    afRigidBodyPtr m_afParentBody;
+    afRigidBodyPtr m_afChildBody;
+
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
 
     // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
     bool m_usePIDController = false;
 
+    // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
+    // for communication purposess.
+    bool m_passive = false;
+
+    // Wrench Feedback information from the joint
+    bool m_feedbackEnabled = false;
+
+    // Bullet Joint Feedback Ptr
+    btJointFeedback* m_feedback;
+
 protected:
 
     btTypedConstraint *m_btConstraint;
+
+    // The estimated Effort for this joint if its a single DOF joint.
+    double m_estimatedEffort = 0.0;
 
 private:
     // Add these two pointers for faster access to constraint internals
@@ -933,6 +986,7 @@ private:
     int m_jpSize = 2;
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
+
 };
 
 
@@ -1031,6 +1085,8 @@ private:
     int m_softBodyFaceIdx = -1;
     // Child offset w.r.t to actuator
     cVector3d m_P_cINp;
+
+    bool m_active = false;
 };
 
 //-----------------------------------------------------------------------------
@@ -1332,6 +1388,8 @@ public:
     // are define in the AMBF config file
     bool createDefaultCamera();
 
+    cCamera* getInternalCamera(){return m_camera;}
+
     // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 
@@ -1606,9 +1664,25 @@ class afWorld: public cBulletWorld, public afConfigHandler, public afComm{
     friend class afMultiBody;
 
 public:
+
     afWorld(std::string a_global_namespace);
+
     virtual ~afWorld(){}
+
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    // Template method to add various types of objects
+    template<typename T, typename TMap>
+    bool addObject(T a_obj, std::string a_name, TMap* a_map);
+
+     // Template method to get a specific type of object
+    template <typename T, typename TMap>
+    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+
+     // Template method to get all objects of specific type
+    template <typename Tvec, typename TMap>
+    Tvec getObjects(TMap* tMap);
+
     bool createDefaultWorld();
 
     double getEnclosureLength();
@@ -1636,7 +1710,7 @@ public:
 
     double computeStepSize(bool adjust_intetration_steps = false);
 
-    GLFWwindow* m_mainWindow;
+    void estimateBodyWrenches();
 
     //! This method updates the simulation over a time interval.
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
@@ -1665,17 +1739,6 @@ public:
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
-
-
-    template<typename T, typename TMap>
-    bool addObject(T a_obj, std::string a_name, TMap* a_map);
-
-    template <typename T, typename TMap>
-    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
-
-    template <typename Tvec, typename TMap>
-    Tvec getObjects(TMap* tMap);
-
 
 
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
@@ -1749,7 +1812,6 @@ public:
 
     void setGlobalNamespace(std::string a_namespace);
 
-
     virtual void afExecuteCommand(double dt);
 
     // The collision groups are sorted by integer indices. A group is an array of
@@ -1764,7 +1826,9 @@ public:
 
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
     bool loadADF(std::string a_adf_filepath, bool enable_comm);
+
     bool loadADF(int i, bool enable_comm);
+
     void loadAllADFs(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
@@ -1773,41 +1837,101 @@ public:
 
     void removePickingConstraint();
 
+    virtual void enableShaderProgram();
+
+    void loadSkyBox();
+
+    GLFWwindow* m_mainWindow;
+
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
-    afRigidBodyPtr m_lastPickedBody;
+
+    afRigidBodyPtr m_lastPickedBody=0;
+
     cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+
     cMaterial m_pickColor; // The color to be applied to the picked body
+
     class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
+
     class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
+
     int m_pickedNodeIdx = -1; // Picked SoftBody Node
+
     double m_pickedNodeMass = 0;
+
     cVector3d m_pickedNodeGoal;
+
     class btTypedConstraint* m_pickedConstraint=0;
+
     int m_savedState;
+
     cVector3d m_oldPickingPos;
+
     cVector3d m_hitPos;
+
     double m_oldPickingDist;
+
     cMesh* m_pickSphere;
 
     cPrecisionClock g_wallClock;
 
+    bool m_shaderProgramDefined = false;
+
+    // Vertex Shader Filepath
+    boost::filesystem::path m_vsFilePath;
+
+    // Fragment Shader Filepath
+    boost::filesystem::path m_fsFilePath;
     //    cMesh* m_pickDragVector;
+
+    // Is skybox defined?
+    bool m_skyBoxDefined = false;
+
+    // Skybox Mesh
+    cMesh* m_skyBoxMesh = 0;
+
+    // L, R, T, B, F and B images for the skybox
+    boost::filesystem::path m_skyBoxLeft;
+
+    boost::filesystem::path m_skyBoxRight;
+
+    boost::filesystem::path m_skyBoxTop;
+
+    boost::filesystem::path m_skyBoxBottom;
+
+    boost::filesystem::path m_skyBoxFront;
+
+    boost::filesystem::path m_skyBoxBack;
+
+    bool m_skyBox_shaderProgramDefined = false;
+
+    boost::filesystem::path m_skyBox_vsFilePath;
+
+    boost::filesystem::path m_skyBox_fsFilePath;
+
+    boost::filesystem::path m_world_config_path;
 
 protected:
 
     afLightMap m_afLightMap;
+
     afCameraMap m_afCameraMap;
+
     afRigidBodyMap m_afRigidBodyMap;
+
     afSoftBodyMap m_afSoftBodyMap;
+
     afJointMap m_afJointMap;
+
     afActuatorMap m_afActuatorMap;
+
     afSensorMap m_afSensorMap;
+
     afMultiBodyMap m_afMultiBodyMap;
+
     afVehicleMap m_afVehicleMap;
 
-
-    afWorld(){}
     std::string m_namespace;
 
     // If this string is set, it will force itself to preeced all nampespaces
@@ -1817,9 +1941,13 @@ protected:
 private:
 
     static double m_encl_length;
+
     static double m_encl_width;
+
     static double m_encl_height;
+
     static int m_maxIterations;
+
     cPositionalLight* m_light;
     // Global flag to pause simulation
     bool m_pausePhx = false;
@@ -1885,6 +2013,13 @@ public:
     // with most children. This method is similar to the corresponding afWorld
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
+
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for MB
+    void setFrameSize(double size){}
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;

@@ -1,8 +1,8 @@
-//===========================================================================
+//==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,18 +35,16 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
     \courtesy:  Starting point CHAI3D-BULLET examples by Francois Conti from <www.chai3d.org>
-    \version:   $
+    \version   1.0$
 */
-//===========================================================================
+//==============================================================================
 
 //---------------------------------------------------------------------------
 #include "chai3d.h"
 #include "ambf.h"
-#include "fstream"
 //---------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
@@ -141,6 +139,10 @@ bool g_window_closed = false;
 
 // Flag to toggle between inverted/non_inverted mouse pitch with mouse
 bool g_mouse_inverted_y = false;
+
+// Ratio between Window Height and Width to Frame Buffer Height and Width
+double g_winWidthRatio = 1.0;
+double g_winHeightRatio = 1.0;
 
 // a frequency counter to measure the simulation graphic rate
 cFrequencyCounter g_freqCounterGraphics;
@@ -417,6 +419,7 @@ int main(int argc, char* argv[])
         // The world loads the lights and cameras + windows
         std::string world_filename = g_afWorld->getWorldConfig();
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+
         g_cameras = g_afWorld->getAFCameras();
 
         // Process the loadMultiBodyFiles string
@@ -451,7 +454,7 @@ int main(int argc, char* argv[])
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
                 g_afWorld->loadADF(mbIndexes[idx], true);
             }
-        }       
+        }
 
         g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
@@ -526,36 +529,6 @@ int main(int argc, char* argv[])
         temp_lights[i]->resolveParenting();
     }
 
-//    ifstream vs;
-//    ifstream fs;
-//    vs.open("/home/adnan/ambf_shaders/shader.vs");
-//    fs.open("/home/adnan/ambf_shaders/shader.fs");
-//    // create a string stream
-//    stringstream light_vtx_shader_file, light_frg_shader_file;
-//    // dump the contents of the file into it
-//    light_vtx_shader_file << vs.rdbuf();
-//    light_frg_shader_file << fs.rdbuf();
-//    // close the file
-//    vs.close();
-//    fs.close();
-//    // convert the StringStream into a string
-//    std::string shaderSource1 = light_vtx_shader_file.str();
-//    std::string shaderSource2 = light_frg_shader_file.str();
-
-//    cShaderProgramPtr g_phongShader = cShaderProgram::create(shaderSource1, shaderSource2);
-//    //    g_phongShader->linkProgram();
-//    cGenericObject* go;
-//    cRenderOptions ro;
-//    g_phongShader->use(go, ro);
-//    g_phongShader->setUniformi("uShadowMap", C_TU_SHADOWMAP);
-
-//    printf("Shader Linked ? %d \n", g_phongShader->linkProgram());
-
-//    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-//    for (int i = 0 ; i < rbVec.size() ; i++){
-//        rbVec[i]->setShaderProgram(g_phongShader);
-//    }
-
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
     //-----------------------------------------------------------------------------------------------------------
@@ -621,6 +594,16 @@ int main(int argc, char* argv[])
 
 //    signal (SIGINT, exitHandler);
 
+    // Enable any shader programs defined via ADF
+    g_afWorld->enableShaderProgram();
+
+    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+
+    // Override the shader program if defined for bodies if defined
+    for (int i = 0 ; i < rbVec.size() ; i++){
+        rbVec[i]->enableShaderProgram();
+    }
+
     RateSleep graphicsSleep(120);
 
 
@@ -637,6 +620,22 @@ int main(int argc, char* argv[])
     if(var_map.count("enable_buffer_debug")){
         g_cameras[0]->enable_buffer_debug = var_map["enable_buffer_debug"].as<bool>();
         g_cameras[0]->skip_frames = 10;
+    }
+
+    // Compute the window width and height ratio
+    if (g_cmdOpts.showGUI){
+        int winH, winW;
+        glfwGetWindowSize(g_cameras[0]->m_window, &winW, &winH);
+
+        int buffH, buffW;
+        glfwGetFramebufferSize(g_cameras[0]->m_window, &buffW, &buffH);
+
+        g_winWidthRatio = double(buffW) / double(winW);
+        g_winHeightRatio = double(buffH) / double(winH);
+
+        // Load the skybox if defined.
+        g_afWorld->loadSkyBox();
+
     }
 
     // main graphic loop
@@ -742,6 +741,7 @@ void errorCallback(int a_error, const char* a_description)
 
 bool g_updateLabels = true;
 bool g_enableGrippingAssist = true;
+bool g_enableNormalMapping = true;
 
 ///
 /// \brief keyCallback
@@ -797,7 +797,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - If CTRL X is pressed, reset the simulation
         else if (a_key == GLFW_KEY_X){
             g_afWorld->pausePhysics(true);
-            if (g_afWorld->m_lastPickedBody){
+            if (g_afWorld->m_lastPickedBody != nullptr){
                 printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_lastPickedBody->m_name.c_str());
                 g_afWorld->m_lastPickedBody->remove();
             }
@@ -826,6 +826,30 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             }
         }
 
+    }
+    else if (a_mods == GLFW_MOD_SHIFT){
+        if (a_key == GLFW_KEY_N){
+            afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+            g_enableNormalMapping = ! g_enableNormalMapping;
+            printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
+            for (int i = 0 ; i < rbVec.size() ; i++){
+                if (rbVec[i]->m_shaderProgramDefined){
+                    if (rbVec[i]->getShaderProgram()){
+                        rbVec[i]->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
+                    }
+                }
+            }
+        }
+
+        // option - Toogle visibility of body frames and softbody skeleton
+        else if (a_key == GLFW_KEY_V){
+            printf("Toggling Frame Visibility ON/OFF\n");
+            if (g_afWorld->m_lastPickedBody != nullptr){
+                g_afWorld->m_lastPickedBody->toggleFrameVisibility();
+            }
+            else{
+            }
+        }
     }
     else{
 
@@ -956,6 +980,18 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             afRigidBodyMap::const_iterator rbIt;
             for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
                 rbIt->second->toggleFrameVisibility();
+            }
+
+            auto lMap = g_afWorld->getAFLightMap();
+            afLightMap::const_iterator lIt;
+            for (lIt = lMap->begin() ; lIt != lMap->end(); ++lIt){
+                lIt->second->toggleFrameVisibility();
+            }
+
+            auto cMap = g_afWorld->getAFCameraMap();
+            afCameraMap::const_iterator cIt;
+            for (cIt = cMap->begin() ; cIt != cMap->end(); ++cIt){
+                cIt->second->toggleFrameVisibility();
             }
 
             auto sbMap = g_afWorld->getAFSoftBodyMap();
@@ -1306,8 +1342,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 dVert = vertical * 1.f / height;
 
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += btScalar(g_heightRatio*x) * dHor;
-    rayTo -= btScalar(g_widthRatio*y) * dVert;
+    rayTo += btScalar(g_winWidthRatio*x) * dHor;
+    rayTo -= btScalar(g_winHeightRatio*y) * dVert;
     cVector3d cRay = toCvec(rayTo);
     return cRay;
 }
@@ -1384,7 +1420,8 @@ void updateGraphics()
         glfwMakeContextCurrent(cameraPtr->m_window);
 
         // get width and height of window
-        glfwGetWindowSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
+//        glfwGetFraSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
+        glfwGetFramebufferSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
 
         int width, height;
 
@@ -1396,6 +1433,20 @@ void updateGraphics()
         // Update the Labels in a separate sub-routine
 //        if (g_updateLabels)
 //            updateLabels();
+
+        if (g_afWorld->m_skyBox_shaderProgramDefined && g_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+        }
 
         // render world
         cameraPtr->renderView(width, height);

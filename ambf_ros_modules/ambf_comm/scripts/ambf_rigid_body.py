@@ -2,27 +2,27 @@
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
-#     Copyright (c) 2019, AMBF
-#     (www.aimlab.wpi.edu)
-
+#     Copyright (c) 2020, AMBF
+#     (https://github.com/WPI-AIM/ambf)
+#
 #     All rights reserved.
-
+#
 #     Redistribution and use in source and binary forms, with or without
 #     modification, are permitted provided that the following conditions
 #     are met:
-
+#
 #     * Redistributions of source code must retain the above copyright
 #     notice, this list of conditions and the following disclaimer.
-
+#
 #     * Redistributions in binary form must reproduce the above
 #     copyright notice, this list of conditions and the following
 #     disclaimer in the documentation and/or other materials provided
 #     with the distribution.
-
+#
 #     * Neither the name of authors nor the names of its contributors may
 #     be used to endorse or promote products derived from this software
 #     without specific prior written permission.
-
+#
 #     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 #     "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 #     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -35,11 +35,10 @@
 #     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 #     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #     POSSIBILITY OF SUCH DAMAGE.
-
-#     \author    <http://aimlab.wpi.edu>
+#
 #     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
-#     \version   0.1
+#     \version   1.0
 # */
 # //==============================================================================
 
@@ -57,6 +56,8 @@ class RigidBody(BaseObject):
         :param a_name:
         """
         super(RigidBody, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        self.object_type = "RIGID_BODY"
+        self.body_type = "DYNAMIC"
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set
         self._twist_cmd_set = False  # Flag to check if a Twist command has been set
@@ -75,14 +76,14 @@ class RigidBody(BaseObject):
                   '\" outside valid range [0 - ' + str(n_jnts - 1) + ']')
             return False
 
-    def get_linear_velocity(self):
+    def get_linear_vel(self):
         """
         Get the linear velocity of this body
         :return:
         """
         return self._state.twist.linear
 
-    def get_angular_velocity(self):
+    def get_angular_vel(self):
         """
         Get the angular velocity of this body
         :return:
@@ -144,6 +145,22 @@ class RigidBody(BaseObject):
         else:
             return None
 
+    def get_joint_effort(self, joint_name_or_idx):
+        """
+        Get the joint effort of a specific joint at idx. Check joint names to see indexes
+        :param joint_name_or_idx:
+        :return:
+        """
+        if isinstance(joint_name_or_idx, str):
+            joint_idx = self.get_joint_idx_from_name(joint_name_or_idx)
+        else:
+            joint_idx = joint_name_or_idx
+
+        if self.is_joint_idx_valid(joint_idx):
+            return self._state.joint_efforts[joint_idx]
+        else:
+            return None
+
     def get_all_joint_pos(self):
         """
                 Get the joint position of a specific joint at idx. Check joint names to see indexes
@@ -157,7 +174,7 @@ class RigidBody(BaseObject):
 
         return positions
 
-    def get_all_joint_velocities(self):
+    def get_all_joint_vel(self):
         """
                 Get the joint velocities of a specific joint at idx. Check joint names to see indexes
                 :param idx:
@@ -169,6 +186,19 @@ class RigidBody(BaseObject):
             velocities.append(self._state.joint_velocities[idx])
 
         return velocities
+
+    def get_all_joint_effort(self):
+        """
+                Get the joint velocities of a specific joint at idx. Check joint names to see indexes
+                :param idx:
+                :return:
+                """
+        n_jnts = len(self._state.joint_efforts)
+        efforts = []
+        for idx in range(n_jnts):
+            efforts.append(self._state.joint_efforts[idx])
+
+        return efforts
 
     def get_num_joints(self):
         """
@@ -603,7 +633,7 @@ class RigidBody(BaseObject):
         Clear wrench if watchdog is expired
         :return:
         """
-        self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
+        # self._cmd.cartesian_cmd_type = RigidBodyCmd.TYPE_FORCE
         self._cmd.wrench.force.x = 0
         self._cmd.wrench.force.y = 0
         self._cmd.wrench.force.z = 0

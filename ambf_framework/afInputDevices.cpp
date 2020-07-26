@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,10 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \version   1.0$
 */
 //==============================================================================
 
@@ -805,8 +804,8 @@ void afSimulatedDevice::setGripperAngle(double angle, double dt){
     // We override the set angle method for grippers to simplify the angle bound. 0 for closed
     // and 1 for open and everything in between is scaled.
     double clipped_angle = cClamp(angle, 0.0, 1.0);
-    for (size_t jntIdx = 0 ; jntIdx < m_rootLink->m_childAndJointPairs.size() ; jntIdx++){
-        afJointPtr joint = m_rootLink->m_childAndJointPairs[jntIdx].m_childJoint;
+    for (size_t jntIdx = 0 ; jntIdx < m_rootLink->m_CJ_PairsAll.size() ; jntIdx++){
+        afJointPtr joint = m_rootLink->m_CJ_PairsAll[jntIdx].m_childJoint;
         double ang = joint->getLowerLimit() + clipped_angle * (joint->getUpperLimit() - joint->getLowerLimit());
         joint->commandPosition(ang, dt);
     }
