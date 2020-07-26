@@ -1398,17 +1398,19 @@ void updateGraphics()
         if (g_updateLabels)
             updateLabels();
 
-        cGenericObject* go;
-        cRenderOptions ro;
-        g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+        if (g_afWorld->m_skyBox_shaderProgramDefined && g_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
 
-        cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
-        cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
-        cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
 
-        g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
 
-        g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+        }
 
         // render world
         cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
