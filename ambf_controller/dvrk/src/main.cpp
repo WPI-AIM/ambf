@@ -42,8 +42,20 @@ int main(int argc, char* argv[])
     Client client;
     client.connect();
 
-    std::string a_name = "World";
-    worldPtr world_handler = client.getAWorld(a_name, true);
+//    std::string a_name = "World";
+//    worldPtr world_handler = client.getAWorld(a_name, true);
+
+    client.printSummary();
+    vector<string> object_names;
+
+    object_names = client.getRigidBodyNames();
+
+    string psm_baselink = object_names[5];
+    cout << psm_baselink << "\n";
+    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+
+    std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
+    cout << "base_children.size(): " << base_children.size() << "\n";
 
     client.cleanUp();
 	return 0;

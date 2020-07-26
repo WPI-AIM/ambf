@@ -43,6 +43,7 @@ Client::Client(){
     int argc = 0;
     char **argv = 0;
     ros::init(argc, argv, "ambf_client");
+    this->getPublishedTopics();
 }
 
 
@@ -53,7 +54,7 @@ void Client::connect() {
 
 void Client::createObjsFromRostopics()
 {
-    this->getPublishedTopics();
+
 
 //    string topic_name = "lights/light_left";
 //    IBaseObject* handler = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
@@ -63,6 +64,8 @@ void Client::createObjsFromRostopics()
 
 //    LightRosCom* lr = dynamic_cast<LightRosCom*>(handler);
 //    lr->~LightRosCom();
+//    while(!ros::ok())
+//        ROS_ERROR("Something is wrong with ROS. Will keep trying...");
 
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
         string msg_type = itr_->first;
@@ -90,6 +93,104 @@ void Client::createObjsFromRostopics()
         }
     }
 
+}
+
+void Client::printSummary() {
+    for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
+        for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
+            cout << "Message Type: " << itr_->first
+                 << ", Object name: " << ptr_->first
+                 << endl;
+        }
+    }
+}
+
+/////
+///// \brief Client::getActuatorNames
+///// \return vector of Actuator names
+/////
+vector<string> Client::getActuatorNames(){
+    string msg_type = "ambf_msgs/ActuatorState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+/////
+///// \brief Client::getCameraNames
+///// \return vector of Camera names
+/////
+vector<string> Client::getCameraNames(){
+    string msg_type = "ambf_msgs/CameraState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getLightNames() {
+    string msg_type = "ambf_msgs/LightState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getObjectNames() {
+    string msg_type = "ambf_msgs/ObjectState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getRigidBodyNames() {
+    string msg_type = "ambf_msgs/RigidBodyState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getSensorNames() {
+    string msg_type = "ambf_msgs/SensorState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getVehicleNames() {
+    string msg_type = "ambf_msgs/VehicleState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+vector<string> Client::getWorldNames() {
+    string msg_type = "ambf_msgs/WorldState";
+    vector<string> object_names;
+    if(!checkMessageType(msg_type)) return object_names;
+
+    getObjectNames(msg_type, object_names);
+    return object_names;
+}
+
+void Client::getObjectNames(string msg_type, vector<string>& object_names) {
+    std::transform (objects_map_[msg_type].begin(), objects_map_[msg_type].end(),back_inserter(object_names), [] (std::pair<string, iBaseObjectPtr> const & pair)
+    {
+    return pair.first;
+
+    });
 }
 
 /////
@@ -212,7 +313,7 @@ bool Client::getPublishedTopics(){
 
 ////    ros_topics_.clear();
 
-    ROS_INFO("%d", payload.size());
+//    ROS_INFO("%d", payload.size());
     string trim_topic = "/State";
     for (int i = 0; i < payload.size(); ++i) {
        string topic_name = (string(payload[i][0])).c_str();
@@ -221,7 +322,7 @@ bool Client::getPublishedTopics(){
        if(endsWith(topic_name, trim_topic)) {
            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
+//           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
 
            objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
            objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
@@ -368,6 +469,7 @@ T Client::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
 
 void Client::cleanUp() {
 //    ros::spin();
+//    ros::spinOnce();
 
 
 

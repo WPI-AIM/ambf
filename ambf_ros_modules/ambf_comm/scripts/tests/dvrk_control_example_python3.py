@@ -63,7 +63,7 @@ print(psm_children_names)
 # # The 3rd Kinematic or 7th Actual Joint, which is the Prismatic Insertion Joint
 # ecm_handle.set_joint_pos(6, 0.1)
 
-print('\n\n----')
+# print('\n\n----')
 # input("Mixed Pos and Effort control of PSM\'s joints. Press Enter to continue...")
 # For the PSM let's control some in position and some in effort mode
 # The 1st joint, which the PSM Yaw
@@ -90,7 +90,7 @@ psm_handle.set_joint_pos(3, -0.2)
 #     mtm_wrist_handle.set_torque(0, 3, 0) # Set 10 Nm in the World Y axis
 #     time.sleep(0.01) # Run the loop for 10 seconds
 
-print('\n\n----')
-input("Let's clean up. Press Enter to continue...")
+# print('\n\n----')
+# input("Let's clean up. Press Enter to continue...")
 # Lastly to cleanup
 _client.clean_up()

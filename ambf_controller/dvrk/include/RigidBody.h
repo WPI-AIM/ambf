@@ -45,6 +45,8 @@ namespace ambf_client{
 class RigidBody: public RigidBodyRosCom{
 public:
     RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+//    std::vector<string> get_children_names();
+
     inline void set_name(std::string name){m_State.name.data = name;}
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
@@ -63,7 +65,8 @@ public:
     // This method is to set any additional data that could for debugging purposes or future use
     void set_userdata(std::vector<float> &a_data);
     void set_children_names(std::vector<std::string> children_names);
-    inline std::vector<std::string> get_children_names(){return m_State.children_names;}
+    std::vector<std::string> get_children_names();
+//    inline std::vector<std::string> get_children_names(){return m_State.children_names;}
     void set_joint_names(std::vector<std::string> joint_names);
     inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
     void set_joint_positions(std::vector<float> joint_positions);

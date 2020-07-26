@@ -41,6 +41,7 @@
 #include <tf/LinearMath/Transform.h>
 #include<geometry_msgs/WrenchStamped.h>
 
+#include "CmdWatchDog.h"
 #include "Actuator.h"
 #include "Camera.h"
 #include "World.h"
@@ -73,6 +74,9 @@
 #include <vector>
 #include <iostream>
 #include <string>
+//#include <boost/program_options.hpp>
+//#include <mutex>
+//#include <thread>
 
 using namespace std;
 using namespace ambf_client;
@@ -105,15 +109,27 @@ public:
     ~Client(void);
 
     void connect();
+    void sys_run();
     void createObjsFromRostopics();
+    void printSummary();
+
+    vector<string> getActuatorNames();
+    vector<string> getCameraNames();
+    vector<string> getLightNames();
+    vector<string> getObjectNames();
+    vector<string> getRigidBodyNames();
+    vector<string> getSensorNames();
+    vector<string> getVehicleNames();
+    vector<string> getWorldNames();
+
     actuatorPtr getAActuator(std::string a_name, bool suppress_warning);
     cameraPtr getACamera(std::string a_name, bool suppress_warning);
-    worldPtr getAWorld(std::string a_name, bool suppress_warning);
-    objectPtr getAObject(std::string a_name, bool suppress_warning);
     lightPtr getALight(std::string a_name, bool suppress_warning);
+    objectPtr getAObject(std::string a_name, bool suppress_warning);
     rigidBodyPtr getARigidBody(std::string a_name, bool suppress_warning);
     sensorPtr getASensor(std::string a_name, bool suppress_warning);
     vehiclePtr getAVehicle(std::string a_name, bool suppress_warning);
+    worldPtr getAWorld(std::string a_name, bool suppress_warning);
 
 //    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
 //    ambf_client::Object* get_object_handle(std::string name);
@@ -130,15 +146,15 @@ private:
     std::unordered_map<string, IBaseObject *>::iterator ptr_;
 
 
-    float rate_ = 1000;
+    float rate_{1000};
     string world_name_ = "";
     string a_namespace_ = "/ambf/env/"; //This needs to be fixed, should not be hardcoded
 
 
-    int a_freq_min_ = 50;
-    int a_freq_max_ = 100;
-    double time_out_ = 10.0;
-
+    int a_freq_min_{50};
+    int a_freq_max_{100};
+    double time_out_{10.0};
+    const int loop_rate_ = 1000;
 
     bool getPublishedTopics();
     bool endsWith(const std::string& stack, const std::string& needle);
@@ -152,6 +168,7 @@ private:
     template <typename T, typename TMap>
     T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
     bool checkMessageType(std::string msg_type);
+    void getObjectNames(string msg_type, vector<string>& object_names);
 
 //    World* get_world_handle();
 //    bool object_exists(std::string name);

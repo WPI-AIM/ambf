@@ -40,6 +40,12 @@ namespace ambf_client{
 RigidBody::RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RigidBodyRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
+std::vector<std::string> RigidBody::get_children_names() {
+    std::vector<std::string> children_names = m_State.children_names;
+
+    return children_names;
+}
+
 ///
 /// \brief RigidBody::cur_position
 /// \param px
