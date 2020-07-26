@@ -1,6 +1,6 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2019, AMBF.
-#  (www.aimlab.wpi.edu)
+#  Copyright (c) 2020, AMBF.
+#  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
 #

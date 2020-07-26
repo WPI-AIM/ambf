@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,12 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \courtesy:  Dejaime Antônio de Oliveira Neto at https://www.gamedev.net/profile/187867-dejaime/ for initial direction
-    \motivation:https://www.gamedev.net/articles/programming/engines-and-middleware/yaml-basics-and-parsing-with-yaml-cpp-r3508/
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \version   1.0$
 */
 //==============================================================================
 
@@ -460,9 +457,9 @@ public:
     inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
 
     // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return _min_publish_frequency;}
+    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
 
-    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
+    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -504,10 +501,6 @@ protected:
 
     // Initial rotation of Ridig Body
     cMatrix3d m_initialRot;
-
-    // Min and Max publishing frequency
-    int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;
 
     // If passive, this instance will not be reported
     // for communication purposess.
@@ -789,8 +782,6 @@ public:
 protected:
 
     double m_scale;
-
-    double m_total_mass;
 
     std::string m_mesh_name;
 
@@ -1397,6 +1388,8 @@ public:
     // are define in the AMBF config file
     bool createDefaultCamera();
 
+    cCamera* getInternalCamera(){return m_camera;}
+
     // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
 
@@ -1658,9 +1651,25 @@ class afWorld: public cBulletWorld, public afConfigHandler, public afComm{
     friend class afMultiBody;
 
 public:
+
     afWorld(std::string a_global_namespace);
+
     virtual ~afWorld(){}
+
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    // Template method to add various types of objects
+    template<typename T, typename TMap>
+    bool addObject(T a_obj, std::string a_name, TMap* a_map);
+
+     // Template method to get a specific type of object
+    template <typename T, typename TMap>
+    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+
+     // Template method to get all objects of specific type
+    template <typename Tvec, typename TMap>
+    Tvec getObjects(TMap* tMap);
+
     bool createDefaultWorld();
 
     double getEnclosureLength();
@@ -1717,17 +1726,6 @@ public:
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
-
-
-    template<typename T, typename TMap>
-    bool addObject(T a_obj, std::string a_name, TMap* a_map);
-
-    template <typename T, typename TMap>
-    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
-
-    template <typename Tvec, typename TMap>
-    Tvec getObjects(TMap* tMap);
-
 
 
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
@@ -1826,49 +1824,101 @@ public:
 
     void removePickingConstraint();
 
+    virtual void enableShaderProgram();
+
+    void loadSkyBox();
+
     GLFWwindow* m_mainWindow;
 
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
+
     afRigidBodyPtr m_lastPickedBody=0;
+
     cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+
     cMaterial m_pickColor; // The color to be applied to the picked body
+
     class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
+
     class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
+
     int m_pickedNodeIdx = -1; // Picked SoftBody Node
+
     double m_pickedNodeMass = 0;
+
     cVector3d m_pickedNodeGoal;
+
     class btTypedConstraint* m_pickedConstraint=0;
+
     int m_savedState;
+
     cVector3d m_oldPickingPos;
+
     cVector3d m_hitPos;
+
     double m_oldPickingDist;
+
     cMesh* m_pickSphere;
 
     cPrecisionClock g_wallClock;
 
-    virtual void enableShaderProgram();
-
     bool m_shaderProgramDefined = false;
 
+    // Vertex Shader Filepath
     boost::filesystem::path m_vsFilePath;
+
+    // Fragment Shader Filepath
     boost::filesystem::path m_fsFilePath;
     //    cMesh* m_pickDragVector;
+
+    // Is skybox defined?
+    bool m_skyBoxDefined = false;
+
+    // Skybox Mesh
+    cMesh* m_skyBoxMesh = 0;
+
+    // L, R, T, B, F and B images for the skybox
+    boost::filesystem::path m_skyBoxLeft;
+
+    boost::filesystem::path m_skyBoxRight;
+
+    boost::filesystem::path m_skyBoxTop;
+
+    boost::filesystem::path m_skyBoxBottom;
+
+    boost::filesystem::path m_skyBoxFront;
+
+    boost::filesystem::path m_skyBoxBack;
+
+    bool m_skyBox_shaderProgramDefined = false;
+
+    boost::filesystem::path m_skyBox_vsFilePath;
+
+    boost::filesystem::path m_skyBox_fsFilePath;
+
+    boost::filesystem::path m_world_config_path;
 
 protected:
 
     afLightMap m_afLightMap;
+
     afCameraMap m_afCameraMap;
+
     afRigidBodyMap m_afRigidBodyMap;
+
     afSoftBodyMap m_afSoftBodyMap;
+
     afJointMap m_afJointMap;
+
     afActuatorMap m_afActuatorMap;
+
     afSensorMap m_afSensorMap;
+
     afMultiBodyMap m_afMultiBodyMap;
+
     afVehicleMap m_afVehicleMap;
 
-
-    afWorld(){}
     std::string m_namespace;
 
     // If this string is set, it will force itself to preeced all nampespaces
@@ -1878,9 +1928,13 @@ protected:
 private:
 
     static double m_encl_length;
+
     static double m_encl_width;
+
     static double m_encl_height;
+
     static int m_maxIterations;
+
     cPositionalLight* m_light;
     // Global flag to pause simulation
     bool m_pausePhx = false;
