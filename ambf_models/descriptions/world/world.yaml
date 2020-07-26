@@ -5,6 +5,22 @@ environment: "./checkered_floor.yaml"
 namespace: /ambf/env/
 max iterations: 50
 gravity: {x: 0.0, y: 0.0, z: -9.81}
+# shaders:
+#   path: ../../ambf_shaders/normal_map
+#   vertex: "shader.vs"
+#   fragment: "shader.fs"
+skybox:
+  path: ./skybox/
+  right: right.jpg
+  left:  left.jpg
+  top: top.jpg
+  bottom: bottom.jpg
+  front: front.jpg
+  back: back.jpg
+  shaders:
+    path: ./skybox/
+    vertex: "shader.vs"
+    fragment: "shader.fs"
 
 light1:
   namespace: /ambf/env/lights/

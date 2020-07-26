@@ -5492,12 +5492,16 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         return 0;
     }
 
+    m_world_config_path = boost::filesystem::path(a_world_config).parent_path();
+    printf("INFO! WORLD CONFIG PATH: %s \n", m_world_config_path.c_str());
+
     m_name = "World";
 
     YAML::Node worldEnclosureData = worldNode["enclosure"];
     YAML::Node worldLightsData = worldNode["lights"];
     YAML::Node worldCamerasData = worldNode["cameras"];
     YAML::Node worldEnvironment = worldNode["environment"];
+    YAML::Node worldSkyBox = worldNode["skybox"];
     YAML::Node worldNamespace = worldNode["namespace"];
     YAML::Node worldMaxIterations = worldNode["max iterations"];
     YAML::Node worldGravity = worldNode["gravity"];
@@ -5554,13 +5558,61 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         std::string world_adf = worldEnvironment.as<std::string>();
         boost::filesystem::path p(world_adf);
         if (p.is_relative()){
-            p = boost::filesystem::path(a_world_config).parent_path() / p;
+            p = m_world_config_path / p;
         }
         env_defined = loadADF(p.string(), false);
     }
 
     if (!env_defined){
         createDefaultWorld();
+    }
+
+    if (worldSkyBox.IsDefined()){
+        boost::filesystem::path skybox_path = worldSkyBox["path"].as<std::string>();
+
+        if (skybox_path.is_relative()){
+            skybox_path = m_world_config_path / skybox_path;
+        }
+
+        if (worldSkyBox["right"].IsDefined() &&
+                worldSkyBox["left"].IsDefined() &&
+                worldSkyBox["top"].IsDefined() &&
+                worldSkyBox["bottom"].IsDefined() &&
+                worldSkyBox["front"].IsDefined() &&
+                worldSkyBox["back"].IsDefined()
+                )
+        {
+            m_skyBoxDefined = true;
+        }
+        else{
+            m_skyBoxDefined = false;
+        }
+
+        if (m_skyBoxDefined){
+
+            m_skyBoxRight = skybox_path / worldSkyBox["right"].as<std::string>();
+            m_skyBoxLeft = skybox_path / worldSkyBox["left"].as<std::string>();
+            m_skyBoxTop = skybox_path / worldSkyBox["top"].as<std::string>();
+            m_skyBoxBottom = skybox_path / worldSkyBox["bottom"].as<std::string>();
+            m_skyBoxFront = skybox_path / worldSkyBox["front"].as<std::string>();
+            m_skyBoxBack = skybox_path / worldSkyBox["back"].as<std::string>();
+
+            if (worldSkyBox["shaders"].IsDefined()){
+                boost::filesystem::path shader_path = worldSkyBox["shaders"]["path"].as<std::string>();
+
+                if (shader_path.is_relative()){
+                    shader_path = m_world_config_path / shader_path;
+                }
+
+                m_skyBox_vsFilePath = shader_path / worldSkyBox["shaders"]["vertex"].as<std::string>();
+                m_skyBox_fsFilePath = shader_path / worldSkyBox["shaders"]["fragment"].as<std::string>();
+
+                m_skyBox_shaderProgramDefined = true;
+            }
+            else{
+                m_skyBox_shaderProgramDefined = false;
+            }
+        }
     }
 
     if (worldLightsData.IsDefined()){
@@ -5629,7 +5681,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             boost::filesystem::path shader_path = worldShaders["path"].as<std::string>();
 
             if (shader_path.is_relative()){
-                shader_path = getBasePath() / shader_path;
+                shader_path = m_world_config_path / shader_path;
             }
 
             m_vsFilePath = shader_path / worldShaders["vertex"].as<std::string>();
@@ -5641,6 +5693,141 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
 
     return true;
 
+}
+
+
+///
+/// \brief afWorld::createSkyBox
+///
+void afWorld::loadSkyBox(){
+    if (m_skyBoxDefined && m_skyBox_shaderProgramDefined){
+
+        m_skyBoxMesh = new cMesh();
+        float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+        };
+
+        for (int vI = 0 ; vI < 12 ; vI++){
+            int offset = vI * 9;
+            m_skyBoxMesh->newTriangle(cVector3d(skyboxVertices[offset + 0], skyboxVertices[offset + 1], skyboxVertices[offset + 2]),
+                    cVector3d(skyboxVertices[offset + 3], skyboxVertices[offset + 4], skyboxVertices[offset + 5]),
+                    cVector3d(skyboxVertices[offset + 6], skyboxVertices[offset + 7], skyboxVertices[offset + 8]));
+        }
+
+        m_skyBoxMesh->computeAllNormals();
+
+        cTextureCubeMapPtr newTexture = cTextureCubeMap::create();
+
+        for (int iI = 0 ; iI < 6 ; iI++){
+            newTexture->m_images[iI] = cImage::create();
+        }
+
+        bool res[6];
+        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxRight.c_str());
+        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxLeft.c_str());
+        res[2] = newTexture->m_images[3]->loadFromFile(m_skyBoxTop.c_str());
+        res[3] = newTexture->m_images[2]->loadFromFile(m_skyBoxBottom.c_str());
+        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxFront.c_str());
+        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBack.c_str());
+
+//        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxFront.c_str());
+//        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxBack.c_str());
+//        res[2] = newTexture->m_images[2]->loadFromFile(m_skyBoxRight.c_str());
+//        res[3] = newTexture->m_images[3]->loadFromFile(m_skyBoxLeft.c_str());
+//        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxTop.c_str());
+//        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBottom.c_str());
+
+        if (res[0] && res[1] && res[2] && res[3] && res[4] && res[5] && res[5]){
+            // All images were loaded succesfully
+
+            m_skyBoxMesh->setTexture(newTexture);
+            m_skyBoxMesh->setUseTexture(true);
+
+            addChild(m_skyBoxMesh);
+
+            if (m_skyBox_shaderProgramDefined){
+                std::ifstream vsFile;
+                std::ifstream fsFile;
+                vsFile.open(m_skyBox_vsFilePath.c_str());
+                fsFile.open(m_skyBox_fsFilePath.c_str());
+                // create a string stream
+                std::stringstream vsBuffer, fsBuffer;
+                // dump the contents of the file into it
+                vsBuffer << vsFile.rdbuf();
+                fsBuffer << fsFile.rdbuf();
+                // close the files
+                vsFile.close();
+                fsFile.close();
+
+                cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+                if (shaderProgram->linkProgram()){
+                    // Just empty Pts to let us use the shader
+                    cGenericObject* go;
+                    cRenderOptions ro;
+                    shaderProgram->use(go, ro);
+
+                    std::cerr << "USING SKYBOX SHADER FILES: " <<
+                                 "\n \t VERTEX: " << m_skyBox_vsFilePath.c_str() <<
+                                 "\n \t FRAGMENT: " << m_skyBox_fsFilePath.c_str() << std::endl;
+                    m_skyBoxMesh->setShaderProgram(shaderProgram);
+
+                }
+                else{
+                    std::cerr << "ERROR! FOR SKYBOX FAILED TO LOAD SHADER FILES: " <<
+                                 "\n \t VERTEX: " << m_skyBox_vsFilePath.c_str() <<
+                                 "\n \t FRAGMENT: " << m_skyBox_fsFilePath.c_str() << std::endl;
+
+                    m_skyBox_shaderProgramDefined = false;
+                    removeChild(m_skyBoxMesh);
+                    delete m_skyBoxMesh;
+                }
+            }
+        }
+        else{
+            std::cerr << "CAN'T LOAD SKY BOX IMAGES, IGNORING\n";
+        }
+    }
 }
 
 

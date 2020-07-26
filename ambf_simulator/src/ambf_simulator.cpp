@@ -406,6 +406,7 @@ int main(int argc, char* argv[])
         // The world loads the lights and cameras + windows
         std::string world_filename = g_afWorld->getWorldConfig();
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+
         g_cameras = g_afWorld->getAFCameras();
 
         // Process the loadMultiBodyFiles string
@@ -602,6 +603,9 @@ int main(int argc, char* argv[])
 
         g_winWidthRatio = double(buffW) / double(winW);
         g_winHeightRatio = double(buffH) / double(winH);
+
+        // Load the skybox if defined.
+        g_afWorld->loadSkyBox();
 
     }
 
@@ -1393,6 +1397,20 @@ void updateGraphics()
         // Update the Labels in a separate sub-routine
         if (g_updateLabels)
             updateLabels();
+
+        if (g_afWorld->m_skyBox_shaderProgramDefined && g_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+        }
 
         // render world
         cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
