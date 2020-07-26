@@ -9,18 +9,18 @@ gravity: {x: 0.0, y: 0.0, z: -9.81}
 #   path: ../../ambf_shaders/normal_map
 #   vertex: "shader.vs"
 #   fragment: "shader.fs"
-skybox:
-  path: ./skybox/
-  right: right.jpg
-  left:  left.jpg
-  top: top.jpg
-  bottom: bottom.jpg
-  front: front.jpg
-  back: back.jpg
-  shaders:
-    path: ./skybox/
-    vertex: "shader.vs"
-    fragment: "shader.fs"
+# skybox: # Uncomment to load this skybox
+#   path: ./skybox/ocean_and_mountains
+#   right: px.png
+#   left:  nx.png
+#   top: py.png
+#   bottom: ny.png
+#   front: pz.png
+#   back: nz.png
+#   shaders:
+#     path: ./skybox/
+#     vertex: "shader.vs"
+#     fragment: "shader.fs"
 
 light1:
   namespace: /ambf/env/lights/
