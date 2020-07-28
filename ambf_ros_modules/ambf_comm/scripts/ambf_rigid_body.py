@@ -597,7 +597,6 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
         self._cmd.joint_cmds = effort_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_FORCE
         self._apply_command()        
 
     def set_joint_pos(self, joint_name_or_idx, q):
@@ -638,10 +637,9 @@ class RigidBody(BaseObject):
 
         if len(effort_list) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
+            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_POSITION]*n_jnts
 
         self._cmd.joint_cmds = q_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_POSITION
         self._apply_command()  
 
     def set_joint_vel(self, joint_name_or_idx, q):
@@ -682,10 +680,9 @@ class RigidBody(BaseObject):
 
         if len(q_list) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
+            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_VELOCITY]*n_jnts
 
         self._cmd.joint_cmds = q_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_VELOCITY
         self._apply_command() 
 
     def _clear_command(self):
