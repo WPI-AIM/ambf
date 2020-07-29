@@ -28,7 +28,7 @@ set -m
 ./training.bash
 
 # Start the fourth process
-./tensorboard_launch.bash
+#./tensorboard_launch.bash
 
 # now we bring the primary process back into the foreground
 # and leave it there
