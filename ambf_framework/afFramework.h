@@ -1080,7 +1080,7 @@ protected:
 
 
 private:
-    afRigidBodyPtr m_childRigidBody = 0;
+    afRigidBodyPtr m_childBody = 0;
     afSensorPtr m_childSotBody = 0;
     int m_softBodyFaceIdx = -1;
     // Child offset w.r.t to actuator

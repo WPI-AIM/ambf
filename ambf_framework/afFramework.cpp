@@ -1084,7 +1084,7 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
         // Check if the new requested actuation is the same as what is already
         // actuated. In this case simply ignore the request
 
-        if (a_rigidBody == m_childRigidBody && (m_P_cINp - a_bodyOffset).length() < 0.001){
+        if (a_rigidBody == m_childBody){
             // We already have the same constraint. We can ignore the new request
 
             std::cerr << "INFO! ACTUATOR \"" << m_name << "\" IS ACTIVATED WITH THE SAME BODY AND OFFSET. THEREBY "
@@ -1100,11 +1100,13 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
     if (a_rigidBody){
         btVector3 pvtA = toBTvec(getLocalPos());
         btVector3 pvtB = toBTvec(a_bodyOffset);
-        m_constraint = new btPoint2PointConstraint(*m_parentBody->m_bulletRigidBody, *a_rigidBody->m_bulletRigidBody, pvtA, pvtB);
+        m_childBody = a_rigidBody;
+        m_constraint = new btPoint2PointConstraint(*m_parentBody->m_bulletRigidBody, *m_childBody->m_bulletRigidBody, pvtA, pvtB);
         m_constraint->m_setting.m_impulseClamp = m_maxImpulse;
         m_constraint->m_setting.m_tau = m_tau;
         m_afWorld->m_bulletWorld->addConstraint(m_constraint);
         m_active = true;
+        return;
     }
     else{
         // We can warn that the requested body is in valid
@@ -1133,7 +1135,7 @@ void afConstraintActuator::deactuate(){
         delete m_constraint;
 
         m_constraint = 0;
-        m_childRigidBody = 0;
+        m_childBody = 0;
         m_childSotBody = 0;
         m_softBodyFaceIdx = -1;
     }
@@ -7595,7 +7597,7 @@ afRigidBodyPtr afMultiBody::getAFRigidBodyLocal(std::string a_name, bool suppres
     }
     else{
         if (!suppress_warning){
-            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: " << a_name << std::endl;
+            std::cerr << "WARNING: CAN'T FIND ANY BODY NAMED: " << a_name << " IN LOCAL MAP" << std::endl;
 
             std::cerr <<"Existing Bodies in Map: " << m_afRigidBodyMapLocal.size() << std::endl;
             afRigidBodyMap::iterator rbIt = m_afRigidBodyMapLocal.begin();
@@ -7749,7 +7751,7 @@ T afWorld::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
     }
     else{
         if (!suppress_warning){
-            std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\"\n";
+            std::cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
 
             std::cerr <<"Existing OBJECTS in Map: " << a_map->size() << std::endl;
             typename TMap::iterator oIt = a_map->begin();
