@@ -40,88 +40,164 @@ namespace ambf_client{
 Object::Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): ObjectRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
-void Object::cur_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_State.pose.position.x = px;
-    m_State.pose.position.y = py;
-    m_State.pose.position.z = pz;
+bool Object::is_joint_idx_valid(int joint_idx) {
+    int n_joints = get_num_of_children();
+
+
+    return joint_idx <= n_joints;
 }
 
-void Object::cur_orientation(double roll, double pitch, double yaw){
+int Object::get_joint_idx_from_name(std::string joint_name) {
+    std::vector<std::string> joint_names = m_State.joint_names;
+
+    std::vector<std::string>::iterator it = std::find(joint_names.begin(), joint_names.end(), joint_name);
+
+    if(it != joint_names.end()) {
+        return std::distance(joint_names.begin(), it);
+    }
+
+    return -1;
+}
+
+std::string Object::get_joint_name_from_id(int joint_index) {
+    std::vector<std::string> joint_names = m_State.joint_names;
+    if(joint_index < joint_names.size()) {
+        return joint_names[joint_index];
+    }
+
+    return NULL;
+}
+
+
+tf::Vector3 Object::get_position() {
+    double px = m_State.pose.position.x;
+    double py = m_State.pose.position.y;
+    double pz = m_State.pose.position.z;
+
+    return tf::Vector3(px, py, pz);
+}
+
+tf::Quaternion Object::get_orientation() {
     tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+
+    tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
+    return rot_quat;
 }
 
-void Object::cur_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+tf::Pose Object::get_pose() {
+    tf::Pose pose;
+
+    tf::poseMsgToTF(m_State.pose, pose);
+    return pose;
 }
 
-void Object::cur_force(double fx, double fy, double fz){
-    tf::Vector3 f(fx, fy, fz);
-    tf::vector3TFToMsg(f, m_State.wrench.force);
+///
+/// \brief Object::get_joint_force
+/// \param fx
+/// \param fy
+/// \param fz
+///
+tf::Vector3 Object::get_joint_force(){
+    tf::Vector3 f(0.0, 0.0, 0.0);
+    tf::vector3MsgToTF(m_State.wrench.torque, f);
+    return f;
 }
 
-void Object::cur_torque(double nx, double ny, double nz){
-    tf::Vector3 n(nx, ny, nz);
-    tf::vector3TFToMsg(n, m_State.wrench.torque);
+
+///
+/// \brief Object::get_joint_torque
+/// \param nx
+/// \param ny
+/// \param nz
+///
+tf::Vector3 Object::get_joint_torque(){
+    tf::Vector3 n(0.0, 0.0, 0.0);
+    tf::vector3MsgToTF(m_State.wrench.torque, n);
+    return n;
 }
 
-ambf_msgs::ObjectCmd Object::get_command(){
-    ambf_msgs::ObjectCmd temp_cmd = m_Cmd;
-    int joint_commands_size = m_Cmd.joint_cmds.size();
-    temp_cmd.joint_cmds.resize(joint_commands_size);
-    temp_cmd.position_controller_mask.resize(joint_commands_size);
-    temp_cmd.enable_position_controller = m_Cmd.enable_position_controller;
-    for(size_t idx = 0; idx < joint_commands_size ; idx++){
-        temp_cmd.joint_cmds[idx] = m_Cmd.joint_cmds[idx];
-        if (idx < m_Cmd.position_controller_mask.size()){
-            temp_cmd.position_controller_mask[idx] = m_Cmd.position_controller_mask[idx];
-        }
-        else{
-            temp_cmd.position_controller_mask[idx] = 0;
-        }
-    }
-    return temp_cmd;
-}
+//void Object::cur_position(double px, double py, double pz){
+//    m_trans.setOrigin(tf::Vector3(px, py, pz));
+//    m_State.pose.position.x = px;
+//    m_State.pose.position.y = py;
+//    m_State.pose.position.z = pz;
+//}
 
-void Object::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
+//void Object::cur_orientation(double roll, double pitch, double yaw){
+//    tf::Quaternion rot_quat;
+//    rot_quat.setRPY(roll, pitch, yaw);
+//    m_trans.setRotation(rot_quat);
+//    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+//}
 
-void Object::set_userdata(float a_data){
-    if (m_State.userdata.size() != 1){
-        m_State.userdata.resize(1);
-    }
-    m_State.userdata[0] = a_data;
-}
+//void Object::cur_orientation(double qx, double qy, double qz, double qw){
+//    tf::Quaternion rot_quat(qx, qy, qz, qw);
+//    m_trans.setRotation(rot_quat);
+//    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+//}
 
-void Object::set_userdata(std::vector<float> &a_data){
-    if (m_State.userdata.size() != a_data.size()){
-        m_State.userdata.resize(a_data.size());
-    }
-    m_State.userdata = a_data;
-}
+//void Object::cur_force(double fx, double fy, double fz){
+//    tf::Vector3 f(fx, fy, fz);
+//    tf::vector3TFToMsg(f, m_State.wrench.force);
+//}
 
-void Object::set_children_names(std::vector<std::string> children_names){
-    m_State.children_names = children_names;
-}
+//void Object::cur_torque(double nx, double ny, double nz){
+//    tf::Vector3 n(nx, ny, nz);
+//    tf::vector3TFToMsg(n, m_State.wrench.torque);
+//}
 
-void Object::set_joint_names(std::vector<std::string> joint_names){
-    m_State.joint_names = joint_names;
-}
+//ambf_msgs::ObjectCmd Object::get_command(){
+//    ambf_msgs::ObjectCmd temp_cmd = m_Cmd;
+//    int joint_commands_size = m_Cmd.joint_cmds.size();
+//    temp_cmd.joint_cmds.resize(joint_commands_size);
+//    temp_cmd.position_controller_mask.resize(joint_commands_size);
+//    temp_cmd.enable_position_controller = m_Cmd.enable_position_controller;
+//    for(size_t idx = 0; idx < joint_commands_size ; idx++){
+//        temp_cmd.joint_cmds[idx] = m_Cmd.joint_cmds[idx];
+//        if (idx < m_Cmd.position_controller_mask.size()){
+//            temp_cmd.position_controller_mask[idx] = m_Cmd.position_controller_mask[idx];
+//        }
+//        else{
+//            temp_cmd.position_controller_mask[idx] = 0;
+//        }
+//    }
+//    return temp_cmd;
+//}
 
-void Object::set_joint_positions(std::vector<float> joint_positions){
-    if (m_State.joint_positions.size() != joint_positions.size()){
-        m_State.joint_positions.resize(joint_positions.size());
-    }
-    m_State.joint_positions = joint_positions;
-}
+//void Object::set_wall_time(double a_sec){
+//    m_State.wall_time = a_sec;
+//    increment_sim_step();
+//    m_State.header.stamp = ros::Time::now();
+//}
+
+//void Object::set_userdata(float a_data){
+//    if (m_State.userdata.size() != 1){
+//        m_State.userdata.resize(1);
+//    }
+//    m_State.userdata[0] = a_data;
+//}
+
+//void Object::set_userdata(std::vector<float> &a_data){
+//    if (m_State.userdata.size() != a_data.size()){
+//        m_State.userdata.resize(a_data.size());
+//    }
+//    m_State.userdata = a_data;
+//}
+
+//void Object::set_children_names(std::vector<std::string> children_names){
+//    m_State.children_names = children_names;
+//}
+
+//void Object::set_joint_names(std::vector<std::string> joint_names){
+//    m_State.joint_names = joint_names;
+//}
+
+//void Object::set_joint_positions(std::vector<float> joint_positions){
+//    if (m_State.joint_positions.size() != joint_positions.size()){
+//        m_State.joint_positions.resize(joint_positions.size());
+//    }
+//    m_State.joint_positions = joint_positions;
+//}
 
 extern "C"{
 

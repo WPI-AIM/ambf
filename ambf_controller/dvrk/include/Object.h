@@ -45,30 +45,44 @@ namespace ambf_client{
 class Object: public ObjectRosCom{
 public:
     Object(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    inline void set_name(std::string name){m_State.name.data = name;}
-    void cur_position(double px, double py, double pz);
-    void cur_orientation(double roll, double pitch, double yaw);
-    void cur_orientation(double qx, double qy, double qz, double qw);
-    void cur_force(double fx, double fy, double fz);
-    void cur_torque(double nx, double ny, double nz);
-    ambf_msgs::ObjectCmd get_command();
-    void set_wall_time(double a_sec);
-    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
-    inline void set_mass(double a_mass){m_State.mass = a_mass;}
-    inline void set_principal_inertia(double Ixx, double Iyy, double Izz){m_State.pInertia.x = Ixx; m_State.pInertia.y = Iyy; m_State.pInertia.z = Izz;}
-    inline void increment_sim_step(){m_State.sim_step++;}
-    inline void set_sim_step(uint step){m_State.sim_step = step;}
-    // This method is to set the description of additional data that could for debugging purposes or future use
-    inline void set_userdata_desc(std::string description){m_State.userdata_description = description;}
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(float a_data);
-    // This method is to set any additional data that could for debugging purposes or future use
-    void set_userdata(std::vector<float> &a_data);
-    void set_children_names(std::vector<std::string> children_names);
+    inline int get_num_of_children(){return m_State.children_names.size();}
     inline std::vector<std::string> get_children_names(){return m_State.children_names;}
-    void set_joint_names(std::vector<std::string> joint_names);
-    inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
-    void set_joint_positions(std::vector<float> joint_positions);
+
+    bool is_joint_idx_valid(int joint_idx);
+    int get_joint_idx_from_name(std::string joint_name);
+    std::string get_joint_name_from_id(int joint_index);
+    tf::Vector3 get_position();
+    tf::Vector3 get_rpy(); //TBD
+    tf::Quaternion get_orientation();
+    tf::Pose get_pose();
+
+    tf::Vector3 get_joint_force();
+    tf::Vector3 get_joint_torque();
+
+//    inline void set_name(std::string name){m_State.name.data = name;}
+//    void cur_position(double px, double py, double pz);
+//    void cur_orientation(double roll, double pitch, double yaw);
+//    void cur_orientation(double qx, double qy, double qz, double qw);
+//    void cur_force(double fx, double fy, double fz);
+//    void cur_torque(double nx, double ny, double nz);
+//    ambf_msgs::ObjectCmd get_command();
+//    void set_wall_time(double a_sec);
+//    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
+//    inline void set_mass(double a_mass){m_State.mass = a_mass;}
+//    inline void set_principal_inertia(double Ixx, double Iyy, double Izz){m_State.pInertia.x = Ixx; m_State.pInertia.y = Iyy; m_State.pInertia.z = Izz;}
+//    inline void increment_sim_step(){m_State.sim_step++;}
+//    inline void set_sim_step(uint step){m_State.sim_step = step;}
+//    // This method is to set the description of additional data that could for debugging purposes or future use
+//    inline void set_userdata_desc(std::string description){m_State.userdata_description = description;}
+//    // This method is to set any additional data that could for debugging purposes or future use
+//    void set_userdata(float a_data);
+//    // This method is to set any additional data that could for debugging purposes or future use
+//    void set_userdata(std::vector<float> &a_data);
+//    void set_children_names(std::vector<std::string> children_names);
+//    inline std::vector<std::string> get_children_names(){return m_State.children_names;}
+//    void set_joint_names(std::vector<std::string> joint_names);
+//    inline std::vector<std::string> get_joint_names(){return m_State.joint_names;}
+//    void set_joint_positions(std::vector<float> joint_positions);
 };
 }
 

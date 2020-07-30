@@ -108,7 +108,7 @@ tf::Vector3 RigidBody::get_angular_velocity(){
 ///
 tf::Vector3 RigidBody::get_joint_force(){
     tf::Vector3 f(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.wrench.torque, f);
+    tf::vector3MsgToTF(m_State.wrench.torque, f);
     return f;
 }
 
@@ -121,7 +121,7 @@ tf::Vector3 RigidBody::get_joint_force(){
 ///
 tf::Vector3 RigidBody::get_joint_torque(){
     tf::Vector3 n(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.wrench.torque, n);
+    tf::vector3MsgToTF(m_State.wrench.torque, n);
     return n;
 }
 
