@@ -63,10 +63,19 @@ public:
         m_freq_min = a_freq_min;
         m_freq_max = a_freq_max;
 
+        int argc = 0;
+        char **argv = 0;
+        ros::init(argc, argv, "ambf_client");
 
         nodePtr.reset(new ros::NodeHandle);
         aspinPtr.reset(new ros::AsyncSpinner(1));
         nodePtr->setCallbackQueue(&m_custom_queue);
+
+//        m_custom_queue.callAvailable(ros::WallDuration());
+//        ros::AsyncSpinner spinner(0, &m_custom_queue);
+//        spinner.start();
+
+
         m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
     }
     virtual void init() = 0;

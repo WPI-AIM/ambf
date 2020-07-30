@@ -54,8 +54,17 @@ int main(int argc, char* argv[])
     cout << psm_baselink << "\n";
     rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
 
+    cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
+
     std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
-    cout << "base_children.size(): " << base_children.size() << "\n";
+    for(string name : base_children) {
+        cout << "name: " << name << "\n";
+    }
+
+    tf::Pose pose = psm_baselink_handler->get_pose();
+    psm_baselink_handler->set_pose(pose);
+
+    cout << "is_joint_idx_valid(): " << psm_baselink_handler->is_joint_idx_valid(50) << "\n";
 
     client.cleanUp();
 	return 0;

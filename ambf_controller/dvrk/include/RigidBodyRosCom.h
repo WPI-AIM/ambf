@@ -50,6 +50,9 @@ public:
 protected:
     virtual void reset_cmd();
     void sub_cb(ambf_msgs::RigidBodyStateConstPtr msg);
+
+private:
+    void spinThread();
 };
 
 

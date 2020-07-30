@@ -40,6 +40,8 @@ RigidBodyRosCom::RigidBodyRosCom(std::string a_name, std::string a_namespace, in
     init();
 }
 
+
+
 void RigidBodyRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;

@@ -40,16 +40,58 @@
 Client::Client(){
 //    m_numObjects = 0;
 
+//    int argc = 0;
+//    char **argv = 0;
+//    ros::init(argc, argv, "ambf_client");
+
+//    boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
+//    boost::shared_ptr<ros::NodeHandle> nodePtr;
+//    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
+//    ros::CallbackQueue m_custom_queue;
+
     int argc = 0;
     char **argv = 0;
     ros::init(argc, argv, "ambf_client");
-    this->getPublishedTopics();
+//    nodePtr.reset(new ros::NodeHandle);
+//    aspinPtr.reset(new ros::AsyncSpinner(1));
+//    nodePtr->setCallbackQueue(&m_custom_queue);
+//    m_watchDogPtr.reset(new CmdWatchDog(a_freq_min_, a_freq_max_, time_out_));
+
 }
 
-
 void Client::connect() {
+    this->getPublishedTopics();
     this->createObjsFromRostopics();
 
+    ros::spin();
+//    boost::shared_ptr<ros::NodeHandle> nodePtr;
+//    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
+//    ros::CallbackQueue m_custom_queue;
+
+//    nodePtr.reset(new ros::NodeHandle);
+//    aspinPtr.reset(new ros::AsyncSpinner(1));
+//    nodePtr->setCallbackQueue(&m_custom_queue);
+//    m_custom_queue.callAvailable(ros::WallDuration());
+//    ros::AsyncSpinner spinner(0, &m_custom_queue);
+//    spinner.start();
+
+//    string topic_name = "psm/baselink";
+//    IBaseObject* handler = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
+
+//    RigidBody* rb = dynamic_cast<RigidBody*>(handler);
+
+//    std::vector<std::string> base_children = rb->get_children_names();
+//    cout << "base_children.size(): " << base_children.size() << "\n";
+
+//    ros::MultiThreadedSpinner spinner(4);
+//    spinner.start();
+//    ros::waitForShutdown();
+
+//    while (ros::ok())
+//    {
+//        ros::spinOnce();
+//        sleep(2);
+//    }
 }
 
 void Client::createObjsFromRostopics()
