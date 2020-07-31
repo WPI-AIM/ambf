@@ -40,123 +40,63 @@ namespace ambf_client{
 Sensor::Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): SensorRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
-void Sensor::cur_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_State.pose.position.x = px;
-    m_State.pose.position.y = py;
-    m_State.pose.position.z = pz;
+tf::Vector3 Sensor::get_position() {
+    double px = m_State.pose.position.x;
+    double py = m_State.pose.position.y;
+    double pz = m_State.pose.position.z;
+
+    return tf::Vector3(px, py, pz);
 }
 
-void Sensor::cur_orientation(double roll, double pitch, double yaw){
+tf::Quaternion Sensor::get_orientation() {
     tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+
+    tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
+    return rot_quat;
 }
 
-void Sensor::cur_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
-
-void Sensor::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
-void Sensor::set_trigger(bool triggered){
-    if (m_State.triggered.size() == 0){
-        m_State.triggered.resize(1);
-    }
-    m_State.triggered[0] = triggered;
-
-}
-
-void Sensor::set_triggers(std::vector<bool> triggered){
-    if (m_State.triggered.size() != triggered.size()){
-        m_State.triggered.resize(triggered.size());
+std::vector<bool> Sensor::get_triggers(){
+    std::vector<bool> triggered;
+    for (int i = 0 ; i < m_State.triggered.size() ; i++){
+        triggered[i] = m_State.triggered[i];
     }
 
-    for (int i = 0 ; i < triggered.size() ; i++){
-        m_State.triggered[i] = triggered[i];
-    }
+    return triggered;
 }
 
-void Sensor::set_range(double range){
-    if (m_State.range.size() == 0){
-        m_State.range.resize(1);
+std::vector<double> Sensor::get_ranges(){
+    std::vector<double> ranges;
+
+    for (int i = 0 ; i < m_State.range.size() ; i++){
+        ranges[i] = m_State.range[i];
     }
-    else{
-        m_State.range[0] = range;
+    return ranges;
+}
+
+std::vector<double> Sensor::get_measurements(){
+    std::vector<double> measurement;
+
+    for (int i = 0 ; i < m_State.measurement.size() ; i++){
+        measurement[i] = m_State.measurement[i];
+    }
+    return measurement;
+}
+
+std::vector<std::string> Sensor::get_sensed_objects(){
+    std::vector<std::string> sensed_objects;
+
+    for (int i = 0 ; i < m_State.sensed_objects.size() ; i++){
+        sensed_objects[i] = m_State.sensed_objects[i].data;
     }
 }
 
-void Sensor::set_ranges(std::vector<double> range){
-    if (m_State.range.size() != range.size()){
-        m_State.range.resize(range.size());
+std::vector<int> Sensor::get_sensed_objects_map(){
+    std::vector<int> sensed_objects_map;
+
+    for (int i = 0 ; i < m_State.sensed_objects_map.size() ; i++){
+        sensed_objects_map[i] = m_State.sensed_objects_map[i];
     }
-
-    for (int i = 0 ; i < range.size() ; i++){
-        m_State.range[i] = range[i];
-    }
-}
-
-void Sensor::set_measurement(double measurement){
-    if (m_State.measurement.size() == 0){
-        m_State.measurement.resize(1);
-    }
-    m_State.measurement[0] = measurement;
-}
-
-void Sensor::set_measurements(std::vector<double> measurement){
-    if (m_State.measurement.size() != measurement.size()){
-        m_State.measurement.resize(measurement.size());
-    }
-
-    for (int i = 0 ; i < measurement.size() ; i++){
-        m_State.measurement[i] = measurement[i];
-    }
-}
-
-void Sensor::set_sensed_object(std::string sensed_object){
-    if (m_State.sensed_objects.size() == 0){
-        m_State.sensed_objects.resize(1);
-    }
-     m_State.sensed_objects[0].data = sensed_object;
-}
-
-void Sensor::set_sensed_objects(std::vector<std::string> sensed_objects){
-    if (m_State.sensed_objects.size() != sensed_objects.size()){
-        m_State.sensed_objects.resize(sensed_objects.size());
-    }
-
-    for (int i = 0 ; i < sensed_objects.size() ; i++){
-        m_State.sensed_objects[i].data = sensed_objects[i];
-    }
-}
-
-void Sensor::set_sensed_object_map(int sensed_objects_map){
-    if (m_State.sensed_objects_map.size() == 0){
-        m_State.sensed_objects_map.resize(1);
-    }
-    m_State.sensed_objects_map[0] = 0;
-}
-
-void Sensor::set_sensed_objects_map(std::vector<int> sensed_objects_map){
-    if (m_State.sensed_objects_map.size() != sensed_objects_map.size()){
-        m_State.sensed_objects_map.resize(sensed_objects_map.size());
-    }
-
-    for (int i = 0 ; i < sensed_objects_map.size() ; i++){
-        m_State.sensed_objects_map[i] = sensed_objects_map[i];
-    }
-}
-
-
-void Sensor::set_type(std::string type){
-    m_State.type.data = type;
+    return sensed_objects_map;
 }
 
 extern "C"{

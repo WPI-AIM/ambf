@@ -44,38 +44,38 @@ namespace ambf_client{
 class Sensor: public SensorRosCom{
 public:
     Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    inline void set_name(std::string name){m_State.name.data = name;}
-    void cur_position(double px, double py, double pz);
-    void cur_orientation(double roll, double pitch, double yaw);
-    void cur_orientation(double qx, double qy, double qz, double qw);
-    void set_wall_time(double a_sec);
-    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
-    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
-    inline void increment_sim_step(){m_State.sim_step++;}
-    inline void set_sim_step(uint step){m_State.sim_step = step;}
+//    inline void set_name(std::string name){m_State.name.data = name;}
+    tf::Vector3 get_position();
+    tf::Quaternion get_orientation();
+//    void set_wall_time(double a_sec);
+//    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
+//    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
+//    inline void increment_sim_step(){m_State.sim_step++;}
+//    inline void set_sim_step(uint step){m_State.sim_step = step;}
     inline void set_count(int count){m_State.count = count;}
 
-    void set_trigger(bool triggered);
-    void set_triggers(std::vector<bool> triggered);
+//    void set_trigger(bool triggered);
+    inline bool is_triggered() { return m_State.triggered[0]; }
+    std::vector<bool> get_triggers();
 
-    void set_range(double range);
-    void set_ranges(std::vector<double> ranges);
+    double get_range() {m_State.range[0];}
+    std::vector<double> get_ranges();
 
-    void set_measurement(double measurements);
-    void set_measurements(std::vector<double> measurements);
+    double get_measurement() { return m_State.measurement[0]; }
+    std::vector<double> get_measurements();
 
-    void set_sensed_object(std::string sensed_object);
-    void set_sensed_objects(std::vector<std::string> sensed_objects);
+    std::string get_sensed_object(); //TBD
+    std::vector<std::string> get_sensed_objects();
 
-    void set_type(std::string type);
+//    void set_type(std::string type);
 
     // We may have multiple individual sensor elements belonging to this
     // sensor comm. And groups of sensors may be in contact with different
     // sets of objects. This method is thus used to specify the mapping
     // of each sensor element w.r.t. to the sensed_objects list of string.
-    void set_sensed_objects_map(std::vector<int> sensed_objects_map);
+    std::vector<int> get_sensed_objects_map();
 
-    void set_sensed_object_map(int sensed_objects_map);
+    int get_sensed_object_map() { return m_State.sensed_objects_map[0]; }
 
 };
 }

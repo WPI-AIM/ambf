@@ -121,16 +121,9 @@ class Camera: public CameraRosCom, public CameraParams{
 public:
     Camera(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ambf_msgs::CameraCmd get_command();
-    inline void set_name(std::string name){m_State.name.data = name;}
-    void cur_position(double px, double py, double pz);
-    void cur_orientation(double roll, double pitch, double yaw);
-    void cur_orientation(double qx, double qy, double qz, double qw);
-    void set_wall_time(double a_sec);
-    void set_parent_name(std::string name){m_State.parent_name.data = name;}
-    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
-    inline void increment_sim_step(){m_State.sim_step++;}
-    inline void set_sim_step(uint step){m_State.sim_step = step;}
-
+    void set_position(double px, double py, double pz);
+    void set_orientation(double roll, double pitch, double yaw);
+    void set_orientation(double qx, double qy, double qz, double qw);
     std::string get_parent_name(){return m_State.parent_name.data;}
 
     // This method updates from the ROS param server instead of topics

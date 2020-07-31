@@ -45,30 +45,26 @@ ambf_msgs::VehicleCmd Vehicle::get_command(){
     return temp_cmd;
 }
 
-void Vehicle::cur_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_State.pose.position.x = px;
-    m_State.pose.position.y = py;
-    m_State.pose.position.z = pz;
+tf::Vector3 Vehicle::get_position() {
+    double px = m_State.pose.position.x;
+    double py = m_State.pose.position.y;
+    double pz = m_State.pose.position.z;
+
+    return tf::Vector3(px, py, pz);
 }
 
-void Vehicle::cur_orientation(double roll, double pitch, double yaw){
+tf::Quaternion Vehicle::get_orientation() {
     tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+
+    tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
+    return rot_quat;
 }
 
-void Vehicle::cur_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
+tf::Vector3 Vehicle::get_principal_inertia() {
+    tf::Vector3 I(0, 0, 0);
+    tf::pointMsgToTF(m_State.pInertia, I);
 
-void Vehicle::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
+    return I;
 }
 
 extern "C"{

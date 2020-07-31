@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
     cout << psm_baselink << "\n";
     rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
 
+    usleep(1000000);
+
     cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
 
     std::vector<std::string> base_children = psm_baselink_handler->get_children_names();

@@ -63,7 +63,7 @@ void Client::connect() {
     this->getPublishedTopics();
     this->createObjsFromRostopics();
 
-    ros::spin();
+//    ros::spin();
 //    boost::shared_ptr<ros::NodeHandle> nodePtr;
 //    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
 //    ros::CallbackQueue m_custom_queue;

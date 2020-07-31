@@ -157,31 +157,26 @@ Camera::Camera(std::string a_name, std::string a_namespace, int a_freq_min, int 
     m_base_prefix = a_namespace + '/' + a_name;
 }
 
-void Camera::cur_position(double px, double py, double pz){
+void Camera::set_position(double px, double py, double pz){
     m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_State.pose.position.x = px;
-    m_State.pose.position.y = py;
-    m_State.pose.position.z = pz;
+    m_Cmd.pose.position.x = px;
+    m_Cmd.pose.position.y = py;
+    m_Cmd.pose.position.z = pz;
 }
 
-void Camera::cur_orientation(double roll, double pitch, double yaw){
+void Camera::set_orientation(double roll, double pitch, double yaw){
     tf::Quaternion rot_quat;
     rot_quat.setRPY(roll, pitch, yaw);
     m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 }
 
-void Camera::cur_orientation(double qx, double qy, double qz, double qw){
+void Camera::set_orientation(double qx, double qy, double qz, double qw){
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 }
 
-void Camera::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
 
 ambf_msgs::CameraCmd Camera::get_command(){
     ambf_msgs::CameraCmd temp_cmd = m_Cmd;
