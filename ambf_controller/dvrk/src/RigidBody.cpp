@@ -41,16 +41,24 @@ RigidBody::RigidBody(std::string a_name, std::string a_namespace, int a_freq_min
 }
 
 bool RigidBody::is_joint_idx_valid(int joint_idx) {
-    int n_joints = get_num_of_children();
+    int n_joints = m_State.joint_positions.size();
+    if(joint_idx < n_joints) return true;
 
+    std::cerr << "ERROR! Requested Joint Idx of " << std::to_string(joint_idx) << " outside valid range [0 - " << std::to_string(n_joints - 1) << "]" << std::endl;
 
-    return joint_idx <= n_joints;
+    return false;
 }
 
-tf::Vector3 RigidBody::get_position() {
+tf::Vector3 RigidBody::get_joint_position() {
     double px = m_State.pose.position.x;
     double py = m_State.pose.position.y;
     double pz = m_State.pose.position.z;
+
+    std::vector<float> joint_positions = m_State.joint_positions;
+    ROS_INFO("joint_position-size(): %d", joint_positions.size());
+    for(float joint_position : joint_positions) {
+        ROS_INFO("joint_position: %f", joint_position);
+    }
 
     return tf::Vector3(px, py, pz);
 }
@@ -58,14 +66,14 @@ tf::Vector3 RigidBody::get_position() {
 //tf::Quaternion RigidBody::get_ryp() {
 //}
 
-tf::Quaternion RigidBody::get_orientation() {
+tf::Quaternion RigidBody::get_joint_orientation() {
     tf::Quaternion rot_quat;
 
     tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
     return rot_quat;
 }
 
-tf::Pose RigidBody::get_pose() {
+tf::Pose RigidBody::get_joint_pose() {
     tf::Pose pose;
 
     tf::poseMsgToTF(m_State.pose, pose);
@@ -132,7 +140,7 @@ tf::Vector3 RigidBody::get_joint_torque(){
 /// \param py
 /// \param pz
 ///
-void RigidBody::set_position(double px, double py, double pz){
+void RigidBody::set_joint_position(double px, double py, double pz){
     m_trans.setOrigin(tf::Vector3(px, py, pz));
     m_Cmd.pose.position.x = px;
     m_Cmd.pose.position.y = py;
@@ -145,7 +153,7 @@ void RigidBody::set_position(double px, double py, double pz){
 /// \param pitch
 /// \param yaw
 ///
-void RigidBody::set_orientation(double roll, double pitch, double yaw){
+void RigidBody::set_joint_orientation(double roll, double pitch, double yaw){
     tf::Quaternion rot_quat;
     rot_quat.setRPY(roll, pitch, yaw);
     m_trans.setRotation(rot_quat);
@@ -160,14 +168,14 @@ void RigidBody::set_orientation(double roll, double pitch, double yaw){
 /// \param qz
 /// \param qw
 ///
-void RigidBody::set_orientation(double qx, double qy, double qz, double qw){
+void RigidBody::set_joint_orientation(double qx, double qy, double qz, double qw){
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 }
 
 
-void RigidBody::set_pose(const tf::Pose pose) {
+void RigidBody::set_joint_pose(const tf::Pose pose) {
      tf::poseTFToMsg(pose, m_Cmd.pose);
 }
 

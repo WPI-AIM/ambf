@@ -51,12 +51,12 @@ public:
     std::string get_parent_name(); //TBD
 
     bool is_joint_idx_valid(int joint_idx);
-    tf::Vector3 get_position();
-    tf::Vector3 get_rpy(); //TBD
-    tf::Quaternion get_orientation();
-    tf::Pose get_pose();
+    tf::Vector3 get_joint_position();
+    tf::Vector3 get_joint_rpy(); //TBD
+    tf::Quaternion get_joint_orientation();
+    tf::Pose get_joint_pose();
     tf::Vector3 get_principal_inertia();
-    inline double get_mass(){return m_State.mass;}
+    inline double get_joint_mass(){return m_State.mass;}
 
     tf::Vector3 get_linear_velocity();
     tf::Vector3 get_angular_velocity();
@@ -64,10 +64,10 @@ public:
     tf::Vector3 get_joint_force();
     tf::Vector3 get_joint_torque();
 
-    void set_position(double px, double py, double pz);
-    void set_orientation(double roll, double pitch, double yaw);
-    void set_orientation(double qx, double qy, double qz, double qw);
-    void set_pose(tf::Pose pose);
+    void set_joint_position(double px, double py, double pz);
+    void set_joint_orientation(double roll, double pitch, double yaw);
+    void set_joint_orientation(double qx, double qy, double qz, double qw);
+    void set_joint_pose(tf::Pose pose);
 
     void set_linear_velocity(double vx, double vy, double vz);
     void set_angular_velocity(double ax, double ay, double az);

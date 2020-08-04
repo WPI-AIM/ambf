@@ -38,60 +38,14 @@
 #include <string>
 
 Client::Client(){
-//    m_numObjects = 0;
-
-//    int argc = 0;
-//    char **argv = 0;
-//    ros::init(argc, argv, "ambf_client");
-
-//    boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
-//    boost::shared_ptr<ros::NodeHandle> nodePtr;
-//    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
-//    ros::CallbackQueue m_custom_queue;
-
     int argc = 0;
     char **argv = 0;
     ros::init(argc, argv, "ambf_client");
-//    nodePtr.reset(new ros::NodeHandle);
-//    aspinPtr.reset(new ros::AsyncSpinner(1));
-//    nodePtr->setCallbackQueue(&m_custom_queue);
-//    m_watchDogPtr.reset(new CmdWatchDog(a_freq_min_, a_freq_max_, time_out_));
-
 }
 
 void Client::connect() {
     this->getPublishedTopics();
     this->createObjsFromRostopics();
-
-//    ros::spin();
-//    boost::shared_ptr<ros::NodeHandle> nodePtr;
-//    boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
-//    ros::CallbackQueue m_custom_queue;
-
-//    nodePtr.reset(new ros::NodeHandle);
-//    aspinPtr.reset(new ros::AsyncSpinner(1));
-//    nodePtr->setCallbackQueue(&m_custom_queue);
-//    m_custom_queue.callAvailable(ros::WallDuration());
-//    ros::AsyncSpinner spinner(0, &m_custom_queue);
-//    spinner.start();
-
-//    string topic_name = "psm/baselink";
-//    IBaseObject* handler = new RigidBody(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-
-//    RigidBody* rb = dynamic_cast<RigidBody*>(handler);
-
-//    std::vector<std::string> base_children = rb->get_children_names();
-//    cout << "base_children.size(): " << base_children.size() << "\n";
-
-//    ros::MultiThreadedSpinner spinner(4);
-//    spinner.start();
-//    ros::waitForShutdown();
-
-//    while (ros::ok())
-//    {
-//        ros::spinOnce();
-//        sleep(2);
-//    }
 }
 
 void Client::createObjsFromRostopics()
@@ -353,9 +307,8 @@ bool Client::getPublishedTopics(){
         return false;
     }
 
-////    ros_topics_.clear();
+//    ros_topics_.clear();
 
-//    ROS_INFO("%d", payload.size());
     string trim_topic = "/State";
     for (int i = 0; i < payload.size(); ++i) {
        string topic_name = (string(payload[i][0])).c_str();
@@ -429,92 +382,7 @@ T Client::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
     }
 }
 
-
-
-
-//World* Client::get_world_handle() {
-//    return world_handle_;
-//}
-
-
-
-
-//void Client::add_object(std::string name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-//    if(!object_exists(name)){
-//        m_objectMap[name] = boost::shared_ptr<ambf_client::Object>(new ambf_client::Object(name, a_namespace, a_min_freq, a_max_freq, time_out));
-//    }
-//    else{
-//        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" ALREADY EXISTS. IGNORING" << std::endl;
-//    }
-//}
-
-//ambf_client::Object* Client::get_object_handle(std::string name){
-//    if(object_exists(name)){
-//        return m_objectMap[name].get();
-//    }
-//    else{
-//        return NULL;
-//    }
-//}
-
-//bool Client::object_exists(std::string name){
-//    m_objectIt = m_objectMap.find(name);
-//    if(m_objectIt != m_objectMap.end()){
-//        return true;
-//    }
-//    else{
-//        std::cerr<< "ERROR!, OBJECT: \""<< name << "\" DOESN'T EXIST" << std::endl;
-//        return false;
-//    }
-//}
-
-//bool Client::object_cur_position(std::string name, double px, double py, double pz){
-//    if(object_exists(name)){
-//        m_objectMap[name]->cur_position(px, py, pz);
-//        return true;
-//    }
-//    else{
-//        return false;
-//    }
-//}
-
-//bool Client::object_cur_orientation(std::string name, double roll, double pitch, double yaw){
-//    if(object_exists(name)){
-//        m_objectMap[name]->cur_orientation(roll, pitch, yaw);
-//        return true;
-//    }
-//    else{
-//        return false;
-//    }
-//}
-
-//bool Client::object_cur_force(std::string name, double fx, double fy, double fz){
-//    if(object_exists(name)){
-//        m_objectMap[name]->cur_force(fx, fy, fz);
-//        return true;
-//    }
-//    else{
-//        return false;
-//    }
-//}
-
-//bool Client::object_cur_torque(std::string name, double nx, double ny, double nz){
-//    if(object_exists(name)){
-//        m_objectMap[name]->cur_torque(nx, ny, nz);
-//        return true;
-//    }
-//    else{
-//        return false;
-//    }
-//}
-
-
 void Client::cleanUp() {
-//    ros::spin();
-//    ros::spinOnce();
-
-
-
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
         string msg_type = itr_->first;
 

@@ -93,7 +93,6 @@ typedef Sensor* sensorPtr;
 typedef Vehicle* vehiclePtr;
 typedef World* worldPtr;
 //------------------------------------------------------------------------------
-
 struct Observation{
 public:
     Observation();
@@ -131,12 +130,7 @@ public:
     vehiclePtr getAVehicle(std::string a_name, bool suppress_warning);
     worldPtr getAWorld(std::string a_name, bool suppress_warning);
 
-//    void add_object(std::string name, std::string a_namespace="/ambf_client/", int a_min_freq=50, int a_max_freq=1000, double time_out=0.5);
-//    ambf_client::Object* get_object_handle(std::string name);
-//    bool object_cur_position(std::string name, double px, double py, double pz);
-//    bool object_cur_orientation(std::string name, double roll, double pitch, double yaw);
-//    bool object_cur_force(std::string name, double fx, double fy, double fz);
-//    bool object_cur_torque(std::string name, double nx, double ny, double nz);
+
     void cleanUp();
 
 private:
@@ -169,14 +163,6 @@ private:
     T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
     bool checkMessageType(std::string msg_type);
     void getObjectNames(string msg_type, vector<string>& object_names);
-
-//    World* get_world_handle();
-//    bool object_exists(std::string name);
-//    static const int max_obj_size=10;
-//    int m_numObjects;
-//    std::map<std::string, boost::shared_ptr<ambf_client::Object> > m_objectMap;
-//    std::map<std::string, boost::shared_ptr<ambf_client::Object> >::iterator m_objectIt;
-//    boost::shared_ptr<ambf_client::Object> m_Objects[max_obj_size];
 };
 
 

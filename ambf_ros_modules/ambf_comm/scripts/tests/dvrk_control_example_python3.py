@@ -36,6 +36,7 @@ print('\n\n----')
 print(' ')
 print('PSM Base Rotation as Quaternion:')
 print(psm_handle.get_rot())
+psm_handle.set_joint_pos(0, 0)
 
 # print(' ')
 # print('MTM Wrist Fixed Rotation:')
@@ -52,6 +53,9 @@ psm_children_names = psm_handle.get_children_names() # Get a list of children na
 print(' ')
 print('Name of PSM\'s children:')
 print(psm_children_names)
+
+for name in psm_children_names:
+    print("psm_handle.get_joint_pos()", name)
 
 # print('\n\n----')
 # input("Control ECMs joint positions. Press Enter to continue...")
