@@ -44,7 +44,9 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 
 include_directories (${GLFW_INCLUDE_DIRS}
                      raven2/include 
-		     dvrk/include )
+#		     dvrk/include
+		     ambf_client/include
+)
 
 add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/include/ambf_controller.h
@@ -54,68 +56,70 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/src/ambf_defines.cpp
                                 raven2/src/main.cpp )
 
-add_executable (ambf_client    
-	dvrk/include/CmdWatchDog.h
-	dvrk/include/RosComBase.h
+#add_executable (ambf_client_app   
+#	dvrk/include/CmdWatchDog.h
+#	dvrk/include/RosComBase.h
 
-	dvrk/include/ActuatorRosCom.h
-	dvrk/include/Actuator.h
+#	dvrk/include/ActuatorRosCom.h
+#	dvrk/include/Actuator.h
 
-	dvrk/include/Camera.h
-	dvrk/include/CameraRosCom.h
+#	dvrk/include/Camera.h
+#	dvrk/include/CameraRosCom.h
 
-	dvrk/include/LightRosCom.h
-	dvrk/include/Light.h
+#	dvrk/include/LightRosCom.h
+#	dvrk/include/Light.h
 
-	dvrk/include/ObjectRosCom.h
-	dvrk/include/Object.h
+#	dvrk/include/ObjectRosCom.h
+#	dvrk/include/Object.h
 
-	dvrk/include/RigidBodyRosCom.h
-	dvrk/include/RigidBody.h
+#	dvrk/include/RigidBodyRosCom.h
+#	dvrk/include/RigidBody.h
 
-	dvrk/include/SensorRosCom.h
-	dvrk/include/Sensor.h
+#	dvrk/include/SensorRosCom.h
+#	dvrk/include/Sensor.h
 
-	dvrk/include/VehicleRosCom.h
-	dvrk/include/Vehicle.h
+#	dvrk/include/VehicleRosCom.h
+#	dvrk/include/Vehicle.h
 
-	dvrk/include/WorldRosCom.h
-	dvrk/include/World.h
+#	dvrk/include/WorldRosCom.h
+#	dvrk/include/World.h
 
-	dvrk/include/ambf_client.h
-	#dvrk/include/BaseObject.h
+#	dvrk/include/ambf_client.h
+#	#dvrk/include/BaseObject.h
 
 
-	dvrk/src/RosComBase.cpp
+#	dvrk/src/RosComBase.cpp
 
-	dvrk/src/ActuatorRosCom.cpp
-	dvrk/src/Actuator.cpp
+#	dvrk/src/ActuatorRosCom.cpp
+#	dvrk/src/Actuator.cpp
 
-	dvrk/src/CameraRosCom.cpp
-	dvrk/src/Camera.cpp
+#	dvrk/src/CameraRosCom.cpp
+#	dvrk/src/Camera.cpp
 
-	dvrk/src/LightRosCom.cpp
-	dvrk/src/Light.cpp
+#	dvrk/src/LightRosCom.cpp
+#	dvrk/src/Light.cpp
 
-	dvrk/src/ObjectRosCom.cpp 
-	dvrk/src/Object.cpp
+#	dvrk/src/ObjectRosCom.cpp 
+#	dvrk/src/Object.cpp
 
-	dvrk/src/RigidBodyRosCom.cpp
-	dvrk/src/RigidBody.cpp
+#	dvrk/src/RigidBodyRosCom.cpp
+#	dvrk/src/RigidBody.cpp
 
-	dvrk/src/SensorRosCom.cpp
-	dvrk/src/Sensor.cpp
+#	dvrk/src/SensorRosCom.cpp
+#	dvrk/src/Sensor.cpp
 
-	dvrk/src/VehicleRosCom.cpp
-	dvrk/src/Vehicle.cpp
+#	dvrk/src/VehicleRosCom.cpp
+#	dvrk/src/Vehicle.cpp
 
-	dvrk/src/WorldRosCom.cpp
-	dvrk/src/World.cpp
+#	dvrk/src/WorldRosCom.cpp
+#	dvrk/src/World.cpp
 
-	dvrk/src/ambf_client.cpp
-	dvrk/src/main.cpp
-	#dvrk/src/BaseObject.cpp
-	)
+#	dvrk/src/ambf_client.cpp
+#	dvrk/src/main.cpp
+#	#dvrk/src/BaseObject.cpp
+#	)
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries (ambf_client ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+#target_link_libraries (ambf_client_app ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)

@@ -39,8 +39,8 @@
 
 int main(int argc, char* argv[])
 {
-//    Client client;
-//    client.connect();
+    Client client;
+    client.connect();
 
 //    std::string a_name = "World";
 //    worldPtr world_handler = client.getAWorld(a_name, true);
@@ -94,6 +94,6 @@ int main(int argc, char* argv[])
 //    ROS_INFO("%f, %f, %f", joint_position[0], joint_position[1], joint_position[2]);
 
 
-//    client.cleanUp();
+    client.cleanUp();
 	return 0;
 }
