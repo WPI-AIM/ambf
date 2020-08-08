@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
 project(ambf_client_app)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -45,8 +48,6 @@ include_directories (${GLFW_INCLUDE_DIRS})
 
 add_executable (${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries (${PROJECT_NAME} ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
-
-
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

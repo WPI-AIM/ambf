@@ -93,7 +93,7 @@ bool afCamera::s_imageTransportInitialized = false;
 
 template <>
 ///
-/// \brief toXYZ<btVector3>
+/// \brief .<btVector3>
 /// \param node
 /// \return
 ///

@@ -74,7 +74,7 @@ for name in psm_children_names:
 psm_handle.set_joint_effort(0, 0.5)
 # The 3rd Kinematic joint, which is the PSM Insertion Joint
 psm_handle.set_joint_pos(3, -0.2)
-
+print('get_joint_vel(0): ', psm_handle.get_joint_vel(0))
 # print('\n\n----')
 # input("Set force on MTM's Wrist Yaw link for 5 secs. Press Enter to continue...")
 # # Let's directly control the forces and torques on the mtmWristYaw Link
@@ -86,6 +86,10 @@ psm_handle.set_joint_pos(3, -0.2)
 # for i in range(0, 500):
 #     mtm_wrist_handle.set_force(0, 0, 10) # Set 10 N in the World Z axis
 #     time.sleep(0.01) # Run the loop for 10 seconds
+
+print("force_cmd: ", psm_handle.get_force_command())
+
+print("rot_cmd: ", psm_handle.get_rot_command())
 
 # print('\n\n----')
 # input("Set wrench on MTM's Wrist Yaw link for 5 secs. Press Enter to continue...")

@@ -37,62 +37,72 @@
 #include<ros/ros.h>
 #include <ros/master.h>
 
+void printVector3(std::string caption, tf::Vector3 v) {
+    ROS_INFO("%s: , %f, %f, %f", caption.c_str(), v[0], v[1], v[2]);
+}
+
+template<typename T>
+void printVector(std::string caption, std::vector<T> ts) {
+    ROS_INFO("%s", caption.c_str());
+
+    for(T t: ts) {
+        std::cout << t << std::endl;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     Client client;
     client.connect();
 
-//    std::string a_name = "World";
-//    worldPtr world_handler = client.getAWorld(a_name, true);
+    client.printSummary();
+    vector<string> object_names;
 
-//    client.printSummary();
-//    vector<string> object_names;
+    object_names = client.getRigidBodyNames();
+    usleep(2000);
 
-//    object_names = client.getRigidBodyNames();
-//    usleep(2000);
-//    for(string obj_name : object_names) {
-//        cout << "obj_name: " << obj_name << "\n";
-//    }
-//    string psm_baselink = object_names[5];
-//        string psm_baselink = object_names[0];
-//    cout << psm_baselink << "\n";
-//    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
-//    usleep(10000);
-//    for(int i = 0; i < 100; i++) {
-//        usleep(2000);
-//        cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
-//        std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
-//        for(string name : base_children) {
-//            cout << "name: " << name << "\n";
-//        }
+    string psm_baselink = "psm/baselink";
+    cout << "psm_baselink: " << psm_baselink << "\n";
+    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+    usleep(1000000);
 
-//        tf::Pose pose = psm_baselink_handler->get_pose();
-//        psm_baselink_handler->set_pose(pose);
-
-//        cout << "is_joint_idx_valid(): " << psm_baselink_handler->is_joint_idx_valid(50) << "\n";
-
-//    }
-//    string psm_base_link = object_names[5];
-//    rigidBodyPtr psm_base_link_handler = client.getARigidBody(psm_base_link, true);
+    cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
+    std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
 
 
-//    psm_base_link_handler->set_joint_force(30.0, 30.0, 30.0);
-//    usleep(10000);
+    for(string name : base_children) {
+        cout << "name: " << name << "\n";
+    }
 
-//    for(int n_joint = 0; n_joint < object_names.size(); n_joint++) {
-//        string psm_link = object_names[n_joint];
-//        cout << psm_link << "\n";
-//        rigidBodyPtr psm_link_handler = client.getARigidBody(psm_link, true);
-//        for(int i = 0; i < 1000; i++){
-//            psm_link_handler->set_joint_force(30.0, 30.0, 30.0);
-////            usleep(1000);
-//        }
-//        psm_link_handler->cleanUp();
-//    }
-//    tf::Vector3 joint_position = psm_base_link_handler->get_joint_position();
-//    usleep(1000);
-//    ROS_INFO("%f, %f, %f", joint_position[0], joint_position[1], joint_position[2]);
+    ROS_INFO("is_joint_idx_valid(0): %d", psm_baselink_handler->is_joint_idx_valid(0));
+    printVector3("get_linear_vel()", psm_baselink_handler->get_linear_vel());
+    printVector3("get_angular_vel()", psm_baselink_handler->get_angular_vel());
 
+    if(base_children.size() < 1) {
+        client.cleanUp();
+        return 0;
+    }
+    string joint_name = ("baselink-" + base_children[0]).c_str();
+    ROS_INFO("get_joint_idx_from_name(%s): %d", joint_name.c_str(), psm_baselink_handler->get_joint_idx_from_name(joint_name));
+    ROS_INFO("get_joint_name_from_idx(%d): %s", 0, psm_baselink_handler->get_joint_name_from_idx(0).c_str());
+
+    ROS_INFO("is_joint_idx_valid(%d): %d", 0, psm_baselink_handler->is_joint_idx_valid(0));
+
+    ROS_INFO("get_joint_pos<int>(%d): %f", 0, psm_baselink_handler->get_joint_pos<int>(0));
+    ROS_INFO("get_joint_pos<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_pos<std::string>(joint_name));
+
+    ROS_INFO("get_joint_vel<int>(%d): %f", 0, psm_baselink_handler->get_joint_vel<int>(0));
+    ROS_INFO("get_joint_vel<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_vel<std::string>(joint_name));
+
+    ROS_INFO("get_joint_effort<int>(%d): %f", 0, psm_baselink_handler->get_joint_effort<int>(0));
+    ROS_INFO("get_joint_effort<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_effort<std::string>(joint_name));
+
+    printVector("psm_baselink_handler->get_all_joint_pos()", psm_baselink_handler->get_all_joint_pos());
+    printVector("psm_baselink_handler->get_all_joint_vel()", psm_baselink_handler->get_all_joint_vel());
+    printVector("psm_baselink_handler->get_all_joint_effort()", psm_baselink_handler->get_all_joint_effort());
+
+//    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
+//    printVector(joint_position);
 
     client.cleanUp();
 	return 0;
