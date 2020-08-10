@@ -100,6 +100,15 @@ public:
     void pose_command(double px, double py, double pz, double qx, double qy, double qz, double qw);
     void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);
 
+    void set_joint_control(int joint_idx, float effort, int control_type);
+    template<typename T>
+    void set_joint_effort(T t, float effort);
+    template<typename T>
+    void set_joint_pos(T t, float q);
+    template<typename T>
+    void set_joint_vel(T t, float q);
+
+
 //    template<typename T>
 //    int get_joint_pos(T t) {
 //        int joint_idx = -1;

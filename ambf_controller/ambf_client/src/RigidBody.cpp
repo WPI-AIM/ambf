@@ -323,10 +323,53 @@ void RigidBody::velocity_command(double vx, double vy, double vz, double ax, dou
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
 }
 
+void RigidBody::set_joint_control(int joint_idx, float effort, int control_type) {
+    if(!is_joint_idx_valid(joint_idx)) return;
+    int n_jnts_cmd = m_Cmd.joint_cmds.size();
 
-//void set_joint_effort(self, joint, effort)
-//void set_joint_pos(self, joint_name_or_idx, q)
-//void set_joint_vel(self, joint_name_or_idx, q)
+
+    if(n_jnts_cmd != m_State.joint_positions.size()) {
+        m_Cmd.joint_cmds.resize(n_jnts_cmd);
+        m_Cmd.joint_cmds_types.resize(n_jnts_cmd, control_type);
+    }
+
+    m_Cmd.joint_cmds[joint_idx] = effort;
+    m_Cmd.joint_cmds_types[joint_idx] = control_type;
+
+}
+
+template<>
+void RigidBody::set_joint_effort(int joint_idx, float effort) {
+    set_joint_control(joint_idx, effort, m_Cmd.TYPE_FORCE);
+}
+
+template<>
+void RigidBody::set_joint_effort(std::string joint_name, float effort) {
+    int joint_idx = get_joint_idx_from_name(joint_name);
+    set_joint_effort(joint_idx, effort);
+}
+
+template<>
+void RigidBody::set_joint_pos(int joint_idx, float effort) {
+    set_joint_control(joint_idx, effort, m_Cmd.TYPE_POSITION);
+}
+
+template<>
+void RigidBody::set_joint_pos(std::string joint_name, float effort) {
+    int joint_idx = get_joint_idx_from_name(joint_name);
+    set_joint_effort(joint_idx, effort);
+}
+
+template<>
+void RigidBody::set_joint_vel(int joint_idx, float effort) {
+    set_joint_control(joint_idx, effort, m_Cmd.TYPE_VELOCITY);
+}
+
+template<>
+void RigidBody::set_joint_vel(std::string joint_name, float effort) {
+    int joint_idx = get_joint_idx_from_name(joint_name);
+    set_joint_effort(joint_idx, effort);
+}
 
 tf::Vector3 RigidBody::get_joint_position() {
     double px = m_State.pose.position.x;
