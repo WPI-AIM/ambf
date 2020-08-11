@@ -68,9 +68,14 @@ RUN . /opt/ros/melodic/setup.sh && \
   make -j$(nproc)
 
 RUN apt-get update && \
-  cat install/training-pip-requirements.txt | xargs -n 1 -L 1 pip3 install -U && \
+  cat install/training-pip-requirements.txt | xargs -n 1 -L 1 pip install -U && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
+
+# Stable Baselines fix
+RUN rm -f /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py && \
+  cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpy.py \
+  /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/
 
 RUN touch ${HOME}/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
