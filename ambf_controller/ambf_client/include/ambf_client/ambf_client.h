@@ -73,9 +73,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
-//#include <boost/program_options.hpp>
-//#include <mutex>
-//#include <thread>
+#include "ros/topic_manager.h"
 
 using namespace std;
 using namespace ambf_client;
@@ -139,15 +137,15 @@ private:
     std::unordered_map<string, IBaseObject *>::iterator ptr_;
 
 
-    float rate_{1000};
+    const float rate_{1000};
     string world_name_ = "";
     string a_namespace_ = "/ambf/env/"; //This needs to be fixed, should not be hardcoded
 
 
-    int a_freq_min_{50};
-    int a_freq_max_{100};
-    double time_out_{10.0};
-    const int loop_rate_ = 1000;
+    const int a_freq_min_{50};
+    const int a_freq_max_{100};
+    const double time_out_{10.0};
+    const int loop_rate_{1000};
 
     bool getPublishedTopics();
     bool endsWith(const std::string& stack, const std::string& needle);

@@ -41,6 +41,8 @@ Client::Client(){
     int argc = 0;
     char **argv = 0;
     ros::init(argc, argv, "ambf_client");
+    ros::shutdown();
+    usleep(1000000);
 }
 
 void Client::connect() {
@@ -50,19 +52,6 @@ void Client::connect() {
 
 void Client::createObjsFromRostopics()
 {
-
-
-//    string topic_name = "lights/light_left";
-//    IBaseObject* handler = new Light(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
-
-//    Light* l = dynamic_cast<Light*>(handler);
-//    l->get_command();
-
-//    LightRosCom* lr = dynamic_cast<LightRosCom*>(handler);
-//    lr->~LightRosCom();
-//    while(!ros::ok())
-//        ROS_ERROR("Something is wrong with ROS. Will keep trying...");
-
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
         string msg_type = itr_->first;
 
@@ -299,7 +288,9 @@ bool Client::checkMessageType(std::string msg_type){
 }
 
 bool Client::getPublishedTopics(){
+
     XmlRpc::XmlRpcValue args, result, payload;
+
     args[0] = ros::this_node::getName();
 
     if (!ros::master::execute("getTopicTypes", args, result, payload, true)){
@@ -317,7 +308,7 @@ bool Client::getPublishedTopics(){
        if(endsWith(topic_name, trim_topic)) {
            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-//           ROS_INFO("%s - %s", msg_type.c_str(), topic_name.c_str());
+//           ROS_INFO("getPublishedTopics(): %s - %s", msg_type.c_str(), topic_name.c_str());
 
            objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
            objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
