@@ -588,13 +588,13 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(effort_list) != n_jnts:
-            print('Requested Joint Index out of range '+ str(n_jnts) + " " + str(len(effort_list)))
-            return
 
         if len(effort_list) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
+        else:
+            print('Requested Joint Index out of range '+ str(n_jnts) + " " + str(len(effort_list)))
+            return
 
         self._cmd.joint_cmds = effort_list
         self._apply_command()        
@@ -632,12 +632,11 @@ class RigidBody(BaseObject):
         n_jnts = len(self._state.joint_positions)
 
         if len(q_list) != n_jnts:
-            print('Requested Joint Index out of range:n_jnts ' + str(n_jnts))
-            return
-
-        if len(effort_list) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_POSITION]*n_jnts
+        else:
+            print('Requested Joint Index out of range:n_jnts ' + str(n_jnts))
+            return
 
         self._cmd.joint_cmds = q_list
         self._apply_command()  
@@ -674,13 +673,12 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if q_list != n_jnts:
-            print('Requested Joint Index out of range')
-            return
-
         if len(q_list) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_VELOCITY]*n_jnts
+        else:
+            print('Requested Joint Index out of range:n_jnts ' + str(n_jnts))
+            return
 
         self._cmd.joint_cmds = q_list
         self._apply_command() 
