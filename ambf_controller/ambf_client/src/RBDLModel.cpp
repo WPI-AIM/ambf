@@ -1,4 +1,4 @@
-#include "rbdlparser.h"
+#include "RBDLModel.h"
 
 RBDLParser::RBDLParser()
 {

@@ -95,7 +95,7 @@ set (ENV_HDR_FILES
     include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/WorldRosCom.h
     include/${PROJECT_NAME}/CmdWatchDog.h
-    include/${PROJECT_NAME}/rbdlparser.h)
+    include/${PROJECT_NAME}/RBDLModel.h)
 
 set (ENV_SRC_FILES
     src/ambf_client.cpp
@@ -118,7 +118,7 @@ set (ENV_SRC_FILES
     src/World.cpp
     src/WorldRosCom.cpp
     src/RosComBase.cpp
-    src/rbdlparser.cpp)
+    src/RBDLModel.cpp)
 
 
 ## Declare a C++ library

@@ -1,8 +1,0 @@
-std_msgs/Float32MultiArray Q
-std_msgs/Float32MultiArray QDot
-std_msgs/Float32MultiArray QDDot
-std_msgs/Float32MultiArray Tau
-
----
-std_msgs/Float32MultiArray Tau
-std_msgs/Float32MultiArray QDDOT
