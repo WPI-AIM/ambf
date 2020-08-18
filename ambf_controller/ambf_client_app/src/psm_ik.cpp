@@ -1,6 +1,6 @@
 #include "ambf_client_app/psm_ik.h"
 
-PSM_IK::PSM_IK(){}
+PSM_IK::PSM_IK() {}
 
 std::vector<float> PSM_IK::compute_IK(Matrix4f T_7_0) {
 
@@ -74,10 +74,14 @@ std::vector<float> PSM_IK::compute_IK(Matrix4f T_7_0) {
     Matrix4f T_4_0 = psm_fk.compute_FK(std::vector<float>{j1, j2, j3, j4});
     float j5 = utilities.get_angle(T_PinchJoint_0.block<3, 1>(0, 3), T_4_0.block<3, 1>(0, 2), -T_4_0.block<3, 1>(0, 1));
 
-////    Calculate j6
-////    This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
+//    Calculate j6
+//    This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
     Matrix4f T_5_0 = psm_fk.compute_FK(std::vector<float>{j1, j2, j3, j4, j5});
     float j6 = utilities.get_angle(T_7_0.block<3, 1>(0, 2), T_5_0.block<3, 1>(0, 0), -T_5_0.block<3, 1>(0, 1));
 
+    utilities.~Utilities();
+//    psm_fk.~PSM_FK();
     return std::vector<float>{j1, j2, j3, j4, j5, j6};
 }
+
+PSM_IK::~PSM_IK(void) {}

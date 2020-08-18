@@ -50,27 +50,6 @@ def compute_FK(joint_pos):
     T_6_0 = np.matmul(T_5_0, T_6_5)
     T_7_0 = np.matmul(T_6_0, T_7_6)
 
-    # print("\nT_1_0: ")
-    # print(T_1_0)
-
-    # print("\nT_2_0: ")
-    # print(T_2_0)
-
-    # print("\nT_3_0: ")
-    # print(T_3_0)
-
-    # print("\nT_4_0: ")
-    # print(T_4_0)
-
-    # print("\nT_5_0: ")
-    # print(T_5_0)
-
-    # print("\nT_6_0: ")
-    # print(T_6_0)
-
-    # print("\nT_7_0: ")
-    # print(T_7_0)
-
     # print("RETURNING FK FOR LINK ", len(joint_pos))
 
     if len(joint_pos) == 1:

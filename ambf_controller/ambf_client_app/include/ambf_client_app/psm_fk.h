@@ -34,7 +34,9 @@ class PSM_FK
 public:
     PSM_FK();
     Matrix4f compute_FK(std::vector<float> joint_pos);
+    void cleanup();
 
+    ~PSM_FK(void);
 private:
     std::vector<DH *> DH_Vector_;
 

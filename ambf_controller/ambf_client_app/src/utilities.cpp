@@ -28,3 +28,5 @@ float Utilities::get_angle(Vector3f vec_a, Vector3f vec_b, Vector3f up_vector) {
 
     return angle;
 }
+
+Utilities::~Utilities(void) {}

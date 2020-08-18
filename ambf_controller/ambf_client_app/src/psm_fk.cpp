@@ -49,3 +49,12 @@ Matrix4f PSM_FK::compute_FK(std::vector<float> joint_pos) {
     if(joint_pos_n == 6) return T_6_0;
     if(joint_pos_n == 7) return T_7_0;
 }
+
+void PSM_FK::cleanup() {
+    for(DH *dh : DH_Vector_)
+        dh->~DH();
+}
+
+PSM_FK::~PSM_FK(void){
+    cleanup();
+}

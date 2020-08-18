@@ -54,6 +54,7 @@ class PSM_IK
 public:
     PSM_IK();
     std::vector<float> compute_IK(Matrix4f T_7_0);
+    ~PSM_IK(void);
 
 private:
     const double palm_length_ = 0.0091; // Fixed length from the palm joint to the pinch joint
