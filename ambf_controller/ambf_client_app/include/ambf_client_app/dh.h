@@ -15,6 +15,7 @@ public:
     Matrix4f mat_from_dh(double alpha, double a, double theta, double d, double offset);
     Matrix4f get_trans();
 
+    ~DH(void);
 private:
     const double alpha_{0.0};
     const double a_{0.0};
@@ -23,5 +24,6 @@ private:
     const double offset_{0.0};
     const std::string joint_type_;
 };
+
 
 #endif // DH_H

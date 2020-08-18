@@ -14,8 +14,8 @@ def test_ik():
     for i in range(0, 6):
         computed_q[i] = round(computed_q[i], 4)
 
-    # print('Test Q: ', test_q[0:6])
-    # print('Comp Q: ', computed_q)
+    print('Test Q: ', test_q[0:6])
+    print('Comp Q: ', computed_q)
 
 
 def test_ambf_psm():

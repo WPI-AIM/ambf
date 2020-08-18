@@ -31,13 +31,16 @@ set(SOURCE_FILES
 set (IK_HDR_FILES
     include/${PROJECT_NAME}/ik_test.h
     include/${PROJECT_NAME}/psm_fk.h
-    include/${PROJECT_NAME}/dh.h)
-
+    include/${PROJECT_NAME}/dh.h
+    include/${PROJECT_NAME}/psm_ik.h
+    include/${PROJECT_NAME}/utilities.h)
 
 set(IK_SOURCE_FILES
     src/ik_test.cpp
     src/psm_fk.cpp
-    src/dh.cpp)
+    src/dh.cpp
+    src/psm_ik.cpp
+    src/utilities.cpp)
 
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)

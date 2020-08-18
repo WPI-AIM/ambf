@@ -1,11 +1,10 @@
 #ifndef PSM_FK_H
 #define PSM_FK_H
-#define _GLIBCXX11_USE_C99_MATH
 
 #include "ambf_client_app/dh.h"
 #include<vector>
 #include<cmath>
-
+#include<iostream>
 
 enum class JointType{
     ROTATIONAL,
@@ -33,23 +32,23 @@ enum class JointType{
 class PSM_FK
 {
 public:
-    PSM_FK(std::vector<double> joint_angles) : joint_angles_(std::move(joint_angles)) {}
-    Matrix4f compute_FK();
-
+    PSM_FK();
+    Matrix4f compute_FK(std::vector<float> joint_pos);
 
 private:
     std::vector<DH *> DH_Vector_;
-    const std::vector<double> joint_angles_;
-    const double dh_params_[7][6] = {
+
+    float dh_params_[7][6] = {
    //     alpha,      a,      theta,                d,                  offset,     joint_type
-        { M_PI_2,     0.0,    joint_angles_[0],     0.0,                M_PI_2,     0},
-        { -M_PI_2,    0.0,    joint_angles_[1],     0.0,                -M_PI_2,    0},
-        { M_PI_2,     0.0,    0.0,                  joint_angles_[2],   -0.4318,    1},
-        { 0.0,        0.0,    joint_angles_[3],     0.4162,             0.0,        0},
-        { -M_PI_2,    0.0,    joint_angles_[4],     0.0,                -M_PI_2,    0},
-        { -M_PI_2,    0.0091, joint_angles_[5],     0.0,                -M_PI_2,    0},
+        { M_PI_2,     0.0,    0.0,                  0.0,                M_PI_2,     0},
+        { -M_PI_2,    0.0,    0.0,                  0.0,                -M_PI_2,    0},
+        { M_PI_2,     0.0,    0.0,                  0.0,                -0.4318,    1},
+        { 0.0,        0.0,    0.0,                  0.4162,             0.0,        0},
+        { -M_PI_2,    0.0,    0.0,                  0.0,                -M_PI_2,    0},
+        { -M_PI_2,    0.0091, 0.0,                  0.0,                -M_PI_2,    0},
         { -M_PI_2,    0.0,    0.0,                  0.0102,             M_PI_2,     0}
     };
+
 };
 
 
