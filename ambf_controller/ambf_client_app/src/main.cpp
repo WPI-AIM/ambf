@@ -59,51 +59,51 @@ int main(int argc, char* argv[])
     vector<string> object_names;
 
     object_names = client.getRigidBodyNames();
-//    usleep(20000);
+    usleep(20000);
 
-//    string psm_baselink = "psm/baselink";
-//    cout << "psm_baselink: " << psm_baselink << "\n";
-//    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
-//    usleep(1000000);
+    string psm_baselink = "psm/baselink";
+    cout << "psm_baselink: " << psm_baselink << "\n";
+    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+    usleep(1000000);
 
-//    cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
-//    std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
+    cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
+    std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
 
 
-//    for(string name : base_children) {
-//        cout << "name: " << name << "\n";
-//    }
+    for(string name : base_children) {
+        cout << "name: " << name << "\n";
+    }
 
-//    ROS_INFO("is_joint_idx_valid(0): %d", psm_baselink_handler->is_joint_idx_valid(0));
-//    printVector3("get_linear_vel()", psm_baselink_handler->get_linear_vel());
-//    printVector3("get_angular_vel()", psm_baselink_handler->get_angular_vel());
+    ROS_INFO("is_joint_idx_valid(0): %d", psm_baselink_handler->is_joint_idx_valid(0));
+    printVector3("get_linear_vel()", psm_baselink_handler->get_linear_vel());
+    printVector3("get_angular_vel()", psm_baselink_handler->get_angular_vel());
 
-//    if(base_children.size() < 1) {
-//        client.cleanUp();
-//        return 0;
-//    }
-//    string joint_name = ("baselink-" + base_children[0]).c_str();
-//    ROS_INFO("get_joint_idx_from_name(%s): %d", joint_name.c_str(), psm_baselink_handler->get_joint_idx_from_name(joint_name));
-//    ROS_INFO("get_joint_name_from_idx(%d): %s", 0, psm_baselink_handler->get_joint_name_from_idx(0).c_str());
+    if(base_children.size() < 1) {
+        client.cleanUp();
+        return 0;
+    }
+    string joint_name = ("baselink-" + base_children[0]).c_str();
+    ROS_INFO("get_joint_idx_from_name(%s): %d", joint_name.c_str(), psm_baselink_handler->get_joint_idx_from_name(joint_name));
+    ROS_INFO("get_joint_name_from_idx(%d): %s", 0, psm_baselink_handler->get_joint_name_from_idx(0).c_str());
 
-//    ROS_INFO("is_joint_idx_valid(%d): %d", 0, psm_baselink_handler->is_joint_idx_valid(0));
+    ROS_INFO("is_joint_idx_valid(%d): %d", 0, psm_baselink_handler->is_joint_idx_valid(0));
 
-//    ROS_INFO("get_joint_pos<int>(%d): %f", 0, psm_baselink_handler->get_joint_pos<int>(0));
-//    ROS_INFO("get_joint_pos<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_pos<std::string>(joint_name));
+    ROS_INFO("get_joint_pos<int>(%d): %f", 0, psm_baselink_handler->get_joint_pos<int>(0));
+    ROS_INFO("get_joint_pos<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_pos<std::string>(joint_name));
 
-//    ROS_INFO("get_joint_vel<int>(%d): %f", 0, psm_baselink_handler->get_joint_vel<int>(0));
-//    ROS_INFO("get_joint_vel<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_vel<std::string>(joint_name));
+    ROS_INFO("get_joint_vel<int>(%d): %f", 0, psm_baselink_handler->get_joint_vel<int>(0));
+    ROS_INFO("get_joint_vel<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_vel<std::string>(joint_name));
 
-//    ROS_INFO("get_joint_effort<int>(%d): %f", 0, psm_baselink_handler->get_joint_effort<int>(0));
-//    ROS_INFO("get_joint_effort<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_effort<std::string>(joint_name));
+    ROS_INFO("get_joint_effort<int>(%d): %f", 0, psm_baselink_handler->get_joint_effort<int>(0));
+    ROS_INFO("get_joint_effort<std::string>(%s): %f", joint_name.c_str(), psm_baselink_handler->get_joint_effort<std::string>(joint_name));
 
-//    printVector("psm_baselink_handler->get_all_joint_pos()", psm_baselink_handler->get_all_joint_pos());
-//    printVector("psm_baselink_handler->get_all_joint_vel()", psm_baselink_handler->get_all_joint_vel());
-//    printVector("psm_baselink_handler->get_all_joint_effort()", psm_baselink_handler->get_all_joint_effort());
+    printVector("psm_baselink_handler->get_all_joint_pos()", psm_baselink_handler->get_all_joint_pos());
+    printVector("psm_baselink_handler->get_all_joint_vel()", psm_baselink_handler->get_all_joint_vel());
+    printVector("psm_baselink_handler->get_all_joint_effort()", psm_baselink_handler->get_all_joint_effort());
 
 //    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
-//    printVector(joint_position);
+//    printVector3("joint_position", joint_position);
 
-//    client.cleanUp();
+    client.cleanUp();
 	return 0;
 }

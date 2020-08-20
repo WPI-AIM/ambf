@@ -52,5 +52,5 @@ def test_ambf_psm():
 
 
 if __name__ == "__main__":
-    test_ik()
-    # test_ambf_psm()
+    # test_ik()
+    test_ambf_psm()

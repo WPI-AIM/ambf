@@ -101,12 +101,19 @@ public:
     void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);
 
     void set_joint_control(int joint_idx, float command, int control_type);
+
     template<typename T>
     void set_joint_effort(T t, float effort);
+
     template<typename T>
     void set_joint_pos(T t, float pos);
+
+
     template<typename T>
     void set_joint_vel(T t, float vel);
+
+
+
 
 
 //    template<typename T>
@@ -162,6 +169,8 @@ public:
     void set_joint_torque(double nx, double ny, double nz);
 
 };
+
+
 }
 
 #endif
