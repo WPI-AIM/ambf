@@ -1131,7 +1131,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             {
                 speed_scale = 0.1;
             }
-            afCamera* devCam = (*g_cameraIt);
+            afCameraPtr devCam = (*g_cameraIt);
             (*g_cameraIt)->mouse_x[1] = (*g_cameraIt)->mouse_x[0];
             (*g_cameraIt)->mouse_x[0] = a_xpos;
             (*g_cameraIt)->mouse_y[1] = (*g_cameraIt)->mouse_y[0];
@@ -1246,7 +1246,12 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             if(dPos.length() < 0.5){
                 _targetPos = _targetPos + cameraPtr->getLocalRot() * camVelAlongLook;
             }
-            cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+            if (cameraPtr->isOrthographic()){
+                cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
+            }
+            else{
+                cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+            }
             cameraPtr->setTargetPos(_targetPos);
         }
     }

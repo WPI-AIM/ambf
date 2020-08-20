@@ -1442,6 +1442,9 @@ public:
         return m_camera->m_backLayer;
     }
 
+    // Is this camera orthographic or not
+    inline bool isOrthographic(){return m_orthographic;}
+
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
@@ -1473,7 +1476,6 @@ public:
 
     cStereoMode m_stereMode;
 
-public:
     // Labels
     cLabel* m_graphicsDynamicsFreqLabel;
     cLabel* m_wallSimTimeLabel;
@@ -1482,7 +1484,6 @@ public:
     cLabel* m_controllingDeviceLabel;
     std::vector<cLabel*> m_devHapticFreqLabels;
 
-public:
     // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
     double mouse_x[2], mouse_y[2], mouse_scroll[2];
     bool mouse_l_clicked = false, mouse_r_clicked= false, mouse_scroll_clicked = false;
@@ -1495,7 +1496,6 @@ public:
     int m_width, m_height;
     int m_win_x, m_win_y;
 
-public:
     std::vector<std::string> m_controllingDevNames;
 
 protected:
@@ -1508,18 +1508,24 @@ protected:
     // of the camera takes place.
     cVector3d m_targetPos;
 
-protected:
     static int s_numWindows;
     static int s_cameraIdx;
     static int s_windowIdx;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 
+public:
+
     // Frame Buffer to write to OpenCV Transport stream
     cFrameBuffer* m_frameBuffer;
 
     // Image to Convert the FrameBuffer into an image
     cImagePtr m_imageFromBuffer;
+
+    // Image to Convert the FrameBuffer into an depth image
+    cImagePtr m_depthFromBuffer;
+
+protected:
 
     // Open CV Image Matrix
     cv::Mat m_imageMatrix;
@@ -1545,7 +1551,6 @@ protected:
 private:
     afWorldPtr m_afWorld;
 
-private:
     // Hold the cCamera private and shield it's kinematics represented
     // by cGenericObject from the world since we want afRidigBody to
     // represent the kinematics instead
@@ -1557,6 +1562,9 @@ private:
     cVector3d m_camPos;
     cVector3d m_camLookAt;
     cVector3d m_camUp;
+
+    // Is this camera orthographic or not.
+    bool m_orthographic = false;
 };
 
 //-----------------------------------------------------------------------------

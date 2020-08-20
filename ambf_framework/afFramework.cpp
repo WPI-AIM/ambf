@@ -6515,7 +6515,6 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
     bool _is_valid = true;
     double _clipping_plane_limits[2], _field_view_angle;
-    bool _enable_ortho_view = false;
     double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
     std::string _stereoModeStr;
     int _monitorToLoad = -1;
@@ -6575,11 +6574,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         _field_view_angle = 0.8;
     }
     if (cameraOrthoWidthData.IsDefined()){
-        _enable_ortho_view = true;
+         m_orthographic = true;
         _orthoViewWidth = cameraOrthoWidthData.as<double>();
     }
     else{
-        _enable_ortho_view = false;
+         m_orthographic = false;
     }
     if (cameraStereo.IsDefined()){
         _stereoModeStr = cameraStereo["mode"].as<std::string>();
@@ -6649,7 +6648,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_camera->setFieldViewAngleRad(_field_view_angle);
 
         // Check if ortho view is enabled
-        if (_enable_ortho_view){
+        if (m_orthographic){
             m_camera->setOrthographicView(_orthoViewWidth);
         }
 
@@ -6869,9 +6868,11 @@ void afCamera::afExecuteCommand(double dt){
                 switch (m_afCameraCommPtr->get_projection_type()) {
                 case ambf_comm::ProjectionType::PERSPECTIVE:
                     m_camera->setFieldViewAngleRad(field_view_angle);
+                    m_orthographic = false;
                     break;
                 case ambf_comm::ProjectionType::ORTHOGRAPHIC:
                     m_camera->setOrthographicView(orthographic_view_width);
+                    m_orthographic = true;
                     break;
                 default:
                     break;
