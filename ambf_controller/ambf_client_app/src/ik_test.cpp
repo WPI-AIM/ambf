@@ -58,6 +58,13 @@ void IK_test::test_ambf_psm() {
 
     std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
     psm_baselink_handler->set_joint_pos<std::string>("baselink-yawlink", -0.3);
+    psm_baselink_handler->set_joint_pos<std::string>("yawlink-pitchbacklink", 0.2);
+    psm_baselink_handler->set_joint_pos<std::string>("pitchendlink-maininsertionlink", 0.1);
+    psm_baselink_handler->set_joint_pos<std::string>("maininsertionlink-toolrolllink", -0.9);
+    psm_baselink_handler->set_joint_pos<std::string>("toolrolllink-toolpitchlink", 0.0);
+    psm_baselink_handler->set_joint_pos<std::string>("toolpitchlink-toolgripper1link", -1.2);
+    psm_baselink_handler->set_joint_pos<std::string>("toolpitchlink-toolgripper2link", 0.0);
+
 //    std::cout << "psm_baselink_handler->get_joint_pos(0): " << psm_baselink_handler->get_joint_pos(0) << std::endl;
 
 //    void RigidBody::set_joint_pos(std::string joint_name, float pos);
