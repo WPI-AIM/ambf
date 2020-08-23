@@ -580,7 +580,7 @@ class RigidBody(BaseObject):
 
         self._apply_command()
 
-    def set_all_joint_effort(self, q_list):
+    def set_all_joint_effort(self, efforts, index_list=[]):
         """
         Set the joint efforts
         :param q_list: list of the joints to set
@@ -588,9 +588,20 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        # checks the length of the command mathchs the number of joints
-        if len(q_list) != n_jnts:
-            print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(q_list)))
+        if len(index_list) == 0:
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ')
+            return
+
+        # # checks the length of the command mathchs the number of joints
+        # if len(efforts) != n_jnts:
+        #     print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(efforts)))
+        #     return
+
+        if len(efforts) != len(index_list):
+            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(efforts)))
             return
 
         # checks to see if the cmd length is init and sets it to correct length
@@ -598,12 +609,16 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
-        self._cmd.joint_cmds = q_list
+        for index, effort in zip(index_list, efforts):
+            self._cmd.joint_cmds[index] = effort
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_FORCE
+
+        #self._cmd.joint_cmds = efforts
         self._apply_command()     
 
     def set_joint_pos(self, joint_name_or_idx, q):
         """
-        Set the joint position based on the index or names. Check the get_joint_names to see the list of
+        Set the joint position basedindex_liste index or names. Check the get_joint_names to see the list of
         joint names for indexes
         :param joint_name_or_idx:
         :param q:
@@ -625,7 +640,7 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_POSITION
             self._apply_command()
 
-    def set_all_joint_pos(self, q_list):
+    def set_all_joint_pos(self, q_list, index_list):
         """
         Set the joint pos
         :param effort_list: list of the joints to set
@@ -633,9 +648,20 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        # checks the length of the command mathchs the number of joints
-        if len(q_list) != n_jnts:
-            print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(q_list)))
+        if len(index_list) == 0:
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ')
+            return
+
+        # # checks the length of the command mathchs the number of joints
+        # if len(efforts) != n_jnts:
+        #     print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(efforts)))
+        #     return
+
+        if len(efforts) != len(index_list):
+            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(q_list)))
             return
 
         # checks to see if the cmd length is init and sets it to correct length
@@ -643,8 +669,12 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_POSITION]*n_jnts
 
-        self._cmd.joint_cmds = q_list
-        self._apply_command() 
+        for index, pos in zip(index_list, q_list):
+            self._cmd.joint_cmds[index] = pos
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_POSITION
+
+        #self._cmd.joint_cmds = efforts
+        self._apply_command()     
 
 
     def set_joint_vel(self, joint_name_or_idx, q):
@@ -671,17 +701,28 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_VELOCITY
             self._apply_command()
 
-    def set_all_joint_vel(self, q_list):
+    def set_all_joint_vel(self, qd_list, index_list):
         """
-        Set the joint vel
+        Set the joint pos
         :param effort_list: list of the joints to set
         :return:
         """
         n_jnts = len(self._state.joint_positions)
 
-        # checks the length of the command mathchs the number of joints
-        if len(q_list) != n_jnts:
-            print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(q_list)))
+        if len(index_list) == 0:
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ')
+            return
+
+        # # checks the length of the command mathchs the number of joints
+        # if len(efforts) != n_jnts:
+        #     print('Requested Joint commands is incorrect length '+ str(n_jnts) + " " + str(len(efforts)))
+        #     return
+
+        if len(efforts) != len(index_list):
+            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(qd_list)))
             return
 
         # checks to see if the cmd length is init and sets it to correct length
@@ -689,8 +730,12 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_VELOCITY]*n_jnts
 
-        self._cmd.joint_cmds = q_list
-        self._apply_command() 
+        for index, vel in zip(index_list, qd_list):
+            self._cmd.joint_cmds[index] = vel
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_VELOCITY
+
+        #self._cmd.joint_cmds = efforts
+        self._apply_command()   
 
     def _clear_command(self):
         """
