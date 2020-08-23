@@ -591,8 +591,8 @@ class RigidBody(BaseObject):
         if len(index_list) == 0:
             index_list = list(range(n_jnts))
 
-        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
-            print('Requested Joint index is out of range with joints ')
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ' + str(n_jnts))
             return
 
         # # checks the length of the command mathchs the number of joints
@@ -651,7 +651,7 @@ class RigidBody(BaseObject):
         if len(index_list) == 0:
             index_list = list(range(n_jnts))
 
-        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
             print('Requested Joint index is out of range with joints ')
             return
 
@@ -712,8 +712,8 @@ class RigidBody(BaseObject):
         if len(index_list) == 0:
             index_list = list(range(n_jnts))
 
-        elif max(index_list)+1 >= n_jnts or min(index_list) < 0:
-            print('Requested Joint index is out of range with joints ')
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ' +str(n_jnts))
             return
 
         # # checks the length of the command mathchs the number of joints
