@@ -25,6 +25,9 @@ set -m
 ./launch_ambf.bash &
 
 # Start the third process
+./psmIK_service.bash
+
+# Start the fourth process
 ./training.bash
 
 # Start the fourth process

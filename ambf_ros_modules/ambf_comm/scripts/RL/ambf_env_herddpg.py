@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env/python3
+
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
@@ -53,7 +54,6 @@ from gym.utils import seeding
 from ambf_world import World
 from ambf_object import Object
 from numpy import linalg as LA
-# from psmIK import *
 from psmFK import compute_FK
 from transformations import euler_from_matrix
 import rospy

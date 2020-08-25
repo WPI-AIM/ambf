@@ -72,10 +72,12 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
+RUN pip install stable-baselines[mpi] --upgrade
+
 # Stable Baselines fix
-RUN rm -f /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py && \
-  cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpg.py \
-  /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/
+# RUN rm -f /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py && \
+#   cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpg.py \
+#   /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/
 
 RUN touch ${HOME}/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
