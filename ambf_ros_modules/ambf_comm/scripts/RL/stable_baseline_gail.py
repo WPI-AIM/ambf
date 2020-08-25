@@ -50,7 +50,33 @@ from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckAc
 from ambf_comm import AmbfEnvDDPG
 import time
 from stable_baselines.ddpg.policies import MlpPolicy
+import os, sys
+from datetime import datetime
 
+
+def redirect_stdout(filepath=None):
+    # os.makedirs('/home/admin/ambf/.logs')
+    cdir = os.getcwd()
+    basepath = os.path.join(cdir, '.logs')
+
+    if not os.path.exists(basepath):
+      os.makedirs(basepath)
+    
+    if filepath is None:
+        now = datetime.now()
+        filepath = 'log_' + now.strftime("%Y_%m_%d-%H_%M_%S.txt")
+        filepath = os.path.join(basepath, filepath)
+    
+    err_filepath = filepath[:-4] + '_err.txt'
+
+    if os.path.exists(filepath):
+        filepath = filepath[:-4]
+        filepath += now.strftime("_%H_%M_%S") + '.txt'
+
+    sys.stdout = open(filepath, 'w')
+    sys.stderr = open(err_filepath, 'w')
+    print("Began logging")
+    return
 
 def main(env):
 
