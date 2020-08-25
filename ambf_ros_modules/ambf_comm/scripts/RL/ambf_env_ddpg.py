@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
+
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
@@ -53,10 +54,10 @@ from gym.utils import seeding
 from ambf_world import World
 from ambf_object import Object
 from numpy import linalg as LA
-from psmIK import *
 from psmFK import compute_FK
 from transformations import euler_from_matrix
-
+import rospy
+from dvrk_functions.srv import *
 
 class Observation:
     def __init__(self):
@@ -185,7 +186,16 @@ class AmbfEnvDDPG(gym.Env):
         desired_end_effector_frame = current_end_effector_frame
         for i in range(3):
             desired_end_effector_frame[i, 3] = desired_cartesian_pos[i]
-        computed_joint_pos = compute_IK(convert_mat_to_frame(desired_end_effector_frame))
+        
+        rospy.wait_for_service('compute_IK')
+        computed_joint_pos = None
+        try:
+            compute_IK_service = rospy.ServiceProxy('compute_IK', ComputeIK)
+            compute_IK_resp = compute_IK_service.call(ComputeIKRequest(convert_mat_to_frame(desired_end_effector_frame)))
+            computed_joint_pos = compute_IK_resp.q_des
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
+        # computed_joint_pos = compute_IK(convert_mat_to_frame(desired_end_effector_frame))
         # Ensure the computed joint positions are within the limit of user set joint positions
         desired_joint_pos = self.limit_joint_pos(computed_joint_pos)
         # Ensures that PSM joints reach the desired joint positions
