@@ -68,7 +68,7 @@ RUN . /opt/ros/melodic/setup.sh && \
   make -j$(nproc)
 
 RUN apt-get update && \
-  cat install/training-pip-requirements.txt | xargs -n 1 -L 1 pip install -U && \
+  cat install/training-pip-requirements.txt | xargs -n 1 -L 1 pip3 install -U && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 

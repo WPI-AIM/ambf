@@ -1,6 +1,3 @@
-pyKDL
 rospkg
-PyYAML 
 matplotlib
 git+https://github.com/hill-a/stable-baselines
-pip install stable-baselines[mpi] --upgrade
