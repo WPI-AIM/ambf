@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from PyKDL import Vector, Rotation, Frame, dot
 import numpy as np
 import math

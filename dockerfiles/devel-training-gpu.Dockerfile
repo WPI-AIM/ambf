@@ -74,7 +74,7 @@ RUN apt-get update && \
 
 # Stable Baselines fix
 RUN rm -f /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py && \
-  cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpy.py \
+  cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpg.py \
   /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/
 
 RUN touch ${HOME}/.bashrc && \

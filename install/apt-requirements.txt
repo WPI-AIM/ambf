@@ -45,3 +45,6 @@ ros-melodic-image-transport-plugins
 ssh
 libopenmpi-dev
 zlib1g-dev
+python3-catkin-pkg-modules
+python3-rospkg-modules
+python3-yaml
