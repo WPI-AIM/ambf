@@ -4,5 +4,3 @@ catkin_tools
 scipy
 tensorboard
 cloudpickle==1.3.0
-rospkg
-catkin_pkg
