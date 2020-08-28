@@ -1,24 +1,23 @@
 #ifndef RBDLServer_H
 #define RBDLServer_H
-
-
-#include <rbdl/rbdl.h>
+#include <ros/ros.h>
 #include "ambf_client/RBDLDynamics.h"
-
-
-using namespace RigidBodyDynamics::Math;
+#include <rbdl/rbdl.h>
 
 
 class RBDLServer
 {
 
 	private:
-        RigidBodyDynamics::Model* model = NULL;
+        ros::NodeHandle nh_;
         void CreateModel();
-        bool ForwardDynamics(ambf_client::RBDLDynamicsRequestConstPtr, ambf_client::RBDLDynamicsResponseConstPtr  );
+        bool ForwardDynamics_srv(ambf_client::RBDLDynamicsRequestConstPtr, ambf_client::RBDLDynamicsResponseConstPtr  );
 
 	public:
-	    RBDLServer();
+        RigidBodyDynamics::Model *model = NULL;
+
+        RBDLServer(ros::NodeHandle* nodehandle);
+
 
 };
 
