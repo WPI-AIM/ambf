@@ -1,15 +1,16 @@
-#ifndef RBDLModel_H
-#define RBDLModel_H
+#ifndef RBDLServer_H
+#define RBDLServer_H
 
 
 #include <rbdl/rbdl.h>
-
+#include "ambf_client/RBDLDynamics.h"
 
 using namespace RigidBodyDynamics;
+
 using namespace RigidBodyDynamics::Math;
 
 
-class RBDLParser
+class RBDLServer
 {
 
 	private:
@@ -17,7 +18,7 @@ class RBDLParser
         void CreateModel();
 
 	public:
-	    RBDLParser();
+	    RBDLServer();
 
 };
 

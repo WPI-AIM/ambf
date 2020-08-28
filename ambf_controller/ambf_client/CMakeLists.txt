@@ -57,11 +57,22 @@ message_generation)
 
 #catkin_python_setup()
 
+
+add_service_files(
+  FILES
+  RBDLDynamics.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 catkin_package( INCLUDE_DIRS include
   LIBRARIES ambf_client
   CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
+
 
 ###########
 ## Build ##
@@ -95,7 +106,7 @@ set (ENV_HDR_FILES
     include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/WorldRosCom.h
     include/${PROJECT_NAME}/CmdWatchDog.h
-    include/${PROJECT_NAME}/RBDLModel.h)
+    include/${PROJECT_NAME}/RBDLServer.h)
 
 set (ENV_SRC_FILES
     src/ambf_client.cpp
@@ -118,7 +129,7 @@ set (ENV_SRC_FILES
     src/World.cpp
     src/WorldRosCom.cpp
     src/RosComBase.cpp
-    src/RBDLModel.cpp)
+    src/RBDLServer.cpp)
 
 
 ## Declare a C++ library
