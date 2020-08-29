@@ -1,5 +1,7 @@
-#ifndef RBDLServer_H
-#define RBDLServer_H
+#ifndef AMBFRBDLServer_H
+#define AMBFRBDLServer_H
+
+
 #include <ros/ros.h>
 #include "ambf_client/RBDLDynamics.h"
 #include <rbdl/rbdl.h>
@@ -21,4 +23,4 @@ class RBDLServer
 
 };
 
-#endif // RBDLModel_H
+#endif
