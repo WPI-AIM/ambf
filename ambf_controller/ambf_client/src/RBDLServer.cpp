@@ -14,6 +14,8 @@ RBDLServer::~RBDLServer()
     delete model;
 }
 
+
+
 bool RBDLServer::ForwardDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
 {
     VectorNd Q = VectorNd::Zero (model->q_size);
