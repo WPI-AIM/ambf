@@ -52,13 +52,13 @@ void printVector(std::string caption, std::vector<T> ts) {
 
 int main(int argc, char* argv[])
 {
-    Client client;
-    client.connect();
+ //    Client client;
+//    client.connect();
 
-    client.printSummary();
-    vector<string> object_names;
+//    client.printSummary();
+//    vector<string> object_names;
 
-    object_names = client.getRigidBodyNames();
+//    object_names = client.getRigidBodyNames();
 //    usleep(20000);
 
 //    string psm_baselink = "psm/baselink";

@@ -109,7 +109,7 @@ set (ENV_HDR_FILES
     include/${PROJECT_NAME}/RBDLServer.h)
 
 set (ENV_SRC_FILES
-    src/ambf_client.cpp
+     src/ambf_client.cpp
     src/Object.cpp
     src/ObjectRosCom.cpp
     src/Actuator.cpp
@@ -132,10 +132,13 @@ set (ENV_SRC_FILES
     src/RBDLServer.cpp)
 
 
+
+
 ## Declare a C++ library
 add_library(ambf_client ${ENV_HDR_FILES} ${ENV_SRC_FILES})
 
 add_dependencies(ambf_client ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(ambf_client ${catkin_LIBRARIES})

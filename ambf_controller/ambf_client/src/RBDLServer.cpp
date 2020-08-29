@@ -1,19 +1,35 @@
 #include "ambf_client/RBDLServer.h"
-
-
+using namespace RigidBodyDynamics;
+using namespace RigidBodyDynamics::Math;
 RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
 {
 
-    model = new RigidBodyDynamics::Model();
-    //ros::ServiceServer service = nh_.advertiseService("ForwardDynamics", RBDLServer::ForwardDynamics_srv );
+     model = new Model();
+     this->FD_srv = nh_.advertiseService("ForwardDynamics", &RBDLServer::ForwardDynamics_srv, this);
+     this->ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
 }
 
-bool RBDLServer::ForwardDynamics_srv(ambf_client::RBDLDynamicsRequestConstPtr req, ambf_client::RBDLDynamicsResponseConstPtr  res)
+RBDLServer::~RBDLServer()
 {
-//    RigidBodyDynamics::Math::VectorNd Q = RigidBodyDynamics::Math::VectorNd::Zero (model->q_size);
-//    RigidBodyDynamics::Math::VectorNd QDot = RigidBodyDynamics::Math::VectorNd::Zero (model->qdot_size);
-//    RigidBodyDynamics::Math::VectorNd Tau = RigidBodyDynamics::Math::VectorNd::Zero (model->qdot_size);
-//    RigidBodyDynamics::Math::VectorNd QDDot = RigidBodyDynamics::Math::VectorNd::Zero (model->qdot_size);
-//    ForwardDynamics (*model, Q, QDot, Tau, QDDot);
+    delete model;
+}
+
+bool RBDLServer::ForwardDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
+{
+    VectorNd Q = VectorNd::Zero (model->q_size);
+    VectorNd QDot = VectorNd::Zero (model->qdot_size);
+    VectorNd Tau = VectorNd::Zero (model->qdot_size);
+    VectorNd QDDot = VectorNd::Zero (model->qdot_size);
+    ForwardDynamics (*model, Q, QDot, Tau, QDDot);
+    return true;
+}
+
+bool RBDLServer::InverseDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
+{
+    VectorNd Q = VectorNd::Zero (model->q_size);
+    VectorNd QDot = VectorNd::Zero (model->qdot_size);
+    VectorNd Tau = VectorNd::Zero (model->qdot_size);
+    VectorNd QDDot = VectorNd::Zero (model->qdot_size);
+    InverseDynamics(*model, Q, QDot, Tau, QDDot);
     return true;
 }
