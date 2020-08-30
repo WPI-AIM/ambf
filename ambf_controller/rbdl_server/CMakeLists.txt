@@ -16,7 +16,10 @@ message_generation
 
 add_service_files(
   FILES
+  RBDLModel.srv
   RBDLDynamics.srv
+  RBDLJacobian.srv
+  
 )
 
 generate_messages(
