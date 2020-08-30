@@ -32,12 +32,9 @@ bool RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl
     if (model->qdot_size != req.qd.size()){return false;}
     if (model->qdot_size != req.tau.size() ){return false;}
 
-//    std::vector<double> q_vec(req.q.begin(), req.q.end());
-//    std::vector<double> qd_vec(req.qd.begin(), req.qd.end());
-//    std::vector<double> tau_vec(req.tau.begin(), req.tau.end());
-    VectorNd Q =  VectToEigen(req.q);  //Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_vec.data(), q_vec.size());
-    VectorNd QDot = VectToEigen(req.qd); // Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(qd_vec.data(), qd_vec.size());
-    VectorNd Tau = VectToEigen(req.tau); // Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(tau_vec.data(), tau_vec.size());
+    VectorNd Q =  VectToEigen(req.q);
+    VectorNd QDot = VectToEigen(req.qd);
+    VectorNd Tau = VectToEigen(req.tau);
     VectorNd QDDot = VectorNd::Zero (model->qdot_size);
     ForwardDynamics (*model, Q, QDot, Tau, QDDot);
     std::vector<double> qdd(&QDDot[0], QDDot.data()+QDDot.cols()*QDDot.rows());
@@ -95,8 +92,11 @@ bool RBDLServer::ForwardKinmatics_srv()
 
 bool RBDLServer::Jacobian_srv()
 {
-
-
+    MatrixNd G;
+    VectorNd Q = VectorNd::Zero(model->q_size);
+    Vector3d point(0,0,0);
+    int id = 0;
+    CalcPointJacobian6D(*model, Q, id, point, G, false);
 }
 
 
