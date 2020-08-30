@@ -33,7 +33,7 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: Melody Su $
+#  $Author: Melody Su, Nathaniel Goldfarb $
 #  $Date:  April, 2019 $
 #  $Rev:  $
 
@@ -43,7 +43,8 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 
 include_directories (${GLFW_INCLUDE_DIRS}
                      raven2/include 
-		     ambf_client/include
+		             ambf_client/include
+		             rbdl_server/include
 )
 
 add_executable (ambf_controller raven2/include/ambf_defines.h
@@ -56,4 +57,5 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rbdl_server)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)

@@ -1,6 +1,7 @@
-#include "ambf_client/RBDLServer.h"
+#include "rbdl_server/RBDLServer.h"
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
+
 RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
 {
 
@@ -15,10 +16,13 @@ RBDLServer::~RBDLServer()
 }
 
 
-
 bool RBDLServer::ForwardDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
 {
-    VectorNd Q = VectorNd::Zero (model->q_size);
+
+    std::vector<float> a = {1.1, 2.2, 3.3, 1.4};
+    std::vector<double> Vec(a.begin(), a.end());
+    VectorNd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(Vec.data(), Vec.size());
+    // VectorNd Q = VectorNd::Zero (model->q_size);
     VectorNd QDot = VectorNd::Zero (model->qdot_size);
     VectorNd Tau = VectorNd::Zero (model->qdot_size);
     VectorNd QDDot = VectorNd::Zero (model->qdot_size);
