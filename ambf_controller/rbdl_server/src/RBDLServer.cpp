@@ -47,6 +47,10 @@ bool RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl
 
 bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl_server::RBDLDynamicsResponse&  res)
 {
+    if (model->q_size != req.q.size()){return false;}
+    if (model->qdot_size != req.qd.size()){return false;}
+    if (model->qdot_size != req.qdd.size() ){return false;}
+
     VectorNd Q =  VectToEigen(req.q);
     VectorNd QDot = VectToEigen(req.qd);
     VectorNd QDDot = VectToEigen(req.qdd);
@@ -57,3 +61,43 @@ bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl
 
     return true;
 }
+
+
+
+bool RBDLServer::ForwardKinmatics_srv()
+{
+    std::string key;
+    int id;
+    VectorNd Q = VectorNd::Zero(model->q_size);
+    Vector3d point(0,0,0);
+    geometry_msgs::PoseArray points;
+    std::vector<std::string> names;
+    Vector3d fk;
+    geometry_msgs::Pose pose;
+
+
+    for(auto& body : body_ids)
+    {
+        key = body.first;
+        id = body.second;
+        fk = CalcBodyToBaseCoordinates(*model, Q, id, point, false);
+        pose.position.x = fk(0);
+        pose.position.y = fk(1);
+        pose.position.z = fk(2);
+        points.poses.push_back(pose);
+        names.push_back(key);
+    }
+
+    return true;
+
+}
+
+
+bool RBDLServer::Jacobian_srv()
+{
+
+
+}
+
+
+
