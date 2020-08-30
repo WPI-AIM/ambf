@@ -3,22 +3,25 @@
 
 
 #include <ros/ros.h>
-#include "ambf_client/RBDLDynamics.h"
+#include "rbdl_server/RBDLDynamics.h"
 #include <rbdl/rbdl.h>
 #include <boost/bind.hpp>
-
+using namespace RigidBodyDynamics;
+using namespace RigidBodyDynamics::Math;
 class RBDLServer
 {
 
 	private:
         ros::NodeHandle nh_;
+        RigidBodyDynamics::Model *model = NULL;
         ros::ServiceServer FD_srv, ID_srv;
-        void CreateModel();
-        bool ForwardDynamics_srv(ambf_client::RBDLDynamicsRequest&, ambf_client::RBDLDynamicsResponse&  );
-        bool InverseDynamics_srv(ambf_client::RBDLDynamicsRequest&, ambf_client::RBDLDynamicsResponse&  );
+        VectorNd VectToEigen(const std::vector<double>&);
+        bool CreateModel();
+        bool CheckSize(int);
+        bool ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest&, rbdl_server::RBDLDynamicsResponse&  );
+        bool InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest&, rbdl_server::RBDLDynamicsResponse&  );
 
 	public:
-        RigidBodyDynamics::Model *model = NULL;
         RBDLServer(ros::NodeHandle* nodehandle);
         RBDLServer();
         ~RBDLServer();

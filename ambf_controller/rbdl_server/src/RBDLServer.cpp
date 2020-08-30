@@ -1,4 +1,6 @@
 #include "rbdl_server/RBDLServer.h"
+
+
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 
@@ -15,27 +17,43 @@ RBDLServer::~RBDLServer()
     delete model;
 }
 
-
-bool RBDLServer::ForwardDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
+VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
 {
+    std::vector<double> vec(msg.begin(), msg.end());
+    VectorNd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
+    return Q;
+}
 
-    std::vector<float> a = {1.1, 2.2, 3.3, 1.4};
-    std::vector<double> Vec(a.begin(), a.end());
-    VectorNd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(Vec.data(), Vec.size());
-    // VectorNd Q = VectorNd::Zero (model->q_size);
-    VectorNd QDot = VectorNd::Zero (model->qdot_size);
-    VectorNd Tau = VectorNd::Zero (model->qdot_size);
+bool RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl_server::RBDLDynamicsResponse&  res)
+{
+    // Need to add some checks on the size of the inputs to make sure they are correct
+
+    if (model->q_size != req.q.size()){return false;}
+    if (model->qdot_size != req.qd.size()){return false;}
+    if (model->qdot_size != req.tau.size() ){return false;}
+
+//    std::vector<double> q_vec(req.q.begin(), req.q.end());
+//    std::vector<double> qd_vec(req.qd.begin(), req.qd.end());
+//    std::vector<double> tau_vec(req.tau.begin(), req.tau.end());
+    VectorNd Q =  VectToEigen(req.q);  //Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_vec.data(), q_vec.size());
+    VectorNd QDot = VectToEigen(req.qd); // Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(qd_vec.data(), qd_vec.size());
+    VectorNd Tau = VectToEigen(req.tau); // Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(tau_vec.data(), tau_vec.size());
     VectorNd QDDot = VectorNd::Zero (model->qdot_size);
     ForwardDynamics (*model, Q, QDot, Tau, QDDot);
+    std::vector<double> qdd(&QDDot[0], QDDot.data()+QDDot.cols()*QDDot.rows());
+    res.qdd = qdd;
     return true;
 }
 
-bool RBDLServer::InverseDynamics_srv(ambf_client::RBDLDynamicsRequest& req, ambf_client::RBDLDynamicsResponse&  res)
+bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl_server::RBDLDynamicsResponse&  res)
 {
-    VectorNd Q = VectorNd::Zero (model->q_size);
-    VectorNd QDot = VectorNd::Zero (model->qdot_size);
+    VectorNd Q =  VectToEigen(req.q);
+    VectorNd QDot = VectToEigen(req.qd);
+    VectorNd QDDot = VectToEigen(req.qdd);
     VectorNd Tau = VectorNd::Zero (model->qdot_size);
-    VectorNd QDDot = VectorNd::Zero (model->qdot_size);
-    InverseDynamics(*model, Q, QDot, Tau, QDDot);
+    InverseDynamics(*model, Q, QDot, QDDot, Tau );
+    std::vector<double> tau(&Tau[0], Tau.data()+Tau.cols()*Tau.rows());
+    res.tau = tau;
+
     return true;
 }
