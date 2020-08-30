@@ -97,6 +97,14 @@ bool RBDLServer::Jacobian_srv()
     Vector3d point(0,0,0);
     int id = 0;
     CalcPointJacobian6D(*model, Q, id, point, G, false);
+
+//    for (int i = 0; i < nrow; ++i) {
+//      for (int j = 0; j < ncol; ++j) {
+//        std::cout << arr2[i][j] << " ";
+//      }
+//      std::cout << "\n";
+//    }
+
 }
 
 
