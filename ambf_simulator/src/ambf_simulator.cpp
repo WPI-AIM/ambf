@@ -1554,7 +1554,7 @@ void updateGraphics()
                     double maxX = (double)(width - 1);
                     double maxY = (double)(height - 1);
 
-                    for (int y_span = 0 ; y_span > height ; y_span++){
+                    for (int y_span = 0 ; y_span < height ; y_span++){
                         for (int x_span = 0 ; x_span < width ; x_span++){
                             double px = double(x_span) / maxX;
                             double py = double(y_span) / maxY;
@@ -1572,8 +1572,7 @@ void updateGraphics()
                             pw = a43 * pz + a44 * pw;
                             pClip = cDiv(pw, pClip);
                             // Flip along vertical plane
-                            int idx2 = (y_span * width + (width-x_span-1));
-                            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx2, pClip);
+                            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
                         }
                     }
                 }
