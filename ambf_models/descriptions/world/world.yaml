@@ -51,12 +51,14 @@ light3:
 camera1:
   namespace: cameras/
   name: default_camera
-  location: {x: 4.0, y: 0.0, z: 2.0}
+  location: {x: 1.0, y: 0.0, z: 0.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 50.0}
   field view angle: 0.8
   monitor: 0
+  publish image: True
+  # orthographic view width: 10.0
   # multipass: True
 
 # This example is to show how to parent w.r.t another body.
