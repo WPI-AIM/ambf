@@ -77,6 +77,10 @@ bool fullscreen = false;
 // mirrored display
 bool mirroredDisplay = false;
 
+// Point cloud mesh from Depth Buffer
+cMultiMesh* g_pointCloudMesh = 0;
+bool g_savePointCloudMesh = false;
+
 
 //---------------------------------------------------------------------------
 // BULLET MODULE VARIABLES
@@ -111,6 +115,9 @@ struct CommandLineOptions{
     std::string prepend_namespace = "";
     // The running speed of the simulation. 1.0 indicates a stepping of one second.
     double simulation_speed = 1.0;
+
+    // Channel of depth buffer to use, 0 -> R, 1 -> G, 2 -> B, 3 -> D.
+    int channel = 0;
 
 };
 
@@ -287,7 +294,8 @@ int main(int argc, char* argv[])
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
             ("show_gui,g", p_opt::value<bool>(), "Show GUI")
             ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace")
-            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)");
+            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
+            ("channel,c", p_opt::value<int>(), "Channel of Depth Buffer to Use. 0,1,2,3 for R,G,B,D. (Default 0)");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
@@ -327,6 +335,8 @@ int main(int argc, char* argv[])
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
     if(var_map.count("sim_speed_factor")){g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();}
+
+    if(var_map.count("channel")){g_cmdOpts.channel = var_map["channel"].as<int>();}
 
     // Process the loadMultiBodies string
 
@@ -1073,6 +1083,12 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                 printf("Stepping Physics by 1 Step \n");
             }
         }
+
+        // option - save depth map mesh
+        else if (a_key == GLFW_KEY_J)
+        {
+            g_savePointCloudMesh = true;
+        }
     }
 }
 
@@ -1431,6 +1447,115 @@ void updateGraphics()
         }
 
         cameraPtr->publishImage();
+
+        // Depth Buffer Rendering
+        afRigidBodyPtr plane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneR");
+
+        if (plane != nullptr){
+            cMesh* planeMesh = (*plane->m_meshes)[0];
+            cameraPtr->m_imageFromBuffer->copyTo(planeMesh->m_texture->m_image);
+            planeMesh->m_texture->markForUpdate();
+        }
+
+
+        afRigidBodyPtr plane2 = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneL");
+
+        if (plane2 != nullptr){
+            cMesh* planeMesh = (*plane2->m_meshes)[0];
+            cImagePtr bufferImage = cameraPtr->m_depthFromBuffer;
+            int width = bufferImage->getWidth();
+            int height = bufferImage->getHeight();
+            int bytes = bufferImage->getBytesPerPixel();
+            int bits= bufferImage->getBitsPerPixel();
+            for (int i = 0 ; i < width*height ; i++){
+                bufferImage->getData()[i * bytes + 0] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
+                bufferImage->getData()[i * bytes + 1] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
+                bufferImage->getData()[i * bytes + 2] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
+//                bufferImage->getData()[i * b + 3] = bufferImage->getData()[i * b + 0];
+//                bufferImage->m_data[i * (w*h) + 1] = bufferImage->m_data[0];
+            }
+
+            if (g_pointCloudMesh == nullptr){
+                g_pointCloudMesh = new cMultiMesh();
+                g_pointCloudMesh->m_meshes->push_back(new cMesh());
+                (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->allocateData(width*height, true, false, true, false, false, false);
+            }
+
+
+            cTransform T4;
+            cMatrix3d T3(cVector3d(0, 0, 1), C_PI_DIV_2);
+            T4.setLocalRot(T3);
+
+            cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
+            invProjection.m_flagTransform = false;
+            invProjection.invert();
+
+            double a31 = invProjection(2,0);
+            double a32 = invProjection(2,1);
+            double a33 = invProjection(2,2);
+            double a34 = invProjection(2,3);
+
+            double a41 = invProjection(3,0);
+            double a42 = invProjection(3,1);
+            double a43 = invProjection(3,2);
+            double a44 = invProjection(3,3);
+
+            double mean1 = 0;
+            double mean2 = 0;
+            for (int i = 0 ; i < width*height ; i++){
+                double depth = double(bufferImage->getData()[i * bytes + g_cmdOpts.channel]);
+                double w = 1.0;
+                mean1 += depth;
+                depth /= 255.0;
+                double normalized_depth = 2.0 * depth - 1.0;
+                double z = a33 * normalized_depth + a34 * w;
+                w = a43 * normalized_depth + a44 * w;
+                z = z/w;
+                mean2 += z;
+            }
+
+            if (g_savePointCloudMesh){
+                if (g_pointCloudMesh){
+                    double maxX = (double)(width - 1);
+                    double maxY = (double)(height - 1);
+
+                    for (int y_span = 0 ; y_span > height ; y_span++){
+                        for (int x_span = 0 ; x_span < width ; x_span++){
+                            double px = double(x_span) / maxX;
+                            double py = double(y_span) / maxY;
+                            int idx = (y_span * width + x_span);
+                            int depth = int(bufferImage->getData()[idx * bytes + g_cmdOpts.channel]);
+                            double pz = depth / 255.0;
+                            double pw = 1.0;
+
+                            px = 2.0 * px - 1.0;
+                            py = 2.0 * py - 1.0;
+                            pz = 2.0 * pz - 1.0;
+
+                            cVector3d pImage(px, py, pz);
+                            cVector3d pClip = invProjection * pImage;
+                            pw = a43 * pz + a44 * pw;
+                            pClip = cDiv(pw, pClip);
+                            // Flip along vertical plane
+                            int idx2 = (y_span * width + (width-x_span-1));
+                            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx2, pClip);
+                        }
+                    }
+                }
+                time_t now = time(0);
+                std::string time_str(ctime(&now));
+                g_pointCloudMesh->saveToFile("/home/adnan/DepthMeshes/mesh.obj");
+                g_savePointCloudMesh = false;
+            }
+
+            mean1 = mean1 / (width*height);
+            mean2 = mean2 / (width*height);
+            std::cerr << "Mean (255): " << mean1 << " | Mean (2.0 * p - 1.0): " << mean2 << "\n";
+            bufferImage->copyTo(planeMesh->m_texture->m_image);
+            planeMesh->m_texture->markForUpdate();
+        }
+
+        //
 
 //        // wait until all GL commands are completed
 //        glFinish();

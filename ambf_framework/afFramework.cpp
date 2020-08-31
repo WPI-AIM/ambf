@@ -6725,6 +6725,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         if (m_publishImage){
             m_frameBuffer = new cFrameBuffer();
             m_imageFromBuffer = cImage::create();
+            m_depthFromBuffer = cImage::create();
 
             if (s_imageTransportInitialized == false){
                 s_imageTransportInitialized = true;
@@ -6754,6 +6755,10 @@ void afCamera::publishImage(){
         m_frameBuffer->renderView();
         m_frameBuffer->copyImageBuffer(m_imageFromBuffer);
         m_imageFromBuffer->flipHorizontal();
+
+        m_frameBuffer->copyDepthBuffer(m_depthFromBuffer);
+        m_depthFromBuffer->flipHorizontal();
+
         m_imageMatrix = cv::Mat(m_imageFromBuffer->getHeight(), m_imageFromBuffer->getWidth(), CV_8UC4, m_imageFromBuffer->getData());
         cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
         sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
