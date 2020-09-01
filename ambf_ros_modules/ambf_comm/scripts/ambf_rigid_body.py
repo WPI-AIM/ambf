@@ -588,16 +588,16 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(index_list) == 0:
+        if len(index_list) == 0 or len(efforts) != len(index_list):
             index_list = list(range(n_jnts))
 
         elif max(index_list)+1 > n_jnts or min(index_list) < 0:
             print('Requested Joint index is out of range with joints ' + str(n_jnts))
             return
 
-        elif len(efforts) != len(index_list):
-            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(efforts)))
-            return
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(efforts)))
+        #     return
 
         # checks to see if the cmd length is init and sets it to correct length
         if len(self._cmd.joint_cmds) != n_jnts:
@@ -643,16 +643,16 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(index_list) == 0:
+        if len(index_list) == 0 or len(efforts) != len(index_list):
             index_list = list(range(n_jnts))
 
         elif max(index_list)+1 > n_jnts or min(index_list) < 0:
             print('Requested Joint index is out of range with joints ')
             return
 
-        elif len(efforts) != len(index_list):
-            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(q_list)))
-            return
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(q_list)))
+        #     return
 
         # checks to see if the cmd length is init and sets it to correct length
         if len(self._cmd.joint_cmds) != n_jnts:
@@ -699,16 +699,16 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(index_list) == 0:
+        if len(index_list) == 0 or len(efforts) != len(index_list):
             index_list = list(range(n_jnts))
 
         elif max(index_list)+1 > n_jnts or min(index_list) < 0:
             print('Requested Joint index is out of range with joints ' +str(n_jnts))
             return
 
-        elif len(efforts) != len(index_list):
-            print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(qd_list)))
-            return
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(qd_list)))
+        #     return
 
         # checks to see if the cmd length is init and sets it to correct length
         if len(self._cmd.joint_cmds) != n_jnts:
