@@ -54,7 +54,7 @@ camera1:
   location: {x: 1.0, y: 0.0, z: 0.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
-  clipping plane: {near: 0.01, far: 50.0}
+  clipping plane: {near: 0.1, far: 5.0}
   field view angle: 0.8
   monitor: 0
   publish image: True

@@ -1559,7 +1559,7 @@ void updateGraphics()
                             double px = double(x_span) / maxX;
                             double py = double(y_span) / maxY;
                             int idx = (y_span * width + x_span);
-                            int depth = int(bufferImage->getData()[idx * bytes + g_cmdOpts.channel]);
+                            double depth = double(bufferImage->getData()[idx * bytes + g_cmdOpts.channel]);
                             double pz = depth / 255.0;
                             double pw = 1.0;
 
@@ -1569,7 +1569,7 @@ void updateGraphics()
 
                             cVector3d pImage(px, py, pz);
                             cVector3d pClip = invProjection * pImage;
-                            pw = a43 * pz + a44 * pw;
+                            pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
                             pClip = cDiv(pw, pClip);
                             // Flip along vertical plane
                             (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
@@ -1579,6 +1579,7 @@ void updateGraphics()
                 time_t now = time(0);
                 std::string time_str(ctime(&now));
                 g_pointCloudMesh->saveToFile("/home/adnan/DepthMeshes/mesh.obj");
+                bufferImage->saveToFile("/home/adnan/DepthMeshes/image.bmp");
                 g_savePointCloudMesh = false;
             }
 
