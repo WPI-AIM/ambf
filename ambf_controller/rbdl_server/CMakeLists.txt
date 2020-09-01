@@ -7,6 +7,12 @@ project(rbdl_server)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+find_package (Boost COMPONENTS program_options filesystem REQUIRED)
+LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} )
+
+FIND_PACKAGE (RBDL REQUIRED)
+FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 geometry_msgs
@@ -33,6 +39,7 @@ catkin_package(
  LIBRARIES rbdl_server
  CATKIN_DEPENDS roscpp
  DEPENDS system_lib
+ DEPENDS Eigen
 )
 
 ###########
@@ -41,10 +48,8 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories( include ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+
 
 
 set(RBDL_HRD_FILES
@@ -54,19 +59,20 @@ set(RBDL_HRD_FILES
 set(RBDL_SRC_FILES
   src/RBDLServer.cpp
 )
+
+
 ## Declare a C++ library
-add_library(rbdl_server ${RBDL_SRC_FILES} ${RBDL_HRD_FILES}
+add_library(${PROJECT_NAME} ${RBDL_SRC_FILES} ${RBDL_HRD_FILES}
 )
 
 # add_library(${PROJECT_NAME}
 #   src/RBDLServer.cpp  include/${PROJECT_NAME}/RBDLServer.h
 # )
-add_dependencies(rbdl_server ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}  ${catkin_EXPORTED_TARGETS})
 
-find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(rbdl_server ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}  ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 set (RBDL_SERVER_INCLUDE_DIRS include)
 set (RBDL_SERVER_LIBRARIES rbdl_server)
@@ -77,6 +83,6 @@ set (RBDL_SERVER_LIBRARIES rbdl_server)
 set(SOURCE_FILES 
     src/rbdl_server_node.cpp)
 
-add_executable (rbdl_server_node src/rbdl_server_node.cpp)
-target_link_libraries (rbdl_server_node rbdl_server)
+add_executable (rbdl_server_node ${SOURCE_FILES})
+target_link_libraries (rbdl_server_node ${PROJECT_NAME})
     
