@@ -29,10 +29,11 @@ class RBDLServer
         bool InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest&, rbdl_server::RBDLDynamicsResponse&  );
         bool ForwardKinmatics_srv();
         bool Jacobian_srv();
-	public:
-        RBDLServer(ros::NodeHandle* nodehandle);
-        RBDLServer();
-        ~RBDLServer();
+	
+        public:
+                RBDLServer(ros::NodeHandle* nodehandle);
+                RBDLServer();
+                ~RBDLServer();
 
 
 };
