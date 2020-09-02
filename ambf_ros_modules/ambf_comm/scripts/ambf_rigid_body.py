@@ -580,26 +580,36 @@ class RigidBody(BaseObject):
 
         self._apply_command()
 
-    def set_all_joint_effort(self, effort_list):
+    def set_multiple_joint_effort(self, efforts, index_list=[]):
         """
-        Set the joint efforts
-        :param effort_list: list of the joints to set
+        Set the seletecd joint efforts
+        :param q_list: list of the joints to set
         :return:
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(effort_list) != n_jnts:
-            print('Requested Joint Index out of range '+ str(n_jnts) + " " + str(len(effort_list)))
+        if len(index_list) == 0 or len(efforts) != len(index_list):
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ' + str(n_jnts))
             return
 
-        if len(effort_list) != n_jnts:
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(efforts)))
+        #     return
+
+        # checks to see if the cmd length is init and sets it to correct length
+        if len(self._cmd.joint_cmds) != n_jnts:
             self._cmd.joint_cmds = [0.0] * n_jnts
             self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
 
-        self._cmd.joint_cmds = effort_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_FORCE
-        self._apply_command()        
+        for index, effort in zip(index_list, efforts):
+            self._cmd.joint_cmds[index] = effort
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_FORCE
 
+        #self._cmd.joint_cmds = efforts
+        self._apply_command()     
 
     def set_joint_pos(self, joint_name_or_idx, q):
         """
@@ -625,7 +635,7 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_POSITION
             self._apply_command()
 
-    def set_all_joint_pos(self, q_list):
+    def set_multiple_joint_pos(self, q_list, index_list):
         """
         Set the joint pos
         :param effort_list: list of the joints to set
@@ -633,17 +643,29 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(q_list) != n_jnts:
-            print('Requested Joint Index out of range:n_jnts ' + str(n_jnts))
+        if len(index_list) == 0 or len(efforts) != len(index_list):
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ')
             return
 
-        if len(effort_list) != n_jnts:
-            self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(q_list)))
+        #     return
 
-        self._cmd.joint_cmds = q_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_POSITION
-        self._apply_command()  
+        # checks to see if the cmd length is init and sets it to correct length
+        if len(self._cmd.joint_cmds) != n_jnts:
+            self._cmd.joint_cmds = [0.0] * n_jnts
+            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_POSITION]*n_jnts
+
+        for index, pos in zip(index_list, q_list):
+            self._cmd.joint_cmds[index] = pos
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_POSITION
+
+        #self._cmd.joint_cmds = efforts
+        self._apply_command()     
+
 
     def set_joint_vel(self, joint_name_or_idx, q):
         """
@@ -669,25 +691,36 @@ class RigidBody(BaseObject):
             self._cmd.joint_cmds_types[joint_idx] = RigidBodyCmd.TYPE_VELOCITY
             self._apply_command()
 
-    def set_all_joint_vel(self, q_list):
+    def set_multiple_joint_vel(self, qd_list, index_list):
         """
-        Set the joint vel
+        Set the seleted joint vel
         :param effort_list: list of the joints to set
         :return:
         """
         n_jnts = len(self._state.joint_positions)
 
-        if q_list != n_jnts:
-            print('Requested Joint Index out of range')
+        if len(index_list) == 0 or len(efforts) != len(index_list):
+            index_list = list(range(n_jnts))
+
+        elif max(index_list)+1 > n_jnts or min(index_list) < 0:
+            print('Requested Joint index is out of range with joints ' +str(n_jnts))
             return
 
-        if len(q_list) != n_jnts:
-            self._cmd.joint_cmds = [0.0] * n_jnts
-            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_FORCE]*n_jnts
+        # elif len(efforts) != len(index_list):
+        #     print('Requested Joint commands is incorrect length '+ str(len(index_list)) + " " + str(len(qd_list)))
+        #     return
 
-        self._cmd.joint_cmds = q_list
-        self._cmd.joint_cmds_types[idx] = RigidBodyCmd.TYPE_VELOCITY
-        self._apply_command() 
+        # checks to see if the cmd length is init and sets it to correct length
+        if len(self._cmd.joint_cmds) != n_jnts:
+            self._cmd.joint_cmds = [0.0] * n_jnts
+            self._cmd.joint_cmds_types = [RigidBodyCmd.TYPE_VELOCITY]*n_jnts
+
+        for index, vel in zip(index_list, qd_list):
+            self._cmd.joint_cmds[index] = vel
+            self._cmd.joint_cmds_types[index] = RigidBodyCmd.TYPE_VELOCITY
+
+        #self._cmd.joint_cmds = efforts
+        self._apply_command()   
 
     def _clear_command(self):
         """
