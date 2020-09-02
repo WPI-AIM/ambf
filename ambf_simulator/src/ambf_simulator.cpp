@@ -1484,37 +1484,45 @@ void updateGraphics()
         cameraPtr->publishImage();
 
         // Depth Buffer Rendering
-        afRigidBodyPtr plane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneR");
+        afRigidBodyPtr rightPlane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneR");
 
-        if (plane != nullptr){
-            cMesh* planeMesh = (*plane->m_meshes)[0];
+        if (rightPlane != nullptr){
+            cMesh* planeMesh = (*rightPlane->m_meshes)[0];
             cameraPtr->m_imageFromBuffer->copyTo(planeMesh->m_texture->m_image);
             planeMesh->m_texture->markForUpdate();
         }
 
 
-        afRigidBodyPtr plane2 = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneL");
+        afRigidBodyPtr leftPlane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneL");
 
-        if (plane2 != nullptr){
-            cMesh* planeMesh = (*plane2->m_meshes)[0];
-            cImagePtr bufferImage = cameraPtr->m_depthFromBuffer;
-            int width = bufferImage->getWidth();
-            int height = bufferImage->getHeight();
-            int bytes = bufferImage->getBytesPerPixel();
-            int bits= bufferImage->getBitsPerPixel();
+        if (leftPlane != nullptr){
+            cMesh* planeMesh = (*leftPlane->m_meshes)[0];
+            cImagePtr depthImage = cameraPtr->m_depthFromBuffer;
+            int width = depthImage->getWidth();
+            int height = depthImage->getHeight();
+            int bytes = depthImage->getBytesPerPixel();
+            int bits = depthImage->getBitsPerPixel();
             for (int i = 0 ; i < width*height ; i++){
-                bufferImage->getData()[i * bytes + 0] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
-                bufferImage->getData()[i * bytes + 1] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
-                bufferImage->getData()[i * bytes + 2] = bufferImage->getData()[i * bytes + g_cmdOpts.channel];
+                depthImage->getData()[i * bytes + 0] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
+                depthImage->getData()[i * bytes + 1] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
+                depthImage->getData()[i * bytes + 2] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
 //                bufferImage->getData()[i * b + 3] = bufferImage->getData()[i * b + 0];
 //                bufferImage->m_data[i * (w*h) + 1] = bufferImage->m_data[0];
             }
 
-            if (g_pointCloudMesh == nullptr){
-                g_pointCloudMesh = new cMultiMesh();
-                g_pointCloudMesh->m_meshes->push_back(new cMesh());
-                (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->allocateData(width*height, true, false, true, false, false, false);
-            }
+            depthImage->copyTo(planeMesh->m_texture->m_image);
+            planeMesh->m_texture->markForUpdate();
+        }
+
+        if (g_pointCloudMesh == nullptr){
+            g_pointCloudMesh = new cMultiMesh();
+            g_pointCloudMesh->m_meshes->push_back(new cMesh());
+            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->allocateData(width*height, true, false, true, false, false, false);
+        }
+
+
+
+        if (g_savePointCloudMesh && g_pointCloudMesh){
 
             cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
             invProjection.m_flagTransform = false;
@@ -1525,43 +1533,51 @@ void updateGraphics()
             double a43 = invProjection(3,2);
             double a44 = invProjection(3,3);
 
-            if (g_savePointCloudMesh){
-                if (g_pointCloudMesh){
-                    double maxX = (double)(width - 1);
-                    double maxY = (double)(height - 1);
+            cImagePtr colorImage = cameraPtr->m_imageFromBuffer;
+            cImagePtr depthImage = cameraPtr->m_depthFromBuffer;
 
-                    for (int y_span = 0 ; y_span < height ; y_span++){
-                        for (int x_span = 0 ; x_span < width ; x_span++){
-                            double px = double(x_span) / maxX;
-                            double py = double(y_span) / maxY;
-                            int idx = (y_span * width + x_span);
-                            double depth = double(bufferImage->getData()[idx * bytes + g_cmdOpts.channel]);
-                            double pz = depth / 255.0;
-                            double pw = 1.0;
+            int width = depthImage->getWidth();
+            int height = depthImage->getHeight();
+            int bytes = depthImage->getBytesPerPixel();
+            int bits = depthImage->getBitsPerPixel();
 
-                            px = 2.0 * px - 1.0;
-                            py = 2.0 * py - 1.0;
-                            pz = 2.0 * pz - 1.0;
+            double maxX = (double)(width - 1);
+            double maxY = (double)(height - 1);
 
-                            cVector3d pImage(px, py, pz);
-                            cVector3d pClip = invProjection * pImage;
-                            pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
-                            pClip = cDiv(pw, pClip);
-                            // Flip along vertical plane
-                            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
-                        }
-                    }
+            for (int y_span = 0 ; y_span < height ; y_span++){
+                for (int x_span = 0 ; x_span < width ; x_span++){
+                    double px = double(x_span) / maxX;
+                    double py = double(y_span) / maxY;
+                    int idx = (y_span * width + x_span);
+                    double depth = double(depthImage->getData()[idx * bytes + g_cmdOpts.channel]);
+                    // Set the RGB values equal to depth to get a grayscale image
+                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 0] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 1] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 2] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+                    double pz = depth / 255.0;
+                    double pw = 1.0;
+
+                    px = 2.0 * px - 1.0;
+                    py = 2.0 * py - 1.0;
+                    pz = 2.0 * pz - 1.0;
+
+                    cVector3d pImage(px, py, pz);
+                    cVector3d pClip = invProjection * pImage;
+                    pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
+                    pClip = cDiv(pw, pClip);
+                    // Flip along vertical plane
+                    (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
                 }
-                time_t now = time(0);
-                std::string time_str(ctime(&now));
-                g_pointCloudMesh->saveToFile("/home/adnan/DepthMeshes/mesh.obj");
-                bufferImage->saveToFile("/home/adnan/DepthMeshes/image.bmp");
-                g_savePointCloudMesh = false;
             }
 
-            bufferImage->copyTo(planeMesh->m_texture->m_image);
-            planeMesh->m_texture->markForUpdate();
+            time_t now = time(0);
+            std::string time_str(ctime(&now));
+            g_pointCloudMesh->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_mesh.obj");
+            colorImage->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_color_image.bmp");
+            depthImage->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_depth_image.bmp");
+            g_savePointCloudMesh = false;
         }
+
 
         //
 
