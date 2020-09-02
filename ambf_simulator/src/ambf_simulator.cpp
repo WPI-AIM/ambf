@@ -1516,38 +1516,14 @@ void updateGraphics()
                 (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->allocateData(width*height, true, false, true, false, false, false);
             }
 
-
-            cTransform T4;
-            cMatrix3d T3(cVector3d(0, 0, 1), C_PI_DIV_2);
-            T4.setLocalRot(T3);
-
             cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
             invProjection.m_flagTransform = false;
             invProjection.invert();
-
-            double a31 = invProjection(2,0);
-            double a32 = invProjection(2,1);
-            double a33 = invProjection(2,2);
-            double a34 = invProjection(2,3);
 
             double a41 = invProjection(3,0);
             double a42 = invProjection(3,1);
             double a43 = invProjection(3,2);
             double a44 = invProjection(3,3);
-
-            double mean1 = 0;
-            double mean2 = 0;
-            for (int i = 0 ; i < width*height ; i++){
-                double depth = double(bufferImage->getData()[i * bytes + g_cmdOpts.channel]);
-                double w = 1.0;
-                mean1 += depth;
-                depth /= 255.0;
-                double normalized_depth = 2.0 * depth - 1.0;
-                double z = a33 * normalized_depth + a34 * w;
-                w = a43 * normalized_depth + a44 * w;
-                z = z/w;
-                mean2 += z;
-            }
 
             if (g_savePointCloudMesh){
                 if (g_pointCloudMesh){
@@ -1583,9 +1559,6 @@ void updateGraphics()
                 g_savePointCloudMesh = false;
             }
 
-            mean1 = mean1 / (width*height);
-            mean2 = mean2 / (width*height);
-            std::cerr << "Mean (255): " << mean1 << " | Mean (2.0 * p - 1.0): " << mean2 << "\n";
             bufferImage->copyTo(planeMesh->m_texture->m_image);
             planeMesh->m_texture->markForUpdate();
         }
