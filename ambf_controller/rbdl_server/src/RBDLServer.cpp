@@ -1,6 +1,5 @@
 #include "rbdl_server/RBDLServer.h"
 
-
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 
@@ -11,6 +10,7 @@ RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
      FD_srv = nh_.advertiseService("ForwardDynamics", &RBDLServer::ForwardDynamics_srv, this);
      ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
      MD_srv = nh_.advertiseService("CreateModel", &RBDLServer::CreateModel_srv, this);
+     Jac_srv = nh_.advertiseService("Jacobian", &RBDLServer::Jacobian_srv, this);
      ROS_INFO("I am alive");
 }
 
@@ -121,20 +121,18 @@ bool RBDLServer::ForwardKinmatics_srv()
 }
 
 
-bool RBDLServer::Jacobian_srv()
+bool RBDLServer::Jacobian_srv(rbdl_server::RBDLJacobianRequest& req, rbdl_server::RBDLJacobianResponse& res)
 {
-    MatrixNd G;
-    VectorNd Q = VectorNd::Zero(model->q_size);
+    std_msgs::Float64MultiArray msg;
+    MatrixNd G (MatrixNd::Zero (6, model->dof_count));
+    VectorNd Q = VectToEigen(req.q);
     Vector3d point(0,0,0);
-    int id = 0;
+    int id = body_ids[req.body_name];
     CalcPointJacobian6D(*model, Q, id, point, G, false);
-
-//    for (int i = 0; i < nrow; ++i) {
-//      for (int j = 0; j < ncol; ++j) {
-//        std::cout << arr2[i][j] << " ";
-//      }
-//      std::cout << "\n";
-//    }
+    tf::matrixEigenToMsg(G, msg);
+    res.jacobian = msg;
+    return true;
+    
 
 }
 

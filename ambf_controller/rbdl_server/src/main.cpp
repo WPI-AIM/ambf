@@ -31,10 +31,13 @@ int main(int argc, char* argv[])
     ros::ServiceClient client_model = nh.serviceClient<rbdl_server::RBDLModel>("CreateModel");
     ros::ServiceClient client_FD = nh.serviceClient<rbdl_server::RBDLDynamics>("ForwardDynamics");
     ros::ServiceClient client_ID = nh.serviceClient<rbdl_server::RBDLDynamics>("InverseDynamics");
+    ros::ServiceClient client_Jac = nh.serviceClient<rbdl_server::RBDLJacobian>("Jacobian");
+
 
     rbdl_server::RBDLModel model_msg; 
     rbdl_server::RBDLDynamics Fordny_msg; 
-    rbdl_server::RBDLDynamics Invdny_msg;  
+    rbdl_server::RBDLDynamics Invdny_msg;
+    rbdl_server::RBDLJacobian Jac_msg;  
     
     const int dof = 3;
     std::vector<double> q{{0.0, 0.0, 0.0}};
@@ -84,8 +87,18 @@ int main(int argc, char* argv[])
             return 1;
         }
 
+        Jac_msg.request.q = q;
+        Jac_msg.request.body_name = "bodyA";
+        if (client_Jac.call(Jac_msg))
+        {
+            std::cout<<"helle " <<std::endl;
+        }
+        else
+        {
+            ROS_ERROR("Failed to call service Jac");
+            return 1;
+        }
 
-        
     }
 
 

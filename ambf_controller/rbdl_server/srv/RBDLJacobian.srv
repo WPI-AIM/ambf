@@ -1,6 +1,4 @@
-string body
+string body_name
 float64[] q
-int id
-
 ---
-std_msgs/Float32MultiArray jacobian
+std_msgs/Float64MultiArray jacobian
