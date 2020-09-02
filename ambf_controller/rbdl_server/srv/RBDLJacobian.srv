@@ -1,4 +1,6 @@
 string body
 float64[] q
+int id
+
 ---
 std_msgs/Float32MultiArray jacobian
