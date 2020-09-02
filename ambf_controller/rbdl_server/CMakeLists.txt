@@ -38,7 +38,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES rbdl_server
  CATKIN_DEPENDS roscpp
- DEPENDS system_lib
+ # DEPENDS system_lib
  DEPENDS Eigen
 )
 
@@ -77,12 +77,13 @@ target_link_libraries(${PROJECT_NAME}  ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ${Boos
 set (RBDL_SERVER_INCLUDE_DIRS include)
 set (RBDL_SERVER_LIBRARIES rbdl_server)
 
-#add_executable(rbdl_server_node src/rbdl_server_node.cpp)
-#target_link_libraries(rbdl_server_node RBDLServer  ${catkin_LIBRARIES})
 
 set(SOURCE_FILES 
     src/rbdl_server_node.cpp)
 
 add_executable (rbdl_server_node ${SOURCE_FILES})
 target_link_libraries (rbdl_server_node ${PROJECT_NAME})
-    
+
+
+add_executable (rbdl_main src/main.cpp)
+target_link_libraries (rbdl_main ${PROJECT_NAME})

@@ -21,7 +21,7 @@ class RBDLServer
         ros::NodeHandle nh_;
         RigidBodyDynamics::Model *model = NULL;
         std::map<std::string, int> body_ids; //body ids
-        ros::ServiceServer FD_srv, ID_srv, create_model;
+        ros::ServiceServer FD_srv, ID_srv, MD_srv;
         VectorNd VectToEigen(const std::vector<double>&);
         bool CreateModel_srv(rbdl_server::RBDLModelRequest&, rbdl_server::RBDLModelResponse& ); //parses the AMBF model into  rbdl model
         bool CheckSize(int); //need to implement this to find way of checking the msg field sizes

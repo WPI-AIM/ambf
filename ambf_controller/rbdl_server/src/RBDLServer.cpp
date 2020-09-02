@@ -6,11 +6,12 @@ using namespace RigidBodyDynamics::Math;
 
 RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
 {
-
+    
      model = new Model();
-     this->FD_srv = nh_.advertiseService("ForwardDynamics", &RBDLServer::ForwardDynamics_srv, this);
-     this->ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
-     this->create_model = nh_.advertiseService("CreateModel", &RBDLServer::CreateModel_srv, this);
+     FD_srv = nh_.advertiseService("ForwardDynamics", &RBDLServer::ForwardDynamics_srv, this);
+     ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
+     MD_srv = nh_.advertiseService("CreateModel", &RBDLServer::CreateModel_srv, this);
+     ROS_INFO("I am alive");
 }
 
 RBDLServer::~RBDLServer()
@@ -20,6 +21,7 @@ RBDLServer::~RBDLServer()
 
 bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server::RBDLModelResponse& res) //parses the AMBF model into  rbdl model
 {
+        ROS_INFO("top");
 
     model->gravity = Vector3d (0., -9.81, 0.);
 
@@ -44,7 +46,6 @@ bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server
     body_ids["bodyA"] = body_a_id;
     body_ids["bodyB"] = body_b_id;
     body_ids["bodyC"] = body_c_id;
-
     return true;
 }
 VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
