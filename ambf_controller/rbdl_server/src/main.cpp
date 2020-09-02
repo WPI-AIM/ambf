@@ -22,7 +22,7 @@ void print(std::vector <double> const &a)
    }
 }
 
-void msgToEigen(const std_msgs::Float64MultiArray& msg, Eigen::Map<Eigen::MatrixXd>& new_mat)
+void msgToEigen(const std_msgs::Float64MultiArray& msg, Eigen::MatrixXd& new_mat)
 {
 	float dstride0 = msg.layout.dim[0].stride;
 	float dstride1 = msg.layout.dim[1].stride;
@@ -56,7 +56,6 @@ int main(int argc, char* argv[])
     std::vector<double> qd{{0.0, 0.0, 0.0}};
     std::vector<double> qdd{{0.0, 0.0, 0.0}};
     std::vector<double> tau{{0.0, 0.0, 0.0}};
-     Eigen::Map<Eigen::MatrixXd> mat;
     
     if(ros::ok)
     {
@@ -104,7 +103,9 @@ int main(int argc, char* argv[])
         Jac_msg.request.body_name = "bodyA";
         if (client_Jac.call(Jac_msg))
         {
+            Eigen::MatrixXd  mat;
             msgToEigen(Jac_msg.response.jacobian, mat);
+            std::cout << mat << std::endl;
         }
         else
         {
