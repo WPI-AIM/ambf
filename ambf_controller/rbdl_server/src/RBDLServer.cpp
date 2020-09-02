@@ -11,6 +11,7 @@ RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
      ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
      MD_srv = nh_.advertiseService("CreateModel", &RBDLServer::CreateModel_srv, this);
      Jac_srv = nh_.advertiseService("Jacobian", &RBDLServer::Jacobian_srv, this);
+     Kin_srv = nh_.advertiseService("ForwardKinimatics", &RBDLServer::ForwardKinimatics_srv, this);
      ROS_INFO("I am alive");
 }
 
@@ -92,13 +93,14 @@ bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl
 
 
 
-bool RBDLServer::ForwardKinmatics_srv()
+bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, rbdl_server::RBDLKinimaticsResponse& res)
 {
     std::string key;
     int id;
     VectorNd Q = VectorNd::Zero(model->q_size);
     Vector3d point(0,0,0);
-    geometry_msgs::PoseArray points;
+    geometry_msgs::Point current_point;
+    std::vector<geometry_msgs::Point> points;
     std::vector<std::string> names;
     Vector3d fk;
     geometry_msgs::Pose pose;
@@ -109,13 +111,15 @@ bool RBDLServer::ForwardKinmatics_srv()
         key = body.first;
         id = body.second;
         fk = CalcBodyToBaseCoordinates(*model, Q, id, point, false);
-        pose.position.x = fk(0);
-        pose.position.y = fk(1);
-        pose.position.z = fk(2);
-        points.poses.push_back(pose);
+        current_point.x = fk(0);
+        current_point.y = fk(1);
+        current_point.z = fk(2);
+        points.push_back(current_point);
         names.push_back(key);
     }
 
+    res.names = names;
+    res.points = points;
     return true;
 
 }

@@ -5,6 +5,7 @@
 #include "rbdl_server/RBDLJacobian.h"
 #include "rbdl_server/RBDLDynamics.h"
 #include "rbdl_server/RBDLModel.h"
+#include "rbdl_server/RBDLKinimatics.h"
 #include <vector>
 #include <array>
 
@@ -44,12 +45,14 @@ int main(int argc, char* argv[])
     ros::ServiceClient client_FD = nh.serviceClient<rbdl_server::RBDLDynamics>("ForwardDynamics");
     ros::ServiceClient client_ID = nh.serviceClient<rbdl_server::RBDLDynamics>("InverseDynamics");
     ros::ServiceClient client_Jac = nh.serviceClient<rbdl_server::RBDLJacobian>("Jacobian");
+    ros::ServiceClient client_kin = nh.serviceClient<rbdl_server::RBDLKinimatics>("ForwardKinimatics");
 
 
     rbdl_server::RBDLModel model_msg; 
     rbdl_server::RBDLDynamics Fordny_msg; 
     rbdl_server::RBDLDynamics Invdny_msg;
-    rbdl_server::RBDLJacobian Jac_msg;  
+    rbdl_server::RBDLJacobian Jac_msg; 
+    rbdl_server::RBDLKinimatics Kin_msg;  
     
     const int dof = 3;
     std::vector<double> q{{0.0, 0.0, 0.0}};
@@ -110,6 +113,26 @@ int main(int argc, char* argv[])
         else
         {
             ROS_ERROR("Failed to call service Jac");
+            return 1;
+        }
+
+        Kin_msg.request.q = q;
+        
+        if (client_kin.call(Kin_msg))
+        {
+            for(auto name: Kin_msg.response.names)
+            {
+                std::cout << name << std::endl;
+            }
+            for(auto point: Kin_msg.response.points)
+            {
+                std::cout << point.x << std::endl;
+            }
+            
+        }
+        else
+        {
+            ROS_ERROR("Failed to call service kin");
             return 1;
         }
 

@@ -25,12 +25,14 @@ add_service_files(
   RBDLModel.srv
   RBDLDynamics.srv
   RBDLJacobian.srv
+  RBDLKinimatics.srv
   
 )
 
 generate_messages(
   DEPENDENCIES
   std_msgs  # Or other packages containing msgs
+  geometry_msgs
 )
 
 
