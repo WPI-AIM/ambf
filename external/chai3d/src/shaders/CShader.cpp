@@ -221,6 +221,26 @@ bool cShader::compile()
     }
     else
     {
+        GLint infoLogLength;
+        glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+        GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+        glGetShaderInfoLog(m_id, infoLogLength, NULL, strInfoLog);
+
+        // display error message
+        cout << "shader compilation succesfull:" << endl << strInfoLog << endl;
+
+        printf("shader compilation succesfull:\n");
+        string info = strInfoLog;
+        printf("%s", info.c_str());
+
+        // store log
+        stringstream stream;
+        stream << strInfoLog << endl;
+        m_log = stream.str();
+
+        delete[] strInfoLog;
+
         m_compiled = true;
         return (C_SUCCESS);
     }

@@ -82,6 +82,11 @@ double g_heightRatio = 1.0;
 // Point cloud mesh from Depth Buffer
 cMultiMesh* g_pointCloudMesh = 0;
 bool g_savePointCloudMesh = false;
+cFrameBufferPtr g_depthFrameBuffer = 0;
+cCamera* g_depthCamera = 0;
+cMesh* g_depthQuad = 0;
+cWorld* g_depthWorld = 0;
+cImagePtr g_secondPassImage = 0;
 
 
 //---------------------------------------------------------------------------
@@ -646,6 +651,91 @@ int main(int argc, char* argv[])
         g_afWorld->loadSkyBox();
 
     }
+
+    g_depthQuad = new cMesh();
+    float quadVertices[] = {
+        // positions
+        -1.0f,  1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f,
+        1.0f,  -1.0f, 0.0f,
+        1.0f,  1.0f, 0.0f,
+    };
+
+    for (int vI = 0 ; vI < 2 ; vI++){
+        int offset = vI * 9;
+        g_depthQuad->newTriangle(cVector3d(quadVertices[offset + 0], quadVertices[offset + 1], quadVertices[offset + 2]),
+                cVector3d(quadVertices[offset + 3], quadVertices[offset + 4], quadVertices[offset + 5]),
+                cVector3d(quadVertices[offset + 6], quadVertices[offset + 7], quadVertices[offset + 8]));
+    }
+
+    g_depthQuad->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
+    g_depthQuad->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
+    g_depthQuad->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
+    g_depthQuad->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
+    g_depthQuad->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
+    g_depthQuad->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
+
+    g_depthQuad->computeAllNormals();
+
+    g_depthQuad->m_texture = cTexture2d::create();
+
+    g_depthQuad->m_texture->m_image->allocate(1024, 720, GL_RGBA);
+
+    g_depthQuad->setUseTexture(true);
+
+    g_secondPassImage = cImage::create();
+    g_secondPassImage->allocate(1024, 720, GL_RGBA);
+
+    std::ifstream vsFile;
+    std::ifstream fsFile;
+    std::string vs_shader_file = "../../depth_testing/shaders/shader.vs";
+    std::string fs_shader_file = "../../depth_testing/shaders/shader.fs";
+    vsFile.open(vs_shader_file);
+    fsFile.open(fs_shader_file);
+    // create a string stream
+    std::stringstream vsBuffer, fsBuffer;
+    // dump the contents of the file into it
+    vsBuffer << vsFile.rdbuf();
+    fsBuffer << fsFile.rdbuf();
+    // close the files
+    vsFile.close();
+    fsFile.close();
+
+    cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+    if (shaderProgram->linkProgram()){
+        // Just empty Pts to let us use the shader
+        cGenericObject* go;
+        cRenderOptions ro;
+        shaderProgram->use(go, ro);
+
+        std::cerr << "USING QUAD SHADER FILES: " <<
+                     "\n \t VERTEX: " << vs_shader_file.c_str() <<
+                     "\n \t FRAGMENT: " << fs_shader_file.c_str() << std::endl;
+        g_depthQuad->setShaderProgram(shaderProgram);
+
+    }
+    else{
+        std::cerr << "ERROR! FOR SKYBOX FAILED TO LOAD SHADER FILES: " <<
+                     "\n \t VERTEX: " << vs_shader_file.c_str() <<
+                     "\n \t FRAGMENT: " << fs_shader_file.c_str() << std::endl;
+
+    }
+
+    g_depthWorld = new cWorld();
+
+    g_depthWorld->addChild(g_depthQuad);
+
+    g_depthFrameBuffer = cFrameBuffer::create();
+
+    g_depthCamera = new cCamera(g_depthWorld);
+
+    g_depthCamera->set(cVector3d(0, 0, 0), cVector3d(-1, 0, 0), cVector3d(0, 0, 1));
+
+    g_depthWorld->addChild(g_depthCamera);
+
+    g_depthFrameBuffer->setup(g_depthCamera, 1024, 720, true, false);
 
     // main graphic loop
     while (!g_window_closed)
@@ -1521,7 +1611,6 @@ void updateGraphics()
         }
 
 
-
         if (g_savePointCloudMesh && g_pointCloudMesh){
 
             cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
@@ -1544,38 +1633,76 @@ void updateGraphics()
             double maxX = (double)(width - 1);
             double maxY = (double)(height - 1);
 
-            for (int y_span = 0 ; y_span < height ; y_span++){
-                for (int x_span = 0 ; x_span < width ; x_span++){
-                    double px = double(x_span) / maxX;
-                    double py = double(y_span) / maxY;
-                    int idx = (y_span * width + x_span);
-                    double depth = double(depthImage->getData()[idx * bytes + g_cmdOpts.channel]);
-                    // Set the RGB values equal to depth to get a grayscale image
-                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 0] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 1] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 2] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-                    double pz = depth / 255.0;
-                    double pw = 1.0;
+//            for (int y_span = 0 ; y_span < height ; y_span++){
+//                for (int x_span = 0 ; x_span < width ; x_span++){
+//                    double px = double(x_span) / maxX;
+//                    double py = double(y_span) / maxY;
+//                    int idx = (y_span * width + x_span);
+//                    double depth = double(depthImage->getData()[idx * bytes + g_cmdOpts.channel]);
+//                    // Set the RGB values equal to depth to get a grayscale image
+//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 0] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 1] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 2] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
+//                    double pz = depth / 255.0;
+//                    double pw = 1.0;
 
-                    px = 2.0 * px - 1.0;
-                    py = 2.0 * py - 1.0;
-                    pz = 2.0 * pz - 1.0;
+//                    px = 2.0 * px - 1.0;
+//                    py = 2.0 * py - 1.0;
+//                    pz = 2.0 * pz - 1.0;
 
-                    cVector3d pImage(px, py, pz);
-                    cVector3d pClip = invProjection * pImage;
-                    pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
-                    pClip = cDiv(pw, pClip);
-                    // Flip along vertical plane
-                    (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
-                }
-            }
+//                    cVector3d pImage(px, py, pz);
+//                    cVector3d pClip = invProjection * pImage;
+//                    pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
+//                    pClip = cDiv(pw, pClip);
+//                    // Flip along vertical plane
+//                    (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
+//                }
+//            }
 
-            time_t now = time(0);
-            std::string time_str(ctime(&now));
-            g_pointCloudMesh->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_mesh.obj");
-            colorImage->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_color_image.bmp");
-            depthImage->saveToFile("/home/adnan/DepthMeshes/" + cameraPtr->m_name + "_depth_image.bmp");
-            g_savePointCloudMesh = false;
+//            time_t now = time(0);
+//            std::string time_str(ctime(&now));
+//            g_pointCloudMesh->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_mesh.obj");
+//            colorImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_color_image.bmp");
+//            depthImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_depth_image.bmp");
+//            g_savePointCloudMesh = false;
+
+
+        }
+
+
+
+        cImagePtr colorImage = cameraPtr->m_imageFromBuffer;
+        cImagePtr depthImage = cameraPtr->m_depthFromBuffer;
+        depthImage->flipHorizontal();
+
+        depthImage->copyTo(g_depthQuad->m_texture->m_image);
+        g_depthQuad->m_texture->markForUpdate();
+
+        // Update the dimensions scale information.
+        float n = cameraPtr->getInternalCamera()->getNearClippingPlane();
+        float f = cameraPtr->getInternalCamera()->getFarClippingPlane();
+        double fva = cameraPtr->getInternalCamera()->getFieldViewAngleRad();
+        double ar = cameraPtr->getInternalCamera()->getAspectRatio();
+
+        double delta_h = 2 * f * acos(fva);
+        double delta_v = delta_h / ar;
+        double delta_d = -f;
+
+        cVector3d maxWorldDimensions(delta_v, delta_h, delta_d);
+
+        g_depthQuad->getShaderProgram()->setUniform("maxWorldDimensions", maxWorldDimensions);
+        g_depthQuad->getShaderProgram()->setUniformf("nearPlane", -n);
+        g_depthQuad->getShaderProgram()->setUniformf("farPlane", -f);
+
+        g_depthFrameBuffer->renderView();
+
+        if (g_savePointCloudMesh){
+            printf("Trying to Save Second Pass Depth Image\n");
+            cImagePtr secondPassImage;
+            g_depthFrameBuffer->copyImageBuffer(g_secondPassImage);
+            colorImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_first_pass_color_image.bmp");
+            depthImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_first_pass_depth_image.bmp");
+            g_secondPassImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_second_pass_depth_image.bmp");
         }
 
 
@@ -1587,6 +1714,10 @@ void updateGraphics()
 //        // check for any OpenGL errors
 //        GLenum err = glGetError();
 //        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+    }
+
+    if (g_savePointCloudMesh){
+        g_savePointCloudMesh = false;
     }
 
     // wait until all GL commands are completed
