@@ -17,11 +17,14 @@ void main(void)
     float deltaZ = farPlane - nearPlane;
     float d = 0.5 + ((P.z - midPoint) / deltaZ);
     // P.z /= maxWorldDimensions.z;
-    if (P.z < farPlane ){
+    if (P.z > 0.0 ){
+      gl_FragColor = vec4(0.0, P.z, 0.0, 1.0);
+    }
+    else if (P.z < farPlane ){
       gl_FragColor = vec4(farPlane / P.z, 0.0, 0.0, 1.0);
     }
     else if (P.z > nearPlane){
-      gl_FragColor = vec4(0.0, 0.0, nearPlane / P.z, 1.0);
+      gl_FragColor = vec4(0.0, 0.0, P.z / nearPlane, 1.0);
     }
     else{
       gl_FragColor = vec4(d, d, d, 1.0);
