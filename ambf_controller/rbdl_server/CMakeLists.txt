@@ -20,10 +20,12 @@ tf
 message_generation
 )
 
+
 add_service_files(
   FILES
   RBDLModel.srv
-  RBDLDynamics.srv
+  RBDLForwardDynamics.srv
+  RBDLInverseDynamics.srv
   RBDLJacobian.srv
   RBDLKinimatics.srv
   

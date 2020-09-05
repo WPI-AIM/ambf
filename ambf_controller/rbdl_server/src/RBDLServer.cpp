@@ -56,7 +56,7 @@ VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
     return Q;
 }
 
-bool RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl_server::RBDLDynamicsResponse&  res)
+bool  RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLForwardDynamicsRequest& req, rbdl_server::RBDLForwardDynamicsResponse&  res )
 {
     // Need to add some checks on the size of the inputs to make sure they are correct
 
@@ -74,7 +74,7 @@ bool RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl
     return true;
 }
 
-bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLDynamicsRequest& req, rbdl_server::RBDLDynamicsResponse&  res)
+bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLInverseDynamicsRequest& req, rbdl_server::RBDLInverseDynamicsResponse&  res)
 {
     if (model->q_size != req.q.size()){return false;}
     if (model->qdot_size != req.qd.size()){return false;}
@@ -105,7 +105,7 @@ bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, 
     Vector3d fk;
     geometry_msgs::Pose pose;
 
-
+    // dont use auto
     for(auto& body : body_ids)
     {
         key = body.first;

@@ -1,8 +1,6 @@
 #include <ros/ros.h>
 #include "rbdl_server/RBDLServer.h"
-#include "rbdl_server/RBDLJacobian.h"
-#include "rbdl_server/RBDLDynamics.h"
-#include "rbdl_server/RBDLModel.h"
+
 
 
 int main(int argc, char* argv[])
