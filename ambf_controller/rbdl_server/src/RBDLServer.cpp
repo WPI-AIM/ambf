@@ -21,6 +21,11 @@ RBDLServer::~RBDLServer()
     delete model;
 }
 
+///
+/// \brief RBDLServer::CreateModel_srv
+/// \param req
+/// \param res
+///
 bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server::RBDLModelResponse& res) //parses the AMBF model into  rbdl model
 {
 
@@ -49,21 +54,23 @@ bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server
     body_ids["bodyA"] = body_a_id;
     body_ids["bodyB"] = body_b_id;
     body_ids["bodyC"] = body_c_id;
+
+    
     have_model = true;
 
     return true;
 }
-VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
-{
-    std::vector<double> vec(msg.begin(), msg.end());
-    VectorNd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
-    return Q;
-}
 
+
+///
+/// \brief RBDLServer::ForwardDynamics_srv
+/// \param req
+/// \param res
+///
 bool  RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLForwardDynamicsRequest& req, rbdl_server::RBDLForwardDynamicsResponse&  res )
 {
     // Need to add some checks on the size of the inputs to make sure they are correct
-    if(have_model)
+    if(!have_model)
     {
         ROS_INFO("Model not set");
         return false;
@@ -94,9 +101,14 @@ bool  RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLForwardDynamicsRequest& r
     return true;
 }
 
+///
+/// \brief RBDLServer::InverseDynamics_srv
+/// \param req
+/// \param res
+///
 bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLInverseDynamicsRequest& req, rbdl_server::RBDLInverseDynamicsResponse&  res)
 {
-    if(have_model)
+    if(!have_model)
     {
         ROS_INFO("Model not set");
         return false;
@@ -129,7 +141,11 @@ bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLInverseDynamicsRequest& re
 }
 
 
-
+///
+/// \brief RBDLServer::ForwardKinimatics_srv
+/// \param req
+/// \param res
+///
 bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, rbdl_server::RBDLKinimaticsResponse& res)
 {
     std::string key;
@@ -143,7 +159,7 @@ bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, 
     geometry_msgs::Pose pose;
     int size = res.points.size();
 
-    if(have_model)
+    if(!have_model)
     {
         ROS_INFO("Model not set");
         return false;
@@ -173,7 +189,11 @@ bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, 
 
 }
 
-
+///
+/// \brief RBDLServer::Jacobian_srv
+/// \param req
+/// \param res
+///
 bool RBDLServer::Jacobian_srv(rbdl_server::RBDLJacobianRequest& req, rbdl_server::RBDLJacobianResponse& res)
 {
     
@@ -184,7 +204,7 @@ bool RBDLServer::Jacobian_srv(rbdl_server::RBDLJacobianRequest& req, rbdl_server
     VectorNd Q = VectToEigen(req.q);
     Vector3d point(req.point.x, req.point.y, req.point.z);
 
-    if(have_model)
+    if(!have_model)
     {
         ROS_INFO("Model not set");
         return false;
@@ -220,33 +240,52 @@ bool RBDLServer::Jacobian_srv(rbdl_server::RBDLJacobianRequest& req, rbdl_server
     
 }
 
+///
+/// \brief RBDLServer::GetNames_srv
+/// \param req
+/// \param res
+///
+bool RBDLServer::GetNames_srv(rbdl_server::RBDLBodyNamesRequest& req, rbdl_server::RBDLBodyNamesResponse& res)
+{
+    
+    std::vector<std::string> names;
+    //check to see if the model is active
+    if(!have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
 
+    GetNames(names);
+    res.names = names;
+
+    return true;
+}
+
+///
+/// \brief RBDLServer::VectToEigen
+/// \param msg
+///
+VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
+{
+    std::vector<double> vec(msg.begin(), msg.end());
+    VectorNd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
+    return Q;
+}
+
+///
+/// \brief RBDLServer::GetNames
+/// \param names
+///
 void RBDLServer::GetNames(std::vector<std::string>& names)
 {
-
+    //loop through the names and add them to the vect
     for(std::pair<std::string, int> body : body_ids)
     {
         names.push_back(body.first);
 
     }
 
-}
-
-bool RBDLServer::GetNames_srv(rbdl_server::RBDLBodyNamesRequest& req, rbdl_server::RBDLBodyNamesResponse& res)
-{
-    if(have_model)
-    {
-        ROS_INFO("Model not set");
-        return false;
-    }
-
-    std::vector<std::string> names;
-
-    GetNames(names);
-
-    res.names = names;
-
-    return true;
 }
 
 

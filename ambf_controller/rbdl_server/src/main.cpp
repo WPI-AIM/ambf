@@ -3,7 +3,8 @@
 #include <rbdl/rbdl.h>
 #include "rbdl_server/RBDLServer.h"
 #include "rbdl_server/RBDLJacobian.h"
-#include "rbdl_server/RBDLDynamics.h"
+#include "rbdl_server/RBDLForwardDynamics.h"
+#include "rbdl_server/RBDLInverseDynamics.h"
 #include "rbdl_server/RBDLModel.h"
 #include "rbdl_server/RBDLKinimatics.h"
 #include <vector>
@@ -42,20 +43,20 @@ int main(int argc, char* argv[])
     ros::NodeHandle nh;
     ROS_INFO("starting");
     ros::ServiceClient client_model = nh.serviceClient<rbdl_server::RBDLModel>("CreateModel");
-    ros::ServiceClient client_FD = nh.serviceClient<rbdl_server::RBDLDynamics>("ForwardDynamics");
-    ros::ServiceClient client_ID = nh.serviceClient<rbdl_server::RBDLDynamics>("InverseDynamics");
+    ros::ServiceClient client_FD = nh.serviceClient<rbdl_server::RBDLForwardDynamics>("ForwardDynamics");
+    ros::ServiceClient client_ID = nh.serviceClient<rbdl_server::RBDLInverseDynamics>("InverseDynamics");
     ros::ServiceClient client_Jac = nh.serviceClient<rbdl_server::RBDLJacobian>("Jacobian");
     ros::ServiceClient client_kin = nh.serviceClient<rbdl_server::RBDLKinimatics>("ForwardKinimatics");
 
 
     rbdl_server::RBDLModel model_msg; 
-    rbdl_server::RBDLDynamics Fordny_msg; 
-    rbdl_server::RBDLDynamics Invdny_msg;
+    rbdl_server::RBDLForwardDynamics Fordny_msg; 
+    rbdl_server::RBDLInverseDynamics Invdny_msg;
     rbdl_server::RBDLJacobian Jac_msg; 
     rbdl_server::RBDLKinimatics Kin_msg;  
     
     const int dof = 3;
-    std::vector<double> q{{0.0, 0.0, 0.0}};
+    std::vector<double> q{{0.5, 0.1, 1.0}};
     std::vector<double> qd{{0.0, 0.0, 0.0}};
     std::vector<double> qdd{{0.0, 0.0, 0.0}};
     std::vector<double> tau{{0.0, 0.0, 0.0}};
@@ -74,7 +75,6 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-                
         
         Fordny_msg.request.q = q;
         Fordny_msg.request.qd = qd;
@@ -103,7 +103,10 @@ int main(int argc, char* argv[])
         }
 
         Jac_msg.request.q = q;
-        Jac_msg.request.body_name = "bodyA";
+        Jac_msg.request.body_name = "bodyB";
+        Jac_msg.request.point.x = 0.0;
+        Jac_msg.request.point.y = 0.0;
+        Jac_msg.request.point.z = 0.0;
         if (client_Jac.call(Jac_msg))
         {
             Eigen::MatrixXd  mat;
@@ -117,7 +120,7 @@ int main(int argc, char* argv[])
         }
 
         Kin_msg.request.q = q;
-        
+    
         if (client_kin.call(Kin_msg))
         {
             for(auto name: Kin_msg.response.names)
