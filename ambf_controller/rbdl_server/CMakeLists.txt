@@ -28,6 +28,7 @@ add_service_files(
   RBDLInverseDynamics.srv
   RBDLJacobian.srv
   RBDLKinimatics.srv
+  RBDLBodyNames.srv
   
 )
 

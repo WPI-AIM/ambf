@@ -7,12 +7,13 @@ RBDLServer::RBDLServer(ros::NodeHandle* nodehandle):nh_(*nodehandle)
 {
     
      model = new Model();
+     have_model = false;
      FD_srv = nh_.advertiseService("ForwardDynamics", &RBDLServer::ForwardDynamics_srv, this);
      ID_srv = nh_.advertiseService("InverseDynamics", &RBDLServer::InverseDynamics_srv, this);
      MD_srv = nh_.advertiseService("CreateModel", &RBDLServer::CreateModel_srv, this);
      Jac_srv = nh_.advertiseService("Jacobian", &RBDLServer::Jacobian_srv, this);
      Kin_srv = nh_.advertiseService("ForwardKinimatics", &RBDLServer::ForwardKinimatics_srv, this);
-     ROS_INFO("I am alive");
+     ROS_INFO("RBDL server running");
 }
 
 RBDLServer::~RBDLServer()
@@ -22,7 +23,8 @@ RBDLServer::~RBDLServer()
 
 bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server::RBDLModelResponse& res) //parses the AMBF model into  rbdl model
 {
-        ROS_INFO("top");
+
+    
 
     model->gravity = Vector3d (0., -9.81, 0.);
 
@@ -47,6 +49,8 @@ bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server
     body_ids["bodyA"] = body_a_id;
     body_ids["bodyB"] = body_b_id;
     body_ids["bodyC"] = body_c_id;
+    have_model = true;
+
     return true;
 }
 VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
@@ -59,10 +63,26 @@ VectorNd RBDLServer::VectToEigen(const std::vector<double> &msg)
 bool  RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLForwardDynamicsRequest& req, rbdl_server::RBDLForwardDynamicsResponse&  res )
 {
     // Need to add some checks on the size of the inputs to make sure they are correct
-
-    if (model->q_size != req.q.size()){return false;}
-    if (model->qdot_size != req.qd.size()){return false;}
-    if (model->qdot_size != req.tau.size() ){return false;}
+    if(have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
+    if (model->q_size != req.q.size())
+    {
+        ROS_INFO("Joint length (q) not correct size");
+        return false;
+    }
+    if (model->qdot_size != req.qd.size())
+    {
+        ROS_INFO("Joint velocity length (qd) not correct size");
+        return false;
+    }
+    if (model->qdot_size != req.tau.size() )
+    {
+        ROS_INFO("Joint torque (tau) not correct size");
+        return false;
+    }
 
     VectorNd Q =  VectToEigen(req.q);
     VectorNd QDot = VectToEigen(req.qd);
@@ -76,9 +96,26 @@ bool  RBDLServer::ForwardDynamics_srv(rbdl_server::RBDLForwardDynamicsRequest& r
 
 bool RBDLServer::InverseDynamics_srv(rbdl_server::RBDLInverseDynamicsRequest& req, rbdl_server::RBDLInverseDynamicsResponse&  res)
 {
-    if (model->q_size != req.q.size()){return false;}
-    if (model->qdot_size != req.qd.size()){return false;}
-    if (model->qdot_size != req.qdd.size() ){return false;}
+    if(have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
+    if (model->q_size != req.q.size())
+    {
+        ROS_INFO("Joint length (q) not correct size");
+        return false;
+    }
+    if (model->qdot_size != req.qd.size())
+    {
+        ROS_INFO("Joint velocity length (qd) not correct size");
+        return false;
+    }
+    if (model->qdot_size != req.qdd.size() )
+    {
+        ROS_INFO("Joint accel (qdd) not correct size");
+        return false;
+    }
 
     VectorNd Q =  VectToEigen(req.q);
     VectorNd QDot = VectToEigen(req.qd);
@@ -104,9 +141,21 @@ bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, 
     std::vector<std::string> names;
     Vector3d fk;
     geometry_msgs::Pose pose;
+    int size = res.points.size();
 
-    // dont use auto
-    for(auto& body : body_ids)
+    if(have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
+    if (model->q_size != req.q.size())
+    {
+        ROS_INFO("Joint length (q) not correct size");
+        return false;
+    }
+    
+    
+    for(std::pair<std::string, int> body : body_ids)
     {
         key = body.first;
         id = body.second;
@@ -127,17 +176,77 @@ bool RBDLServer::ForwardKinimatics_srv(rbdl_server::RBDLKinimaticsRequest& req, 
 
 bool RBDLServer::Jacobian_srv(rbdl_server::RBDLJacobianRequest& req, rbdl_server::RBDLJacobianResponse& res)
 {
+    
+    std::vector<std::string> names;
+    int id;
     std_msgs::Float64MultiArray msg;
     MatrixNd G (MatrixNd::Zero (6, model->dof_count));
     VectorNd Q = VectToEigen(req.q);
-    Vector3d point(0,0,0);
-    int id = body_ids[req.body_name];
+    Vector3d point(req.point.x, req.point.y, req.point.z);
+
+    if(have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
+    if (model->q_size != req.q.size())
+    {
+        ROS_INFO("Joint length (q) not correct size");
+        return false;
+    }
+      
+
+    if (body_ids.find(req.body_name) != body_ids.end()) 
+    {
+		id = body_ids[req.body_name];
+	} 
+    else 
+    {
+        ROS_INFO("That is not a body, the current bodies are");
+        GetNames(names);
+        for(std::string name: names)
+        {
+            ROS_INFO("%s", name);
+        }
+
+		return false;
+	}
+
+    
     CalcPointJacobian6D(*model, Q, id, point, G, false);
     tf::matrixEigenToMsg(G, msg);
     res.jacobian = msg;
     return true;
     
+}
 
+
+void RBDLServer::GetNames(std::vector<std::string>& names)
+{
+
+    for(std::pair<std::string, int> body : body_ids)
+    {
+        names.push_back(body.first);
+
+    }
+
+}
+
+bool RBDLServer::GetNames_srv(rbdl_server::RBDLBodyNamesRequest& req, rbdl_server::RBDLBodyNamesResponse& res)
+{
+    if(have_model)
+    {
+        ROS_INFO("Model not set");
+        return false;
+    }
+
+    std::vector<std::string> names;
+
+    GetNames(names);
+
+    res.names = names;
+
+    return true;
 }
 
 
