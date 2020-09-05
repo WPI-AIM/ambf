@@ -18,14 +18,15 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package( INCLUDE_DIRS include
-  LIBRARIES ambf_client_app
+  LIBRARIES ambf_client_test
   CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
 
+
 # Locate GTest
 find_package(GTest REQUIRED)
-include_directories( include ${GTEST_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+include_directories( include ${GLFW_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 set(SOURCE_FILES
     src/ambf_client_test.cpp)
