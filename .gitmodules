@@ -4,3 +4,6 @@
 [submodule "ambf_utilities/urdf_2_ambf"]
 	path = ambf_utilities/urdf_2_ambf
 	url = https://github.com/adnanmunawar/urdf_2_ambf.git
+[submodule "ambf_controller/thirdparty/rbdl"]
+	path = ambf_controller/thirdparty/rbdl
+	url = https://github.com/rbdl/rbdl.git
