@@ -1,8 +1,11 @@
 FROM tensorflow/tensorflow:1.14.0-gpu-py3
 
 ENV USERNAME="admin"
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 
 RUN useradd -ms /bin/bash ${USERNAME}
+RUN usermod -aG sudo ${USERNAME}
 
 ENV HOME="/home/${USERNAME}" \
   AMBF_WS="/home/${USERNAME}/ambf"
