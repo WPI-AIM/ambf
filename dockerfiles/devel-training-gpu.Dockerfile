@@ -10,6 +10,10 @@ RUN usermod -aG sudo ${USERNAME}
 ENV HOME="/home/${USERNAME}" \
   AMBF_WS="/home/${USERNAME}/ambf"
 
+# Add apt-utils
+RUN apt-get install apt-utils -q -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # setup timezone
 RUN echo 'Etc/UTC' > /etc/timezone && \
     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \

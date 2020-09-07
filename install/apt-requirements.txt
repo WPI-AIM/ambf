@@ -28,6 +28,7 @@ libyaml-cpp-dev
 freeglut3
 freeglut3-dev
 libboost-dev
+xorg-dev
 cmake
 python-nose
 python-setuptools
