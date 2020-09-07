@@ -76,6 +76,20 @@ You can also permanently add the install location in your .bashrc with the follo
 
 `echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
+### Docker
+
+In order to use the docker file, follow the instructions [here](https://docs.docker.com/install/) to install docker on your system. To run the file:  
+
+```bash
+cd ~/
+git clone https://github.com/WPI-AIM/ambf.git && cd ambf
+sudo service docker start
+docker build --rm -f "Dockerfile" -t ambf:latest "."
+docker run --rm -it  ambf:latest
+cd /ambf/bin/lin-x86_64/
+./ambf_simulator -g off
+```
+
 ### Running the Simulator:
 Having succesfully completed the steps above running is Simulator is easy. Depending
 on what OS you're using simply follow the commands below:

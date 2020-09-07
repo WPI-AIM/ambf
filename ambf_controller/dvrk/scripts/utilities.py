@@ -12,6 +12,9 @@ def get_angle(vec_a, vec_b, up_vector=None):
     vec_a.Normalize()
     vec_b.Normalize()
     cross_ab = vec_a * vec_b
+    # print('\ncross_ab')
+    # print(cross_ab)
+
     vdot = dot(vec_a, vec_b)
     # print('VDOT', vdot, vec_a, vec_b)
     # Check if the vectors are in the same direction
@@ -37,7 +40,7 @@ def round_mat(mat, rows, cols, precision=4):
             mat[i, j] = round(mat[i, j], precision)
     return mat
 
-
+  
 def round_vec(vec, precision=4):
     for i in range(3):
         vec[i] = round(vec[i], precision)

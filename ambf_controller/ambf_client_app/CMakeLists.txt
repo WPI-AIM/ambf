@@ -31,13 +31,29 @@ set(SOURCE_FILES
 set (IK_HDR_FILES
     include/${PROJECT_NAME}/ik_test.h
     include/${PROJECT_NAME}/psm_fk.h
-    include/${PROJECT_NAME}/dh.h)
-
+    include/${PROJECT_NAME}/dh.h
+    include/${PROJECT_NAME}/psm_ik.h
+    include/${PROJECT_NAME}/utilities.h)
 
 set(IK_SOURCE_FILES
     src/ik_test.cpp
     src/psm_fk.cpp
-    src/dh.cpp)
+    src/dh.cpp
+    src/psm_ik.cpp
+    src/utilities.cpp)
+
+
+#find_package(Torch REQUIRED)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
+#target_link_libraries(rl_test "${TORCH_LIBRARIES}")
+#set_property(TARGET rl_test PROPERTY CXX_STANDARD 14)
+
+# set (RL_HDR_FILES
+#    include/${PROJECT_NAME}/rl_test.h)
+
+# set(RL_SOURCE_FILES
+#     src/rl_test.cpp)
 
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
@@ -48,3 +64,6 @@ target_link_libraries (${PROJECT_NAME} ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boo
 
 add_executable (ik_test ${IK_HDR_FILES} ${IK_SOURCE_FILES})
 target_link_libraries (ik_test ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
+
+# add_executable (rl_test ${RL_HDR_FILES} ${RL_SOURCE_FILES})
+# target_link_libraries (rl_test ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)

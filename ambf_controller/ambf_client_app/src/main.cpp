@@ -58,8 +58,8 @@ int main(int argc, char* argv[])
 //    client.printSummary();
 //    vector<string> object_names;
 
-//    object_names = client.getRigidBodyNames();
-//    usleep(20000);
+    object_names = client.getRigidBodyNames();
+    usleep(20000);
 
 //    string psm_baselink = "psm/baselink";
 //    cout << "psm_baselink: " << psm_baselink << "\n";
@@ -102,8 +102,10 @@ int main(int argc, char* argv[])
 //    printVector("psm_baselink_handler->get_all_joint_effort()", psm_baselink_handler->get_all_joint_effort());
 
 //    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
-//    printVector(joint_position);
+//    printVector3("joint_position", joint_position);
 
 //    client.cleanUp();
+    client.~Client();
+
 	return 0;
 }

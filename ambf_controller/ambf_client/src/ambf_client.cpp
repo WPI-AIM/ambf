@@ -398,6 +398,7 @@ void Client::cleanUp() {
             }
         }
     }
+
 }
 
 Client::~Client(void){

@@ -68,6 +68,7 @@ def compute_IK(T_7_0):
     # Convert the vector from base to pinch joint in the pinch joint frame
     # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
     P_PinchJoint_local = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
+
     # print("P_PinchJoint_local: ", round_vec(P_PinchJoint_local))
     # Now we can trim the value along the x axis to get a projection along the YZ plane as mentioned above
     N_PalmJoint_PinchJoint = P_PinchJoint_local
@@ -75,6 +76,7 @@ def compute_IK(T_7_0):
     N_PalmJoint_PinchJoint.Normalize()
     # We can check the angle to see if things make sense
     angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
+    # angle = 3.141592653589793
     # print("Palm Link Angle in Pinch YZ Plane: ", angle)
 
     # If the angle between the two vectors is > 90 Degree, we should move in the opposite direction
@@ -84,6 +86,7 @@ def compute_IK(T_7_0):
     # Add another frame to account for Palm link length
     # print("N_PalmJoint_PinchJoint: ", round_vec(N_PalmJoint_PinchJoint))
     T_PalmJoint_PinchJoint = Frame(Rotation.RPY(0, 0, 0), N_PalmJoint_PinchJoint * palm_length)
+
     # print("P_PalmJoint_PinchJoint: ", round_vec(T_PalmJoint_PinchJoint.p))
     # Get the shaft tip or the Palm's Joint position
     T_PalmJoint_0 = T_7_0 * T_PinchJoint_7 * T_PalmJoint_PinchJoint
@@ -106,6 +109,8 @@ def compute_IK(T_7_0):
     # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print ('XZ Diagonal: ', xz_diagonal)
     # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
+    # print("\nT_PalmJoint_0.p: ")
+    # print(T_PalmJoint_0.p[0], T_PalmJoint_0.p[2])
     j1 = math.atan2(T_PalmJoint_0.p[0], sign * T_PalmJoint_0.p[2])
 
     # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
@@ -115,35 +120,26 @@ def compute_IK(T_7_0):
 
     j3 = insertion_depth + tool_rcm_offset
 
-
     # Calculate j4
     # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
     # we need to construct a plane based on the vectors Rx_7_0 and D_PinchJoint_PalmJoint_0 since these are
     # the only two vectors that are orthogonal at all configurations of the EE.
     cross_palmlink_x7_0 = T_7_0.M.UnitX() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
-
     # To get j4, compare the above vector with Y axes of T_3_0
     T_3_0 = convert_mat_to_frame(compute_FK([j1, j2, j3]))
     j4 = get_angle(cross_palmlink_x7_0, T_3_0.M.UnitY(), up_vector=-T_3_0.M.UnitZ())
+    # print("\nj4: ", j4)
 
     # Calculate j5
     # This should be simple, just compute the angle between Rz_4_0 and D_PinchJoint_PalmJoint_0
     T_4_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4]))
     j5 = get_angle(T_PinchJoint_0.p - T_PalmJoint_0.p, T_4_0.M.UnitZ(), up_vector=-T_4_0.M.UnitY())
-
     # Calculate j6
     # This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
     T_5_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4, j5]))
     j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
-
     str = '\n**********************************'*3
     # print(str)
-    # print("Joint 1: ", round(j1, 3))
-    # print("Joint 2: ", round(j2, 3))
-    # print("Joint 3: ", round(j3, 3))
-    # print("Joint 4: ", round(j4, 3))
-    # print("Joint 5: ", round(j5, 3))
-    # print("Joint 6: ", round(j6, 3))
 
     T_7_0_req = convert_frame_to_mat(T_7_0)
     T_7_0_req = round_transform(T_7_0_req, 3)
@@ -151,5 +147,4 @@ def compute_IK(T_7_0):
     T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
     round_transform(T_7_0_computed, 3)
     # print('Computed Pose: \n', T_7_0_computed)
-
     return [j1, j2, j3, j4, j5, j6]

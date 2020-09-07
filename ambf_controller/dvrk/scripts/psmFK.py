@@ -40,6 +40,9 @@ def compute_FK(joint_pos):
     T_6_5 = link6.get_trans()
     T_7_6 = link7.get_trans()
 
+    # print("\nT_4_3: ")
+    # print(T_4_3)
+
     T_2_0 = np.matmul(T_1_0, T_2_1)
     T_3_0 = np.matmul(T_2_0, T_3_2)
     T_4_0 = np.matmul(T_3_0, T_4_3)

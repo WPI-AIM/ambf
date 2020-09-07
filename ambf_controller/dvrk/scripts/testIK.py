@@ -7,15 +7,13 @@ def test_ik():
     # in the FK returning us T_7_0 rather than T_6_0. There 7 frame from DH is a fixed frame (no D.O.F)
     test_q = [-0.3, 0.2, 0.1, -0.9, 0.0, 0.0, 0.0]
     T_7_0 = compute_FK(test_q)
-    print('T_7_0: ')
-    print(T_7_0)
 
     computed_q = compute_IK(convert_mat_to_frame(T_7_0))
     for i in range(0, 6):
         computed_q[i] = round(computed_q[i], 4)
 
-    # print('Test Q: ', test_q[0:6])
-    # print('Comp Q: ', computed_q)
+    print('Test Q: ', test_q[0:6])
+    print('Comp Q: ', computed_q)
 
 
 def test_ambf_psm():
@@ -54,5 +52,5 @@ def test_ambf_psm():
 
 
 if __name__ == "__main__":
-    test_ik()
-    # test_ambf_psm()
+    # test_ik()
+    test_ambf_psm()

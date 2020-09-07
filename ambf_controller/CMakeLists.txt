@@ -59,3 +59,5 @@ target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boo
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rbdl_server)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_test)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)

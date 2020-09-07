@@ -325,12 +325,12 @@ void RigidBody::velocity_command(double vx, double vy, double vz, double ax, dou
 
 void RigidBody::set_joint_control(int joint_idx, float command, int control_type) {
     if(!is_joint_idx_valid(joint_idx)) return;
-    int n_jnts_cmd = m_Cmd.joint_cmds.size();
+    int n_jnts = get_num_joints();
 
 
-    if(n_jnts_cmd != m_State.joint_positions.size()) {
-        m_Cmd.joint_cmds.resize(n_jnts_cmd);
-        m_Cmd.joint_cmds_types.resize(n_jnts_cmd, control_type);
+    if(m_Cmd.joint_cmds.size() != n_jnts) {
+        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
+        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
     }
 
     m_Cmd.joint_cmds[joint_idx] = command;
@@ -348,6 +348,20 @@ void RigidBody::set_joint_effort(std::string joint_name, float effort) {
     int joint_idx = get_joint_idx_from_name(joint_name);
     set_joint_effort(joint_idx, effort);
 }
+
+
+//template<>
+//void RigidBody::set_joint_pos<int>(int joint_idx, float pos) {
+//    set_joint_control(joint_idx, pos, m_Cmd.TYPE_POSITION);
+//}
+
+
+//template<>
+//void RigidBody::set_joint_pos<std::string>(std::string joint_idx, float pos) {
+////    int joint_idx = get_joint_idx_from_name(joint_name);
+////    set_joint_pos(joint_idx, pos);
+//}
+
 
 template<>
 void RigidBody::set_joint_pos(int joint_idx, float pos) {

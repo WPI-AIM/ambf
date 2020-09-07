@@ -33,3 +33,5 @@ Matrix4f DH::get_trans() {
     return mat_from_dh(alpha_, a_, theta_, d_, offset_);
 
 }
+
+DH::~DH(void) {}

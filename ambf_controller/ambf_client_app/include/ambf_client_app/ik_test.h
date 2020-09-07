@@ -1,16 +1,23 @@
 #ifndef IK_TEST_H
 #define IK_TEST_H
 
-#include "ambf_client_app/psm_fk.h"
+#include<ros/ros.h>
+#include <ros/master.h>
 
+#include "ambf_client/ambf_client.h"
+#include "ambf_client_app/psm_fk.h"
+#include "ambf_client_app/psm_ik.h"
 
 class IK_test
 {
 public:
     IK_test();
-    void test_IK();
+    std::vector<float> test_IK(const std::vector<float> joint_angles);
+    void test_ambf_psm();
 
+//    ~IK_test();
 //private:
+
 
 };
 
