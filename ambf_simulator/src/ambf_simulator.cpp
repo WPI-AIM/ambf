@@ -732,6 +732,9 @@ int main(int argc, char* argv[])
     g_depthCamera = new cCamera(g_depthWorld);
 
     g_depthCamera->set(cVector3d(0, 0, 0), cVector3d(-1, 0, 0), cVector3d(0, 0, 1));
+    g_depthCamera->setClippingPlanes(g_afWorld->getAFCameras()[0]->getInternalCamera()->getNearClippingPlane(),
+            g_afWorld->getAFCameras()[0]->getInternalCamera()->getFarClippingPlane());
+    g_depthCamera->setFieldViewAngleRad(g_afWorld->getAFCameras()[0]->getInternalCamera()->getFieldViewAngleRad());
 
     g_depthWorld->addChild(g_depthCamera);
 

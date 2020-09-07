@@ -1,4 +1,3 @@
-
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aTexCoord;
@@ -12,8 +11,11 @@ varying vec3 vTexCoord;
 
 varying mat3 TBN;
 
+varying mat4 invProjection;
+
 void main(void)
 {
    vTexCoord = aTexCoord;
    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0);
+   invProjection = inverse(gl_ProjectionMatrix);
 }
