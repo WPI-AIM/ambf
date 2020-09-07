@@ -84,5 +84,8 @@ RUN touch ${HOME}/.bashrc && \
   echo "source /home/admin/ambf/build/devel/setup.bash" >> ${HOME}/.bashrc
 
 RUN . ${HOME}/.bashrc
+
+RUN apt-get update && \
+  apt-get -y -qq install wget gdb
   
 WORKDIR ${AMBF_WS}/training_scripts

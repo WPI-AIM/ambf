@@ -13,8 +13,9 @@ htop
 libasound2-dev
 libusb-1.0-0-dev
 xorg-dev 
-libgl1-mesa-dev
-xorg-dev
+mesa-common-dev 
+libgl1-mesa-dev 
+libglu1-mesa-dev
 libyaml-cpp0.5v5
 libyaml-cpp-dev
 freeglut3
