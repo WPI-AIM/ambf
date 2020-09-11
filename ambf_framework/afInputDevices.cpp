@@ -420,7 +420,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afCreateCommInstance(afCommType::OBJECT,
+            simDevice->m_rootLink->afCreateCommInstance(afCommType::RIGID_BODY,
                                                         _sDevName,
                                                         m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
                                                         simDevice->m_rootLink->getMinPublishFrequency(),

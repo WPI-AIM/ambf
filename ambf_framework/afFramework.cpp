@@ -2656,15 +2656,10 @@ void afRigidBody::afExecuteCommand(double dt){
         btVector3 force, torque;
         btVector3 lin_vel, ang_vel;
         ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
-        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-            m_af_enable_position_controller = true;
-        }
-        else{
-            m_af_enable_position_controller = false;
-        }
 
         // IF THE COMMAND IS OF TYPE FORCE
         if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
+            m_activeControllerType = afControlType::force;
             if (m_bulletRigidBody){
                 force.setValue(afCommand.wrench.force.x,
                                afCommand.wrench.force.y,
@@ -2680,6 +2675,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE POSITION
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+            m_activeControllerType = afControlType::position;
             // If the body is kinematic, we just want to control the position
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
                 btTransform _Td;
@@ -2743,6 +2739,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+            m_activeControllerType = afControlType::velocity;
             if (m_bulletRigidBody){
                 lin_vel.setValue(afCommand.twist.linear.x,
                                  afCommand.twist.linear.y,

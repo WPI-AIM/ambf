@@ -118,9 +118,17 @@ public:
 
     void updateMeasuredPose();
 
-    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
+    inline void applyForce(cVector3d force){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalForce(force);
+        }
+    }
 
-    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+    inline void applyTorque(cVector3d torque){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalTorque(torque);
+        }
+    }
 
     bool isWrenchSet();
 

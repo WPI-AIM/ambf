@@ -331,6 +331,13 @@ enum GeometryType{
 };
 
 
+enum class afControlType{
+  position=0,
+  force=1,
+  velocity=02
+};
+
+
 ///
 /// \brief The afCartesianController struct
 ///
@@ -601,7 +608,7 @@ public:
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
     // If the Position Controller is active, disable Position Controller from Haptic Device
-    bool m_af_enable_position_controller;
+    afControlType m_activeControllerType = afControlType::force;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
