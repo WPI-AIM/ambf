@@ -16,7 +16,7 @@ _client.connect()
 
 # Lets get a handle to PSM and ECM, as we can see in the printed
 # object names, 'ecm/baselink' and 'psm/baselink' should exist
-# ecm_handle = _client.get_obj_handle('ecm/baselink')
+ecm_handle = _client.get_obj_handle('ecm/baselink')
 # psm_handle = _client.get_obj_handle('psm/baselink')
 
 # # Similarly we can get a handle to any link lower in the hierarchy rather
@@ -25,13 +25,13 @@ _client.connect()
 
 # # Let's sleep for a very brief moment to give the internal callbacks
 # # to sync up new data from the running simulator
-# time.sleep(0.2)
+time.sleep(0.2)
 
 # print('\n\n----')
 # # input("Let's Get Some Pose Info. Press Enter to continue...")
 # # Not we can print the pos and rotation of object in the World Frame
-# # print('ECM Base Pos:')
-# # print(ecm_handle.get_pos())
+print('ECM Base Pos:')
+print(ecm_handle.get_pos())
 
 # print(' ')
 # print('PSM Base Rotation as Quaternion:')
@@ -45,7 +45,7 @@ _client.connect()
 # print('\n\n----')
 # # input("Let's get Joints and Children Info. Press Enter to continue...")
 # # We can get the number of children and joints connected to each object as
-# # ecm_num_joints = ecm_handle.get_num_joints() # Get the number of joints of this object
+ecm_num_joints = ecm_handle.get_num_joints() # Get the number of joints of this object
 # psm_children_names = psm_handle.get_children_names() # Get a list of children names belonging to this obj
 # # print('Number of Joints in ECM:')
 # # print(ecm_num_joints)
