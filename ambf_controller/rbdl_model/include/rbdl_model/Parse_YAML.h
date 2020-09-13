@@ -3,7 +3,14 @@
 #include <yaml-cpp/yaml.h>
 #include<iostream>
 #include<rbdl_model/Body.h>
+#include <unordered_map>
+//#include <memory>
+//#include <vector>
+//#include <string>
 
+//------------------------------------------------------------------------------
+typedef Body* bodyPtr;
+//------------------------------------------------------------------------------
 
 class ParseYAML
 {
@@ -12,13 +19,10 @@ public:
     void getBodies();
 
 private:
-//    afRigidBodyPtr ParseYAML::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr);
-
-
     YAML::Node baseNode_;
     std::string actuator_config_file_;
 
-
+    std::unordered_map<std::string, bodyPtr> bodyObjectMap_;
 };
 
 #endif // PARSE_YAML_H

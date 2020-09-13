@@ -68,4 +68,6 @@ std::string Body::trimTrailingSpaces(YAML::Node bodyNode) {
     return m_name;
 }
 
+Body::~Body() {
 
+}

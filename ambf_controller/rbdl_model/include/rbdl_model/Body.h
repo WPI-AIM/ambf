@@ -3,8 +3,9 @@
 #include <iostream>
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
-#include <x86intrin.h>
-#include <cstdint>
+
+//#include <x86intrin.h>
+//#include <cstdint>
 
 //static const size_t AVX_alignment = 32;
 
@@ -32,15 +33,13 @@ template <typename T>
 ///
 T toRPY(YAML::Node* node);
 
-
-
 using namespace chai3d;
 
 class Body
 {
 public:
     Body(YAML::Node bodyNode);
-//    ~Body(void);
+    ~Body(void);
 private:
 
     std::string name_;
