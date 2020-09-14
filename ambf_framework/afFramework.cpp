@@ -2003,6 +2003,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             shapeOffsetTrans = m_T_iINb;
         }
 
+        // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+        // Thus for a plane, instead of using a compound, use the single collision shape.
+        bool is_plane = false;
+
         if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
             double x = bodyCollisionGeometry["x"].as<double>();
             double y = bodyCollisionGeometry["y"].as<double>();
@@ -2020,7 +2024,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             double ny = bodyCollisionGeometry["normal"]["y"].as<double>();
             double nz = bodyCollisionGeometry["normal"]["z"].as<double>();
             offset *= m_scale;
-            singleCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
+            // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+            // Thus for a plane, instead of using a compound, use the single collision shape.
+            is_plane = true;
+            m_bulletCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
@@ -2113,8 +2120,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // Now, a collision shape has to address both an inertial offset transform as well as
         // a shape offset.
 
-        compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
-        m_bulletCollisionShape = compoundCollisionShape;
+        if (is_plane == false){
+            compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
+            m_bulletCollisionShape = compoundCollisionShape;
+        }
 
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
