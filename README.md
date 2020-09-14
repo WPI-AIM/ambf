@@ -1,6 +1,16 @@
 # Asynchronous Multi-Body Framework (AMBF)
 ### Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
+# NOTE:
+# ambf-1.0 is the active development branch with many new features so please feel free to check it out.
+```bash
+git checkout -b ambf-1.0 origin/ambf-1.0
+cd <ambf>/build
+cmake ..
+make
+```
+
+
 #### Contributors:
 1. [Melody Su](https://github.com/melodysu83) (Email: --)
 
