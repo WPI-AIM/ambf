@@ -1660,21 +1660,20 @@ void updatePhysics(){
                 cVector3d force, torque;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / step_size;
-                double dt = g_afWorld->getSimulationDeltaTime();
-                force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), dt, 1);
+                force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), step_size, 1);
                 force = simDev->P_lc_ramp * force;
 
-                torque = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), dt, 1);
+                torque = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), step_size, 1);
                 simDev->applyForce(force);
                 simDev->applyTorque(torque);
                 // Control simulated body joints only if joint control of this physical device has been enabled
                 if (phyDev->isJointControlEnabled()){
-                    simDev->setGripperAngle(simDev->m_gripper_angle, dt);
+                    simDev->setGripperAngle(simDev->m_gripper_angle);
                 }
 
                 if (simDev->P_lc_ramp < 1.0)
                 {
-                    simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * dt;
+                    simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * step_size;
                 }
                 else
                 {
@@ -1683,7 +1682,7 @@ void updatePhysics(){
 
                 if (simDev->P_ac_ramp < 1.0)
                 {
-                    simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * dt;
+                    simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * step_size;
                 }
                 else
                 {

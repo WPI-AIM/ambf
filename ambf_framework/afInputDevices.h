@@ -136,7 +136,7 @@ public:
 
     void offsetGripperAngle(double offset);
 
-    void setGripperAngle(double angle, double dt=0.001);
+    void setGripperAngle(double angle);
 
 public:
     cVector3d m_pos;

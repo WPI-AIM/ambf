@@ -2774,7 +2774,7 @@ void afRigidBody::afExecuteCommand(double dt){
                     joint->commandEffort(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-                    joint->commandPosition(jnt_cmd, dt);
+                    joint->commandPosition(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
                     joint->commandVelocity(jnt_cmd);
@@ -2913,31 +2913,31 @@ void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const
 ///
 /// \brief afRigidBody::setAngle
 /// \param angle
-/// \param dt
 ///
-void afRigidBody::setAngle(double &angle, double dt){
+void afRigidBody::setAngle(double &angle){
     if (m_parentBodies.size() == 0){
         for (size_t jnt = 0 ; jnt < m_CJ_PairsActive.size() ; jnt++){
-            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle, dt);
+            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::setAngle
 /// \param angles
-/// \param dt
 ///
-void afRigidBody::setAngle(std::vector<double> &angles, double dt){
+void afRigidBody::setAngle(std::vector<double> &angles){
     if (m_parentBodies.size() == 0){
         double jntCmdSize = m_CJ_PairsActive.size() < angles.size() ? m_CJ_PairsActive.size() : angles.size();
         for (size_t jntIdx = 0 ; jntIdx < jntCmdSize ; jntIdx++){
-            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx], dt);
+            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx]);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::checkCollisionGroupIdx
@@ -3997,9 +3997,8 @@ void afJoint::applyDamping(const double &dt){
 ///
 /// \brief afJoint::commandPosition
 /// \param position_cmd
-/// \param dt
 ///
-void afJoint::commandPosition(double &position_cmd, double dt){
+void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enableActuator){

@@ -568,10 +568,10 @@ public:
     std::vector<afRigidBodyPtr> m_parentBodies;
 
     // Set the angle of all the child joints
-    virtual void setAngle(double &angle, double dt);
+    virtual void setAngle(double &angle);
 
     // Set the angles based on the num elements in the argument vector
-    virtual void setAngle(std::vector<double> &angle, double dt);
+    virtual void setAngle(std::vector<double> &angle);
 
     // Set the config properties, this include, damping, friction restitution
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
@@ -900,7 +900,7 @@ public:
     void commandVelocity(double &velocity_cmd);
 
     // Set position target for this joint that is handeled by it's joint controller
-    void commandPosition(double &position_cmd, double dt);
+    void commandPosition(double &position_cmd);
 
     // Get the internal bullet constraint
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
