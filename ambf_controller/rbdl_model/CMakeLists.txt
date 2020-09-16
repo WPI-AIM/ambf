@@ -28,7 +28,9 @@ set(EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${EXECUTABLE_NAME})
 
 set (HDR_FILES
+    include/${PROJECT_NAME}/Utilities.h
     include/${PROJECT_NAME}/Body.h
+    include/${PROJECT_NAME}/Joint.h
     include/${PROJECT_NAME}/Parse_YAML.h
 #    include/${PROJECT_NAME}/dh.h
 #    include/${PROJECT_NAME}/psm_ik.h
@@ -36,7 +38,9 @@ set (HDR_FILES
 )
 
 set(SOURCE_FILES
+    src/Utilities.cpp
     src/Body.cpp
+    src/Joint.cpp
     src/Parse_YAML.cpp
     src/main.cpp
 )

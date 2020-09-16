@@ -1,39 +1,7 @@
 #ifndef BODY_H
 #define BODY_H
 #include <iostream>
-#include "chai3d.h"
-#include <yaml-cpp/yaml.h>
-
-//#include <x86intrin.h>
-//#include <cstdint>
-
-//static const size_t AVX_alignment = 32;
-
-//struct __m128_wrapper {
-//    typedef __m128 T;
-//};
-//Ref to fix warning https://stackoverflow.com/questions/41676311/implication-of-gcc-warning-ignoring-attributes-on-template-argument-wignored
-
-template <typename T>
-///
-/// \brief toXYZ
-/// \param node
-/// \return
-///
-T toXYZ(YAML::Node* node);
-
-
-
-template <typename T>
-///
-/// \brief toRPY
-/// \param node
-/// \param v
-/// \return
-///
-T toRPY(YAML::Node* node);
-
-using namespace chai3d;
+#include <rbdl_model/Utilities.h>
 
 class Body
 {

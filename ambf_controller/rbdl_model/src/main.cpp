@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 {
     const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
     ParseYAML py(actuator_config_file);
-    py.getBodies();
+//    py.getBodies();
 
 //    YAML::Node baseNode;
 //    const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
