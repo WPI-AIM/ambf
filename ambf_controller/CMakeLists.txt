@@ -57,6 +57,6 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_test)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_test)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rbdl_model)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
