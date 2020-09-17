@@ -4,12 +4,13 @@
 //#include <fstream>
 #include<iostream>
 //#include <thread>
-#include "rbdl_model/Parse_YAML.h"
+#include "rbdl_model/BuildRBDLModel.h"
 
 int main(int argc, char* argv[])
 {
     const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
-    ParseYAML py(actuator_config_file);
+    BuildRBDLModel buildRBDLModel(actuator_config_file);
+    buildRBDLModel.cleanUp();
 //    py.getBodies();
 
 //    YAML::Node baseNode;
