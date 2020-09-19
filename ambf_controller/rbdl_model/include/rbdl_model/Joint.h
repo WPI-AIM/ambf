@@ -8,6 +8,10 @@ public:
     Joint(YAML::Node jointNode);
     ~Joint(void);
 
+    inline std::string Name() { return name_; }
+    inline std::string Parent() { return parent_; }
+    inline std::string Child() { return child_; }
+
 private:
     std::string name_;
     std::string parent_;
