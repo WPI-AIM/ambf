@@ -1,6 +1,6 @@
-#include "rbdl_model/Body.h"
+#include "rbdl_model/BodyParam.h"
 
-Body::Body(YAML::Node bodyNode)
+BodyParam::BodyParam(YAML::Node bodyNode)
 {
     // Declare all the yaml parameters that we want to look for
     Utilities utilities;
@@ -61,6 +61,6 @@ Body::Body(YAML::Node bodyNode)
     utilities.~Utilities();
 }
 
-Body::~Body() {
+BodyParam::~BodyParam() {
 
 }

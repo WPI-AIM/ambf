@@ -2,46 +2,48 @@
 #define PARSE_YAML_H
 #include <yaml-cpp/yaml.h>
 #include <iostream>
-#include <rbdl_model/Body.h>
 #include <unordered_map>
-#include "rbdl_model/Body.h"
-#include "rbdl_model/Joint.h"
+#include "rbdl_model/BodyParam.h"
+#include "rbdl_model/JointParam.h"
+#include<rbdl/rbdl.h>
+#include "rbdl/rbdl_math.h"
 
 #include <unordered_set>
-//#include<set>
-//#include <algorithm>
-//#include <iterator>
+//using namespace RigidBodyDynamics;
+//using namespace Math;
 
-//#include <memory>
-//#include <vector>
-//#include <string>
+//using namespace RigidBodyDynamics;
+//using namespace RigidBodyDynamics::Math;
 
 //------------------------------------------------------------------------------
-typedef Body* bodyPtr;
-typedef Joint* jointPtr;
+typedef BodyParam* bodyParamPtr;
+typedef JointParam* jointParamPtr;
 //------------------------------------------------------------------------------
 
 class BuildRBDLModel
 {
 public:
     BuildRBDLModel(const std::string actuator_config_file);
-    bool getBodies();
-    bool getJoints();
-    bool findRootNode();
-    bool BuildBodyTree();
+
+    void BuildModel();
     void cleanUp();
 
     ~BuildRBDLModel(void);
 private:
+    bool getBodies();
+    bool getJoints();
+    bool findRootNode();
+    bool BuildBodyTree();
+
+
     YAML::Node baseNode_;
     std::string actuator_config_file_;
-
-    //Hardcoded for now. Write a function to find it out for any model.
     std::string rootRigidBody_;
 
-    std::unordered_map<std::string, bodyPtr> bodyObjectMap_;
-//    std::unordered_map<std::string, jointPtr> jointObjectMap_;
-    std::unordered_map<std::string, std::unordered_map<std::string, jointPtr> > jointObjectMap_;
+    std::unordered_map<std::string, bodyParamPtr> bodyParamObjectMap_;
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr> > jointParamObjectMap_;
+
+
 };
 
 #endif // PARSE_YAML_H

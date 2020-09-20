@@ -1,6 +1,6 @@
-#include "rbdl_model/Joint.h"
+#include "rbdl_model/JointParam.h"
 
-Joint::Joint(YAML::Node jointNode)
+JointParam::JointParam(YAML::Node jointNode)
 {
     // Declare all the yaml parameters that we want to look for
     Utilities utilities;
@@ -51,6 +51,6 @@ Joint::Joint(YAML::Node jointNode)
     if(offset.IsDefined()) offset_ = jointNode["offset"].as<double>();
 }
 
-Joint::~Joint(void) {
+JointParam::~JointParam(void) {
 
 }

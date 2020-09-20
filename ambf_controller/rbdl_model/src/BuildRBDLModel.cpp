@@ -16,7 +16,18 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
     if(!this->getJoints()) return;
     if(!this->findRootNode()) return;
 
-//    this->BuildBodyTree();
+    this->BuildModel();
+}
+
+
+void BuildRBDLModel::BuildModel() {
+    RigidBodyDynamics::Model *rbdl_model = NULL;
+//    rbdl_model->gravity = Vector3d(0., 0., -9.81);
+//    rbdl_model->gravity = Vector3d(0., 0., -9.81);
+
+
+//    std::unordered_map<std::string, std::unordered_map<std::string, jointPtr> >::iterator itr;
+//    std::unordered_map<std::string, jointPtr>::iterator ptr;
 }
 
 bool BuildRBDLModel::getBodies()
@@ -26,7 +37,7 @@ bool BuildRBDLModel::getBodies()
     size_t totalRigidBodies = rigidBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
         std::string node_name = rigidBodies[i].as<std::string>();
-        bodyObjectMap_.insert(std::make_pair(node_name, new Body(baseNode_[node_name])));
+        bodyParamObjectMap_.insert(std::make_pair(node_name, new BodyParam(baseNode_[node_name])));
     }
     return true;
 }
@@ -51,44 +62,44 @@ bool BuildRBDLModel::getJoints()
             if(parent.IsDefined()) parent_name = utilities.trimTrailingSpaces(parent);
         }
 
-        jointObjectMap_.insert(std::make_pair(parent_name, std::unordered_map<std::string, jointPtr>()));
-        jointObjectMap_[parent_name].insert(std::make_pair(joint_name, new Joint(baseNode_[joint_name])));
+        jointParamObjectMap_.insert(std::make_pair(parent_name, std::unordered_map<std::string, jointParamPtr>()));
+        jointParamObjectMap_[parent_name].insert(std::make_pair(joint_name, new JointParam(baseNode_[joint_name])));
     }
     return true;
 }
 
 
 bool BuildRBDLModel::findRootNode() {
-    std::unordered_map<std::string, jointPtr>::iterator jointMapIt;
-    std::unordered_set<std::string> parentSet;
-    std::unordered_set<std::string> childSet;
+    std::unordered_map<std::string, jointParamPtr>::iterator jointParamMapIt;
+    std::unordered_set<std::string> parentNodeSet;
+    std::unordered_set<std::string> childNodeSet;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, jointPtr> >::iterator itr;
-    std::unordered_map<std::string, jointPtr>::iterator ptr;
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr> >::iterator itr;
+    std::unordered_map<std::string, jointParamPtr>::iterator ptr;
 
-    for (itr = jointObjectMap_.begin(); itr != jointObjectMap_.end(); itr++) {
+    for (itr = jointParamObjectMap_.begin(); itr != jointParamObjectMap_.end(); itr++) {
         for (ptr = itr->second.begin(); ptr != itr->second.end(); ptr++) {
-            jointPtr jointptr = ptr->second;
-            parentSet.emplace(jointptr->Parent());
-            childSet.emplace(jointptr->Child());
+            jointParamPtr jointParamptr = ptr->second;
+            parentNodeSet.emplace(jointParamptr->Parent());
+            childNodeSet.emplace(jointParamptr->Child());
         }
     }
 
 
-    for (std::unordered_set<std::string>::iterator it=childSet.begin(); it!=childSet.end(); ++it) {
-        if(parentSet.find(*it) != parentSet.end()) parentSet.erase(*it);
+    for (std::unordered_set<std::string>::iterator it=childNodeSet.begin(); it!=childNodeSet.end(); ++it) {
+        if(parentNodeSet.find(*it) != parentNodeSet.end()) parentNodeSet.erase(*it);
     }
 
-    if(parentSet.size() < 1) {
+    if(parentNodeSet.size() < 1) {
         std::cout << "No root node found, invalid model." << std::endl;
         return false;
     }
-    if(parentSet.size() > 1) {
+    if(parentNodeSet.size() > 1) {
         std::cout << "Found more than one root, make sure that model in YAML file has just one root." << std::endl;
         return false;
     }
 
-    std::unordered_set<std::string>::iterator it = parentSet.begin();
+    std::unordered_set<std::string>::iterator it = parentNodeSet.begin();
     rootRigidBody_ = *it;
     std::cout << "root node: " << *it << std::endl;
 
@@ -97,17 +108,17 @@ bool BuildRBDLModel::findRootNode() {
 
 
 void BuildRBDLModel::cleanUp() {
-    std::unordered_map<std::string, bodyPtr>::iterator bodyMapIt;
-    for ( bodyMapIt = bodyObjectMap_.begin(); bodyMapIt != bodyObjectMap_.end(); ++bodyMapIt ) {
-        bodyMapIt->second->~Body();
+    std::unordered_map<std::string, bodyParamPtr>::iterator bodyParamMapIt;
+    for ( bodyParamMapIt = bodyParamObjectMap_.begin(); bodyParamMapIt != bodyParamObjectMap_.end(); ++bodyParamMapIt ) {
+        bodyParamMapIt->second->~BodyParam();
     }
 
-    std::unordered_map<std::string, std::unordered_map<std::string, jointPtr> >::iterator itr;
-    std::unordered_map<std::string, jointPtr>::iterator ptr;
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr> >::iterator itr;
+    std::unordered_map<std::string, jointParamPtr>::iterator ptr;
 
-    for (itr = jointObjectMap_.begin(); itr != jointObjectMap_.end(); itr++) {
+    for (itr = jointParamObjectMap_.begin(); itr != jointParamObjectMap_.end(); itr++) {
         for (ptr = itr->second.begin(); ptr != itr->second.end(); ptr++) {
-            ptr->second->~Joint();
+            ptr->second->~JointParam();
         }
     }
 }

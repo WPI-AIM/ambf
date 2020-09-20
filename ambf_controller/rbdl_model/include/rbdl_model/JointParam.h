@@ -1,12 +1,12 @@
-#ifndef JOINT_H
-#define JOINT_H
+#ifndef JOINTPARAM_H
+#define JOINTPARAM_H
 #include<rbdl_model/Utilities.h>
 
-class Joint
+class JointParam
 {
 public:
-    Joint(YAML::Node jointNode);
-    ~Joint(void);
+    JointParam(YAML::Node jointNode);
+    ~JointParam(void);
 
     inline std::string Name() { return name_; }
     inline std::string Parent() { return parent_; }

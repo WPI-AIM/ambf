@@ -1,13 +1,13 @@
-#ifndef BODY_H
-#define BODY_H
+#ifndef BODYPARAM_H
+#define BODYPARAM_H
 #include <iostream>
 #include <rbdl_model/Utilities.h>
 
-class Body
+class BodyParam
 {
 public:
-    Body(YAML::Node bodyNode);
-    ~Body(void);
+    BodyParam(YAML::Node bodyNode);
+    ~BodyParam(void);
 private:
 
     std::string name_;

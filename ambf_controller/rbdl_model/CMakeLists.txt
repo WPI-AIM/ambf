@@ -29,18 +29,17 @@ add_executable(${EXECUTABLE_NAME})
 
 set (HDR_FILES
     include/${PROJECT_NAME}/Utilities.h
-    include/${PROJECT_NAME}/Body.h
-    include/${PROJECT_NAME}/Joint.h
+    include/${PROJECT_NAME}/BodyParam.h
+    include/${PROJECT_NAME}/JointParam.h
+    include/${PROJECT_NAME}/RBDLBody.h
     include/${PROJECT_NAME}/BuildRBDLModel.h
-#    include/${PROJECT_NAME}/dh.h
-#    include/${PROJECT_NAME}/psm_ik.h
-#    include/${PROJECT_NAME}/utilities.h
 )
 
 set(SOURCE_FILES
     src/Utilities.cpp
-    src/Body.cpp
-    src/Joint.cpp
+    src/BodyParam.cpp
+    src/JointParam.cpp
+    src/RBDLBody.cpp
     src/BuildRBDLModel.cpp
     src/main.cpp
 )
