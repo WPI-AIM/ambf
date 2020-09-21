@@ -5914,6 +5914,7 @@ bool afWorld::loadADF(int i, bool enable_comm){
 
     std::string adf_filepath = getMultiBodyConfig(i);
     loadADF(adf_filepath, enable_comm);
+    return true;
 }
 
 

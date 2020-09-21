@@ -989,6 +989,7 @@ bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_co
     m_simModes = CAM_CLUTCH_CONTROL;
     m_mode_str = "CAM_CLUTCH_CONTROL";
     m_mode_idx = 0;
+    return true;
 }
 
 
