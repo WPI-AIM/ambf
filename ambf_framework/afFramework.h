@@ -193,7 +193,7 @@ public:
     static std::string removeAdjacentBackSlashes(std::string a_name);
     static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
 
-    static void debug_print(int line, std::string filename){
+    static void debugPrint(int line, std::string filename){
         std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
     }
 };
