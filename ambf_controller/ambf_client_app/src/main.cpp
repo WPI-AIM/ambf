@@ -58,8 +58,8 @@ int main(int argc, char* argv[])
 //    client.printSummary();
 //    vector<string> object_names;
 
-    object_names = client.getRigidBodyNames();
-    usleep(20000);
+    // object_names = client.getRigidBodyNames();
+    // usleep(20000);
 
 //    string psm_baselink = "psm/baselink";
 //    cout << "psm_baselink: " << psm_baselink << "\n";
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 //    printVector3("joint_position", joint_position);
 
 //    client.cleanUp();
-    client.~Client();
+    //client.~Client();
 
 	return 0;
 }
