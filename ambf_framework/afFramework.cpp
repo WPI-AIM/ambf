@@ -4277,7 +4277,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
     }
 
-    if (m_parentBody == NULL){
+    if (m_parentBody == nullptr){
         std::cerr << "ERROR: SENSOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }

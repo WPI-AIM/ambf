@@ -514,8 +514,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_afWorld->addChild(m_refSphere);
     }
 
-
-    return 1;
+    return true;
 }
 
 
@@ -928,6 +927,7 @@ bool afCollateralControlManager::pairCamerasToCCU(afCollateralControlUnit& a_ccu
             a_ccuPtr.m_cameras.push_back(camPtr);
         }
     }
+    return true;
 }
 
 
@@ -1020,6 +1020,8 @@ bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_co
         return 0;
     }
 
+    bool success = false;
+
     if (a_device_indices.size() >= 0 && a_device_indices.size() <= inputDevices.size()){
         m_deviceHandler.reset(new cHapticDeviceHandler());
         for (int i = 0; i < a_device_indices.size(); i++){
@@ -1038,25 +1040,30 @@ bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_co
                     ccu.m_simulatedDevicePtr = sD;
                     ccu.m_name = devKey;
                     m_collateralControlUnits.push_back(ccu);
+                    success = true;
                 }
                 else
                 {
                     std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devKey << "\"\n";
+                    success = false;
                 }
             }
             else{
                 std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevices.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+                success = false;
             }
         }
     }
     else{
         std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+        success = false;
     }
     m_numDevices = m_collateralControlUnits.size();
     m_use_cam_frame_rot = true;
     m_simModes = CAM_CLUTCH_CONTROL;
     m_mode_str = "CAM_CLUTCH_CONTROL";
     m_mode_idx = 0;
+    return success;
 }
 
 

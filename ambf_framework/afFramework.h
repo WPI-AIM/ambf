@@ -192,6 +192,10 @@ public:
 
     static std::string removeAdjacentBackSlashes(std::string a_name);
     static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+
+    static void debug_print(int line, std::string filename){
+        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    }
 };
 
 
@@ -596,10 +600,10 @@ public:
     bool isDirectChild(btRigidBody* a_body);
 
     // Add sensor to this body
-    bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+    void addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
 
     // Add sensor to this body
-    bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
+    void addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
     // Enable shader program if defined
     virtual void enableShaderProgram();
