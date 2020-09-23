@@ -20,20 +20,20 @@ BodyParam::BodyParam(YAML::Node bodyNode)
     YAML::Node location = bodyNode["location"];
     if(location.IsDefined()) {
         YAML::Node location_position = location["position"];
-        if(location_position.IsDefined()) location_position_ = utilities.toXYZ<cVector3d>(&location_position);
+        if(location_position.IsDefined()) location_position_ = utilities.toXYZ(&location_position);
 
         YAML::Node location_orientation = location["orientation"];
-        if(location_orientation.IsDefined()) location_orientation_ = utilities.toRPY<cVector3d>(&location_orientation);
+        if(location_orientation.IsDefined()) location_orientation_ = utilities.toRPY(&location_orientation);
     }
 
 
     YAML::Node inertial_offset = bodyNode["inertial offset"];
     if(inertial_offset.IsDefined()) {
         YAML::Node inertial_offset_position = inertial_offset["position"];
-        if(inertial_offset_position.IsDefined()) inertial_offset_position_ = utilities.toXYZ<cVector3d>(&inertial_offset_position);
+        if(inertial_offset_position.IsDefined()) inertial_offset_position_ = utilities.toXYZ(&inertial_offset_position);
 
         YAML::Node inertial_offset_orientation = inertial_offset["orientation"];
-        if(inertial_offset_orientation.IsDefined()) inertial_offset_orientation_ = utilities.toRPY<cVector3d>(&inertial_offset_orientation);
+        if(inertial_offset_orientation.IsDefined()) inertial_offset_orientation_ = utilities.toRPY(&inertial_offset_orientation);
     }
 
     YAML::Node passive = bodyNode["passive"];

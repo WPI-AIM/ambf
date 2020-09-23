@@ -5,34 +5,32 @@ Utilities::Utilities()
 
 }
 
-template <>
 ///
-/// \brief toXYZ<cVector3d>
+/// \brief toVector3d
 /// \param node
 /// \return
 ///
-cVector3d Utilities::toXYZ<cVector3d>(YAML::Node* node){
-    cVector3d v;
-    v.x((*node)["x"].as<double>());
-    v.y((*node)["y"].as<double>());
-    v.z((*node)["z"].as<double>());
+Vector3d Utilities::toXYZ(YAML::Node* node){
+    Vector3d v;
+    v(0) = (*node)["x"].as<double>();
+    v(1) = (*node)["y"].as<double>();
+    v(2) = (*node)["z"].as<double>();
     return v;
 }
 
-template<>
+
 ///
-/// \brief toRPY<cVector3>
+/// \brief toVector3d
 /// \param node
 /// \return
 ///
-cVector3d Utilities::toRPY<cVector3d>(YAML::Node *node){
-    cVector3d v;
-    v.x((*node)["r"].as<double>());
-    v.y((*node)["p"].as<double>());
-    v.z((*node)["y"].as<double>());
+Vector3d Utilities::toRPY(YAML::Node* node){
+    Vector3d v;
+    v(0) = (*node)["r"].as<double>();
+    v(1) = (*node)["p"].as<double>();
+    v(2) = (*node)["y"].as<double>();
     return v;
 }
-
 
 std::string Utilities::trimTrailingSpaces(YAML::Node bodyNode) {
     std::string m_name;
@@ -42,7 +40,6 @@ std::string Utilities::trimTrailingSpaces(YAML::Node bodyNode) {
     }
     return m_name;
 }
-
 
 Utilities::~Utilities(void) {
 

@@ -15,16 +15,16 @@ JointParam::JointParam(YAML::Node jointNode)
     if(child.IsDefined()) child_ = utilities.trimTrailingSpaces(child);
 
     YAML::Node parent_pivot = jointNode["parent pivot"];
-    if(parent_pivot.IsDefined()) parent_pivot_ = utilities.toXYZ<cVector3d>(&parent_pivot);
+    if(parent_pivot.IsDefined()) parent_pivot_ = utilities.toXYZ(&parent_pivot);
 
     YAML::Node parent_axis = jointNode["parent axis"];
-    if(parent_axis.IsDefined()) parent_axis_ = utilities.toXYZ<cVector3d>(&parent_axis);
+    if(parent_axis.IsDefined()) parent_axis_ = utilities.toXYZ(&parent_axis);
 
     YAML::Node child_pivot = jointNode["child pivot"];
-    if(parent_pivot.IsDefined()) child_pivot_ = utilities.toXYZ<cVector3d>(&child_pivot);
+    if(parent_pivot.IsDefined()) child_pivot_ = utilities.toXYZ(&child_pivot);
 
     YAML::Node child_axis = jointNode["child axis"];
-    if(parent_axis.IsDefined()) child_axis_ = utilities.toXYZ<cVector3d>(&child_axis);
+    if(parent_axis.IsDefined()) child_axis_ = utilities.toXYZ(&child_axis);
 
     YAML::Node joint_limits = jointNode["joint limits"];
     if(joint_limits.IsDefined()) {

@@ -3,48 +3,21 @@
 #include<chai3d.h>
 #include <yaml-cpp/yaml.h>
 
-//template <typename T>
-/////
-///// \brief toXYZ
-///// \param node
-///// \return
-/////
-//T toXYZ(YAML::Node* node);
+#include <rbdl/rbdl.h>
+#include <iostream>
+#include "rbdl/rbdl_math.h"
 
+using namespace RigidBodyDynamics;
+using namespace Math;
+using namespace RigidBodyDynamics::Math;
 
-
-//template <typename T>
-/////
-///// \brief toRPY
-///// \param node
-///// \param v
-///// \return
-/////
-//T toRPY(YAML::Node* node);
-
-using namespace chai3d;
 class Utilities
 {
 public:
     Utilities();
-    template <typename T>
-    ///
-    /// \brief toXYZ
-    /// \param node
-    /// \return
-    ///
-    T toXYZ(YAML::Node* node);
 
-
-
-    template <typename T>
-    ///
-    /// \brief toRPY
-    /// \param node
-    /// \param v
-    /// \return
-    ///
-    T toRPY(YAML::Node* node);
+    Vector3d toXYZ(YAML::Node* node);
+    Vector3d toRPY(YAML::Node* node);
 
     std::string trimTrailingSpaces(YAML::Node bodyNode);
 

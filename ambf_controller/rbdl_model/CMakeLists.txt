@@ -19,10 +19,30 @@ catkin_package( INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
-find_package(yaml-cpp REQUIRED)
-FIND_PACKAGE (RBDL REQUIRED)
+
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/home/shreyas/rbdl/CMake/")
+
+SET (RBDL_DIR "/home/shreyas/rbdl/examples/simple/")
+
+find_package(RBDL REQUIRED)
+include_directories(${RBDL_INCLUDE_DIRS})
+#set(LIBS ${LIBS} ${RBDL_LIBRARIES})
+
+#target_link_libraries(exampleProgram ${LIBS})
+
+#FIND_PACKAGE (RBDL REQUIRED)
+#include_directories(${RBDL_INCLUDE_DIRS})
+#set(LIBS ${LIBS} ${RBDL_LIBRARIES})
+
+
+
+#SET (RBDL_DIR "/home/shreyas/rbdl/")
+FIND_PACKAGE (yaml-cpp REQUIRED)
+#FIND_PACKAGE (RBDL REQUIRED)
+FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
 #find_package(RBDL REQUIRED PATHS "/home/shreyas/rbdl/examples/simple/")
-include_directories(${YAML_CPP_INCLUDE_DIR})
+include_directories(include ${YAML_CPP_INCLUDE_DIR} ${Eigen_INCLUDE_DIRS} ${RBDL_INCLUDE_DIR})
+
 
 set(EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${EXECUTABLE_NAME})
@@ -50,7 +70,7 @@ include_directories (${GLFW_INCLUDE_DIRS})
 
 target_sources(${EXECUTABLE_NAME} PRIVATE ${HDR_FILES} ${SOURCE_FILES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE include)
-target_link_libraries(${EXECUTABLE_NAME} "${RBDL_LIBRARIES}" ${YAML_CPP_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${YAML_CPP_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} ${RBDL_LIBRARY})
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
   CXX_STANDARD 14

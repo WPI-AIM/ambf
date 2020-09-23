@@ -20,15 +20,7 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
 }
 
 
-void BuildRBDLModel::BuildModel() {
-    RigidBodyDynamics::Model *rbdl_model = NULL;
-//    rbdl_model->gravity = Vector3d(0., 0., -9.81);
-//    rbdl_model->gravity = Vector3d(0., 0., -9.81);
 
-
-//    std::unordered_map<std::string, std::unordered_map<std::string, jointPtr> >::iterator itr;
-//    std::unordered_map<std::string, jointPtr>::iterator ptr;
-}
 
 bool BuildRBDLModel::getBodies()
 {
@@ -70,7 +62,6 @@ bool BuildRBDLModel::getJoints()
 
 
 bool BuildRBDLModel::findRootNode() {
-    std::unordered_map<std::string, jointParamPtr>::iterator jointParamMapIt;
     std::unordered_set<std::string> parentNodeSet;
     std::unordered_set<std::string> childNodeSet;
 
@@ -106,6 +97,176 @@ bool BuildRBDLModel::findRootNode() {
     return true;
 }
 
+//void BuildRBDLModel::BuildModel() {
+//    rbdl_check_api_version(RBDL_API_VERSION);
+
+//    Model *model = NULL;
+
+//    unsigned int body_a_id, body_b_id, body_c_id, body_d_id;
+//    Body body_a, body_b, body_c, body_d;
+//    Joint joint_a, joint_b, joint_c, joint_d;
+
+//    // Initializing Body properties
+//    double mass{1.};
+//    Vector3d com(0., -0.344, 0.);
+//    Vector3d inertia(0.058907, 0.003295, 0.058907);
+
+//    model = new Model();
+
+//    model->gravity = Vector3d(0., 0., -9.81); // in my case should set in the Z direction
+
+//    body_a = Body(mass, com, inertia); /* mass, com, inertia*/
+//    joint_a = Joint(JointTypeFixed);
+
+//    Matrix3_t body_a_rot;
+//    body_a_rot << 0., 0., 1.,
+//        0., -1., 0.,
+//        1., 0., 0.;
+//    Vector3d body_a_trans(0.001, -0.36, -0.222);
+//    SpatialTransform body_a_tf(body_a_rot, body_a_trans);
+//    body_a_id = model->AddBody(0, body_a_tf, joint_a, body_a);
+
+//    body_b = Body(mass, com, inertia);
+//    joint_b = Joint(JointTypeRevolute, Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_b_rot;
+//    body_b_rot << 0., -1., 0.,
+//        1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_b_trans(0.139, 0.138, 0.);
+//    SpatialTransform body_b_tf(body_b_rot, body_b_trans);
+
+//    body_b_id = model->AddBody(body_a_id, body_b_tf, joint_b, body_b);
+
+//    body_c = Body(mass, com, inertia);
+//    joint_c = Joint(JointTypeRevolute, Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_c_rot;
+//    body_c_rot << 0., 1., 0.,
+//        -1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_c_trans(-0.141, -0.832, 0.);
+//    SpatialTransform body_c_tf(body_c_rot, body_c_trans);
+
+//    body_c_id = model->AddBody(body_b_id, body_c_tf, joint_c, body_c);
+
+//    body_d = Body(mass, com, inertia);
+//    joint_d = Joint(
+//        JointTypeRevolute,
+//        Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_d_rot;
+//    body_d_rot << 0., 1., 0.,
+//        -1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_d_trans(-0.14, -0.83, 0.);
+//    SpatialTransform body_d_tf(body_d_rot, body_d_trans);
+
+//    body_d_id = model->AddBody(body_c_id, body_d_tf, joint_d, body_d);
+
+//    VectorNd Q = VectorNd::Zero(model->dof_count);
+//    // Q(0) = 0.2;
+//    // Q(1) = 0.2;
+//    // Q(2) = 0.2;
+//    VectorNd QDot = VectorNd::Zero(model->dof_count);
+//    VectorNd Tau = VectorNd::Zero(model->dof_count);
+//    VectorNd QDDot = VectorNd::Zero(model->dof_count);
+
+//    // ForwardDynamics(*model, Q, QDot, Tau, QDDot);
+
+//    // std::cout << QDDot.transpose() << std::endl;
+
+//    InverseDynamics(*model, Q, QDot, QDDot, Tau);
+//    std::cout << Tau << std::endl;
+
+//    delete model;
+//}
+
+bool BuildRBDLModel::BuildModel() {
+    rbdl_check_api_version(RBDL_API_VERSION);
+
+//    unsigned int body_a_id, body_b_id, body_c_id, body_d_id;
+//    Body body_a, body_b, body_c, body_d;
+//    Joint joint_a, joint_b, joint_c, joint_d;
+
+//    // Initializing Body properties
+//    double mass{1.};
+//    Vector3d com(0., -0.344, 0.);
+//    Vector3d inertia(0.058907, 0.003295, 0.058907);
+
+//    RBDLmodel_ = new Model();
+
+//    RBDLmodel_->gravity = Vector3d(0., 0., -9.81); // in my case should set in the Z direction
+
+////    body_a = Body(mass, com, inertia); /* mass, com, inertia*/
+//    joint_a = Joint(JointTypeFixed);
+
+//    Matrix3_t body_a_rot;
+//    body_rot << 0., 0., 1.,
+//        0., -1., 0.,
+//        1., 0., 0.;
+//    Vector3d body_trans(0.001, -0.36, -0.222);
+//    SpatialTransform body_tf(body_rot, boda_trans);
+////    body_a_id = RBDLmodel_->AddBody(0, body_tf, joint_a, body_a);
+
+
+//    body_b = Body(mass, com, inertia);
+//    joint_b = Joint(JointTypeRevolute, Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_b_rot;
+//    body_b_rot << 0., -1., 0.,
+//        1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_b_trans(0.139, 0.138, 0.);
+//    SpatialTransform body_b_tf(body_b_rot, body_b_trans);
+
+//    body_b_id = RBDLmodel_->AddBody(body_a_id, body_b_tf, joint_b, body_b);
+
+//    body_c = Body(mass, com, inertia);
+//    joint_c = Joint(JointTypeRevolute, Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_c_rot;
+//    body_c_rot << 0., 1., 0.,
+//        -1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_c_trans(-0.141, -0.832, 0.);
+//    SpatialTransform body_c_tf(body_c_rot, body_c_trans);
+
+//    body_c_id = RBDLmodel_->AddBody(body_b_id, body_c_tf, joint_c, body_c);
+
+//    body_d = Body(mass, com, inertia);
+//    joint_d = Joint(
+//        JointTypeRevolute,
+//        Vector3d(0., 0., 1.));
+
+//    Matrix3_t body_d_rot;
+//    body_d_rot << 0., 1., 0.,
+//        -1., 0., 0.,
+//        0., 0., 1.;
+//    Vector3d body_d_trans(-0.14, -0.83, 0.);
+//    SpatialTransform body_d_tf(body_d_rot, body_d_trans);
+
+//    body_d_id = RBDLmodel_->AddBody(body_c_id, body_d_tf, joint_d, body_d);
+
+
+
+
+//    std::cout << "jointParamObjectMap_.size() is " << jointParamObjectMap_.size() << std::endl;
+
+//    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>>::iterator itr;
+//    std::unordered_map<std::string, jointParamPtr>::iterator ptr;
+
+//    for (itr = jointParamObjectMap_.begin(); itr != jointParamObjectMap_.end(); itr++) {
+//        std::string parent_node_name = itr->first;
+//        std::cout << "parent_node_name: " << parent_node_name << std::endl << "child_node_name: " ;
+//        for (ptr = itr->second.begin(); ptr != itr->second.end(); ptr++) {
+//            jointParamPtr jointparamPtr = ptr->second;
+//            std::cout << jointparamPtr->Child() << ", ";
+//        }
+//        std::cout << std::endl;
+//    }
+    return true;
+}
 
 void BuildRBDLModel::cleanUp() {
     std::unordered_map<std::string, bodyParamPtr>::iterator bodyParamMapIt;
@@ -121,6 +282,8 @@ void BuildRBDLModel::cleanUp() {
             ptr->second->~JointParam();
         }
     }
+
+    delete RBDLmodel_;
 }
 
 BuildRBDLModel::~BuildRBDLModel(void){

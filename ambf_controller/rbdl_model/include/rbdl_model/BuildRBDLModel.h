@@ -5,15 +5,17 @@
 #include <unordered_map>
 #include "rbdl_model/BodyParam.h"
 #include "rbdl_model/JointParam.h"
+#include "rbdl_model/Utilities.h"
+
 #include<rbdl/rbdl.h>
-#include "rbdl/rbdl_math.h"
+#include <rbdl/rbdl_math.h>
 
 #include <unordered_set>
-//using namespace RigidBodyDynamics;
-//using namespace Math;
 
-//using namespace RigidBodyDynamics;
-//using namespace RigidBodyDynamics::Math;
+
+using namespace RigidBodyDynamics;
+using namespace Math;
+using namespace RigidBodyDynamics::Math;
 
 //------------------------------------------------------------------------------
 typedef BodyParam* bodyParamPtr;
@@ -25,7 +27,7 @@ class BuildRBDLModel
 public:
     BuildRBDLModel(const std::string actuator_config_file);
 
-    void BuildModel();
+//    Model GetRBDLModel();
     void cleanUp();
 
     ~BuildRBDLModel(void);
@@ -34,14 +36,15 @@ private:
     bool getJoints();
     bool findRootNode();
     bool BuildBodyTree();
-
+    bool BuildModel();
 
     YAML::Node baseNode_;
     std::string actuator_config_file_;
     std::string rootRigidBody_;
+    Model *RBDLmodel_ = NULL;
 
     std::unordered_map<std::string, bodyParamPtr> bodyParamObjectMap_;
-    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr> > jointParamObjectMap_;
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>> jointParamObjectMap_;
 
 
 };
