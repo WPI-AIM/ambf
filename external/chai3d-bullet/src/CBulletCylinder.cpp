@@ -64,7 +64,7 @@ namespace chai3d {
 //==============================================================================
 cBulletCylinder::cBulletCylinder(cBulletWorld* a_world,
         const double& a_height, 
-        const double& a_radius, std::string a_objName) : cBulletMesh(a_world, a_objName)
+        const double& a_radius) : cBulletMesh(a_world)
 { 
     // set dimensions
     m_height = cAbs(a_height);

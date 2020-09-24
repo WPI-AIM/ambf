@@ -1,0 +1,14 @@
+Header header
+uint32 sim_step
+std_msgs/String type
+std_msgs/String parent_name
+std_msgs/String name
+float32 wall_time
+float32 sim_time
+geometry_msgs/Pose pose
+uint32 count
+bool[] triggered
+float32[] range
+float32[] measurement
+std_msgs/String[] sensed_objects
+uint8[] sensed_objects_map

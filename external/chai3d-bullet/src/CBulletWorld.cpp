@@ -58,11 +58,8 @@ namespace chai3d {
     Constructor of cBulletWorld.
 */
 //==============================================================================
-cBulletWorld::cBulletWorld(std::string a_worldName)
+cBulletWorld::cBulletWorld()
 {
-    if(!a_worldName.empty()){
-        afWorldCreate(a_worldName);
-    }
     // reset simulation time
     m_simulationTime = 0.0;
 
@@ -71,6 +68,9 @@ cBulletWorld::cBulletWorld(std::string a_worldName)
 
     // maximum number of iterations
     m_integrationMaxIterations = 5;
+
+    // Set the last simulation time to 0
+    m_lastSimulationTime = 0.0;
 
     // setup broad phase collision detection
     m_bulletBroadphase = new btDbvtBroadphase();
@@ -163,21 +163,6 @@ cVector3d cBulletWorld::getGravity()
 
 //==============================================================================
 /*!
-    This method creates an afCommunication World with specified namespace
-
-    \param  a_name  af World Name.
-    \param  a_name  af Namespace.
-*/
-//==============================================================================
-void cBulletWorld::afWorldCreate(std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    m_afWorldPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq));
-#endif
-}
-
-
-//==============================================================================
-/*!
     This methods updates the simulation over a time interval passed as
     argument.
 
@@ -191,36 +176,12 @@ void cBulletWorld::updateDynamics(double a_interval, double a_wallClock, double 
 
     m_wallClock = a_wallClock;
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afWorldPtr.get() != nullptr){
-        while (!m_afWorldPtr->step_sim()){
-            usleep(1);
-        }
-    }
-#endif
-    // apply wrench from ROS
-    list<cBulletGenericObject*>::iterator i;
-
-    for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
-    {
-        cBulletGenericObject* nextItem = *i;
-        nextItem->afObjectCommandExecute(a_interval);
-    }
-
     // integrate simulation during an certain interval
     m_bulletWorld->stepSimulation(a_interval, m_integrationMaxIterations, m_integrationTimeStep);
 
     // add time to overall simulation
+    m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
-
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afWorldPtr.get() != nullptr){
-        m_afWorldPtr->set_sim_time(m_simulationTime);
-        m_afWorldPtr->set_wall_time(m_wallClock);
-        m_afWorldPtr->set_loop_freq(a_loopFreq);
-        m_afWorldPtr->set_num_devices(a_numDevices);
-    }
-#endif
 
     // update CHAI3D positions for of all object
     updatePositionFromDynamics();
@@ -241,8 +202,16 @@ void cBulletWorld::updatePositionFromDynamics()
     {
         cBulletGenericObject* nextItem = *i;
         nextItem->updatePositionFromDynamics();
-        nextItem->afObjectSetTime(&m_wallClock, &m_simulationTime);
     }
+}
+
+//==============================================================================
+/*!
+    This methods returns the current simulation time.
+*/
+//==============================================================================
+double cBulletWorld::getWallTime(){
+    return m_wallClock;
 }
 
 //==============================================================================
@@ -252,6 +221,16 @@ void cBulletWorld::updatePositionFromDynamics()
 //==============================================================================
 double cBulletWorld::getSimulationTime(){
     return m_simulationTime;
+}
+
+//==============================================================================
+/*!
+    This method gets the time difference between current time and last simulation time
+*/
+//==============================================================================
+double cBulletWorld::getSimulationDeltaTime(){
+    double dt = m_simulationTime - m_lastSimulationTime;
+    return dt;
 }
 
 //------------------------------------------------------------------------------

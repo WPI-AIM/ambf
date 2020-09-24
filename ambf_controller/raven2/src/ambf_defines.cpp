@@ -1,8 +1,8 @@
 //===========================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -37,7 +37,7 @@
 
     \author:    Melody Su
     \date:      April, 2019
-    \version:   $
+    \version:   1.0$
 */
 //===========================================================================
 
@@ -55,9 +55,9 @@ const float           AMBFDef::safe_pos_incr          = 0.5 / AMBFDef::loop_rate
 // The loop rate of the AMBF python client: 1000 Hz
 // The loop rate of the Raven source code:  1000 Hz
 
-const string          AMBFDef::env_append             = "/ambf/env/";                                              
+const string          AMBFDef::env_append             = "/ambf/env/";
 const string          AMBFDef::sub_append             = "/State";                           // place holder for namescpace strings
-const string          AMBFDef::pub_append             = "/Command";  
+const string          AMBFDef::pub_append             = "/Command";
 const string          AMBFDef::raven_append           = "raven_2";
 const vector<string>  AMBFDef::arm_append             = {"/base_link_L", "/base_link_R"};   // left arm 0 & right arm 1
 const vector<string>  AMBFDef::cam_append             = {"cam_1", "cam_2", "cam_3"};        // each camera name
@@ -68,7 +68,7 @@ const tf::Vector3             AMBFDef::zero_vec             = tf::Vector3(0,0,0)
 const vector<float>           AMBFDef::zero_joints          = {          0,           0,           0,        0,       0,        0,         0};
 const vector<float>           AMBFDef::max_joints           = {       M_PI,        M_PI,        0.10,     M_PI,       2, M_PI*3/4,  M_PI*3/4};
 const vector<float>           AMBFDef::min_joints           = {      -M_PI,       -M_PI,       -0.17,    -M_PI,      -2,        0,         0};
-const vector<float>           AMBFDef::home_joints          = {   M_PI*1/3,    M_PI*3/5,       -0.09, M_PI*3/4,       0,   M_PI/6,    M_PI/6}; 
+const vector<float>           AMBFDef::home_joints          = {   M_PI*1/3,    M_PI*3/5,       -0.09, M_PI*3/4,       0,   M_PI/6,    M_PI/6};
 const vector<float>           AMBFDef::dance_scale_joints   = {        0.3,         0.3,        0.06,      0.3,     1.2,   M_PI/6,    M_PI/6};
 const vector<unsigned char>   AMBFDef::true_joints          = {          1,           1,           1,        1,       1,        1,         1};
 const vector<unsigned char>   AMBFDef::false_joints         = {          0,           0,           0,        0,       0,        0,         0};

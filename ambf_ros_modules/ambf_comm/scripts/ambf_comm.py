@@ -1,29 +1,28 @@
 #!/usr/bin/env python
-#!/usr/bin/env python
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
-#     Copyright (c) 2019, AMBF
-#     (www.aimlab.wpi.edu)
-
+#     Copyright (c) 2020, AMBF
+#     (https://github.com/WPI-AIM/ambf)
+#
 #     All rights reserved.
-
+#
 #     Redistribution and use in source and binary forms, with or without
 #     modification, are permitted provided that the following conditions
 #     are met:
-
+#
 #     * Redistributions of source code must retain the above copyright
 #     notice, this list of conditions and the following disclaimer.
-
+#
 #     * Redistributions in binary form must reproduce the above
 #     copyright notice, this list of conditions and the following
 #     disclaimer in the documentation and/or other materials provided
 #     with the distribution.
-
+#
 #     * Neither the name of authors nor the names of its contributors may
 #     be used to endorse or promote products derived from this software
 #     without specific prior written permission.
-
+#
 #     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 #     "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 #     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -36,15 +35,20 @@
 #     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 #     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #     POSSIBILITY OF SUCH DAMAGE.
-
-#     \author    <http://www.aimlab.wpi.edu>
+#
 #     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
-#     \version   0.1
+#     \version   1.0
 # */
 # //==============================================================================
+
 from ambf_client import Client
 from ambf_world import World
 from ambf_object import Object
+from ambf_rigid_body import RigidBody
+from ambf_actuator import Actuator
+from ambf_camera import Camera
+from ambf_sensor import Sensor
+from ambf_light import Light
 from ambf_env import AmbfEnv
 from watch_dog import WatchDog

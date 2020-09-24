@@ -51,10 +51,6 @@
 //------------------------------------------------------------------------------
 #include "btBulletDynamicsCommon.h"
 #include "BulletSoftBody/btSoftBody.h"
-//------------------------------------------------------------------------------
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_comm/Object.h"
-#endif
 
 //------------------------------------------------------------------------------
 namespace chai3d {
@@ -105,10 +101,7 @@ class cBulletGenericObject
 public:
 
     //! Constructor of cBulletGenericBody.
-    cBulletGenericObject(cBulletWorld* a_world, std::string a_objName="") {
-        if(!a_objName.empty()){
-            afObjectCreate(a_objName);
-        }
+    cBulletGenericObject(cBulletWorld* a_world) {
         initialize(a_world); }
 
     //! Destructor of cBulletGenericBody.
@@ -190,24 +183,6 @@ public:
     void addExternalForceAtPoint(const cVector3d& a_force,
                                  const cVector3d& a_relativePos);
 
-    // AFMB API BEGIN
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afObjectCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000);
-
-    //! This method applies any wrenches, joint commands that are being sent by AF Ojbect Command Message.
-    virtual void afObjectCommandExecute(double dt=0.001);
-
-    //! This method applies updates Wall and Sim Time for AF State Message.
-    virtual void afObjectSetTime(const double* a_wall_time, const double* a_sim_time);
-
-    //! AF CHAI Env
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Object> m_afObjectPtr;
-#endif
-
-    // AFMB API END
-
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - DAMPING:
     //--------------------------------------------------------------------------
@@ -280,8 +255,8 @@ protected:
     cVector3d m_dpos, m_dpos_prev, m_ddpos;
     cMatrix3d m_drot, m_drot_prev, m_ddrot;
 
-    //! Inetial Offset Transform
-    btTransform m_inertialOffsetTransform;
+    //! Inetial Offset Transform defined in the body frame
+    btTransform m_T_iINb;
 };
 
 //------------------------------------------------------------------------------

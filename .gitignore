@@ -17,3 +17,5 @@ bin-debug/
 *.ipch
 
 \.vscode/
+*.blend1
+*.old

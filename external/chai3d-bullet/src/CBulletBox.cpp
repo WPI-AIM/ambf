@@ -66,7 +66,7 @@ namespace chai3d {
 cBulletBox::cBulletBox(cBulletWorld* a_world,
     const double& a_sizeX,
     const double& a_sizeY,
-    const double& a_sizeZ, std::string a_objName) : cBulletMesh(a_world, a_objName)
+    const double& a_sizeZ) : cBulletMesh(a_world)
 { 
     // set dimensions
     m_sizeX = cAbs(a_sizeX);

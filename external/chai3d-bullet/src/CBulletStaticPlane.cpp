@@ -66,7 +66,7 @@ namespace chai3d {
 //==============================================================================
 cBulletStaticPlane::cBulletStaticPlane(cBulletWorld* a_world,
     const cVector3d& a_planeNormal,
-    const double& a_planeConstant, std::string a_objName) : cBulletMesh(a_world, a_objName)
+    const double& a_planeConstant) : cBulletMesh(a_world)
 { 
     // set dimensions
     m_planeNormal = a_planeNormal;

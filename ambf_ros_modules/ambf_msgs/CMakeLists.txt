@@ -42,6 +42,9 @@ if (POLICY CMP0048)
 endif (POLICY CMP0048)
 project(ambf_msgs)
 
+## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-std=c++11)
+
 find_package(catkin REQUIRED COMPONENTS
   message_generation
   std_msgs
@@ -52,6 +55,18 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    ObjectState.msg
    ObjectCmd.msg
+   ActuatorState.msg
+   ActuatorCmd.msg
+   SensorState.msg
+   SensorCmd.msg
+   CameraState.msg
+   CameraCmd.msg
+   LightState.msg
+   LightCmd.msg
+   RigidBodyState.msg
+   RigidBodyCmd.msg
+   VehicleState.msg
+   VehicleCmd.msg
    WorldState.msg
    WorldCmd.msg
  )

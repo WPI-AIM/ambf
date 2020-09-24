@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,16 +35,15 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
 #include "ambf_comm/ObjectRosCom.h"
 
-ObjectRosCom::ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max){
+ObjectRosCom::ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     init();
 }
 
@@ -52,8 +51,8 @@ void ObjectRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
 
-    m_pub = nodePtr->advertise<ambf_msgs::ObjectState>("/" + m_ambf_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_ambf_namespace + "/" + m_name + "/Command", 10, &ObjectRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::ObjectState>("/" + m_namespace + "/" + m_name + "/State", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &ObjectRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&ObjectRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;

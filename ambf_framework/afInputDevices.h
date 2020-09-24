@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,10 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \version   1.0$
 */
 //==============================================================================
 
@@ -119,9 +118,17 @@ public:
 
     void updateMeasuredPose();
 
-    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
+    inline void applyForce(cVector3d force){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalForce(force);
+        }
+    }
 
-    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+    inline void applyTorque(cVector3d torque){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalTorque(torque);
+        }
+    }
 
     bool isWrenchSet();
 
@@ -129,7 +136,7 @@ public:
 
     void offsetGripperAngle(double offset);
 
-    void setGripperAngle(double angle, double dt=0.001);
+    void setGripperAngle(double angle);
 
 public:
     cVector3d m_pos;
@@ -229,7 +236,7 @@ public:
     cMatrix3d m_rotCamPreClutch;
     cVector3d m_vel, m_avel;
     double m_workspaceScale;
-    cBulletSphere* m_afCursor = NULL;
+    afRigidBody* m_afCursor = NULL;
     bool m_btn_prev_state_rising[10] = {false};
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;

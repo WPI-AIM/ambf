@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,12 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \courtesy:  Dejaime Antônio de Oliveira Neto at https://www.gamedev.net/profile/187867-dejaime/ for initial direction
-    \motivation:https://www.gamedev.net/articles/programming/engines-and-middleware/yaml-basics-and-parsing-with-yaml-cpp-r3508/
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \version   1.0$
 */
 //==============================================================================
 
@@ -57,6 +54,7 @@
 #include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <thread>
+#include <fstream>
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 
@@ -65,6 +63,21 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #endif
+
+//-----------------------------------------------------------------------------
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#include "ambf_comm/Actuator.h"
+#include "ambf_comm/Camera.h"
+#include "ambf_comm/Light.h"
+#include "ambf_comm/Object.h"
+#include "ambf_comm/RigidBody.h"
+#include "ambf_comm/Sensor.h"
+#include "ambf_comm/Vehicle.h"
+#include "ambf_comm/World.h"
+#endif
+//-----------------------------------------------------------------------------
+
+
 //------------------------------------------------------------------------------
 namespace ambf {
 using namespace chai3d;
@@ -108,11 +121,25 @@ typedef afSensor* afSensorPtr;
 typedef std::map<std::string, afSensorPtr> afSensorMap;
 typedef std::vector<afSensorPtr> afSensorVec;
 //------------------------------------------------------------------------------
+class afActuator;
+class afConstraintActuator;
+typedef afActuator* afActuatorPtr;
+typedef std::map<std::string, afActuatorPtr> afActuatorMap;
+typedef std::vector<afActuatorPtr> afActuatorVec;
+//------------------------------------------------------------------------------
 class afMultiBody;
 typedef afMultiBody* afMultiBodyPtr;
 typedef std::map<std::string, afMultiBodyPtr> afMultiBodyMap;
 typedef std::vector<afMultiBodyPtr> afMultiBodyVec;
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+class afVehicle;
+typedef afVehicle* afVehiclePtr;
+typedef std::map<std::string, afVehiclePtr> afVehicleMap;
+typedef std::vector<afVehiclePtr> afVehicleVec;
+//------------------------------------------------------------------------------
+class afPointCloudsHandler;
+typedef cMultiPoint* cMultiPointPtr;
+
 
 ///
 /// \brief toBTvec
@@ -147,7 +174,9 @@ template <typename T>
 T toRPY(YAML::Node* node);
 
 
-
+///
+/// \brief The afUtils class
+///
 class afUtils{
 public:
 
@@ -157,6 +186,16 @@ public:
 
     template<typename T1, typename T2>
     static T1 convertDataType(const T2 &r);
+
+    template <typename T>
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
+
+    static std::string removeAdjacentBackSlashes(std::string a_name);
+    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+
+    static void debugPrint(int line, std::string filename){
+        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    }
 };
 
 
@@ -186,6 +225,8 @@ public:
     // Get the nuber of multibody config files defined in launch config file
     inline int getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
 
+    std::string getBasePath(){return s_basePath.c_str();}
+
 private:
 
     static boost::filesystem::path s_basePath;
@@ -200,6 +241,63 @@ protected:
     static YAML::Node s_colorsNode;
 
 };
+
+
+enum afCommType{
+    ACTUATOR,
+    CAMERA,
+    LIGHT,
+    OBJECT,
+    RIGID_BODY,
+    SOFT_BODY,
+    SENSOR,
+    VEHICLE,
+    WORLD
+};
+
+
+class afComm{
+public:
+    afComm(){}
+
+    virtual void afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+
+    //! This method is to retrieve all the commands for appropriate af comm instances.
+    virtual void afExecuteCommand(double dt=0.001);
+
+    //! This method applies updates Wall and Sim Time for AF State Message.
+    virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
+
+    //! AF CHAI Env
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
+    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
+    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
+    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
+    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
+    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
+    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+#endif
+
+    // Flag to check if the any params have been set on the server for this comm instance
+    bool m_paramsSet=false;
+
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
+
+    // Get the type of communication instance
+    afCommType getCommType(){return m_commType;}
+
+private:
+    afCommType m_commType;
+};
+
 
 ///
 /// \brief The afBodySurfaceProperties struct
@@ -234,6 +332,13 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 ///
 enum GeometryType{
     invalid= 0, mesh = 1, shape = 2, compound_shape = 3
+};
+
+
+enum class afControlType{
+  position=0,
+  force=1,
+  velocity=02
 };
 
 
@@ -333,40 +438,27 @@ struct afChildJointPair{
     }
     afRigidBodyPtr m_childBody;
     afJointPtr m_childJoint;
-    bool m_directConnection = false; // Flag for checking if the body is connected directly or not to another body
+    // Flag for checking if the body is connected directly or not to the parent body
+    bool m_directConnection = false;
 };
 
 
-///
-/// \brief The afBody class
-///
-class afRigidBody: public cBulletMultiMesh{
 
-    friend class afMultiBody;
-    friend class afJoint;
+class afBaseObject: public cBulletMultiMesh, public afComm{
 
 public:
-
-    afRigidBody(afWorldPtr a_afWorld);
-    virtual ~afRigidBody();
-    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
-    // In case the body is kinematic, only position cmds will be applied
-    virtual void afObjectCommandExecute(double dt);
-
-    // Load rigid body named by node_name from the a config file that may contain many bodies
-    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
-
-    // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
-
-    // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
-    virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
-
-    // This method update the AMBF position representation from the Bullet dynamics engine.
-    virtual void updatePositionFromDynamics();
+    afBaseObject(afWorldPtr a_afWorld);
+    virtual ~afBaseObject();
 
     // Get the namespace of this body
     inline std::string getNamespace(){return m_namespace; }
+
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
+    virtual void afExecuteCommand(double dt){}
+
+    // This method updates the AMBF position representation from the Bullet dynamics engine.
+    virtual void updatePositionFromDynamics(){}
 
     inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
 
@@ -378,6 +470,94 @@ public:
     // Get Initial Rotation of this body
     inline cMatrix3d getInitialRotation(){return m_initialRot;}
 
+    // This method toggles the viewing of frames of this rigid body.
+    inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
+
+    // Get Min/Max publishing frequency for afObjectState for this body
+    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
+
+    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
+
+    // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
+    // to be parented to hasn't been loaded yet.
+    virtual bool resolveParenting(std::string a_parent_name = ""){}
+
+    bool isPassive(){return m_passive;}
+
+    void setPassive(bool a_passive){m_passive = a_passive;}
+
+    // Ptr to afWorld
+    afWorldPtr m_afWorld;
+
+    // Parent body name defined in the ADF
+    std::string m_parentName;
+
+    // Min publishing frequency
+    int m_min_publish_frequency=50;
+
+    // Max publishing frequency
+    int m_max_publish_frequency=1000;
+
+    // Enable Shader Program Associate with this object
+    virtual void enableShaderProgram(){}
+
+    // Flag for the Shader Program
+    bool m_shaderProgramDefined = false;
+
+    boost::filesystem::path m_vsFilePath;
+    boost::filesystem::path m_fsFilePath;
+
+protected:
+
+    // The namespace for this body, this namespace affect afComm and the stored name of the body
+    // in the internal body tree map.
+    std::string m_namespace = "";
+
+    // Initial location of Rigid Body
+    cVector3d m_initialPos;
+
+    // Initial rotation of Ridig Body
+    cMatrix3d m_initialRot;
+
+    // If passive, this instance will not be reported
+    // for communication purposess.
+    bool m_passive = false;
+};
+
+
+///
+/// \brief The afBody class
+///
+class afRigidBody: public afBaseObject{
+
+    friend class afMultiBody;
+    friend class afJoint;
+    friend class afWorld;
+
+public:
+
+    afRigidBody(afWorldPtr a_afWorld);
+    virtual ~afRigidBody();
+
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
+    virtual void afExecuteCommand(double dt);
+
+    // This method updates the AMBF position representation from the Bullet dynamics engine.
+    virtual void updatePositionFromDynamics();
+
+    // Load rigid body named by node_name from the a config file that may contain many bodies
+    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
+
+    // Load rigid body named by from the rb_node specification
+    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
+
+    // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
+    virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
+
+    // Get the namespace of this body
+    inline std::string getNamespace(){return m_namespace; }
+
     // Apply force that is specified in the world frame at a point specified in world frame
     // This force is first converted into body frame and then is used to compute
     // the resulting torque in the body frame. This torque in the body frame is
@@ -388,7 +568,11 @@ public:
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
     // children (children's children ... and so on also count as children)
-    std::vector<afChildJointPair> m_childAndJointPairs;
+    std::vector<afChildJointPair> m_CJ_PairsAll;
+
+    // This vector contains the list of only the bodies connected via active joints. A joint can
+    // be set as passive in the ADF file.
+    std::vector<afChildJointPair> m_CJ_PairsActive;
 
     // A vector of all the parent bodies (not just the immediate parents but all the way up to the root parent)
     std::vector<afRigidBodyPtr> m_parentBodies;
@@ -405,18 +589,8 @@ public:
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
 
-    // This method toggles the viewing of frames of this rigid body.
-    inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
-
     // Cleanup this rigid body
     void remove();
-
-public:
-
-    // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return _min_publish_frequency;}
-
-    inline int getMaxPublishFrequency(){return _max_publish_frequency;}
 
     // function to check if this rigid body is part of the collision group
     // at a_idx
@@ -432,21 +606,28 @@ public:
     bool isDirectChild(btRigidBody* a_body);
 
     // Add sensor to this body
-    bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+    void addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+
+    // Add sensor to this body
+    void addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
+
+    // Enable shader program if defined
+    virtual void enableShaderProgram();
 
     // Get the sensors for this body
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
-public:
     // If the Position Controller is active, disable Position Controller from Haptic Device
-    bool m_af_enable_position_controller;
+    afControlType m_activeControllerType = afControlType::force;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
 
-    // The namespace for this body, this namespace affect afComm and the stored name of the body
-    // in the internal body tree map.
-    std::string m_namespace;
+    // Estimated Force acting on body
+    btVector3 m_estimatedForce;
+
+    // Estimated Torque acting on body
+    btVector3 m_estimatedTorque;
 
 protected:
 
@@ -459,20 +640,14 @@ protected:
     // cMultiMesh representation of collision mesh
     cMultiMesh m_lowResMesh;
 
-    // Initial location of Rigid Body
-    cVector3d m_initialPos;
-
-    // Initial rotation of Ridig Body
-    cMatrix3d m_initialRot;
-
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _lin_gains_computed = false;
+    bool m_lin_gains_computed = false;
 
     // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool _ang_gains_computed = false;
+    bool m_ang_gains_computed = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -483,17 +658,15 @@ protected:
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
 
-    // Min and Max publishing frequency
-    int _min_publish_frequency=50;
-    int _max_publish_frequency=1000;
+    // Sensors for this Rigid Body
+    afSensorVec m_afSensors;
+
+    // Actuators for this Rigid Body
+    afActuatorVec m_afActuators;
 
     // Function of compute body's controllers based on lumped masses
     void computeControllerGains();
 
-    // Sensors for this Rigid Body
-    afSensorVec m_afSensors;
-
-protected:
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
 
@@ -518,22 +691,26 @@ protected:
     // Update the joint positions of children in afObject State Message
     virtual void afObjectSetJointPositions();
 
+    // Update the joint velocitess of children in afObject State Message
+    virtual void afObjectSetJointVelocities();
+
+    // Update the joint efforts of children in afObject State Message
+    virtual void afObjectSetJointEfforts();
+
     // Surface properties for damping, friction and restitution
     static afRigidBodySurfaceProperties m_surfaceProps;
 
-protected:
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
-
-protected:
-
-    afResistiveSurface m_resistiveSurface;
 
     // pool of threads for solving the body's sensors in paralled
     std::vector<std::thread*> m_sensorThreads;
 
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
+
+    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
+    bool m_usePIDController = false;
 
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
@@ -555,6 +732,12 @@ private:
     // Positions of all child joints
     std::vector<float> m_joint_positions;
 
+    // Velocities of all child joints
+    std::vector<float> m_joint_velocities;
+
+    // Efforts of all child joints
+    std::vector<float> m_joint_efforts;
+
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
 
@@ -564,9 +747,6 @@ private:
 
     // Last Position Error
     btVector3 m_dpos;
-
-    // Last torque or Rotational Error with Kp multiplied
-    btVector3 m_torque;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
     GeometryType m_visualGeometryType, m_collisionGeometryType;
@@ -620,8 +800,6 @@ protected:
 
     double m_scale;
 
-    double m_total_mass;
-
     std::string m_mesh_name;
 
     cMultiMesh m_lowResMesh;
@@ -670,10 +848,11 @@ public:
     double I = 0;
     double D = 50;
     double e[4] = {0, 0, 0, 0};
+    double ie[4] = {0, 0, 0, 0};
     double de[4] = {0, 0, 0, 0};
-    double dde[4] = {0, 0, 0, 0};
     double t[4]= {0, 0, 0, 0};
-    size_t n = 4;
+    double Ie_sum = 0.0;
+    size_t queue_length = 4;
     double output;
     double max_impulse;
     double max_effort;
@@ -707,6 +886,7 @@ class afJoint{
     friend class afRigidBody;
     friend class afGripperLink;
     friend class afMultiBody;
+    friend class afWorld;
 
 public:
 
@@ -723,8 +903,11 @@ public:
     // Apply damping to this joint
     void applyDamping(const double &dt=0.001);
 
-    // Set open loop effort for this joint
-    void commandEffort(double &effort_cmd);
+    // Set open loop effort for this joint.
+    void commandEffort(double &effort_cmd, bool skip_motor_check=false);
+
+    // Set velocity for this joint
+    void commandVelocity(double &velocity_cmd);
 
     // Set position target for this joint that is handeled by it's joint controller
     void commandPosition(double &position_cmd);
@@ -741,11 +924,29 @@ public:
     // Get the position of this joint
     double getPosition();
 
+    // Get the velocity of this joint
+    double getVelocity();
+
+    // Get the effort of this joint
+    double getEffort();
+
     // Type of Joint to know what different operations to perform at the ambf level
     JointType m_jointType;
 
     // Method to remove the afJoint
     void remove();
+
+    std::string getName(){return m_name;}
+
+    bool isPassive(){return m_passive;}
+
+    bool isFeedBackEnabled(){return m_feedbackEnabled;}
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for Joint
+    void setFrameSize(double size){}
 
 protected:
 
@@ -759,13 +960,33 @@ protected:
     bool m_enableActuator;
     double m_lowerLimit, m_upperLimit;
     double m_jointOffset;
-    btRigidBody *m_rbodyA, *m_rbodyB;
+
+    // Store parent and child afRigidBody to prevent lookups.
+    afRigidBodyPtr m_afParentBody;
+    afRigidBodyPtr m_afChildBody;
+
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
+
+    // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
+    bool m_usePIDController = false;
+
+    // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
+    // for communication purposess.
+    bool m_passive = false;
+
+    // Wrench Feedback information from the joint
+    bool m_feedbackEnabled = false;
+
+    // Bullet Joint Feedback Ptr
+    btJointFeedback* m_feedback;
 
 protected:
 
     btTypedConstraint *m_btConstraint;
+
+    // The estimated Effort for this joint if its a single DOF joint.
+    double m_estimatedEffort = 0.0;
 
 private:
     // Add these two pointers for faster access to constraint internals
@@ -778,9 +999,111 @@ private:
     afMultiBodyPtr m_mB;
     afJointController m_controller;
 
-    // Previous Joint Position. This value is used for explicit damping
-    double m_prevPos;
-    double m_curPos;
+    // Vector of joint positions containing the last n joint values.
+    int m_jpSize = 2;
+    std::vector<double> m_posArray;
+    std::vector<double> m_dtArray;
+
+};
+
+
+enum afActuatorType{
+    constraint = 0
+};
+
+
+///
+/// \brief The afActuator class
+///
+class afActuator: public afBaseObject{
+public:
+    afActuator(afWorldPtr a_afWorld);
+
+    // Load actuator from filename
+    virtual bool loadActuator(std::string actuator_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    // Load actuator form YAML node data
+    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
+
+    virtual void actuate(){}
+
+    virtual void deactuate(){}
+
+    // Parent Body for this sensor
+    afRigidBodyPtr m_parentBody;
+
+    bool m_showActuator;
+
+    virtual void afExecuteCommand(double dt){}
+
+    virtual void updatePositionFromDynamics(){}
+
+protected:
+    bool m_actuate = false;
+
+};
+
+
+
+///
+/// \brief The afConstraintActuator class. First type of actuator class. Ultimately we can add things like drills, cutters, magnets
+/// etc all as actuators.
+///
+class afConstraintActuator: public afActuator{
+public:
+    afConstraintActuator(afWorldPtr a_afWorld);
+
+    // Load actuator from filename
+    virtual bool loadActuator(std::string actuator_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping = "");
+
+    // Load actuator form YAML node data
+    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping = "");
+
+    // The actuate methods will all result in the same thing. I.e. constraint a desired body or soft-body (face) to the parent body,
+    // on which this actuator is mounted. The methods will use the current position of bodies or soft-bodyies to compute the parent
+    // and child offsets for forming the constraint
+    virtual void actuate(std::string a_rigid_body_name);
+
+    virtual void actuate(afRigidBodyPtr a_rigidBody);
+
+    virtual void actuate(std::string a_softbody_name, int a_face_index);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index);
+
+    // In these actuate methods, explicit body offsets are provided.
+
+    virtual void actuate(std::string a_rigid_body_name, cVector3d a_bodyOffset);
+
+    virtual void actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset);
+
+    virtual void actuate(std::string a_softbody_name, int a_face_index, cVector3d a_bodyOffset);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset);
+
+    // Remove the constraint
+    virtual void deactuate();
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
+protected:
+
+    double m_maxImpulse = 3.0;
+    double m_tau = 0.001;
+    btPoint2PointConstraint* m_constraint = 0;
+    // Transform of actuator w.r.t. parent body
+    cTransform m_T_aINp;
+
+
+private:
+    afRigidBodyPtr m_childBody = 0;
+    afSensorPtr m_childSotBody = 0;
+    int m_softBodyFaceIdx = -1;
+    // Child offset w.r.t to actuator
+    cVector3d m_P_cINp;
+
+    bool m_active = false;
 };
 
 //-----------------------------------------------------------------------------
@@ -791,10 +1114,10 @@ enum afSensorType{
 ///
 /// \brief The afSensor class
 ///
-class afSensor{
+class afSensor: public afBaseObject{
     friend class afRigidBody;
 public:
-    afSensor(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
+    afSensor(afWorldPtr a_afWorld);
 
     // Load sensor from filename
     virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
@@ -802,8 +1125,6 @@ public:
     // Load sensor form YAML node data
     virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "")=0;
 
-    // Upate the sensor, usually called at each dynamic tick update of the physics engine
-    virtual void updateSensor()=0;
 
     // Toggle the debug display of the sensor
     inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
@@ -811,104 +1132,32 @@ public:
     // Get the body this sensor is a child of
     inline afRigidBodyPtr getParentBody(){return m_parentBody;}
 
-public:
-    // Name of this sensor
-    std::string m_name;
-
-    // The body this sensor is attached to.
+    // Parent Body for this sensor
     afRigidBodyPtr m_parentBody;
-
-    // Location of this sensor w.r.t the parent body.
-    cVector3d m_location;
-
-    // Ptr to afWorld
-    afWorldPtr m_afWorld;
 
     // The type this sensor?
     afSensorType m_sensorType;
 
-public:
     // Toggle visibility of this sensor
     bool m_showSensor = true;
+
+    virtual void afExecuteCommand(double dt);
+
+    // Upate the sensor, usually called at each dynamic tick update of the physics engine
+    virtual void updatePositionFromDynamics();
+
+    // Go through all the parents to get the absolute world transform
+    cTransform getWorldTransform(){
+
+    }
 };
 
+// Declare enum to find out later what type of body we sensed
+enum class afBodyType{
+    RIGID_BODY=0, SOFT_BODY=1};
 
-class afRayTracerSensor: public afSensor{
+struct afRayTracerResult{
 
-    friend class afProximitySensor;
-    friend class afResistanceSensor;
-
-public:
-    // Declare enum to find out later what type of body we sensed
-    enum SensedBodyType{
-        RIGID_BODY=0, SOFT_BODY=1};
-
-    // Type of sensed body, could be a rigid body or a soft body
-    SensedBodyType m_sensedBodyType;
-
-public:
-    // Constructor
-    afRayTracerSensor(afWorldPtr a_afWorld);
-
-    // Load the sensor from ambf format
-    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Load the sensor from ambf format
-    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
-
-    // Update sensor is called on each update of positions of RBs and SBs
-    virtual void updateSensor();
-
-    // Check if the sensor sensed something. Depending on what type of sensor this is
-    inline bool isTriggered(){return m_triggered;}
-
-    // Get the type of sensed body
-    inline SensedBodyType getSensedBodyType(){return m_sensedBodyType;
-                                             }
-    // Return the sensed RigidBody's Ptr
-    inline btRigidBody* getSensedRigidBody(){return m_sensedRigidBody;}
-
-    // Get the sensed SoftBody's Ptr
-    inline btSoftBody* getSensedSoftBody(){return m_sensedSoftBody;}
-
-    // Get the sensed SoftBody's Face
-    inline btSoftBody::Face* getSensedSoftBodyFace(){return m_sensedSoftBodyFace;}
-
-    // Get the sensed SofyBody's Closest node the sensed point Node if any
-    inline btSoftBody::Node* getSensedSoftBodyNode(){return m_sensedSoftBodyNode;}
-
-    // Get the sensed SofyBody's Face's index if any
-    inline int getSensedSoftBodyFaceIdx(){return m_sensedSoftBodyFaceIdx;}
-
-    // Get the sensed SofyBody's Node's Idx
-    inline int getSensedSoftBodyNodeIdx(){return m_sensedSoftBodyNodeIdx;}
-
-    // Get the sensed point in world frame
-    inline cVector3d getSensedPoint(){return m_sensedLocationWorld;}
-
-public:
-
-    inline void setRayFromInLocal(const cVector3d& a_rayFrom){m_rayFromLocal = a_rayFrom;}
-
-    inline void setRayToInLocal(const cVector3d& a_rayTo){m_rayToLocal = a_rayTo;}
-
-    inline void setDirection(const cVector3d& a_direction){m_direction = a_direction;}
-
-    inline void setRange(const double& a_range){m_range = a_range;}
-
-    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
-
-    void enableVisualization();
-
-public:
-
-    // Depth fraction is the penetration normalized depth of the sensor
-    double m_depthFraction = 0;
-
-    // Normal at Contact Point
-    cVector3d m_contactNormal;
-
-protected:
     // Direction rel to parent that this sensor is looking at
     cVector3d m_direction;
 
@@ -920,11 +1169,17 @@ protected:
     cVector3d m_rayFromLocal;
     cVector3d m_rayToLocal;
 
-    // The body the this proximity sensor is sensing
-    btRigidBody* m_sensedRigidBody;
+    // The rigid body that this proximity sensor is sensing
+    btRigidBody* m_sensedBTRigidBody;
 
-    // Could also be sensing a softbody
-    btSoftBody* m_sensedSoftBody;
+    // This is the AF Rigid body sensed by this sensor
+    afRigidBodyPtr m_sensedAFRigidBody = 0;
+
+    // The soft body that this proximity sensor is sensing
+    btSoftBody* m_sensedBTSoftBody;
+
+    // This is the AF Soft body sensed by this sensor
+    afSoftBodyPtr m_sensedAFSoftBody = 0;
 
     // The internal index of the face belonging to the sensed soft body
     int m_sensedSoftBodyFaceIdx = -1;
@@ -953,6 +1208,93 @@ protected:
     // Internal constraint for rigid body gripping
     btPoint2PointConstraint* _p2p;
 
+    // Depth fraction is the penetration normalized depth of the sensor
+    double m_depthFraction = 0;
+
+    // Normal at Contact Point
+    cVector3d m_contactNormal;
+
+    // Type of sensed body, could be a rigid body or a soft body
+    afBodyType m_sensedBodyType;
+};
+
+
+class afRayTracerSensor: public afSensor{
+
+    friend class afProximitySensor;
+    friend class afResistanceSensor;
+
+public:
+    // Constructor
+    afRayTracerSensor(afWorldPtr a_afWorld);
+
+    // Load the sensor from ambf format
+    virtual bool loadSensor(std::string sensor_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load the sensor from ambf format
+    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Update sensor is called on each update of positions of RBs and SBs
+    virtual void updatePositionFromDynamics();
+
+    // Check if the sensor sensed something. Depending on what type of sensor this is
+    inline bool isTriggered(int idx){return m_sensedResults[idx].m_triggered;}
+
+    // Get the type of sensed body
+    inline afBodyType getSensedBodyType(int idx){return m_sensedResults[idx].m_sensedBodyType;}
+
+    // Return the sensed BT RigidBody's Ptr
+    inline btRigidBody* getSensedBTRigidBody(int idx){return m_sensedResults[idx].m_sensedBTRigidBody;}
+
+    // Get the sensed AF Rigid Body's Ptr
+    inline afRigidBodyPtr getSensedAFRigidBody(int idx){return m_sensedResults[idx].m_sensedAFRigidBody;}
+
+    // Get the sensed BT SoftBody's Ptr
+    inline btSoftBody* getSensedBTSoftBody(int idx){return m_sensedResults[idx].m_sensedBTSoftBody;}
+
+    // Get the sensed AF Soft Body's Ptr
+    inline afSoftBodyPtr getSensedAFSoftBody(int idx){return m_sensedResults[idx].m_sensedAFSoftBody;}
+
+    // Get the sensed SoftBody's Face
+    inline btSoftBody::Face* getSensedSoftBodyFace(int idx){return m_sensedResults[idx].m_sensedSoftBodyFace;}
+
+    // Get the sensed SofyBody's Closest node the sensed point Node if any
+    inline btSoftBody::Node* getSensedSoftBodyNode(int idx){return m_sensedResults[idx].m_sensedSoftBodyNode;}
+
+    // Get the sensed SofyBody's Face's index if any
+    inline int getSensedSoftBodyFaceIdx(int idx){return m_sensedResults[idx].m_sensedSoftBodyFaceIdx;}
+
+    // Get the sensed SofyBody's Node's Idx
+    inline int getSensedSoftBodyNodeIdx(int idx){return m_sensedResults[idx].m_sensedSoftBodyNodeIdx;}
+
+    // Get the sensed point in world frame
+    inline cVector3d getSensedPoint(int idx){return m_sensedResults[idx].m_sensedLocationWorld;}
+
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom, int idx){m_sensedResults[idx].m_rayFromLocal = a_rayFrom;}
+
+    inline void setRayToInLocal(const cVector3d& a_rayTo, int idx){m_sensedResults[idx].m_rayToLocal = a_rayTo;}
+
+    inline void setDirection(const cVector3d& a_direction, int idx){m_sensedResults[idx].m_direction = a_direction;}
+
+    inline void setRange(const double& a_range, int idx){m_sensedResults[idx].m_range = a_range;}
+
+    inline void setSensorVisibilityRadius(const double& a_sensorVisibilityRadius){m_visibilitySphereRadius = a_sensorVisibilityRadius;}
+
+    inline double getCount(){return m_count;}
+
+    void enableVisualization();
+
+    virtual void afExecuteCommand(double dt);
+
+
+    double m_range;
+
+protected:
+    // The number of ray tracing elements belonging to this sensor
+    int m_count;
+
+    std::vector<afRayTracerResult> m_sensedResults;
+
     // Size of spheres for the sensor visualization
     double m_visibilitySphereRadius;
 };
@@ -967,13 +1309,34 @@ public:
     afProximitySensor(afWorldPtr a_afWorld);
 };
 
+
+struct afResistanceContacts{
+    // Contact point in Body A frame
+    cVector3d m_bodyAContactPointLocal;
+
+    // Contact point in body B frame
+    cVector3d m_bodyBContactPointLocal;
+
+    // Error tangential to the contact (or sensor) normal
+    cVector3d m_tangentialError;
+
+    // Pre value of tangential contact error
+    cVector3d m_tangentialErrorLast;
+
+    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
+    bool m_contactPointsValid;
+
+    // First time the sensor made contact with another object. Computed everytime a new contact happens
+    bool m_firstTrigger = true;
+};
+
 //-----------------------------------------------------------------------------
 
 class afResistanceSensor: public afRayTracerSensor{
 public:
     afResistanceSensor(afWorldPtr a_afWorld);
     virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx="");
-    virtual void updateSensor();
+    virtual void updatePositionFromDynamics();
 
 public:
     inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}
@@ -1010,41 +1373,30 @@ private:
     // Friction due to slide, or kinetic friction
     double m_dynamicFriction;
 
-    // Contact point in Body A frame
-    cVector3d m_bodyAContactPointLocal;
-
-    // Contact point in body B frame
-    cVector3d m_bodyBContactPointLocal;
-
-    // Error tangential to the contact (or sensor) normal
-    cVector3d m_tangentialError;
-
-    // Pre value of tangential contact error
-    cVector3d m_tangentialErrorLast;
-
-    // Variable to store if the slick contacts are still valid (with in the contact area tolerance)
-    bool m_contactPointsValid;
-
     // Tolerance to slide of the contact points between two bodies
     // tangential to the direction of the sensor direction
     double m_contactArea;
 
-    // First time the sensor made contact with another object. Computed everytime a new contact happens
-    bool m_firstTrigger = true;
-
     // Use Variable Coeffecients based on the Depth Fraction
     bool m_useVariableCoeff = false;
+
+    std::vector<afResistanceContacts> m_resistanceContacts;
 };
 
 ///
 /// \brief The afCamera class
 ///
-class afCamera: public afRigidBody{
+class afCamera: public afBaseObject{
 public:
 
     afCamera(afWorld* a_afWorld);
     ~afCamera();
 
+    // Define the virtual method for camera
+    virtual void afExecuteCommand(double dt);
+
+    // Define the virtual method for camera
+    virtual void updatePositionFromDynamics();
 
     // Initialize
     bool init();
@@ -1053,8 +1405,16 @@ public:
     // are define in the AMBF config file
     bool createDefaultCamera();
 
+    cCamera* getInternalCamera(){return m_camera;}
+
     // Load camera from YAML Node data
     bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
+
+    // Since we changed the order of ADF loading such that cameras are loaded before
+    // bodies etc. we wouldn't be able to find a body defined as a parent in the
+    // camera data-block in the ADF file. Thus after loading the bodies, this method
+    // should be called to find the parent.
+    virtual bool resolveParenting(std::string a_parent_name = "");
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -1099,6 +1459,9 @@ public:
         return m_camera->m_backLayer;
     }
 
+    // Is this camera orthographic or not
+    inline bool isOrthographic(){return m_orthographic;}
+
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
@@ -1130,7 +1493,6 @@ public:
 
     cStereoMode m_stereMode;
 
-public:
     // Labels
     cLabel* m_graphicsDynamicsFreqLabel;
     cLabel* m_wallSimTimeLabel;
@@ -1139,7 +1501,6 @@ public:
     cLabel* m_controllingDeviceLabel;
     std::vector<cLabel*> m_devHapticFreqLabels;
 
-public:
     // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
     double mouse_x[2], mouse_y[2], mouse_scroll[2];
     bool mouse_l_clicked = false, mouse_r_clicked= false, mouse_scroll_clicked = false;
@@ -1152,7 +1513,6 @@ public:
     int m_width, m_height;
     int m_win_x, m_win_y;
 
-public:
     std::vector<std::string> m_controllingDevNames;
 
 protected:
@@ -1165,18 +1525,24 @@ protected:
     // of the camera takes place.
     cVector3d m_targetPos;
 
-protected:
     static int s_numWindows;
     static int s_cameraIdx;
     static int s_windowIdx;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 
+public:
+
     // Frame Buffer to write to OpenCV Transport stream
     cFrameBuffer* m_frameBuffer;
 
     // Image to Convert the FrameBuffer into an image
     cImagePtr m_imageFromBuffer;
+
+    // Image to Convert the FrameBuffer into an depth image
+    cImagePtr m_depthFromBuffer;
+
+protected:
 
     // Open CV Image Matrix
     cv::Mat m_imageMatrix;
@@ -1194,10 +1560,14 @@ protected:
     static bool s_imageTransportInitialized;
 #endif
 
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::ProjectionType m_projectionType;
+    ambf_comm::ViewMode m_viewMode;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 
-private:
     // Hold the cCamera private and shield it's kinematics represented
     // by cGenericObject from the world since we want afRidigBody to
     // represent the kinematics instead
@@ -1205,6 +1575,13 @@ private:
 
     // Flag to enable disable publishing of image as a ROS topic
     bool m_publishImage = false;
+
+    cVector3d m_camPos;
+    cVector3d m_camLookAt;
+    cVector3d m_camUp;
+
+    // Is this camera orthographic or not.
+    bool m_orthographic = false;
 };
 
 //-----------------------------------------------------------------------------
@@ -1225,7 +1602,7 @@ enum ShadowQuality{
 ///
 /// \brief The afLight struct
 ///
-class afLight: public afRigidBody{
+class afLight: public afBaseObject{
 public:
     afLight(afWorld* a_afWorld);
 
@@ -1235,10 +1612,57 @@ public:
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
 
+    virtual bool resolveParenting(std::string a_parent_name = "");
+
+    virtual void afExecuteCommand(double dt);
+
+    virtual void updatePositionFromDynamics();
+
+    // Set direction of this light
+    void setDir(const cVector3d& a_direction);
+
 protected:
     cSpotLight* m_spotLight;
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::LightType m_lightType;
+#endif
+
 private:
     afWorldPtr m_afWorld;
+};
+
+
+///
+/// \brief The afMultiPointUnit struct
+///
+struct afMultiPointUnit{
+
+    // The parent name for this struct
+    std::string m_parentName;
+
+    cMultiPointPtr m_mpPtr;
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    ambf_comm::PointCloudHandlerPtr m_pchPtr;
+#endif
+};
+
+
+///
+/// \brief The afPointCloud class
+///
+class afPointCloudsHandler: public afBaseObject{
+
+public:
+    afPointCloudsHandler(afWorldPtr a_afWorld);
+
+    virtual void afExecuteCommand(double dt){}
+
+    virtual void updatePositionFromDynamics();
+
+    std::map<std::string, afMultiPointUnit> m_pcMap;
+
 };
 
 
@@ -1247,95 +1671,177 @@ private:
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afConfigHandler{
+class afWorld: public cBulletWorld, public afConfigHandler, public afComm{
 
     friend class afMultiBody;
 
 public:
-    afWorld(cBulletWorld *bulletWorld);
+
+    afWorld(std::string a_global_namespace);
+
     virtual ~afWorld(){}
+
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    // Template method to add various types of objects
+    template<typename T, typename TMap>
+    bool addObject(T a_obj, std::string a_name, TMap* a_map);
+
+     // Template method to get a specific type of object
+    template <typename T, typename TMap>
+    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+
+     // Template method to get all objects of specific type
+    template <typename Tvec, typename TMap>
+    Tvec getObjects(TMap* tMap);
+
     bool createDefaultWorld();
+
     double getEnclosureLength();
+
     double getEnclosureWidth();
+
     double getEnclosureHeight();
+
     void getEnclosureExtents(double &length, double &width, double &height);
+
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
+
     bool isPhysicsPaused(){return m_pausePhx;}
+
+    // Used when the Physics is paused
+    inline void stepPhysicsManually(int a_steps){m_manualStepPhx += a_steps;}
+
+    int getManualSteps(){return m_manualStepPhx;}
+
     void resetCameras();
+
     void resetDynamicBodies(bool reset_time=false);
 
-    static cBulletWorld *s_bulletWorld;
-    GLFWwindow* m_mainWindow;
+    int getMaxIterations(){return m_maxIterations;}
 
-public:
+    double computeStepSize(bool adjust_intetration_steps = false);
+
+    void estimateBodyWrenches();
+
+    //! This method updates the simulation over a time interval.
+    virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
+
+    //! This method updates the position and orientation from Bullet models to CHAI3D models.
+    virtual void updatePositionFromDynamics(void);
 
     bool addAFLight(afLightPtr a_rb, std::string a_name);
+
     bool addAFCamera(afCameraPtr a_rb, std::string a_name);
+
     bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+
     bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+
     bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+
+    bool addAFActuator(afActuatorPtr a_actuator, std::string a_name);
+
     bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
+
     bool addAFMultiBody(afMultiBodyPtr a_multiBody, std::string a_name);
 
+    bool addAFVehicle(afVehiclePtr a_vehicle, std::string a_name);
+
+    // This method build the collision graph based on the collision group numbers
+    // defined in the bodies
+    void buildCollisionGroups();
+
+
     afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
+
     afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
+
     afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
+
     afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
-    afSoftBodyPtr getAFSoftBody(std::string a_name);
+
+    afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
+
+    afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
+
     afJointPtr getAFJoint(std::string a_name);
+
+    afActuatorPtr getAFActuator(std::string a_name);
+
     afSensorPtr getAFSensor(std::string a_name);
+
     afMultiBodyPtr getAFMultiBody(std::string a_name, bool suppress_warning=false);
-    std::string getNamespace(){return m_world_namespace;}
+
+    afVehiclePtr getAFVehicle(std::string a_name, bool suppress_warning=false);
+
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
+
     inline afCameraMap* getAFCameraMap(){return &m_afCameraMap;}
+
     inline afRigidBodyMap* getAFRigidBodyMap(){return &m_afRigidBodyMap;}
+
     inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
+
     inline afJointMap* getAFJointMap(){return &m_afJointMap;}
+
+    inline afActuatorMap* getAFActuatorMap(){return &m_afActuatorMap;}
+
     inline afSensorMap* getAFSensorMap(){return &m_afSensorMap;}
+
     inline afMultiBodyMap* getAFMultiBodyMap(){return &m_afMultiBodyMap;}
 
+    inline afVehicleMap* getAFVehicleMap(){return &m_afVehicleMap;}
+
+
     afLightVec  getAFLighs();
+
     afCameraVec getAFCameras();
+
     afRigidBodyVec getAFRigidBodies();
+
     afSoftBodyVec getAFSoftBodies();
+
     afJointVec getAFJoints();
+
+    afActuatorVec getAFActuators();
+
     afSensorVec getAFSensors();
+
     afMultiBodyVec getAFMultiBodies();
+
+    afVehicleVec getAFVehicles();
+
+
+    std::string resolveGlobalNamespace(std::string a_name);
+
+    std::string getNamespace(){return m_namespace;}
+
+    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
+
+    std::string getGlobalNamespace(){return m_global_namespace;}
+
+    void setGlobalNamespace(std::string a_namespace);
+
+    virtual void afExecuteCommand(double dt);
+
+    // The collision groups are sorted by integer indices. A group is an array of
+    // rigid bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = NULL);
 
-protected:
+    // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
+    bool loadADF(std::string a_adf_filepath, bool enable_comm);
 
-    afLightMap m_afLightMap;
-    afCameraMap m_afCameraMap;
-    afRigidBodyMap m_afRigidBodyMap;
-    afSoftBodyMap m_afSoftBodyMap;
-    afJointMap m_afJointMap;
-    afSensorMap m_afSensorMap;
-    afMultiBodyMap m_afMultiBodyMap;
+    bool loadADF(int i, bool enable_comm);
 
-protected:
-
-    afWorld(){}
-    std::string m_world_namespace;
-    cDirectionalLight* m_dirLight;
-
-private:
-
-    static double m_encl_length;
-    static double m_encl_width;
-    static double m_encl_height;
-
-private:
-    // Global flag to pause simulation
-    bool m_pausePhx = false;
-
-
-public:
+    void loadAllADFs(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
@@ -1343,26 +1849,126 @@ public:
 
     void removePickingConstraint();
 
-public:
+    virtual void enableShaderProgram();
+
+    void loadSkyBox();
+
+    GLFWwindow* m_mainWindow;
+
     //data for picking objects
     class btRigidBody* m_pickedBody=0;
-    afRigidBodyPtr m_lastPickedBody;
+
+    afRigidBodyPtr m_lastPickedBody=0;
+
     cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+
     cMaterial m_pickColor; // The color to be applied to the picked body
+
     class btSoftBody* m_pickedSoftBody=0; // Picked SoftBody
+
     class btSoftBody::Node* m_pickedNode=0; // Picked SoftBody Node
+
     int m_pickedNodeIdx = -1; // Picked SoftBody Node
+
     double m_pickedNodeMass = 0;
+
     cVector3d m_pickedNodeGoal;
+
     class btTypedConstraint* m_pickedConstraint=0;
+
     int m_savedState;
+
     cVector3d m_oldPickingPos;
+
     cVector3d m_hitPos;
+
     double m_oldPickingDist;
+
     cMesh* m_pickSphere;
 
+    cPrecisionClock g_wallClock;
+
+    bool m_shaderProgramDefined = false;
+
+    // Vertex Shader Filepath
+    boost::filesystem::path m_vsFilePath;
+
+    // Fragment Shader Filepath
+    boost::filesystem::path m_fsFilePath;
     //    cMesh* m_pickDragVector;
 
+    // Is skybox defined?
+    bool m_skyBoxDefined = false;
+
+    // Skybox Mesh
+    cMesh* m_skyBoxMesh = 0;
+
+    // L, R, T, B, F and B images for the skybox
+    boost::filesystem::path m_skyBoxLeft;
+
+    boost::filesystem::path m_skyBoxRight;
+
+    boost::filesystem::path m_skyBoxTop;
+
+    boost::filesystem::path m_skyBoxBottom;
+
+    boost::filesystem::path m_skyBoxFront;
+
+    boost::filesystem::path m_skyBoxBack;
+
+    bool m_skyBox_shaderProgramDefined = false;
+
+    boost::filesystem::path m_skyBox_vsFilePath;
+
+    boost::filesystem::path m_skyBox_fsFilePath;
+
+    boost::filesystem::path m_world_config_path;
+
+protected:
+
+    afLightMap m_afLightMap;
+
+    afCameraMap m_afCameraMap;
+
+    afRigidBodyMap m_afRigidBodyMap;
+
+    afSoftBodyMap m_afSoftBodyMap;
+
+    afJointMap m_afJointMap;
+
+    afActuatorMap m_afActuatorMap;
+
+    afSensorMap m_afSensorMap;
+
+    afMultiBodyMap m_afMultiBodyMap;
+
+    afVehicleMap m_afVehicleMap;
+
+    std::string m_namespace;
+
+    // If this string is set, it will force itself to preeced all nampespaces
+    // regardless of whether any namespace starts with a '/' or not.
+    std::string m_global_namespace;
+
+private:
+
+    static double m_encl_length;
+
+    static double m_encl_width;
+
+    static double m_encl_height;
+
+    static int m_maxIterations;
+
+    cPositionalLight* m_light;
+    // Global flag to pause simulation
+    bool m_pausePhx = false;
+
+    // Step the simulation by this many steps
+    // Used when the Physics is paused
+    int m_manualStepPhx = 0;
+
+    afPointCloudsHandler* m_pointCloudHandlerPtr;
 };
 
 
@@ -1386,11 +1992,12 @@ class afMultiBody{
 public:
 
     afMultiBody();
+
     afMultiBody(afWorldPtr a_afWorld);
+
     virtual ~afMultiBody();
-    virtual bool loadMultiBody(int i, bool enable_comm);
+
     virtual bool loadMultiBody(std::string a_multibody_config, bool enable_comm);
-    void loadAllMultiBodies(bool enable_comm=true);
 
     inline std::string getHighResMeshesPath(){return m_multibody_high_res_meshes_path;}
 
@@ -1398,16 +2005,12 @@ public:
 
     inline std::string getMultiBodyPath(){return m_multibody_path;}
 
-    inline std::string getNamespace(){return m_mb_namespace;}
+    inline std::string getNamespace(){return m_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
     // between all these bodies connected in a tree
     void removeOverlappingCollisionChecking();
-
-    // This method build the collision graph based on the collision group numbers
-    // defined in the bodies
-    void buildCollisionGroups();
 
     //Remove collision checking for this entire multi-body, mostly for
     // debugging purposes
@@ -1423,7 +2026,12 @@ public:
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
 
-    cPrecisionClock m_wallClock;
+
+    // Hard coded for now
+    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
+
+    // Do nothing for MB
+    void setFrameSize(double size){}
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
@@ -1434,32 +2042,78 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_mb_namespace;
+    std::string m_namespace="";
     std::string m_multibody_path;
 
 protected:
 
     cMaterial mat;
     template <typename T>
-    std::string remapBodyName(std::string a_body_name, const T* tMap);
-    std::string remapJointName(std::string a_joint_name);
-    std::string remapSensorName(std::string a_sensor_name);
+    std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
     void remapName(std::string &name, std::string remap_idx_str);
-
-protected:
-    // The collision groups are sorted by integer indices. A group is an array of
-    // rigid bodies that collide with each other. The bodies in one group
-    // are not meant to collide with bodies from another group. Lastly
-    // the a body can be a part of multiple groups
-    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
 private:
     // The world has a list of all the bodies and joints belonging to all multibodies
     // The multibody has list of bodies and joints defined for this specific multibody
     afRigidBodyMap m_afRigidBodyMapLocal;
     afSoftBodyMap m_afSoftBodyMapLocal;
+    afVehicleMap m_afVehicleMapLocal;
     afJointMap m_afJointMapLocal;
 };
+
+
+struct afWheel{
+    enum class WheelBodyType{
+        MESH=0,
+        RIGID_BODY=1,
+        INVALID=2
+    };
+
+    cMultiMesh* m_mesh;
+    afRigidBodyPtr m_wheelBody = 0;
+    double m_width;
+    double m_radius;
+    double m_friction;
+    double m_suspensionStiffness;
+    double m_suspensionDamping;
+    double m_suspensionCompression;
+    double m_suspensionRestLength;
+    double m_rollInfluence;
+    cVector3d m_downDirection;
+    cVector3d m_axelDirection;
+    cVector3d m_offset;
+    bool m_isFront = false;
+    double m_high_steering_lim = 0.0;
+    double m_low_steering_lim = 0.0;
+    double m_max_engine_power = 0.0;
+    double m_max_brake_power = 0.0;
+
+    WheelBodyType m_wheelBodyType;
+};
+
+class afVehicle: public afBaseObject{
+public:
+    afVehicle(afWorldPtr a_afWorld);
+
+    // Load the vehicle from ambf format
+    virtual bool loadVehicle(std::string vehicle_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    // Load the vehicle from ambf format
+    virtual bool loadVehicle(YAML::Node* vehicle_node, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
+
+    virtual void updatePositionFromDynamics();
+
+    virtual void afExecuteCommand(double dt);
+
+protected:
+    btDefaultVehicleRaycaster* m_vehicleRayCaster;
+    btRaycastVehicle* m_vehicle;
+    btRaycastVehicle::btVehicleTuning m_tuning;
+    afRigidBodyPtr m_chassis;
+    int m_numWheels = 0;
+    std::vector<afWheel> m_wheels;
+};
+
 
 }
 //------------------------------------------------------------------------------

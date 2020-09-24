@@ -168,6 +168,7 @@ typedef std::map<vertexIndexSet,unsigned int,ltVertexIndexSet> vertexIndexSet_ui
 // MTL File string identifiers
 #define C_OBJ_NEW_MTL_ID       "newmtl"
 #define C_OBJ_MTL_TEXTURE_ID   "map_Kd"
+#define C_OBJ_MTL_BUMP_ID      "map_Bump"
 #define C_OBJ_MTL_AMBIENT_ID   "Ka"
 #define C_OBJ_MTL_DIFFUSE_ID   "Kd"
 #define C_OBJ_MTL_SPECULAR_ID  "Ks"
@@ -246,7 +247,9 @@ struct cMaterialInfo
 {
     char m_name[1024];
     char m_texture[C_OBJ_SIZE_PATH];
+    char m_normalMap[C_OBJ_SIZE_PATH];
     int	m_textureID;
+    int	m_normalMapID;
     float m_diffuse[3];
     float m_ambient[3];
     float m_specular[3];

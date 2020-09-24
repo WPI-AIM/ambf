@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,10 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
@@ -52,7 +51,7 @@
 
 class ObjectRosCom: public RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>{
 public:
-    ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max);
+    ObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~ObjectRosCom();
     virtual void init();
 

@@ -86,7 +86,7 @@ public:
     cBulletBox(cBulletWorld* a_world,
         const double& a_sizeX, 
         const double& a_sizeY, 
-        const double& a_sizeZ, std::string a_objName = "");
+        const double& a_sizeZ);
 
     //! Destructor of cBulletBox.
     virtual ~cBulletBox() {};

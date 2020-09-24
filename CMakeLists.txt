@@ -1,6 +1,6 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2019, AMBF.
-#  (www.aimlab.wpi.edu)
+#  Copyright (c) 2020, AMBF.
+#  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
 #
@@ -114,13 +114,13 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
 	find_package(tf_function REQUIRED)
 
         if(${ambf_comm_FOUND} AND ${ambf_msgs_FOUND} AND ${dvrk_arm_FOUND})
-            message("-- *** FOUND AMBF_COMM, AMBF_MSGS and DVRK_ARM, ENABLING SUPPORT")
+            message("-- *** FOUND AMBF_COMM, AMBF_MSGS and DVRK_ARM, ENABLING DVRK DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
 
             add_definitions(-DC_ENABLE_AMBF_COMM_SUPPORT)
-            add_definitions(-DC_ENABLE_AMBF_DVRK_SUPPORT)
+            add_definitions(-DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
 
             set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_COMM_SUPPORT)
             set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
@@ -132,7 +132,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         if(${OpenCV_FOUND})
             message("-- *** FOUND OPENCV")
             if(${cv_bridge_FOUND} AND ${image_transport_FOUND})
-                message("-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING SUPPORT")
+                message("-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING VIDEO PUBLISHING SUPPORT")
                 add_definitions(-DAF_ENABLE_OPEN_CV_SUPPORT)
 
                 set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
@@ -146,8 +146,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         endif()
 
         if (${razer_hydra_FOUND})
-            message("-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING SUPPORT")
-            add_definitions(-DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
+            message("-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${razer_hydra_LIBRARIES})
@@ -156,7 +155,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             set (CHAI3D_DEFINITIONS -DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
 
         else()
-        message("RAZER HYDRA'S ROS PACKAGE NOT FOUND")
+        message("-- *** RAZER HYDRA'S ROS PACKAGE NOT FOUND")
         endif()
 
     endif()
@@ -356,9 +355,6 @@ add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
 
 # AMBF Controller
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-  find_package(catkin COMPONENTS
-    roscpp
-  )
   if (${catkin_FOUND})
     add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
   endif()

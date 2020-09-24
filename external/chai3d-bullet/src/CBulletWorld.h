@@ -55,10 +55,7 @@
 #include "BulletSoftBody/btSoftRigidDynamicsWorld.h"
 #include "BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h"
 #include "BulletSoftBody/btSoftBodyHelpers.h"
-//------------------------------------------------------------------------------
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_comm/World.h"
-#endif
+
 //------------------------------------------------------------------------------
 namespace chai3d {
 //------------------------------------------------------------------------------
@@ -95,7 +92,7 @@ class cBulletWorld : public chai3d::cWorld
 public:
 
     //! Constructor of cBulletWorld.
-    cBulletWorld(std::string a_worldName="");
+    cBulletWorld();
 
     //! Destructor of cBulletWorld.
     virtual ~cBulletWorld();
@@ -145,25 +142,19 @@ public:
     chai3d::cVector3d getGravity();
 
     //! This method updates the simulation over a time interval.
-    void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
+    virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
-    void updatePositionFromDynamics(void);
+    virtual void updatePositionFromDynamics(void);
+
+    //! This method returns the current simulation time
+    double getWallTime(void);
 
     //! This method returns the current simulation time
     double getSimulationTime(void);
 
-    // AFMB API BEGIN
-
-    //! This method create as afCommunication Instance with the specified namespace
-    virtual void afWorldCreate(std::string a_name, std::string a_namespace = "/ambf/env/", int a_min_freq=50, int a_max_freq=2000);
-
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    //! AF World Ptr
-    std::shared_ptr<ambf_comm::World> m_afWorldPtr;
-#endif
-
-    // AFMB API END
+    //! This method gets the time difference between current time and last simulation time
+    double getSimulationDeltaTime();
 
 
     //--------------------------------------------------------------------------
@@ -208,6 +199,9 @@ protected:
 
     //! Wall Clock in Secs
     double m_wallClock;
+
+    //! Last Simulation Time
+    double m_lastSimulationTime;
 
     //! Maximum number of iterations.
     int m_integrationMaxIterations;

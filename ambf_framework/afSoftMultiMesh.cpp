@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,11 +35,10 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
-    \coutesy:   Extended from cBulletMultiMesh Class by Francois Conti
-    \version:   $
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
+    \courtesy: Extended from cBulletMultiMesh Class by Francois Conti
+    \version   1.0$
 */
 //==============================================================================
 
@@ -994,7 +993,7 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         localTrans.setRotation(q);
 
         // Apply the inertial transform offset
-        localTrans *= m_inertialOffsetTransform.inverse();
+        localTrans *= m_T_iINb.inverse();
     }
     if(lowResMesh){
         lowResMesh->m_meshes->clear();

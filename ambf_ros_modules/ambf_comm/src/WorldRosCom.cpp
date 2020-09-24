@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,41 +35,96 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
 #include "ambf_comm/WorldRosCom.h"
 
-WorldRosCom::WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max){
+///
+/// \brief PointCloundHandler::init
+/// \param a_node
+/// \param a_topic_name
+///
+void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::string a_topic_name){
+    m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloundHandler::sub_cb, this);
+}
+
+
+///
+/// \brief PointCloundHandler::sub_cb
+/// \param msg
+///
+void PointCloundHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
+    m_StatePtr = msg;
+}
+
+
+sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
+    return m_StatePtr;
+}
+
+
+void PointCloundHandler::remove(){
+    m_pcSub.shutdown();
+    m_StatePtr->points.clear();
+    m_StatePtr->channels.clear();
+}
+
+
+///
+/// \brief WorldRosCom::WorldRosCom
+/// \param a_name
+/// \param a_namespace
+/// \param a_freq_min
+/// \param a_freq_max
+/// \param time_out
+///
+WorldRosCom::WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     init();
 }
 
+
+///
+/// \brief WorldRosCom::init
+///
 void WorldRosCom::init(){
     m_State.sim_step = 0;
     m_enableSimThrottle = false;
     m_stepSim = true;
 
-    m_pub = nodePtr->advertise<ambf_msgs::WorldState>("/" + m_ambf_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_ambf_namespace + "/" + m_name + "/Command", 10, &WorldRosCom::sub_cb, this);
+    m_pub = nodePtr->advertise<ambf_msgs::WorldState>("/" + m_namespace + "/" + m_name + "/State", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &WorldRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&WorldRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
+
+///
+/// \brief WorldRosCom::~WorldRosCom
+///
 WorldRosCom::~WorldRosCom(){
     ros::shutdown();
     std::cerr << "Thread Shutdown: " << m_name << std::endl;
 }
 
+
+///
+/// \brief WorldRosCom::reset_cmd
+///
 void WorldRosCom::reset_cmd(){
     m_enableSimThrottle = false;
     m_stepSim = true;
 }
 
+
+///
+/// \brief WorldRosCom::sub_cb
+/// \param msg
+///
 void WorldRosCom::sub_cb(ambf_msgs::WorldCmdConstPtr msg){
     m_CmdPrev = m_Cmd;
     m_Cmd = *msg;

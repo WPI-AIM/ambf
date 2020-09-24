@@ -120,6 +120,7 @@
 #include "materials/CTexture1d.h"
 #include "materials/CTexture2d.h"
 #include "materials/CTexture3d.h"
+#include "materials/CTextureCubeMap.h"
 #include "materials/CTextureVideo.h"
 
 

@@ -1,8 +1,8 @@
 //==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,10 +35,9 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
     \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
-    \version   $
+    \version   1.0$
 */
 //==============================================================================
 
@@ -56,10 +55,13 @@
 template <class T_state, class T_cmd>
 class RosComBase{
 public:
-    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max)
+    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
     {
         m_name = a_name;
-        m_ambf_namespace = a_namespace;
+        m_namespace = a_namespace;
+
+        m_freq_min = a_freq_min;
+        m_freq_max = a_freq_max;
 
         int argc = 0;
         char **argv = 0;
@@ -67,18 +69,22 @@ public:
         nodePtr.reset(new ros::NodeHandle);
         aspinPtr.reset(new ros::AsyncSpinner(1));
         nodePtr->setCallbackQueue(&m_custom_queue);
-        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max));
+        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
     }
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();
+    virtual T_cmd get_command(){return m_Cmd;}
+
+    int m_freq_min;
+    int m_freq_max;
 
 protected:
     boost::shared_ptr<ros::NodeHandle> nodePtr;
     boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
     boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
 
-    std::string m_ambf_namespace;
+    std::string m_namespace;
     std::string m_name;
     ros::Publisher m_pub;
     ros::Subscriber m_sub;

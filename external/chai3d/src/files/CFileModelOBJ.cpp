@@ -147,6 +147,29 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     }
                 }
 
+                int normalMapId = material.m_normalMapID;
+                if (normalMapId >= 1)
+                {
+                    cNormalMapPtr newNormaMap = cNormalMap::create();
+                    bool result = newNormaMap->loadFromFile(material.m_normalMap);
+
+                    // If this didn't work out, try again in the obj file's path
+                    if (result == false)
+                    {
+                        string model_dir = cGetDirectory(a_filename);
+
+                        char new_normal_map_path[1024];
+                        sprintf(new_normal_map_path,"%s/%s",model_dir.c_str(),material.m_normalMap);
+
+                        result = newNormaMap->loadFromFile(new_normal_map_path);
+                    }
+
+                    if (result)
+                    {
+                        newMesh->m_normalMap = newNormaMap;
+                    }
+                }
+
                 float alpha = material.m_alpha;
                 if (alpha < 1.0)
                 {
@@ -1295,6 +1318,24 @@ bool cOBJModel::loadMaterialLib(const char a_fileName[],
 
             // load texture and store its ID in the structure
             m_pMaterials[*a_curMaterialIndex].m_textureID = 1;//LoadTexture(szTextureFile);
+        }
+
+        // normal or bump map name
+        if (!strncmp(str, C_OBJ_MTL_BUMP_ID, sizeof(C_OBJ_MTL_BUMP_ID)))
+        {
+            // read image filename
+            getTokenParameter(str, sizeof(str), hFile);
+
+            // append material library filename to the model's base path
+            char normalMapFile[C_OBJ_SIZE_PATH];
+            strcpy(normalMapFile, a_basePath);
+            strcat(normalMapFile, str);
+
+            // store normal map filename in the structure
+            strcpy(m_pMaterials[*a_curMaterialIndex].m_normalMap, normalMapFile);
+
+            // load normal map and store its ID in the structure
+            m_pMaterials[*a_curMaterialIndex].m_normalMapID = 2;//LoadNormalMap(szMapFile);
         }
 
         // shininess

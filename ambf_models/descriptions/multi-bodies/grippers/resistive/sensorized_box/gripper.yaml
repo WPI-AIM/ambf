@@ -4,7 +4,7 @@
 # Generated on: 2019-07-17 19:34:37
 bodies: [BODY BoxTool]
 joints: []
-sensors: [RP0, RP1, RP2, RP3, RP4, RP5, RP6, RP7, RP8]
+sensors: [RP0]
 high resolution path: ../../../../../meshes/grippers/box_tool/high_res/
 low resolution path: ../../../../../meshes/grippers/box_tool/low_res/
 ignore inter-collision: false
@@ -13,7 +13,7 @@ namespace: /ambf/env/
 
 friction: &default_friction
   {static: 10000,
-  damping: 0,
+  damping: 50,
   dynamic: 0,
   variable: true}
 contact area: &cta 0.001
@@ -29,129 +29,44 @@ positive_default_offset: &pdo 0.08
 parent: &parent /ambf/env/BODY BoxTool
 
 RP0:
-  name: Proximity
+  name: ResistancePatch0
   type: Resistance
-  location: {x: *xl, y: 0.0, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
+  location:
+    orientation: {p: 0.0, r: 0.0, y: 0.0}
+    position: {x: 0.0, y: 0.0, z: 0.0}
+  array:
+    -
+      offset: {x: *xl, y: 0.0, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: 0.0}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: 0.0, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *pdo, z: *ndo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
+    -
+      offset: {x: *xl, y: *ndo, z: *pdo}
+      direction: {x: -1.0, y: 0.0, z: 0.0}
   range: *range
   visible: true
   contact area: *cta
   visible size: *visibility
   friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP1:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP2:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: 0.0}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP3:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP4:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: 0.0, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP5:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP6:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP7:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *pdo, z: *ndo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
-  parent: *parent
-
-RP8:
-  name: Proximity
-  type: Resistance
-  location: {x: *xl, y: *ndo, z: *pdo}
-  direction: {x: -1.0, y: 0.0, z: 0.0}
-  range: *range
-  contact area: *cta
-  visible: true
-  visible size: *visibility
-  friction: *default_friction
-  contact stiffness: *ctf
-  contact damping: *ctd
   parent: *parent
 
 BODY BoxTool:
