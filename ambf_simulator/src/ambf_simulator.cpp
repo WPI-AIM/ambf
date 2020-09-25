@@ -1657,15 +1657,18 @@ void updatePhysics(){
                     }
                 }
 
-                cVector3d force, torque;
+                cVector3d pCommand, rCommand;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / step_size;
-                force = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), step_size, 1);
-                force = simDev->P_lc_ramp * force;
+                pCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), step_size, 1);
+                pCommand = simDev->P_lc_ramp * pCommand;
 
-                torque = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), step_size, 1);
-                simDev->applyForce(force);
-                simDev->applyTorque(torque);
+                rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), step_size, 1);
+//                simDev->applyForce(force);
+//                simDev->applyTorque(torque);
+
+                simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
+                simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(afUtils::convertDataType<btVector3, cVector3d>(rCommand));
                 // Control simulated body joints only if joint control of this physical device has been enabled
                 if (phyDev->isJointControlEnabled()){
                     simDev->setGripperAngle(simDev->m_gripper_angle);
