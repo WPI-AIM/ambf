@@ -2697,7 +2697,15 @@ void afRigidBody::afExecuteCommand(double dt){
                                              afCommand.pose.orientation.z,
                                              afCommand.pose.orientation.w));
 
-                m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+                // If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
+                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - _Td.getOrigin()).norm() > 0.00001 ||
+                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(_Td.getRotation()) > 0.0001){
+
+                    std::cerr << "Updating Static Object Pose \n";
+                    m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+                    m_bulletRigidBody->setWorldTransform(_Td);
+                }
+
             }
             else{
                 btVector3 cur_pos, cmd_pos;
