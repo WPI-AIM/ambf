@@ -6,13 +6,11 @@
 #include "rbdl_model/BodyParam.h"
 #include "rbdl_model/JointParam.h"
 #include "rbdl_model/Utilities.h"
-
+#include <queue>
 #include<rbdl/rbdl.h>
 #include <rbdl/rbdl_math.h>
 
 #include <unordered_set>
-
-
 using namespace RigidBodyDynamics;
 using namespace Math;
 using namespace RigidBodyDynamics::Math;
@@ -22,12 +20,26 @@ typedef BodyParam* bodyParamPtr;
 typedef JointParam* jointParamPtr;
 //------------------------------------------------------------------------------
 
+enum class BlenderJointType {
+    undefined,
+    revolute,
+    prismatic,
+    fixed,
+    continuous,
+    linear_spring,
+    torsion_spring,
+    p2p
+};
+
 class BuildRBDLModel
 {
 public:
     BuildRBDLModel(const std::string actuator_config_file);
 
 //    Model GetRBDLModel();
+
+    void printBody();
+    void printJoint();
     void cleanUp();
 
     ~BuildRBDLModel(void);

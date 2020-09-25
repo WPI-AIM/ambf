@@ -13,6 +13,7 @@ public:
     inline std::string Child() { return child_; }
     inline Vector3d ParentAxis() { return parent_axis_; }
     inline Vector3d ParentPivot() { return parent_pivot_; }
+    inline std::string Type() { return type_; }
 
 private:
     std::string name_;

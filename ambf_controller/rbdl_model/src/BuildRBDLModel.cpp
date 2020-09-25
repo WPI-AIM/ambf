@@ -1,5 +1,32 @@
 #include "rbdl_model/BuildRBDLModel.h"
 
+const RigidBodyDynamics::JointType blender_to_rbdl_joint_type_enum(BlenderJointType enumVal)
+{
+    if (enumVal == BlenderJointType::undefined) return JointTypeUndefined;
+    else if (enumVal == BlenderJointType::revolute) return JointTypeRevolute;
+    else if (enumVal == BlenderJointType::prismatic) return JointTypePrismatic;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeRevoluteX;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeRevoluteY;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeRevoluteZ;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeSpherical;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeEulerZYX;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeEulerXYZ;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeEulerYXZ;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeTranslationXYZ;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeFloatingBase;
+    else if (enumVal == BlenderJointType::fixed) return JointTypeFixed;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeHelical;
+//    else if (enumVal == BlenderJointType::revolute) return JointType1DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointType2DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointType3DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointType4DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointType5DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointType6DoF;
+//    else if (enumVal == BlenderJointType::revolute) return JointTypeCustom;
+}
+
+//light_param_enum_to_str(LightParamsEnum::cuttoff_angle)
+
 BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
     actuator_config_file_ = actuator_config_file;
 
@@ -14,9 +41,9 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
     if (baseNode_.IsNull()) return;
     if(!this->getBodies()) return;
     if(!this->getJoints()) return;
-    if(!this->findRootNode()) return;
+//    if(!this->findRootNode()) return;
 
-    this->BuildModel();
+//    this->BuildModel();
 }
 
 
@@ -24,12 +51,18 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
 
 bool BuildRBDLModel::getBodies()
 {
+    Utilities utilities;
+
     YAML::Node rigidBodies = baseNode_["bodies"];
     if(!rigidBodies.IsDefined()) return false;
     size_t totalRigidBodies = rigidBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
-        std::string node_name = rigidBodies[i].as<std::string>();
-        bodyParamObjectMap_.insert(std::make_pair(node_name, new BodyParam(baseNode_[node_name])));
+        std::string body_name_expanded = rigidBodies[i].as<std::string>();
+        YAML::Node body_yaml = baseNode_[body_name_expanded];
+        std::string body_name;
+
+        if(body_yaml.IsDefined()) body_name = utilities.trimTrailingSpaces(body_yaml["name"]);
+        bodyParamObjectMap_.insert(std::make_pair(body_name, new BodyParam(baseNode_[body_name_expanded])));
     }
     return true;
 }
@@ -42,20 +75,24 @@ bool BuildRBDLModel::getJoints()
     if(!joints.IsDefined()) return false;
 
     Utilities utilities;
-
     size_t totalJoints = joints.size();
     for (size_t i = 0; i < totalJoints; ++i) {
-        std::string joint_name = joints[i].as<std::string>();
+        std::string joint_name_expanded = joints[i].as<std::string>();
+        YAML::Node joint_yaml = baseNode_[joint_name_expanded];
+        std::string joint_name;
+        if(joint_yaml.IsDefined()) joint_name = utilities.trimTrailingSpaces(joint_yaml["name"]);
+//        std::cout << "joint_name: " << joint_name << std::endl;
         std::string parent_name;
 
-        YAML::Node name = baseNode_[joint_name]["name"];
+        YAML::Node name = baseNode_[joint_name_expanded]["name"];
         if(name.IsDefined()) {
-            YAML::Node parent = baseNode_[joint_name]["parent"];
+            YAML::Node parent = baseNode_[joint_name_expanded]["parent"];
             if(parent.IsDefined()) parent_name = utilities.trimTrailingSpaces(parent);
+            utilities.eraseSubStr(parent_name, "BODY");
         }
 
         jointParamObjectMap_.insert(std::make_pair(parent_name, std::unordered_map<std::string, jointParamPtr>()));
-        jointParamObjectMap_[parent_name].insert(std::make_pair(joint_name, new JointParam(baseNode_[joint_name])));
+        jointParamObjectMap_[parent_name].insert(std::make_pair(joint_name, new JointParam(baseNode_[joint_name_expanded])));
     }
     return true;
 }
@@ -190,21 +227,21 @@ bool BuildRBDLModel::BuildModel() {
 //    Joint joint_a, joint_b, joint_c, joint_d;
 
 //    // Initializing Body properties
-//    double mass{1.};
-//    Vector3d com(0., -0.344, 0.);
-//    Vector3d inertia(0.058907, 0.003295, 0.058907);
+    double mass{1.};
+    Vector3d com(0., -0.344, 0.);
+    Vector3d inertia(0.058907, 0.003295, 0.058907);
 
-//    RBDLmodel_ = new Model();
-
-//    RBDLmodel_->gravity = Vector3d(0., 0., -9.81); // in my case should set in the Z direction
+    RBDLmodel_ = new Model();
+    RBDLmodel_->gravity = Vector3d(0., 0., -9.81); // in my case should set in the Z direction
+    Matrix3_t body_rot;
+    body_rot << 0., 0., 1.,
+        0., -1., 0.,
+        1., 0., 0.;
 
 ////    body_a = Body(mass, com, inertia); /* mass, com, inertia*/
 //    joint_a = Joint(JointTypeFixed);
 
-//    Matrix3_t body_a_rot;
-//    body_rot << 0., 0., 1.,
-//        0., -1., 0.,
-//        1., 0., 0.;
+
 //    Vector3d body_trans(0.001, -0.36, -0.222);
 //    SpatialTransform body_tf(body_rot, boda_trans);
 ////    body_a_id = RBDLmodel_->AddBody(0, body_tf, joint_a, body_a);
@@ -232,7 +269,7 @@ bool BuildRBDLModel::BuildModel() {
 //    Vector3d body_c_trans(-0.141, -0.832, 0.);
 //    SpatialTransform body_c_tf(body_c_rot, body_c_trans);
 
-//    body_c_id = RBDLmodel_->AddBody(body_b_id, body_c_tf, joint_c, body_c);
+//    body_c_id = RBDLmodel_->AddBody(body_b_id, body_c_tf, joint_c, body_c);BodyParam
 
 //    body_d = Body(mass, com, inertia);
 //    joint_d = Joint(
@@ -248,25 +285,93 @@ bool BuildRBDLModel::BuildModel() {
 
 //    body_d_id = RBDLmodel_->AddBody(body_c_id, body_d_tf, joint_d, body_d);
 
-
-
+//Joint(JointTypeRevolute, Vector3d(0., 0., 1.))
 
 //    std::cout << "jointParamObjectMap_.size() is " << jointParamObjectMap_.size() << std::endl;
 
-//    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>>::iterator itr;
-//    std::unordered_map<std::string, jointParamPtr>::iterator ptr;
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>>::iterator outter_map_itr;
+    std::unordered_map<std::string, jointParamPtr>::iterator inner_map_itr;
 
-//    for (itr = jointParamObjectMap_.begin(); itr != jointParamObjectMap_.end(); itr++) {
-//        std::string parent_node_name = itr->first;
+//    for (outter_map_itr = jointParamObjectMap_.begin(); outter_map_itr != jointParamObjectMap_.end(); outter_map_itr++) {
+//        std::string parent_node_name = outter_map_itr->first;
 //        std::cout << "parent_node_name: " << parent_node_name << std::endl << "child_node_name: " ;
-//        for (ptr = itr->second.begin(); ptr != itr->second.end(); ptr++) {
-//            jointParamPtr jointparamPtr = ptr->second;
+//        for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
+//            jointParamPtr jointparamPtr = inner_map_itr->second;
 //            std::cout << jointparamPtr->Child() << ", ";
 //        }
 //        std::cout << std::endl;
 //    }
+//    std::cout << "---------------------------------" << std::endl;
+
+    std::unordered_set<std::string> ancestry_set;
+    std::unordered_set<std::string>::iterator ancestry_set_itr;
+
+    std::unordered_map<std::string, Body *> rbdlObjectMap;
+    std::unordered_map<std::string, Body *> ::iterator rbdl_object_map_itr;
+
+    ancestry_set.emplace(rootRigidBody_);
+    while(!ancestry_set.empty()) {
+        ancestry_set_itr = ancestry_set.begin();
+        std::string parent = *ancestry_set_itr;
+
+        ancestry_set.erase(*ancestry_set_itr);
+//        std::cout << "parent: " << parent << std::endl;
+//        mass = (bodyParamObjectMap_[parent])->Mass();
+        rbdl_object_map_itr = rbdlObjectMap.find((parent));
+
+//        com(0., -0.344, 0.);
+//        inertia(0.058907, 0.003295, 0.058907);
+        rbdlObjectMap.insert(std::make_pair(parent, new Body(mass, com, inertia)));
+
+        outter_map_itr = jointParamObjectMap_.find(parent);
+        if(outter_map_itr != jointParamObjectMap_.end()) {
+            std::cout << "parent: " << parent << ", its children: ";
+
+            for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
+
+                std::string child = inner_map_itr->second->Child();
+                std::cout << child << ", ";
+
+
+                rbdl_object_map_itr = rbdlObjectMap.find((child));
+                if(rbdl_object_map_itr == rbdlObjectMap.end()) {
+                    ancestry_set.emplace(child);
+                }
+            }
+            std::cout << std::endl;
+        }
+
+    }
     return true;
 }
+
+
+void BuildRBDLModel::printBody() {
+    std::unordered_map<std::string, bodyParamPtr>::iterator body_map_itr;
+    for (body_map_itr = bodyParamObjectMap_.begin(); body_map_itr != bodyParamObjectMap_.end(); body_map_itr++) {
+        std::cout << body_map_itr->first << std::endl;
+    }
+//    std::cout << std::endl;
+}
+
+void BuildRBDLModel::printJoint() {
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>>::iterator outter_map_itr;
+    std::unordered_map<std::string, jointParamPtr>::iterator inner_map_itr;
+
+    for (outter_map_itr = jointParamObjectMap_.begin(); outter_map_itr != jointParamObjectMap_.end(); outter_map_itr++) {
+        std::string parent_node_name = outter_map_itr->first;
+        std::cout << ", parent_node_name: " << parent_node_name << std::endl << "child_node_name: " ;
+        for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
+            std::string joint_name = inner_map_itr->first;
+            std::cout << "joint_name: " << joint_name;
+            jointParamPtr jointparamPtr = inner_map_itr->second;
+            std::cout << jointparamPtr->Child() << ", ";
+
+        }
+        std::cout << std::endl;
+    }
+}
+
 
 void BuildRBDLModel::cleanUp() {
     std::unordered_map<std::string, bodyParamPtr>::iterator bodyParamMapIt;
@@ -283,7 +388,7 @@ void BuildRBDLModel::cleanUp() {
         }
     }
 
-    delete RBDLmodel_;
+//    delete RBDLmodel_;
 }
 
 BuildRBDLModel::~BuildRBDLModel(void){

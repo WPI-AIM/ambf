@@ -6,13 +6,17 @@ JointParam::JointParam(YAML::Node jointNode)
     Utilities utilities;
 
     YAML::Node name = jointNode["name"];
+    std::string name_main = utilities.trimTrailingSpaces(name);
+
     if(name.IsDefined()) name_ = utilities.trimTrailingSpaces(name);
 
     YAML::Node parent = jointNode["parent"];
     if(parent.IsDefined()) parent_ = utilities.trimTrailingSpaces(parent);
+    utilities.eraseSubStr(parent_, "BODY");
 
     YAML::Node child = jointNode["child"];
     if(child.IsDefined()) child_ = utilities.trimTrailingSpaces(child);
+    utilities.eraseSubStr(child_, "BODY");
 
     YAML::Node parent_pivot = jointNode["parent pivot"];
     if(parent_pivot.IsDefined()) parent_pivot_ = utilities.toXYZ(&parent_pivot);

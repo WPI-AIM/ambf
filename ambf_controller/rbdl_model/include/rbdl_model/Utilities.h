@@ -6,6 +6,7 @@
 #include <rbdl/rbdl.h>
 #include <iostream>
 #include "rbdl/rbdl_math.h"
+#include <algorithm>
 
 using namespace RigidBodyDynamics;
 using namespace Math;
@@ -20,6 +21,8 @@ public:
     Vector3d toRPY(YAML::Node* node);
 
     std::string trimTrailingSpaces(YAML::Node bodyNode);
+    void eraseSubStr(std::string & mainStr, const std::string & toErase);
+    void eraseAllSubStr(std::string & mainStr, const std::string & toErase);
 
     ~Utilities(void);
 };
