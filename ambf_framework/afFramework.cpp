@@ -2351,8 +2351,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     if(!m_lin_gains_computed || !m_ang_gains_computed){
         // Use preset values for the controller since we are going to be using its output for the
         // internal velocity controller
-        m_controller.setLinearGains(10, 0, 0);
-        m_controller.setAngularGains(10, 0, 0);
+        m_controller.setLinearGains(cVector3d(10, 10, 10), cVector3d(0, 0, 0), cVector3d(0, 0, 0));
+        m_controller.setAngularGains(cVector3d(10, 10, 10), cVector3d(0, 0, 0), cVector3d(0, 0, 0));
         m_usePIDController = false;
     }
     else{
