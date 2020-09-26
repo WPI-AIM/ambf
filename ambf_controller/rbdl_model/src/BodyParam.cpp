@@ -10,6 +10,7 @@ BodyParam::BodyParam(YAML::Node bodyNode)
 
     YAML::Node mass = bodyNode["mass"];
     if(mass.IsDefined()) mass_ = mass.as<double>();
+    if(mass_ == 0.0) mass_ = 0.0000001;
 
     YAML::Node collision_margin = bodyNode["collision margin"];
     if(collision_margin.IsDefined()) collision_margin_ = collision_margin.as<double>();

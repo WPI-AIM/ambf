@@ -55,6 +55,15 @@ JointParam::JointParam(YAML::Node jointNode)
     if(offset.IsDefined()) offset_ = jointNode["offset"].as<double>();
 }
 
+JointParam::JointParam(std::string name, std::string parent_name, std::string child, Vector3d parent_axis, Vector3d parent_pivot, std::string type) {
+    name_ = (std::string(name)).c_str();
+    parent_ = (std::string(parent_name)).c_str();
+    child_ = (std::string(child)).c_str();
+    parent_axis_ = parent_axis;
+    parent_pivot_ = parent_pivot;
+    type_ = (std::string(type)).c_str();
+}
+
 JointParam::~JointParam(void) {
 
 }

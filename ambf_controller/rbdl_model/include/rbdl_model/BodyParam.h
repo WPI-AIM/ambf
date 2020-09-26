@@ -15,7 +15,7 @@ public:
 private:
 
     std::string name_;
-    double mass_{0.0};
+    double mass_{0.00000001};
     double collision_margin_{0.0};
     double scale_{0.0};
 

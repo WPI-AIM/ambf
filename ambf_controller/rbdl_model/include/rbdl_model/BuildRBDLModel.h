@@ -18,23 +18,14 @@ using namespace RigidBodyDynamics::Math;
 //------------------------------------------------------------------------------
 typedef BodyParam* bodyParamPtr;
 typedef JointParam* jointParamPtr;
+typedef RigidBodyDynamics::Body* rbdlBodyptr;
 //------------------------------------------------------------------------------
-
-enum class BlenderJointType {
-    undefined,
-    revolute,
-    prismatic,
-    fixed,
-    continuous,
-    linear_spring,
-    torsion_spring,
-    p2p
-};
 
 class BuildRBDLModel
 {
 public:
     BuildRBDLModel(const std::string actuator_config_file);
+
 
 //    Model GetRBDLModel();
 
@@ -47,18 +38,24 @@ private:
     bool getBodies();
     bool getJoints();
     bool findRootNode();
-    bool BuildBodyTree();
-    bool BuildModel();
+    void addDummyRootJoint();
+    bool buildBodyTree();
+    bool buildModel();
 
     YAML::Node baseNode_;
     std::string actuator_config_file_;
     std::string rootRigidBody_;
+
+    const std::string root_parent_name_ = "world";
+    std::string root_joint_name_;
     Model *RBDLmodel_ = NULL;
 
     std::unordered_map<std::string, bodyParamPtr> bodyParamObjectMap_;
+
+    //                 <parent,                       <jointname, jointParamPtr>>
     std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>> jointParamObjectMap_;
-
-
+    const RigidBodyDynamics::JointType getRBDLJointType(std::string joint_type);
+    unsigned int addBodyToRBDL(std::string parent_name, unsigned int parent_id, std::string joint_name, std::string child_name);
 };
 
 #endif // PARSE_YAML_H

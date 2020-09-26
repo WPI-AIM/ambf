@@ -6,6 +6,8 @@ class JointParam
 {
 public:
     JointParam(YAML::Node jointNode);
+    JointParam(std::string name, std::string parent_name, std::string child, Vector3d parent_axis, Vector3d parent_pivot, std::string type);
+
     ~JointParam(void);
 
     inline std::string Name() { return name_; }
@@ -30,6 +32,8 @@ private:
     std::string type_;
     double damping_{0.0};
     double offset_{0.0};
+
+
 };
 
 #endif // JOINTS_H
