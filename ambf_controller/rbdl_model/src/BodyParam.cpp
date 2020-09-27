@@ -62,6 +62,10 @@ BodyParam::BodyParam(YAML::Node bodyNode)
     utilities.~Utilities();
 }
 
+void BodyParam::Inertia(Vector3d inertia) {
+    inertia_ = inertia;
+}
+
 BodyParam::~BodyParam() {
 
 }

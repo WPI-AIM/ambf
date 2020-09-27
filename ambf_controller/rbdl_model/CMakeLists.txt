@@ -11,12 +11,15 @@ project(rbdl_model)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
+    ambf_msgs
+    geometry_msgs
+    message_generation
+    tf
 )
 
 catkin_package( INCLUDE_DIRS include
   LIBRARIES rbdl_model
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -68,7 +71,7 @@ include_directories (${GLFW_INCLUDE_DIRS})
 
 target_sources(${EXECUTABLE_NAME} PRIVATE ${HDR_FILES} ${SOURCE_FILES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE include)
-target_link_libraries(${EXECUTABLE_NAME} ${YAML_CPP_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} ${RBDL_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} ${AMBF_LIBRARIES} ${YAML_CPP_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ambf_client)
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
   CXX_STANDARD 14

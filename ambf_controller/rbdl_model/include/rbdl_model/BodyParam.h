@@ -11,6 +11,7 @@ public:
     inline double Mass() { return mass_; }
     inline Vector3d InertialOffsetOrientation() { return inertial_offset_orientation_; }
     inline Vector3d Inertia() { return inertia_; }
+    void Inertia(Vector3d inertia);
 
 private:
 
@@ -35,6 +36,7 @@ private:
     Vector3d inertia_;
 
     std::string trimTrailingSpaces(YAML::Node bodyNode);
+
 };
 
 #endif // AFRIGIDBODY_H

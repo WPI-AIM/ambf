@@ -33,9 +33,9 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: Adnan Munawar $
+#  $Author: Adnan Munawar, Shreyas Chandra Sekhar$
 #  $Date:  $
-#  $Rev: $
+#  $Rev: 1.0$
 
 cmake_minimum_required(VERSION 2.8.3)
 if (POLICY CMP0048)

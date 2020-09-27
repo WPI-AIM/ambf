@@ -9,8 +9,10 @@
 #include <queue>
 #include<rbdl/rbdl.h>
 #include <rbdl/rbdl_math.h>
-
+#include<ambf_client/ambf_client.h>
+#include<sstream>
 #include <unordered_set>
+
 using namespace RigidBodyDynamics;
 using namespace Math;
 using namespace RigidBodyDynamics::Math;
@@ -26,22 +28,26 @@ class BuildRBDLModel
 public:
     BuildRBDLModel(const std::string actuator_config_file);
 
-
-//    Model GetRBDLModel();
-
     void printBody();
     void printJoint();
     void cleanUp();
 
     ~BuildRBDLModel(void);
+    Model inline getRBDLModel() { return *RBDLmodel_; }
+    std::unordered_map<std::string, unsigned int> inline getRBDLBodyToIDMap() { return rbdlObjectMap_; }
+
 private:
+    void getNamespace();
     bool getBodies();
+    void updateInertiaFromAMBFClient();
     bool getJoints();
     bool findRootNode();
     void addDummyRootJoint();
+
     bool buildBodyTree();
     bool buildModel();
 
+    std::string blender_namespace_;
     YAML::Node baseNode_;
     std::string actuator_config_file_;
     std::string rootRigidBody_;
@@ -54,6 +60,11 @@ private:
 
     //                 <parent,                       <jointname, jointParamPtr>>
     std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>> jointParamObjectMap_;
+
+    std::unordered_map<std::string, unsigned int> rbdlObjectMap_;
+    std::unordered_map<std::string, unsigned int> ::iterator rbdl_object_map_itr_;
+
+
     const RigidBodyDynamics::JointType getRBDLJointType(std::string joint_type);
     unsigned int addBodyToRBDL(std::string parent_name, unsigned int parent_id, std::string joint_name, std::string child_name);
 };

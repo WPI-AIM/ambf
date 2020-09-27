@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
 
     BuildRBDLModel buildRBDLModel(actuator_config_file);
 //    buildRBDLModel.printBody();
+
 //    buildRBDLModel.printJoint();
     buildRBDLModel.cleanUp();
 //    py.getBodies();

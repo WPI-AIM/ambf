@@ -14,14 +14,24 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
         return;
     }
     if (baseNode_.IsNull()) return;
+
+    this->getNamespace();
     if(!this->getBodies()) return;
-    if(!this->getJoints()) return;
-    if(!this->findRootNode()) return;
-    this->addDummyRootJoint();
-    this->buildModel();
+    this->updateInertiaFromAMBFClient();
+//    if(!this->getJoints()) return;
+//    if(!this->findRootNode()) return;
+//    this->addDummyRootJoint();
+//    this->buildModel();
 }
 
+void BuildRBDLModel::getNamespace() {
+    Utilities utilities;
 
+    YAML::Node blender_namespace = baseNode_["namespace"];
+    if(blender_namespace.IsDefined())  blender_namespace_ = utilities.trimTrailingSpaces(blender_namespace);
+
+//    std::cout << blender_namespace_ << std::endl;
+}
 
 
 bool BuildRBDLModel::getBodies()
@@ -42,7 +52,74 @@ bool BuildRBDLModel::getBodies()
     return true;
 }
 
+void BuildRBDLModel::updateInertiaFromAMBFClient() {
+//    std::cout << blender_namespace_ << std::endl;
 
+    // This is not a right way of defining model name. just doing this a hack for now.
+    std::istringstream ss(blender_namespace_);
+    std::string model_name;
+
+        for(int i = 0; i < 4; i++)
+        {
+           std::getline(ss, model_name, '/');
+
+        }
+    std::cout << model_name << std::endl;
+
+    Client client;
+    client.connect();
+
+//    client.printSummary();
+    vector<string> object_names = client.getRigidBodyNames();
+    for(std::string object_name : object_names) {
+        std::cout << object_name << ", ";
+    }
+    std::cout << std::endl;
+
+    std::unordered_map<std::string, bodyParamPtr>::iterator body_map_itr;
+    for (body_map_itr = bodyParamObjectMap_.begin(); body_map_itr != bodyParamObjectMap_.end(); body_map_itr++) {
+        std::string rigidbody_name = body_map_itr->first;
+        std::string rigidbody_name_ambf = model_name + "/" + rigidbody_name;
+        std::cout << rigidbody_name_ambf << std::endl;
+
+        if (std::find(object_names.begin(), object_names.end(), rigidbody_name_ambf) != object_names.end()) {
+            std::cout << "Element found" << std::endl;;
+            rigidBodyPtr handler = client.getARigidBody(rigidbody_name_ambf, true);
+            usleep(2000);
+            tf::Vector3 inertia_tf = handler->get_inertia();
+//            std::cout << inertia_tf[0] << inertia[1] << inertia[2] << std::endl;
+            Vector3d inertia(inertia_tf[0], inertia_tf[1], inertia_tf[2]);
+            bodyParamObjectMap_[rigidbody_name]->Inertia(inertia);
+        } else {
+            std::cout << "Element not found" << std::endl;
+        }
+    }
+
+
+
+
+
+//    object_names = client.getRigidBodyNames();
+
+//    usleep(20000);
+
+
+//    string psm_baselink = "psm/baselink";
+//    rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+
+//    usleep(1000000);
+//    tf::Vector3 base_inertia = psm_baselink_handler->get_inertia();
+
+//    std::cout << base_inertia[0] << std::endl;
+////    cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
+////    std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
+
+
+////    for(string name : base_children) {
+////        cout << "name: " << name << "\n";
+////    }
+    client.cleanUp();
+}
 
 bool BuildRBDLModel::getJoints()
 {
@@ -117,35 +194,12 @@ void BuildRBDLModel::addDummyRootJoint() {
     // Create RBDL ID for root
     Vector3d parent_axis(0., 0., 0.);
     Vector3d parent_pivot(0., 0., 0.);
-//    std::string root_parent_name_ = "world";
 
     root_joint_name_ = root_parent_name_ + "-" + rootRigidBody_;
-
-//    JointParam base_joint(joint_name, parent_name, rootRigidBody_, parent_axis, parent_pivot, joint_type);
-
-//    jointParamObjectMap_.insert(std::make_pair(parent_name, std::unordered_map<std::string, jointParamPtr>()));
-//    jointParamObjectMap_[parent_name].insert(std::make_pair(joint_name, new JointParam((joint_name, parent_name,
-//                                                                                        rootRigidBody_, parent_axis, parent_pivot, joint_type))));
 
 
     jointParamObjectMap_[root_parent_name_].insert(std::make_pair(root_joint_name_, new JointParam(root_joint_name_, root_parent_name_, rootRigidBody_, parent_axis, parent_pivot, joint_type)));
 
-//    new JointParam(joint_name, parent_name, rootRigidBody_, parent_axis, parent_pivot, parent_name);
-
-//    std::string name_;
-//    std::string parent_;
-//    std::string child_;
-//    Vector3d parent_axis_;
-//    Vector3d parent_pivot_;
-//    Vector3d child_axis_;
-//    Vector3d child_pivot_;
-//    double joint_limits_high_{0.0};
-//    double joint_limits_low_{0.0};
-//    bool passive_{false};
-//    bool detached_{false};
-//    std::string type_;
-//    double damping_{0.0};
-//    double offset_{0.0};
 }
 
 bool BuildRBDLModel::buildModel() {
@@ -165,8 +219,7 @@ bool BuildRBDLModel::buildModel() {
     std::unordered_set<std::string> ancestry_set;
     std::unordered_set<std::string>::iterator ancestry_set_itr;
 
-    std::unordered_map<std::string, unsigned int> rbdlObjectMap;
-    std::unordered_map<std::string, unsigned int> ::iterator rbdl_object_map_itr;
+
 
 //    // Create RBDL body for root joint
 //    double mass = (bodyParamObjectMap_[rootRigidBody_])->Mass();
@@ -185,7 +238,7 @@ bool BuildRBDLModel::buildModel() {
 
     unsigned int root_id = addBodyToRBDL(root_parent_name_, 0, root_joint_name_, rootRigidBody_);
 
-    rbdlObjectMap.insert(std::make_pair(rootRigidBody_, root_id));
+    rbdlObjectMap_.insert(std::make_pair(rootRigidBody_, root_id));
 
     ancestry_set.emplace(rootRigidBody_);
     while(!ancestry_set.empty()) {
@@ -195,7 +248,7 @@ bool BuildRBDLModel::buildModel() {
 
         outter_map_itr = jointParamObjectMap_.find(parent_name);
         if(outter_map_itr != jointParamObjectMap_.end()) {
-            unsigned int parent_id = rbdlObjectMap[parent_name];
+            unsigned int parent_id = rbdlObjectMap_[parent_name];
             std::cout << "parent_name: " << parent_name << ", parent_id: " << parent_id << ", its children: ";
             for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
 
@@ -226,10 +279,10 @@ bool BuildRBDLModel::buildModel() {
                 unsigned int child_id = addBodyToRBDL(parent_name, parent_id, joint_name, child_name);
 
 
-                rbdl_object_map_itr = rbdlObjectMap.find((child_name));
-                if(rbdl_object_map_itr == rbdlObjectMap.end()) {
+                rbdl_object_map_itr_ = rbdlObjectMap_.find((child_name));
+                if(rbdl_object_map_itr_ == rbdlObjectMap_.end()) {
                     ancestry_set.emplace(child_name);
-                    rbdlObjectMap.insert(std::make_pair(child_name, child_id));
+                    rbdlObjectMap_.insert(std::make_pair(child_name, child_id));
                 }
             }
             std::cout << std::endl;
@@ -238,8 +291,8 @@ bool BuildRBDLModel::buildModel() {
     }
 
     std::cout << "rbdlObjectMap: " << std::endl;
-    for(rbdl_object_map_itr = rbdlObjectMap.begin(); rbdl_object_map_itr != rbdlObjectMap.end(); rbdl_object_map_itr++) {
-        std::cout << rbdl_object_map_itr->first << ": " <<rbdl_object_map_itr->second << std::endl;
+    for(rbdl_object_map_itr_ = rbdlObjectMap_.begin(); rbdl_object_map_itr_ != rbdlObjectMap_.end(); rbdl_object_map_itr_++) {
+        std::cout << rbdl_object_map_itr_->first << ": " <<rbdl_object_map_itr_->second << std::endl;
 
     }
     return true;
