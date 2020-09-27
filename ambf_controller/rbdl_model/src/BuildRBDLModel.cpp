@@ -18,10 +18,10 @@ BuildRBDLModel::BuildRBDLModel(std::string actuator_config_file) {
     this->getNamespace();
     if(!this->getBodies()) return;
     this->updateInertiaFromAMBFClient();
-//    if(!this->getJoints()) return;
-//    if(!this->findRootNode()) return;
-//    this->addDummyRootJoint();
-//    this->buildModel();
+    if(!this->getJoints()) return;
+    if(!this->findRootNode()) return;
+    this->addDummyRootJoint();
+    this->buildModel();
 }
 
 void BuildRBDLModel::getNamespace() {
