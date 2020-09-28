@@ -1,8 +1,8 @@
-//===========================================================================
+//==============================================================================
 /*
     Software License Agreement (BSD License)
-    Copyright (c) 2019, AMBF
-    (www.aimlab.wpi.edu)
+    Copyright (c) 2020, AMBF
+    (https://github.com/WPI-AIM/ambf)
 
     All rights reserved.
 
@@ -35,13 +35,12 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author:    <http://www.aimlab.wpi.edu>
-    \author:    <amunawar@wpi.edu>
-    \author:    Adnan Munawar
+    \author    <amunawar@wpi.edu>
+    \author    Adnan Munawar
     \courtesy:  Starting point CHAI3D-BULLET examples by Francois Conti from <www.chai3d.org>
-    \version:   $
+    \version   1.0$
 */
-//===========================================================================
+//==============================================================================
 
 //---------------------------------------------------------------------------
 #include "chai3d.h"
@@ -138,6 +137,10 @@ bool g_window_closed = false;
 
 // Flag to toggle between inverted/non_inverted mouse pitch with mouse
 bool g_mouse_inverted_y = false;
+
+// Ratio between Window Height and Width to Frame Buffer Height and Width
+double g_winWidthRatio = 1.0;
+double g_winHeightRatio = 1.0;
 
 // a frequency counter to measure the simulation graphic rate
 cFrequencyCounter g_freqCounterGraphics;
@@ -403,6 +406,7 @@ int main(int argc, char* argv[])
         // The world loads the lights and cameras + windows
         std::string world_filename = g_afWorld->getWorldConfig();
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+
         g_cameras = g_afWorld->getAFCameras();
 
         // Process the loadMultiBodyFiles string
@@ -437,7 +441,7 @@ int main(int argc, char* argv[])
             for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
                 g_afWorld->loadADF(mbIndexes[idx], true);
             }
-        }       
+        }
 
         g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
     }
@@ -588,6 +592,22 @@ int main(int argc, char* argv[])
     }
 
     RateSleep graphicsSleep(120);
+
+    // Compute the window width and height ratio
+    if (g_cmdOpts.showGUI){
+        int winH, winW;
+        glfwGetWindowSize(g_cameras[0]->m_window, &winW, &winH);
+
+        int buffH, buffW;
+        glfwGetFramebufferSize(g_cameras[0]->m_window, &buffW, &buffH);
+
+        g_winWidthRatio = double(buffW) / double(winW);
+        g_winHeightRatio = double(buffH) / double(winH);
+
+        // Load the skybox if defined.
+        g_afWorld->loadSkyBox();
+
+    }
 
     // main graphic loop
     while (!g_window_closed)
@@ -748,7 +768,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - If CTRL X is pressed, reset the simulation
         else if (a_key == GLFW_KEY_X){
             g_afWorld->pausePhysics(true);
-            if (g_afWorld->m_lastPickedBody){
+            if (g_afWorld->m_lastPickedBody != nullptr){
                 printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_lastPickedBody->m_name.c_str());
                 g_afWorld->m_lastPickedBody->remove();
             }
@@ -789,6 +809,16 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                         rbVec[i]->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
                     }
                 }
+            }
+        }
+
+        // option - Toogle visibility of body frames and softbody skeleton
+        else if (a_key == GLFW_KEY_V){
+            printf("Toggling Frame Visibility ON/OFF\n");
+            if (g_afWorld->m_lastPickedBody != nullptr){
+                g_afWorld->m_lastPickedBody->toggleFrameVisibility();
+            }
+            else{
             }
         }
     }
@@ -1101,7 +1131,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             {
                 speed_scale = 0.1;
             }
-            afCamera* devCam = (*g_cameraIt);
+            afCameraPtr devCam = (*g_cameraIt);
             (*g_cameraIt)->mouse_x[1] = (*g_cameraIt)->mouse_x[0];
             (*g_cameraIt)->mouse_x[0] = a_xpos;
             (*g_cameraIt)->mouse_y[1] = (*g_cameraIt)->mouse_y[0];
@@ -1216,7 +1246,12 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             if(dPos.length() < 0.5){
                 _targetPos = _targetPos + cameraPtr->getLocalRot() * camVelAlongLook;
             }
-            cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+            if (cameraPtr->isOrthographic()){
+                cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
+            }
+            else{
+                cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+            }
             cameraPtr->setTargetPos(_targetPos);
         }
     }
@@ -1283,8 +1318,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 dVert = vertical * 1.f / height;
 
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += btScalar(x) * dHor;
-    rayTo -= btScalar(y) * dVert;
+    rayTo += btScalar(g_winWidthRatio*x) * dHor;
+    rayTo -= btScalar(g_winHeightRatio*y) * dVert;
     cVector3d cRay = toCvec(rayTo);
     return cRay;
 }
@@ -1361,11 +1396,26 @@ void updateGraphics()
         glfwMakeContextCurrent(cameraPtr->m_window);
 
         // get width and height of window
-        glfwGetWindowSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
+//        glfwGetFraSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
+        glfwGetFramebufferSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
 
         // Update the Labels in a separate sub-routine
         if (g_updateLabels)
             updateLabels();
+
+        if (g_afWorld->m_skyBox_shaderProgramDefined && g_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+
+            g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+        }
 
         // render world
         cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
