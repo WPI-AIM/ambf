@@ -23,4 +23,4 @@ include_directories(
 # ${catkin_INCLUDE_DIRS}
 )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rbdl)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rbdl-orb)
