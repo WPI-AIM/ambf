@@ -3,14 +3,14 @@
 #include <yaml-cpp/yaml.h>
 #include <iostream>
 #include <unordered_map>
-#include "rbdl_model/BodyParam.h"
-#include "rbdl_model/JointParam.h"
-#include "rbdl_model/Utilities.h"
+#include "rbdl_server/BodyParam.h"
+#include "rbdl_server/JointParam.h"
+#include "rbdl_server/Utilities.h"
 #include <queue>
-#include<rbdl/rbdl.h>
+#include <rbdl/rbdl.h>
 #include <rbdl/rbdl_math.h>
-#include<ambf_client/ambf_client.h>
-#include<sstream>
+#include <ambf_client/ambf_client.h>
+#include <sstream>
 #include <unordered_set>
 
 using namespace RigidBodyDynamics;

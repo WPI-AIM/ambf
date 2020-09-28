@@ -1,4 +1,4 @@
-#include "rbdl_model/JointParam.h"
+#include "rbdl_server/JointParam.h"
 
 JointParam::JointParam(YAML::Node jointNode)
 {

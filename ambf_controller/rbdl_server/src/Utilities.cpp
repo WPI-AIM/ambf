@@ -1,4 +1,4 @@
-#include "rbdl_model/Utilities.h"
+#include "rbdl_server/Utilities.h"
 
 Utilities::Utilities()
 {

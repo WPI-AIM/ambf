@@ -1,4 +1,4 @@
-#include "rbdl_model/BodyParam.h"
+#include "rbdl_server/BodyParam.h"
 
 BodyParam::BodyParam(YAML::Node bodyNode)
 {

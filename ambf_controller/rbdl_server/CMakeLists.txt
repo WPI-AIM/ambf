@@ -12,6 +12,9 @@ LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} )
 
 FIND_PACKAGE (RBDL REQUIRED)
 FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
+FIND_PACKAGE (yaml-cpp REQUIRED)
+#FIND_PACKAGE (RBDL REQUIRED)
+#find_package(RBDL REQUIRED PATHS "/home/shreyas/rbdl/examples/simple/")
 
 find_package(catkin REQUIRED COMPONENTS
 roscpp
@@ -53,18 +56,29 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories( include ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+include_directories( include ${YAML_CPP_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
 
 
 
 set(RBDL_HRD_FILES
   include/${PROJECT_NAME}/RBDLServer.h
+  include/${PROJECT_NAME}/Utilities.h
+  include/${PROJECT_NAME}/BodyParam.h
+  include/${PROJECT_NAME}/JointParam.h
+  include/${PROJECT_NAME}/BuildRBDLModel.h
 )
 
 set(RBDL_SRC_FILES
   src/RBDLServer.cpp
+  src/Utilities.cpp
+  src/BodyParam.cpp
+  src/JointParam.cpp
+  src/BuildRBDLModel.cpp
 )
 
+find_package (GLFW REQUIRED)
+find_package (Boost COMPONENTS program_options filesystem REQUIRED)
+include_directories (${GLFW_INCLUDE_DIRS})
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} ${RBDL_SRC_FILES} ${RBDL_HRD_FILES}
@@ -77,7 +91,7 @@ add_dependencies(${PROJECT_NAME}  ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}  ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${YAML_CPP_LIBRARIES}  ${AMBF_LIBRARIES} ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ${Boost_LIBRARIES} ${catkin_LIBRARIES} ambf_client)
 
 set (RBDL_SERVER_INCLUDE_DIRS include)
 set (RBDL_SERVER_LIBRARIES rbdl_server)
