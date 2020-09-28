@@ -29,34 +29,12 @@ RBDLServer::~RBDLServer()
 bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server::RBDLModelResponse& res) //parses the AMBF model into  rbdl model
 {
 
-    
+    std::string actuator_config_file;
+    BuildRBDLModel  buildRBDLModel(actuator_config_file);
+    body_ids = buildRBDLModel.getRBDLBodyToIDMap();
+    *model = buildRBDLModel.getRBDLModel();
+    buildRBDLModel.cleanUp();
 
-    model->gravity = Vector3d (0., -9.81, 0.);
-
-	Body body_a = Body (1., Vector3d (0.5, 0., 0.0), Vector3d (1., 1., 1.));
-		Joint joint_a = Joint( JointTypeRevolute, Vector3d (0., 0., 1.)
-	);
-	
-	int body_a_id = model->AddBody(0, Xtrans(Vector3d(0., 0., 0.)), joint_a, body_a);
-	
-	Body body_b = Body (1., Vector3d (0., 0.5, 0.), Vector3d (1., 1., 1.));
-		Joint joint_b = Joint ( JointTypeRevolute, Vector3d (0., 0., 1.)
-	);
-	
-    int body_b_id = model->AddBody(body_a_id, Xtrans(Vector3d(1., 0., 0.)), joint_b, body_b);
-	
-	Body body_c = Body (0., Vector3d (0.5, 0., 0.), Vector3d (1., 1., 1.));
-		Joint joint_c = Joint ( JointTypeRevolute, Vector3d (0., 0., 1.)
-	);
-	
-	int body_c_id = model->AddBody(body_b_id, Xtrans(Vector3d(0., 1., 0.)), joint_c, body_c);
-
-    body_ids["bodyA"] = body_a_id;
-    body_ids["bodyB"] = body_b_id;
-    body_ids["bodyC"] = body_c_id;
-
-    
-    have_model = true;
 
     return true;
 }

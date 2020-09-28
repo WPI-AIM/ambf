@@ -51,6 +51,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <rbdl/rbdl.h>
 #include <eigen_conversions/eigen_msg.h>
+#include "rbdl_server/BuildRBDLModel.h"
 
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
@@ -61,7 +62,7 @@ class RBDLServer
                 ros::NodeHandle nh_;
                 RigidBodyDynamics::Model *model = NULL;
                 bool have_model;
-                std::map<std::string, int> body_ids; //body ids
+                std::unordered_map<std::string, unsigned int> body_ids; //body ids
                 ros::ServiceServer FD_srv, ID_srv, MD_srv, Jac_srv, Kin_srv;
                 VectorNd VectToEigen(const std::vector<double>&);
                 bool CreateModel_srv(rbdl_server::RBDLModelRequest&, rbdl_server::RBDLModelResponse& ); //parses the AMBF model into  rbdl model
