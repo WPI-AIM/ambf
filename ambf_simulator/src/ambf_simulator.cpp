@@ -750,7 +750,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                 afPhysicalDevice* pDev = ccu_vec[ccuIdx]->m_physicalDevicePtr;
                 afSimulatedDevice* sDev = ccu_vec[ccuIdx]->m_simulatedDevicePtr;
                 pDev->setPosClutched(pDev->getPos());
-                pDev->m_rotClutched = pDev->m_rot;
+                pDev->setRotClutched(pDev->getRot());
                 sDev->setPosRef(sDev->m_rootLink->getInitialPosition());
                 sDev->setRotRef(sDev->m_rootLink->getInitialRotation());
                 sDev->setPosRefOrigin(sDev->m_rootLink->getInitialPosition() / pDev->m_workspaceScale);
@@ -1884,7 +1884,7 @@ void updateHapticDevice(void* a_arg){
                         cTranspose(devCams[0]->getLocalRot()));
             }
             else{
-                simDev->setRotRef(phyDev->m_simRotInitial * phyDev->getRot() * phyDev->m_simRotOffset);
+                simDev->setRotRef(phyDev->getSimRotInitial() * phyDev->getSimRotOffsetInverse() * phyDev->getRot() * phyDev->getSimRotOffset());
             }
 
             if (phyDev->m_showMarker){

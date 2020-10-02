@@ -516,6 +516,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         m_simRotOffset.identity();
     }
 
+    m_simRotOffset.transr(m_simRotOffsetInverse);
+
     if (pDButtonMapping.IsDefined()){
         if (pDButtonMapping["a1"].IsDefined()){
             m_buttons.A1 = pDButtonMapping["a1"].as<int>();
@@ -737,6 +739,33 @@ void afPhysicalDevice::setRotPreClutch(cMatrix3d a_rot){
 void afPhysicalDevice::setRotCamPreClutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotCamPreClutch = a_rot;
+}
+
+
+///
+/// \brief afPhysicalDevice::getSimRotInitial
+/// \return
+///
+cMatrix3d afPhysicalDevice::getSimRotInitial(){
+    return m_simRotInitial;
+}
+
+
+///
+/// \brief afPhysicalDevice::getSimRotOffset
+/// \return
+///
+cMatrix3d afPhysicalDevice::getSimRotOffset(){
+    return m_simRotOffset;
+}
+
+
+///
+/// \brief afPhysicalDevice::getSimRotOffsetInverse
+/// \return
+///
+cMatrix3d afPhysicalDevice::getSimRotOffsetInverse(){
+    return m_simRotOffsetInverse;
 }
 
 ///

@@ -223,6 +223,12 @@ public:
 
     void setRotCamPreClutch(cMatrix3d a_rot);
 
+    cMatrix3d getSimRotInitial();
+
+    cMatrix3d getSimRotOffset();
+
+    cMatrix3d getSimRotOffsetInverse();
+
     cVector3d getLinVel();
 
     cVector3d getAngVel();
@@ -280,6 +286,9 @@ public:
     // A transform between simulated and pyhsical devices' frame
     // to store any intended offset
     cMatrix3d m_simRotOffset;
+
+    // Inverse of the simRotOffset
+    cMatrix3d m_simRotOffsetInverse;
 
     // Flag to enable disable showing of reference marker
     bool m_showMarker;
