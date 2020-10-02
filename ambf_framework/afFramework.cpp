@@ -6811,23 +6811,6 @@ bool afCamera::resolveParenting(std::string a_parent_name){
 
 
 ///
-/// \brief afCamera::measuredPos
-/// \return
-///
-cVector3d afCamera::measuredPos(){
-    return getLocalPos();
-}
-
-///
-/// \brief afCamera::measuredRot
-/// \return
-///
-cMatrix3d afCamera::measuredRot(){
-    return getLocalRot();
-}
-
-
-///
 /// \brief afCamera::afObjectCommandExecute
 /// \param dt
 ///

@@ -89,6 +89,26 @@ void afSharedDataStructure::setRotRef(cMatrix3d a_rot){
 
 
 ///
+/// \brief afSharedDataStructure::setPosRefOrigin
+/// \param a_pos
+///
+void afSharedDataStructure::setPosRefOrigin(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posRefOrigin = a_pos;
+}
+
+
+///
+/// \brief afSharedDataStructure::setRotRefOrigin
+/// \param a_rot
+///
+void afSharedDataStructure::setRotRefOrigin(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotRefOrigin = a_rot;
+}
+
+
+///
 /// \brief afSharedDataStructure::getPosRef
 /// \return
 ///
@@ -105,6 +125,33 @@ cMatrix3d afSharedDataStructure::getRotRef(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotRef;
 }
+
+
+
+///
+/// \brief afSharedDataStructure::getPosRef
+/// \return
+///
+cVector3d afSharedDataStructure::getPosRefOrigin(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posRefOrigin;
+}
+
+///
+/// \brief afSharedDataStructure::getRotRef
+/// \return
+///
+cMatrix3d afSharedDataStructure::getRotRefOrigin(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotRefOrigin;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////   PHYSICAL DEVICE   ////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 ///
 /// \brief afPhysicalDevice::~afPhysicalDevice
@@ -455,9 +502,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
 
     simDevice->setPosRef(position/ m_workspaceScale);
-    simDevice->m_posRefOrigin = position / m_workspaceScale;
+    simDevice->setPosRefOrigin(position / m_workspaceScale);
     simDevice->setRotRef(rotation);
-    simDevice->m_rotRefOrigin = rotation;
+    simDevice->setRotRefOrigin(rotation);
     m_gripper_pinch_btn = 0;
 
     if (pDOrientationOffset.IsDefined()){
@@ -550,96 +597,144 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     m_afWorld = a_afWorld;
 }
 
+
 ///
 /// \brief afPhysicalDevice::measuredPos
 /// \return
 ///
-cVector3d afPhysicalDevice::measuredPos(){
+cVector3d afPhysicalDevice::getPos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getPosition(m_pos);
-    updateCursorPose();
     return m_pos;
 }
 
+
 ///
-/// \brief afPhysicalDevice::measuredPosPreclutch
+/// \brief afPhysicalDevice::getPosClutched
 /// \return
 ///
-cVector3d afPhysicalDevice::measuredPosPreclutch(){
+cVector3d afPhysicalDevice::getPosClutched(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posClutched;
+}
+
+
+///
+/// \brief afPhysicalDevice::getPosPreClutch
+/// \return
+///
+cVector3d afPhysicalDevice::getPosPreClutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_posPreClutch;
 }
 
-///
-/// \brief afPhysicalDevice::setPosPreclutch
-/// \param a_pos
-///
-void afPhysicalDevice::setPosPreclutch(cVector3d a_pos){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_posPreClutch = a_pos;
-}
 
 ///
-/// \brief afPhysicalDevice::measuredRot
+/// \brief afPhysicalDevice::getPosCamPreClutch
 /// \return
 ///
-cMatrix3d afPhysicalDevice::measuredRot(){
+cVector3d afPhysicalDevice::getPosCamPreClutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_posCamPreClutch;
+}
+
+
+///
+/// \brief afPhysicalDevice::getRot
+/// \return
+///
+cMatrix3d afPhysicalDevice::getRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getRotation(m_rot);
     return m_rot;
 }
 
+
 ///
-/// \brief afPhysicalDevice::measuredRotPreclutch
+/// \brief afPhysicalDevice::getRotClutched
 /// \return
 ///
-cMatrix3d afPhysicalDevice::measuredRotPreclutch(){
+cMatrix3d afPhysicalDevice::getRotClutched(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotClutched;
+}
+
+
+///
+/// \brief afPhysicalDevice::getRotPreClutch
+/// \return
+///
+cMatrix3d afPhysicalDevice::getRotPreClutch(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rotPreClutch;
 }
 
+
 ///
-/// \brief afPhysicalDevice::setRotPreclutch
+/// \brief afPhysicalDevice::measuredRotCamPreclutch
+/// \return
+///
+cMatrix3d afPhysicalDevice::getRotCamPreClutch(){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_rotCamPreClutch;
+}
+
+
+///
+/// \brief afPhysicalDevice::setPosClutched
+/// \param a_pos
+///
+void afPhysicalDevice::setPosClutched(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posClutched = a_pos;
+}
+
+
+///
+/// \brief afPhysicalDevice::setPosPreClutch
+/// \param a_pos
+///
+void afPhysicalDevice::setPosPreClutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posPreClutch = a_pos;
+}
+
+
+///
+/// \brief afPhysicalDevice::setPosCamPreClutch
+/// \param a_pos
+///
+void afPhysicalDevice::setPosCamPreClutch(cVector3d a_pos){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_posCamPreClutch = a_pos;
+}
+
+
+///
+/// \brief afPhysicalDevice::setRotClutched
 /// \param a_rot
 ///
-void afPhysicalDevice::setRotPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRotClutched(cMatrix3d a_rot){
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_rotClutched = a_rot;
+}
+
+
+///
+/// \brief afPhysicalDevice::setRotPreClutch
+/// \param a_rot
+///
+void afPhysicalDevice::setRotPreClutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotPreClutch = a_rot;
 }
 
 
 ///
-/// \brief afPhysicalDevice::measuredPosCamPreclutch
-/// \return
-///
-cVector3d afPhysicalDevice::measuredPosCamPreclutch(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_posCamPreClutch;
-}
-
-///
-/// \brief afPhysicalDevice::setPosCamPreclutch
-/// \param a_pos
-///
-void afPhysicalDevice::setPosCamPreclutch(cVector3d a_pos){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_posCamPreClutch = a_pos;
-}
-
-///
-/// \brief afPhysicalDevice::measuredRotCamPreclutch
-/// \return
-///
-cMatrix3d afPhysicalDevice::measuredRotCamPreclutch(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_rotCamPreClutch;
-}
-
-///
 /// \brief afPhysicalDevice::setRotCamPreclutch
 /// \param a_rot
 ///
-void afPhysicalDevice::setRotCamPreclutch(cMatrix3d a_rot){
+void afPhysicalDevice::setRotCamPreClutch(cMatrix3d a_rot){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_rotCamPreClutch = a_rot;
 }
@@ -658,31 +753,34 @@ void afPhysicalDevice::updateCursorPose(){
     }
 }
 
+
 ///
-/// \brief afPhysicalDevice::measuredVelLin
+/// \brief afPhysicalDevice::getLinVel
 /// \return
 ///
-cVector3d afPhysicalDevice::measuredVelLin(){
+cVector3d afPhysicalDevice::getLinVel(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getLinearVelocity(m_vel);
     return m_vel;
 }
 
+
 ///
-/// \brief afPhysicalDevice::mearuredVelAng
+/// \brief afPhysicalDevice::getAngVel
 /// \return
 ///
-cVector3d afPhysicalDevice::mearuredVelAng(){
+cVector3d afPhysicalDevice::getAngVel(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_hDevice->getAngularVelocity(m_avel);
     return m_avel;
 }
 
+
 ///
 /// \brief afPhysicalDevice::measuredGripperAngle
 /// \return
 ///
-double afPhysicalDevice::measuredGripperAngle(){
+double afPhysicalDevice::getGripperAngle(){
     std::lock_guard<std::mutex> lock(m_mutex);
     double angle;
     m_hDevice->getGripperAngleRad(angle);
@@ -756,6 +854,11 @@ void afPhysicalDevice::applyWrench(cVector3d force, cVector3d torque){
     m_hDevice->setForceAndTorqueAndGripperForce(force, torque, 0.0);
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////   SIMULATED DEVICE   ///////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ///
 /// \brief afSimulatedDevice::afSimulatedDevice
 /// \param a_afWorld
@@ -766,11 +869,12 @@ afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afMultiBody (a_afWor
     P_ac_ramp = 0;
 }
 
+
 ///
 /// \brief afSimulatedDevice::measuredPos
 /// \return
 ///
-cVector3d afSimulatedDevice::measuredPos(){
+cVector3d afSimulatedDevice::getPos(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalPos();
 }
@@ -779,7 +883,7 @@ cVector3d afSimulatedDevice::measuredPos(){
 /// \brief afSimulatedDevice::measuredRot
 /// \return
 ///
-cMatrix3d afSimulatedDevice::measuredRot(){
+cMatrix3d afSimulatedDevice::getRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalRot();
 }
@@ -787,7 +891,7 @@ cMatrix3d afSimulatedDevice::measuredRot(){
 ///
 /// \brief afSimulatedDevice::updateMeasuredPose
 ///
-void afSimulatedDevice::updateMeasuredPose(){
+void afSimulatedDevice::updatePose(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pos  = m_rootLink->getLocalPos();
     m_rot = m_rootLink->getLocalRot();

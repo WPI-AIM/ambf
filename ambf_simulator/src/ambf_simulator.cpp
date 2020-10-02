@@ -749,12 +749,12 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             for (int ccuIdx = 0 ; ccuIdx < ccu_vec.size() ; ccuIdx++){
                 afPhysicalDevice* pDev = ccu_vec[ccuIdx]->m_physicalDevicePtr;
                 afSimulatedDevice* sDev = ccu_vec[ccuIdx]->m_simulatedDevicePtr;
-                pDev->m_posClutched = pDev->m_pos;
+                pDev->setPosClutched(pDev->getPos());
                 pDev->m_rotClutched = pDev->m_rot;
                 sDev->setPosRef(sDev->m_rootLink->getInitialPosition());
                 sDev->setRotRef(sDev->m_rootLink->getInitialRotation());
-                sDev->m_posRefOrigin = sDev->m_rootLink->getInitialPosition() / pDev->m_workspaceScale;
-                sDev->m_rotRefOrigin = sDev->m_rootLink->getInitialRotation();
+                sDev->setPosRefOrigin(sDev->m_rootLink->getInitialPosition() / pDev->m_workspaceScale);
+                sDev->setRotRefOrigin(sDev->m_rootLink->getInitialRotation());
             }
         }
 
@@ -1554,7 +1554,7 @@ void updatePhysics(){
                 afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
                 afPhysicalDevice * phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
                 afRigidBodyPtr rootLink = simDev->m_rootLink;
-                simDev->updateMeasuredPose();
+                simDev->updatePose();
 
                 if (g_enableGrippingAssist){
                     for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
@@ -1660,12 +1660,12 @@ void updatePhysics(){
                 cVector3d pCommand, rCommand;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / step_size;
-                pCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_pos, simDev->getPosRef(), step_size, 1);
+                pCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
                 pCommand = simDev->P_lc_ramp * pCommand;
 
-                rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->m_rot, simDev->getRotRef(), step_size, 1);
-//                simDev->applyForce(force);
-//                simDev->applyTorque(torque);
+                rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+//                simDev->applyForce(pCommand);
+//                simDev->applyTorque(rCommand);
 
                 simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
                 simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(afUtils::convertDataType<btVector3, cVector3d>(rCommand));
@@ -1721,10 +1721,10 @@ void updateHapticDevice(void* a_arg){
         devCams = g_cameras;
     }
 
-    phyDev->m_posClutched.set(0.0,0.0,0.0);
-    phyDev->measuredRot();
-    phyDev->m_rotClutched.identity();
-    simDev->m_rotRefOrigin = phyDev->m_rot;
+    phyDev->setPosClutched(cVector3d(0.0,0.0,0.0));
+    phyDev->getRot();
+    phyDev->setRotClutched(cMatrix3d(0, 0, 0));
+    simDev->setRotRefOrigin(phyDev->getRot());
 
     cVector3d dpos, ddpos, dposLast;
     cMatrix3d drot, ddrot, drotLast;
@@ -1767,8 +1767,6 @@ void updateHapticDevice(void* a_arg){
             else{
                 dt = g_afWorld->computeStepSize();
             }
-            phyDev->m_pos = phyDev->measuredPos();
-            phyDev->m_rot = phyDev->measuredRot();
 
             if(phyDev->m_gripper_pinch_btn >= 0){
                 if(phyDev->isButtonPressed(phyDev->m_gripper_pinch_btn)){
@@ -1776,7 +1774,7 @@ void updateHapticDevice(void* a_arg){
                 }
             }
             if (phyDev->m_hInfo.m_sensedGripper){
-                simDev->m_gripper_angle = phyDev->measuredGripperAngle();
+                simDev->m_gripper_angle = phyDev->getGripperAngle();
             }
             else if (phyDev->m_buttons.G1 > 0){
                 // Some devices may have a gripper button instead of a continous gripper.
@@ -1838,29 +1836,29 @@ void updateHapticDevice(void* a_arg){
             if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
                 double scale = 0.01;
                 for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
-                    devCams[dcIdx]->setLocalPos(devCams[dcIdx]->measuredPos() + cMul(scale, devCams[dcIdx]->measuredRot() * phyDev->measuredVelLin() ) );
-                    devCams[dcIdx]->setLocalRot(phyDev->measuredRotCamPreclutch() * cTranspose(phyDev->measuredRotPreclutch()) * phyDev->measuredRot());
+                    devCams[dcIdx]->setLocalPos(devCams[dcIdx]->getLocalPos() + cMul(scale, devCams[dcIdx]->getLocalRot() * phyDev->getLinVel() ) );
+                    devCams[dcIdx]->setLocalRot(phyDev->getRotCamPreClutch() * cTranspose(phyDev->getRotPreClutch()) * phyDev->getRot());
                 }
 
             }
             if (!devCams[0]->m_cam_pressed){
-                phyDev->setRotCamPreclutch( devCams[0]->measuredRot() );
-                phyDev->setRotPreclutch( phyDev->measuredRot() );
+                phyDev->setRotCamPreClutch( devCams[0]->getLocalRot() );
+                phyDev->setRotPreClutch( phyDev->getRot() );
             }
 
 
             if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
-                phyDev->m_posClutched = phyDev->m_pos;
+                phyDev->setPosClutched(phyDev->getPos());
             }
 
             if(g_inputDevices->g_cam_btn_pressed){
                 if(phyDev->btn_cam_rising_edge){
                     phyDev->btn_cam_rising_edge = false;
-                    simDev->m_posRefOrigin = simDev->getPosRef()/ phyDev->m_workspaceScale;
-                    simDev->m_rotRefOrigin = simDev->getRotRef();
+                    simDev->setPosRefOrigin(simDev->getPosRef()/ phyDev->m_workspaceScale);
+                    simDev->setRotRefOrigin(simDev->getRotRef());
                 }
-                phyDev->m_posClutched = phyDev->m_pos;
-                phyDev->m_rotClutched = phyDev->m_rot;
+                phyDev->setPosClutched(phyDev->getPos());
+                phyDev->setRotClutched(phyDev->getRot());
             }
             else{
                 phyDev->btn_cam_rising_edge = true;
@@ -1868,25 +1866,25 @@ void updateHapticDevice(void* a_arg){
             if(g_inputDevices->g_clutch_btn_pressed){
                 if(phyDev->btn_clutch_rising_edge){
                     phyDev->btn_clutch_rising_edge = false;
-                    simDev->m_posRefOrigin = simDev->getPosRef() / phyDev->m_workspaceScale;
-                    simDev->m_rotRefOrigin = simDev->getRotRef();
+                    simDev->setPosRefOrigin(simDev->getPosRef() / phyDev->m_workspaceScale);
+                    simDev->setRotRefOrigin(simDev->getRotRef());
                 }
-                phyDev->m_posClutched = phyDev->m_pos;
-                phyDev->m_rotClutched = phyDev->m_rot;
+                phyDev->setPosClutched(phyDev->getPos());
+                phyDev->setRotClutched(phyDev->getRot());
             }
             else{
                 phyDev->btn_clutch_rising_edge = true;
             }
 
-            simDev->setPosRef(phyDev->m_workspaceScale * (simDev->m_posRefOrigin +
-                                                          (devCams[0]->getLocalRot() * (phyDev->m_pos - phyDev->m_posClutched))));
+            simDev->setPosRef(phyDev->m_workspaceScale * (simDev->getPosRefOrigin() +
+                                                          (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) );
             if (!g_inputDevices->m_use_cam_frame_rot){
-                simDev->setRotRef(simDev->m_rotRefOrigin * devCams[0]->getLocalRot() *
-                        cTranspose(phyDev->m_rotClutched) * phyDev->m_rot *
+                simDev->setRotRef(simDev->getRotRefOrigin() * devCams[0]->getLocalRot() *
+                        cTranspose(phyDev->getRotClutched()) * phyDev->getRot() *
                         cTranspose(devCams[0]->getLocalRot()));
             }
             else{
-                simDev->setRotRef(phyDev->m_simRotInitial * phyDev->m_rot * phyDev->m_simRotOffset);
+                simDev->setRotRef(phyDev->m_simRotInitial * phyDev->getRot() * phyDev->m_simRotOffset);
             }
 
             if (phyDev->m_showMarker){
@@ -1895,8 +1893,7 @@ void updateHapticDevice(void* a_arg){
             }
 
             // update position of simulated gripper
-            simDev->updateMeasuredPose();
-
+            simDev->updatePose();
 
             double P_lin = simDev->m_rootLink->m_controller.getP_lin();
             double D_lin = simDev->m_rootLink->m_controller.getD_lin();
@@ -1904,11 +1901,11 @@ void updateHapticDevice(void* a_arg){
             double D_ang = simDev->m_rootLink->m_controller.getD_ang();
 
             dposLast = dpos;
-            dpos = simDev->getPosRef() - simDev->m_pos;
+            dpos = simDev->getPosRef() - simDev->getPos();
             ddpos = (dpos - dposLast) / dt;
 
             drotLast = drot;
-            drot = cTranspose(simDev->m_rot) * simDev->getRotRef();
+            drot = cTranspose(simDev->getRot()) * simDev->getRotRef();
             ddrot = (cTranspose(drot) * drotLast);
 
             double angle, dangle;

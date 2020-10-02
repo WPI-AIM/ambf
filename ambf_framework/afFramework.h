@@ -1459,12 +1459,6 @@ public:
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
-    // Get the pos of camera
-    cVector3d measuredPos();
-
-    // Get the Rotation of the camera
-    cMatrix3d measuredRot();
-
     // Get the Target or the lookAt point
     cVector3d getTargetPos();
 
