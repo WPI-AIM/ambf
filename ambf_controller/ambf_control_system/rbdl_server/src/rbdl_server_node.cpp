@@ -1,6 +1,10 @@
 #include <ros/ros.h>
 #include "rbdl_server/RBDLServer.h"
 
+RBDLServer::RBDLServer(ros::NodeHandle *nodehandle) {
+
+}
+
 
 
 int main(int argc, char* argv[])

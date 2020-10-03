@@ -1,7 +1,7 @@
 #ifndef BODYPARAM_H
 #define BODYPARAM_H
 #include <iostream>
-#include <rbdl_server/Utilities.h>
+#include <rbdl_model/Utilities.h>
 
 class BodyParam
 {

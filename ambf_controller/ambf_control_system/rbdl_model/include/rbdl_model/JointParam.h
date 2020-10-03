@@ -1,6 +1,6 @@
 #ifndef JOINTPARAM_H
 #define JOINTPARAM_H
-#include <rbdl_server/Utilities.h>
+#include <rbdl_model/Utilities.h>
 
 class JointParam
 {
