@@ -33,9 +33,12 @@ public:
     void cleanUp();
 
     ~BuildRBDLModel(void);
-    Model inline getRBDLModel() { return *RBDLmodel_; }
-    std::unordered_map<std::string, unsigned int> inline getRBDLBodyToIDMap() { return rbdlObjectMap_; }
 
+    std::unordered_map<std::string, bodyParamPtr> inline getRBDLBodyToObjectMap() { return bodyParamObjectMap_; }
+    std::unordered_map<std::string, std::unordered_map<std::string, jointParamPtr>> inline getRBDLJointToObjectMap() { return jointParamObjectMap_; }
+
+    std::unordered_map<std::string, unsigned int> inline getRBDLBodyToIDMap() { return rbdlObjectMap_; }
+    Model inline getRBDLModel() { return *RBDLmodel_; }
 private:
     void getNamespace();
     bool getBodies();
