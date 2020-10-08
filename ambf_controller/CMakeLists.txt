@@ -44,7 +44,7 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS}
                      raven2/include 
 		             ambf_client/include
-		             rbdl_server/include
+		             
 )
 
 add_executable (ambf_controller raven2/include/ambf_defines.h

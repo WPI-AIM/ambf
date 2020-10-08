@@ -22,7 +22,8 @@ catkin_package( INCLUDE_DIRS include
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/home/shreyas/rbdl/CMake/")
 
-SET (RBDL_DIR "/home/shreyas/rbdl/examples/simple/")
+#SET (RBDL_DIR "/home/shreyas/rbdl/examples/simple/")
+LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} )
 
 find_package(RBDL REQUIRED)
 include_directories(${RBDL_INCLUDE_DIRS})

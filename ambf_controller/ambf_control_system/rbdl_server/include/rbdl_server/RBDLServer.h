@@ -46,15 +46,14 @@
 #include "rbdl_server/RBDLModel.h"
 #include "rbdl_server/RBDLKinimatics.h"
 #include "rbdl_server/RBDLBodyNames.h"
-
-
+#include <unordered_map>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <rbdl/rbdl.h>
 #include <eigen_conversions/eigen_msg.h>
-#include "rbdl_model/BuildRBDLModel.h"
+// #include "rbdl_model/BuildRBDLModel.h"
 
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
@@ -80,7 +79,7 @@ class RBDLServer
         public:
                 RBDLServer(ros::NodeHandle* nodehandle);
                 RBDLServer();
-//                ~RBDLServer();
+              ~RBDLServer();
 
 
 };
