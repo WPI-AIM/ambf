@@ -9,7 +9,6 @@ project(rbdl_server)
 ## is used, also find other catkin packages
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} )
-
 FIND_PACKAGE (RBDL REQUIRED)
 FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
 FIND_PACKAGE (yaml-cpp REQUIRED)
