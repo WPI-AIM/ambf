@@ -192,6 +192,10 @@ public:
 
     static std::string removeAdjacentBackSlashes(std::string a_name);
     static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+
+    static void debugPrint(int line, std::string filename){
+        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    }
 };
 
 
@@ -328,6 +332,13 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 ///
 enum GeometryType{
     invalid= 0, mesh = 1, shape = 2, compound_shape = 3
+};
+
+
+enum class afControlType{
+  position=0,
+  force=1,
+  velocity=02
 };
 
 
@@ -561,10 +572,10 @@ public:
     std::vector<afRigidBodyPtr> m_parentBodies;
 
     // Set the angle of all the child joints
-    virtual void setAngle(double &angle, double dt);
+    virtual void setAngle(double &angle);
 
     // Set the angles based on the num elements in the argument vector
-    virtual void setAngle(std::vector<double> &angle, double dt);
+    virtual void setAngle(std::vector<double> &angle);
 
     // Set the config properties, this include, damping, friction restitution
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
@@ -589,10 +600,10 @@ public:
     bool isDirectChild(btRigidBody* a_body);
 
     // Add sensor to this body
-    bool addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
+    void addAFSensor(afSensorPtr a_sensor){m_afSensors.push_back(a_sensor);}
 
     // Add sensor to this body
-    bool addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
+    void addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
     // Enable shader program if defined
     virtual void enableShaderProgram();
@@ -601,7 +612,7 @@ public:
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
     // If the Position Controller is active, disable Position Controller from Haptic Device
-    bool m_af_enable_position_controller;
+    afControlType m_activeControllerType = afControlType::force;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
@@ -893,7 +904,7 @@ public:
     void commandVelocity(double &velocity_cmd);
 
     // Set position target for this joint that is handeled by it's joint controller
-    void commandPosition(double &position_cmd, double dt);
+    void commandPosition(double &position_cmd);
 
     // Get the internal bullet constraint
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
@@ -1447,12 +1458,6 @@ public:
 
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
-
-    // Get the pos of camera
-    cVector3d measuredPos();
-
-    // Get the Rotation of the camera
-    cMatrix3d measuredRot();
 
     // Get the Target or the lookAt point
     cVector3d getTargetPos();

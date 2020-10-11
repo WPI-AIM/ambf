@@ -2003,6 +2003,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             shapeOffsetTrans = m_T_iINb;
         }
 
+        // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+        // Thus for a plane, instead of using a compound, use the single collision shape.
+        bool is_plane = false;
+
         if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
             double x = bodyCollisionGeometry["x"].as<double>();
             double y = bodyCollisionGeometry["y"].as<double>();
@@ -2020,7 +2024,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             double ny = bodyCollisionGeometry["normal"]["y"].as<double>();
             double nz = bodyCollisionGeometry["normal"]["z"].as<double>();
             offset *= m_scale;
-            singleCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
+            // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+            // Thus for a plane, instead of using a compound, use the single collision shape.
+            is_plane = true;
+            m_bulletCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
@@ -2113,8 +2120,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // Now, a collision shape has to address both an inertial offset transform as well as
         // a shape offset.
 
-        compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
-        m_bulletCollisionShape = compoundCollisionShape;
+        if (is_plane == false){
+            compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
+            m_bulletCollisionShape = compoundCollisionShape;
+        }
 
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
@@ -2656,15 +2665,10 @@ void afRigidBody::afExecuteCommand(double dt){
         btVector3 force, torque;
         btVector3 lin_vel, ang_vel;
         ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
-        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-            m_af_enable_position_controller = true;
-        }
-        else{
-            m_af_enable_position_controller = false;
-        }
 
         // IF THE COMMAND IS OF TYPE FORCE
         if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
+            m_activeControllerType = afControlType::force;
             if (m_bulletRigidBody){
                 force.setValue(afCommand.wrench.force.x,
                                afCommand.wrench.force.y,
@@ -2680,6 +2684,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE POSITION
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+            m_activeControllerType = afControlType::position;
             // If the body is kinematic, we just want to control the position
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
                 btTransform _Td;
@@ -2692,7 +2697,15 @@ void afRigidBody::afExecuteCommand(double dt){
                                              afCommand.pose.orientation.z,
                                              afCommand.pose.orientation.w));
 
-                m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+                // If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
+                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - _Td.getOrigin()).norm() > 0.00001 ||
+                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(_Td.getRotation()) > 0.0001){
+
+                    std::cerr << "Updating Static Object Pose \n";
+                    m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+                    m_bulletRigidBody->setWorldTransform(_Td);
+                }
+
             }
             else{
                 btVector3 cur_pos, cmd_pos;
@@ -2743,6 +2756,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+            m_activeControllerType = afControlType::velocity;
             if (m_bulletRigidBody){
                 lin_vel.setValue(afCommand.twist.linear.x,
                                  afCommand.twist.linear.y,
@@ -2768,7 +2782,7 @@ void afRigidBody::afExecuteCommand(double dt){
                     joint->commandEffort(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-                    joint->commandPosition(jnt_cmd, dt);
+                    joint->commandPosition(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
                     joint->commandVelocity(jnt_cmd);
@@ -2907,31 +2921,31 @@ void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const
 ///
 /// \brief afRigidBody::setAngle
 /// \param angle
-/// \param dt
 ///
-void afRigidBody::setAngle(double &angle, double dt){
+void afRigidBody::setAngle(double &angle){
     if (m_parentBodies.size() == 0){
         for (size_t jnt = 0 ; jnt < m_CJ_PairsActive.size() ; jnt++){
-            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle, dt);
+            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::setAngle
 /// \param angles
-/// \param dt
 ///
-void afRigidBody::setAngle(std::vector<double> &angles, double dt){
+void afRigidBody::setAngle(std::vector<double> &angles){
     if (m_parentBodies.size() == 0){
         double jntCmdSize = m_CJ_PairsActive.size() < angles.size() ? m_CJ_PairsActive.size() : angles.size();
         for (size_t jntIdx = 0 ; jntIdx < jntCmdSize ; jntIdx++){
-            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx], dt);
+            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx]);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::checkCollisionGroupIdx
@@ -3991,9 +4005,8 @@ void afJoint::applyDamping(const double &dt){
 ///
 /// \brief afJoint::commandPosition
 /// \param position_cmd
-/// \param dt
 ///
-void afJoint::commandPosition(double &position_cmd, double dt){
+void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enableActuator){
@@ -4272,7 +4285,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
     }
 
-    if (m_parentBody == NULL){
+    if (m_parentBody == nullptr){
         std::cerr << "ERROR: SENSOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }
@@ -5909,6 +5922,7 @@ bool afWorld::loadADF(int i, bool enable_comm){
 
     std::string adf_filepath = getMultiBodyConfig(i);
     loadADF(adf_filepath, enable_comm);
+    return true;
 }
 
 
@@ -6793,23 +6807,6 @@ bool afCamera::resolveParenting(std::string a_parent_name){
         // No parent assigned, so report success as we have nothing to find
         return true;
     }
-}
-
-
-///
-/// \brief afCamera::measuredPos
-/// \return
-///
-cVector3d afCamera::measuredPos(){
-    return getLocalPos();
-}
-
-///
-/// \brief afCamera::measuredRot
-/// \return
-///
-cMatrix3d afCamera::measuredRot(){
-    return getLocalRot();
 }
 
 
