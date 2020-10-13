@@ -2000,7 +2000,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         else{
             // If a shape offset is not defined, set the shape offset equal to the intertial offset transform
             // This is to take care of legacy ADF where a shape offset is not set.
-            shapeOffsetTrans = m_T_iINb;
+            shapeOffsetTrans = getInertialOffsetTransform();
         }
 
         // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
@@ -2121,7 +2121,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // a shape offset.
 
         if (is_plane == false){
-            compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
             m_bulletCollisionShape = compoundCollisionShape;
         }
 
@@ -2244,7 +2244,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             // shape offset transfrom. This will change the legacy behavior but
             // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
             // shape. So they shall be updated.
-            compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
         }
         m_bulletCollisionShape = compoundCollisionShape;
     }
@@ -2322,20 +2322,31 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     buildDynamicModel();
 
+    cVector3d tempPos(0, 0, 0);
+    cMatrix3d tempRot(0, 0, 0);
     if(bodyPos.IsDefined()){
-        m_initialPos = toXYZ<cVector3d>(&bodyPos);
-        // Account for intertial offset transform
-        m_initialPos += toCvec(m_T_iINb.getOrigin());
-        setLocalPos(m_initialPos);
+        tempPos = toXYZ<cVector3d>(&bodyPos);
+        setLocalPos(tempPos);
     }
 
     if(bodyRot.IsDefined()){
         double r = bodyRot["r"].as<double>();
         double p = bodyRot["p"].as<double>();
         double y = bodyRot["y"].as<double>();
-        m_initialRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        setLocalRot(m_initialRot);
+        tempRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
+        setLocalRot(tempRot);
     }
+
+    // Inertial origin in world
+    cTransform T_iINw = getLocalTransform();
+
+    // Mesh Origin in World
+    cTransform T_mINw = T_iINw * afUtils::convertDataType<cTransform, btTransform>(getInertialOffsetTransform());
+
+    m_initialPos = T_mINw.getLocalPos();
+    m_initialRot = T_mINw.getLocalRot();
+    setLocalPos(T_mINw.getLocalPos());
+    setLocalRot(T_mINw.getLocalRot());
 
     if (bodyLinDamping.IsDefined())
         m_surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
@@ -2525,13 +2536,13 @@ void afRigidBody::updatePositionFromDynamics()
 {
     if (m_bulletRigidBody)
     {
-        // get transformation matrix of object
-        btTransform trans;
-        m_bulletRigidBody->getMotionState()->getWorldTransform(trans);
-        trans *= m_T_iINb.inverse();
+        // Inertial and Mesh Transform
+        btTransform T_iINw, T_mINw;
+        m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
+        T_mINw = T_iINw * getInverseInertialOffsetTransform();
 
-        btVector3 pos = trans.getOrigin();
-        btQuaternion q = trans.getRotation();
+        btVector3 pos = T_mINw.getOrigin();
+        btQuaternion q = T_mINw.getRotation();
 
         // set new position
         m_localPos.set(pos[0],pos[1],pos[2]);
@@ -2687,23 +2698,24 @@ void afRigidBody::afExecuteCommand(double dt){
             m_activeControllerType = afControlType::position;
             // If the body is kinematic, we just want to control the position
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
-                btTransform _Td;
-                _Td.setOrigin(btVector3(afCommand.pose.position.x,
+                btTransform Tcommand;
+                Tcommand.setOrigin(btVector3(afCommand.pose.position.x,
                                         afCommand.pose.position.y,
                                         afCommand.pose.position.z));
 
-                _Td.setRotation(btQuaternion(afCommand.pose.orientation.x,
+                Tcommand.setRotation(btQuaternion(afCommand.pose.orientation.x,
                                              afCommand.pose.orientation.y,
                                              afCommand.pose.orientation.z,
                                              afCommand.pose.orientation.w));
 
-                // If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
-                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - _Td.getOrigin()).norm() > 0.00001 ||
-                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(_Td.getRotation()) > 0.0001){
-
-                    std::cerr << "Updating Static Object Pose \n";
-                    m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
-                    m_bulletRigidBody->setWorldTransform(_Td);
+//                If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
+                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - Tcommand.getOrigin()).norm() > 0.00001 ||
+                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(Tcommand.getRotation()) > 0.0001){
+                    // Compensate for the inertial offset
+                    Tcommand = Tcommand * getInertialOffsetTransform();
+//                    std::cerr << "Updating Static Object Pose \n";
+                    m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
+                    m_bulletRigidBody->setWorldTransform(Tcommand);
                 }
 
             }

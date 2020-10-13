@@ -993,7 +993,7 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         localTrans.setRotation(q);
 
         // Apply the inertial transform offset
-        localTrans *= m_T_iINb.inverse();
+        localTrans *= getInverseInertialOffsetTransform();
     }
     if(lowResMesh){
         lowResMesh->m_meshes->clear();

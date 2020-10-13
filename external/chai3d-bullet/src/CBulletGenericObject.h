@@ -204,6 +204,9 @@ public:
     //! Get the Inertial Offset Transfrom;
     btTransform getInertialOffsetTransform();
 
+    //! Get the inverse inertial offset Transform;
+    btTransform getInverseInertialOffsetTransform();
+
 
     //--------------------------------------------------------------------------
     // PUBLIC MEMBERS:
@@ -255,8 +258,13 @@ protected:
     cVector3d m_dpos, m_dpos_prev, m_ddpos;
     cMatrix3d m_drot, m_drot_prev, m_ddrot;
 
-    //! Inetial Offset Transform defined in the body frame
+private:
+
+    //! Inertial Offset Transform defined in the body frame
     btTransform m_T_iINb;
+
+    //! Body Frame in the Inertial Offset Transform. Inverse of the above transform
+    btTransform m_T_bINi;
 };
 
 //------------------------------------------------------------------------------
