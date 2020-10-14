@@ -5128,6 +5128,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
         rB->setAngularVelocity(zero);
         cTransform c_T(afRB->getInitialPosition(), afRB->getInitialRotation());
         btTransform bt_T = afUtils::convertDataType<btTransform, cTransform>(c_T);
+        rB->getMotionState()->setWorldTransform(bt_T);
         rB->setWorldTransform(bt_T);
     }
 
