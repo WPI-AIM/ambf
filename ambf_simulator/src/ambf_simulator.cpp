@@ -768,9 +768,9 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - If CTRL X is pressed, reset the simulation
         else if (a_key == GLFW_KEY_X){
             g_afWorld->pausePhysics(true);
-            if (g_afWorld->m_lastPickedBody != nullptr){
-                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_lastPickedBody->m_name.c_str());
-                g_afWorld->m_lastPickedBody->remove();
+            if (g_afWorld->m_pickedAFRigidBody != nullptr){
+                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_pickedAFRigidBody->m_name.c_str());
+                g_afWorld->m_pickedAFRigidBody->remove();
             }
             else{
                 printf("Last Picked Body Not Valid for Removal\n");
@@ -815,8 +815,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - Toogle visibility of body frames and softbody skeleton
         else if (a_key == GLFW_KEY_V){
             printf("Toggling Frame Visibility ON/OFF\n");
-            if (g_afWorld->m_lastPickedBody != nullptr){
-                g_afWorld->m_lastPickedBody->toggleFrameVisibility();
+            if (g_afWorld->m_pickedAFRigidBody != nullptr){
+                g_afWorld->m_pickedAFRigidBody->toggleFrameVisibility();
             }
             else{
             }

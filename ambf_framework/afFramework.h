@@ -1844,11 +1844,11 @@ public:
     GLFWwindow* m_mainWindow;
 
     //data for picking objects
-    class btRigidBody* m_pickedBody=0;
+    class btRigidBody* m_pickedBulletRigidBody=0;
 
-    afRigidBodyPtr m_lastPickedBody=0;
+    afRigidBodyPtr m_pickedAFRigidBody=0;
 
-    cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+    cMaterialPtr m_pickedAFRigidBodyColor; // Original color of picked body for reseting later
 
     cMaterial m_pickColor; // The color to be applied to the picked body
 
@@ -1871,6 +1871,8 @@ public:
     cVector3d m_hitPos;
 
     double m_oldPickingDist;
+
+    cVector3d m_pickedOffset;
 
     cMesh* m_pickSphere;
 

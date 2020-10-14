@@ -6179,18 +6179,19 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
         if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
             if (body){
-                m_lastPickedBody = getAFRigidBody(body, true);
-                if (m_lastPickedBody){
-                    std::cerr << "Picked AF Rigid Body: " << m_lastPickedBody->m_name << std::endl;
+                m_pickedAFRigidBody = getAFRigidBody(body, true);
+                if (m_pickedAFRigidBody){
+                    std::cerr << "User picked AF rigid body: " << m_pickedAFRigidBody->m_name << std::endl;
+                    m_pickedBulletRigidBody = body;
+                    m_pickedAFRigidBodyColor = m_pickedAFRigidBody->m_material->copy();
+                    m_pickedAFRigidBody->setMaterial(m_pickColor);
+                    m_savedState = m_pickedBulletRigidBody->getActivationState();
+                    m_pickedBulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
                 }
+
                 //other exclusions?
                 if (!(body->isStaticObject() || body->isKinematicObject()))
                 {
-                    m_pickedBody = body;
-                    m_pickedBodyColor = m_lastPickedBody->m_material->copy();
-                    m_lastPickedBody->setMaterial(m_pickColor);
-                    m_savedState = m_pickedBody->getActivationState();
-                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
                     btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
@@ -6200,6 +6201,9 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                     p2p->m_setting.m_impulseClamp = mousePickClamping;
                     //very weak constraint for picking
                     p2p->m_setting.m_tau = 1/body->getInvMass();
+                }
+                else{
+                    m_pickedOffset = toCvec(body->getCenterOfMassPosition()) - pickPos;
                 }
             }
         }
@@ -6250,23 +6254,33 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
 /// \return
 ///
 bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    if (m_pickedBody && m_pickedConstraint)
+    if (m_pickedBulletRigidBody)
     {
-        btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
-        if (pickCon)
-        {
-            //keep it at the same picking distance
+        //keep it at the same picking distance
+        cVector3d newLocation;
 
-            cVector3d newPivotB;
+        cVector3d dir = rayToWorld - rayFromWorld;
+        dir.normalize();
+        dir *= m_oldPickingDist;
 
-            cVector3d dir = rayToWorld - rayFromWorld;
-            dir.normalize();
-            dir *= m_oldPickingDist;
+        newLocation = rayFromWorld + dir;
+        // Set the position of grab sphere
+        m_pickSphere->setLocalPos(newLocation);
 
-            newPivotB = rayFromWorld + dir;
-            // Set the position of grab sphere
-            m_pickSphere->setLocalPos(newPivotB);
-            pickCon->setPivotB(toBTvec(newPivotB));
+        if (m_pickedConstraint){
+            btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
+            if (pickCon)
+            {
+                pickCon->setPivotB(toBTvec(newLocation));
+                return true;
+            }
+        }
+        else{
+            // In this case the rigidBody is a static or kinematic body
+            btTransform curTrans = m_pickedBulletRigidBody->getWorldTransform();
+            curTrans.setOrigin(toBTvec(newLocation + m_pickedOffset));
+            m_pickedBulletRigidBody->getMotionState()->setWorldTransform(curTrans);
+            m_pickedBulletRigidBody->setWorldTransform(curTrans);
             return true;
         }
     }
@@ -6298,16 +6312,20 @@ void afWorld::removePickingConstraint(){
     btDynamicsWorld* m_dynamicsWorld = m_bulletWorld;
     if (m_pickedConstraint)
     {
-        m_pickSphere->setShowEnabled(false);
-        m_pickedBody->forceActivationState(m_savedState);
-        m_pickedBody->activate();
+        m_pickedBulletRigidBody->forceActivationState(m_savedState);
+        m_pickedBulletRigidBody->activate();
         m_dynamicsWorld->removeConstraint(m_pickedConstraint);
         delete m_pickedConstraint;
         m_pickedConstraint = 0;
-        m_pickedBody = 0;
-        if (m_lastPickedBody){
-            m_lastPickedBody->setMaterial(m_pickedBodyColor);
-        }
+    }
+
+    if (m_pickedBulletRigidBody){
+        m_pickSphere->setShowEnabled(false);
+        m_pickedBulletRigidBody = 0;
+    }
+
+    if (m_pickedAFRigidBody){
+        m_pickedAFRigidBody->setMaterial(m_pickedAFRigidBodyColor);
     }
 
     if (m_pickedSoftBody){
