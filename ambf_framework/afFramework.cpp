@@ -980,9 +980,8 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
     YAML::Node actuatorTau = actuatorNode["tau"];
 
 
-    std::string parent_name;
     if (actuatorParentName.IsDefined()){
-        parent_name = actuatorParentName.as<std::string>();
+        m_parentName = actuatorParentName.as<std::string>();
     }
     else{
         result = false;
@@ -1021,14 +1020,14 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
     }
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
+    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
     }
 
     if (m_parentBody == NULL){
-        std::cerr << "ERROR: ACTUATOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
+        std::cerr << "ERROR: ACTUATOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
         return 0;
     }
     else{
@@ -3578,7 +3577,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
                 &&(!strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
                 &&(!strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
             //            std::cerr <<"INFO: JOINT: \"" << m_name <<
-            //                        "\'s\" PARENT BODY \"" << m_parent_name <<
+            //                        "\'s\" PARENT BODY \"" << m_parentName <<
             //                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
@@ -4234,9 +4233,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorMesh = sensorNode["mesh"];
     YAML::Node sensorParametric = sensorNode["parametric"];
 
-    std::string parent_name;
     if (sensorParentName.IsDefined()){
-        parent_name = sensorParentName.as<std::string>();
+        m_parentName = sensorParentName.as<std::string>();
     }
     else{
         result = false;
@@ -4291,14 +4289,14 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
+    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
     }
 
     if (m_parentBody == nullptr){
-        std::cerr << "ERROR: SENSOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
+        std::cerr << "ERROR: SENSOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }
     else{
