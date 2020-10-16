@@ -39,6 +39,7 @@ class ControllerNode
         Eigen::VectorXd desired_vel;
         Eigen::VectorXd desired_accel ;// =  VectToEigen(vel_vec);
         trajectory_generator::trajectory path;
+        boost::thread run;
 };
 
 #endif // CONTROLLERNODE_H

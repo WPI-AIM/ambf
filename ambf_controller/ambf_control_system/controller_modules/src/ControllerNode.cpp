@@ -9,6 +9,7 @@ ControllerNode::ControllerNode(rigidBodyPtr _handle,
                                const Eigen::Ref<const Eigen::MatrixXd>& kd): handle(_handle), n(*_nh), controller(kp, kd)
 {
 
+
     client_ID = n.serviceClient<rbdl_server::RBDLInverseDynamics>("InverseDynamics");
     have_path = false;
 
@@ -30,7 +31,10 @@ void ControllerNode::updataPath(const trajectory_generator::trajectory& new_path
 
 bool ControllerNode::startController()
 {
-    boost::thread thread_foo(boost::bind(&ControllerNode::control, this));
+    //boost::thread run(boost::bind(&ControllerNode::control, this));
+    run = boost::thread(boost::bind(&ControllerNode::control, this));
+    return true;
+    //run.join();
 }
 
 ///
@@ -93,7 +97,7 @@ void ControllerNode::control()
         {
             //get torque
             //sent torqe to AMBF
-           //  tau = Invdny_msg.Response.tau;
+            tau = Invdny_msg.Response.tau;
             std::vector<float> float_tau(tau.begin(), tau.end());
             handle->set_joint_efforts(float_tau);
         }
@@ -106,6 +110,7 @@ void ControllerNode::control()
         loop_rate.sleep();
         ros::spinOnce();
     }
+    run.join();
 
 
 
