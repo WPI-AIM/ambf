@@ -643,7 +643,7 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(index_list) == 0 or len(efforts) != len(index_list):
+        if len(index_list) == 0 or len(q_list) != len(index_list):
             index_list = list(range(n_jnts))
 
         elif max(index_list)+1 > n_jnts or min(index_list) < 0:
@@ -699,7 +699,7 @@ class RigidBody(BaseObject):
         """
         n_jnts = len(self._state.joint_positions)
 
-        if len(index_list) == 0 or len(efforts) != len(index_list):
+        if len(index_list) == 0 or len(qd_list) != len(index_list):
             index_list = list(range(n_jnts))
 
         elif max(index_list)+1 > n_jnts or min(index_list) < 0:
