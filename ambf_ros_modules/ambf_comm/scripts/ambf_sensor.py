@@ -84,6 +84,7 @@ class Sensor(BaseObject):
         Get the range of an element belonging to this sensor
         :return:
         """
+        # print(self._state.range)
         return self._state.range[idx]
 
     def get_measurement(self, idx):
@@ -95,6 +96,15 @@ class Sensor(BaseObject):
         if idx < len(self._state.measurement):
             return self._state.measurement[idx]
 
+    def get_all_measurements(self):
+        """
+        Get the measurement of a specific sensor element. The value is normalized.
+        :param idx:
+        :return:
+        """
+        
+        return self._state.measurement
+
     def get_sensed_object(self, idx):
         """
         Get the name of sensed object by a specific sensor element.
@@ -103,3 +113,20 @@ class Sensor(BaseObject):
         """
         if idx < len(self._state.sensed_objects):
             return self._state.sensed_objects[idx].data
+
+
+    def get_parent(self):
+        """
+        Get the name of the parent
+        :return String
+        """
+        return self._state.parent_name
+
+    def get_pose(self):
+
+        """
+        Get the pose of the sensor
+        :return geometry_msgs/Pose
+        """
+        return self._state.pose
+
