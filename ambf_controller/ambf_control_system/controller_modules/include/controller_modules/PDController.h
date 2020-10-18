@@ -1,15 +1,15 @@
 #include <Eigen/Core>
 
-
+#include <iostream>
 
 
 class PDController
 {
 public:
 
-     PDController(const Eigen::Ref<const Eigen::MatrixXd>& Kp, const Eigen::Ref<const Eigen::MatrixXd>& Kd);
-     void setKp(const Eigen::Ref<const Eigen::MatrixXd>& Kp);
-     void setKd(const Eigen::Ref<const Eigen::MatrixXd>& Kd);
+     PDController(const Eigen::MatrixXd&, const Eigen::MatrixXd&);
+     bool setKp(const Eigen::MatrixXd&);
+     bool setKd(const Eigen::MatrixXd&);
      Eigen::MatrixXd getKp();
      Eigen::MatrixXd getKd();
      void calculate( const Eigen::VectorXd& e, const  Eigen::VectorXd& ed, Eigen::VectorXd& tau);
@@ -18,8 +18,9 @@ public:
 private:
      Eigen::MatrixXd Kp;
      Eigen::MatrixXd Kd;
-//     Eigen::EigenBase<Derived>& Kp;
-//     Eigen::EigenBase<Derived>& Kd;
+     int dimensions;
+
+     static Eigen::MatrixXd validateMat(const Eigen::MatrixXd&, const Eigen::MatrixXd&);
 
 };
 

@@ -9,32 +9,69 @@ ControllerNode::ControllerNode(rigidBodyPtr _handle,
                                const Eigen::Ref<const Eigen::MatrixXd>& kd): handle(_handle), n(*_nh), controller(kp, kd)
 {
 
-
+    running = false;
+    start_controller = n.subscribe("start_controller", 1000, &ControllerNode::startControllerCallback, this);
+    stop_controller = n.subscribe("stop_controller", 1000, &ControllerNode::stopControllerCallback, this);
     client_ID = n.serviceClient<rbdl_server::RBDLInverseDynamics>("InverseDynamics");
     have_path = false;
 
 }
 
+
+void ControllerNode::startControllerCallback(const std_msgs::Empty )
+{
+   if(running)
+   {
+       ROS_INFO("Controller is already running");
+   }
+   else
+   {
+       startController();
+   }
+}
+
+void ControllerNode::stopControllerCallback(const std_msgs::Empty )
+{
+    if(running)
+    {
+        ROS_INFO("Stoping the controller");
+        running=false;
+
+    }
+    else
+    {
+        ROS_INFO("Controller is not running");
+    }
+}
+
 void ControllerNode::setGain(const Eigen::Ref<const Eigen::MatrixXd>& Kp, const Eigen::Ref<const Eigen::MatrixXd>& Kd)
 {
-    controller.setKd(Kd);
-    controller.setKp(Kp);
+//    controller.setKd(Kd);
+//    controller.setKp(Kp);
 }
 
 void ControllerNode::updataPath(const trajectory_generator::trajectory& new_path)
 {
         path = new_path;
         path_index = 0;
+        have_path = true;
         path_length = new_path.pathLength;
 
 }
 
 bool ControllerNode::startController()
 {
-    //boost::thread run(boost::bind(&ControllerNode::control, this));
-    run = boost::thread(boost::bind(&ControllerNode::control, this));
+
+    if (!running)
+    {
+        ROS_INFO("Starting the Controller");
+        //boost::thread run(boost::bind(&ControllerNode::control, this));
+        run = boost::thread(boost::bind(&ControllerNode::control, this));
+        running = true;
+    }
+
     return true;
-    //run.join();
+
 }
 
 ///
@@ -48,6 +85,15 @@ Eigen::VectorXd ControllerNode::VectToEigen(const std::vector<double> &msg)
     return Q;
 }
 
+
+Eigen::VectorXd ControllerNode::VectToEigen(const std::vector<float> &msg)
+{
+    std::vector<double> vec(msg.begin(), msg.end());
+    Eigen::VectorXd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
+    return Q;
+}
+
+
 void ControllerNode::control()
 {
 
@@ -59,8 +105,20 @@ void ControllerNode::control()
     std::vector<double> curr_pos, curr_vel;
     ros::Rate loop_rate(1000);
 
-    while(ros::ok())
+    //set then inital desired state to the current state
+    std::vector<float> pos_vec = handle->get_all_joint_pos();
+    std::vector<float> vel_vec = handle->get_all_joint_vel();
+
+    std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
+    std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
+
+    desired_pos =  VectToEigen(pos_vec_temp);
+    desired_vel =  VectToEigen(vel_vec_temp);
+
+    //run the controller in a loop
+    while(ros::ok() && running)
     {
+
         std::vector<float> pos_vec = handle->get_all_joint_pos();
         std::vector<float> vel_vec = handle->get_all_joint_vel();
 
@@ -97,9 +155,10 @@ void ControllerNode::control()
         {
             //get torque
             //sent torqe to AMBF
-            tau = Invdny_msg.Response.tau;
+            tau = Invdny_msg.response.tau;
             std::vector<float> float_tau(tau.begin(), tau.end());
-            handle->set_joint_efforts(float_tau);
+            //handle->set_joint_efforts(float_tau);
+
         }
         else
         {
@@ -110,8 +169,6 @@ void ControllerNode::control()
         loop_rate.sleep();
         ros::spinOnce();
     }
-    run.join();
-
 
 
 }
