@@ -84,20 +84,24 @@ struct afSharedDataStructure{
 public:
     afSharedDataStructure();
 
-public:
-    cVector3d m_posRefOrigin;
-    cMatrix3d m_rotRefOrigin;
 
 public:
     void setPosRef(cVector3d a_pos);
     void setRotRef(cMatrix3d a_rot);
+    void setPosRefOrigin(cVector3d a_pos);
+    void setRotRefOrigin(cMatrix3d a_rot);
 
     cVector3d getPosRef();
     cMatrix3d getRotRef();
+    cVector3d getPosRefOrigin();
+    cMatrix3d getRotRefOrigin();
 
 private:
     cVector3d m_posRef;
     cMatrix3d m_rotRef;
+
+    cVector3d m_posRefOrigin;
+    cMatrix3d m_rotRefOrigin;
 
 protected:
     std::mutex m_mutex;
@@ -112,15 +116,23 @@ public:
 
     ~afSimulatedDevice(){}
 
-    cVector3d measuredPos();
+    cVector3d getPos();
 
-    cMatrix3d measuredRot();
+    cMatrix3d getRot();
 
-    void updateMeasuredPose();
+    void updatePose();
 
-    inline void applyForce(cVector3d force){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalForce(force);}
+    inline void applyForce(cVector3d force){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalForce(force);
+        }
+    }
 
-    inline void applyTorque(cVector3d torque){if (!m_rootLink->m_af_enable_position_controller) m_rootLink->addExternalTorque(torque);}
+    inline void applyTorque(cVector3d torque){
+        if (m_rootLink->m_activeControllerType == afControlType::force){
+            m_rootLink->addExternalTorque(torque);
+        }
+    }
 
     bool isWrenchSet();
 
@@ -128,7 +140,7 @@ public:
 
     void offsetGripperAngle(double offset);
 
-    void setGripperAngle(double angle, double dt=0.001);
+    void setGripperAngle(double angle);
 
 public:
     cVector3d m_pos;
@@ -183,31 +195,45 @@ public:
 
     inline bool isJointControlEnabled(){return m_jointControlEnable;}
 
-    cVector3d measuredPos();
+    cVector3d getPos();
 
-    cMatrix3d measuredRot();
+    cMatrix3d getRot();
 
-    cVector3d measuredPosPreclutch();
+    cVector3d getPosClutched();
 
-    cMatrix3d measuredRotPreclutch();
+    cMatrix3d getRotClutched();
 
-    void setPosPreclutch(cVector3d a_pos);
+    void setPosClutched(cVector3d a_pos);
 
-    void setRotPreclutch(cMatrix3d a_rot);
+    void setRotClutched(cMatrix3d a_rot);
 
-    cVector3d measuredPosCamPreclutch();
+    cVector3d getPosPreClutch();
 
-    cMatrix3d measuredRotCamPreclutch();
+    cMatrix3d getRotPreClutch();
 
-    void setPosCamPreclutch(cVector3d a_pos);
+    void setPosPreClutch(cVector3d a_pos);
 
-    void setRotCamPreclutch(cMatrix3d a_rot);
+    void setRotPreClutch(cMatrix3d a_rot);
 
-    cVector3d measuredVelLin();
+    cVector3d getPosCamPreClutch();
 
-    cVector3d mearuredVelAng();
+    cMatrix3d getRotCamPreClutch();
 
-    double measuredGripperAngle();
+    void setPosCamPreClutch(cVector3d a_pos);
+
+    void setRotCamPreClutch(cMatrix3d a_rot);
+
+    cMatrix3d getSimRotInitial();
+
+    cMatrix3d getSimRotOffset();
+
+    cMatrix3d getSimRotOffsetInverse();
+
+    cVector3d getLinVel();
+
+    cVector3d getAngVel();
+
+    double getGripperAngle();
 
     void applyWrench(cVector3d a_force, cVector3d a_torque);
 
@@ -260,6 +286,9 @@ public:
     // A transform between simulated and pyhsical devices' frame
     // to store any intended offset
     cMatrix3d m_simRotOffset;
+
+    // Inverse of the simRotOffset
+    cMatrix3d m_simRotOffsetInverse;
 
     // Flag to enable disable showing of reference marker
     bool m_showMarker;

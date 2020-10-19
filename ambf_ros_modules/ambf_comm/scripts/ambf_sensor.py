@@ -84,6 +84,7 @@ class Sensor(BaseObject):
         Get the range of an element belonging to this sensor
         :return:
         """
+        print (self._state.range)
         return self._state.range[idx]
 
     def get_measurement(self, idx):
@@ -94,6 +95,15 @@ class Sensor(BaseObject):
         """
         if idx < len(self._state.measurement):
             return self._state.measurement[idx]
+
+    def get_all_measurement(self):
+        """
+        Get the measurement of a specific sensor element. The value is normalized.
+        :param idx:
+        :return:
+        """
+        
+        return self._state.measurement
 
     def get_sensed_object(self, idx):
         """

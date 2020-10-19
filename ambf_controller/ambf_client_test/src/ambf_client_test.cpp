@@ -14,7 +14,6 @@ Ambf_Test::Ambf_Test() {
 //    client_.~Client();
 //}
 
-
 TEST_F(Ambf_Test, TestPSMBaselink) {
     EXPECT_FLOAT_EQ(psm_baselink_handler_->get_joint_pos(0), -1.605f);
 //    EXPECT_FLOAT_EQ(psm_baselink_handler_->get_joint_pos(1), -1.605f);
