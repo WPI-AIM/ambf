@@ -26,11 +26,11 @@ def compute_FK(joint_pos):
     # PSM DH Params
     link1 = DH(alpha=PI_2, a=0, theta=j[0], d=0, offset=PI_2, joint_type='R')
     link2 = DH(alpha=-PI_2, a=0, theta=j[1], d=0, offset=-PI_2, joint_type='R')
-    link3 = DH(alpha=PI_2, a=0, theta=0, d=j[2], offset=-.4318, joint_type='P')
-    link4 = DH(alpha=0, a=0, theta=j[3], d=0.4162, offset=0, joint_type='R')
+    link3 = DH(alpha=PI_2, a=0, theta=0, d=j[2], offset=-0.4389, joint_type='P')
+    link4 = DH(alpha=0, a=0, theta=j[3], d=0.416, offset=0, joint_type='R')
     link5 = DH(alpha=-PI_2, a=0, theta=j[4], d=0, offset=-PI_2, joint_type='R')
-    link6 = DH(alpha=-PI_2, a=0.0091, theta=j[5], d=0, offset=-PI_2, joint_type='R')
-    link7 = DH(alpha=-PI_2, a=0, theta=0, d=0.0102, offset=PI_2, joint_type='R')
+    link6 = DH(alpha=-PI_2, a=0.009, theta=j[5], d=0, offset=-PI_2, joint_type='R')
+    link7 = DH(alpha=-PI_2, a=0, theta=0, d=0.0106, offset=PI_2, joint_type='R')
 
     T_1_0 = link1.get_trans()
     T_2_1 = link2.get_trans()
