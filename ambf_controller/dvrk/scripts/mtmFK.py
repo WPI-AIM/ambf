@@ -23,14 +23,18 @@ def compute_FK(joint_pos):
 
     # The last frame is fixed
 
+    L_arm = 0.278828
+    L_forearm = 0.363867
+    L_h = 0.147733
+
     # PSM DH Params
-    link1 = DH(alpha=PI_2, a=0, theta=j[0], d=0, offset=PI_2, joint_type='R', convention='MODIFIED')
-    link2 = DH(alpha=-PI_2, a=0, theta=j[1], d=0, offset=-PI_2, joint_type='R', convention='MODIFIED')
-    link3 = DH(alpha=PI_2, a=0, theta=0, d=j[2], offset=-0.4389, joint_type='P', convention='MODIFIED')
-    link4 = DH(alpha=0, a=0, theta=j[3], d=0.416, offset=0, joint_type='R', convention='MODIFIED')
-    link5 = DH(alpha=-PI_2, a=0, theta=j[4], d=0, offset=-PI_2, joint_type='R', convention='MODIFIED')
-    link6 = DH(alpha=-PI_2, a=0.009, theta=j[5], d=0, offset=-PI_2, joint_type='R', convention='MODIFIED')
-    link7 = DH(alpha=-PI_2, a=0, theta=0, d=0.0106, offset=PI_2, joint_type='R', convention='MODIFIED')
+    link1 = DH(alpha=PI_2, a=0, theta=j[0], d=0, offset=-PI_2, joint_type='R', convention='STANDARD')
+    link2 = DH(alpha=0, a=L_arm, theta=j[1], d=0, offset=-PI_2, joint_type='R', convention='STANDARD')
+    link3 = DH(alpha=-PI_2, a=L_forearm, theta=j[2], d=0, offset=PI_2, joint_type='R', convention='STANDARD')
+    link4 = DH(alpha=PI_2, a=0, theta=j[3], d=L_h, offset=0, joint_type='R', convention='STANDARD')
+    link5 = DH(alpha=-PI_2, a=0, theta=j[4], d=0, offset=0, joint_type='R', convention='STANDARD')
+    link6 = DH(alpha=PI_2, a=0, theta=j[5], d=0, offset=-PI_2, joint_type='R', convention='STANDARD')
+    link7 = DH(alpha=0, a=0, theta=j[6], d=0, offset=PI_2, joint_type='R', convention='STANDARD')
 
     T_1_0 = link1.get_trans()
     T_2_1 = link2.get_trans()
