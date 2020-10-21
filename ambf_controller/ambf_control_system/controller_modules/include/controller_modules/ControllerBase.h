@@ -5,10 +5,14 @@
 class ControllerBase
 {
    public:
+    ControllerBase(){}
+    ~ControllerBase(){}
+
+   private:
+        virtual void calc_tau(const Eigen::VectorXd&, const  Eigen::VectorXd&, Eigen::VectorXd&)=0;
 
    protected:
-      int width;
-      int height;
+
 };
 
 

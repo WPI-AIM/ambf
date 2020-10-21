@@ -5,18 +5,25 @@
 
 ControllerNode::ControllerNode(rigidBodyPtr _handle,
                                ros::NodeHandle* _nh,
-                               const Eigen::Ref<const Eigen::MatrixXd>& kp,
-                               const Eigen::Ref<const Eigen::MatrixXd>& kd): handle(_handle), n(*_nh), controller(kp, kd)
+                               PDController& controller): handle(_handle), n(*_nh), controller(controller)
 {
 
     running = false;
     start_controller = n.subscribe("start_controller", 1000, &ControllerNode::startControllerCallback, this);
     stop_controller = n.subscribe("stop_controller", 1000, &ControllerNode::stopControllerCallback, this);
     client_ID = n.serviceClient<rbdl_server::RBDLInverseDynamics>("InverseDynamics");
+    desired_pub = n.advertise<sensor_msgs::JointState>("desiredJoint", 1000);
     have_path = false;
+    step_count = 0;
 
 }
 
+Eigen::VectorXd ControllerNode::getDesiredPos(){return desired_pos;}
+Eigen::VectorXd ControllerNode::getDesiredVel(){return desired_vel;}
+Eigen::VectorXd ControllerNode::getDesiredAccel(){return desired_accel;}
+int ControllerNode::getStepCount(){return step_count;}
+int ControllerNode::getPathLength(){return path_length;}
+bool ControllerNode::isRunning(){return running;}
 
 void ControllerNode::startControllerCallback(const std_msgs::Empty )
 {
@@ -35,8 +42,7 @@ void ControllerNode::stopControllerCallback(const std_msgs::Empty )
     if(running)
     {
         ROS_INFO("Stoping the controller");
-        running=false;
-
+        running = false;
     }
     else
     {
@@ -44,19 +50,12 @@ void ControllerNode::stopControllerCallback(const std_msgs::Empty )
     }
 }
 
-void ControllerNode::setGain(const Eigen::Ref<const Eigen::MatrixXd>& Kp, const Eigen::Ref<const Eigen::MatrixXd>& Kd)
-{
-//    controller.setKd(Kd);
-//    controller.setKp(Kp);
-}
-
 void ControllerNode::updataPath(const trajectory_generator::trajectory& new_path)
 {
-        path = new_path;
-        path_index = 0;
-        have_path = true;
-        path_length = new_path.pathLength;
-
+    path = new_path;
+    step_count = 0;
+    path_length = new_path.traj.size();
+    have_path = true;
 }
 
 bool ControllerNode::startController()
@@ -65,8 +64,7 @@ bool ControllerNode::startController()
     if (!running)
     {
         ROS_INFO("Starting the Controller");
-        //boost::thread run(boost::bind(&ControllerNode::control, this));
-        run = boost::thread(boost::bind(&ControllerNode::control, this));
+        run = boost::thread(boost::bind(&ControllerNode::controlloop, this));
         running = true;
     }
 
@@ -78,7 +76,8 @@ bool ControllerNode::startController()
 /// \brief RBDLServer::VectToEigen
 /// \param msg
 ///
-Eigen::VectorXd ControllerNode::VectToEigen(const std::vector<double> &msg)
+template<typename T, typename A>
+Eigen::VectorXd ControllerNode::VectToEigen(std::vector<T,A> const& msg )
 {
     std::vector<double> vec(msg.begin(), msg.end());
     Eigen::VectorXd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
@@ -86,77 +85,116 @@ Eigen::VectorXd ControllerNode::VectToEigen(const std::vector<double> &msg)
 }
 
 
-Eigen::VectorXd ControllerNode::VectToEigen(const std::vector<float> &msg)
+void ControllerNode::step()
 {
-    std::vector<double> vec(msg.begin(), msg.end());
-    Eigen::VectorXd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
-    return Q;
+    if(step_count == path_length - 1)
+    {
+        have_path = false;
+    }
+    else
+    {
+        for(int i =0; i <path.traj[step_count].position.size(); i++ )
+        {
+            //std::cout<<path.traj[step_count].position ;
+        }
+        desired_pos = VectToEigen( path.traj[step_count].position );
+        desired_vel = VectToEigen( path.traj[step_count].velocity );
+        step_count++;
+    }
 }
 
 
-void ControllerNode::control()
+std::vector<double> ControllerNode::calcTorque(const std::vector<double> pos, const std::vector<double> vel)
 {
 
-    std::vector<double> tau;
-    Eigen::VectorXd pos; //=  VectToEigen(pos_vec);
-    Eigen::VectorXd vel; // =  VectToEigen(vel_vec);
-    Eigen::VectorXd e, ed, aq;
-    rbdl_server::RBDLInverseDynamics Invdny_msg;
-    std::vector<double> curr_pos, curr_vel;
-    ros::Rate loop_rate(1000);
+    // calculate the control input
 
-    //set then inital desired state to the current state
+    std::cout<<"desired "<<desired_pos.rows()<<std::endl;
+
+    std::cout<<"pos "<<VectToEigen(pos).size()<<std::endl;
+    desired_pos - VectToEigen(pos);
+    std::cout<<"hello\nz";
+    Eigen::VectorXd e = desired_pos - VectToEigen(pos);
+
+    std::cout<<"hello2\n";
+    Eigen::VectorXd ed = desired_vel - VectToEigen(vel);
+    std::cout<<"ch1"<<std::endl;
+
+    Eigen::VectorXd aq;
+    controller.calc_tau(e, ed, aq);
+    std::vector<double> aq_vect(&aq[0], aq.data()+aq.cols()*aq.rows());
+    return aq_vect;
+
+}
+
+void ControllerNode::updateState()
+{
     std::vector<float> pos_vec = handle->get_all_joint_pos();
     std::vector<float> vel_vec = handle->get_all_joint_vel();
 
-    std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
-    std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
+    curr_pos = std::vector<double>(pos_vec.begin(), pos_vec.end());
+    curr_vel = std::vector<double>(vel_vec.begin(), vel_vec.end());
+}
 
-    desired_pos =  VectToEigen(pos_vec_temp);
-    desired_vel =  VectToEigen(vel_vec_temp);
+void ControllerNode::controlloop()
+{
+
+    sensor_msgs::JointState desired_msg;
+    Eigen::VectorXd pos; //=  VectToEigen(pos_vec);
+    Eigen::VectorXd vel; // =  VectToEigen(vel_vec);
+    std::vector<double> aq;
+    rbdl_server::RBDLInverseDynamics Invdny_msg;
+    ros::Rate loop_rate(1000);
+    //set then inital desired state to the current state
+
 
     //run the controller in a loop
     while(ros::ok() && running)
     {
 
-        std::vector<float> pos_vec = handle->get_all_joint_pos();
-        std::vector<float> vel_vec = handle->get_all_joint_vel();
-
+        updateState();
         //check if there is a new path
         if(have_path)
         {
-
-            if(path_index == path_length)
-            {
-                have_path = false;
-            }
-            else
-            {
-                desired_pos = VectToEigen( path.traj[path_index].position );
-                desired_vel = VectToEigen( path.traj[path_index].velocity );
-                path_index++;
-            }
-
+            step();
+            std::cout<<"step"<<std::endl;
         }
+        else
+        {
+            std::vector<float> pos_vec = handle->get_all_joint_pos();
+            std::vector<float> vel_vec = handle->get_all_joint_vel();
 
-        // calculate the control input
-        e = desired_pos - VectToEigen(curr_pos);
-        ed = desired_vel - VectToEigen(curr_vel);
-        controller.calculate(e, ed, aq);
-        std::vector<double> aq_vect(&aq[0], aq.data()+aq.cols()*aq.rows());
+            std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
+            std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
+
+            desired_pos =  VectToEigen(pos_vec_temp);
+            desired_vel =  VectToEigen(vel_vec_temp);
+            std::cout<<" no step"<<std::endl;
+        }
+        std::cout<<running<<std::endl;
+        aq = calcTorque(curr_pos, curr_vel);
 
         //build the message
         Invdny_msg.request.q = curr_pos;
         Invdny_msg.request.qd = curr_vel;
-        Invdny_msg.request.qdd = aq_vect;
+        Invdny_msg.request.qdd = aq;
 
-        //call the service
+        std::vector<double> pos_msg(&desired_pos[0], desired_pos.data()+desired_pos.cols()*desired_pos.rows());
+        std::vector<double> vel_msg(&desired_vel[0], desired_vel.data()+desired_vel.cols()*desired_vel.rows());
+        desired_msg.position = pos_msg;
+        desired_msg.velocity = vel_msg;
+        desired_msg.effort = aq;
+
+       //call the service
         if (client_ID.call(Invdny_msg))
         {
             //get torque
             //sent torqe to AMBF
-            tau = Invdny_msg.response.tau;
-            std::vector<float> float_tau(tau.begin(), tau.end());
+//            std::vector<double> tau = Invdny_msg.response.tau;
+//            for(int i=0; i < tau.size(); i++)
+//                std::cout << tau.at(i) << ' ';
+//            std::vector<float> float_tau(tau.begin(), tau.end());
+//            desired_pub.publish(desired_msg);
             //handle->set_joint_efforts(float_tau);
 
         }

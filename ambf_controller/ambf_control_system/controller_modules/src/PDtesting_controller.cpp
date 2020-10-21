@@ -70,7 +70,7 @@ TEST_F(Controller_Test, TestTauMath )
     e(1) = 5.2;
     ed(0) = -6.5;
     ed(1) = 3.2;
-    controller.calculate(e,ed,tau);
+    controller.calc_tau(e,ed,tau);
 
     EXPECT_FLOAT_EQ(tau(0), 50.7f);
     EXPECT_FLOAT_EQ(tau(1), 116.6f);

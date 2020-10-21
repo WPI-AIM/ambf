@@ -50,6 +50,7 @@ set(SRC_FILES
    src/ControllerNode.cpp)
 
 set (HDR_FILES
+   include/${PROJECT_NAME}/ControllerBase.h
    include/${PROJECT_NAME}/PDController.h
    include/${PROJECT_NAME}/ControllerNode.h)
 
@@ -65,11 +66,14 @@ find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
-
-
-add_executable (controller_test src/testing_controller.cpp)
-target_link_libraries (controller_test ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread )
-
 # add_executable (control_node src/control_node.cpp)
 # target_link_libraries (control_node ${PROJECT_NAME} ${Eigen_LIBRARIES} ambf_client)
+
+
+add_executable (PDcontroller_test src/PDtesting_controller.cpp)
+target_link_libraries (PDcontroller_test ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread )
+
+add_executable (controlnode_test src/controlnode_testing.cpp)
+target_link_libraries (controlnode_test ${PROJECT_NAME} ${AMBF_LIBRARIES} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread ambf_client )
+
 

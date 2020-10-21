@@ -71,32 +71,15 @@ Eigen::MatrixXd PDController::validateMat(const Eigen::MatrixXd& mat1, const Eig
     }
     else{
 
-         throw std::runtime_error{"!"};
+         throw std::invalid_argument{"!"};
     }
 
 }
 
-void PDController::calculate( const Eigen::VectorXd& e, const  Eigen::VectorXd& ed, Eigen::VectorXd& tau)
+void PDController::calc_tau(const Eigen::VectorXd &e, const Eigen::VectorXd &ed, Eigen::VectorXd &tau)
 {
-    //need to calculate the PD control
-    //Kp*e + Kd*ed;
 
-    try
-    {
-        if ( e.rows() == dimensions && ed.rows() == dimensions )
-        {
-          tau = Kp*e+ Kd*ed;
-        }
-        else
-        {
-            throw std::invalid_argument{"dementions are not correct"};
-        }
-
-    }catch(const std::invalid_argument& e )
-    {
-        std::cout<<"Make sure you demetnios are correct: " << dimensions;
-    }
-
+  tau = Kp*e+ Kd*ed;
 }
 
 

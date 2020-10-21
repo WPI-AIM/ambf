@@ -1,9 +1,11 @@
+#ifndef PDCONTROLLER_H
+#define PDCONTROLLER_H
 #include <Eigen/Core>
-
+#include "controller_modules/ControllerBase.h".h"
 #include <iostream>
 
 
-class PDController
+class PDController : public ControllerBase
 {
 public:
 
@@ -12,7 +14,7 @@ public:
      bool setKd(const Eigen::MatrixXd&);
      Eigen::MatrixXd getKp();
      Eigen::MatrixXd getKd();
-     void calculate( const Eigen::VectorXd& e, const  Eigen::VectorXd& ed, Eigen::VectorXd& tau);
+     void calc_tau( const Eigen::VectorXd& e, const  Eigen::VectorXd& ed, Eigen::VectorXd& tau);
     ~PDController(void);
 
 private:
@@ -24,3 +26,5 @@ private:
 
 };
 
+
+#endif

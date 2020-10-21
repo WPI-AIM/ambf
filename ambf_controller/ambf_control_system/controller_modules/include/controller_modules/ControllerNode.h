@@ -16,33 +16,44 @@
 #include "trajectory_generator/trajectory.h"
 #include <boost/thread/thread.hpp>
 #include "std_msgs/Empty.h"
+#include "sensor_msgs/JointState.h"
 
 class ControllerNode
 {
 
     public:
-        ControllerNode(rigidBodyPtr, ros::NodeHandle*, const Eigen::Ref<const Eigen::MatrixXd>&, const Eigen::Ref<const Eigen::MatrixXd>&);
+        ControllerNode(rigidBodyPtr, ros::NodeHandle*, PDController&);
         void setGain(const Eigen::Ref<const Eigen::MatrixXd>&, const Eigen::Ref<const Eigen::MatrixXd>&);
         void updataPath(const trajectory_generator::trajectory&);
         bool startController();
+        bool isRunning();
+        int getStepCount();
+        int getPathLength();
+        Eigen::VectorXd getDesiredPos(); //=  VectToEigen(pos_vec);
+        Eigen::VectorXd getDesiredVel();
+        Eigen::VectorXd getDesiredAccel();
 
    private:
-        Eigen::VectorXd VectToEigen(const std::vector<double> &msg);
-        Eigen::VectorXd VectToEigen(const std::vector<float> &msg);
+        ros::Publisher desired_pub;
+        template<typename T, typename A>
+        Eigen::VectorXd VectToEigen(std::vector<T,A> const& msg );
         void startControllerCallback(const std_msgs::Empty );
         void stopControllerCallback(const std_msgs::Empty );
-        void control();
+        void controlloop();
+        void step();
+        void updateState();
+        std::vector<double> calcTorque(const std::vector<double>, const std::vector<double>);
         ros::Subscriber start_controller;
         ros::Subscriber stop_controller;
         rigidBodyPtr handle;
         bool have_path;
         bool running;
-        int path_index;
+        int step_count;
         int path_length;
         ros::NodeHandle n;
         ros::ServiceClient client_ID; //nh.serviceClient<rbdl_server::RBDLInverseDynamics>("InverseDynamics");
-        //
         PDController controller;
+        std::vector<double> curr_pos, curr_vel;
         Eigen::VectorXd desired_pos; //=  VectToEigen(pos_vec);
         Eigen::VectorXd desired_vel;
         Eigen::VectorXd desired_accel ;// =  VectToEigen(vel_vec);
