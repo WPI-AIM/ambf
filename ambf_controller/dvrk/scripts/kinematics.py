@@ -48,3 +48,15 @@ class DH:
 
     def get_trans(self):
         return self.mat_from_dh(self.alpha, self.a, self.theta, self.d, self.offset)
+
+
+def enforce_limits(j_raw, joint_lims):
+    num_joints = len(j_raw)
+    j_limited = [0.0]*num_joints
+
+    for idx in range(num_joints):
+        min_lim = joint_lims[idx][0]
+        max_lim = joint_lims[idx][1]
+        j_limited[idx] = max(min_lim, min(j_raw[idx], max_lim))
+
+    return [j_limited[0], j_limited[1], j_limited[2], j_limited[3], j_limited[4], j_limited[5], j_limited[6]]

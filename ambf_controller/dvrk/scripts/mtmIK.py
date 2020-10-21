@@ -48,38 +48,8 @@ import rospy
 #
 # is the direction between the difference of A and B expressed in C.
 
-T_PalmJoint_0 = None
-
-
-def enforce_limits(j_raw):
-    # Min to Max Limits
-    num_joints = 7
-    j1_lims = [np.deg2rad(-75), np.deg2rad(44.98)]
-    j2_lims = [np.deg2rad(-44.98), np.deg2rad(44.98)]
-    j3_lims = [np.deg2rad(-44.98), np.deg2rad(44.98)]
-    j4_lims = [np.deg2rad(-59), np.deg2rad(245)]
-    j5_lims = [np.deg2rad(-90), np.deg2rad(180)]
-    j6_lims = [np.deg2rad(-44.98), np.deg2rad(44.98)]
-    j7_lims = [np.deg2rad(-175), np.deg2rad(175)]
-
-    j_limited = [0.0]*num_joints
-    j_lims = [j1_lims, j2_lims, j3_lims, j4_lims, j5_lims, j6_lims, j7_lims]
-
-    for idx in range(num_joints):
-        min_lim = j_lims[idx][0]
-        max_lim = j_lims[idx][1]
-        j_limited[idx] = max(min_lim, min(j_raw[idx], max_lim))
-
-    return [j_limited[0], j_limited[1], j_limited[2], j_limited[3], j_limited[4], j_limited[5], j_limited[6]]
-
-
-def get_T_PalmJoint_0():
-    global T_PalmJoint_0
-    return T_PalmJoint_0
-
 
 def compute_IK(T_7_0):
-    global T_PalmJoint_0
     L_arm = 0.278828
     L_forearm = 0.363867
     L_h = 0.147733

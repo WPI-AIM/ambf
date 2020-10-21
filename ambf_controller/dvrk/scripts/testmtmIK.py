@@ -1,40 +1,11 @@
 from mtmIK import *
 from ambf_client import Client
 import time
-
-
-class JointSpaceTrajectory:
-    def __init__(self):
-        self._num_traj_points = 11
-        self._num_joints = 7
-        self._traj_points = [[0] * self._num_joints] * self._num_traj_points
-        self._traj_points[0] = [-0.0, 0.0, 0.0, 0.0, -0.0, 0.0, 0.0]
-        self._traj_points[1] = [-0.1, 0.1, 0.1, 0.1, -0.1, 0.0, 0.1]
-        self._traj_points[2] = [-0.3, 0.3, 0.1, 0.3, -0.3, 0.0, 0.3]
-        self._traj_points[3] = [-0.5, 0.5, 0.15, 0.5, -0.5, 0.0, 0.5]
-        self._traj_points[4] = [-0.7, 0.7, 0.20, 0.7, -0.7, 0.0, 0.7]
-        self._traj_points[5] = [-0.9, 0.9, 0.22, 0.9, -0.9, 0.0, 0.9]
-        self._traj_points[6] = [0.1, -0.1, 0.22, -0.1, 0.1, 0.0, -0.1]
-        self._traj_points[7] = [0.3, -0.3, 0.20, -0.3, 0.3, 0.0, -0.3]
-        self._traj_points[8] = [0.5, -0.5, 0.15, -0.5, 0.5, 0.0, -0.5]
-        self._traj_points[9] = [0.7, -0.7, 0.1, -0.7, 0.7, 0.0, -0.7]
-        self._traj_points[10] = [0.9, -0.9, 0.1, -0.9, 0.9, 0.0, -0.9]
-
-    def get_num_traj_points(self):
-        return self._num_traj_points
-
-    def get_num_joints(self):
-        return self._num_joints
-
-    def get_traj_at_point(self, point):
-        if point < self._num_traj_points:
-            return self._traj_points[point]
-        else:
-            raise ValueError
+from joint_space_trajectory_generator import JointSpaceTrajectory
 
 
 def test_ik():
-    js_traj = JointSpaceTrajectory()
+    js_traj = JointSpaceTrajectory(num_joints=7, num_traj_points=50)
     num_points = js_traj.get_num_traj_points()
     num_joints = 7
     for i in range(num_points):
@@ -53,11 +24,13 @@ def test_ik():
 
 
 def test_ambf_mtm():
-    c = Client()
+    c = Client('mtm_ik_test')
     c.connect()
     time.sleep(2.0)
     print(c.get_obj_names())
     b = c.get_obj_handle('TopPanel')
+    target_ik = c.get_obj_handle('mtm/target_ik')
+    target_fk = c.get_obj_handle('mtm/target_fk')
     time.sleep(1.0)
 
     # The following are the names of the controllable joints.
@@ -69,13 +42,41 @@ def test_ambf_mtm():
     #  'WristPitch-WristYaw', 5
     #  'WristYaw-WristRoll', 6
 
-    js_traj = JointSpaceTrajectory()
+    num_joints = 7
+    joint_lims = np.zeros((num_joints, 2))
+    joint_lims[0] = [np.deg2rad(-75), np.deg2rad(44.98)]
+    joint_lims[1] = [np.deg2rad(-44.98), np.deg2rad(44.98)]
+    joint_lims[2] = [np.deg2rad(-44.98), np.deg2rad(44.98)]
+    joint_lims[3] = [np.deg2rad(-59), np.deg2rad(245)]
+    joint_lims[4] = [np.deg2rad(-90), np.deg2rad(180)]
+    joint_lims[5] = [np.deg2rad(-44.98), np.deg2rad(44.98)]
+    joint_lims[6] = [np.deg2rad(-175), np.deg2rad(175)]
+
+    js_traj = JointSpaceTrajectory(num_joints=7, num_traj_points=50, joint_limits=joint_lims)
     num_points = js_traj.get_num_traj_points()
     num_joints = 7
     for i in range(num_points):
         test_q = js_traj.get_traj_at_point(i)
         T_7_0 = compute_FK(test_q)
+
+        if target_ik is not None:
+            P_0_w = Vector(b.get_pos().x, b.get_pos().y, b.get_pos().z)
+            R_0_w = Rotation.RPY(b.get_rpy()[0], b.get_rpy()[1], b.get_rpy()[2])
+            T_0_w = Frame(R_0_w, P_0_w)
+            T_7_w = T_0_w * convert_mat_to_frame(T_7_0)
+            target_ik.set_pos(T_7_w.p[0], T_7_w.p[1], T_7_w.p[2])
+            target_ik.set_rpy(T_7_w.M.GetRPY()[0], T_7_w.M.GetRPY()[1], T_7_w.M.GetRPY()[2])
+
         computed_q = compute_IK(convert_mat_to_frame(T_7_0))
+
+        if target_fk is not None:
+            P_0_w = Vector(b.get_pos().x, b.get_pos().y, b.get_pos().z)
+            R_0_w = Rotation.RPY(b.get_rpy()[0], b.get_rpy()[1], b.get_rpy()[2])
+            T_0_w = Frame(R_0_w, P_0_w)
+            T_7_0_fk = compute_FK(computed_q)
+            T_7_w = T_0_w * convert_mat_to_frame(T_7_0_fk)
+            target_fk.set_pos(T_7_w.p[0], T_7_w.p[1], T_7_w.p[2])
+            target_fk.set_rpy(T_7_w.M.GetRPY()[0], T_7_w.M.GetRPY()[1], T_7_w.M.GetRPY()[2])
 
         # print('SETTING JOINTS: ')
         # print(computed_q)
@@ -88,11 +89,16 @@ def test_ambf_mtm():
         b.set_joint_pos('WristPitch-WristYaw', computed_q[5])
         b.set_joint_pos('WristYaw-WristRoll', computed_q[6])
 
+        test_q = round_vec(test_q)
+        T_7_0 = round_mat(T_7_0, 4, 4, 3)
         errors = [0]*num_joints
-        for j in range(7):
-            errors[j] = test_q[j] - computed_q[j]
-        print ('******')
-        print ('Case:', i)
+        print ('--------------------------------------')
+        print ('**************************************')
+        print ('Test Number:', i)
+        print ('Joint Positions used to T_EE_B (EndEffector in Base)')
+        print test_q
+        print ('Requested Transform for T_EE_B (EndEffector in Base)')
+        print (T_7_0)
         print ('Joint Errors from IK Solver')
         print ["{0:0.2f}".format(k) for k in errors]
 
