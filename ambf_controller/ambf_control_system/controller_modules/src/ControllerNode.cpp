@@ -15,6 +15,7 @@ ControllerNode::ControllerNode(rigidBodyPtr _handle,
     desired_pub = n.advertise<sensor_msgs::JointState>("desiredJoint", 1000);
     have_path = false;
     step_count = 0;
+    mtx_.unlock();
 
 }
 
@@ -52,10 +53,12 @@ void ControllerNode::stopControllerCallback(const std_msgs::Empty )
 
 void ControllerNode::updataPath(const trajectory_generator::trajectory& new_path)
 {
+    boost::lock_guard<boost::mutex> lock{mtx_};
     path = new_path;
     step_count = 0;
     path_length = new_path.traj.size();
     have_path = true;
+
 }
 
 bool ControllerNode::startController()
@@ -108,10 +111,11 @@ std::vector<double> ControllerNode::calcTorque(const std::vector<double> pos, co
 {
 
     // calculate the control input
-
-    std::cout<<"desired "<<desired_pos.rows()<<std::endl;
-
+       boost::lock_guard<boost::mutex> lock{mtx_};
+    std::cout<<"desired pos"<<desired_pos.rows()<<std::endl;
+    std::cout<<"desired vel"<<desired_vel.rows()<<std::endl;
     std::cout<<"pos "<<VectToEigen(pos).size()<<std::endl;
+    std::cout<<"vel "<<VectToEigen(vel).size()<<std::endl;
     desired_pos - VectToEigen(pos);
     std::cout<<"hello\nz";
     Eigen::VectorXd e = desired_pos - VectToEigen(pos);
@@ -146,7 +150,13 @@ void ControllerNode::controlloop()
     rbdl_server::RBDLInverseDynamics Invdny_msg;
     ros::Rate loop_rate(1000);
     //set then inital desired state to the current state
+    std::vector<float> pos_vec = handle->get_all_joint_pos();
+    std::vector<float> vel_vec = handle->get_all_joint_vel();
+    std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
+    std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
 
+    desired_pos =  VectToEigen(pos_vec_temp);
+    desired_vel =  VectToEigen(vel_vec_temp);
 
     //run the controller in a loop
     while(ros::ok() && running)
@@ -154,24 +164,22 @@ void ControllerNode::controlloop()
 
         updateState();
         //check if there is a new path
+        boost::lock_guard<boost::mutex> lock{mtx_};
         if(have_path)
         {
             step();
-            std::cout<<"step"<<std::endl;
         }
-        else
-        {
-            std::vector<float> pos_vec = handle->get_all_joint_pos();
-            std::vector<float> vel_vec = handle->get_all_joint_vel();
+//        else
+//        {
+//            std::vector<float> pos_vec = handle->get_all_joint_pos();
+//            std::vector<float> vel_vec = handle->get_all_joint_vel();
+//            std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
+//            std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
 
-            std::vector<double> pos_vec_temp(pos_vec.begin(), pos_vec.end());
-            std::vector<double> vel_vec_temp(vel_vec.begin(), vel_vec.end());
+//            desired_pos =  VectToEigen(pos_vec_temp);
+//            desired_vel =  VectToEigen(vel_vec_temp);
+//        }
 
-            desired_pos =  VectToEigen(pos_vec_temp);
-            desired_vel =  VectToEigen(vel_vec_temp);
-            std::cout<<" no step"<<std::endl;
-        }
-        std::cout<<running<<std::endl;
         aq = calcTorque(curr_pos, curr_vel);
 
         //build the message

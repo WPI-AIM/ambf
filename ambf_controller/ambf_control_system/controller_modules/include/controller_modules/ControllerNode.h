@@ -35,6 +35,7 @@ class ControllerNode
 
    private:
         ros::Publisher desired_pub;
+        boost::mutex mtx_;
         template<typename T, typename A>
         Eigen::VectorXd VectToEigen(std::vector<T,A> const& msg );
         void startControllerCallback(const std_msgs::Empty );
