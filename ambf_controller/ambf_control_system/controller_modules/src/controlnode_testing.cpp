@@ -25,6 +25,14 @@ ControllerNode_Test::ControllerNode_Test()
     usleep(1000000);
 }
 
+template<typename T, typename A>
+Eigen::VectorXd VectToEigen(std::vector<T,A> const& msg )
+{
+    std::vector<double> vec(msg.begin(), msg.end());
+    Eigen::VectorXd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
+    return Q;
+}
+
 
 //TEST_F(ControllerNode_Test, TestRunning )
 //{
@@ -66,9 +74,9 @@ TEST_F(ControllerNode_Test, TestTraj )
     trajectory_generator::trajectory msg;
     sensor_msgs::JointState s1, s2, s3;
     std::vector<double> p1, p2, p3, v1, v2, v3;
-
+    Eigen::VectorXd v(7);
     for( unsigned int i= 0; i<7; i++)
-    {
+    {   v[i]=1;
         p1.push_back(1);
         p2.push_back(1);
         p3.push_back(1);
@@ -80,16 +88,33 @@ TEST_F(ControllerNode_Test, TestTraj )
     s1.position = p1;
     s2.position = p2;
     s3.position = p3;
-    s1.position = v1;
-    s2.position = v2;
-    s3.position = v3;
+    s1.velocity = v1;
+    s2.velocity = v2;
+    s3.velocity = v3;
 
     msg.traj.push_back(s1);
     msg.traj.push_back(s2);
     msg.traj.push_back(s3);
-    controller.startController();
-    controller.updataPath(msg);
+    //controller.startController();
 
+
+    controller.updataPath(msg);
+    controller.step();
+    Eigen::VectorXd potato =  controller.getDesiredPos();
+
+    EXPECT_TRUE(v.isApprox(potato));
+    controller.step();
+    Eigen::VectorXd potato2 =  controller.getDesiredPos();
+    EXPECT_TRUE(v.isApprox(potato2));
+    controller.step();
+    Eigen::VectorXd potato3 =  controller.getDesiredPos();
+    EXPECT_TRUE(v.isApprox(potato3));
+    controller.step();
+    Eigen::VectorXd potato4 =  controller.getDesiredPos();
+    EXPECT_TRUE(v.isApprox(potato4));
+    controller.step();
+    Eigen::VectorXd potato5 =  controller.getDesiredPos();
+    EXPECT_TRUE(v.isApprox(potato5));
 
 }
 

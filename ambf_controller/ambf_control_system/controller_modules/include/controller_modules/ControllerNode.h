@@ -32,16 +32,19 @@ class ControllerNode
         Eigen::VectorXd getDesiredPos(); //=  VectToEigen(pos_vec);
         Eigen::VectorXd getDesiredVel();
         Eigen::VectorXd getDesiredAccel();
+        void step();
+
 
    private:
-        ros::Publisher desired_pub;
-        boost::mutex mtx_;
+
         template<typename T, typename A>
         Eigen::VectorXd VectToEigen(std::vector<T,A> const& msg );
+        ros::Publisher desired_pub;
+        boost::mutex mtx_;
         void startControllerCallback(const std_msgs::Empty );
         void stopControllerCallback(const std_msgs::Empty );
         void controlloop();
-        void step();
+
         void updateState();
         std::vector<double> calcTorque(const std::vector<double>, const std::vector<double>);
         ros::Subscriber start_controller;

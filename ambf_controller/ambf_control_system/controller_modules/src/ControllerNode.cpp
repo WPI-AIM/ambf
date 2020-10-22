@@ -58,7 +58,7 @@ void ControllerNode::updataPath(const trajectory_generator::trajectory& new_path
     step_count = 0;
     path_length = new_path.traj.size();
     have_path = true;
-
+    std::cout<<"ch1"<<std::endl;
 }
 
 bool ControllerNode::startController()
@@ -90,16 +90,12 @@ Eigen::VectorXd ControllerNode::VectToEigen(std::vector<T,A> const& msg )
 
 void ControllerNode::step()
 {
-    if(step_count == path_length - 1)
+    if(step_count >= path_length - 1)
     {
         have_path = false;
     }
     else
     {
-        for(int i =0; i <path.traj[step_count].position.size(); i++ )
-        {
-            //std::cout<<path.traj[step_count].position ;
-        }
         desired_pos = VectToEigen( path.traj[step_count].position );
         desired_vel = VectToEigen( path.traj[step_count].velocity );
         step_count++;
@@ -111,19 +107,9 @@ std::vector<double> ControllerNode::calcTorque(const std::vector<double> pos, co
 {
 
     // calculate the control input
-       boost::lock_guard<boost::mutex> lock{mtx_};
-    std::cout<<"desired pos"<<desired_pos.rows()<<std::endl;
-    std::cout<<"desired vel"<<desired_vel.rows()<<std::endl;
-    std::cout<<"pos "<<VectToEigen(pos).size()<<std::endl;
-    std::cout<<"vel "<<VectToEigen(vel).size()<<std::endl;
-    desired_pos - VectToEigen(pos);
-    std::cout<<"hello\nz";
+    boost::lock_guard<boost::mutex> lock{mtx_};
     Eigen::VectorXd e = desired_pos - VectToEigen(pos);
-
-    std::cout<<"hello2\n";
     Eigen::VectorXd ed = desired_vel - VectToEigen(vel);
-    std::cout<<"ch1"<<std::endl;
-
     Eigen::VectorXd aq;
     controller.calc_tau(e, ed, aq);
     std::vector<double> aq_vect(&aq[0], aq.data()+aq.cols()*aq.rows());
