@@ -28,7 +28,7 @@ def test_ambf_mtm():
     c.connect()
     time.sleep(2.0)
     print(c.get_obj_names())
-    b = c.get_obj_handle('TopPanel')
+    b = c.get_obj_handle('mtm/TopPanel')
     target_ik = c.get_obj_handle('mtm/target_ik')
     target_fk = c.get_obj_handle('mtm/target_fk')
     time.sleep(1.0)
@@ -68,6 +68,7 @@ def test_ambf_mtm():
             target_ik.set_rpy(T_7_w.M.GetRPY()[0], T_7_w.M.GetRPY()[1], T_7_w.M.GetRPY()[2])
 
         computed_q = compute_IK(convert_mat_to_frame(T_7_0))
+        # computed_q = enforce_limits(computed_q, joint_lims)
 
         if target_fk is not None:
             P_0_w = Vector(b.get_pos().x, b.get_pos().y, b.get_pos().z)
