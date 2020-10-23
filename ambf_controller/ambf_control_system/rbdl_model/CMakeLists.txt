@@ -8,15 +8,11 @@ project(rbdl_model)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-#  ambf_msgs
-#  geometry_msgs
-#  message_generation
-#  tf
 )
 
 catkin_package( INCLUDE_DIRS include
   LIBRARIES rbdl_model
-#  CATKIN_DEPENDS ambf_msgs message_runtime
+#  CATKIN_DEPENDS
 #  DEPENDS system_lib
 )
 
