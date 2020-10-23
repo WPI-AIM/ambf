@@ -17,6 +17,7 @@ private:
 
     std::string name_;
     double mass_{0.00000001};
+    Vector3d inertia_;
     double collision_margin_{0.0};
     double scale_{0.0};
 
@@ -31,9 +32,6 @@ private:
     double friction_static_{0.0};
     double damping_angular_{0.0};
     double damping_linear_{0.0};
-
-    //substitute this value to inertia in RBDL, this is got from rbdl client
-    Vector3d inertia_;
 
     std::string trimTrailingSpaces(YAML::Node bodyNode);
 

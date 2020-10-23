@@ -1,7 +1,7 @@
 #ifndef PDCONTROLLER_H
 #define PDCONTROLLER_H
 #include <Eigen/Core>
-#include "controller_modules/ControllerBase.h".h"
+#include "controller_modules/ControllerBase.h"
 #include <iostream>
 
 

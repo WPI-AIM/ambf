@@ -43,8 +43,6 @@ include_directories(
   ${GTEST_INCLUDE_DIRS}
 )
 
-
-
 set(SRC_FILES
    src/PDController.cpp
    src/ControllerNode.cpp)

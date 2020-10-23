@@ -15,6 +15,7 @@ public:
     inline std::string Child() { return child_; }
     inline Vector3d ParentAxis() { return parent_axis_; }
     inline Vector3d ParentPivot() { return parent_pivot_; }
+    inline Matrix3_t BodyRotation() { return body_rotation_; }
     inline std::string Type() { return type_; }
 
 private:
@@ -29,6 +30,7 @@ private:
     double joint_limits_low_{0.0};
     bool passive_{false};
     bool detached_{false};
+    Matrix3_t body_rotation_;
     std::string type_;
     double damping_{0.0};
     double offset_{0.0};

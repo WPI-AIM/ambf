@@ -9,7 +9,6 @@
 #include <queue>
 #include <rbdl/rbdl.h>
 #include <rbdl/rbdl_math.h>
-#include <ambf_client/ambf_client.h>
 #include <sstream>
 #include <unordered_set>
 
@@ -42,7 +41,6 @@ public:
 private:
     void getNamespace();
     bool getBodies();
-    void updateInertiaFromAMBFClient();
     bool getJoints();
     bool findRootNode();
     void addDummyRootJoint();

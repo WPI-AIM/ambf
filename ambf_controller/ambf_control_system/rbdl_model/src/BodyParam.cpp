@@ -12,6 +12,9 @@ BodyParam::BodyParam(YAML::Node bodyNode)
     if(mass.IsDefined()) mass_ = mass.as<double>();
     if(mass_ == 0.0) mass_ = 0.0000001;
 
+    YAML::Node inertia = bodyNode["inertia"];
+    if(inertia.IsDefined()) inertia_ = utilities.toXYZInertia(&inertia);
+
     YAML::Node collision_margin = bodyNode["collision margin"];
     if(collision_margin.IsDefined()) collision_margin_ = collision_margin.as<double>();
 
