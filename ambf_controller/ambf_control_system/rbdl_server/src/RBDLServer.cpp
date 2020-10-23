@@ -21,6 +21,12 @@ RBDLServer::~RBDLServer()
     delete model;
 }
 
+
+RigidBodyDynamics::Model* RBDLServer::getModel()
+{
+    return model;
+}
+
 ///
 /// \brief RBDLServer::CreateModel_srv
 /// \param req
