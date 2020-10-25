@@ -1,7 +1,9 @@
+tensorboard==1.14.0
+pyKDL
 setuptools
 wheel
 catkin_tools
 scipy
-tensorboard==1.14.0
 cloudpickle==1.3.0
-pyKDL
+rospkg
+catkin_pkg
