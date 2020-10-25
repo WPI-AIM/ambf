@@ -8,15 +8,11 @@ project(rbdl_model)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  ambf_msgs
-  geometry_msgs
-  message_generation
-  tf
 )
 
 catkin_package( INCLUDE_DIRS include
   LIBRARIES rbdl_model
-  CATKIN_DEPENDS ambf_msgs message_runtime
+#  CATKIN_DEPENDS
 #  DEPENDS system_lib
 )
 
@@ -38,6 +34,11 @@ include_directories(include ${YAML_CPP_INCLUDE_DIR} ${Eigen_INCLUDE_DIRS} ${RBDL
 #set(EXECUTABLE_NAME ${PROJECT_NAME})
 #set(EXECUTABLE_NAME rbdl_model)
 
+
+set (RBDL_MODEL_INCLUDE_DIRS include)
+set (RBDL_MODEL_LIBRARIES rbdl_model)
+
+
 #add_executable(${EXECUTABLE_NAME})
 
 set (HDR_FILES
@@ -55,15 +56,14 @@ set(SOURCE_FILES
 #    src/main.cpp
     )
 
-
 ## Declare a C++ library
 add_library(rbdl_model ${HDR_FILES} ${SOURCE_FILES})
 
 add_dependencies(rbdl_model ${catkin_EXPORTED_TARGETS})
 
-
+#add_executable (${PROJECT_NAME} ${HDR_FILES} ${SOURCE_FILES})
 ## Specify libraries to link a library or executable target against
-target_link_libraries(rbdl_model ${catkin_LIBRARIES})
+target_link_libraries(rbdl_model ${catkin_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} ${RBDL_LIBRARY} ${YAML_CPP_LIBRARIES} pthread)
 
 set (RBDL_MODEL_INCLUDE_DIRS include)
 set (RBDL_MODEL_LIBRARIES rbdl_model)

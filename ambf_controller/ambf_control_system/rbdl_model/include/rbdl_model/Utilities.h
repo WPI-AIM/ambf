@@ -19,6 +19,8 @@ public:
 
     Vector3d toXYZ(YAML::Node* node);
     Vector3d toRPY(YAML::Node* node);
+    Vector3d toXYZInertia(YAML::Node* node);
+    Matrix3_t toRotation(YAML::Node* node);
 
     std::string trimTrailingSpaces(YAML::Node bodyNode);
     void eraseSubStr(std::string & mainStr, const std::string & toErase);

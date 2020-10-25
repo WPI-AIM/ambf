@@ -42,6 +42,9 @@ JointParam::JointParam(YAML::Node jointNode)
     YAML::Node passive = jointNode["passive"];
     if(passive.IsDefined()) passive_ = passive.as<bool>();
 
+    YAML::Node body_rotation = jointNode["body rotation"];
+    if(parent_axis.IsDefined()) body_rotation_ = utilities.toRotation(&body_rotation);
+
     YAML::Node detached = jointNode["detached"];
     if(detached.IsDefined()) detached_ = detached.as<bool>();
 
