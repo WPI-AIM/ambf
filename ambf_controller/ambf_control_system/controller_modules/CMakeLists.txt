@@ -10,6 +10,7 @@ project(controller_modules)
 find_package(catkin REQUIRED COMPONENTS
   ambf_msgs
   geometry_msgs
+  trajectory_msgs
   message_generation
   tf
   roscpp
@@ -23,12 +24,6 @@ find_package(GTest REQUIRED)
 include_directories( include ${catkin_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS} ${RBDL_MODEL_INCLUDE_DIRS})
 include_directories("../rbdl_model/include/")
 include_directories("../rbdl_server/include/")
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES controller_modules
-  CATKIN_DEPENDS ambf_msgs geometry_msgs  tf
-  DEPENDS system_lib
-)
 
 ###########
 ## Build ##
@@ -43,16 +38,37 @@ include_directories(
   ${GTEST_INCLUDE_DIRS}
 )
 
+add_service_files(
+  FILES
+  JointControl.srv  
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+  geometry_msgs
+  trajectory_msgs
+)
+
+
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES controller_modules
+  CATKIN_DEPENDS ambf_msgs geometry_msgs trajectory_msgs  tf
+  #DEPENDS system_lib
+)
 
 
 set(SRC_FILES
    src/PDController.cpp
-   src/ControllerNode.cpp)
+   src/ControllerNode.cpp
+   src/ControllerManager.cpp)
 
 set (HDR_FILES
    include/${PROJECT_NAME}/ControllerBase.h
    include/${PROJECT_NAME}/PDController.h
-   include/${PROJECT_NAME}/ControllerNode.h)
+   include/${PROJECT_NAME}/ControllerNode.h
+   include/${PROJECT_NAME}/ControllerManager.h)
 
 # target_link_libraries (PDController  )
 

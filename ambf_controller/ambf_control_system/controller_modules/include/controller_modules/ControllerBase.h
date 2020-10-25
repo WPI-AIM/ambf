@@ -1,6 +1,7 @@
 #ifndef CONTROLLERBASE_H
 #define CONTROLLERBASE_H
 
+#include <Eigen/Core>
 
 class ControllerBase
 {
@@ -12,6 +13,8 @@ class ControllerBase
         virtual void calc_tau(const Eigen::VectorXd&, const  Eigen::VectorXd&, Eigen::VectorXd&)=0;
 
    protected:
+   
+
 
 };
 
