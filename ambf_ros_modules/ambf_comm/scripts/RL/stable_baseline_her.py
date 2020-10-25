@@ -106,7 +106,7 @@ def main(env):
     env.reset()
     # Train the model
     model.learn(4000000, log_interval=100,
-                callback=CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/"))
+                callback=CheckpointCallback(save_freq=1, save_path="./ddpg_dvrk_tensorboard/"))
     model.save("./her_robot_env")
 
     # NOTE:

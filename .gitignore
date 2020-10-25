@@ -20,3 +20,5 @@ bin-debug/
 *.blend1
 *.old
 .logs
+
+training-gpu.Dockerfile

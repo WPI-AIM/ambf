@@ -3,7 +3,7 @@ pyKDL
 setuptools
 wheel
 catkin_tools
-scipy
+numpy
 cloudpickle==1.3.0
 rospkg
 catkin_pkg

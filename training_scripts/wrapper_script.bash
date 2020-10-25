@@ -22,20 +22,20 @@ set -m
 ./roscore.bash &
 
 # Start the second process
-./launch_ambf.bash &
+./psmIK_service.bash &
 
 # Start the third process
-./psmIK_service.bash
+./training.bash &
+
+# Start the fifth process
+./tensorboard_launch.bash &
 
 # Start the fourth process
-./training.bash
-
-# Start the fourth process
-#./tensorboard_launch.bash
+./launch_ambf.bash
 
 # now we bring the primary process back into the foreground
 # and leave it there
-fg %2
+fg %5
 
 # and now make the script abortable again
 allowAbort=true;
