@@ -56,10 +56,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
-# RUN mkdir ${AMBF_WS}
 RUN git clone --branch feat-rl https://github.com/WPI-AIM/ambf.git
-# COPY . ${AMBF_WS}
-# WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
 

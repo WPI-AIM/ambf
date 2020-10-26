@@ -54,8 +54,9 @@ from gym.utils import seeding
 from ambf_world import World
 from ambf_object import Object
 from numpy import linalg as LA
-from psmFK import compute_FK
+from psmFK import *
 from transformations import euler_from_matrix
+from dvrk_functions.msg import HomogenousTransform
 import rospy
 from dvrk_functions.srv import *
 
@@ -187,14 +188,20 @@ class AmbfEnvDDPG(gym.Env):
         for i in range(3):
             desired_end_effector_frame[i, 3] = desired_cartesian_pos[i]
         
+        # Create Homogenous Transform Message:
+        msg = HomogenousTransform()
+        msg.data = np.array(desired_end_effector_frame).flatten()
+
         rospy.wait_for_service('compute_IK')
         computed_joint_pos = None
         try:
             compute_IK_service = rospy.ServiceProxy('compute_IK', ComputeIK)
-            compute_IK_resp = compute_IK_service.call(ComputeIKRequest(convert_mat_to_frame(desired_end_effector_frame)))
-            computed_joint_pos = compute_IK_resp.q_des
+            compute_IK_resp = compute_IK_service.call(ComputeIKRequest(msg)) # convert_mat_to_frame(desired_end_effector_frame)
+            computed_joint_pos = list(compute_IK_resp.q_des)
+            for i in range(0, 6):
+                computed_joint_pos[i] = round(computed_joint_pos[i], 4)
         except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
+            print("Service call failed: %s" % e, file=sys.stderr)
         # computed_joint_pos = compute_IK(convert_mat_to_frame(desired_end_effector_frame))
         # Ensure the computed joint positions are within the limit of user set joint positions
         desired_joint_pos = self.limit_joint_pos(computed_joint_pos)

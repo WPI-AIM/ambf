@@ -1,4 +1,4 @@
-#!/usr/bin/env/python3
+#!/usr/bin/python3
 
 # //==============================================================================
 # /*
@@ -47,9 +47,10 @@
 import numpy as np
 from stable_baselines import HER, DDPG
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
+from stable_baselines.bench import Monitor
 from ambf_comm import AmbfEnvHERDDPG
 import time
-from stable_baselines.common.callbacks import CheckpointCallback
+from stable_baselines.common.callbacks import CallbackList, CheckpointCallback, EvalCallback
 import os, sys
 from datetime import datetime
 
@@ -78,9 +79,13 @@ def redirect_stdout(filepath=None):
     print("Began logging")
     return
 
-def main(env):
+def main(training_env, eval_env=None, log_dir='./.logs/results'):
+    
+    os.makedirs(log_dir, exist_ok=True)
 
-    n_actions = env.action_space.shape[0]
+    training_env = Monitor(training_env, log_dir)
+
+    n_actions = training_env.action_space.shape[0]
     noise_std = 0.2
     # Currently using OU noise
     action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=noise_std * np.ones(n_actions))
@@ -100,13 +105,18 @@ def main(env):
     }
 
     # Available strategies (cf paper): future, final, episode, random
-    model = HER('MlpPolicy', env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
+    model = HER('MlpPolicy', training_env, model_class, verbose=1, n_sampled_goal=4, goal_selection_strategy='future',
                 buffer_size=int(1e5), batch_size=128, tensorboard_log="./ddpg_dvrk_tensorboard/", **rl_model_kwargs)
     # Reset the model
-    env.reset()
+    training_env.reset()
+    # Create callbacks
+    checkpoint_callback = CheckpointCallback(save_freq=100000, save_path="./.model/model_checkpoint/") #save_freq=100000
+    eval_callback = EvalCallback(training_env, best_model_save_path='./.model/model_checkpoint/best_model',
+                                log_path=log_dir, eval_freq=500)
+    callback = CallbackList([checkpoint_callback, eval_callback])
     # Train the model
     model.learn(4000000, log_interval=100,
-                callback=CheckpointCallback(save_freq=1, save_path="./ddpg_dvrk_tensorboard/"))
+                callback=callback) 
     model.save("./her_robot_env")
 
     # NOTE:
@@ -147,7 +157,7 @@ def load_model(eval_env):
 
 
 if __name__ == '__main__':
-    redirect_stdout()
+    # redirect_stdout()
     ENV_NAME = 'psm/baselink'
     env_kwargs = {
         'action_space_limit': 0.05,
@@ -172,17 +182,22 @@ if __name__ == '__main__':
         'enable_step_throttling': False,
     }
     # Training
+    print("Creating training_env")
     ambf_env = AmbfEnvHERDDPG(**env_kwargs)
     time.sleep(5)
     ambf_env.make(ENV_NAME)
     ambf_env.reset()
-    main(env=ambf_env)
-    ambf_env.ambf_client.clean_up()
+
     # Evaluate learnt policy
+    print("Creating eval_env")
     eval_env = AmbfEnvHERDDPG(**env_kwargs)
     time.sleep(5)
     eval_env.make(ENV_NAME)
     eval_env.reset()
+    
+    main(training_env=ambf_env, eval_env=eval_env)
+    ambf_env.ambf_client.clean_up()
+    
     load_model(eval_env=eval_env)
     eval_env.ambf_client.clean_up()
 

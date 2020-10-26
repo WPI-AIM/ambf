@@ -113,6 +113,9 @@ class AmbfEnvHERDDPG(gym.GoalEnv):
         self.action_lims_high = action_space_limit*np.ones(self.n_actions)
         self.action_space = spaces.Box(low=-action_space_limit, high=action_space_limit,
                                        shape=(self.n_actions,), dtype="float32")
+                                       
+        print("Observation Shape: {}".format(self.initial_pos['observation'].shape))
+
         self.observation_space = spaces.Dict(dict(
             desired_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
             achieved_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
