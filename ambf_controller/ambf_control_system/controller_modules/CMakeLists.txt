@@ -41,6 +41,7 @@ include_directories(
 add_service_files(
   FILES
   JointControl.srv  
+  ControllerList.srv
 )
 
 generate_messages(
@@ -86,10 +87,13 @@ include_directories (${GLFW_INCLUDE_DIRS})
 # target_link_libraries (control_node ${PROJECT_NAME} ${Eigen_LIBRARIES} ambf_client)
 
 
-add_executable (PDcontroller_test src/PDtesting_controller.cpp)
-target_link_libraries (PDcontroller_test ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread )
 
-add_executable (controlnode_test src/controlnode_testing.cpp)
-target_link_libraries (controlnode_test ${PROJECT_NAME} ${AMBF_LIBRARIES} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread ambf_client )
+#add_executable (PDcontroller_test src/PDtesting_controller.cpp)
+#target_link_libraries (PDcontroller_test ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread )
 
+#add_executable (controlnode_test src/controlnode_testing.cpp)
+#target_link_libraries (controlnode_test ${PROJECT_NAME} ${AMBF_LIBRARIES} ${GTEST_LIBRARIES} ${GLFW_LIBRARIES} pthread ambf_client )
+
+set (CONTROLLER_MODULES_INCLUDE_DIRS include)
+set (CONTROLLER_MODULES_LIBRARIES ${PROJECT_NAME})
 

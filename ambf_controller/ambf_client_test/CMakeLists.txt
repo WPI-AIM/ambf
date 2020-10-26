@@ -28,7 +28,7 @@ catkin_package( INCLUDE_DIRS include
 find_package(GTest REQUIRED)
 include_directories( include ${GLFW_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
-set(SOURCE_FILES
+set (SOURCE_FILES
     src/ambf_client_test.cpp)
 
 set (HDR_FILES

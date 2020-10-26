@@ -8,9 +8,10 @@ class ControllerBase
    public:
     ControllerBase(){}
     ~ControllerBase(){}
+    virtual void calc_tau(const Eigen::VectorXd&, const  Eigen::VectorXd&, Eigen::VectorXd&)=0;
 
    private:
-        virtual void calc_tau(const Eigen::VectorXd&, const  Eigen::VectorXd&, Eigen::VectorXd&)=0;
+        
 
    protected:
    

@@ -1,4 +1,5 @@
 #include"ambf_client_test/ambf_client_test.h"
+
 Ambf_Test::Ambf_Test() {
     client_.connect();
 
