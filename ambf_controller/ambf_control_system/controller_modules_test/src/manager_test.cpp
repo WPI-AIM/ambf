@@ -18,17 +18,16 @@ int main(int argc, char* argv[])
 
    msg.request.desired.velocities = std::vector<double>{5.0,5.0};
    msg.request.actual.velocities = std::vector<double>{0.0,0.0};
+   msg.request.controller_name = "PD";
 
-    if (client.call(msg))
-    {
-        for(int i = 0; i < msg.response.control_output.effort.size(); i++ )
-        {
-            std::cout<<msg.response.control_output.effort.at(i);
-        }
+   if (client.call(msg))
+   {
+        ROS_INFO("it worked");
+        
     }
     else
     {
-        //ROS_ERROR("Failed to call service add_two_ints");
+        ROS_ERROR("Failed to call service");
         return 1;
     } 
 

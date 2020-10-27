@@ -88,18 +88,15 @@ void PDController::calculate_torque(const Eigen::VectorXd &e, const Eigen::Vecto
 void PDController::update(const trajectory_msgs::JointTrajectoryPoint& actual, const trajectory_msgs::JointTrajectoryPoint& desired, std::vector<double>& torque)
 {
     
-    ROS_INFO("CH1");
-    std::cout<<desired.positions.size();
-    VectToEigen(desired.positions);
-    //Eigen::VectorXd e = VectToEigen(desired.positions) - VectToEigen(actual.positions);
-    //Eigen::VectorXd ed = VectToEigen(desired.velocities) - VectToEigen(actual.velocities); 
-    ROS_INFO("CH2");
-    // Eigen::VectorXd tau_(e.rows());
-    // calculate_torque(e,ed,tau_);
-    // tau = std::vector<double>(&tau_[0], tau.data()+tau_.cols()*tau_.rows());
-    // error = std::vector<double>(&e[0], e.data()+e.cols()*e.rows());
-    // torque = tau;
-
+    Eigen::VectorXd e = VectToEigen(desired.positions) - VectToEigen(actual.positions);
+    Eigen::VectorXd ed = VectToEigen(desired.velocities) - VectToEigen(actual.velocities); 
+    Eigen::VectorXd tau_(e.rows());
+    calculate_torque(e, ed, tau_);
+    std::vector<double> my_tau(&tau_[0], tau_.data()+tau_.cols()*tau_.rows());
+    tau = my_tau;
+    //error = std::vector<double>(&e[0], e.data()+e.cols()*e.rows());
+    torque = tau;
+    
 }
 
 
