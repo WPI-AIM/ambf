@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rbdl_model
 )
 
+
 catkin_package( INCLUDE_DIRS include
   LIBRARIES rbdl_model_test rbdl_model
   CATKIN_DEPENDS ambf_msgs geometry_msgs

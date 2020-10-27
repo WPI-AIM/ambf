@@ -46,7 +46,7 @@ catkin_package(
  LIBRARIES rbdl_server
  CATKIN_DEPENDS roscpp
  # DEPENDS system_lib
- DEPENDS Eigen
+  DEPENDS Eigen
 )
 
 ###########
@@ -72,6 +72,14 @@ set(RBDL_SRC_FILES
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
+
+find_package(RBDL REQUIRED)
+include_directories(${RBDL_INCLUDE_DIRS})
+
+FIND_PACKAGE (RBDL REQUIRED)
+FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
+include_directories(include ${Eigen_INCLUDE_DIRS} ${RBDL_INCLUDE_DIR})
+
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} ${RBDL_SRC_FILES} ${RBDL_HRD_FILES}

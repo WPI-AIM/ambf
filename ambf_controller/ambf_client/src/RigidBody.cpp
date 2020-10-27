@@ -49,6 +49,13 @@ bool RigidBody::is_joint_idx_valid(int joint_idx) {
     return false;
 }
 
+
+int RigidBody::get_sim_step() {
+    return m_State.sim_step;
+}
+
+
+
 tf::Vector3 RigidBody::get_linear_vel() {
     tf::Vector3 v(0, 0, 0);
     tf::vector3MsgToTF(m_State.twist.linear, v);

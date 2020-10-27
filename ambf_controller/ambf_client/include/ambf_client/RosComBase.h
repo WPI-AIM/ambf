@@ -68,10 +68,20 @@ public:
         ros::init(argc, argv, "ambf_client");
         nodePtr.reset(new ros::NodeHandle);
         aspinPtr.reset(new ros::AsyncSpinner(1));
+
         nodePtr->setCallbackQueue(&m_custom_queue);
+
+
+//        ros::spinOnce();
+//        aspinPtr->start();
+//        ros::waitForShutdown();
         m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
 
+
     }
+
+    RosComBase(T_cmd m_Cmd_val, T_state m_State_val) : m_Cmd(m_Cmd_val), m_State(m_State_val){}
+
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();
@@ -96,22 +106,30 @@ protected:
     T_cmd m_Cmd;
     T_cmd m_CmdPrev;
 
+
     boost::thread m_thread;
     ros::CallbackQueue m_custom_queue;
 
+
     virtual void reset_cmd() = 0;
+
 };
 
 template <class T_cmd, class T_state>
 void RosComBase<T_cmd, T_state>::run_publishers(){
     while(nodePtr->ok()){
         m_pub.publish(m_Cmd);
+
         m_custom_queue.callAvailable();
+        ros::MultiThreadedSpinner spinner(0);
+        spinner.spin(&m_custom_queue);
         if(m_watchDogPtr->is_wd_expired()){
             m_watchDogPtr->consolePrint(m_name);
             reset_cmd();
         }
+
         m_watchDogPtr->m_ratePtr->sleep();
+
     }
 }
 

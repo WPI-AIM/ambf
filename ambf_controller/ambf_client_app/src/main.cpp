@@ -52,22 +52,35 @@ void printVector(std::string caption, std::vector<T> ts) {
 
 int main(int argc, char* argv[])
 {
- //    Client client;
-//    client.connect();
+     Client client;
+    client.connect();
 
 //    client.printSummary();
-//    vector<string> object_names;
+    vector<string> object_names;
 
-    // object_names = client.getRigidBodyNames();
-    // usleep(20000);
+     object_names = client.getRigidBodyNames();
+     usleep(20000);
 
-    // string psm_baselink = "psm/baselink";
+     string psm_baselink = "psm/baselink";
     // cout << "psm_baselink: " << psm_baselink << "\n";
-    // rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
-    // usleep(1000000);
+     rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+     usleep(1000000);
 
-    // cout << "get_num_of_children(): " << psm_baselink_handler->get_num_of_children() << "\n";
-    // std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
+    std::cout << "psm_baselink_handler->is_joint_idx_valid(0): " << psm_baselink_handler->is_joint_idx_valid(0) << std::endl;
+//     print(psm_handle.get_rot())
+//     psm_handle.set_joint_pos(0, 0)
+//    psm_baselink_handler->get_joint_rpy();
+//     for(int i = 0; i < 100; i++) {
+
+////         psm_baselink_handler->get_joint_rpy();
+////         usleep(20000);
+//         psm_baselink_handler->set_joint_pos(0, 0);
+//         usleep(20000);
+//         int n_children = psm_baselink_handler->get_num_of_children();
+
+//         cout << "get_num_of_children(): " << n_children << "\n";
+//     }
+//     std::vector<std::string> base_children = psm_baselink_handler->get_children_names();
 
 
 //    for(string name : base_children) {

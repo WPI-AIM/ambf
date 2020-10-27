@@ -16,7 +16,7 @@ FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
 find_package(GTest REQUIRED)
 
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package( INCLUDE_DIRS include
+catkin_package( #INCLUDE_DIRS include
   LIBRARIES controller_modules_test controller_modules
   CATKIN_DEPENDS roscpp
   DEPENDS controller_modules
@@ -26,7 +26,7 @@ include_directories(${controller_modules_INCLUDE_DIRS})
 include_directories( include ${GTEST_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${controller_modules_INCLUDE_DIRS} )
 
 include_directories(
-  include
+  #include
   ${catkin_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS}
 )

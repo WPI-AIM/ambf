@@ -103,8 +103,8 @@ set (ENV_HDR_FILES
     include/${PROJECT_NAME}/SensorRosCom.h
     include/${PROJECT_NAME}/VehicleRosCom.h
     include/${PROJECT_NAME}/World.h
-    include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/WorldRosCom.h
+    include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/CmdWatchDog.h
     )
 
