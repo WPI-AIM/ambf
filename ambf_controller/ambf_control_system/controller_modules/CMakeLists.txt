@@ -62,13 +62,12 @@ catkin_package(
 
 set(SRC_FILES
    src/PDController.cpp
-   src/ControllerNode.cpp
+   
    src/ControllerManager.cpp)
 
 set (HDR_FILES
    include/${PROJECT_NAME}/ControllerBase.h
    include/${PROJECT_NAME}/PDController.h
-   include/${PROJECT_NAME}/ControllerNode.h
    include/${PROJECT_NAME}/ControllerManager.h)
 
 # target_link_libraries (PDController  )

@@ -10,7 +10,7 @@ ControllerManager::ControllerManager(ros::NodeHandle* n):nh(*n)
 
 ControllerManager::~ControllerManager()
 {
-
+    
 }
 
 bool ControllerManager::getControllersListSrv(controller_modules::ControllerListRequest& req, controller_modules::ControllerListResponse& res)
@@ -34,9 +34,19 @@ void ControllerManager::addController(std::string name, boost::shared_ptr<Contro
     controller_list[name] = controller;
 }
 
-// void ControllerManager::getControllerList();
+
 bool ControllerManager::calcTauSrv(controller_modules::JointControlRequest& req, controller_modules::JointControlResponse& res )
 {
-    controller_list[req.controller_name];
-
-}
+    
+    std::vector<double> thing;
+    ROS_INFO("CH0");
+    controller_list[req.controller_name]->update(req.actual, req.desired, thing );
+    //std::vector<double> error = controller_list[req.controller_name]->get_error();
+    ROS_INFO("bye");
+    res.control_output.effort = thing;
+    for(int i = 0; i < thing.size(); i++ )
+    {
+        std::cout<<thing.at(i);
+    }
+    return true;
+}   

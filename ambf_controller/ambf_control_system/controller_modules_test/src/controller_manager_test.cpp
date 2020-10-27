@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
     
-    ros::init(argc, argv, "talker");
+    ros::init(argc, argv, "listener");
     Eigen::MatrixXd Kp(2,2);
     Kp(0,0) = 5;
     Kp(1,0) = 10;
@@ -21,14 +21,11 @@ int main(int argc, char* argv[])
     //PDController controller(Kp,Kd);
     
     ros::NodeHandle n;
-    std::cout<<"ch0"<<std::endl;
     ControllerManager manager(&n);
-    std::cout<<"ch1"<<std::endl;
     boost::shared_ptr<ControllerBase> my_controller(new PDController(Kp,Kd));
-    manager.addController("PD",my_controller);
+    manager.addController("PD", my_controller);
+
     
-
-
     ros::spin();
     return 0;
 }

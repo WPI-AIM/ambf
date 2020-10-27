@@ -31,15 +31,12 @@ include_directories(
   ${GTEST_INCLUDE_DIRS}
 )
 
-set(SOURCE_FILES
-    src/controller_manager_test.cpp
-    )
-
-
-
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
-add_executable (${PROJECT_NAME} ${HDR_FILES} ${SOURCE_FILES})
+add_executable (${PROJECT_NAME} src/controller_manager_test.cpp)
 target_link_libraries (${PROJECT_NAME} ${GLFW_LIBRARIES} ${CONTROLLER_MODULES_LIBRARIES} controller_modules)
+
+add_executable (manager_test src/manager_test.cpp)
+target_link_libraries (manager_test ${GLFW_LIBRARIES} ${CONTROLLER_MODULES_LIBRARIES} controller_modules)

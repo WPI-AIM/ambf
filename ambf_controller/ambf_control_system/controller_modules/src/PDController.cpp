@@ -8,6 +8,12 @@ PDController::PDController(const Eigen::MatrixXd& _Kp, const Eigen::MatrixXd& _K
     dimensions = Kp.rows();
 }
 
+
+PDController::~PDController()
+{
+
+}
+
 bool PDController::setKp(const Eigen::MatrixXd& mat)
 {
     int r = mat.rows();
@@ -27,6 +33,7 @@ bool PDController::setKp(const Eigen::MatrixXd& mat)
 
 bool PDController::setKd(const Eigen::MatrixXd& mat)
 {
+
     int r = mat.rows();
     int c = mat.cols();
 
@@ -53,10 +60,6 @@ Eigen::MatrixXd PDController::getKd()
     return Kd;
 }
 
-PDController::~PDController()
-{
-
-}
 
 Eigen::MatrixXd PDController::validateMat(const Eigen::MatrixXd& mat1, const Eigen::MatrixXd& mat2)
 {
@@ -76,15 +79,28 @@ Eigen::MatrixXd PDController::validateMat(const Eigen::MatrixXd& mat1, const Eig
 
 }
 
-void PDController::calc_tau(const Eigen::VectorXd &e, const Eigen::VectorXd &ed, Eigen::VectorXd &tau)
+void PDController::calculate_torque(const Eigen::VectorXd &e, const Eigen::VectorXd &ed, Eigen::VectorXd &torque)
 {
-
-  tau = Kp*e+ Kd*ed;
+    torque = Kp*e+ Kd*ed;
 }
 
 
+void PDController::update(const trajectory_msgs::JointTrajectoryPoint& actual, const trajectory_msgs::JointTrajectoryPoint& desired, std::vector<double>& torque)
+{
+    
+    ROS_INFO("CH1");
+    std::cout<<desired.positions.size();
+    VectToEigen(desired.positions);
+    //Eigen::VectorXd e = VectToEigen(desired.positions) - VectToEigen(actual.positions);
+    //Eigen::VectorXd ed = VectToEigen(desired.velocities) - VectToEigen(actual.velocities); 
+    ROS_INFO("CH2");
+    // Eigen::VectorXd tau_(e.rows());
+    // calculate_torque(e,ed,tau_);
+    // tau = std::vector<double>(&tau_[0], tau.data()+tau_.cols()*tau_.rows());
+    // error = std::vector<double>(&e[0], e.data()+e.cols()*e.rows());
+    // torque = tau;
 
-
+}
 
 
 

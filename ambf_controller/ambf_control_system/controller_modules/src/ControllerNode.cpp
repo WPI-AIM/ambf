@@ -82,6 +82,7 @@ bool ControllerNode::startController()
 template<typename T, typename A>
 Eigen::VectorXd ControllerNode::VectToEigen(std::vector<T,A> const& msg )
 {
+    std::cout<<"CH0.1\n";
     std::vector<double> vec(msg.begin(), msg.end());
     Eigen::VectorXd Q =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vec.data(), vec.size());
     return Q;
