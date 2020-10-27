@@ -8,12 +8,8 @@
 
 int main(int argc, char* argv[])
 {
-//    const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
-    const std::string actuator_config_file = "/localcodebase/ambf_addon_updated/PSM/PSM_with_body_rotation.yaml";
-//    const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-ecm.yaml";
-//    const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-mtm.yaml";
-//    const std::string actuator_config_file = "/home/shreyas/ambf/ambf_models/descriptions/multi-bodies/robots/blender-kuka.yaml";
-//    const std::string actuator_config_file = "/home/shreyas/Downloads/simulator/exohuman.yaml";
+    const std::string actuator_config_file = "../ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
+
 
     BuildRBDLModel buildRBDLModel(actuator_config_file);
 //    buildRBDLModel.printBody();

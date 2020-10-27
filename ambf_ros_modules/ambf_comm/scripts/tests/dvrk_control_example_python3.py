@@ -35,8 +35,8 @@ time.sleep(0.2)
 
 # print(' ')
 # print('PSM Base Rotation as Quaternion:')
-# print(psm_handle.get_rot())
-# psm_handle.set_joint_pos(0, 0)
+print(psm_handle.get_rot())
+psm_handle.set_joint_pos(0, 0)
 
 # # print(' ')
 # # print('MTM Wrist Fixed Rotation:')
@@ -71,7 +71,7 @@ for name in psm_children_names:
 # input("Mixed Pos and Effort control of PSM\'s joints. Press Enter to continue...")
 # For the PSM let's control some in position and some in effort mode
 # The 1st joint, which the PSM Yaw
-# psm_handle.set_joint_effort(0, 0.5)
+psm_handle.set_joint_effort(0, 0.5)
 # The 3rd Kinematic joint, which is the PSM Insertion Joint
 # psm_handle.set_joint_pos(3, -0.2)
 # print('get_joint_vel(0): ', psm_handle.get_joint_vel(0))

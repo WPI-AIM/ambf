@@ -44,9 +44,12 @@
 
 namespace ambf_client{
 
-class RigidBody: public RigidBodyRosCom{
+class RigidBody: public RigidBodyRosCom {
 public:
     RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+
+    bool is_active(); //TBD
+    int get_sim_step(); //TBT
 
     bool is_joint_idx_valid(int joint_idx);
     tf::Vector3 get_linear_vel();
