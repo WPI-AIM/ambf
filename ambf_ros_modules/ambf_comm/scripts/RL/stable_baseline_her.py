@@ -83,7 +83,7 @@ def main(training_env, eval_env=None, log_dir='./.logs/results'):
     
     os.makedirs(log_dir, exist_ok=True)
 
-    training_env = Monitor(training_env, log_dir)
+    # training_env = Monitor(training_env, log_dir)
 
     n_actions = training_env.action_space.shape[0]
     noise_std = 0.2
@@ -111,9 +111,9 @@ def main(training_env, eval_env=None, log_dir='./.logs/results'):
     training_env.reset()
     # Create callbacks
     checkpoint_callback = CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/") # save_path="./.model/model_checkpoint/") #save_freq=100000
-    eval_callback = EvalCallback(training_env, best_model_save_path='./ddpg_dvrk_tensorboard/best_model/',
-                                log_path=log_dir, eval_freq=500)
-    callback = CallbackList([checkpoint_callback, eval_callback])
+    # eval_callback = EvalCallback(training_env, best_model_save_path='./ddpg_dvrk_tensorboard/best_model',
+    #                             log_path=log_dir, eval_freq=500)
+    callback = CallbackList([checkpoint_callback]) # , eval_callback])
     # Train the model
     model.learn(4000000, log_interval=100,
                 callback=callback) 
@@ -200,3 +200,5 @@ if __name__ == '__main__':
     
     load_model(eval_env=eval_env)
     eval_env.ambf_client.clean_up()
+
+

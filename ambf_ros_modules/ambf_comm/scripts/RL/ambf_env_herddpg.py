@@ -49,6 +49,7 @@ from gym import spaces
 import numpy as np
 import copy
 import time
+import os, sys, shutil
 import gym
 from gym.utils import seeding
 from ambf_world import World
@@ -59,6 +60,7 @@ from dvrk_functions.msg import HomogenousTransform
 from transformations import euler_from_matrix
 import rospy
 from dvrk_functions.srv import *
+import csv
 
 class Observation:
     def __init__(self):
@@ -121,6 +123,22 @@ class AmbfEnvHERDDPG(gym.GoalEnv):
             achieved_goal=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['achieved_goal'].shape, dtype='float32'),
             observation=spaces.Box(-np.inf, np.inf, shape=self.initial_pos['observation'].shape, dtype='float32'),
         ))
+        
+        self.fieldnames = ['system_time','number_of_steps']
+
+        self.prev_eps_time = int(round(time.time()*1000))
+
+        if not os.path.isdir('./ddpg_dvrk_tensorboard/'):
+            os.mkdir('./ddpg_dvrk_tensorboard/')
+
+        if os.path.isfile('./ddpg_dvrk_tensorboard/profiling.csv'):
+            os.remove('./ddpg_dvrk_tensorboard/profiling.csv')
+
+        with open('./ddpg_dvrk_tensorboard/profiling.csv', 'w+', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+            writer.writeheader()
+            writer.writerow({self.fieldnames[0]: self.prev_eps_time, self.fieldnames[1]: 0})
+        
 
     def skip_sim_steps(self, num):
         # Function to define the number of steps that can be skipped if Step Throttling is enabled
@@ -363,8 +381,17 @@ class AmbfEnvHERDDPG(gym.GoalEnv):
 
     def _check_if_done(self):
         # Function to check if the episode was successful
-        # Print Time for episode
+
         if abs(self.obs.dist) < self.goal_error_margin:
+            # Print time for episode
+            self.cur_eps_time = int(round(time.time()*1000)) - self.prev_eps_time
+            self.prev_eps_time = int(round(time.time()*1000))
+            print('Time taken for episode: {}'.format(self.cur_eps_time))
+            
+            with open('./ddpg_dvrk_tensorboard/profiling.csv', 'a', newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+                writer.writerow({self.fieldnames[0]: self.prev_eps_time, self.fieldnames[1]: self.count_for_print})
+                
             return True
         else:
             return False
