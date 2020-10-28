@@ -363,6 +363,7 @@ class AmbfEnvHERDDPG(gym.GoalEnv):
 
     def _check_if_done(self):
         # Function to check if the episode was successful
+        # Print Time for episode
         if abs(self.obs.dist) < self.goal_error_margin:
             return True
         else:

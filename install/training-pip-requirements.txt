@@ -4,4 +4,4 @@ pyKDL
 rospkg
 catkin_pkg
 matplotlib
-stable-baselines==2.10.0
+stable-baselines[mpi]==2.10.0

@@ -110,8 +110,8 @@ def main(training_env, eval_env=None, log_dir='./.logs/results'):
     # Reset the model
     training_env.reset()
     # Create callbacks
-    checkpoint_callback = CheckpointCallback(save_freq=100000, save_path="./.model/model_checkpoint/") #save_freq=100000
-    eval_callback = EvalCallback(training_env, best_model_save_path='./.model/model_checkpoint/best_model',
+    checkpoint_callback = CheckpointCallback(save_freq=100000, save_path="./ddpg_dvrk_tensorboard/") # save_path="./.model/model_checkpoint/") #save_freq=100000
+    eval_callback = EvalCallback(training_env, best_model_save_path='./ddpg_dvrk_tensorboard/best_model/',
                                 log_path=log_dir, eval_freq=500)
     callback = CallbackList([checkpoint_callback, eval_callback])
     # Train the model
@@ -188,6 +188,9 @@ if __name__ == '__main__':
     ambf_env.make(ENV_NAME)
     ambf_env.reset()
 
+    main(training_env=ambf_env) #, eval_env=eval_env)
+    ambf_env.ambf_client.clean_up()
+
     # Evaluate learnt policy
     print("Creating eval_env")
     eval_env = AmbfEnvHERDDPG(**env_kwargs)
@@ -195,10 +198,5 @@ if __name__ == '__main__':
     eval_env.make(ENV_NAME)
     eval_env.reset()
     
-    main(training_env=ambf_env, eval_env=eval_env)
-    ambf_env.ambf_client.clean_up()
-    
     load_model(eval_env=eval_env)
     eval_env.ambf_client.clean_up()
-
-

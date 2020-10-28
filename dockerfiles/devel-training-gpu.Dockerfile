@@ -57,6 +57,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR ${HOME}
 # Make Directory AMBF_WS
 RUN git clone --branch feat-rl https://github.com/WPI-AIM/ambf.git
+WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
 
@@ -81,12 +82,13 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN pip install stable-baselines[mpi] --upgrade
-
 # Stable Baselines fix
-RUN rm -f /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py && \
+RUN mv /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg.py \
+  /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/ddpg_old.py && \
   cp ${AMBF_WS}/training_scripts/stable_baseline_fix/ddpg.py \
   /usr/local/lib/python3.6/dist-packages/stable_baselines/ddpg/
+
+# RUN pip install stable-baselines[mpi]==2.10.0
 
 RUN touch ${HOME}/.bashrc && \
   echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
