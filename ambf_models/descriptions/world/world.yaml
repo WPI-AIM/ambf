@@ -28,7 +28,7 @@ light1:
   location: {x: 0.0, y: 0.5, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
   spot exponent: 0.3
-  shadow quality: 0
+  shadow quality: 5
   cutoff angle: 0.7
 
 light2:
@@ -37,7 +37,7 @@ light2:
   location: {x: 0.5, y: -1, z: 2.5}
   direction: {x: 0, y: 0, z: -1.0}
   spot exponent: 0.3
-  shadow quality: 2
+  shadow quality: 0
   cutoff angle: 0.7
 
 light3:

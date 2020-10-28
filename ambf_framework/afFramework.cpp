@@ -980,9 +980,8 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
     YAML::Node actuatorTau = actuatorNode["tau"];
 
 
-    std::string parent_name;
     if (actuatorParentName.IsDefined()){
-        parent_name = actuatorParentName.as<std::string>();
+        m_parentName = actuatorParentName.as<std::string>();
     }
     else{
         result = false;
@@ -1021,14 +1020,14 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
     }
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
+    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
     }
 
     if (m_parentBody == NULL){
-        std::cerr << "ERROR: ACTUATOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
+        std::cerr << "ERROR: ACTUATOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
         return 0;
     }
     else{
@@ -2000,8 +1999,12 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         else{
             // If a shape offset is not defined, set the shape offset equal to the intertial offset transform
             // This is to take care of legacy ADF where a shape offset is not set.
-            shapeOffsetTrans = m_T_iINb;
+            shapeOffsetTrans = getInertialOffsetTransform();
         }
+
+        // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+        // Thus for a plane, instead of using a compound, use the single collision shape.
+        bool is_plane = false;
 
         if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
             double x = bodyCollisionGeometry["x"].as<double>();
@@ -2020,7 +2023,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             double ny = bodyCollisionGeometry["normal"]["y"].as<double>();
             double nz = bodyCollisionGeometry["normal"]["z"].as<double>();
             offset *= m_scale;
-            singleCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
+            // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
+            // Thus for a plane, instead of using a compound, use the single collision shape.
+            is_plane = true;
+            m_bulletCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
         }
         else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
             double radius = bodyCollisionGeometry["radius"].as<double>();
@@ -2113,8 +2119,10 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // Now, a collision shape has to address both an inertial offset transform as well as
         // a shape offset.
 
-        compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
-        m_bulletCollisionShape = compoundCollisionShape;
+        if (is_plane == false){
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
+            m_bulletCollisionShape = compoundCollisionShape;
+        }
 
     }
     else if (m_collisionGeometryType == GeometryType::compound_shape){
@@ -2235,7 +2243,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             // shape offset transfrom. This will change the legacy behavior but
             // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
             // shape. So they shall be updated.
-            compoundCollisionShape->addChildShape(m_T_iINb.inverse() * shapeOffsetTrans, singleCollisionShape);
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
         }
         m_bulletCollisionShape = compoundCollisionShape;
     }
@@ -2313,20 +2321,31 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     buildDynamicModel();
 
+    cVector3d tempPos(0, 0, 0);
+    cMatrix3d tempRot(0, 0, 0);
     if(bodyPos.IsDefined()){
-        m_initialPos = toXYZ<cVector3d>(&bodyPos);
-        // Account for intertial offset transform
-        m_initialPos += toCvec(m_T_iINb.getOrigin());
-        setLocalPos(m_initialPos);
+        tempPos = toXYZ<cVector3d>(&bodyPos);
+        setLocalPos(tempPos);
     }
 
     if(bodyRot.IsDefined()){
         double r = bodyRot["r"].as<double>();
         double p = bodyRot["p"].as<double>();
         double y = bodyRot["y"].as<double>();
-        m_initialRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        setLocalRot(m_initialRot);
+        tempRot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
+        setLocalRot(tempRot);
     }
+
+    // Inertial origin in world
+    cTransform T_iINw = getLocalTransform();
+
+    // Mesh Origin in World
+    cTransform T_mINw = T_iINw * afUtils::convertDataType<cTransform, btTransform>(getInertialOffsetTransform());
+
+    m_initialPos = T_mINw.getLocalPos();
+    m_initialRot = T_mINw.getLocalRot();
+    setLocalPos(T_mINw.getLocalPos());
+    setLocalRot(T_mINw.getLocalRot());
 
     if (bodyLinDamping.IsDefined())
         m_surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
@@ -2516,13 +2535,13 @@ void afRigidBody::updatePositionFromDynamics()
 {
     if (m_bulletRigidBody)
     {
-        // get transformation matrix of object
-        btTransform trans;
-        m_bulletRigidBody->getMotionState()->getWorldTransform(trans);
-        trans *= m_T_iINb.inverse();
+        // Inertial and Mesh Transform
+        btTransform T_iINw, T_mINw;
+        m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
+        T_mINw = T_iINw * getInverseInertialOffsetTransform();
 
-        btVector3 pos = trans.getOrigin();
-        btQuaternion q = trans.getRotation();
+        btVector3 pos = T_mINw.getOrigin();
+        btQuaternion q = T_mINw.getRotation();
 
         // set new position
         m_localPos.set(pos[0],pos[1],pos[2]);
@@ -2656,15 +2675,10 @@ void afRigidBody::afExecuteCommand(double dt){
         btVector3 force, torque;
         btVector3 lin_vel, ang_vel;
         ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
-        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-            m_af_enable_position_controller = true;
-        }
-        else{
-            m_af_enable_position_controller = false;
-        }
 
         // IF THE COMMAND IS OF TYPE FORCE
         if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
+            m_activeControllerType = afControlType::force;
             if (m_bulletRigidBody){
                 force.setValue(afCommand.wrench.force.x,
                                afCommand.wrench.force.y,
@@ -2680,19 +2694,29 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE POSITION
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
+            m_activeControllerType = afControlType::position;
             // If the body is kinematic, we just want to control the position
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
-                btTransform _Td;
-                _Td.setOrigin(btVector3(afCommand.pose.position.x,
+                btTransform Tcommand;
+                Tcommand.setOrigin(btVector3(afCommand.pose.position.x,
                                         afCommand.pose.position.y,
                                         afCommand.pose.position.z));
 
-                _Td.setRotation(btQuaternion(afCommand.pose.orientation.x,
+                Tcommand.setRotation(btQuaternion(afCommand.pose.orientation.x,
                                              afCommand.pose.orientation.y,
                                              afCommand.pose.orientation.z,
                                              afCommand.pose.orientation.w));
 
-                m_bulletRigidBody->getMotionState()->setWorldTransform(_Td);
+//                If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
+                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - Tcommand.getOrigin()).norm() > 0.00001 ||
+                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(Tcommand.getRotation()) > 0.0001){
+                    // Compensate for the inertial offset
+                    Tcommand = Tcommand * getInertialOffsetTransform();
+//                    std::cerr << "Updating Static Object Pose \n";
+                    m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
+                    m_bulletRigidBody->setWorldTransform(Tcommand);
+                }
+
             }
             else{
                 btVector3 cur_pos, cmd_pos;
@@ -2743,6 +2767,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+            m_activeControllerType = afControlType::velocity;
             if (m_bulletRigidBody){
                 lin_vel.setValue(afCommand.twist.linear.x,
                                  afCommand.twist.linear.y,
@@ -2768,7 +2793,7 @@ void afRigidBody::afExecuteCommand(double dt){
                     joint->commandEffort(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-                    joint->commandPosition(jnt_cmd, dt);
+                    joint->commandPosition(jnt_cmd);
                 }
                 else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
                     joint->commandVelocity(jnt_cmd);
@@ -2907,31 +2932,31 @@ void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const
 ///
 /// \brief afRigidBody::setAngle
 /// \param angle
-/// \param dt
 ///
-void afRigidBody::setAngle(double &angle, double dt){
+void afRigidBody::setAngle(double &angle){
     if (m_parentBodies.size() == 0){
         for (size_t jnt = 0 ; jnt < m_CJ_PairsActive.size() ; jnt++){
-            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle, dt);
+            m_CJ_PairsActive[jnt].m_childJoint->commandPosition(angle);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::setAngle
 /// \param angles
-/// \param dt
 ///
-void afRigidBody::setAngle(std::vector<double> &angles, double dt){
+void afRigidBody::setAngle(std::vector<double> &angles){
     if (m_parentBodies.size() == 0){
         double jntCmdSize = m_CJ_PairsActive.size() < angles.size() ? m_CJ_PairsActive.size() : angles.size();
         for (size_t jntIdx = 0 ; jntIdx < jntCmdSize ; jntIdx++){
-            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx], dt);
+            m_CJ_PairsActive[jntIdx].m_childJoint->commandPosition(angles[jntIdx]);
         }
 
     }
 }
+
 
 ///
 /// \brief afRigidBody::checkCollisionGroupIdx
@@ -3552,7 +3577,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
                 &&(!strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
                 &&(!strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
             //            std::cerr <<"INFO: JOINT: \"" << m_name <<
-            //                        "\'s\" PARENT BODY \"" << m_parent_name <<
+            //                        "\'s\" PARENT BODY \"" << m_parentName <<
             //                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
         }
     }
@@ -3991,9 +4016,8 @@ void afJoint::applyDamping(const double &dt){
 ///
 /// \brief afJoint::commandPosition
 /// \param position_cmd
-/// \param dt
 ///
-void afJoint::commandPosition(double &position_cmd, double dt){
+void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enableActuator){
@@ -4209,9 +4233,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     YAML::Node sensorMesh = sensorNode["mesh"];
     YAML::Node sensorParametric = sensorNode["parametric"];
 
-    std::string parent_name;
     if (sensorParentName.IsDefined()){
-        parent_name = sensorParentName.as<std::string>();
+        m_parentName = sensorParentName.as<std::string>();
     }
     else{
         result = false;
@@ -4266,14 +4289,14 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     }
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(parent_name);
+    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(parent_name + name_remapping);
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
     }
 
-    if (m_parentBody == NULL){
-        std::cerr << "ERROR: SENSOR'S "<< parent_name + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
+    if (m_parentBody == nullptr){
+        std::cerr << "ERROR: SENSOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
         return 0;
     }
     else{
@@ -5103,6 +5126,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
         rB->setAngularVelocity(zero);
         cTransform c_T(afRB->getInitialPosition(), afRB->getInitialRotation());
         btTransform bt_T = afUtils::convertDataType<btTransform, cTransform>(c_T);
+        rB->getMotionState()->setWorldTransform(bt_T);
         rB->setWorldTransform(bt_T);
     }
 
@@ -5909,6 +5933,7 @@ bool afWorld::loadADF(int i, bool enable_comm){
 
     std::string adf_filepath = getMultiBodyConfig(i);
     loadADF(adf_filepath, enable_comm);
+    return true;
 }
 
 
@@ -6152,18 +6177,19 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
         if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
             if (body){
-                m_lastPickedBody = getAFRigidBody(body, true);
-                if (m_lastPickedBody){
-                    std::cerr << "Picked AF Rigid Body: " << m_lastPickedBody->m_name << std::endl;
+                m_pickedAFRigidBody = getAFRigidBody(body, true);
+                if (m_pickedAFRigidBody){
+                    std::cerr << "User picked AF rigid body: " << m_pickedAFRigidBody->m_name << std::endl;
+                    m_pickedBulletRigidBody = body;
+                    m_pickedAFRigidBodyColor = m_pickedAFRigidBody->m_material->copy();
+                    m_pickedAFRigidBody->setMaterial(m_pickColor);
+                    m_savedState = m_pickedBulletRigidBody->getActivationState();
+                    m_pickedBulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
                 }
+
                 //other exclusions?
                 if (!(body->isStaticObject() || body->isKinematicObject()))
                 {
-                    m_pickedBody = body;
-                    m_pickedBodyColor = m_lastPickedBody->m_material->copy();
-                    m_lastPickedBody->setMaterial(m_pickColor);
-                    m_savedState = m_pickedBody->getActivationState();
-                    m_pickedBody->setActivationState(DISABLE_DEACTIVATION);
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
                     btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
@@ -6173,6 +6199,9 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                     p2p->m_setting.m_impulseClamp = mousePickClamping;
                     //very weak constraint for picking
                     p2p->m_setting.m_tau = 1/body->getInvMass();
+                }
+                else{
+                    m_pickedOffset = toCvec(body->getCenterOfMassPosition()) - pickPos;
                 }
             }
         }
@@ -6223,23 +6252,33 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
 /// \return
 ///
 bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
-    if (m_pickedBody && m_pickedConstraint)
+    if (m_pickedBulletRigidBody)
     {
-        btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
-        if (pickCon)
-        {
-            //keep it at the same picking distance
+        //keep it at the same picking distance
+        cVector3d newLocation;
 
-            cVector3d newPivotB;
+        cVector3d dir = rayToWorld - rayFromWorld;
+        dir.normalize();
+        dir *= m_oldPickingDist;
 
-            cVector3d dir = rayToWorld - rayFromWorld;
-            dir.normalize();
-            dir *= m_oldPickingDist;
+        newLocation = rayFromWorld + dir;
+        // Set the position of grab sphere
+        m_pickSphere->setLocalPos(newLocation);
 
-            newPivotB = rayFromWorld + dir;
-            // Set the position of grab sphere
-            m_pickSphere->setLocalPos(newPivotB);
-            pickCon->setPivotB(toBTvec(newPivotB));
+        if (m_pickedConstraint){
+            btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
+            if (pickCon)
+            {
+                pickCon->setPivotB(toBTvec(newLocation));
+                return true;
+            }
+        }
+        else{
+            // In this case the rigidBody is a static or kinematic body
+            btTransform curTrans = m_pickedBulletRigidBody->getWorldTransform();
+            curTrans.setOrigin(toBTvec(newLocation + m_pickedOffset));
+            m_pickedBulletRigidBody->getMotionState()->setWorldTransform(curTrans);
+            m_pickedBulletRigidBody->setWorldTransform(curTrans);
             return true;
         }
     }
@@ -6271,16 +6310,20 @@ void afWorld::removePickingConstraint(){
     btDynamicsWorld* m_dynamicsWorld = m_bulletWorld;
     if (m_pickedConstraint)
     {
-        m_pickSphere->setShowEnabled(false);
-        m_pickedBody->forceActivationState(m_savedState);
-        m_pickedBody->activate();
+        m_pickedBulletRigidBody->forceActivationState(m_savedState);
+        m_pickedBulletRigidBody->activate();
         m_dynamicsWorld->removeConstraint(m_pickedConstraint);
         delete m_pickedConstraint;
         m_pickedConstraint = 0;
-        m_pickedBody = 0;
-        if (m_lastPickedBody){
-            m_lastPickedBody->setMaterial(m_pickedBodyColor);
-        }
+    }
+
+    if (m_pickedBulletRigidBody){
+        m_pickSphere->setShowEnabled(false);
+        m_pickedBulletRigidBody = 0;
+    }
+
+    if (m_pickedAFRigidBody){
+        m_pickedAFRigidBody->setMaterial(m_pickedAFRigidBodyColor);
     }
 
     if (m_pickedSoftBody){
@@ -6793,23 +6836,6 @@ bool afCamera::resolveParenting(std::string a_parent_name){
         // No parent assigned, so report success as we have nothing to find
         return true;
     }
-}
-
-
-///
-/// \brief afCamera::measuredPos
-/// \return
-///
-cVector3d afCamera::measuredPos(){
-    return getLocalPos();
-}
-
-///
-/// \brief afCamera::measuredRot
-/// \return
-///
-cMatrix3d afCamera::measuredRot(){
-    return getLocalRot();
 }
 
 
