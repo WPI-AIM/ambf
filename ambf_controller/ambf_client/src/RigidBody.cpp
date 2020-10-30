@@ -35,9 +35,105 @@
 //==============================================================================
 
 #include "ambf_client/RigidBody.h"
+
 namespace ambf_client{
 
 RigidBody::RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RigidBodyRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+}
+
+tf::Vector3 RigidBody::get_pos() {
+    double px = m_State.pose.position.x;
+    double py = m_State.pose.position.y;
+    double pz = m_State.pose.position.z;
+
+    return tf::Vector3(px, py, pz);
+}
+
+tf::Quaternion RigidBody::get_rot() {
+    tf::Quaternion rot_quat(0.0, 0.0, 0.0, 0.0);
+    tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
+
+    return rot_quat;
+}
+
+tf::Vector3 RigidBody::get_rpy() {
+
+    const tf::Quaternion rot_quat = this->get_rot();
+
+    // the tf::Quaternion has a method to acess roll pitch and yaw
+    double roll, pitch, yaw;
+    tf::Matrix3x3(rot_quat).getRPY(roll, pitch, yaw);
+
+    // the found angles are written in a tf::Vector3
+    tf::Vector3 rot_rpy(0, 0, 0);
+
+    rot_rpy.setX(roll);
+    rot_rpy.setY(pitch);
+    rot_rpy.setZ(yaw);
+
+
+    return rot_rpy;
+}
+
+tf::Pose RigidBody::get_pose() {
+    tf::Pose pose;
+
+    tf::poseMsgToTF(m_State.pose, pose);
+    return pose;
+}
+
+
+tf::Vector3 RigidBody::get_pos_command() {
+    double px = m_Cmd.pose.position.x;
+    double py = m_Cmd.pose.position.y;
+    double pz = m_Cmd.pose.position.z;
+    return tf::Vector3(px, py, pz);
+}
+
+tf::Quaternion RigidBody::get_rot_command() {
+    tf::Quaternion rot_quat(0.0, 0.0, 0.0, 0.0);
+    tf::quaternionMsgToTF(m_Cmd.pose.orientation, rot_quat);
+
+    return rot_quat;
+}
+
+
+void RigidBody::set_pos(double px, double py, double pz) {
+
+    m_trans.setOrigin(tf::Vector3(px, py, pz));
+    m_Cmd.pose.position.x = px;
+    m_Cmd.pose.position.y = py;
+    m_Cmd.pose.position.z = pz;
+
+    tf::Quaternion rot_quat = this->get_rot_command();
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+}
+
+
+///
+/// \brief RigidBody::set_orientation
+/// \param roll
+/// \param pitch
+/// \param yaw
+///
+void RigidBody::set_rpy(double roll, double pitch, double yaw) {
+    tf::Quaternion rot_quat;
+    rot_quat.setRPY(roll, pitch, yaw);
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+}
+
+///
+/// \brief RigidBody::set_orientation
+/// \param qx
+/// \param qy
+/// \param qz
+/// \param qw
+///
+void RigidBody::set_rot(tf::Quaternion rot_quat) {
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 }
 
 bool RigidBody::is_joint_idx_valid(int joint_idx) {
@@ -48,12 +144,6 @@ bool RigidBody::is_joint_idx_valid(int joint_idx) {
 
     return false;
 }
-
-
-int RigidBody::get_sim_step() {
-    return m_State.sim_step;
-}
-
 
 
 tf::Vector3 RigidBody::get_linear_vel() {
@@ -156,19 +246,6 @@ tf::Vector3 RigidBody::get_inertia() {
     return I;
 }
 
-tf::Vector3 RigidBody::get_pos_command() {
-    double px = m_Cmd.pose.position.x;
-    double py = m_Cmd.pose.position.y;
-    double pz = m_Cmd.pose.position.z;
-    return tf::Vector3(px, py, pz);
-}
-
-tf::Quaternion RigidBody::get_rot_command() {
-    tf::Quaternion rot_quat(0.0, 0.0, 0.0, 0.0);
-    tf::quaternionMsgToTF(m_Cmd.pose.orientation, rot_quat);
-
-    return rot_quat;
-}
 
 tf::Vector3 RigidBody::get_force_command() {
     tf::Vector3 f(0.0, 0.0, 0.0);
@@ -202,9 +279,13 @@ tf::Vector3 RigidBody::get_angular_velocity_command() {
 /// \param fz
 ///
 void RigidBody::set_force(double fx, double fy, double fz){
+    tf::Vector3 n = this->get_torque_command();
+
     tf::Vector3 f(fx, fy, fz);
     tf::vector3TFToMsg(f, m_Cmd.wrench.force);
+    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 }
+
 
 ///
 /// \brief RigidBody::set_torque
@@ -213,7 +294,10 @@ void RigidBody::set_force(double fx, double fy, double fz){
 /// \param nz
 ///
 void RigidBody::set_torque(double nx, double ny, double nz){
+    tf::Vector3 f = this->get_force_command();
+
     tf::Vector3 n(nx, ny, nz);
+    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 }
 
@@ -224,44 +308,22 @@ void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 }
 
-///
-/// \brief RigidBody::set_position
-/// \param px
-/// \param py
-/// \param pz
-///
-void RigidBody::set_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_Cmd.pose.position.x = px;
-    m_Cmd.pose.position.y = py;
-    m_Cmd.pose.position.z = pz;
+void RigidBody::set_pos(double px, double py, double pz) {
+
 }
 
-///
-/// \brief RigidBody::set_orientation
-/// \param roll
-/// \param pitch
-/// \param yaw
-///
-void RigidBody::set_rpy(double roll, double pitch, double yaw) {
-    tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
-}
-
-
-///
-/// \brief RigidBody::set_orientation
-/// \param qx
-/// \param qy
-/// \param qz
-/// \param qw
-///
-void RigidBody::set_rot(tf::Quaternion rot_quat) {
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
-}
+/////
+///// \brief RigidBody::set_position
+///// \param px
+///// \param py
+///// \param pz
+/////
+//void RigidBody::set_position(double px, double py, double pz){
+//    m_trans.setOrigin(tf::Vector3(px, py, pz));
+//    m_Cmd.pose.position.x = px;
+//    m_Cmd.pose.position.y = py;
+//    m_Cmd.pose.position.z = pz;
+//}
 
 void RigidBody::set_pose(const tf::Pose pose) {
     m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_POSITION;
@@ -405,14 +467,6 @@ tf::Quaternion RigidBody::get_joint_orientation() {
     tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
     return rot_quat;
 }
-
-tf::Pose RigidBody::get_joint_pose() {
-    tf::Pose pose;
-
-    tf::poseMsgToTF(m_State.pose, pose);
-    return pose;
-}
-
 
 tf::Vector3 RigidBody::get_principal_inertia() {
     tf::Vector3 I(0, 0, 0);

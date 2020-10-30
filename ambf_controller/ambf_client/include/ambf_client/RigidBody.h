@@ -37,8 +37,9 @@
 #ifndef AFRIGIDBODYCOMM_H
 #define AFRIGIDBODYCOMM_H
 
-#include <string>
 #include "ambf_client/RigidBodyRosCom.h"
+#include <boost/lexical_cast.hpp>
+#include <string>
 #include <type_traits>
 #include <iostream>
 
@@ -48,52 +49,72 @@ class RigidBody: public RigidBodyRosCom {
 public:
     RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 
-    bool is_active(); //TBD
-    int get_sim_step(); //TBT
+    // Getters Common to Object class
+    bool is_active(); //TBD - its always active
+    inline int get_sim_step() { return m_State.sim_step; } //TBT - To be tested
+    inline int get_num_of_children(){return m_State.children_names.size();}
+    inline std::vector<std::string> get_children_names(){return m_State.children_names;}
+    tf::Vector3 get_pos(); //TBT
+    tf::Quaternion get_rot(); //TBT
+    tf::Vector3 get_rpy(); //TBT
+    tf::Pose get_pose(); //TBT
+    tf::Vector3 get_pos_command(); //TBT
+    tf::Quaternion get_rot_command(); //TBT
+    inline std::string get_name() { return boost::lexical_cast<std::string>(m_State.name); } //TBT
 
-    bool is_joint_idx_valid(int joint_idx);
-    tf::Vector3 get_linear_vel();
-    tf::Vector3 get_angular_vel();
-    int get_joint_idx_from_name(std::string joint_name);
-    std::string get_joint_name_from_idx(int joint_idx);
+    // Setters Common to Object class
+    void set_active(bool flag); //TBD
+    void set_pos(double px, double py, double pz); //TBT
+    void set_rpy(double roll, double pitch, double yaw); //TBT
+    void set_rot(tf::Quaternion rot_quat); //TBT
 
-    template<typename T>
+
+    // Getters w.r.t Rigid Body Class
+    bool is_joint_idx_valid(int joint_idx); //TBT
+    tf::Vector3 get_linear_vel(); //TBT
+    tf::Vector3 get_angular_vel(); //TBT
+    int get_joint_idx_from_name(std::string joint_name); //TBT
+    std::string get_joint_name_from_idx(int joint_idx); //TBT
+
+    template<typename T> //TBT
     float get_joint_pos(T t);
 
-    template<typename T>
+    template<typename T> //TBT
     float get_joint_vel(T t);
 
-    template<typename T>
+    template<typename T> //TBT
     float get_joint_effort(T t);
 
-    inline std::vector<float> get_all_joint_pos() { return m_State.joint_positions; }
-    inline std::vector<float> get_all_joint_vel() { return m_State.joint_velocities; }
-    inline std::vector<float> get_all_joint_effort() { return m_State.joint_efforts; }
-    inline int get_num_joints() { return m_State.joint_positions.size(); }
-    inline std::vector<std::string> get_joint_names() { return m_State.joint_names; }
+    inline std::vector<float> get_all_joint_pos() { return m_State.joint_positions; } //TBT
+    inline std::vector<float> get_all_joint_vel() { return m_State.joint_velocities; } //TBT
+    inline std::vector<float> get_all_joint_effort() { return m_State.joint_efforts; } //TBT
+    inline int get_num_joints() { return m_State.joint_positions.size(); } //TBT
+    inline std::vector<std::string> get_joint_names() { return m_State.joint_names; } //TBT
     tf::Vector3 get_inertia();
 
-    tf::Vector3 get_pos_command();
-    tf::Quaternion get_rot_command();
-    tf::Vector3 get_force_command();
-    tf::Vector3 get_torque_command();
-    tf::Vector3 get_linear_velocity_command();
-    tf::Vector3 get_angular_velocity_command();
 
-    inline bool get_publish_children_name_flag() { return m_Cmd.publish_children_names; }
-    inline bool get_publish_joint_names_flag() { return m_Cmd.publish_joint_names; }
-    inline bool get_publish_joint_positions_flag() { return m_Cmd.publish_joint_positions; }
 
-    inline void set_publish_children_names_flag(bool publish_children_names) { m_Cmd.publish_children_names = publish_children_names; }
-    inline void set_publish_joint_names_flag(bool publish_joint_names) { m_Cmd.publish_joint_names = publish_joint_names; }
-    inline void set_publish_joint_positions_flag(bool publish_joint_positions) { m_Cmd.publish_joint_positions= publish_joint_positions; }
+    tf::Vector3 get_force_command(); //TBT
+    tf::Vector3 get_torque_command(); //TBT
+    tf::Vector3 get_linear_velocity_command(); //TBT
+    tf::Vector3 get_angular_velocity_command(); //TBT
 
-    void set_force(double fx, double fy, double fz);
-    void set_torque(double nx, double ny, double nz);
-    void set_wrench(tf::Vector3 f, tf::Vector3 n);
-    void set_position(double px, double py, double pz);
-    void set_rpy(double roll, double pitch, double yaw);
-    void set_rot(tf::Quaternion rot_quat);
+    inline bool get_publish_children_name_flag() { return m_Cmd.publish_children_names; } //TBT
+    inline bool get_publish_joint_names_flag() { return m_Cmd.publish_joint_names; } //TBT
+    inline bool get_publish_joint_positions_flag() { return m_Cmd.publish_joint_positions; } //TBT
+
+    // Setters w.r.t Rigid Body Class
+    inline void set_publish_children_names_flag(bool publish_children_names) { m_Cmd.publish_children_names = publish_children_names; } //TBT
+    inline void set_publish_joint_names_flag(bool publish_joint_names) { m_Cmd.publish_joint_names = publish_joint_names; } //TBT
+    inline void set_publish_joint_positions_flag(bool publish_joint_positions) { m_Cmd.publish_joint_positions= publish_joint_positions; } //TBT
+
+    void set_force(double fx, double fy, double fz);  //TBT
+    void set_torque(double nx, double ny, double nz);  //TBT
+    void set_wrench(tf::Vector3 f, tf::Vector3 n);  //TBT
+
+//    void set_position(double px, double py, double pz);
+//    void set_rpy(double roll, double pitch, double yaw);
+//    void set_rot(tf::Quaternion rot_quat);
     void set_pose(tf::Pose pose);
     void set_linear_vel(double vx, double vy, double vz);
     void set_angular_vel(double ax, double ay, double az);
@@ -138,8 +159,8 @@ public:
 
     void getBackground();
 
-    inline int get_num_of_children(){return m_State.children_names.size();}
-    inline std::vector<std::string> get_children_names(){return m_State.children_names;}
+
+
     //    inline std::string get_name() { return m_State.name.c_str(); } - TBD
     std::string get_parent_name(); //TBD
 
@@ -148,7 +169,7 @@ public:
     tf::Vector3 get_joint_position();
     tf::Vector3 get_joint_rpy(); //TBD
     tf::Quaternion get_joint_orientation();
-    tf::Pose get_joint_pose();
+//    tf::Pose get_joint_pose();
     tf::Vector3 get_principal_inertia();
     inline double get_joint_mass(){return m_State.mass;}
 
