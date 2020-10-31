@@ -42,6 +42,7 @@
 #include <string>
 #include <type_traits>
 #include <iostream>
+#include <numeric>
 
 namespace ambf_client{
 
@@ -115,30 +116,27 @@ public:
 //    void set_position(double px, double py, double pz);
 //    void set_rpy(double roll, double pitch, double yaw);
 //    void set_rot(tf::Quaternion rot_quat);
-    void set_pose(tf::Pose pose);
-    void set_linear_vel(double vx, double vy, double vz);
-    void set_angular_vel(double ax, double ay, double az);
-    void set_twist(tf::Vector3 v, tf::Vector3 a);
+    void set_pose(tf::Pose pose); //TBT
+    void set_linear_vel(double vx, double vy, double vz); //TBT
+    void set_angular_vel(double ax, double ay, double az); //TBT
+    void set_twist(tf::Vector3 v, tf::Vector3 a);  //TBT
+    void set_twist(geometry_msgs::Twist twist);  //TBT
 
-    void wrench_command(double fx, double fy, double fz, double nx, double ny, double nz);
-    void pose_command(double px, double py, double pz, double qx, double qy, double qz, double qw);
-    void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);
-
-    void set_joint_control(int joint_idx, float command, int control_type);
-
-    template<typename T>
-    void set_joint_effort(T t, float effort);
+    void wrench_command(double fx, double fy, double fz, double nx, double ny, double nz);  //TBT
+    void pose_command(double px, double py, double pz, double qx, double qy, double qz, double qw);  //TBT
+    void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);  //TBT
 
     template<typename T>
-    void set_joint_pos(T t, float pos);
-
+    void set_joint_pos(T t, float pos); //TBT
+    void set_multiple_joint_pos(std::vector<int> joints_idx, std::vector<float> joints_pos); //TBT
 
     template<typename T>
-    void set_joint_vel(T t, float vel);
+    void set_joint_vel(T t, float vel); //TBT
+    void set_multiple_joint_vel(std::vector<int> joints_idx, std::vector<float> joints_vel); //TBT
 
-
-
-
+    template<typename T>
+    void set_joint_effort(T t, float effort); //TBT
+    void set_multiple_joint_effort(std::vector<int> joints_idx, std::vector<float> joints_effort); //TBT
 
 //    template<typename T>
 //    int get_joint_pos(T t) {
@@ -157,41 +155,10 @@ public:
 //        return m_State.joint_positions[joint_idx];
 //    }
 
-    void getBackground();
 
-
-
-    //    inline std::string get_name() { return m_State.name.c_str(); } - TBD
-    std::string get_parent_name(); //TBD
-
-
-
-    tf::Vector3 get_joint_position();
-    tf::Vector3 get_joint_rpy(); //TBD
-    tf::Quaternion get_joint_orientation();
-//    tf::Pose get_joint_pose();
-    tf::Vector3 get_principal_inertia();
-    inline double get_joint_mass(){return m_State.mass;}
-
-
-
-
-    tf::Vector3 get_joint_force();
-    tf::Vector3 get_joint_torque();
-
-    void set_joint_position(double px, double py, double pz);
-    void set_joint_orientation(double roll, double pitch, double yaw);
-    void set_joint_orientation(double qx, double qy, double qz, double qw);
-    void set_joint_pose(tf::Pose pose);
-
-    void set_linear_velocity(double vx, double vy, double vz);
-    void set_angular_velocity(double ax, double ay, double az);
-    void set_joint_velocities(std::vector<float> joint_velocities);
-
-    void set_joint_efforts(std::vector<float> joint_efforts); //TBD
-    void set_joint_force(double fx, double fy, double fz);
-    void set_joint_torque(double nx, double ny, double nz);
-
+private:
+    void set_joint_control(int joint_idx, float command, int control_type);
+    void set_multiple_joint_control(std::vector<int> joints_idx, std::vector<float> joints_pos, int control_type);
 };
 
 

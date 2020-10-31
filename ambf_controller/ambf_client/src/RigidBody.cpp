@@ -308,10 +308,6 @@ void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 }
 
-void RigidBody::set_pos(double px, double py, double pz) {
-
-}
-
 /////
 ///// \brief RigidBody::set_position
 ///// \param px
@@ -339,7 +335,10 @@ void RigidBody::set_pose(const tf::Pose pose) {
 ///
 void RigidBody::set_linear_vel(double vx, double vy, double vz){
     tf::Vector3 v(vx, vy, vz);
+    tf::Vector3 a = this->get_angular_velocity_command();
+
     tf::vector3TFToMsg(v, m_Cmd.twist.linear);
+    tf::vector3TFToMsg(a, m_Cmd.twist.angular);
 }
 
 ///
@@ -349,7 +348,10 @@ void RigidBody::set_linear_vel(double vx, double vy, double vz){
 /// \param az
 ///
 void RigidBody::set_angular_vel(double ax, double ay, double az){
+    tf::Vector3 v = this->get_linear_velocity_command();
     tf::Vector3 a(ax, ay, az);
+
+    tf::vector3TFToMsg(v, m_Cmd.twist.linear);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
 }
 
@@ -358,6 +360,17 @@ void RigidBody::set_twist(tf::Vector3 v, tf::Vector3 a) {
 
     tf::vector3TFToMsg(v, m_Cmd.twist.linear);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
+}
+
+void RigidBody::set_twist(geometry_msgs::Twist twist) {
+    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_VELOCITY;
+    m_Cmd.twist.linear.x = twist.linear.x;
+    m_Cmd.twist.linear.y = twist.linear.y;
+    m_Cmd.twist.linear.z = twist.linear.z;
+
+    m_Cmd.twist.angular.x = twist.angular.x;
+    m_Cmd.twist.angular.y = twist.angular.y;
+    m_Cmd.twist.angular.z = twist.angular.z;
 }
 
 void RigidBody::wrench_command(double fx, double fy, double fz, double nx, double ny, double nz) {
@@ -391,31 +404,6 @@ void RigidBody::velocity_command(double vx, double vy, double vz, double ax, dou
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
 }
 
-void RigidBody::set_joint_control(int joint_idx, float command, int control_type) {
-    if(!is_joint_idx_valid(joint_idx)) return;
-    int n_jnts = get_num_joints();
-
-
-    if(m_Cmd.joint_cmds.size() != n_jnts) {
-        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
-        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
-    }
-
-    m_Cmd.joint_cmds[joint_idx] = command;
-    m_Cmd.joint_cmds_types[joint_idx] = control_type;
-
-}
-
-template<>
-void RigidBody::set_joint_effort(int joint_idx, float effort) {
-    set_joint_control(joint_idx, effort, m_Cmd.TYPE_FORCE);
-}
-
-template<>
-void RigidBody::set_joint_effort(std::string joint_name, float effort) {
-    int joint_idx = get_joint_idx_from_name(joint_name);
-    set_joint_effort(joint_idx, effort);
-}
 
 
 //template<>
@@ -442,6 +430,10 @@ void RigidBody::set_joint_pos(std::string joint_name, float pos) {
     set_joint_pos(joint_idx, pos);
 }
 
+void RigidBody::set_multiple_joint_pos(std::vector<int> joints_idx, std::vector<float> joints_pos) {
+    set_multiple_joint_control(joints_idx, joints_pos , m_Cmd.TYPE_POSITION);
+}
+
 template<>
 void RigidBody::set_joint_vel(int joint_idx, float vel) {
     set_joint_control(joint_idx, vel, m_Cmd.TYPE_VELOCITY);
@@ -453,154 +445,81 @@ void RigidBody::set_joint_vel(std::string joint_name, float vel) {
     set_joint_vel(joint_idx, vel);
 }
 
-tf::Vector3 RigidBody::get_joint_position() {
-    double px = m_State.pose.position.x;
-    double py = m_State.pose.position.y;
-    double pz = m_State.pose.position.z;
 
-    return tf::Vector3(px, py, pz);
+void RigidBody::set_multiple_joint_vel(std::vector<int> joints_idx, std::vector<float> joints_vel) {
+    set_multiple_joint_control(joints_idx, joints_vel , m_Cmd.TYPE_VELOCITY);
 }
 
-tf::Quaternion RigidBody::get_joint_orientation() {
-    tf::Quaternion rot_quat;
-
-    tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
-    return rot_quat;
+template<>
+void RigidBody::set_joint_effort(int joint_idx, float effort) {
+    set_joint_control(joint_idx, effort, m_Cmd.TYPE_FORCE);
 }
 
-tf::Vector3 RigidBody::get_principal_inertia() {
-    tf::Vector3 I(0, 0, 0);
-    tf::pointMsgToTF(m_State.pInertia, I);
-
-    return I;
+template<>
+void RigidBody::set_joint_effort(std::string joint_name, float effort) {
+    int joint_idx = get_joint_idx_from_name(joint_name);
+    set_joint_effort(joint_idx, effort);
 }
 
-///
-/// \brief RigidBody::get_joint_force
-/// \param fx
-/// \param fy
-/// \param fz
-///
-tf::Vector3 RigidBody::get_joint_force(){
-    tf::Vector3 f(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_State.wrench.torque, f);
-    return f;
+void RigidBody::set_multiple_joint_effort(std::vector<int> joints_idx, std::vector<float> joints_effort) {
+    set_multiple_joint_control(joints_idx, joints_effort , m_Cmd.TYPE_FORCE);
 }
 
+//template<>
+//void RigidBody::set_joint_pos(std::string joint_name, float pos) {
+//    int joint_idx = get_joint_idx_from_name(joint_name);
+//    set_joint_pos(joint_idx, pos);
+//}
 
-///
-/// \brief RigidBody::get_joint_torque
-/// \param nx
-/// \param ny
-/// \param nz
-///
-tf::Vector3 RigidBody::get_joint_torque(){
-    tf::Vector3 n(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_State.wrench.torque, n);
-    return n;
-}
+void RigidBody::set_joint_control(int joint_idx, float command, int control_type) {
+    if(!is_joint_idx_valid(joint_idx)) return;
+    int n_jnts = get_num_joints();
 
 
-///
-/// \brief RigidBody::set_position
-/// \param px
-/// \param py
-/// \param pz
-///
-void RigidBody::set_joint_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_Cmd.pose.position.x = px;
-    m_Cmd.pose.position.y = py;
-    m_Cmd.pose.position.z = pz;
-}
-
-///
-/// \brief RigidBody::set_orientation
-/// \param roll
-/// \param pitch
-/// \param yaw
-///
-void RigidBody::set_joint_orientation(double roll, double pitch, double yaw){
-    tf::Quaternion rot_quat;
-    rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
-}
-
-
-///
-/// \brief RigidBody::set_orientation
-/// \param qx
-/// \param qy
-/// \param qz
-/// \param qw
-///
-void RigidBody::set_joint_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
-}
-
-
-void RigidBody::set_joint_pose(const tf::Pose pose) {
-     tf::poseTFToMsg(pose, m_Cmd.pose);
-}
-
-///
-/// \brief RigidBody::set_linear_velocity
-/// \param vx
-/// \param vy
-/// \param vz
-///
-void RigidBody::set_linear_velocity(double vx, double vy, double vz){
-    tf::Vector3 v(vx, vy, vz);
-    tf::vector3TFToMsg(v, m_Cmd.twist.linear);
-}
-
-///
-/// \brief RigidBody::set_angular_velocity
-/// \param ax
-/// \param ay
-/// \param az
-///
-void RigidBody::set_angular_velocity(double ax, double ay, double az){
-    tf::Vector3 a(ax, ay, az);
-    tf::vector3TFToMsg(a, m_Cmd.twist.angular);
-}
-
-///
-/// \brief RigidBody::set_joint_velocities
-/// \param joint_velocities
-///
-void RigidBody::set_joint_velocities(std::vector<float> joint_velocities){
-    if (m_Cmd.joint_cmds.size() != joint_velocities.size()){
-        m_State.joint_velocities.resize(joint_velocities.size());
+    if(m_Cmd.joint_cmds.size() != n_jnts) {
+        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
+        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
     }
-    m_State.joint_velocities = joint_velocities;
+
+    m_Cmd.joint_cmds[joint_idx] = command;
+    m_Cmd.joint_cmds_types[joint_idx] = control_type;
+
 }
 
+void RigidBody::set_multiple_joint_control(std::vector<int> joints_idx, std::vector<float> joints_pos, int control_type) {
+    if(joints_pos.size() != joints_idx.size()) {
+        std::cerr << "Size of joints indicies and joints position doest match" << std::endl;
+        return;
+    }
 
-///
-/// \brief RigidBody::set_joint_force
-/// \param fx
-/// \param fy
-/// \param fz
-///
-void RigidBody::set_joint_force(double fx, double fy, double fz){
-    tf::Vector3 f(fx, fy, fz);
-    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-}
+    int n_jnts = get_num_joints();
+
+    int min_joint_index = *min_element(joints_idx.begin(), joints_idx.end());
+    int max_joint_index = *max_element(joints_idx.begin(), joints_idx.end());
+
+    if(min_joint_index < 0 || max_joint_index >= n_jnts) {
+        std::cerr << "Requested Joint index is out of range with joints" << std::endl;
+        return;
+    }
 
 
-///
-/// \brief RigidBody::set_joint_torque
-/// \param nx
-/// \param ny
-/// \param nz
-///
-void RigidBody::set_joint_torque(double nx, double ny, double nz){
-    tf::Vector3 n(nx, ny, nz);
-    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+    if(joints_idx.size() != n_jnts) {
+        joints_idx.resize(n_jnts);
+        std::iota(std::begin(joints_idx), std::end(joints_idx), 0);
+    }
+
+    if(m_Cmd.joint_cmds.size() != n_jnts) {
+        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
+        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
+    }
+
+    for(int index = 0; index < joints_idx.size(); index++) {
+        int joint_idx = joints_pos[index];
+        float command = joints_pos[index];
+        m_Cmd.joint_cmds[joint_idx] = command;
+        m_Cmd.joint_cmds_types[joint_idx] = control_type;
+    }
+
 }
 
 extern "C"{
