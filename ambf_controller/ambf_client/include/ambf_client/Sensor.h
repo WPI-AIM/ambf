@@ -44,6 +44,17 @@ namespace ambf_client{
 class Sensor: public SensorRosCom{
 public:
     Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    inline int get_count() { return m_State.count; }
+    bool is_triggered(int idx);
+
+    inline std::vector<float> get_all_range() { return m_State.range; }
+    float get_range(int idx);
+
+    inline std::vector<float> get_all_measurement() { return m_State.measurement; }
+    float get_measurement(int idx);
+
+    inline std::string get_parent_name() { return boost::lexical_cast<std::string>(m_State.parent_name); }
+
     tf::Vector3 get_position();
     tf::Quaternion get_orientation();
 

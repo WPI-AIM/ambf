@@ -430,9 +430,15 @@ void RigidBody::set_joint_pos(std::string joint_name, float pos) {
     set_joint_pos(joint_idx, pos);
 }
 
-void RigidBody::set_multiple_joint_pos(std::vector<int> joints_idx, std::vector<float> joints_pos) {
-    set_multiple_joint_control(joints_idx, joints_pos , m_Cmd.TYPE_POSITION);
+void RigidBody::set_multiple_joint_pos(std::map<int, float> joints_idx_pos_map) {
+    set_multiple_joint_control(joints_idx_pos_map, m_Cmd.TYPE_POSITION);
 }
+
+void RigidBody::set_all_joint_pos(std::vector<float> joints_pos) {
+    set_all_joint_control(joints_pos, m_Cmd.TYPE_POSITION);
+}
+
+
 
 template<>
 void RigidBody::set_joint_vel(int joint_idx, float vel) {
@@ -445,9 +451,12 @@ void RigidBody::set_joint_vel(std::string joint_name, float vel) {
     set_joint_vel(joint_idx, vel);
 }
 
+void RigidBody::set_multiple_joint_vel(std::map<int, float> joints_idx_vel_map) {
+    set_multiple_joint_control(joints_idx_vel_map, m_Cmd.TYPE_VELOCITY);
+}
 
-void RigidBody::set_multiple_joint_vel(std::vector<int> joints_idx, std::vector<float> joints_vel) {
-    set_multiple_joint_control(joints_idx, joints_vel , m_Cmd.TYPE_VELOCITY);
+void RigidBody::set_all_joint_vel(std::vector<float> joints_vel) {
+    set_all_joint_control(joints_vel, m_Cmd.TYPE_VELOCITY);
 }
 
 template<>
@@ -461,15 +470,13 @@ void RigidBody::set_joint_effort(std::string joint_name, float effort) {
     set_joint_effort(joint_idx, effort);
 }
 
-void RigidBody::set_multiple_joint_effort(std::vector<int> joints_idx, std::vector<float> joints_effort) {
-    set_multiple_joint_control(joints_idx, joints_effort , m_Cmd.TYPE_FORCE);
+void RigidBody::set_multiple_joint_effort(std::map<int, float> joints_idx_effort_map) {
+    set_multiple_joint_control(joints_idx_effort_map, m_Cmd.TYPE_FORCE);
 }
 
-//template<>
-//void RigidBody::set_joint_pos(std::string joint_name, float pos) {
-//    int joint_idx = get_joint_idx_from_name(joint_name);
-//    set_joint_pos(joint_idx, pos);
-//}
+void RigidBody::set_all_joint_effort(std::vector<float> joints_effort) {
+    set_all_joint_control(joints_effort, m_Cmd.TYPE_FORCE);
+}
 
 void RigidBody::set_joint_control(int joint_idx, float command, int control_type) {
     if(!is_joint_idx_valid(joint_idx)) return;
@@ -486,36 +493,38 @@ void RigidBody::set_joint_control(int joint_idx, float command, int control_type
 
 }
 
-void RigidBody::set_multiple_joint_control(std::vector<int> joints_idx, std::vector<float> joints_pos, int control_type) {
-    if(joints_pos.size() != joints_idx.size()) {
-        std::cerr << "Size of joints indicies and joints position doest match" << std::endl;
-        return;
-    }
-
+void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type) {
     int n_jnts = get_num_joints();
 
-    int min_joint_index = *min_element(joints_idx.begin(), joints_idx.end());
-    int max_joint_index = *max_element(joints_idx.begin(), joints_idx.end());
+    int min_joint_index = joints_idx_command_map.begin()->first;
+    int max_joint_index = joints_idx_command_map.rbegin()->first;
 
-    if(min_joint_index < 0 || max_joint_index >= n_jnts) {
+    if(min_joint_index < 0 || max_joint_index >= n_jnts || joints_idx_command_map.size() != n_jnts) {
         std::cerr << "Requested Joint index is out of range with joints" << std::endl;
         return;
     }
 
+    std::map<int, float>::iterator itr;
+    for (itr = joints_idx_command_map.begin(); itr != joints_idx_command_map.end(); itr++) {
+        int joint_idx = itr->first;
+        float command = itr->second;
 
-    if(joints_idx.size() != n_jnts) {
-        joints_idx.resize(n_jnts);
-        std::iota(std::begin(joints_idx), std::end(joints_idx), 0);
+        m_Cmd.joint_cmds[joint_idx] = command;
+        m_Cmd.joint_cmds_types[joint_idx] = control_type;
     }
 
-    if(m_Cmd.joint_cmds.size() != n_jnts) {
-        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
-        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
+}
+
+void RigidBody::set_all_joint_control(std::vector<float> joints_command, int control_type) {
+    int n_jnts = get_num_joints();
+
+    if(joints_command.size() != n_jnts) {
+        std::cerr << "Joints control size doest match the number of joints" << std::endl;
+        return;
     }
 
-    for(int index = 0; index < joints_idx.size(); index++) {
-        int joint_idx = joints_pos[index];
-        float command = joints_pos[index];
+    for(int joint_idx = 0; joint_idx < n_jnts; joint_idx++) {
+        float command = joints_command[joint_idx];
         m_Cmd.joint_cmds[joint_idx] = command;
         m_Cmd.joint_cmds_types[joint_idx] = control_type;
     }

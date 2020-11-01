@@ -43,6 +43,7 @@
 #include <type_traits>
 #include <iostream>
 #include <numeric>
+#include <map>
 
 namespace ambf_client{
 
@@ -128,37 +129,23 @@ public:
 
     template<typename T>
     void set_joint_pos(T t, float pos); //TBT
-    void set_multiple_joint_pos(std::vector<int> joints_idx, std::vector<float> joints_pos); //TBT
+    void set_multiple_joint_pos(std::map<int, float> joints_idx_pos_map); //TBT
+    void set_all_joint_pos(std::vector<float> joints_pos); //TBT
 
     template<typename T>
     void set_joint_vel(T t, float vel); //TBT
-    void set_multiple_joint_vel(std::vector<int> joints_idx, std::vector<float> joints_vel); //TBT
+    void set_multiple_joint_vel(std::map<int, float> joints_idx_vel_map); //TBT
+    void set_all_joint_vel(std::vector<float> joints_vel);
 
     template<typename T>
     void set_joint_effort(T t, float effort); //TBT
-    void set_multiple_joint_effort(std::vector<int> joints_idx, std::vector<float> joints_effort); //TBT
-
-//    template<typename T>
-//    int get_joint_pos(T t) {
-//        int joint_idx = -1;
-
-//        if(std::is_same<T, std::string>::value) {
-////            joint_idx = get_joint_idx_from_name(std::to_string(t).c_str()); //compilation error on conversion
-//            std::cerr << "String type: " << t << std::endl;
-//        } else if(std::numeric_limits<T>::is_integer) {
-//            std::cerr << "Integer type: " << t << std::endl;
-////            joint_idx = convert<int>(t); //compilation error on conversion
-//        } else {
-//            return joint_idx;
-//        }
-
-//        return m_State.joint_positions[joint_idx];
-//    }
-
+    void set_multiple_joint_effort(std::map<int, float> joints_idx_effort_map); //TBT
+    void set_all_joint_effort(std::vector<float> joints_effort);
 
 private:
     void set_joint_control(int joint_idx, float command, int control_type);
-    void set_multiple_joint_control(std::vector<int> joints_idx, std::vector<float> joints_pos, int control_type);
+    void set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type);
+    void set_all_joint_control(std::vector<float> joints_command, int control_type);
 };
 
 

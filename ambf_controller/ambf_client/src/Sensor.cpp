@@ -40,6 +40,37 @@ namespace ambf_client{
 Sensor::Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): SensorRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
+
+bool Sensor::is_triggered(int idx) {
+    if(idx < 0 || idx >= m_State.triggered.size()) {
+        std::cerr << "Invalid Index" << std::endl;
+
+        return false;
+    }
+
+    return m_State.triggered[idx];
+}
+
+float Sensor::get_range(int idx) {
+    if(idx < 0 || idx >= m_State.range.size()) {
+        std::cerr << "Invalid Index" << std::endl;
+
+        return -1;
+    }
+
+    return m_State.range[idx];
+}
+
+float Sensor::get_measurement(int idx) {
+    if(idx < 0 || idx >= m_State.measurement.size()) {
+        std::cerr << "Invalid Index" << std::endl;
+
+        return -1;
+    }
+
+    return m_State.measurement[idx];
+}
+
 tf::Vector3 Sensor::get_position() {
     double px = m_State.pose.position.x;
     double py = m_State.pose.position.y;
