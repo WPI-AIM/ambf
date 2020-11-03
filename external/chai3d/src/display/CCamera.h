@@ -131,6 +131,9 @@ public:
     //! This method returns a pointer to the parent world.
     cWorld* getParentWorld() { return (m_parentWorld); }
 
+    //! This method returns a pointer to the parent world.
+    void setParentWorld(cWorld* a_parentWorld) { m_parentWorld = a_parentWorld; }
+
 
     //-----------------------------------------------------------------------
     // PUBLIC METHODS - MOUSE SELECTION:

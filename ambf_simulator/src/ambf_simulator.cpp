@@ -722,14 +722,9 @@ int main(int argc, char* argv[])
 
     g_depthFrameBuffer = cFrameBuffer::create();
 
-    g_depthCamera = new cCamera(g_depthWorld);
+    g_depthWorld->addChild(g_afWorld->getAFCameras()[0]->getInternalCamera());
 
-    g_depthCamera->m_useCustomProjectionMatrix = true;
-    g_depthCamera->m_projectionMatrix = g_afWorld->getAFCameras()[0]->getInternalCamera()->m_projectionMatrix;
-
-    g_depthWorld->addChild(g_depthCamera);
-
-    g_depthFrameBuffer->setup(g_depthCamera, 1280, 720, true, false);
+    g_depthFrameBuffer->setup(g_afWorld->getAFCameras()[0]->getInternalCamera(), 1280, 720, true, false);
 
     g_depthQuad->m_texture = cTexture2d::create();
 
@@ -1574,10 +1569,11 @@ void updateGraphics()
             g_window_closed = true;
         }
 
-        g_depthCamera->m_useCustomProjectionMatrix = true;
-        g_depthCamera->m_projectionMatrix = cameraPtr->getInternalCamera()->m_projectionMatrix;
-
         cameraPtr->publishImage();
+
+
+        // Change world to render proper scene graph
+        cameraPtr->getInternalCamera()->setParentWorld(g_depthWorld);
 
         // Depth Buffer Rendering
         afRigidBodyPtr rightPlane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneR");
@@ -1785,6 +1781,9 @@ void updateGraphics()
 //        // check for any OpenGL errors
 //        GLenum err = glGetError();
 //        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+
+        // Change back the world to render proper scene graph
+        cameraPtr->getInternalCamera()->setParentWorld(g_afWorld);
     }
 
     if (g_saveDepthBuffers){
