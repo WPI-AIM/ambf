@@ -12,6 +12,7 @@ varying vec3 vTexCoord;
 varying mat3 TBN;
 
 varying mat4 invProjection;
+uniform mat4 Projection;
 
 void main(void)
 {

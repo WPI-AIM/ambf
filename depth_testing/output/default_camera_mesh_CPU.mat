@@ -1,0 +1,23 @@
+#
+# Wavefront material file
+# CHAI3D
+# http://www.chai3d.org
+#
+
+
+newmtl MATERIAL0
+Ka 0.300 0.300 0.300
+Kd 0.700 0.700 0.700
+Ks 1.000 1.000 1.000
+Ns 50.00
+illum 2
+map_Kd 
+map_bump
+bump
+map_opacity
+map_d
+refl
+map_kS
+map_kA
+map_Ns
+

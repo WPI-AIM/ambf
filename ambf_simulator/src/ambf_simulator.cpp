@@ -80,13 +80,15 @@ bool mirroredDisplay = false;
 double g_widthRatio = 1.0;
 double g_heightRatio = 1.0;
 // Point cloud mesh from Depth Buffer
-cMultiMesh* g_pointCloudMesh = 0;
-bool g_savePointCloudMesh = false;
+cMultiMesh* g_pointCloudMesh_CPU = 0;
+cMultiMesh* g_pointCloudMesh_normalized_CPU = 0;
+cMultiMesh* g_pointCloudMesh_GPU = 0;
+bool g_saveDepthBuffers = false;
 cFrameBufferPtr g_depthFrameBuffer = 0;
 cCamera* g_depthCamera = 0;
 cMesh* g_depthQuad = 0;
 cWorld* g_depthWorld = 0;
-cImagePtr g_secondPassImage = 0;
+cImagePtr g_depthImage_GPU = 0;
 
 
 //---------------------------------------------------------------------------
@@ -679,15 +681,6 @@ int main(int argc, char* argv[])
 
     g_depthQuad->computeAllNormals();
 
-    g_depthQuad->m_texture = cTexture2d::create();
-
-    g_depthQuad->m_texture->m_image->allocate(1024, 720, GL_RGBA);
-
-    g_depthQuad->setUseTexture(true);
-
-    g_secondPassImage = cImage::create();
-    g_secondPassImage->allocate(1024, 720, GL_RGBA);
-
     std::ifstream vsFile;
     std::ifstream fsFile;
     std::string vs_shader_file = "../../depth_testing/shaders/shader.vs";
@@ -731,14 +724,23 @@ int main(int argc, char* argv[])
 
     g_depthCamera = new cCamera(g_depthWorld);
 
-    g_depthCamera->set(cVector3d(0, 0, 0), cVector3d(-1, 0, 0), cVector3d(0, 0, 1));
+    g_depthCamera->set(cVector3d(0, 0, 0), cVector3d(1, 0, 0), cVector3d(0.7, 0.7, 0.7));
     g_depthCamera->setClippingPlanes(g_afWorld->getAFCameras()[0]->getInternalCamera()->getNearClippingPlane(),
             g_afWorld->getAFCameras()[0]->getInternalCamera()->getFarClippingPlane());
     g_depthCamera->setFieldViewAngleRad(g_afWorld->getAFCameras()[0]->getInternalCamera()->getFieldViewAngleRad());
 
     g_depthWorld->addChild(g_depthCamera);
 
-    g_depthFrameBuffer->setup(g_depthCamera, 1024, 720, true, false);
+    g_depthFrameBuffer->setup(g_depthCamera, 1280, 720, true, false);
+
+    g_depthQuad->m_texture = cTexture2d::create();
+
+    g_depthQuad->m_texture->m_image->allocate(1280, 720, GL_RGBA);
+
+    g_depthQuad->setUseTexture(true);
+
+    g_depthImage_GPU = cImage::create();
+    g_depthImage_GPU->allocate(1280, 720, GL_RGBA);
 
     // main graphic loop
     while (!g_window_closed)
@@ -1208,7 +1210,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - save depth map mesh
         else if (a_key == GLFW_KEY_J)
         {
-            g_savePointCloudMesh = true;
+            g_saveDepthBuffers = true;
         }
     }
 }
@@ -1607,15 +1609,23 @@ void updateGraphics()
             planeMesh->m_texture->markForUpdate();
         }
 
-        if (g_pointCloudMesh == nullptr){
-            g_pointCloudMesh = new cMultiMesh();
-            g_pointCloudMesh->m_meshes->push_back(new cMesh());
-            (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->allocateData(width*height, true, false, true, false, false, false);
-        }
+        // Update the dimensions scale information.
+        float n = cameraPtr->getInternalCamera()->getNearClippingPlane();
+        float f = cameraPtr->getInternalCamera()->getFarClippingPlane();
+        double fva = cameraPtr->getInternalCamera()->getFieldViewAngleRad();
+        double ar = cameraPtr->getInternalCamera()->getAspectRatio();
 
+        double delta_h = 2.0 * f * tan(fva/2.0);
+        double delta_v = delta_h / ar;
+        double delta_d = f-n;
 
-        if (g_savePointCloudMesh && g_pointCloudMesh){
+        if (g_saveDepthBuffers){
 
+            printf("Delta_h = %f \n", delta_h);
+            printf("Delta_v = %f \n", delta_v);
+            printf("Delta_d = %f \n", delta_d);
+
+            printf("Saving CPU Depth Buffer\n");
             cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
             invProjection.m_flagTransform = false;
             invProjection.invert();
@@ -1625,73 +1635,73 @@ void updateGraphics()
             double a43 = invProjection(3,2);
             double a44 = invProjection(3,3);
 
-            cImagePtr colorImage = cameraPtr->m_imageFromBuffer;
-            cImagePtr depthImage = cameraPtr->m_depthFromBuffer;
+            cImagePtr colorImage_CPU = cameraPtr->m_imageFromBuffer;
+            cImagePtr depthImage_CPU = cameraPtr->m_depthFromBuffer;
 
-            int width = depthImage->getWidth();
-            int height = depthImage->getHeight();
-            int bytes = depthImage->getBytesPerPixel();
-            int bits = depthImage->getBitsPerPixel();
+            int width_CPU = depthImage_CPU->getWidth();
+            int height_CPU = depthImage_CPU->getHeight();
+            int bytes_CPU = depthImage_CPU->getBytesPerPixel();
+            int bits_CPU = depthImage_CPU->getBitsPerPixel();
 
-            double maxX = (double)(width - 1);
-            double maxY = (double)(height - 1);
+            double maxX = (double)(width_CPU - 1);
+            double maxY = (double)(height_CPU - 1);
 
-//            for (int y_span = 0 ; y_span < height ; y_span++){
-//                for (int x_span = 0 ; x_span < width ; x_span++){
-//                    double px = double(x_span) / maxX;
-//                    double py = double(y_span) / maxY;
-//                    int idx = (y_span * width + x_span);
-//                    double depth = double(depthImage->getData()[idx * bytes + g_cmdOpts.channel]);
-//                    // Set the RGB values equal to depth to get a grayscale image
-//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 0] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 1] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-//                    depthImage->getData()[idx * bytes + g_cmdOpts.channel + 2] = depthImage->getData()[idx * bytes + g_cmdOpts.channel];
-//                    double pz = depth / 255.0;
-//                    double pw = 1.0;
+            colorImage_CPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_color_image_CPU.bmp");
+            depthImage_CPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_depth_image_CPU.bmp");
 
-//                    px = 2.0 * px - 1.0;
-//                    py = 2.0 * py - 1.0;
-//                    pz = 2.0 * pz - 1.0;
+            if (g_pointCloudMesh_CPU == nullptr){
+                g_pointCloudMesh_CPU = new cMultiMesh();
+                g_pointCloudMesh_CPU->m_meshes->push_back(new cMesh());
+                (*(g_pointCloudMesh_CPU->m_meshes))[0]->m_vertices->allocateData(width_CPU*height_CPU, true, false, true, false, false, false);
+            }
 
-//                    cVector3d pImage(px, py, pz);
-//                    cVector3d pClip = invProjection * pImage;
-//                    pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
-//                    pClip = cDiv(pw, pClip);
-//                    // Flip along vertical plane
-//                    (*(g_pointCloudMesh->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
-//                }
-//            }
+            if (g_pointCloudMesh_normalized_CPU == nullptr){
+                g_pointCloudMesh_normalized_CPU = new cMultiMesh();
+                g_pointCloudMesh_normalized_CPU->m_meshes->push_back(new cMesh());
+                (*(g_pointCloudMesh_normalized_CPU->m_meshes))[0]->m_vertices->allocateData(width_CPU*height_CPU, true, false, true, false, false, false);
+            }
 
-//            time_t now = time(0);
-//            std::string time_str(ctime(&now));
-//            g_pointCloudMesh->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_mesh.obj");
-//            colorImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_color_image.bmp");
-//            depthImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_depth_image.bmp");
-//            g_savePointCloudMesh = false;
+            if (g_pointCloudMesh_CPU){
+                for (int y_span = 0 ; y_span < height_CPU ; y_span++){
+                    for (int x_span = 0 ; x_span < width_CPU ; x_span++){
+                        double px = double(x_span) / maxX;
+                        double py = double(y_span) / maxY;
+                        int idx = (y_span * width_CPU + x_span);
+                        double depth = double(depthImage_CPU->getData()[idx * bytes_CPU + g_cmdOpts.channel]);
+                        double pz = depth / 255.0;
+                        double pw = 1.0;
 
+                        px = 2.0 * px - 1.0;
+                        py = 2.0 * py - 1.0;
+                        pz = 2.0 * pz - 1.0;
+
+                        cVector3d pImage(px, py, pz);
+                        cVector3d pClip = invProjection * pImage;
+                        pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
+                        pClip = cDiv(pw, pClip);
+                        (*(g_pointCloudMesh_CPU->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
+
+                        double far = -f;
+                        double near = -n;
+                        double deltaZ = far - near;
+                        cVector3d pNorm((pClip.x() + delta_v / 2.0) / delta_v, (pClip.y() + delta_h / 2.0) / delta_h, (pClip.z() - near) / deltaZ);
+                        (*(g_pointCloudMesh_normalized_CPU->m_meshes))[0]->m_vertices->setLocalPos(idx, pNorm);
+                    }
+                }
+
+                g_pointCloudMesh_CPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_mesh_CPU.obj");
+                g_pointCloudMesh_normalized_CPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_mesh_normalized_CPU.obj");
+            }
 
         }
 
+        cImagePtr depthImage_CPU = cameraPtr->m_depthFromBuffer;
+//        depthImage_CPU->flipHorizontal();
 
-
-        cImagePtr colorImage = cameraPtr->m_imageFromBuffer;
-        cImagePtr depthImage = cameraPtr->m_depthFromBuffer;
-        depthImage->flipHorizontal();
-
-        depthImage->copyTo(g_depthQuad->m_texture->m_image);
+        depthImage_CPU->copyTo(g_depthQuad->m_texture->m_image);
         g_depthQuad->m_texture->markForUpdate();
 
-        // Update the dimensions scale information.
-        float n = cameraPtr->getInternalCamera()->getNearClippingPlane();
-        float f = cameraPtr->getInternalCamera()->getFarClippingPlane();
-        double fva = cameraPtr->getInternalCamera()->getFieldViewAngleRad();
-        double ar = cameraPtr->getInternalCamera()->getAspectRatio();
-
-        double delta_h = 2 * f * acos(fva);
-        double delta_v = delta_h / ar;
-        double delta_d = -f;
-
-        cVector3d maxWorldDimensions(delta_v, delta_h, delta_d);
+        cVector3d maxWorldDimensions(delta_h, delta_v, delta_d);
 
         g_depthQuad->getShaderProgram()->setUniform("maxWorldDimensions", maxWorldDimensions);
         g_depthQuad->getShaderProgram()->setUniformf("nearPlane", -n);
@@ -1699,13 +1709,67 @@ void updateGraphics()
 
         g_depthFrameBuffer->renderView();
 
-        if (g_savePointCloudMesh){
-            printf("Trying to Save Second Pass Depth Image\n");
-            cImagePtr secondPassImage;
-            g_depthFrameBuffer->copyImageBuffer(g_secondPassImage);
-            colorImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_first_pass_color_image.bmp");
-            depthImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_first_pass_depth_image.bmp");
-            g_secondPassImage->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_second_pass_depth_image.bmp");
+        afRigidBodyPtr centerPlane = g_afWorld->getAFRigidBody("/ambf/env/BODY PlaneC");
+
+        if (centerPlane != nullptr){
+            cMesh* planeMesh = (*centerPlane->m_meshes)[0];
+            g_depthFrameBuffer->copyImageBuffer(planeMesh->m_texture->m_image);
+            planeMesh->m_texture->markForUpdate();
+        }
+
+
+        if (g_saveDepthBuffers){
+            printf("Saving GPU Depth Buffer\n");
+            g_depthFrameBuffer->copyImageBuffer(g_depthImage_GPU);
+
+            // Save the mesh as well
+            int width_GPU = g_depthImage_GPU->getWidth();
+            int height_GPU = g_depthImage_GPU->getHeight();
+
+            g_depthImage_GPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_depth_image_GPU.bmp");
+
+            if (g_pointCloudMesh_GPU == nullptr){
+                g_pointCloudMesh_GPU = new cMultiMesh();
+                g_pointCloudMesh_GPU->m_meshes->push_back(new cMesh());
+                (*(g_pointCloudMesh_GPU->m_meshes))[0]->m_vertices->allocateData(width_GPU*height_GPU, true, false, true, false, false, false);
+            }
+
+            if (g_pointCloudMesh_GPU){
+
+                int bytes_GPU = g_depthImage_GPU->getBytesPerPixel();
+                int bits_GPU = g_depthImage_GPU->getBitsPerPixel();
+
+                double maxX = (double)(width_GPU - 1);
+                double maxY = (double)(height_GPU - 1);
+
+                double maxZ = 0.0;
+                double minZ = 10000.0;
+
+                for (int y_span = 0 ; y_span < height_GPU ; y_span++){
+                    for (int x_span = 0 ; x_span < width_GPU ; x_span++){
+                        int idx = (y_span * width_GPU + x_span);
+                        double px = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 0]) / 255.0;
+                        double py = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 1]) / 255.0;
+                        double pz = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 2]) / 255.0;
+                        // Reconstruct from scales applied in the Frag Shader
+                        px = (px * delta_h - (delta_h / 2.0));
+                        py = (py  * delta_v - (delta_v / 2.0));
+                        pz = -(pz * delta_d  - (-n) ); // (-n) since we are taking this to be a +ve quantity
+                        (*(g_pointCloudMesh_GPU->m_meshes))[0]->m_vertices->setLocalPos(idx, cVector3d(px, py, pz));
+
+                        if (pz > maxZ){
+                            maxZ = pz;
+                        }
+                        if (pz < minZ){
+                            minZ = pz;
+                        }
+                    }
+                }
+
+                std::cerr << "Max Z: " << maxZ << " | Min Z: " << minZ << std::endl;
+                g_pointCloudMesh_GPU->saveToFile("../../depth_testing/output/" + cameraPtr->m_name + "_mesh_GPU.obj");
+            }
+            g_saveDepthBuffers = false;
         }
 
 
@@ -1719,8 +1783,8 @@ void updateGraphics()
 //        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
     }
 
-    if (g_savePointCloudMesh){
-        g_savePointCloudMesh = false;
+    if (g_saveDepthBuffers){
+        g_saveDepthBuffers = false;
     }
 
     // wait until all GL commands are completed
