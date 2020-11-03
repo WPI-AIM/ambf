@@ -1758,7 +1758,7 @@ void updateGraphics()
                         // Reconstruct from scales applied in the Frag Shader
                         px = (px * delta_h - (delta_h / 2.0));
                         py = (py  * delta_v - (delta_v / 2.0));
-                        pz = (pz * delta_d  - n);
+                        pz = (pz * delta_d  + n);
                         (*(g_pointCloudMesh_GPU->m_meshes))[0]->m_vertices->setLocalPos(idx, cVector3d(px, py, pz));
 
                         if (pz > maxZ){
