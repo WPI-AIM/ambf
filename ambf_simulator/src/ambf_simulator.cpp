@@ -724,10 +724,8 @@ int main(int argc, char* argv[])
 
     g_depthCamera = new cCamera(g_depthWorld);
 
-    g_depthCamera->set(cVector3d(0, 0, 0), cVector3d(1, 0, 0), cVector3d(0.7, 0.7, 0.7));
-    g_depthCamera->setClippingPlanes(g_afWorld->getAFCameras()[0]->getInternalCamera()->getNearClippingPlane(),
-            g_afWorld->getAFCameras()[0]->getInternalCamera()->getFarClippingPlane());
-    g_depthCamera->setFieldViewAngleRad(g_afWorld->getAFCameras()[0]->getInternalCamera()->getFieldViewAngleRad());
+    g_depthCamera->m_useCustomProjectionMatrix = true;
+    g_depthCamera->m_projectionMatrix = g_afWorld->getAFCameras()[0]->getInternalCamera()->m_projectionMatrix;
 
     g_depthWorld->addChild(g_depthCamera);
 
@@ -1576,6 +1574,9 @@ void updateGraphics()
             g_window_closed = true;
         }
 
+        g_depthCamera->m_useCustomProjectionMatrix = true;
+        g_depthCamera->m_projectionMatrix = cameraPtr->getInternalCamera()->m_projectionMatrix;
+
         cameraPtr->publishImage();
 
         // Depth Buffer Rendering
@@ -1610,12 +1611,18 @@ void updateGraphics()
         }
 
         // Update the dimensions scale information.
-        float n = cameraPtr->getInternalCamera()->getNearClippingPlane();
-        float f = cameraPtr->getInternalCamera()->getFarClippingPlane();
+        float n = -cameraPtr->getInternalCamera()->getNearClippingPlane();
+        float f = -cameraPtr->getInternalCamera()->getFarClippingPlane();
         double fva = cameraPtr->getInternalCamera()->getFieldViewAngleRad();
         double ar = cameraPtr->getInternalCamera()->getAspectRatio();
 
-        double delta_h = 2.0 * f * tan(fva/2.0);
+        double delta_h = 0;
+        if (cameraPtr->isOrthographic()){
+            delta_h = cameraPtr->getInternalCamera()->getOrthographicViewWidth();
+        }
+        else{
+            delta_h = 2.0 * abs(f) * tan(fva/2.0);
+        }
         double delta_v = delta_h / ar;
         double delta_d = f-n;
 
@@ -1681,10 +1688,7 @@ void updateGraphics()
                         pClip = cDiv(pw, pClip);
                         (*(g_pointCloudMesh_CPU->m_meshes))[0]->m_vertices->setLocalPos(idx, pClip);
 
-                        double far = -f;
-                        double near = -n;
-                        double deltaZ = far - near;
-                        cVector3d pNorm((pClip.x() + delta_v / 2.0) / delta_v, (pClip.y() + delta_h / 2.0) / delta_h, (pClip.z() - near) / deltaZ);
+                        cVector3d pNorm((pClip.x() + delta_v / 2.0) / delta_v, (pClip.y() + delta_h / 2.0) / delta_h, (pClip.z() - n) / delta_d);
                         (*(g_pointCloudMesh_normalized_CPU->m_meshes))[0]->m_vertices->setLocalPos(idx, pNorm);
                     }
                 }
@@ -1704,8 +1708,8 @@ void updateGraphics()
         cVector3d maxWorldDimensions(delta_h, delta_v, delta_d);
 
         g_depthQuad->getShaderProgram()->setUniform("maxWorldDimensions", maxWorldDimensions);
-        g_depthQuad->getShaderProgram()->setUniformf("nearPlane", -n);
-        g_depthQuad->getShaderProgram()->setUniformf("farPlane", -f);
+        g_depthQuad->getShaderProgram()->setUniformf("nearPlane", n);
+        g_depthQuad->getShaderProgram()->setUniformf("farPlane", f);
 
         g_depthFrameBuffer->renderView();
 
@@ -1754,7 +1758,7 @@ void updateGraphics()
                         // Reconstruct from scales applied in the Frag Shader
                         px = (px * delta_h - (delta_h / 2.0));
                         py = (py  * delta_v - (delta_v / 2.0));
-                        pz = -(pz * delta_d  - (-n) ); // (-n) since we are taking this to be a +ve quantity
+                        pz = (pz * delta_d  - n);
                         (*(g_pointCloudMesh_GPU->m_meshes))[0]->m_vertices->setLocalPos(idx, cVector3d(px, py, pz));
 
                         if (pz > maxZ){
