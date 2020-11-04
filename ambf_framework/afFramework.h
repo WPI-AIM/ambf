@@ -1386,6 +1386,8 @@ public:
     afCamera(afWorld* a_afWorld);
     ~afCamera();
 
+    virtual void render(afRenderOptions &options);
+
     // Define the virtual method for camera
     virtual void afExecuteCommand(double dt);
 

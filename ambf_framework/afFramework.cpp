@@ -5737,44 +5737,7 @@ void afWorld::render(afRenderOptions &options)
     afCameraMap::iterator camIt;
     for (camIt = m_afCameraMap.begin(); camIt != m_afCameraMap.end(); ++ camIt){
         afCameraPtr cameraPtr = (camIt->second);
-        // set current display context
-        glfwMakeContextCurrent(cameraPtr->m_window);
-
-        // get width and height of window
-        glfwGetFramebufferSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
-
-        // Update the Labels in a separate sub-routine
-        if (options.m_updateLabels)
-            cameraPtr->updateLabels(options);
-
-        if (m_skyBox_shaderProgramDefined && m_skyBoxMesh->getShaderProgram() != nullptr){
-            cGenericObject* go;
-            cRenderOptions ro;
-            m_skyBoxMesh->getShaderProgram()->use(go, ro);
-
-            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
-            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
-            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
-
-            m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
-
-            m_skyBoxMesh->getShaderProgram()->disable();
-        }
-
-        // render world
-        cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
-
-        // swap buffers
-        glfwSwapBuffers(cameraPtr->m_window);
-
-        // Only set the _window_closed if the condition is met
-        // otherwise a non-closed window will set the variable back
-        // to false
-        if (glfwWindowShouldClose(cameraPtr->m_window)){
-            options.m_windowClosed = true;
-        }
-
-        cameraPtr->publishImage();
+        cameraPtr->render(options);
 
     }
 
@@ -7096,6 +7059,48 @@ afCamera::~afCamera(){
         }
     }
 #endif
+}
+
+void afCamera::render(afRenderOptions &options)
+{
+    // set current display context
+    glfwMakeContextCurrent(m_window);
+
+    // get width and height of window
+    glfwGetFramebufferSize(m_window, &m_width, &m_height);
+
+    // Update the Labels in a separate sub-routine
+    if (options.m_updateLabels)
+        updateLabels(options);
+
+    if (m_afWorld->m_skyBox_shaderProgramDefined && m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+        cGenericObject* go;
+        cRenderOptions ro;
+        m_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+
+        cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+        cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+        cTransform viewMat = rotOffsetPre * getLocalTransform() * rotOffsetPost;
+
+        m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+
+        m_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+    }
+
+    // render world
+   renderView(m_width,m_height);
+
+    // swap buffers
+    glfwSwapBuffers(m_window);
+
+    // Only set the _window_closed if the condition is met
+    // otherwise a non-closed window will set the variable back
+    // to false
+    if (glfwWindowShouldClose(m_window)){
+        options.m_windowClosed = true;
+    }
+
+    publishImage();
 }
 
 
