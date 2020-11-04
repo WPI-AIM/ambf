@@ -5723,6 +5723,62 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
 
 
 ///
+/// \brief afWorld::render
+/// \param options
+///
+void afWorld::render(afRenderOptions &options)
+{
+    // Update shadow maps once
+    updateShadowMaps(false, options.m_mirroredDisplay);
+
+    afCameraMap::iterator camIt;
+    for (camIt = m_afCameraMap.begin(); camIt != m_afCameraMap.end(); ++ camIt){
+        afCameraPtr cameraPtr = (camIt->second);
+        // set current display context
+        glfwMakeContextCurrent(cameraPtr->m_window);
+
+        // get width and height of window
+        glfwGetFramebufferSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
+
+        // Update the Labels in a separate sub-routine
+        if (options.m_updateLabels)
+            cameraPtr->updateLabels(options);
+
+        if (m_skyBox_shaderProgramDefined && m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            m_skyBoxMesh->getShaderProgram()->use(go, ro);
+
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
+
+            m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+
+            m_skyBoxMesh->getShaderProgram()->disable();
+        }
+
+        // render world
+        cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
+
+        // swap buffers
+        glfwSwapBuffers(cameraPtr->m_window);
+
+        // Only set the _window_closed if the condition is met
+        // otherwise a non-closed window will set the variable back
+        // to false
+        if (glfwWindowShouldClose(cameraPtr->m_window)){
+            options.m_windowClosed = true;
+        }
+
+        cameraPtr->publishImage();
+
+    }
+
+}
+
+
+///
 /// \brief afWorld::createSkyBox
 ///
 void afWorld::loadSkyBox(){
@@ -6976,6 +7032,50 @@ void afCamera::updatePositionFromDynamics()
         }
     }
 #endif
+}
+
+
+///
+/// \brief afCamera::updateLabels
+/// \param options
+///
+void afCamera::updateLabels(afRenderOptions &options)
+{
+    // Not all labels change at every frame buffer.
+    // We should prioritize the update of freqeunt labels
+
+    // update haptic and graphic rate data
+    std::string wallTimeStr = "Wall Time: " + cStr(m_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
+    std::string simTimeStr = "Sim Time: " + cStr(m_afWorld->getSimulationTime(), 2) + " s";
+
+    std::string graphicsFreqStr = "Gfx (" + cStr(m_afWorld->m_freqCounterGraphics.getFrequency(), 0) + " Hz)";
+    std::string hapticFreqStr = "Phx (" + cStr(m_afWorld->m_freqCounterHaptics.getFrequency(), 0) + " Hz)";
+
+    std::string timeLabelStr = wallTimeStr + " / " + simTimeStr;
+    std::string dynHapticFreqLabelStr = graphicsFreqStr + " / " + hapticFreqStr;
+    std::string modeLabelStr = "MODE: " + options.m_IIDModeStr;
+    std::string btnLabelStr = " : " + options.m_IIDBtnActionStr;
+
+    m_wallSimTimeLabel->setText(timeLabelStr);
+    m_graphicsDynamicsFreqLabel->setText(dynHapticFreqLabelStr);
+    m_devicesModesLabel->setText(modeLabelStr);
+    m_deviceButtonLabel->setText(btnLabelStr);
+
+    std::string controlling_dev_names;
+    for (int devIdx = 0 ; devIdx < m_devHapticFreqLabels.size() ; devIdx++){
+        m_devHapticFreqLabels[devIdx]->setLocalPos(10, (int)( m_height - ( devIdx + 1 ) * 20 ) );
+        controlling_dev_names += m_controllingDevNames[devIdx] + " <> ";
+    }
+
+    m_controllingDeviceLabel->setText("Controlling Devices: [ " + controlling_dev_names + " ]");
+
+    // update position of label
+    m_wallSimTimeLabel->setLocalPos((int)(0.5 * (m_width - m_wallSimTimeLabel->getWidth() ) ), 30);
+    m_graphicsDynamicsFreqLabel->setLocalPos((int)(0.5 * (m_width - m_graphicsDynamicsFreqLabel->getWidth() ) ), 10);
+    m_devicesModesLabel->setLocalPos((int)(0.5 * (m_width - m_devicesModesLabel->getWidth())), 50);
+    m_deviceButtonLabel->setLocalPos((int)(0.5 * (m_width - m_devicesModesLabel->getWidth()) + m_devicesModesLabel->getWidth()), 50);
+    m_controllingDeviceLabel->setLocalPos((int)(0.5 * (m_width - m_controllingDeviceLabel->getWidth())), (int)(m_height - 20));
+
 }
 
 

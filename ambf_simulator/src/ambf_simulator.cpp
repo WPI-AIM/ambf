@@ -71,11 +71,11 @@ using namespace std;
 */
 cStereoMode stereoMode = C_STEREO_DISABLED;
 
+afRenderOptions g_afRenderOptions;
+
 // fullscreen mode
 bool fullscreen = false;
 
-// mirrored display
-bool mirroredDisplay = false;
 
 
 //---------------------------------------------------------------------------
@@ -132,21 +132,12 @@ bool g_simulationRunning = false;
 // flag to indicate if the haptic simulation has terminated
 bool g_simulationFinished = true;
 
-// Flag to check if any window is closed by the user
-bool g_window_closed = false;
-
 // Flag to toggle between inverted/non_inverted mouse pitch with mouse
 bool g_mouse_inverted_y = false;
 
 // Ratio between Window Height and Width to Frame Buffer Height and Width
 double g_winWidthRatio = 1.0;
 double g_winHeightRatio = 1.0;
-
-// a frequency counter to measure the simulation graphic rate
-cFrequencyCounter g_freqCounterGraphics;
-
-// a frequency counter to measure the simulation haptic rate
-cFrequencyCounter g_freqCounterHaptics;
 
 // haptic thread
 std::vector<cThread*> g_hapticsThreads;
@@ -215,7 +206,7 @@ void preTickCallBack(btDynamicsWorld* world, btScalar timeStep);
 // Exit Handler
 void exitHandler(int s){
            std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
-           g_window_closed = true;
+           g_afRenderOptions.m_windowClosed = true;
 }
 
 ///
@@ -610,7 +601,7 @@ int main(int argc, char* argv[])
     }
 
     // main graphic loop
-    while (!g_window_closed)
+    while (!g_afRenderOptions.m_windowClosed)
     {
         if (g_cmdOpts.showGUI){
         // Call the update graphics method
@@ -620,7 +611,7 @@ int main(int argc, char* argv[])
         glfwPollEvents();
 
         // signal frequency counter
-        g_freqCounterGraphics.signal(1);
+        g_afWorld->m_freqCounterGraphics.signal(1);
         }
 
         else{
@@ -710,7 +701,6 @@ void errorCallback(int a_error, const char* a_description)
     cout << "Error: " << a_description << endl;
 }
 
-bool g_updateLabels = true;
 bool g_enableGrippingAssist = true;
 bool g_enableNormalMapping = true;
 
@@ -908,10 +898,10 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - toggle vertical mirroring
         else if (a_key == GLFW_KEY_M){
-            mirroredDisplay = !mirroredDisplay;
+            g_afRenderOptions.m_mirroredDisplay = ! g_afRenderOptions.m_mirroredDisplay;
             std::vector<afCameraPtr>::iterator cameraIt;
             for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
-                (*cameraIt)->setMirrorVertical(mirroredDisplay);
+                (*cameraIt)->setMirrorVertical( g_afRenderOptions.m_mirroredDisplay);
             }
         }
 
@@ -942,7 +932,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - Toggle visibility of label updates
         else if (a_key == GLFW_KEY_U){
-            g_updateLabels = !g_updateLabels;
+            g_afRenderOptions.m_updateLabels = !g_afRenderOptions.m_updateLabels;
         }
 
         // option - Toogle visibility of body frames and softbody skeleton
@@ -1387,58 +1377,10 @@ void close(void)
 ///
 void updateGraphics()
 {
-    // Update shadow maps once
-    g_afWorld->updateShadowMaps(false, mirroredDisplay);
+    g_afRenderOptions.m_IIDModeStr = g_inputDevices->m_mode_str;
+    g_afRenderOptions.m_IIDBtnActionStr = g_inputDevices->m_btn_action_str;
 
-    for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end(); ++ g_cameraIt){
-        afCameraPtr cameraPtr = (*g_cameraIt);
-        // set current display context
-        glfwMakeContextCurrent(cameraPtr->m_window);
-
-        // get width and height of window
-//        glfwGetFraSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
-        glfwGetFramebufferSize(cameraPtr->m_window, &cameraPtr->m_width, &cameraPtr->m_height);
-
-        // Update the Labels in a separate sub-routine
-        if (g_updateLabels)
-            updateLabels();
-
-        if (g_afWorld->m_skyBox_shaderProgramDefined && g_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
-            cGenericObject* go;
-            cRenderOptions ro;
-            g_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
-
-            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
-            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
-            cTransform viewMat = rotOffsetPre * cameraPtr->getLocalTransform() * rotOffsetPost;
-
-            g_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
-
-            g_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
-        }
-
-        // render world
-        cameraPtr->renderView(cameraPtr->m_width, cameraPtr->m_height);
-
-        // swap buffers
-        glfwSwapBuffers(cameraPtr->m_window);
-
-        // Only set the _window_closed if the condition is met
-        // otherwise a non-closed window will set the variable back
-        // to false
-        if (glfwWindowShouldClose(cameraPtr->m_window)){
-            g_window_closed = true;
-        }
-
-        cameraPtr->publishImage();
-
-//        // wait until all GL commands are completed
-//        glFinish();
-
-//        // check for any OpenGL errors
-//        GLenum err = glGetError();
-//        if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
-    }
+    g_afWorld->render(g_afRenderOptions);
 
     // wait until all GL commands are completed
     glFinish();
@@ -1449,60 +1391,6 @@ void updateGraphics()
 
 }
 
-///
-/// \brief updateLabels
-///
-void updateLabels(){
-    // Not all labels change at every frame buffer.
-    // We should prioritize the update of freqeunt labels
-    afCameraVec::iterator cameraIt;
-    for (cameraIt = g_cameras.begin(); cameraIt != g_cameras.end(); ++ cameraIt){
-        afCameraPtr cameraPtr = *cameraIt;
-        int width = cameraPtr->m_width;
-        int height = cameraPtr->m_height;
-
-        cLabel* dynFreqLabel = cameraPtr->m_graphicsDynamicsFreqLabel;
-        cLabel* timesLabel = cameraPtr->m_wallSimTimeLabel;
-        cLabel* modesLabel = cameraPtr->m_devicesModesLabel;
-        cLabel* btnLabel = cameraPtr->m_deviceButtonLabel;
-        cLabel* contextDevicesLabel = cameraPtr->m_controllingDeviceLabel;
-        std::vector<cLabel*> devFreqLabels = cameraPtr->m_devHapticFreqLabels;
-
-        // update haptic and graphic rate data
-        std::string wallTimeStr = "Wall Time: " + cStr(g_afWorld->g_wallClock.getCurrentTimeSeconds(), 2) + " s";
-        std::string simTimeStr = "Sim Time: " + cStr(g_afWorld->getSimulationTime(), 2) + " s";
-
-        std::string graphicsFreqStr = "Gfx (" + cStr(g_freqCounterGraphics.getFrequency(), 0) + " Hz)";
-        std::string hapticFreqStr = "Phx (" + cStr(g_freqCounterHaptics.getFrequency(), 0) + " Hz)";
-
-        std::string timeLabelStr = wallTimeStr + " / " + simTimeStr;
-        std::string dynHapticFreqLabelStr = graphicsFreqStr + " / " + hapticFreqStr;
-        std::string modeLabelStr = "MODE: " + g_inputDevices->m_mode_str;
-        std::string btnLabelStr = " : " + g_inputDevices->g_btn_action_str;
-
-        timesLabel->setText(timeLabelStr);
-        dynFreqLabel->setText(dynHapticFreqLabelStr);
-        modesLabel->setText(modeLabelStr);
-        btnLabel->setText(btnLabelStr);
-
-        std::string controlling_dev_names;
-        for (int devIdx = 0 ; devIdx < devFreqLabels.size() ; devIdx++){
-            devFreqLabels[devIdx]->setLocalPos(10, (int)( height - ( devIdx + 1 ) * 20 ) );
-            controlling_dev_names += cameraPtr->m_controllingDevNames[devIdx] + " <> ";
-        }
-
-        contextDevicesLabel->setText("Controlling Devices: [ " + controlling_dev_names + " ]");
-
-        // update position of label
-        timesLabel->setLocalPos((int)(0.5 * (width - timesLabel->getWidth() ) ), 30);
-        dynFreqLabel->setLocalPos((int)(0.5 * (width - dynFreqLabel->getWidth() ) ), 10);
-        modesLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth())), 50);
-        btnLabel->setLocalPos((int)(0.5 * (width - modesLabel->getWidth()) + modesLabel->getWidth()), 50);
-        contextDevicesLabel->setLocalPos((int)(0.5 * (width - contextDevicesLabel->getWidth())), (int)(height - 20));
-
-    }
-
-}
 
 ///
 /// \brief updateBulletSim
@@ -1524,7 +1412,7 @@ void updatePhysics(){
     torque_prev.set(0, 0, 0);
     while(g_simulationRunning)
     {
-            g_freqCounterHaptics.signal(1);
+            g_afWorld->m_freqCounterHaptics.signal(1);
 
             // Take care of any picked body by mouse
             if (g_pickBody){
@@ -1692,7 +1580,7 @@ void updatePhysics(){
                     simDev->P_ac_ramp = 1.0;
                 }
             }
-            g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+            g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
             phxSleep.sleep();
     }
     g_simulationFinished = true;
@@ -1795,11 +1683,11 @@ void updateHapticDevice(void* a_arg){
             double gripper_offset = 0;
             switch (g_inputDevices->m_simModes){
             case MODES::CAM_CLUTCH_CONTROL:
-                g_inputDevices->g_clutch_btn_pressed  = phyDev->isButtonPressed(phyDev->m_buttons.A1);
-                g_inputDevices->g_cam_btn_pressed     = phyDev->isButtonPressed(phyDev->m_buttons.A2);
-                if(g_inputDevices->g_clutch_btn_pressed) g_inputDevices->g_btn_action_str = "Clutch Pressed";
-                if(g_inputDevices->g_cam_btn_pressed)   {g_inputDevices->g_btn_action_str = "Cam Pressed";}
-                if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->g_btn_action_str = "";
+                g_inputDevices->m_clutch_btn_pressed  = phyDev->isButtonPressed(phyDev->m_buttons.A1);
+                g_inputDevices->m_cam_btn_pressed     = phyDev->isButtonPressed(phyDev->m_buttons.A2);
+                if(g_inputDevices->m_clutch_btn_pressed) g_inputDevices->m_btn_action_str = "Clutch Pressed";
+                if(g_inputDevices->m_cam_btn_pressed)   {g_inputDevices->m_btn_action_str = "Cam Pressed";}
+                if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->m_btn_action_str = "";
                 break;
             case MODES::GRIPPER_JAW_CONTROL:
                 if (btn_1_rising_edge) gripper_offset = 0.1;
@@ -1851,7 +1739,7 @@ void updateHapticDevice(void* a_arg){
                 phyDev->setPosClutched(phyDev->getPos());
             }
 
-            if(g_inputDevices->g_cam_btn_pressed){
+            if(g_inputDevices->m_cam_btn_pressed){
                 if(phyDev->btn_cam_rising_edge){
                     phyDev->btn_cam_rising_edge = false;
                     simDev->setPosRefOrigin(simDev->getPosRef()/ phyDev->m_workspaceScale);
@@ -1863,7 +1751,7 @@ void updateHapticDevice(void* a_arg){
             else{
                 phyDev->btn_cam_rising_edge = true;
             }
-            if(g_inputDevices->g_clutch_btn_pressed){
+            if(g_inputDevices->m_clutch_btn_pressed){
                 if(phyDev->btn_clutch_rising_edge){
                     phyDev->btn_clutch_rising_edge = false;
                     simDev->setPosRefOrigin(simDev->getPosRef() / phyDev->m_workspaceScale);
@@ -1915,8 +1803,8 @@ void updateHapticDevice(void* a_arg){
 
             force_prev = force;
             torque_prev = torque_prev;
-            force  = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-            torque = - !g_inputDevices->g_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
+            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
+            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
 
 //            if ((force - force_prev).length() > phyDev->m_maxJerk){
 //                cVector3d normalized_force = force;

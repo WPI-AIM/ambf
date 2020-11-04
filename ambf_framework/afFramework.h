@@ -91,6 +91,7 @@ class afJoint;
 class afWorld;
 struct afRigidBodySurfaceProperties;
 struct afSoftBodyConfigProperties;
+struct afRenderOptions;
 
 typedef afMultiBody* afMultiBodyPtr;
 typedef afRigidBody* afRigidBodyPtr;
@@ -1395,6 +1396,8 @@ public:
     // Initialize
     bool init();
 
+    void updateLabels(afRenderOptions &options);
+
     // Create the default camera. Implemented in case not additional cameras
     // are define in the AMBF config file
     bool createDefaultCamera();
@@ -1654,6 +1657,15 @@ public:
 };
 
 
+struct afRenderOptions{
+    bool m_mirroredDisplay = false;
+    bool m_updateLabels = true;
+    bool m_windowClosed = false;
+    std::string m_IIDModeStr = "";
+    std::string m_IIDBtnActionStr = "";
+};
+
+
 //-----------------------------------------------------------------------------
 
 ///
@@ -1670,6 +1682,8 @@ public:
     virtual ~afWorld(){}
 
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    virtual void render(afRenderOptions &options);
 
     // Template method to add various types of objects
     template<typename T, typename TMap>
@@ -1913,6 +1927,13 @@ public:
     boost::filesystem::path m_skyBox_fsFilePath;
 
     boost::filesystem::path m_world_config_path;
+
+    // a frequency counter to measure the simulation graphic rate
+    cFrequencyCounter m_freqCounterGraphics;
+
+    // a frequency counter to measure the simulation haptic rate
+    cFrequencyCounter m_freqCounterHaptics;
+
 
 protected:
 
