@@ -1552,11 +1552,21 @@ void updatePhysics(){
                 pCommand = simDev->P_lc_ramp * pCommand;
 
                 rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
-//                simDev->applyForce(pCommand);
-//                simDev->applyTorque(rCommand);
 
-                simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
-                simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(afUtils::convertDataType<btVector3, cVector3d>(rCommand));
+                if (phyDev->m_controller.m_positionOutputType == afControlType::force){
+                    simDev->applyForce(pCommand);
+                }
+                else{
+                    simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
+                }
+
+                if (phyDev->m_controller.m_orientationOutputType == afControlType::force){
+                    simDev->applyTorque(rCommand);
+                }
+                else{
+                    simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(afUtils::convertDataType<btVector3, cVector3d>(rCommand));
+                }
+
                 // Control simulated body joints only if joint control of this physical device has been enabled
                 if (phyDev->isJointControlEnabled()){
                     simDev->setGripperAngle(simDev->m_gripper_angle);

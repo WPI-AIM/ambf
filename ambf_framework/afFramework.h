@@ -339,7 +339,7 @@ enum GeometryType{
 enum class afControlType{
   position=0,
   force=1,
-  velocity=02
+  velocity=2
 };
 
 
@@ -357,7 +357,6 @@ public:
     inline double getP_ang(){return P_ang;}
     inline double getD_ang(){return D_ang;}
 
-public:
     inline void enable(bool a_enable){m_enabled = a_enable;}
     inline bool isEnabled(){return m_enabled;}
 
@@ -370,7 +369,6 @@ public:
     inline void setP_ang(double a_P) {P_ang = a_P;}
     inline void setD_ang(double a_D) {D_ang = a_D;}
 
-public:
     template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
     // The last argument ts is the time_scale and is computed at dt_fixed / dt
@@ -381,13 +379,17 @@ public:
     // Yet to be implemented
     void boundEffort(double effort_cmd);
 
+    // The default output type is velocity
+    afControlType m_positionOutputType = afControlType::velocity;
+
+    // The default output type is velocity
+    afControlType m_orientationOutputType = afControlType::velocity;
+
 private:
     // PID Controller Gains for Linear and Angular Controller
     double P_lin, I_lin, D_lin;
     double P_ang, I_ang, D_ang;
 
-
-private:
     // Vector storing the current position error
     btVector3 m_dPos;
     cVector3d m_dPos_cvec;
@@ -638,11 +640,11 @@ protected:
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
-    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool m_lin_gains_computed = false;
+    // Check if the linear gains have been defined
+    bool m_lin_gains_defined = false;
 
-    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool m_ang_gains_computed = false;
+    // Check if the linear gains have been defined
+    bool m_ang_gains_defined = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -703,9 +705,6 @@ protected:
 
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
-
-    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
-    bool m_usePIDController = false;
 
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
@@ -860,6 +859,9 @@ public:
     void boundImpulse(double& effort_cmd);
 
     void boundEffort(double& effort_cmd);
+
+    // The default output type is velocity
+    afControlType m_outputType = afControlType::velocity;
 };
 
 ///
@@ -962,9 +964,6 @@ protected:
 
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
-
-    // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
-    bool m_usePIDController = false;
 
     // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
     // for communication purposess.

@@ -410,6 +410,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 _D = pDControllerGain["linear"]["D"].as<double>();
                 m_controller.setLinearGains(_P, 0, _D);
                 linGainsDefined = true;
+                m_controller.m_positionOutputType == afControlType::force;
             }
 
             // Check if the angular controller is defined
@@ -419,6 +420,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 _D = pDControllerGain["angular"]["D"].as<double>();
                 m_controller.setAngularGains(_P, 0, _D);
                 angGainsDefined = true;
+                m_controller.m_orientationOutputType == afControlType::force;
             }
         }
         if(!linGainsDefined){
@@ -427,6 +429,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
                                         0,
                                         simDevice->m_rootLink->m_controller.getD_lin());
+
+            m_controller.m_positionOutputType = simDevice->m_rootLink->m_controller.m_positionOutputType;
         }
         if (!angGainsDefined){
             // If not controller gains defined for this physical device's simulated body,
@@ -434,6 +438,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
                                          0,
                                          simDevice->m_rootLink->m_controller.getD_ang());
+
+            m_controller.m_orientationOutputType = simDevice->m_rootLink->m_controller.m_orientationOutputType;
         }
 
         // Read the flag to enable disable the joint control of SDE from this input device

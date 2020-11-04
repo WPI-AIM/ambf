@@ -2268,7 +2268,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["linear"]["D"].as<double>();
             m_controller.setLinearGains(P, I, D);
-            m_lin_gains_computed = true;
+            m_controller.m_positionOutputType = afControlType::force;
+            m_lin_gains_defined = true;
         }
 
         // Check if the angular controller is defined
@@ -2284,21 +2285,23 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["angular"]["D"].as<double>();
             m_controller.setAngularGains(P, I, D);
-            m_ang_gains_computed = true;
+            m_controller.m_orientationOutputType = afControlType::force;
+            m_ang_gains_defined = true;
         }
     }
 
-    // If no controller gains are defined, compute based on lumped mass
-    // and intertia
-    if(!m_lin_gains_computed || !m_ang_gains_computed){
+    if(!m_lin_gains_defined){
         // Use preset values for the controller since we are going to be using its output for the
         // internal velocity controller
         m_controller.setLinearGains(10, 0, 0);
-        m_controller.setAngularGains(10, 0, 0);
-        m_usePIDController = false;
+        m_controller.m_positionOutputType = afControlType::velocity;
     }
-    else{
-        m_usePIDController = true;
+
+    if(!m_ang_gains_defined){
+        // Use preset values for the controller since we are going to be using its output for the
+        // internal velocity controller
+        m_controller.setAngularGains(10, 0, 0);
+        m_controller.m_orientationOutputType = afControlType::velocity;
     }
 
     if(m_mass == 0.0){
@@ -2487,7 +2490,7 @@ btVector3 afRigidBody::computeInertialOffset(cMesh* mesh){
 /// \brief afBody::compute_gains
 ///
 void afRigidBody::computeControllerGains(){
-    if (m_lin_gains_computed && m_ang_gains_computed){
+    if (m_lin_gains_defined && m_ang_gains_defined){
         return;
     }
 
@@ -2499,19 +2502,19 @@ void afRigidBody::computeControllerGains(){
         lumped_mass += sjIt->m_childBody->getMass();
         lumped_intertia += sjIt->m_childBody->getInertia();
     }
-    if (!m_lin_gains_computed){
+    if (!m_lin_gains_defined){
         P_lin = lumped_mass * 20;
         D_lin = P_lin / 100;
         m_controller.setLinearGains(P_lin, 0, D_lin);
-        m_lin_gains_computed = true;
+        m_lin_gains_defined = true;
     }
     // TODO
     // Need a better way of estimating angular gains
-    if (!m_ang_gains_computed){
+    if (!m_ang_gains_defined){
         P_ang = lumped_mass * 10;
         D_ang = lumped_mass;
         m_controller.setAngularGains(P_ang, 0, D_ang);
-        m_ang_gains_computed = true;
+        m_ang_gains_defined = true;
     }
 }
 
@@ -2749,7 +2752,7 @@ void afRigidBody::afExecuteCommand(double dt){
                 // Use the internal Cartesian Rotation Controller to Compute Output
                 rCommand = m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
 
-                if (m_usePIDController){
+                if (m_controller.m_positionOutputType == afControlType::force){
                     // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
                     // Use the internal Cartesian Position Controller
                     m_bulletRigidBody->applyCentralForce(pCommand);
@@ -3686,8 +3689,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if( (jointController["D"]).IsDefined())
             m_controller.D = jointController["D"].as<double>();
 
-        // If the PID controller in defined, the gains will be used to command the joint
-        m_usePIDController = true;
+        // If the PID controller in defined, the gains will be used to command the joint force (effort)
+        m_controller.m_outputType == afControlType::force;
     }
     else{
         // If the controller gains are not defined, a velocity based control will be used.
@@ -3696,7 +3699,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_controller.P = 10;
         m_controller.I = 0;
         m_controller.D = 0;
-        m_usePIDController = false;
+        m_controller.m_outputType == afControlType::velocity;
     }
 
     // Bullet takes the x axis as the default for prismatic joints
@@ -4026,7 +4029,7 @@ void afJoint::commandPosition(double &position_cmd){
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
-            if (m_usePIDController){
+            if (m_controller.m_outputType == afControlType::force){
                 commandEffort(command);
             }
             else{
