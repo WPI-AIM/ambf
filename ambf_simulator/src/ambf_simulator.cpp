@@ -50,6 +50,8 @@
 #include <boost/program_options.hpp>
 #include <mutex>
 #include <signal.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 //---------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -238,6 +240,11 @@ cFrameBuffer g_frameBuffer;
 cImagePtr g_bufferColorImage;
 cImagePtr g_bufferDepthImage;
 
+sensor_msgs::PointCloud2::Ptr g_pc2Msg;
+sensor_msgs::PointCloud2Modifier* g_pc2Modifier;
+
+ros::NodeHandle* g_node;
+ros::Publisher g_pub;
 ///
 /// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
 /// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
@@ -734,6 +741,15 @@ int main(int argc, char* argv[])
 
     g_depthImage_GPU = cImage::create();
     g_depthImage_GPU->allocate(1280, 720, GL_RGBA);
+
+    g_pc2Msg.reset(new sensor_msgs::PointCloud2());
+    g_pc2Modifier = new sensor_msgs::PointCloud2Modifier(*g_pc2Msg);
+
+    g_pc2Modifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
+    g_pc2Modifier->resize(1280*720);
+
+    g_node = new ros::NodeHandle("test_pc");
+    g_pub = g_node->advertise<sensor_msgs::PointCloud2>("/test_pc2/", 5);
 
     // main graphic loop
     while (!g_window_closed)
@@ -1513,7 +1529,7 @@ void close(void)
     delete g_afWorld;
 }
 
-
+int pc_pub_cntr = 0;
 ///
 /// \brief updateGraphics
 ///
@@ -1771,6 +1787,65 @@ void updateGraphics()
             }
             g_saveDepthBuffers = false;
         }
+
+        ////////// PUBLISH TO POINT CLOUD MSG ///////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+
+        pc_pub_cntr++;
+        if (pc_pub_cntr % 5 == 0){
+            pc_pub_cntr = 0;
+
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*g_pc2Msg, "x");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*g_pc2Msg, "y");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*g_pc2Msg, "z");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*g_pc2Msg, "r");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*g_pc2Msg, "g");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*g_pc2Msg, "b");
+
+            g_depthFrameBuffer->copyImageBuffer(g_depthImage_GPU);
+
+            // Save the mesh as well
+            int width_GPU = g_depthImage_GPU->getWidth();
+            int height_GPU = g_depthImage_GPU->getHeight();
+
+            int bytes_GPU = g_depthImage_GPU->getBytesPerPixel();
+
+            double maxX = (double)(width_GPU - 1);
+            double maxY = (double)(height_GPU - 1);
+
+            double maxZ = 0.0;
+            double minZ = 10000.0;
+
+            for (int y_span = 0 ; y_span < height_GPU ; y_span++){
+                for (int x_span = 0 ; x_span < width_GPU ; x_span++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+
+                    int idx = (y_span * width_GPU + x_span);
+                    double px = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 0]) / 255.0;
+                    double py = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 1]) / 255.0;
+                    double pz = double(g_depthImage_GPU->getData()[idx * bytes_GPU + 2]) / 255.0;
+                    // Reconstruct from scales applied in the Frag Shader
+                    px = (px * delta_h - (delta_h / 2.0));
+                    py = (py  * delta_v - (delta_v / 2.0));
+                    pz = (pz * delta_d  + n);
+
+                    *pcMsg_x = px;
+                    *pcMsg_y = py;
+                    *pcMsg_z = pz;
+
+                    *pcMsg_r = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_GPU + 0];
+                    *pcMsg_g = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_GPU + 1];
+                    *pcMsg_b = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_GPU + 2];
+
+                }
+            }
+
+            g_pc2Msg->header.frame_id = "map";
+            g_pc2Msg->header.stamp = ros::Time::now();
+            g_pub.publish(g_pc2Msg);
+
+        }
+        ///////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
 
 
         //
