@@ -240,11 +240,15 @@ cFrameBuffer g_frameBuffer;
 cImagePtr g_bufferColorImage;
 cImagePtr g_bufferDepthImage;
 
-sensor_msgs::PointCloud2::Ptr g_pc2Msg;
-sensor_msgs::PointCloud2Modifier* g_pc2Modifier;
+sensor_msgs::PointCloud2::Ptr g_pc2Msg_CPU;
+sensor_msgs::PointCloud2Modifier* g_pc2Modifier_CPU;
+
+sensor_msgs::PointCloud2::Ptr g_pc2Msg_GPU;
+sensor_msgs::PointCloud2Modifier* g_pc2Modifier_GPU;
 
 ros::NodeHandle* g_node;
-ros::Publisher g_pub;
+ros::Publisher g_pub_CPU;
+ros::Publisher g_pub_GPU;
 ///
 /// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
 /// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
@@ -742,14 +746,21 @@ int main(int argc, char* argv[])
     g_depthImage_GPU = cImage::create();
     g_depthImage_GPU->allocate(1280, 720, GL_RGBA);
 
-    g_pc2Msg.reset(new sensor_msgs::PointCloud2());
-    g_pc2Modifier = new sensor_msgs::PointCloud2Modifier(*g_pc2Msg);
+    g_pc2Msg_CPU.reset(new sensor_msgs::PointCloud2());
+    g_pc2Modifier_CPU = new sensor_msgs::PointCloud2Modifier(*g_pc2Msg_CPU);
 
-    g_pc2Modifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
-    g_pc2Modifier->resize(1280*720);
+    g_pc2Modifier_CPU->setPointCloud2FieldsByString(2, "xyz", "rgb");
+    g_pc2Modifier_CPU->resize(1280*720);
+
+    g_pc2Msg_GPU.reset(new sensor_msgs::PointCloud2());
+    g_pc2Modifier_GPU = new sensor_msgs::PointCloud2Modifier(*g_pc2Msg_GPU);
+
+    g_pc2Modifier_GPU->setPointCloud2FieldsByString(2, "xyz", "rgb");
+    g_pc2Modifier_GPU->resize(1280*720);
 
     g_node = new ros::NodeHandle("test_pc");
-    g_pub = g_node->advertise<sensor_msgs::PointCloud2>("/test_pc2/", 5);
+    g_pub_CPU = g_node->advertise<sensor_msgs::PointCloud2>("/depth_pointCloud2/CPU", 5);
+    g_pub_GPU = g_node->advertise<sensor_msgs::PointCloud2>("/depth_pointCloud2/GPU", 5);
 
     // main graphic loop
     while (!g_window_closed)
@@ -1711,6 +1722,74 @@ void updateGraphics()
 
         }
 
+        ////////// PUBLISH CPU TO POINT CLOUD MSG ///////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+
+        if (pc_pub_cntr % 5 == 0){
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*g_pc2Msg_CPU, "x");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*g_pc2Msg_CPU, "y");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*g_pc2Msg_CPU, "z");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*g_pc2Msg_CPU, "r");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*g_pc2Msg_CPU, "g");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*g_pc2Msg_CPU, "b");
+
+            g_depthFrameBuffer->copyImageBuffer(g_depthImage_GPU);
+
+            // Save the mesh as well
+            int width_CPU = cameraPtr->m_depthFromBuffer->getWidth();
+            int height_CPU = cameraPtr->m_depthFromBuffer->getHeight();
+
+            int bytes_CPU = cameraPtr->m_depthFromBuffer->getBytesPerPixel();
+
+            double maxX = (double)(width_CPU - 1);
+            double maxY = (double)(height_CPU - 1);
+
+            cTransform invProjection = cameraPtr->getInternalCamera()->m_projectionMatrix;
+            invProjection.m_flagTransform = false;
+            invProjection.invert();
+
+            double a41 = invProjection(3,0);
+            double a42 = invProjection(3,1);
+            double a43 = invProjection(3,2);
+            double a44 = invProjection(3,3);
+
+            for (int y_span = 0 ; y_span < height_CPU ; y_span++){
+                for (int x_span = 0 ; x_span < width_CPU ; x_span++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+                    double px = double(x_span) / maxX;
+                    double py = double(y_span) / maxY;
+                    int idx = (y_span * width_CPU + x_span);
+                    double depth = double(cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + g_cmdOpts.channel]);
+                    double pz = depth / 255.0;
+                    double pw = 1.0;
+
+                    px = 2.0 * px - 1.0;
+                    py = 2.0 * py - 1.0;
+                    pz = 2.0 * pz - 1.0;
+
+                    cVector3d pImage(px, py, pz);
+                    cVector3d pClip = invProjection * pImage;
+                    pw = a41 * px + a42 * py + a43 * pz + a44 * pw;
+                    pClip = cDiv(pw, pClip);
+
+                    *pcMsg_x = pClip.x();
+                    *pcMsg_y = pClip.y();
+                    *pcMsg_z = pClip.z();
+
+                    *pcMsg_r = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_CPU + 0];
+                    *pcMsg_g = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_CPU + 1];
+                    *pcMsg_b = cameraPtr->m_imageFromBuffer->getData()[idx * bytes_CPU + 2];
+
+                }
+            }
+
+            g_pc2Msg_CPU->header.frame_id = "map";
+            g_pc2Msg_CPU->header.stamp = ros::Time::now();
+            g_pub_CPU.publish(g_pc2Msg_CPU);
+
+        }
+        ///////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
+
         cImagePtr depthImage_CPU = cameraPtr->m_depthFromBuffer;
 //        depthImage_CPU->flipHorizontal();
 
@@ -1788,19 +1867,19 @@ void updateGraphics()
             g_saveDepthBuffers = false;
         }
 
-        ////////// PUBLISH TO POINT CLOUD MSG ///////////////////////////////
+        ////////// PUBLISH GPU TO POINT CLOUD MSG ///////////////////////////////
         ////////////////////////////////////////////////////////////////////
 
         pc_pub_cntr++;
         if (pc_pub_cntr % 5 == 0){
             pc_pub_cntr = 0;
 
-            sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*g_pc2Msg, "x");
-            sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*g_pc2Msg, "y");
-            sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*g_pc2Msg, "z");
-            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*g_pc2Msg, "r");
-            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*g_pc2Msg, "g");
-            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*g_pc2Msg, "b");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*g_pc2Msg_GPU, "x");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*g_pc2Msg_GPU, "y");
+            sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*g_pc2Msg_GPU, "z");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*g_pc2Msg_GPU, "r");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*g_pc2Msg_GPU, "g");
+            sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*g_pc2Msg_GPU, "b");
 
             g_depthFrameBuffer->copyImageBuffer(g_depthImage_GPU);
 
@@ -1839,9 +1918,9 @@ void updateGraphics()
                 }
             }
 
-            g_pc2Msg->header.frame_id = "map";
-            g_pc2Msg->header.stamp = ros::Time::now();
-            g_pub.publish(g_pc2Msg);
+            g_pc2Msg_GPU->header.frame_id = "map";
+            g_pc2Msg_GPU->header.stamp = ros::Time::now();
+            g_pub_GPU.publish(g_pc2Msg_GPU);
 
         }
         ///////////////////////////////////////////////////////////////////////
