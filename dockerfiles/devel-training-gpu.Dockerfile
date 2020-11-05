@@ -98,5 +98,8 @@ RUN . ${HOME}/.bashrc
 
 RUN apt-get update && \
   apt-get -y -qq install wget gdb
+
+ENV ROS_HOSTNAME="localhost" \
+  ROS_MASTER_URI="http://localhost:11311"
   
 WORKDIR ${AMBF_WS}/training_scripts

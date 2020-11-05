@@ -8,12 +8,18 @@ processes = (
               'launch_ambf', 
               'psmIK_service', 
               'training', 
-              'tensorboard_launch'
+              'tensorboard_launch',
+              'print_output'
             )
 
 def run_process(script_name):
   print('Running process: {}'.format(script_name))
-  os.system('./{}.bash >> .logs/{}.txt 2>&1'.format(script_name, script_name))
+  if script_name == 'print_output':
+    os.system('./{}.bash'.format(script_name))
+  elif script_name == 'training':
+    os.system('./{}.bash >> .logs/{}_out.txt  2> .logs/{}_err.txt >'.format(script_name, script_name))
+  else:
+    os.system('./{}.bash >> .logs/{}.txt 2>&1'.format(script_name, script_name)) # 
 
 if __name__ == '__main__':
   
