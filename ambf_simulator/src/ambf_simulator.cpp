@@ -1238,6 +1238,7 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             }
             if (cameraPtr->isOrthographic()){
                 cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
+                cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
             }
             else{
                 cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );

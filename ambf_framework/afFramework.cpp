@@ -6721,11 +6721,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         // set vertical mirrored display mode
         m_camera->setMirrorVertical(false);
 
-        m_camera->setFieldViewAngleRad(_field_view_angle);
-
-        // Check if ortho view is enabled
         if (m_orthographic){
             m_camera->setOrthographicView(_orthoViewWidth);
+        }
+        else{
+            m_camera->setFieldViewAngleRad(_field_view_angle);
         }
 
         m_camera->setUseMultipassTransparency(_useMultiPassTransparency);
@@ -7140,10 +7140,18 @@ void afCamera::afExecuteCommand(double dt){
 
                 switch (m_afCameraCommPtr->get_projection_type()) {
                 case ambf_comm::ProjectionType::PERSPECTIVE:
+                    if (field_view_angle == 0){
+                        field_view_angle = 0.7;
+                        m_paramsSet = false;
+                    }
                     m_camera->setFieldViewAngleRad(field_view_angle);
                     m_orthographic = false;
                     break;
                 case ambf_comm::ProjectionType::ORTHOGRAPHIC:
+                    if (orthographic_view_width == 0){
+                        orthographic_view_width = 10.0;
+                        m_paramsSet = false;
+                    }
                     m_camera->setOrthographicView(orthographic_view_width);
                     m_orthographic = true;
                     break;
