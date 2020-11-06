@@ -75,6 +75,12 @@
 #include "ambf_comm/Vehicle.h"
 #include "ambf_comm/World.h"
 #endif
+
+// Support for Depth Image to PointCloud2
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/point_cloud2_iterator.h"
+#endif
 //-----------------------------------------------------------------------------
 
 
@@ -198,6 +204,60 @@ public:
         std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
     }
 };
+
+static std::string AF_DEPTH_TO_PC_VTX_SHADER =
+        " attribute vec3 aPosition;                                  \n"
+        " attribute vec3 aNormal;                                    \n"
+        " attribute vec3 aTexCoord;                                  \n"
+        " attribute vec4 aColor;                                     \n"
+        " attribute vec3 aTangent;                                   \n"
+        " attribute vec3 aBitangent;                                 \n"
+        "                                                            \n"
+        " varying vec4 vPosition;                                    \n"
+        " varying vec3 vNormal;                                      \n"
+        " varying vec3 vTexCoord;                                    \n"
+        "                                                            \n"
+        " varying mat3 TBN;                                          \n"
+        "                                                            \n"
+        " varying mat4 invProjection;                                \n"
+        " uniform mat4 Projection;                                   \n"
+        "                                                            \n"
+        " void main(void)                                            \n"
+        " {                                                          \n"
+        "    vTexCoord = aTexCoord;                                  \n"
+        "    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0); \n"
+        "    invProjection = inverse(gl_ProjectionMatrix);           \n"
+        " }                                                          \n";
+
+static std::string AF_DEPTH_TO_PC_FRAG_SHADER =
+        "uniform sampler2D diffuseMap;                                                     \n"
+        "varying vec3 vTexCoord;                                                           \n"
+        "uniform vec3 maxWorldDimensions;                                                  \n"
+        "uniform float nearPlane;                                                          \n"
+        "uniform float farPlane;                                                           \n"
+        "                                                                                  \n"
+        "varying mat4 invProjection;                                                       \n"
+        "uniform mat4 Projection;                                                          \n"
+        "                                                                                  \n"
+        "void main(void)                                                                   \n"
+        "{                                                                                 \n"
+        "    vec3 texColor = texture2D(diffuseMap, vTexCoord.xy).xyz;                      \n"
+        "    float x = vTexCoord.x * 2.0 - 1.0;                                            \n"
+        "    float y = vTexCoord.y * 2.0 - 1.0;                                            \n"
+        "    float z = texColor.r * 2.0 - 1.0;                                             \n"
+        "    vec4 P = vec4(x, y, z, 1.0);                                                  \n"
+        "                                                                                  \n"
+        "    P = inverse(gl_ProjectionMatrix) * P;                                         \n"
+        "    P /= P.w;                                                                     \n"
+        "                                                                                  \n"
+        "    float deltaZ = farPlane - nearPlane;                                          \n"
+        "    float normalized_z = (P.z - nearPlane)/deltaZ;                                \n"
+        "                                                                                  \n"
+        "    // Assuming the frustrum is centered vertically and horizontally              \n"
+        "    float normalized_x = (P.x + maxWorldDimensions.x / 2.0)/maxWorldDimensions.x; \n"
+        "    float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y; \n"
+        "    gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);           \n"
+        "}                                                                                 \n";
 
 
 ///
@@ -1444,8 +1504,15 @@ public:
         m_camera->renderView(a_windowWidth, a_windowHeight);
     }
 
+    void renderFrameBuffer();
+
+    void renderDepthBuffer();
+
     // Publish Image as a ROS Topic
     void publishImage();
+
+    // Publish Depth as a ROS Topic
+    void publishDepth();
 
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
@@ -1507,6 +1574,28 @@ public:
 
     std::vector<std::string> m_controllingDevNames;
 
+    // Frame Buffer to write to OpenCV Transport stream
+    cFrameBuffer* m_frameBuffer;
+
+    // Image to Convert the FrameBuffer into an image
+    cImagePtr m_bufferColorImage;
+
+    // Image to Convert the FrameBuffer into an depth image
+    cImagePtr m_bufferDepthImage;
+
+    /// IMPLEMENTATION FOR DEPTH IMAGE TO POINTCLOUD ///
+    // A separate buffer to render and convert depth image to Cam XYZ
+    cFrameBuffer* m_depthBuffer;
+
+    // A separate world attached to the depht Buffer
+    cWorld* m_dephtWorld;
+
+    // A separate quad added as the only child to the depth world
+    cMesh* m_depthMesh;
+
+    cImagePtr m_depthBufferColorImage;
+    ////////////////////////////////////////////////////
+
 protected:
     std::mutex m_mutex;
     cVector3d m_pos, m_posClutched;
@@ -1522,18 +1611,6 @@ protected:
     static int s_windowIdx;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-
-public:
-
-    // Frame Buffer to write to OpenCV Transport stream
-    cFrameBuffer* m_frameBuffer;
-
-    // Image to Convert the FrameBuffer into an image
-    cImagePtr m_imageFromBuffer;
-
-    // Image to Convert the FrameBuffer into an depth image
-    cImagePtr m_depthFromBuffer;
-
 protected:
 
     // Open CV Image Matrix
@@ -1546,7 +1623,7 @@ protected:
     image_transport::Publisher m_imagePublisher;
 
     // Image Transport ROS Node
-    static ros::NodeHandle* s_imageTransportNode;
+    static ros::NodeHandle* s_rosNode;
 
     // Flag to check if to check if ROS Node and CV ROS Node is initialized
     static bool s_imageTransportInitialized;
@@ -1557,6 +1634,13 @@ protected:
     ambf_comm::ViewMode m_viewMode;
 #endif
 
+    // Depth to Point Cloud Impl
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier;
+    ros::Publisher m_depthPointCloudPub;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 
@@ -1565,8 +1649,11 @@ private:
     // represent the kinematics instead
     cCamera* m_camera;
 
-    // Flag to enable disable publishing of image as a ROS topic
+    // Flag to enable disable publishing of color image as a ROS topic
     bool m_publishImage = false;
+
+    // Flag to enable disable publishing of depth image as a ROS topic
+    bool m_publishDepth = false;
 
     cVector3d m_camPos;
     cVector3d m_camLookAt;

@@ -455,15 +455,15 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        // get width and height of window
-        int _width, _height;
-        glfwGetWindowSize(windowPtr, &_width, &_height);
+//        // get width and height of window
+//        int _width, _height;
+//        glfwGetWindowSize(windowPtr, &_width, &_height);
 
-        (*g_cameraIt)->m_width = _width;
-        (*g_cameraIt)->m_height = _height;
+//        (*g_cameraIt)->m_width = _width;
+//        (*g_cameraIt)->m_height = _height;
 
-        // set position of window
-        glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
+//        // set position of window
+//        glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
 
         // set key callback
         glfwSetKeyCallback(windowPtr, keyCallback);
@@ -491,15 +491,15 @@ int main(int argc, char* argv[])
         // Finally address all the requested parenting if any in the ADF file
         (*g_cameraIt)->resolveParenting();
 
-        // initialize GLEW library
-#ifdef GLEW_VERSION
-        if (glewInit() != GLEW_OK)
-        {
-            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
-            glfwTerminate();
-            return 1;
-        }
-#endif
+//        // initialize GLEW library
+//#ifdef GLEW_VERSION
+//        if (glewInit() != GLEW_OK)
+//        {
+//            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
+//            glfwTerminate();
+//            return 1;
+//        }
+//#endif
     }
 
     afLightVec temp_lights = g_afWorld->getAFLighs();

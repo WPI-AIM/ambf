@@ -78,7 +78,7 @@ int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-ros::NodeHandle* afCamera::s_imageTransportNode;
+ros::NodeHandle* afCamera::s_rosNode;
 image_transport::ImageTransport* afCamera::s_imageTransport;
 bool afCamera::s_imageTransportInitialized = false;
 #endif
@@ -5751,7 +5751,7 @@ void afWorld::loadSkyBox(){
     if (m_skyBoxDefined && m_skyBox_shaderProgramDefined){
 
         m_skyBoxMesh = new cMesh();
-        float skyboxVertices[] = {
+        float cube[] = {
             // positions
             -1.0f,  1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
@@ -5797,10 +5797,11 @@ void afWorld::loadSkyBox(){
         };
 
         for (int vI = 0 ; vI < 12 ; vI++){
-            int offset = vI * 9;
-            m_skyBoxMesh->newTriangle(cVector3d(skyboxVertices[offset + 0], skyboxVertices[offset + 1], skyboxVertices[offset + 2]),
-                    cVector3d(skyboxVertices[offset + 3], skyboxVertices[offset + 4], skyboxVertices[offset + 5]),
-                    cVector3d(skyboxVertices[offset + 6], skyboxVertices[offset + 7], skyboxVertices[offset + 8]));
+            int off = vI * 9;
+            m_skyBoxMesh->newTriangle(
+                        cVector3d(cube[off + 0], cube[off + 1], cube[off + 2]),
+                        cVector3d(cube[off + 3], cube[off + 4], cube[off + 5]),
+                        cVector3d(cube[off + 6], cube[off + 7], cube[off + 8]));
         }
 
         m_skyBoxMesh->computeAllNormals();
@@ -6419,6 +6420,11 @@ bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_loca
     return true;
 }
 
+
+///
+/// \brief afCamera::getGlobalPos
+/// \return
+///
 cVector3d afCamera::getGlobalPos(){
     if (getParent()){
         return getParent()->getLocalTransform() * getLocalPos();
@@ -6576,6 +6582,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraParent = cameraNode["parent"];
     YAML::Node cameraMonitor = cameraNode["monitor"];
     YAML::Node cameraPublishImage = cameraNode["publish image"];
+    YAML::Node cameraPublishDepth = cameraNode["publish depth"];
     YAML::Node cameraMultiPass = cameraNode["multipass"];
 
     bool _is_valid = true;
@@ -6672,6 +6679,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_publishImage = cameraPublishImage.as<bool>();
     }
 
+    if (cameraPublishDepth.IsDefined()){
+        m_publishDepth = cameraPublishDepth.as<bool>();
+    }
+
     if (cameraMultiPass.IsDefined()){
         _useMultiPassTransparency = cameraMultiPass.as<bool>();
     }
@@ -6755,6 +6766,35 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
             s_mainWindow = m_window;
         }
 
+        if (!m_window)
+        {
+            std::cerr << "ERROR! FAILED TO CREATE OPENGL WINDOW" << std::endl;
+            cSleepMs(1000);
+            glfwTerminate();
+            return 1;
+        }
+
+        // get width and height of window
+        glfwGetWindowSize(m_window, &m_width, &m_height);
+
+        // set position of window
+        glfwSetWindowPos(m_window, m_win_x, m_win_y);
+
+        // set the current context
+        glfwMakeContextCurrent(m_window);
+
+        glfwSwapInterval(0);
+
+        // initialize GLEW library
+#ifdef GLEW_VERSION
+        if (glewInit() != GLEW_OK)
+        {
+            std::cerr << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << std::endl;
+            glfwTerminate();
+            return 1;
+        }
+#endif
+
         // create a font
         cFontPtr font = NEW_CFONTCALIBRI20();
 
@@ -6786,27 +6826,111 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         buildDynamicModel();
 
 
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-        if (m_publishImage){
+        if (m_publishImage || m_publishDepth){
             m_frameBuffer = new cFrameBuffer();
-            m_imageFromBuffer = cImage::create();
+            m_bufferColorImage = cImage::create();
+            m_bufferDepthImage = cImage::create();
+            m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
 
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
             if (s_imageTransportInitialized == false){
                 s_imageTransportInitialized = true;
                 int argc = 0;
                 char **argv = 0;
                 ros::init(argc, argv, "ambf_image_transport_node");
-                s_imageTransportNode = new ros::NodeHandle();
-                s_imageTransport = new image_transport::ImageTransport(*s_imageTransportNode);
+                s_rosNode = new ros::NodeHandle();
+                s_imageTransport = new image_transport::ImageTransport(*s_rosNode);
+            }
+            m_imagePublisher = s_imageTransport->advertise(m_namespace + m_name + "/ImageData", 1);
+#endif
+
+            if (m_publishDepth){
+                // Set up the world
+                m_dephtWorld = new cWorld();
+
+                // Set up the frame buffer
+                m_depthBuffer = new cFrameBuffer();
+                m_depthBuffer->setup(m_camera, m_width, m_height, true, false);
+
+                // Set up the quad
+                m_depthMesh = new cMesh();
+                float quad[] = {
+                    // positions
+                    -1.0f,  1.0f, 0.0f,
+                    -1.0f, -1.0f, 0.0f,
+                    1.0f, -1.0f, 0.0f,
+                    -1.0f, 1.0f, 0.0f,
+                    1.0f,  -1.0f, 0.0f,
+                    1.0f,  1.0f, 0.0f,
+                };
+                for (int vI = 0 ; vI < 2 ; vI++){
+                    int off = vI * 9;
+                    m_depthMesh->newTriangle(
+                                cVector3d(quad[off + 0], quad[off + 1], quad[off + 2]),
+                                cVector3d(quad[off + 3], quad[off + 4], quad[off + 5]),
+                                cVector3d(quad[off + 6], quad[off + 7], quad[off + 8]));
+                }
+                m_depthMesh->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
+                m_depthMesh->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
+                m_depthMesh->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
+                m_depthMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
+                m_depthMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
+                m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
+
+                m_depthMesh->computeAllNormals();
+                m_depthMesh->m_texture = cTexture2d::create();
+                m_depthMesh->m_texture->m_image->allocate(m_width, m_height, GL_RGBA);
+                m_depthMesh->setUseTexture(true);
+
+                m_dephtWorld->addChild(m_depthMesh);
+                m_dephtWorld->addChild(m_camera);
+
+                m_depthBufferColorImage = cImage::create();
+                m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA);
+
+                cShaderProgramPtr shaderPgm = cShaderProgram::create(AF_DEPTH_TO_PC_VTX_SHADER, AF_DEPTH_TO_PC_FRAG_SHADER);
+                if (shaderPgm->linkProgram()){
+                    cGenericObject* go;
+                    cRenderOptions ro;
+                    shaderPgm->use(go, ro);
+                    m_depthMesh->setShaderProgram(shaderPgm);
+                }
+                else{
+                    std::cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO LOAD SHADER FILES: " << std::endl;
+                }
+
             }
 
-            m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
-            m_imagePublisher = s_imageTransport->advertise("/ambf/image_data/" + m_name, 1);
-        }
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+            m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
+            m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
+            m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
+            m_depthPointCloudModifier->resize(m_width*m_height);
+            if (s_imageTransportInitialized == false){
+                s_imageTransportInitialized = true;
+                int argc = 0;
+                char **argv = 0;
+                ros::init(argc, argv, "ambf_image_transport_node");
+                s_rosNode = new ros::NodeHandle();
+            }
+            m_depthPointCloudPub = s_rosNode->advertise<sensor_msgs::PointCloud2>(m_namespace + m_name + "/DepthData", 1);
 #endif
+        }
     }
 
     return _is_valid;
+}
+
+///
+/// \brief afCamera::renderFrameBuffer
+///
+void afCamera::renderFrameBuffer()
+{
+    m_frameBuffer->renderView();
+    m_frameBuffer->copyImageBuffer(m_bufferColorImage);
+    m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
+    m_bufferColorImage->flipHorizontal();
+    m_bufferDepthImage->flipHorizontal();
 }
 
 
@@ -6815,15 +6939,116 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 ///
 void afCamera::publishImage(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    if (m_publishImage){
-        m_frameBuffer->renderView();
-        m_frameBuffer->copyImageBuffer(m_imageFromBuffer);
-        m_imageFromBuffer->flipHorizontal();
-        m_imageMatrix = cv::Mat(m_imageFromBuffer->getHeight(), m_imageFromBuffer->getWidth(), CV_8UC4, m_imageFromBuffer->getData());
-        cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
-        sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
-        m_imagePublisher.publish(rosMsg);
+    m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
+    cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
+    sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
+    m_imagePublisher.publish(rosMsg);
+#endif
+}
+
+
+///
+/// \brief afCamera::renderDepthBuffer
+///
+void afCamera::renderDepthBuffer()
+{
+    m_bufferDepthImage->copyTo(m_depthMesh->m_texture->m_image);
+    m_depthMesh->m_texture->markForUpdate();
+
+    // Change the parent world for the camera so it only render's the depht quad (Mesh)
+    m_camera->setParentWorld(m_dephtWorld);
+
+    // Update the dimensions scale information.
+    float n = -m_camera->getNearClippingPlane();
+    float f = -m_camera->getFarClippingPlane();
+    double fva = m_camera->getFieldViewAngleRad();
+    double ar = m_camera->getAspectRatio();
+
+    double maxX;
+    if (isOrthographic()){
+        maxX = m_camera->getOrthographicViewWidth();
     }
+    else{
+        maxX = 2.0 * cAbs(f) * cTanRad(fva/2.0);
+    }
+    double maxY = maxX / ar;
+    double maxZ = f-n;
+
+    cVector3d maxWorldDimensions(maxX, maxY, maxZ);
+
+    m_depthMesh->getShaderProgram()->setUniform("maxWorldDimensions", maxWorldDimensions);
+    m_depthMesh->getShaderProgram()->setUniformf("nearPlane", n);
+    m_depthMesh->getShaderProgram()->setUniformf("farPlane", f);
+
+    m_depthBuffer->renderView();
+
+    m_camera->setParentWorld(m_afWorld);
+
+    m_depthBuffer->copyImageBuffer(m_depthBufferColorImage);
+
+}
+
+
+///
+/// \brief afCamera::publishDepth
+///
+void afCamera::publishDepth()
+{
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
+#endif
+
+    int width = m_depthBufferColorImage->getWidth();
+    int height = m_depthBufferColorImage->getHeight();
+    int bytes = m_depthBufferColorImage->getBytesPerPixel();
+    float n = -m_camera->getNearClippingPlane();
+    float f = -m_camera->getFarClippingPlane();
+    double fva = m_camera->getFieldViewAngleRad();
+    double ar = m_camera->getAspectRatio();
+
+    double maxX;
+    if (isOrthographic()){
+        maxX = m_camera->getOrthographicViewWidth();
+    }
+    else{
+        maxX = 2.0 * cAbs(f) * cTanRad(fva/2.0);
+    }
+    double maxY = maxX / ar;
+    double maxZ = f-n;
+
+    for (int y_span = 0 ; y_span < height ; y_span++){
+        for (int x_span = 0 ; x_span < width ; x_span++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+
+            int idx = (y_span * width + x_span);
+            double px = double(m_depthBufferColorImage->getData()[idx * bytes + 0]) / 255.0;
+            double py = double(m_depthBufferColorImage->getData()[idx * bytes + 1]) / 255.0;
+            double pz = double(m_depthBufferColorImage->getData()[idx * bytes + 2]) / 255.0;
+            // Reconstruct from scales applied in the Frag Shader
+            px = (px * maxX - (maxX / 2.0));
+            py = (py  * maxY - (maxY / 2.0));
+            pz = (pz * maxZ  + n);
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+            *pcMsg_x = px;
+            *pcMsg_y = py;
+            *pcMsg_z = pz;
+
+            *pcMsg_r = m_bufferColorImage->getData()[idx * bytes + 0];
+            *pcMsg_g = m_bufferColorImage->getData()[idx * bytes + 1];
+            *pcMsg_b = m_bufferColorImage->getData()[idx * bytes + 2];
+#endif
+
+        }
+    }
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+        m_depthPointCloudMsg->header.frame_id = m_name;
+        m_depthPointCloudMsg->header.stamp = ros::Time::now();
+        m_depthPointCloudPub.publish(m_depthPointCloudMsg);
 #endif
 }
 
@@ -7055,12 +7280,17 @@ afCamera::~afCamera(){
         if (s_imageTransportInitialized == true){
             s_imageTransportInitialized = false;
             delete s_imageTransport;
-            delete s_imageTransportNode;
+            delete s_rosNode;
         }
     }
 #endif
 }
 
+int dcntr = 0;
+///
+/// \brief afCamera::render
+/// \param options
+///
 void afCamera::render(afRenderOptions &options)
 {
     // set current display context
@@ -7100,7 +7330,23 @@ void afCamera::render(afRenderOptions &options)
         options.m_windowClosed = true;
     }
 
-    publishImage();
+    if (m_publishImage || m_publishDepth){
+        renderFrameBuffer();
+    }
+
+    if (m_publishImage){
+        publishImage();
+    }
+
+    dcntr++;
+    if (dcntr % 10 == 0){
+        dcntr = 0;
+        if (m_publishDepth){
+            renderDepthBuffer();
+            publishDepth();
+        }
+    }
+
 }
 
 
