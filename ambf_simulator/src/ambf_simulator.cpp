@@ -1622,9 +1622,9 @@ void updateGraphics()
             int bytes = depthImage->getBytesPerPixel();
             int bits = depthImage->getBitsPerPixel();
             for (int i = 0 ; i < width*height ; i++){
-                depthImage->getData()[i * bytes + 0] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
-                depthImage->getData()[i * bytes + 1] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
-                depthImage->getData()[i * bytes + 2] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
+//                depthImage->getData()[i * bytes + 0] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
+//                depthImage->getData()[i * bytes + 1] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
+//                depthImage->getData()[i * bytes + 2] = depthImage->getData()[i * bytes + g_cmdOpts.channel];
 //                bufferImage->getData()[i * b + 3] = bufferImage->getData()[i * b + 0];
 //                bufferImage->m_data[i * (w*h) + 1] = bufferImage->m_data[0];
             }
@@ -1741,6 +1741,8 @@ void updateGraphics()
 
             int bytes_CPU = cameraPtr->m_depthFromBuffer->getBytesPerPixel();
 
+            int type = cameraPtr->m_depthFromBuffer->getType();
+
             double maxX = (double)(width_CPU - 1);
             double maxY = (double)(height_CPU - 1);
 
@@ -1758,8 +1760,14 @@ void updateGraphics()
                     double px = double(x_span) / maxX;
                     double py = double(y_span) / maxY;
                     int idx = (y_span * width_CPU + x_span);
-                    double depth = double(cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + g_cmdOpts.channel]);
-                    double pz = depth / 255.0;
+                    unsigned char byte0 = cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + 0];
+                    unsigned char byte1 = cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + 1];
+                    unsigned char byte2 = cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + 2];
+                    unsigned char byte3 = cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + 3];
+                    uint depth = uint (byte3 << 24 | byte2 << 16 | byte1 << 8 | byte0);
+//                    double depth = double(cameraPtr->m_depthFromBuffer->getData()[idx * bytes_CPU + g_cmdOpts.channel]);
+                    double sizeOfInt = pow(2, (sizeof(uint)*8));
+                    double pz = double(depth) / sizeOfInt;
                     double pw = 1.0;
 
                     px = 2.0 * px - 1.0;
