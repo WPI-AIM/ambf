@@ -1512,7 +1512,10 @@ public:
     void publishImage();
 
     // Publish Depth as a ROS Topic
-    void publishDepth();
+    void publishDepthCPUBased();
+
+    // Publish Depth as a ROS Topic
+    void publishDepthGPUBased();
 
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
@@ -1594,7 +1597,8 @@ public:
     cMesh* m_depthMesh;
 
     cImagePtr m_depthBufferColorImage;
-    ////////////////////////////////////////////////////
+
+    bool m_useGPUForDepthCam = false;
 
 protected:
     std::mutex m_mutex;
