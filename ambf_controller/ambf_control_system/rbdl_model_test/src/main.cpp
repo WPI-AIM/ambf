@@ -9,7 +9,7 @@
 int main(int argc, char* argv[])
 {
     const std::string actuator_config_file = "../ambf_models/descriptions/multi-bodies/robots/blender-psm.yaml";
-
+//    const std::string actuator_config_file = "../ambf_models/descriptions/multi-bodies/robots/blender-kuka.yaml";
 
     BuildRBDLModel buildRBDLModel(actuator_config_file);
 //    buildRBDLModel.printBody();

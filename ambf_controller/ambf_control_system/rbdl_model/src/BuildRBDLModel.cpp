@@ -145,44 +145,44 @@ bool BuildRBDLModel::buildModel() {
 
     unsigned int root_id = addBodyToRBDL(root_parent_name_, 0, root_joint_name_, rootRigidBody_);
 
-    rbdlObjectMap_.insert(std::make_pair(rootRigidBody_, root_id));
+//    rbdlObjectMap_.insert(std::make_pair(rootRigidBody_, root_id));
 
-    ancestry_set.emplace(rootRigidBody_);
-    while(!ancestry_set.empty()) {
-        ancestry_set_itr = ancestry_set.begin();
-        std::string parent_name = *ancestry_set_itr;
-        ancestry_set.erase(*ancestry_set_itr);
+//    ancestry_set.emplace(rootRigidBody_);
+//    while(!ancestry_set.empty()) {
+//        ancestry_set_itr = ancestry_set.begin();
+//        std::string parent_name = *ancestry_set_itr;
+//        ancestry_set.erase(*ancestry_set_itr);
 
-        outter_map_itr = jointParamObjectMap_.find(parent_name);
-        if(outter_map_itr != jointParamObjectMap_.end()) {
-            unsigned int parent_id = rbdlObjectMap_[parent_name];
-            std::cout << "parent_name: " << parent_name << ", parent_id: " << parent_id << ", its children: ";
-            for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
+//        outter_map_itr = jointParamObjectMap_.find(parent_name);
+//        if(outter_map_itr != jointParamObjectMap_.end()) {
+//            unsigned int parent_id = rbdlObjectMap_[parent_name];
+//            std::cout << "parent_name: " << parent_name << ", parent_id: " << parent_id << ", its children: ";
+//            for (inner_map_itr = outter_map_itr->second.begin(); inner_map_itr != outter_map_itr->second.end(); inner_map_itr++) {
 
-                std::string child_name = inner_map_itr->second->Child();
-                std::cout << child_name << ", ";
+//                std::string child_name = inner_map_itr->second->Child();
+//                std::cout << child_name << ", ";
 
 //                // Create RBDL Joint between parent and child
-                std::string joint_name = inner_map_itr->first;
-                unsigned int child_id = addBodyToRBDL(parent_name, parent_id, joint_name, child_name);
+//                std::string joint_name = inner_map_itr->first;
+//                unsigned int child_id = addBodyToRBDL(parent_name, parent_id, joint_name, child_name);
 
 
-                rbdl_object_map_itr_ = rbdlObjectMap_.find((child_name));
-                if(rbdl_object_map_itr_ == rbdlObjectMap_.end()) {
-                    ancestry_set.emplace(child_name);
-                    rbdlObjectMap_.insert(std::make_pair(child_name, child_id));
-                }
-            }
-            std::cout << std::endl;
-        }
+//                rbdl_object_map_itr_ = rbdlObjectMap_.find((child_name));
+//                if(rbdl_object_map_itr_ == rbdlObjectMap_.end()) {
+//                    ancestry_set.emplace(child_name);
+//                    rbdlObjectMap_.insert(std::make_pair(child_name, child_id));
+//                }
+//            }
+//            std::cout << std::endl;
+//        }
 
-    }
+//    }
 
-    std::cout << "rbdlObjectMap: " << std::endl;
-    for(rbdl_object_map_itr_ = rbdlObjectMap_.begin(); rbdl_object_map_itr_ != rbdlObjectMap_.end(); rbdl_object_map_itr_++) {
-        std::cout << rbdl_object_map_itr_->first << ": " <<rbdl_object_map_itr_->second << std::endl;
+//    std::cout << "rbdlObjectMap: " << std::endl;
+//    for(rbdl_object_map_itr_ = rbdlObjectMap_.begin(); rbdl_object_map_itr_ != rbdlObjectMap_.end(); rbdl_object_map_itr_++) {
+//        std::cout << rbdl_object_map_itr_->first << ": " <<rbdl_object_map_itr_->second << std::endl;
 
-    }
+//    }
     return true;
 }
 
@@ -198,18 +198,27 @@ unsigned int  BuildRBDLModel::addBodyToRBDL(std::string parent_name, unsigned in
     // Create RBDL Joint between parent and child
     std::string joint_type_str = (jointParamObjectMap_[parent_name][joint_name])->Type();
     RigidBodyDynamics::JointType joint_type = getRBDLJointType(joint_type_str);
+    std::cout << "joint_type: " << joint_type << std::endl;
 
-    Vector3d parent_axis = (jointParamObjectMap_[parent_name][joint_name])->ParentAxis();
-    Joint rbdl_joint = Joint(joint_type, parent_axis);
+//    Joint rbdl_joint;
 
-    // Create RBDL ID for parent to child
-    Vector3d child_translation = (jointParamObjectMap_[parent_name][joint_name])->ParentPivot();
-    Matrix3_t body_rotation = (jointParamObjectMap_[parent_name][joint_name])->BodyRotation();
+//    if(joint_type == JointTypeFixed) {
+//        rbdl_joint = Joint(joint_type);
+//    } else {
+//        Vector3d parent_axis = (jointParamObjectMap_[parent_name][joint_name])->ParentAxis();
+//        std::cout << "parent_axis : " << parent_axis [0] << ", " << parent_axis[1] << ", " << parent_axis[2] << std::endl;
+//        rbdl_joint = Joint(joint_type, parent_axis);
+//    }
 
-    SpatialTransform child_tf(body_rotation, child_translation);
-    unsigned int child_id = RBDLmodel_->AddBody(parent_id, child_tf, rbdl_joint, child_body);
+//    // Create RBDL ID for parent to child
+//    Vector3d child_translation = (jointParamObjectMap_[parent_name][joint_name])->ParentPivot();
+//    Matrix3_t body_rotation = (jointParamObjectMap_[parent_name][joint_name])->BodyRotation();
 
-    return child_id;
+//    SpatialTransform child_tf(body_rotation, child_translation);
+//    unsigned int child_id = RBDLmodel_->AddBody(parent_id, child_tf, rbdl_joint, child_body);
+
+//    return child_id;
+    return 0;
 }
 
 const RigidBodyDynamics::JointType BuildRBDLModel::getRBDLJointType(std::string joint_type) {
