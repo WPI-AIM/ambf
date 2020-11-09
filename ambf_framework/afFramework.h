@@ -1506,16 +1506,16 @@ public:
 
     void renderFrameBuffer();
 
-    void renderDepthBuffer();
+    void computeDepthOnGPU();
 
     // Publish Image as a ROS Topic
     void publishImage();
 
     // Publish Depth as a ROS Topic
-    void publishDepthCPUBased();
+    void computeDepthOnCPU();
 
-    // Publish Depth as a ROS Topic
-    void publishDepthGPUBased();
+    // Publish Depth as Point Cloud
+    void publishDepthAsPointCloud();
 
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
@@ -1598,7 +1598,7 @@ public:
 
     cImagePtr m_depthBufferColorImage;
 
-    bool m_useGPUForDepthCam = false;
+    bool m_useGPUForDepthComputation = true;
 
 protected:
     std::mutex m_mutex;

@@ -119,7 +119,7 @@ public:
     void renderView(const cEyeMode a_eyeMode = C_STEREO_LEFT_EYE);
 
     //! This method copies the framebuffer content to an image.
-    void copyImageBuffer(cImagePtr a_image);
+    void copyImageBuffer(cImagePtr a_image, int a_internalType=GL_RGBA, int a_outputType=GL_UNSIGNED_BYTE);
 
     //! This method copies the depth buffer content to an image.
     void copyDepthBuffer(cImagePtr a_image);

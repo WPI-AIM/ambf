@@ -171,7 +171,7 @@ void cFrameBuffer::setSize(const unsigned int a_width, const unsigned int a_heig
     \param  a_image           Destination image.
 */
 //==============================================================================
-void cFrameBuffer::copyImageBuffer(cImagePtr a_image)
+void cFrameBuffer::copyImageBuffer(cImagePtr a_image, int a_internalType, int a_outputType)
 {
 #ifdef C_USE_OPENGL
 
@@ -195,8 +195,8 @@ void cFrameBuffer::copyImageBuffer(cImagePtr a_image)
     // copy pixel data if required
     glGetTexImage(GL_TEXTURE_2D,
                   0,
-                  GL_RGBA,
-                  GL_UNSIGNED_BYTE,
+                  a_internalType,
+                  a_outputType,
                   (GLvoid*)(a_image->getData())
                   );
 #endif
