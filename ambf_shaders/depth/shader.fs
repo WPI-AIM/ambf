@@ -34,10 +34,4 @@ void main(void)
     float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y;
 
     gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);
-
-    // uint nnX = vTexCoord.x * 1280;
-    // uint nnY = vTexCoord.y * 720;
-    // uint nnZ = P.z * 1000;
-    //
-    // gl_FragColor = uvec4(nnX, nnY, nnZ, 1000);
 }

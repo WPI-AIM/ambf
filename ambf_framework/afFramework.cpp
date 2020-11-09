@@ -6852,6 +6852,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
                 m_depthBuffer = new cFrameBuffer();
                 m_depthBuffer->setup(m_camera, m_width, m_height, true, false);
 
+                m_depthCameraData.setup(m_width, m_height, 3);
+
                 // Set up the quad
                 m_depthMesh = new cMesh();
                 float quad[] = {
@@ -6888,20 +6890,21 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
                 m_depthBufferColorImage = cImage::create();
                 m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_INT);
 
-                std::ifstream vsFile;
-                std::ifstream fsFile;
-                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
-                fsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.fs");
-                // create a string stream
-                std::stringstream vsBuffer, fsBuffer;
-                // dump the contents of the file into it
-                vsBuffer << vsFile.rdbuf();
-                fsBuffer << fsFile.rdbuf();
-                // close the files
-                vsFile.close();
-                fsFile.close();
+//                std::ifstream vsFile;
+//                std::ifstream fsFile;
+//                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
+//                fsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.fs");
+//                // create a string stream
+//                std::stringstream vsBuffer, fsBuffer;
+//                // dump the contents of the file into it
+//                vsBuffer << vsFile.rdbuf();
+//                fsBuffer << fsFile.rdbuf();
+//                // close the files
+//                vsFile.close();
+//                fsFile.close();
+//                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
 
-                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+                cShaderProgramPtr shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
                 if (shaderPgm->linkProgram()){
                     cGenericObject* go;
                     cRenderOptions ro;
@@ -6972,7 +6975,7 @@ void afCamera::computeDepthOnCPU()
 
     int width = m_bufferDepthImage->getWidth();
     int height = m_bufferDepthImage->getHeight();
-    int bytes = m_bufferDepthImage->getBytesPerPixel();
+    int bbp = m_bufferDepthImage->getBytesPerPixel();
 
     double varScale = pow(2, sizeof(uint) * 8);
 
@@ -6999,10 +7002,10 @@ void afCamera::computeDepthOnCPU()
         for (int x_span = 0 ; x_span < width ; x_span++){
             double xImage = double(x_span) / (width - 1);
             int idx = y_span * width + x_span;
-            unsigned char b0 = m_bufferDepthImage->getData()[idx * bytes + 0];
-            unsigned char b1 = m_bufferDepthImage->getData()[idx * bytes + 1];
-            unsigned char b2 = m_bufferDepthImage->getData()[idx * bytes + 2];
-            unsigned char b3 = m_bufferDepthImage->getData()[idx * bytes + 3];
+            unsigned char b0 = m_bufferDepthImage->getData()[idx * bbp + 0];
+            unsigned char b1 = m_bufferDepthImage->getData()[idx * bbp + 1];
+            unsigned char b2 = m_bufferDepthImage->getData()[idx * bbp + 2];
+            unsigned char b3 = m_bufferDepthImage->getData()[idx * bbp + 3];
 
             uint depth = uint (b3 << 24 | b2 << 16 | b1 << 8 | b0);
             double zImage = double (depth) / varScale;
@@ -7016,28 +7019,9 @@ void afCamera::computeDepthOnCPU()
             double wClip = projMatInv(3, 0) * xNDC + projMatInv(3, 1) * yNDC + projMatInv(3, 2) * zNDC + projMatInv(3, 3) * wNDC;
             cVector3d pCam = cDiv(wClip, pClip);
 
-            uint x_uint = (pCam.x() + maxWorldDimensions.x() / 2.0) / maxWorldDimensions.x() * varScale;
-            uint y_uint = (pCam.y() + maxWorldDimensions.y() / 2.0) / maxWorldDimensions.y() * varScale;
-            uint z_uint = (pCam.z() + n) / maxWorldDimensions.z() * varScale;
-
-            int dcBytes = m_depthBufferColorImage->getBytesPerPixel();
-            // Store the x value
-            m_depthBufferColorImage->getData()[idx * dcBytes + 0] = (unsigned char)(x_uint) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 1] = (unsigned char)(x_uint >> 8) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 2] = (unsigned char)(x_uint >> 16) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 3] = (unsigned char)(x_uint >> 24) & 0xFF;
-
-            // Store the y value
-            m_depthBufferColorImage->getData()[idx * dcBytes + 4] = (unsigned char)(y_uint) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 5] = (unsigned char)(y_uint >> 8) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 6] = (unsigned char)(y_uint >> 16) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 7] = (unsigned char)(y_uint >> 24) & 0xFF;
-
-            // Store the z value
-            m_depthBufferColorImage->getData()[idx * dcBytes + 8] = (unsigned char)(z_uint) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 9] = (unsigned char)(z_uint >> 8) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 10] = (unsigned char)(z_uint >> 16) & 0xFF;
-            m_depthBufferColorImage->getData()[idx * dcBytes + 11] = (unsigned char)(z_uint >> 24) & 0xFF;
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0] = pCam.x();
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1] = pCam.y();
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2] = pCam.z();
 
         }
     }
@@ -7090,60 +7074,31 @@ void afCamera::computeDepthOnGPU()
     m_camera->setParentWorld(m_afWorld);
 
     m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_RGBA, GL_UNSIGNED_INT);
-}
-
-
-///
-/// \brief afCamera::publishDepthAsPointCloud
-///
-void afCamera::publishDepthAsPointCloud()
-{
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
 
     int width = m_depthBufferColorImage->getWidth();
     int height = m_depthBufferColorImage->getHeight();
-    int bytes = m_depthBufferColorImage->getBytesPerPixel();
-    double n = -m_camera->getNearClippingPlane();
-    double f = -m_camera->getFarClippingPlane();
-    double fva = m_camera->getFieldViewAngleRad();
-    double ar = m_camera->getAspectRatio();
-
-    double maxX;
-    if (isOrthographic()){
-        maxX = m_camera->getOrthographicViewWidth();
-    }
-    else{
-        maxX = 2.0 * cAbs(f) * cTanRad(fva/2.0);
-    }
-    double maxY = maxX / ar;
-    double maxZ = f-n;
+    int bbp = m_depthBufferColorImage->getBytesPerPixel();
 
     double varScale = pow(2, sizeof(uint) * 8);
 
     for (int y_span = 0 ; y_span < height ; y_span++){
-        for (int x_span = 0 ; x_span < width ; x_span++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+        for (int x_span = 0 ; x_span < width ; x_span++){
 
             int idx = (y_span * width + x_span);
-            unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bytes + 0];
-            unsigned char xByte1 = m_depthBufferColorImage->getData()[idx * bytes + 1];
-            unsigned char xByte2 = m_depthBufferColorImage->getData()[idx * bytes + 2];
-            unsigned char xByte3 = m_depthBufferColorImage->getData()[idx * bytes + 3];
+            unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bbp + 0];
+            unsigned char xByte1 = m_depthBufferColorImage->getData()[idx * bbp + 1];
+            unsigned char xByte2 = m_depthBufferColorImage->getData()[idx * bbp + 2];
+            unsigned char xByte3 = m_depthBufferColorImage->getData()[idx * bbp + 3];
 
-            unsigned char yByte0 = m_depthBufferColorImage->getData()[idx * bytes + 4];
-            unsigned char yByte1 = m_depthBufferColorImage->getData()[idx * bytes + 5];
-            unsigned char yByte2 = m_depthBufferColorImage->getData()[idx * bytes + 6];
-            unsigned char yByte3 = m_depthBufferColorImage->getData()[idx * bytes + 7];
+            unsigned char yByte0 = m_depthBufferColorImage->getData()[idx * bbp + 4];
+            unsigned char yByte1 = m_depthBufferColorImage->getData()[idx * bbp + 5];
+            unsigned char yByte2 = m_depthBufferColorImage->getData()[idx * bbp + 6];
+            unsigned char yByte3 = m_depthBufferColorImage->getData()[idx * bbp + 7];
 
-            unsigned char zByte0 = m_depthBufferColorImage->getData()[idx * bytes + 8];
-            unsigned char zByte1 = m_depthBufferColorImage->getData()[idx * bytes + 9];
-            unsigned char zByte2 = m_depthBufferColorImage->getData()[idx * bytes + 10];
-            unsigned char zByte3 = m_depthBufferColorImage->getData()[idx * bytes + 11];
+            unsigned char zByte0 = m_depthBufferColorImage->getData()[idx * bbp + 8];
+            unsigned char zByte1 = m_depthBufferColorImage->getData()[idx * bbp + 9];
+            unsigned char zByte2 = m_depthBufferColorImage->getData()[idx * bbp + 10];
+            unsigned char zByte3 = m_depthBufferColorImage->getData()[idx * bbp + 11];
 
             uint ix = uint(xByte3 << 24 | xByte2 << 16 | xByte1 << 8 | xByte0);
             uint iy = uint(yByte3 << 24 | yByte2 << 16 | yByte1 << 8 | yByte0);
@@ -7157,19 +7112,43 @@ void afCamera::publishDepthAsPointCloud()
             py = (py  * maxY - (maxY / 2.0));
             pz = (pz * maxZ  + n);
 
-            *pcMsg_x = px;
-            *pcMsg_y = py;
-            *pcMsg_z = pz;
-
-            *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
-            *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];
-            *pcMsg_b = m_bufferColorImage->getData()[idx * 4 + 2];
-
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0] = px;
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1] = py;
+            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2] = pz;
         }
     }
-        m_depthPointCloudMsg->header.frame_id = m_name;
-        m_depthPointCloudMsg->header.stamp = ros::Time::now();
-        m_depthPointCloudPub.publish(m_depthPointCloudMsg);
+}
+
+
+///
+/// \brief afCamera::publishDepthPointCloud
+///
+void afCamera::publishDepthPointCloud()
+{
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
+    sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
+
+    int width = m_depthBufferColorImage->getWidth();
+    int height = m_depthBufferColorImage->getHeight();
+
+    for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+        *pcMsg_x = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0];
+        *pcMsg_y = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1];
+        *pcMsg_z = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2];
+
+        *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
+        *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];
+        *pcMsg_b = m_bufferColorImage->getData()[idx * 4 + 2];
+    }
+
+    m_depthPointCloudMsg->header.frame_id = m_name;
+    m_depthPointCloudMsg->header.stamp = ros::Time::now();
+    m_depthPointCloudPub.publish(m_depthPointCloudMsg);
 #endif
 }
 
@@ -7429,8 +7408,9 @@ void afCamera::render(afRenderOptions &options)
     glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
     // Update the Labels in a separate sub-routine
-    if (options.m_updateLabels)
+    if (options.m_updateLabels && !m_publishDepth){
         updateLabels(options);
+    }
 
     if (m_afWorld->m_skyBox_shaderProgramDefined && m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
         cGenericObject* go;
@@ -7469,7 +7449,7 @@ void afCamera::render(afRenderOptions &options)
 
     dcntr++;
     if (dcntr % 10 == 0){
-//        dcntr = 0;
+        dcntr = 0;
         if (m_publishDepth){
             m_useGPUForDepthComputation = false;
             if (m_useGPUForDepthComputation){
@@ -7478,9 +7458,7 @@ void afCamera::render(afRenderOptions &options)
             else{
                 computeDepthOnCPU();
             }
-            publishDepthAsPointCloud();
-            if (dcntr == 100)
-            m_depthBufferColorImage->saveToFile("/home/adnan/DeptImage.raw");
+            publishDepthPointCloud();
         }
     }
 
@@ -8865,6 +8843,40 @@ void afVehicle::updatePositionFromDynamics(){
         }
     }
 #endif
+}
+
+
+///
+/// \brief afDepthPointCloud::setup
+/// \param a_width
+/// \param a_height
+/// \param a_numFields
+/// \return
+///
+int afDepthPointCloud::setup(int a_width, int a_height, int a_numFields)
+{
+    if ( (a_width <= 0) || (a_height <= 0) || (a_numFields <= 0) ){
+        // PRINT SOME ERROR MESSAGE
+        return -1;
+    }
+
+    m_width = a_width;
+    m_height = a_height;
+    m_numFields = a_numFields;
+    m_data = (float*) malloc(m_width * m_height * m_numFields * sizeof(float));
+
+    return 1;
+}
+
+
+///
+/// \brief afDepthPointCloud::~afDepthPointCloud
+///
+afDepthPointCloud::~afDepthPointCloud()
+{
+    if (m_data != nullptr){
+        free(m_data);
+    }
 }
 
 

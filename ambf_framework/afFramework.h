@@ -205,7 +205,7 @@ public:
     }
 };
 
-static std::string AF_DEPTH_TO_PC_VTX_SHADER =
+static std::string AF_DEPTH_COMPUTE_VTX =
         " attribute vec3 aPosition;                                  \n"
         " attribute vec3 aNormal;                                    \n"
         " attribute vec3 aTexCoord;                                  \n"
@@ -217,47 +217,50 @@ static std::string AF_DEPTH_TO_PC_VTX_SHADER =
         " varying vec3 vNormal;                                      \n"
         " varying vec3 vTexCoord;                                    \n"
         "                                                            \n"
-        " varying mat3 TBN;                                          \n"
-        "                                                            \n"
-        " varying mat4 invProjection;                                \n"
-        " uniform mat4 Projection;                                   \n"
-        "                                                            \n"
         " void main(void)                                            \n"
         " {                                                          \n"
         "    vTexCoord = aTexCoord;                                  \n"
         "    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0); \n"
-        "    invProjection = inverse(gl_ProjectionMatrix);           \n"
         " }                                                          \n";
 
-static std::string AF_DEPTH_TO_PC_FRAG_SHADER =
-        "uniform sampler2D diffuseMap;                                                     \n"
-        "varying vec3 vTexCoord;                                                           \n"
-        "uniform vec3 maxWorldDimensions;                                                  \n"
-        "uniform float nearPlane;                                                          \n"
-        "uniform float farPlane;                                                           \n"
-        "                                                                                  \n"
-        "varying mat4 invProjection;                                                       \n"
-        "uniform mat4 Projection;                                                          \n"
-        "                                                                                  \n"
-        "void main(void)                                                                   \n"
-        "{                                                                                 \n"
-        "    vec3 texColor = texture2D(diffuseMap, vTexCoord.xy).xyz;                      \n"
-        "    float x = vTexCoord.x * 2.0 - 1.0;                                            \n"
-        "    float y = vTexCoord.y * 2.0 - 1.0;                                            \n"
-        "    float z = texColor.r * 2.0 - 1.0;                                             \n"
-        "    vec4 P = vec4(x, y, z, 1.0);                                                  \n"
-        "                                                                                  \n"
-        "    P = inverse(gl_ProjectionMatrix) * P;                                         \n"
-        "    P /= P.w;                                                                     \n"
-        "                                                                                  \n"
-        "    float deltaZ = farPlane - nearPlane;                                          \n"
-        "    float normalized_z = (P.z - nearPlane)/deltaZ;                                \n"
-        "                                                                                  \n"
-        "    // Assuming the frustrum is centered vertically and horizontally              \n"
-        "    float normalized_x = (P.x + maxWorldDimensions.x / 2.0)/maxWorldDimensions.x; \n"
-        "    float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y; \n"
-        "    gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);           \n"
-        "}                                                                                 \n";
+static std::string AF_DEPTH_COMPUTE_FRAG =
+        " uniform sampler2D diffuseMap;                                                       \n"
+        " varying vec3 vTexCoord;                                                             \n"
+        " uniform vec3 maxWorldDimensions;                                                    \n"
+        " uniform float nearPlane;                                                            \n"
+        " uniform float farPlane;                                                             \n"
+        "                                                                                     \n"
+        " uniform mat4 invProjection;                                                         \n"
+        "                                                                                     \n"
+        " void main(void)                                                                     \n"
+        " {                                                                                   \n"
+        "     vec4 texColor = texture2D(diffuseMap, vTexCoord.xy);                            \n"
+        "     float x = vTexCoord.x * 2.0 - 1.0;                                              \n"
+        "     float y = vTexCoord.y * 2.0 - 1.0;                                              \n"
+        "     uint b0 = texColor.x * 255.0;                                                   \n"
+        "     uint b1 = texColor.y * 255.0;                                                   \n"
+        "     uint b2 = texColor.z * 255.0;                                                   \n"
+        "     uint b3 = texColor.w * 255.0;                                                   \n"
+        "                                                                                     \n"
+        "     uint depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                         \n"
+        "     depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                              \n"
+        "     float d = float(depth) / float(pow(2.0, 4*8));                                  \n"
+        "                                                                                     \n"
+        "     float z = d * 2.0 - 1.0;                                                        \n"
+        "     vec4 P = vec4(x, y, z, 1.0);                                                    \n"
+        "                                                                                     \n"
+        "     P = invProjection * P;                                                          \n"
+        "     P /= P.w;                                                                       \n"
+        "                                                                                     \n"
+        "     float deltaZ = farPlane - nearPlane;                                            \n"
+        "     float normalized_z = (P.z - nearPlane)/deltaZ;                                  \n"
+        "                                                                                     \n"
+        "     // Assuming the frustrum is centered vertically and horizontally                \n"
+        "     float normalized_x = (P.x + maxWorldDimensions.x / 2.0)/maxWorldDimensions.x;   \n"
+        "     float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y;   \n"
+        "                                                                                     \n"
+        "     gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);             \n"
+        " }                                                                                   \n";
 
 
 ///
@@ -1437,6 +1440,28 @@ private:
     std::vector<afResistanceContacts> m_resistanceContacts;
 };
 
+
+///
+/// \brief The afDepthPointCloud class
+///
+class afDepthPointCloud{
+    friend class afCamera;
+public:
+    int setup(int a_width, int a_height, int a_numFields);
+    ~afDepthPointCloud();
+
+    inline int getWidth(){return m_width;}
+    inline int getHeight(){return m_height;}
+    inline int getNumFields(){return m_numFields;}
+
+protected:
+    float *m_data;
+    int m_width=0;
+    int m_height=0;
+    int m_numFields=0;
+};
+
+
 ///
 /// \brief The afCamera class
 ///
@@ -1515,7 +1540,7 @@ public:
     void computeDepthOnCPU();
 
     // Publish Depth as Point Cloud
-    void publishDepthAsPointCloud();
+    void publishDepthPointCloud();
 
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
@@ -1665,6 +1690,8 @@ private:
 
     // Is this camera orthographic or not.
     bool m_orthographic = false;
+
+    afDepthPointCloud m_depthCameraData;
 };
 
 //-----------------------------------------------------------------------------
