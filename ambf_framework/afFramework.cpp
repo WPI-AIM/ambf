@@ -6850,9 +6850,9 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
                 // Set up the frame buffer
                 m_depthBuffer = new cFrameBuffer();
-                m_depthBuffer->setup(m_camera, m_width, m_height, true, false);
+                m_depthBuffer->setup(m_camera, m_width, m_height, true, false, GL_RGBA16);
 
-                m_depthCameraData.setup(m_width, m_height, 3);
+                m_depthPC.setup(m_width, m_height, 3);
 
                 // Set up the quad
                 m_depthMesh = new cMesh();
@@ -6890,6 +6890,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
                 m_depthBufferColorImage = cImage::create();
                 m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_INT);
 
+//                // DEBUGGING USING EXTERNALLY DEFINED SHADERS
 //                std::ifstream vsFile;
 //                std::ifstream fsFile;
 //                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
@@ -7019,9 +7020,9 @@ void afCamera::computeDepthOnCPU()
             double wClip = projMatInv(3, 0) * xNDC + projMatInv(3, 1) * yNDC + projMatInv(3, 2) * zNDC + projMatInv(3, 3) * wNDC;
             cVector3d pCam = cDiv(wClip, pClip);
 
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0] = pCam.x();
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1] = pCam.y();
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2] = pCam.z();
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pCam.x();
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = pCam.y();
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pCam.z();
 
         }
     }
@@ -7073,7 +7074,21 @@ void afCamera::computeDepthOnGPU()
 
     m_camera->setParentWorld(m_afWorld);
 
-    m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_RGBA, GL_UNSIGNED_INT);
+    m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_UNSIGNED_INT);
+
+//    // bind texture
+//    glBindTexture(GL_TEXTURE_2D, m_depthBuffer->m_imageBuffer->getTextureId());
+
+//    // settings
+//    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+//    // copy pixel data if required
+//    glGetTexImage(GL_TEXTURE_2D,
+//                  0,
+//                  GL_RGBA,
+//                  GL_FLOAT,
+//                  (GLvoid*)(m_depthBufferColorImage2)
+//                  );
 
     int width = m_depthBufferColorImage->getWidth();
     int height = m_depthBufferColorImage->getHeight();
@@ -7112,9 +7127,9 @@ void afCamera::computeDepthOnGPU()
             py = (py  * maxY - (maxY / 2.0));
             pz = (pz * maxZ  + n);
 
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0] = px;
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1] = py;
-            m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2] = pz;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = px;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = py;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pz;
         }
     }
 }
@@ -7137,9 +7152,9 @@ void afCamera::publishDepthPointCloud()
     int height = m_depthBufferColorImage->getHeight();
 
     for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
-        *pcMsg_x = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 0];
-        *pcMsg_y = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 1];
-        *pcMsg_z = m_depthCameraData.m_data[idx * m_depthCameraData.m_numFields + 2];
+        *pcMsg_x = m_depthPC.m_data[idx * m_depthPC.m_numFields + 0];
+        *pcMsg_y = m_depthPC.m_data[idx * m_depthPC.m_numFields + 1];
+        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2];
 
         *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
         *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];
@@ -7451,7 +7466,6 @@ void afCamera::render(afRenderOptions &options)
     if (dcntr % 10 == 0){
         dcntr = 0;
         if (m_publishDepth){
-            m_useGPUForDepthComputation = false;
             if (m_useGPUForDepthComputation){
                 computeDepthOnGPU();
             }

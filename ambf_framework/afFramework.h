@@ -1691,7 +1691,7 @@ private:
     // Is this camera orthographic or not.
     bool m_orthographic = false;
 
-    afDepthPointCloud m_depthCameraData;
+    afDepthPointCloud m_depthPC;
 };
 
 //-----------------------------------------------------------------------------
