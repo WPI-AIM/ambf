@@ -6967,6 +6967,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     return _is_valid;
 }
 
+
 ///
 /// \brief afCamera::renderFrameBuffer
 ///
@@ -6977,19 +6978,6 @@ void afCamera::renderFrameBuffer()
     m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
     m_bufferColorImage->flipHorizontal();
     m_bufferDepthImage->flipHorizontal();
-}
-
-
-///
-/// \brief afCamera::publishImage
-///
-void afCamera::publishImage(){
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
-    cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_BGRA2RGB);
-    sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", m_imageMatrix).toImageMsg();
-    m_imagePublisher.publish(rosMsg);
-#endif
 }
 
 
@@ -7160,6 +7148,19 @@ void afCamera::computeDepthOnGPU()
             m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pz;
         }
     }
+}
+
+
+///
+/// \brief afCamera::publishImage
+///
+void afCamera::publishImage(){
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
+    cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
+    sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
+    m_imagePublisher.publish(rosMsg);
+#endif
 }
 
 
@@ -7505,7 +7506,6 @@ void afCamera::render(afRenderOptions &options)
             publishDepthPointCloud();
         }
     }
-
 }
 
 
