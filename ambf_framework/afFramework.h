@@ -798,10 +798,6 @@ private:
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
 
-    // Counter for the times we have written to ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
-
     // Last Position Error
     btVector3 m_dpos;
 
@@ -1521,6 +1517,18 @@ public:
     // This method returns the field view angle in Radians.
     inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
 
+    // Get interval between the scene update and publishing of an image
+    inline uint getImagePublishInterval(){return m_imagePublishInterval;}
+
+    // Get interval between the scene update and publishing of the depth
+    inline uint getDepthPublishInterval(){return m_depthPublishInterval;}
+
+    // Set interval between the scene update and publishing of an image
+    void setImagePublishInterval(uint a_interval);
+
+    // Set interval between the scene update and publishing of the depth
+    void setDepthPublishInterval(uint a_interval);
+
     // This method enables or disables output image mirroring vertically.
     inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
 
@@ -1692,6 +1700,17 @@ private:
     bool m_orthographic = false;
 
     afDepthPointCloud m_depthPC;
+
+    // The interval used to publish the image. A val of 1 means that publish every scene update
+    // and a value of 10 means, publish every 10th scene udpate
+    uint m_imagePublishInterval = 1;
+
+    // The interval used to publish the depth. A val of 1 means that publish every scene update
+    // and a value of 10 means, publish every 10th scene udpate
+    uint m_depthPublishInterval = 10;
+
+    // Incremented every scene update (render method call)
+    uint m_sceneUpdateCounter = 0;
 };
 
 //-----------------------------------------------------------------------------

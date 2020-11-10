@@ -6422,6 +6422,24 @@ bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_loca
 
 
 ///
+/// \brief afCamera::setImagePublishInterval
+/// \param a_interval
+///
+void afCamera::setImagePublishInterval(uint a_interval){
+    m_imagePublishInterval = cMax(a_interval, (uint)1 );
+}
+
+
+///
+/// \brief afCamera::setDepthPublishInterval
+/// \param a_interval
+///
+void afCamera::setDepthPublishInterval(uint a_interval){
+    m_depthPublishInterval = cMax(a_interval, (uint)1 );
+}
+
+
+///
 /// \brief afCamera::getGlobalPos
 /// \return
 ///
@@ -6582,7 +6600,9 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraParent = cameraNode["parent"];
     YAML::Node cameraMonitor = cameraNode["monitor"];
     YAML::Node cameraPublishImage = cameraNode["publish image"];
+    YAML::Node cameraPublishImageInterval = cameraNode["publish image interval"];
     YAML::Node cameraPublishDepth = cameraNode["publish depth"];
+    YAML::Node cameraPublishDepthInterval = cameraNode["publish depth interval"];
     YAML::Node cameraMultiPass = cameraNode["multipass"];
 
     bool _is_valid = true;
@@ -6679,8 +6699,16 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_publishImage = cameraPublishImage.as<bool>();
     }
 
+    if (cameraPublishImageInterval.IsDefined()){
+        m_imagePublishInterval = cMax(cameraPublishImageInterval.as<uint>(), (uint)1);
+    }
+
     if (cameraPublishDepth.IsDefined()){
         m_publishDepth = cameraPublishDepth.as<bool>();
+    }
+
+    if (cameraPublishDepthInterval.IsDefined()){
+        m_depthPublishInterval = cMax(cameraPublishDepthInterval.as<uint>(), (uint)1);
     }
 
     if (cameraMultiPass.IsDefined()){
@@ -7454,18 +7482,20 @@ void afCamera::render(afRenderOptions &options)
         options.m_windowClosed = true;
     }
 
+    m_sceneUpdateCounter++;
+
     if (m_publishImage || m_publishDepth){
         renderFrameBuffer();
     }
 
     if (m_publishImage){
-        publishImage();
+        if (m_sceneUpdateCounter % m_imagePublishInterval == 0){
+            publishImage();
+        }
     }
 
-    dcntr++;
-    if (dcntr % 10 == 0){
-        dcntr = 0;
-        if (m_publishDepth){
+    if (m_publishDepth){
+        if (m_sceneUpdateCounter % m_depthPublishInterval == 0){
             if (m_useGPUForDepthComputation){
                 computeDepthOnGPU();
             }
