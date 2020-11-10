@@ -1451,7 +1451,7 @@ public:
     inline int getNumFields(){return m_numFields;}
 
 protected:
-    float *m_data;
+    float *m_data = nullptr;
     int m_width=0;
     int m_height=0;
     int m_numFields=0;
