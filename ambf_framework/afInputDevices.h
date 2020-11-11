@@ -159,7 +159,7 @@ public:
     std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
 
     // Root link for this simulated device hhhhhhh
-    afRigidBodyPtr m_rootLink;
+    afRigidBodyPtr m_rootLink = nullptr;
 
     //private:
     //    std::mutex m_mutex;
@@ -311,8 +311,7 @@ public:
     std::vector<std::string> m_pairedCameraNames;
 
 private:
-    afCollateralControlManager* m_iDPtr; // Ptr to the Device Handler class
-    afWorldPtr m_afWorld; // Ref to world ptr
+    afWorldPtr m_afWorld = nullptr; // Ref to world ptr
 };
 
 ///
@@ -435,7 +434,7 @@ public:
 private:
     // Base of the config file location of this Input Device Handler
     boost::filesystem::path m_basePath;
-    afWorldPtr m_afWorld;
+    afWorldPtr m_afWorld = nullptr;
     // Integer index to keep track of device indexes that have already been
     // claimed so that we dont mistakenly claim and already claimed device
     std::vector<int> m_devicesClaimed;

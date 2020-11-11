@@ -380,6 +380,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
     if (_simulatedMBDefined){
         if (!simDevice->loadMultiBody(_simulatedMBConfig, false)){
+            m_hDevice->close();
             return 0;
         }
         boost::filesystem::path p(_simulatedMBConfig);
@@ -394,14 +395,13 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
         }
     }
-    // If only root link is defined, we are going to look for it in the global space
+    // If only the root link is defined, we are going to look for it in the global space
     else if (_rootLinkDefined){
         if (a_iD->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
             simDevice->m_rootLink = a_iD->getAFWorld()->getAFRigidBody(_rootLinkName);
         }
     }
 
-    // If we cannot find any root link, return failure
     if (simDevice->m_rootLink){
         // Now check if the controller gains have been defined. If so, override the controller gains
         // defined for the rootlink of simulate end effector
@@ -489,6 +489,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
     else{
+        m_hDevice->close();
         return 0;
     }
 
