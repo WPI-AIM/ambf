@@ -1032,11 +1032,11 @@ protected:
     bool m_feedbackEnabled = false;
 
     // Bullet Joint Feedback Ptr
-    btJointFeedback* m_feedback;
+    btJointFeedback  *m_feedback = nullptr;
 
 protected:
 
-    btTypedConstraint *m_btConstraint;
+    btTypedConstraint *m_btConstraint = nullptr;
 
     // The estimated Effort for this joint if its a single DOF joint.
     double m_estimatedEffort = 0.0;
@@ -1611,7 +1611,7 @@ public:
     std::vector<std::string> m_controllingDevNames;
 
     // Frame Buffer to write to OpenCV Transport stream
-    cFrameBuffer* m_frameBuffer;
+    cFrameBuffer* m_frameBuffer = nullptr;
 
     // Image to Convert the FrameBuffer into an image
     cImagePtr m_bufferColorImage;
@@ -1621,13 +1621,13 @@ public:
 
     /// IMPLEMENTATION FOR DEPTH IMAGE TO POINTCLOUD ///
     // A separate buffer to render and convert depth image to Cam XYZ
-    cFrameBuffer* m_depthBuffer;
+    cFrameBuffer* m_depthBuffer = nullptr;
 
     // A separate world attached to the depht Buffer
-    cWorld* m_dephtWorld;
+    cWorld* m_dephtWorld = nullptr;
 
     // A separate quad added as the only child to the depth world
-    cMesh* m_depthMesh;
+    cMesh* m_depthMesh = nullptr;
 
     cImagePtr m_depthBufferColorImage;
 
@@ -1674,7 +1674,7 @@ protected:
     // Depth to Point Cloud Impl
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
-    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
     ros::Publisher m_depthPointCloudPub;
 #endif
 
@@ -1817,7 +1817,7 @@ public:
 
     afWorld(std::string a_global_namespace);
 
-    virtual ~afWorld(){}
+    virtual ~afWorld();
 
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
 
@@ -2014,7 +2014,7 @@ public:
 
     cVector3d m_pickedNodeGoal;
 
-    class btTypedConstraint* m_pickedConstraint=0;
+    class btTypedConstraint* m_pickedConstraint = nullptr;
 
     int m_savedState;
 
@@ -2244,6 +2244,8 @@ class afVehicle: public afBaseObject{
 public:
     afVehicle(afWorldPtr a_afWorld);
 
+    ~afVehicle();
+
     // Load the vehicle from ambf format
     virtual bool loadVehicle(std::string vehicle_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
@@ -2255,8 +2257,8 @@ public:
     virtual void afExecuteCommand(double dt);
 
 protected:
-    btDefaultVehicleRaycaster* m_vehicleRayCaster;
-    btRaycastVehicle* m_vehicle;
+    btDefaultVehicleRaycaster* m_vehicleRayCaster = nullptr;
+    btRaycastVehicle* m_vehicle = nullptr;
     btRaycastVehicle::btVehicleTuning m_tuning;
     afRigidBodyPtr m_chassis;
     int m_numWheels = 0;

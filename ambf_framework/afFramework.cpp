@@ -78,8 +78,8 @@ int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-ros::NodeHandle* afCamera::s_rosNode;
-image_transport::ImageTransport* afCamera::s_imageTransport;
+ros::NodeHandle* afCamera::s_rosNode = nullptr;
+image_transport::ImageTransport* afCamera::s_imageTransport = nullptr;
 bool afCamera::s_imageTransportInitialized = false;
 #endif
 //------------------------------------------------------------------------------
@@ -4327,7 +4327,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
     else if (sensorMesh.IsDefined()){
         std::string mesh_name = sensorMesh.as<std::string>();
         mesh_name = mB->getHighResMeshesPath() + mesh_name;
-        cMultiMesh* multiMesh = new cBulletMultiMesh(m_afWorld);
+        cMultiMesh* multiMesh = new cMultiMesh();
         if (multiMesh->loadFromFile(mesh_name)){
             cMesh* sourceMesh = (*multiMesh->m_meshes)[0];
             if (sourceMesh){
@@ -4359,6 +4359,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
                     m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
                 }
             }
+            delete multiMesh;
             result = true;
         }
         else{
@@ -4910,7 +4911,13 @@ void afResistanceSensor::updatePositionFromDynamics(){
 /// \brief afJoint::~afJoint
 ///
 afJoint::~afJoint(){
-    delete m_btConstraint;
+    if (m_btConstraint != nullptr){
+         delete m_btConstraint;
+    }
+
+    if (m_feedback != nullptr){
+        delete m_feedback;
+    }
 }
 
 
@@ -5031,6 +5038,26 @@ afWorld::afWorld(std::string a_global_namespace){
 
     m_pointCloudHandlerPtr = new afPointCloudsHandler(this);
     addChild(m_pointCloudHandlerPtr);
+}
+
+afWorld::~afWorld()
+{
+    if (m_pickedConstraint != nullptr){
+        delete m_pickedConstraint;
+    }
+
+    for (afSensorMap::iterator sIt = m_afSensorMap.begin() ; sIt != m_afSensorMap.end() ; ++sIt){
+        delete sIt->second;
+    }
+
+    for (afActuatorMap::iterator aIt = m_afActuatorMap.begin() ; aIt != m_afActuatorMap.end() ; ++aIt){
+        delete aIt->second;
+    }
+
+    for (afJointMap::iterator jIt = m_afJointMap.begin() ; jIt != m_afJointMap.end() ; ++jIt){
+        delete jIt->second;
+    }
+
 }
 
 
@@ -6337,7 +6364,7 @@ void afWorld::removePickingConstraint(){
         m_pickedBulletRigidBody->activate();
         m_dynamicsWorld->removeConstraint(m_pickedConstraint);
         delete m_pickedConstraint;
-        m_pickedConstraint = 0;
+        m_pickedConstraint = nullptr;
     }
 
     if (m_pickedBulletRigidBody){
@@ -7426,16 +7453,35 @@ void afCamera::updateLabels(afRenderOptions &options)
 /// \brief afCamera::~afCamera
 ///
 afCamera::~afCamera(){
+    if (m_frameBuffer != nullptr){
+        delete m_frameBuffer;
+    }
+
+    if (m_depthBuffer != nullptr){
+        delete m_depthBuffer;
+    }
+
+    if (m_dephtWorld != nullptr){
+        delete m_dephtWorld;
+    }
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    if (m_publishImage){
-        delete m_frameBuffer;;
-        if (s_imageTransportInitialized == true){
-            s_imageTransportInitialized = false;
-            delete s_imageTransport;
-            delete s_rosNode;
-        }
+    if (s_imageTransport != nullptr){
+        delete s_imageTransport;
+    }
+
+    s_imageTransportInitialized = false;
+#endif
+
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    if (s_rosNode != nullptr){
+        delete s_rosNode;
+    }
+
+    if (m_depthPointCloudModifier != nullptr){
+        delete m_depthPointCloudModifier;
     }
 #endif
+
 }
 
 int dcntr = 0;
@@ -8557,6 +8603,18 @@ afMultiBody::~afMultiBody(){
 }
 
 afVehicle::afVehicle(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+
+}
+
+afVehicle::~afVehicle()
+{
+    if (m_vehicleRayCaster != nullptr){
+        delete m_vehicleRayCaster;
+    }
+
+    if (m_vehicle != nullptr){
+        delete m_vehicle;
+    }
 
 }
 

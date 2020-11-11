@@ -334,8 +334,8 @@ enum MODES{ CAM_CLUTCH_CONTROL,
 /// controllable cameras by that SDE-IID
 ///
 struct afCollateralControlUnit{
-    afPhysicalDevice* m_physicalDevicePtr = NULL;
-    afSimulatedDevice* m_simulatedDevicePtr = NULL;
+    afPhysicalDevice* m_physicalDevicePtr = nullptr;
+    afSimulatedDevice* m_simulatedDevicePtr = nullptr;
     // The cameras that this particular device Gripper Pair control
     std::vector<afCameraPtr> m_cameras;
 

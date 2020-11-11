@@ -995,6 +995,14 @@ afCollateralControlManager::afCollateralControlManager(afWorldPtr a_afWorld){
 /// \brief afInputDevices::~afInputDevices
 ///
 afCollateralControlManager::~afCollateralControlManager(){
+    for (int i = 0 ; i < m_collateralControlUnits.size() ; i++){
+        if (m_collateralControlUnits[i].m_physicalDevicePtr != nullptr){
+            delete m_collateralControlUnits[i].m_physicalDevicePtr;
+        }
+        if (m_collateralControlUnits[i].m_simulatedDevicePtr != nullptr){
+            delete m_collateralControlUnits[i].m_simulatedDevicePtr;
+        }
+    }
 }
 
 
