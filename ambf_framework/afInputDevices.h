@@ -397,7 +397,7 @@ public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
     std::vector<afCollateralControlUnit> m_collateralControlUnits;
 
-    uint m_numDevices;
+    uint m_numDevices = 0;
 
     // bool to enable the rotation of simulated gripper be in camera frame. i.e. Orienting the camera
     // re-orients the simulate gripper.
