@@ -113,13 +113,15 @@ public:
                const unsigned int a_width = 0,
                const unsigned int a_height = 0,
                const bool a_enableImageBuffer = true,
-               const bool a_enableDepthBuffer = true);
+               const bool a_enableDepthBuffer = true,
+               const GLenum a_imageBufferInternalStorageType=GL_RGBA,
+               const GLenum a_depthBufferInternalStorageType=GL_DEPTH_COMPONENT);
 
     //! This method renders the framebuffer view.
     void renderView(const cEyeMode a_eyeMode = C_STEREO_LEFT_EYE);
 
     //! This method copies the framebuffer content to an image.
-    void copyImageBuffer(cImagePtr a_image);
+    void copyImageBuffer(cImagePtr a_image, int a_type=GL_UNSIGNED_BYTE);
 
     //! This method copies the depth buffer content to an image.
     void copyDepthBuffer(cImagePtr a_image);
@@ -150,6 +152,12 @@ public:
 
     //! This method returns the height in pixels of the framebuffer.
     inline unsigned int getHeight() const { return (m_height); }
+
+    //! Returns the internal format of Image Buffer's Texture Image
+    inline GLenum getImageBufferInternalFormat(){return m_imageInternalFormat;}
+
+    //! Returns the internal format of Depth Buffer's Texture Image
+    inline GLenum getDepthBufferInternalFormat(){return m_depthInternalFormat;}
 
     //! This method sets the resolution of the framebuffer by defining its width and height in pixels.
     void setSize(const unsigned int a_width, const unsigned int a_height);
@@ -210,6 +218,12 @@ protected:
 
     //! OpenGL frame buffer object.
     GLuint m_fbo;
+
+    //! Storage Type of Image Buffer. E.g. GL_RGBA, GL_RGBA12, GL_RGBA16 ...
+    GLenum m_imageInternalFormat;
+
+    //! Storage Type of Depth Buffer. E.g. GL_DEPTH_COMPONENT, GL_DEPTH)COMPONENT24 ...
+    GLenum m_depthInternalFormat;
 };
 
 //------------------------------------------------------------------------------

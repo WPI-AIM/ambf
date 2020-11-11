@@ -424,9 +424,9 @@ public:
     int m_mode_idx;
 
 
-    std::string g_btn_action_str = "";
-    bool g_cam_btn_pressed = false;
-    bool g_clutch_btn_pressed = false;
+    std::string m_btn_action_str = "";
+    bool m_cam_btn_pressed = false;
+    bool m_clutch_btn_pressed = false;
 
     // Number of input devices loaded. To be used by the devices while launching
     // thier afCommunication
