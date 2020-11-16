@@ -15,8 +15,8 @@ joints:
 - JOINT link4-link5
 - JOINT link5-link6
 - JOINT link6-link7
-high resolution path: ../../../meshes/blender_afmb/kuka_lwr/high_res/
-low resolution path: ../../../meshes/blender_afmb/kuka_lwr/low_res/
+high resolution path: ../../../../../../ambf_addon_updated/KUKA/high_res/
+low resolution path: ../../../../../../ambf_addon_updated/KUKA/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/
 BODY base:
@@ -76,6 +76,10 @@ BODY link1:
   name: link1
   mesh: link1.STL
   mass: 1.0
+  inertia:
+    ix: 0.0453
+    iy: 0.0446
+    iz: 0.0041
   collision margin: 0.001
   scale: 1.0
   location:
@@ -125,6 +129,10 @@ BODY link2:
   name: link2
   mesh: link2.STL
   mass: 1.0
+  inertia:
+    ix: 0.0227
+    iy: 0.0037
+    iz: 0.0224
   collision margin: 0.001
   scale: 1.0
   location:
@@ -174,6 +182,10 @@ BODY link3:
   name: link3
   mesh: link3.STL
   mass: 1.0
+  inertia:
+    ix: 0.0417
+    iy: 0.0419
+    iz: 0.0038
   collision margin: 0.001
   scale: 1.0
   location:
@@ -223,6 +235,10 @@ BODY link4:
   name: link4
   mesh: link4.STL
   mass: 1.0
+  inertia:
+    ix: 0.0249
+    iy: 0.0036
+    iz: 0.0246
   collision margin: 0.001
   scale: 1.0
   location:
@@ -272,6 +288,10 @@ BODY link5:
   name: link5
   mesh: link5.STL
   mass: 1.0
+  inertia:
+    ix: 0.0363
+    iy: 0.0351
+    iz: 0.0044
   collision margin: 0.001
   scale: 1.0
   location:
@@ -321,6 +341,10 @@ BODY link6:
   name: link6
   mesh: link6.STL
   mass: 1.0
+  inertia:
+    ix: 0.0113
+    iy: 0.0116
+    iz: 0.0037
   collision margin: 0.001
   scale: 1.0
   location:
@@ -370,6 +394,10 @@ BODY link7:
   name: link7
   mesh: link7.STL
   mass: 1.0
+  inertia:
+    ix: 0.0012
+    iy: 0.0013
+    iz: 0.001
   collision margin: 0.001
   scale: 1.0
   location:

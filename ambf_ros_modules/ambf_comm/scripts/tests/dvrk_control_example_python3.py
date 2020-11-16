@@ -17,8 +17,8 @@ print(_client.get_obj_names())
 # Lets get a handle to PSM and ECM, as we can see in the printed
 # object names, 'ecm/baselink' and 'psm/baselink' should exist
 # ecm_handle = _client.get_obj_handle('ecm/baselink')
-psm_handle = _client.get_obj_handle('psm/baselink')
-
+# psm_handle = _client.get_obj_handle('psm/baselink')
+kuka_handle = _client.get_obj_handle('/ambf/env/base')
 # # Similarly we can get a handle to any link lower in the hierarchy rather
 # # than the root link. Let's get a handle to MTMs wrist platform link
 # # mtm_wrist_handle = _client.get_obj_handle('mtm/WristYaw')
@@ -35,9 +35,11 @@ time.sleep(0.2)
 
 # print(' ')
 # print('PSM Base Rotation as Quaternion:')
-print(psm_handle.get_rot())
-psm_handle.set_joint_pos(0, 0)
+# print(psm_handle.get_rot())
+# psm_handle.set_joint_pos(0, 0)
 
+print(kuka_handle.get_rot())
+kuka_handle.set_joint_pos(0, 0)
 # # print(' ')
 # # print('MTM Wrist Fixed Rotation:')
 # # print(mtm_wrist_handle.get_rpy())
@@ -46,16 +48,23 @@ psm_handle.set_joint_pos(0, 0)
 # # input("Let's get Joints and Children Info. Press Enter to continue...")
 # # We can get the number of children and joints connected to each object as
 # ecm_num_joints = ecm_handle.get_num_joints() # Get the number of joints of this object
-psm_children_names = psm_handle.get_children_names() # Get a list of children names belonging to this obj
+# psm_children_names = psm_handle.get_children_names() # Get a list of children names belonging to this obj
+kuka_children_names = kuka_handle.get_children_names()
 # # print('Number of Joints in ECM:')
 # # print(ecm_num_joints)
 
-# print(' ')
-print('Name of PSM\'s children:')
-print(psm_children_names)
 
-for name in psm_children_names:
-     print("psm_handle.get_joint_pos()", name)
+# print(' ')
+# print('Name of PSM\'s children:')
+# print(psm_children_names)
+
+# for name in psm_children_names:
+#      print("psm_handle.get_joint_pos()", name)
+
+print(kuka_children_names)
+for name in kuka_children_names:
+	print("kuka_handle.get_joint_pos()", name)
+
 
 # print('\n\n----')
 # input("Control ECMs joint positions. Press Enter to continue...")
@@ -71,7 +80,10 @@ for name in psm_children_names:
 # input("Mixed Pos and Effort control of PSM\'s joints. Press Enter to continue...")
 # For the PSM let's control some in position and some in effort mode
 # The 1st joint, which the PSM Yaw
-psm_handle.set_joint_effort(0, 0.5)
+# psm_handle.set_joint_effort(0, 0.5)
+
+# kuka_handle.set_joint_effort(0. 0.5)
+
 # The 3rd Kinematic joint, which is the PSM Insertion Joint
 # psm_handle.set_joint_pos(3, -0.2)
 # print('get_joint_vel(0): ', psm_handle.get_joint_vel(0))
