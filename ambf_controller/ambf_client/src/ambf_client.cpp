@@ -379,6 +379,9 @@ void Client::cleanUp() {
 
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
             IBaseObject * handler = ptr_->second;
+
+//            std::cout << "msg_type - cleanup: " << msg_type << std::endl;
+
             if (msg_type == "ambf_msgs/ActuatorState") {
                 (dynamic_cast<ActuatorRosCom*>(handler))->~ActuatorRosCom();
             } else if (msg_type == "ambf_msgs/CameraState") {

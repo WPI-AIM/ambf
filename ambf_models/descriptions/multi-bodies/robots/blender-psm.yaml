@@ -11,8 +11,6 @@ bodies:
 - BODY tool gripper2 link
 - BODY pitch top link
 - BODY pitch front link
-- BODY target_ik
-- BODY target_fk
 joints:
 - JOINT base link-yaw link
 - JOINT yaw link-pitch back link
@@ -81,9 +79,9 @@ BODY base link:
       g: 0.4803
       r: 0.3012
     specular:
-      b: 0.2402
-      g: 0.2402
-      r: 0.1506
+      b: 0.4803
+      g: 0.4803
+      r: 0.3012
     transparency: 1.0
 BODY yaw link:
   name: yaw link
@@ -93,13 +91,13 @@ BODY yaw link:
   scale: 1.0
   location:
     position:
-      x: 0.5003
+      x: 0.5001
       y: 1.0
       z: -0.7
     orientation:
-      r: -1.573
+      r: -1.5726
       p: -1.5706
-      y: -0.003
+      y: -0.0
   inertial offset:
     position:
       x: -0.061
@@ -130,9 +128,9 @@ BODY yaw link:
       g: 0.2719
       r: 0.2854
     specular:
-      b: 0.1359
-      g: 0.1359
-      r: 0.1427
+      b: 0.2719
+      g: 0.2719
+      r: 0.2854
     transparency: 1.0
 BODY pitch back link:
   name: pitch back link
@@ -142,13 +140,13 @@ BODY pitch back link:
   scale: 1.0
   location:
     position:
-      x: 0.5004
+      x: 0.5001
       y: 1.03
       z: -0.7
     orientation:
       r: 1.5708
       p: -1.2798
-      y: 1.5682
+      y: 1.5703
   inertial offset:
     position:
       x: 0.041
@@ -179,9 +177,9 @@ BODY pitch back link:
       g: 0.3032
       r: 0.1689
     specular:
-      b: 0.1515
-      g: 0.1515
-      r: 0.0844
+      b: 0.3032
+      g: 0.3032
+      r: 0.1689
     transparency: 1.0
 BODY pitch bottom link:
   name: pitch bottom link
@@ -191,13 +189,13 @@ BODY pitch bottom link:
   scale: 1.0
   location:
     position:
-      x: 0.5005
+      x: 0.5001
       y: 1.073
       z: -0.5563
     orientation:
-      r: -1.5702
+      r: -1.5711
       p: 0.0
-      y: -1.5759
+      y: -1.5717
   inertial offset:
     position:
       x: 0.257
@@ -228,9 +226,9 @@ BODY pitch bottom link:
       g: 0.0156
       r: 0.008
     specular:
-      b: 0.0078
-      g: 0.0078
-      r: 0.004
+      b: 0.0156
+      g: 0.0156
+      r: 0.008
     transparency: 1.0
 BODY pitch end link:
   name: pitch end link
@@ -240,13 +238,13 @@ BODY pitch end link:
   scale: 1.0
   location:
     position:
-      x: 0.4978
+      x: 0.4996
       y: 0.557
       z: -0.5559
     orientation:
-      r: -1.5702
+      r: -1.5711
       p: 0.0
-      y: -1.5759
+      y: -1.5717
   inertial offset:
     position:
       x: 0.015
@@ -277,9 +275,9 @@ BODY pitch end link:
       g: 0.1627
       r: 0.1418
     specular:
-      b: 0.0813
-      g: 0.0813
-      r: 0.0709
+      b: 0.1627
+      g: 0.1627
+      r: 0.1418
     transparency: 1.0
 BODY main insertion link:
   name: main insertion link
@@ -289,13 +287,13 @@ BODY main insertion link:
   scale: 1.0
   location:
     position:
-      x: 0.4975
+      x: 0.4997
       y: 0.514
       z: -0.2611
     orientation:
-      r: -0.9677
-      p: 1.5718
-      y: 2.167
+      r: -1.9589
+      p: 1.5717
+      y: 1.1804
   inertial offset:
     position:
       x: 0.169
@@ -326,9 +324,9 @@ BODY main insertion link:
       g: 0.5569
       r: 1.0
     specular:
-      b: 0.2785
-      g: 0.2785
-      r: 0.5
+      b: 0.5569
+      g: 0.5569
+      r: 1.0
     transparency: 0.4
 BODY tool roll link:
   name: tool roll link
@@ -338,13 +336,13 @@ BODY tool roll link:
   scale: 1.0
   location:
     position:
-      x: 0.4976
+      x: 0.4996
       y: 0.514
       z: -0.4921
     orientation:
-      r: 3.141
+      r: -3.1413
       p: -0.0
-      y: 1.5657
+      y: 1.5696
   inertial offset:
     position:
       x: 0.0
@@ -375,9 +373,9 @@ BODY tool roll link:
       g: 0.3743
       r: 0.3621
     specular:
-      b: 0.1872
-      g: 0.1872
-      r: 0.1811
+      b: 0.3743
+      g: 0.3743
+      r: 0.3621
     transparency: 1.0
 BODY tool pitch link:
   name: tool pitch link
@@ -387,13 +385,13 @@ BODY tool pitch link:
   scale: 1.0
   location:
     position:
-      x: 0.4977
+      x: 0.4996
       y: 0.514
       z: -0.6771
     orientation:
-      r: -0.0015
-      p: 1.5702
-      y: -0.0057
+      r: 0.0007
+      p: 1.5711
+      y: -0.0005
   inertial offset:
     position:
       x: 0.004
@@ -424,9 +422,9 @@ BODY tool pitch link:
       g: 0.885
       r: 0.9373
     specular:
-      b: 0.4425
-      g: 0.4425
-      r: 0.4687
+      b: 0.885
+      g: 0.885
+      r: 0.9373
     transparency: 1.0
 BODY tool gripper1 link:
   name: tool gripper1 link
@@ -436,13 +434,13 @@ BODY tool gripper1 link:
   scale: 1.0
   location:
     position:
-      x: 0.4977
+      x: 0.4996
       y: 0.514
       z: -0.6861
     orientation:
       r: -1.5708
-      p: -0.0006
-      y: -0.0051
+      p: 0.0003
+      y: -0.0012
   inertial offset:
     position:
       x: -0.0
@@ -473,9 +471,9 @@ BODY tool gripper1 link:
       g: 0.0157
       r: 0.9373
     specular:
-      b: 0.0079
-      g: 0.0079
-      r: 0.4687
+      b: 0.0157
+      g: 0.0157
+      r: 0.9373
     transparency: 1.0
 BODY tool gripper2 link:
   name: tool gripper2 link
@@ -485,13 +483,13 @@ BODY tool gripper2 link:
   scale: 1.0
   location:
     position:
-      x: 0.4977
+      x: 0.4996
       y: 0.514
       z: -0.6861
     orientation:
       r: -1.5708
-      p: -0.0006
-      y: -0.0051
+      p: 0.0003
+      y: -0.0012
   inertial offset:
     position:
       x: 0.0
@@ -522,9 +520,9 @@ BODY tool gripper2 link:
       g: 0.0763
       r: 0.074
     specular:
-      b: 0.0382
-      g: 0.0382
-      r: 0.037
+      b: 0.0763
+      g: 0.0763
+      r: 0.074
     transparency: 1.0
 BODY pitch top link:
   name: pitch top link
@@ -534,13 +532,13 @@ BODY pitch top link:
   scale: 1.0
   location:
     position:
-      x: 0.5005
+      x: 0.5001
       y: 1.0694
       z: -0.5197
     orientation:
-      r: -1.5702
+      r: -1.5711
       p: 0.0
-      y: -1.5759
+      y: -1.5717
   inertial offset:
     position:
       x: 0.257
@@ -571,9 +569,9 @@ BODY pitch top link:
       g: 0.4643
       r: 0.9294
     specular:
-      b: 0.2322
-      g: 0.2322
-      r: 0.4647
+      b: 0.4643
+      g: 0.4643
+      r: 0.9294
     transparency: 1.0
 BODY pitch front link:
   name: pitch front link
@@ -583,13 +581,13 @@ BODY pitch front link:
   scale: 1.0
   location:
     position:
-      x: 0.5002
+      x: 0.5
       y: 0.934
       z: -0.7
     orientation:
       r: 1.5708
       p: -1.2798
-      y: 1.5682
+      y: 1.5703
   inertial offset:
     position:
       x: 0.075
@@ -620,136 +618,29 @@ BODY pitch front link:
       g: 0.1705
       r: 0.1637
     specular:
-      b: 0.0852
-      g: 0.0852
-      r: 0.0818
-    transparency: 1.0
-BODY target_ik:
-  name: target_ik
-  mesh: target_ik.STL
-  mass: 0.0
-  inertia:
-    ix: 0.0
-    iy: 0.0
-    iz: 0.0
-  collision margin: 0.001
-  scale: 1.0
-  location:
-    position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    orientation:
-      r: 0.0
-      p: -0.0
-      y: 0.0
-  inertial offset:
-    position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    orientation:
-      r: 0
-      p: 0
-      y: 0
-  passive: false
-  publish children names: false
-  publish joint names: false
-  publish joint positions: false
-  friction:
-    rolling: 0.1
-    static: 0.5
-  restitution: 0.1
-  damping:
-    angular: 0.1
-    linear: 0.5
-  collision groups:
-  - 14
-  color components:
-    ambient:
-      level: 1.0
-    diffuse:
-      b: 0.0507
-      g: 0.1255
-      r: 0.8
-    specular:
-      b: 0.0627
-      g: 0.0627
-      r: 0.4
-    transparency: 1.0
-BODY target_fk:
-  name: target_fk
-  mesh: target_fk.STL
-  mass: 0.0
-  inertia:
-    ix: 0.0
-    iy: 0.0
-    iz: 0.0
-  collision margin: 0.001
-  scale: 1.0
-  location:
-    position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    orientation:
-      r: 0.0
-      p: -0.0
-      y: 0.0
-  inertial offset:
-    position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    orientation:
-      r: 0
-      p: 0
-      y: 0
-  passive: false
-  namespace: ambf/env/psm/
-  publish children names: false
-  publish joint names: false
-  publish joint positions: false
-  friction:
-    rolling: 0.1
-    static: 0.5
-  restitution: 0.1
-  damping:
-    angular: 0.1
-    linear: 0.5
-  collision groups:
-  - 5
-  color components:
-    ambient:
-      level: 1.0
-    diffuse:
-      b: 0.0508
-      g: 0.8
-      r: 0.3767
-    specular:
-      b: 0.4001
-      g: 0.4001
-      r: 0.1884
+      b: 0.1705
+      g: 0.1705
+      r: 0.1637
     transparency: 1.0
 JOINT base link-yaw link:
   name: base link-yaw link
   parent: BODY base link
   child: BODY yaw link
   parent axis:
-    x: -0.0012
+    x: 0.0006
     y: -1.0
-    z: 0.0
+    z: -0.0
   parent pivot:
     x: -0.0
     y: -0.0
     z: 0.0
   child axis:
     x: -0.0
-    y: -0.0025
+    y: -0.0009
     z: 1.0
   child pivot:
     x: -0.0
-    y: 0.0022
+    y: 0.0009
     z: -0.4859
   joint limits:
     high: 1.599
@@ -759,18 +650,18 @@ JOINT base link-yaw link:
   body rotation:
     xx: -0.0002
     xy: -1.0
-    xz: -0.0036
-    yx: 0.0
-    yy: 0.0036
+    xz: -0.0003
+    yx: -0.0
+    yy: 0.0003
     yz: -1.0
     zx: 1.0
     zy: -0.0002
     zz: -0.0
   detached: true
   type: revolute
-  max motor impulse: 1.0
+  max motor impulse: 0.05000000074505806
   damping: 5.0
-  offset: 1.5698
+  offset: 1.5716
 JOINT yaw link-pitch back link:
   name: yaw link-pitch back link
   parent: BODY yaw link
@@ -778,10 +669,10 @@ JOINT yaw link-pitch back link:
   parent axis:
     x: -0.0
     y: 1.0
-    z: 0.0033
+    z: 0.0021
   parent pivot:
-    x: -0.0
-    y: -0.0001
+    x: 0.0
+    y: 0.0
     z: 0.03
   child axis:
     x: -0.0
@@ -800,12 +691,12 @@ JOINT yaw link-pitch back link:
     xx: 0.958
     xy: 0.2869
     xz: 0.0002
-    yx: -0.0009
-    yy: 0.0025
+    yx: -0.0006
+    yy: 0.0013
     yz: 1.0
     zx: 0.2869
     zy: -0.958
-    zz: 0.0026
+    zz: 0.0014
   detached: true
   type: revolute
   max motor impulse: 0.05000000074505806
@@ -816,21 +707,21 @@ JOINT pitch back link-pitch bottom link:
   parent: BODY pitch back link
   child: BODY pitch bottom link
   parent axis:
-    x: -0.0001
-    y: 0.0024
+    x: -0.0004
+    y: 0.0001
     z: 1.0
   parent pivot:
     x: 0.15
     y: 0.0
     z: -0.0
   child axis:
-    x: -0.0002
+    x: -0.0003
     y: -0.0
     z: 1.0
   child pivot:
     x: 0.0
     y: -0.0
-    z: -0.0
+    z: 0.0
   joint limits:
     high: 0.936
     low: -0.942
@@ -839,12 +730,12 @@ JOINT pitch back link-pitch bottom link:
   body rotation:
     xx: -0.2869
     xy: -0.958
-    xz: -0.0002
+    xz: -0.0005
     yx: 0.958
     yy: -0.2869
-    yz: 0.0026
-    zx: -0.0026
-    zy: 0.0006
+    yz: 0.0004
+    zx: -0.0005
+    zy: -0.0003
     zz: 1.0
   detached: true
   type: revolute
@@ -857,19 +748,19 @@ JOINT pitch bottom link-pitch end link:
   child: BODY pitch end link
   parent axis:
     x: 0.0
-    y: 0.0
+    y: -0.0
     z: 1.0
   parent pivot:
     x: 0.516
     y: -0.0004
-    z: 0.0
+    z: -0.0
   child axis:
     x: -0.0
     y: -0.0
     z: 1.0
   child pivot:
-    x: 0.0
-    y: 0.0
+    x: -0.0
+    y: -0.0
     z: 0.0
   joint limits:
     high: 0.942
@@ -884,7 +775,7 @@ JOINT pitch bottom link-pitch end link:
     yy: 1.0
     yz: 0.0
     zx: -0.0
-    zy: -0.0
+    zy: 0.0
     zz: 1.0
   detached: true
   type: revolute
@@ -901,15 +792,15 @@ JOINT pitch end link-main insertion link:
   parent pivot:
     x: 0.043
     y: -0.2948
-    z: 0.0
+    z: -0.0
   child axis:
     x: 1.0
     y: -0.0008
     z: 0.0
   child pivot:
     x: -0.0
-    y: 0.0
-    z: 0.0
+    y: -0.0
+    z: -0.0
   joint limits:
     high: 0.24
     low: 0.0
@@ -918,18 +809,18 @@ JOINT pitch end link-main insertion link:
   body rotation:
     xx: 0.0008
     xy: 1.0
-    xz: -0.0018
+    xz: -0.0013
     yx: 1.0
     yy: -0.0008
-    yz: -0.0
+    yz: 0.0
     zx: -0.0
-    zy: -0.0018
+    zy: -0.0013
     zz: -1.0
   detached: true
   type: prismatic
-  max motor impulse: 1.0
+  max motor impulse: 0.05000000074505806
   damping: 100.0
-  offset: 3.1434
+  offset: 3.1429
 JOINT main insertion link-tool roll link:
   name: main insertion link-tool roll link
   parent: BODY main insertion link
@@ -937,17 +828,17 @@ JOINT main insertion link-tool roll link:
   parent axis:
     x: 1.0
     y: -0.0008
-    z: -0.0
+    z: 0.0
   parent pivot:
     x: 0.0398
-    y: 0.0
+    y: -0.0
     z: -0.0
   child axis:
     x: 0.0
     y: 0.0
     z: 1.0
   child pivot:
-    x: -0.0
+    x: 0.0
     y: -0.0
     z: -0.1912
   joint limits:
@@ -960,36 +851,36 @@ JOINT main insertion link-tool roll link:
     xy: -0.0
     xz: 1.0
     yx: -1.0
-    yy: -0.0018
+    yy: -0.0011
     yz: -0.0008
-    zx: 0.0018
+    zx: 0.0011
     zy: -1.0
     zz: -0.0
   detached: true
   type: revolute
   max motor impulse: 0.05000000074505806
   damping: 0.001
-  offset: -1.5734
+  offset: -1.5727
 JOINT tool roll link-tool pitch link:
   name: tool roll link-tool pitch link
   parent: BODY tool roll link
   child: BODY tool pitch link
   parent axis:
-    x: 0.001
+    x: 0.0
     y: 1.0
     z: 0.0
   parent pivot:
     x: -0.0
-    y: 0.0
+    y: -0.0
     z: 0.185
   child axis:
-    x: 0.0
-    y: 0.0
+    x: -0.0
+    y: -0.0
     z: 1.0
   child pivot:
-    x: 0.0
+    x: -0.0
     y: 0.0
-    z: 0.0
+    z: -0.0
   joint limits:
     high: 1.571
     low: -1.571
@@ -998,9 +889,49 @@ JOINT tool roll link-tool pitch link:
   body rotation:
     xx: -0.0
     xy: 1.0
-    xz: 0.0008
-    yx: 0.0
-    yy: -0.0008
+    xz: 0.0
+    yx: -0.0
+    yy: -0.0
+    yz: 1.0
+    zx: 1.0
+    zy: 0.0
+    zz: 0.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.05
+  offset: -1.5708
+JOINT tool pitch link-tool gripper1 link:
+  name: tool pitch link-tool gripper1 link
+  parent: BODY tool pitch link
+  child: BODY tool gripper1 link
+  parent axis:
+    x: 0.0
+    y: -1.0
+    z: -0.0
+  parent pivot:
+    x: 0.009
+    y: -0.0
+    z: -0.0
+  child axis:
+    x: -0.0
+    y: 0.0
+    z: -1.0
+  child pivot:
+    x: 0.0
+    y: 0.0
+    z: -0.0
+  joint limits:
+    high: 1.5708
+    low: -1.5708
+  enable feedback: false
+  passive: false
+  body rotation:
+    xx: -0.0
+    xy: 1.0
+    xz: 0.0
+    yx: -0.0
+    yy: -0.0
     yz: 1.0
     zx: 1.0
     zy: 0.0
@@ -1008,68 +939,28 @@ JOINT tool roll link-tool pitch link:
   detached: true
   type: revolute
   max motor impulse: 0.05000000074505806
-  damping: 0.05
-  offset: -1.5718
-JOINT tool pitch link-tool gripper1 link:
-  name: tool pitch link-tool gripper1 link
-  parent: BODY tool pitch link
-  child: BODY tool gripper1 link
-  parent axis:
-    x: -0.0
-    y: 1.0
-    z: 0.001
-  parent pivot:
-    x: 0.009
-    y: 0.0
-    z: 0.0
-  child axis:
-    x: -0.0
-    y: 0.0
-    z: 1.0
-  child pivot:
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  joint limits:
-    high: 1.5708
-    low: -1.5708
-  enable feedback: false
-  passive: false
-  body rotation:
-    xx: -0.0
-    xy: 1.0
-    xz: -0.0
-    yx: -0.0008
-    yy: 0.0
-    yz: 1.0
-    zx: 1.0
-    zy: 0.0
-    zz: 0.0008
-  detached: true
-  type: revolute
-  max motor impulse: 0.05000000074505806
   damping: 0.005
-  offset: -1.5708
+  offset: 1.5708
 JOINT tool pitch link-tool gripper2 link:
   name: tool pitch link-tool gripper2 link
   parent: BODY tool pitch link
   child: BODY tool gripper2 link
   parent axis:
     x: 0.0
-    y: -1.0
-    z: -0.001
+    y: 1.0
+    z: 0.0
   parent pivot:
     x: 0.009
-    y: 0.0
-    z: 0.0
+    y: -0.0
+    z: -0.0
   child axis:
     x: 0.0
-    y: 0.0
-    z: -1.0
+    y: -0.0
+    z: 1.0
   child pivot:
     x: 0.0
-    y: -0.0
-    z: 0.0
+    y: 0.0
+    z: -0.0
   joint limits:
     high: 1.5708
     low: -1.5708
@@ -1078,38 +969,38 @@ JOINT tool pitch link-tool gripper2 link:
   body rotation:
     xx: -0.0
     xy: 1.0
-    xz: -0.0
-    yx: -0.0008
-    yy: 0.0
+    xz: 0.0
+    yx: -0.0
+    yy: -0.0
     yz: 1.0
     zx: 1.0
     zy: 0.0
-    zz: 0.0008
+    zz: 0.0
   detached: true
   type: revolute
   max motor impulse: 0.05000000074505806
   damping: 0.005
-  offset: 1.5708
+  offset: -1.5708
 JOINT pitch back link-pitch top link:
   name: pitch back link-pitch top link
   parent: BODY pitch back link
   child: BODY pitch top link
   parent axis:
-    x: -0.0001
-    y: 0.0024
+    x: -0.0004
+    y: 0.0001
     z: 1.0
   parent pivot:
     x: 0.184
     y: 0.014
-    z: -0.0
+    z: 0.0
   child axis:
-    x: -0.0002
+    x: -0.0003
     y: -0.0
     z: 1.0
   child pivot:
     x: 0.0
     y: -0.0
-    z: -0.0
+    z: 0.0
   joint limits:
     high: 0.936
     low: -0.942
@@ -1118,12 +1009,12 @@ JOINT pitch back link-pitch top link:
   body rotation:
     xx: -0.2869
     xy: -0.958
-    xz: -0.0002
+    xz: -0.0005
     yx: 0.958
     yy: -0.2869
-    yz: 0.0026
-    zx: -0.0026
-    zy: 0.0006
+    yz: 0.0004
+    zx: -0.0005
+    zy: -0.0003
     zz: 1.0
   detached: true
   type: revolute
@@ -1136,7 +1027,7 @@ JOINT pitch top link-pitch end link:
   child: BODY pitch end link
   parent axis:
     x: 0.0
-    y: 0.0
+    y: -0.0
     z: 1.0
   parent pivot:
     x: 0.5163
@@ -1149,7 +1040,7 @@ JOINT pitch top link-pitch end link:
   child pivot:
     x: 0.004
     y: -0.0363
-    z: 0.0
+    z: -0.0
   joint limits:
     high: 1.0472
     low: -1.0472
@@ -1163,7 +1054,7 @@ JOINT pitch top link-pitch end link:
     yy: 1.0
     yz: 0.0
     zx: -0.0
-    zy: -0.0
+    zy: 0.0
     zz: 1.0
   detached: true
   type: revolute
@@ -1178,17 +1069,17 @@ JOINT yaw link-pitch end link:
     y: -0.0002
     z: 0.0
   parent pivot:
-    x: -0.0
-    y: 0.0013
+    x: 0.0
+    y: 0.0007
     z: -0.4859
   child axis:
     x: -0.0
     y: -1.0
-    z: 0.0006
+    z: -0.0003
   child pivot:
     x: 0.0429
     y: 0.1441
-    z: 0.0014
+    z: 0.0003
   joint limits:
     high: 1.2
     low: -1.2
@@ -1197,13 +1088,13 @@ JOINT yaw link-pitch end link:
   body rotation:
     xx: -0.0
     xy: -1.0
-    xz: 0.0008
-    yx: 0.0001
-    yy: 0.0008
+    xz: -0.0001
+    yx: 0.0009
+    yy: -0.0001
     yz: 1.0
     zx: -1.0
     zy: 0.0
-    zz: 0.0001
+    zz: 0.0009
   detached: true
   type: p2p
   damping: 0.0
@@ -1215,10 +1106,10 @@ JOINT yaw link-pitch front link:
   parent axis:
     x: -0.0
     y: 1.0
-    z: 0.0033
+    z: 0.0021
   parent pivot:
-    x: -0.0
-    y: 0.0002
+    x: 0.0
+    y: 0.0001
     z: -0.066
   child axis:
     x: -0.0
@@ -1227,7 +1118,7 @@ JOINT yaw link-pitch front link:
   child pivot:
     x: 0.0
     y: -0.0
-    z: -0.0
+    z: 0.0
   joint limits:
     high: 0.942
     low: -0.936
@@ -1237,15 +1128,15 @@ JOINT yaw link-pitch front link:
     xx: 0.958
     xy: 0.2869
     xz: 0.0002
-    yx: -0.0009
-    yy: 0.0025
+    yx: -0.0006
+    yy: 0.0013
     yz: 1.0
     zx: 0.2869
     zy: -0.958
-    zz: 0.0026
+    zz: 0.0014
   detached: true
   type: revolute
-  max motor impulse: 1.0
+  max motor impulse: 0.05000000074505806
   damping: 0.0
   offset: -0.291
 JOINT pitch front link-pitch bottom link:
@@ -1254,20 +1145,20 @@ JOINT pitch front link-pitch bottom link:
   child: BODY pitch bottom link
   parent axis:
     x: 0.0
-    y: -0.0
+    y: 0.0
     z: 1.0
   parent pivot:
     x: 0.15
     y: 0.0
     z: -0.0002
   child axis:
-    x: -0.0026
-    y: 0.0006
+    x: -0.0005
+    y: -0.0003
     z: 1.0
   child pivot:
     x: 0.096
     y: -0.0
-    z: 0.0001
+    z: -0.0002
   joint limits:
     high: 1.0472
     low: -1.0472
@@ -1276,12 +1167,12 @@ JOINT pitch front link-pitch bottom link:
   body rotation:
     xx: -0.2869
     xy: -0.958
-    xz: -0.0002
+    xz: -0.0005
     yx: 0.958
     yy: -0.2869
-    yz: 0.0026
-    zx: -0.0026
-    zy: 0.0006
+    yz: 0.0004
+    zx: -0.0005
+    zy: -0.0003
     zz: 1.0
   detached: true
   type: revolute

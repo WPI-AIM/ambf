@@ -56,17 +56,17 @@ int main(int argc, char* argv[])
     client.connect();
 
 //    client.printSummary();
-    vector<string> object_names;
+//    vector<string> object_names;
 
-     object_names = client.getRigidBodyNames();
-     usleep(20000);
+//     object_names = client.getRigidBodyNames();
+//     usleep(20000);
 
-     string psm_baselink = "psm/baselink";
-    // cout << "psm_baselink: " << psm_baselink << "\n";
-     rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
-     usleep(1000000);
+//     string psm_baselink = "psm/baselink";
+//    // cout << "psm_baselink: " << psm_baselink << "\n";
+//     rigidBodyPtr psm_baselink_handler = client.getARigidBody(psm_baselink, true);
+//     usleep(1000000);
 
-    std::cout << "psm_baselink_handler->is_joint_idx_valid(0): " << psm_baselink_handler->is_joint_idx_valid(0) << std::endl;
+//    std::cout << "psm_baselink_handler->is_joint_idx_valid(0): " << psm_baselink_handler->is_joint_idx_valid(0) << std::endl;
 //     print(psm_handle.get_rot())
 //     psm_handle.set_joint_pos(0, 0)
 //    psm_baselink_handler->get_joint_rpy();
@@ -117,8 +117,8 @@ int main(int argc, char* argv[])
 //    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
 //    printVector3("joint_position", joint_position);
 
-//    client.cleanUp();
-    //client.~Client();
+    client.cleanUp();
+    client.~Client();
 
 	return 0;
 }
