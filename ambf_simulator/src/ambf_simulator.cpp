@@ -795,8 +795,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
             for (int i = 0 ; i < rbVec.size() ; i++){
                 if (rbVec[i]->m_shaderProgramDefined){
-                    if (rbVec[i]->getShaderProgram()){
-                        rbVec[i]->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
+                    if (rbVec[i]->m_visualMesh->getShaderProgram()){
+                        rbVec[i]->m_visualMesh->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
                     }
                 }
             }
@@ -1269,8 +1269,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     camPos = toBTvec(a_cameraPtr->getGlobalPos());
     cVector3d targetPosGlobal = a_cameraPtr->getTargetPos();
-    if (a_cameraPtr->getParent()){
-        targetPosGlobal = a_cameraPtr->getParent()->getLocalTransform() * targetPosGlobal;
+    if (a_cameraPtr->m_visualMesh->getParent()){
+        targetPosGlobal = a_cameraPtr->m_visualMesh->getParent()->getLocalTransform() * targetPosGlobal;
     }
     camTarget = toBTvec(targetPosGlobal);
 

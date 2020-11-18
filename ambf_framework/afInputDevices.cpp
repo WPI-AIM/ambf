@@ -605,8 +605,8 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     mat.setGreenLightSea();
     tempMesh->setMaterial(mat);
     m_afCursor = new afRigidBody(a_afWorld);
-    m_afCursor->m_meshes->push_back(tempMesh);
-    a_afWorld->addChild(m_afCursor);
+    m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
+    a_afWorld->addChild(m_afCursor->m_visualMesh);
     m_afCursor->afCreateCommInstance(afCommType::OBJECT,
                                      a_name, m_afWorld->resolveGlobalNamespace(a_namespace),
                                      minPF,

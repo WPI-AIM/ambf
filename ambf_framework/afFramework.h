@@ -180,6 +180,54 @@ template <typename T>
 ///
 T toRPY(YAML::Node* node);
 
+///
+/// \brief The afShapeType enum
+///
+enum class afShapeType{
+    AF_PLANE = 0,
+    AF_BOX = 1,
+    AF_SPHERE = 2,
+    AF_CYLINDER = 3,
+    AF_CAPSULE = 4,
+    AF_CONE = 5,
+    AF_INVALID = 6
+};
+
+
+///
+/// \brief The afShapeGeometry struct
+///
+struct afShapeGeometry{
+public:
+
+    afShapeGeometry();
+
+    bool copyShapeOffsetData(YAML::Node* offsetNode);
+
+    bool copyGeometryData(YAML::Node* geometryNode);
+
+    void setScale(double a_scale);
+
+    double m_radius = 0;
+    double m_height = 0;
+    double m_dx = 0; // x dim
+    double m_dy = 0; // y dim
+    double m_dz = 0; // z dim
+
+    double m_nx = 0; // plane normal x
+    double m_ny = 0; // plane normal y
+    double m_nz = 1; // plane normal z
+
+    double m_planeOffset = 0;
+
+    afShapeType m_shapeType;
+
+    cVector3d m_posOffset;
+    cMatrix3d m_rotOffset;
+
+private:
+    double m_scale = 1.0;
+};
 
 ///
 /// \brief The afUtils class
@@ -203,6 +251,10 @@ public:
     static void debugPrint(int line, std::string filename){
         std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
     }
+
+    static afShapeType getShapeTypeFromString(const std::string & a_shape_str);
+
+    static void createVisualShape(cMesh* mesh, const afShapeGeometry& a_shapeGeometry);
 };
 
 static std::string AF_DEPTH_COMPUTE_VTX =
@@ -332,6 +384,14 @@ public:
     //! This method applies updates Wall and Sim Time for AF State Message.
     virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
 
+    inline std::string getName(){return m_name;}
+
+    inline std::string setName(std::string a_name){m_name = a_name;}
+
+    inline std::string getNamespace(){return m_namespace; }
+
+    inline std::string setNamespace(std::string a_namespace){m_namespace = a_namespace; }
+
     //! AF CHAI Env
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
@@ -357,6 +417,24 @@ public:
 
     // Get the type of communication instance
     afCommType getCommType(){return m_commType;}
+
+    // Min publishing frequency
+    int m_min_publish_frequency=50;
+
+    // Max publishing frequency
+    int m_max_publish_frequency=1000;
+
+    // If passive, this instance will not be reported
+    // for communication purposess.
+    bool m_passive = false;
+
+    std::string m_name;
+
+protected:
+    // The namespace for this body, this namespace affect afComm and the stored name of the body
+    // in the internal body tree map.
+    std::string m_namespace = "";
+
 
 private:
     afCommType m_commType;
@@ -394,7 +472,7 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 ///
 /// \brief The Geometrytype enum
 ///
-enum GeometryType{
+enum afGeometryType{
     invalid= 0, mesh = 1, shape = 2, compound_shape = 3
 };
 
@@ -504,14 +582,11 @@ struct afChildJointPair{
 
 
 
-class afBaseObject: public cBulletMultiMesh, public afComm{
+class afBaseObject: public afComm{
 
 public:
     afBaseObject(afWorldPtr a_afWorld);
     virtual ~afBaseObject();
-
-    // Get the namespace of this body
-    inline std::string getNamespace(){return m_namespace; }
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
@@ -524,6 +599,24 @@ public:
 
     inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
 
+    inline cVector3d getLocalPos();
+
+    inline cMatrix3d getLocalRot();
+
+    inline cTransform getLocalTransform();
+
+    void setLocalPos(const cVector3d &pos);
+
+    void setLocalPos(double px, double py, double pz);
+
+    void setLocalRot(const cMatrix3d &mat);
+
+    void setLocalRot(const cQuaternion &quat);
+
+    void setLocalRot(double qx, double qy, double qz, double qw);
+
+    void setLocalTransform(const cTransform &trans);
+
     // Get Initial Position of this body
     inline cVector3d getInitialPosition(){return m_initialPos;}
 
@@ -531,12 +624,26 @@ public:
     inline cMatrix3d getInitialRotation(){return m_initialRot;}
 
     // This method toggles the viewing of frames of this rigid body.
-    inline void toggleFrameVisibility(){m_showFrame = !m_showFrame;}
+    inline void toggleFrameVisibility(){m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());}
 
     // Get Min/Max publishing frequency for afObjectState for this body
     inline int getMinPublishFrequency(){return m_min_publish_frequency;}
 
     inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
+
+    cVector3d getBoundaryMin();
+
+    cVector3d getBoundaryMax();
+
+    void setFrameSize(double a_size);
+
+    bool loadFromFile(std::string a_filename);
+
+    void setScale(double a_scale);
+
+    void addChild(cGenericObject* a_cObject);
+
+    void removeChild(cGenericObject* a_cObject);
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -552,12 +659,6 @@ public:
     // Parent body name defined in the ADF
     std::string m_parentName;
 
-    // Min publishing frequency
-    int m_min_publish_frequency=50;
-
-    // Max publishing frequency
-    int m_max_publish_frequency=1000;
-
     // Enable Shader Program Associate with this object
     virtual void enableShaderProgram(){}
 
@@ -567,11 +668,9 @@ public:
     boost::filesystem::path m_vsFilePath;
     boost::filesystem::path m_fsFilePath;
 
-protected:
+    cMultiMesh* m_visualMesh;
 
-    // The namespace for this body, this namespace affect afComm and the stored name of the body
-    // in the internal body tree map.
-    std::string m_namespace = "";
+protected:
 
     // Initial location of Rigid Body
     cVector3d m_initialPos;
@@ -579,16 +678,75 @@ protected:
     // Initial rotation of Ridig Body
     cMatrix3d m_initialRot;
 
-    // If passive, this instance will not be reported
-    // for communication purposess.
-    bool m_passive = false;
+    // Scale of mesh
+    double m_scale;
+};
+
+
+class afInertialObject: public afBaseObject{
+public:
+    afInertialObject(afWorldPtr a_afWorld);
+    ~afInertialObject();
+
+    virtual void buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh);
+
+    virtual void buildDynamicModel();
+
+    inline double getMass(){return m_mass;}
+
+    inline void setMass(double a_mass){m_mass = a_mass;}
+
+    void estimateInertia();
+
+    void setInertia(double ix, double iy, double iz);
+
+    inline btVector3 getInertia(){return m_inertia;}
+
+    void setInertialOffsetTransform(btTransform & a_trans);
+
+    inline btTransform getInertialOffsetTransform(){return m_T_iINb;}
+
+    inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
+
+    // Apply force that is specified in the world frame at a point specified in world frame
+    // This force is first converted into body frame and then is used to compute
+    // the resulting torque in the body frame. This torque in the body frame is
+    // then converted to the world frame and is applied to the body in the world frame
+    // along with the original force in the world frame
+    void applyForceAtPointOnBody(const cVector3d & a_forceInWorld, const cVector3d & a_pointInWorld);
+
+    void applyForce(const cVector3d &a_force, const cVector3d& a_offset = cVector3d(0, 0, 0));
+
+    void applyTorque(const cVector3d &a_torque);
+
+    // Compute the COM of the body and the tranform from mesh origin to the COM
+    btVector3 computeInertialOffset(cMesh* mesh);
+
+    btRigidBody* m_bulletRigidBody;
+
+protected:
+    //! Inertial Offset Transform defined in the body frame
+    btTransform m_T_iINb;
+
+    //! Body Frame in the Inertial Offset Transform. Inverse of the above transform
+    btTransform m_T_bINi;
+
+    btDefaultMotionState* m_bulletMotionState;
+
+    btCollisionShape *m_bulletCollisionShape;
+
+    // Mass
+    double m_mass;
+
+    // Inertia
+    btVector3 m_inertia;
 };
 
 
 ///
 /// \brief The afBody class
 ///
-class afRigidBody: public afBaseObject{
+class afRigidBody: public afInertialObject{
 
     friend class afMultiBody;
     friend class afJoint;
@@ -615,16 +773,6 @@ public:
     // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
 
-    // Get the namespace of this body
-    inline std::string getNamespace(){return m_namespace; }
-
-    // Apply force that is specified in the world frame at a point specified in world frame
-    // This force is first converted into body frame and then is used to compute
-    // the resulting torque in the body frame. This torque in the body frame is
-    // then converted to the world frame and is applied to the body in the world frame
-    // along with the original force in the world frame
-    void applyForceAtPointOnBody(const cVector3d & a_forceInWorld, const cVector3d & a_pointInWorld);
-
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
     // children (children's children ... and so on also count as children)
@@ -645,9 +793,6 @@ public:
 
     // Set the config properties, this include, damping, friction restitution
     static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
-
-    // Compute the COM of the body and the tranform from mesh origin to the COM
-    btVector3 computeInertialOffset(cMesh* mesh);
 
     // Cleanup this rigid body
     void remove();
@@ -690,9 +835,6 @@ public:
     btVector3 m_estimatedTorque;
 
 protected:
-
-    // Scale of mesh
-    double m_scale;
 
     // Name of visual and collision mesh
     std::string m_mesh_name, m_collision_mesh_name;
@@ -783,8 +925,6 @@ protected:
     bool m_keepSensorThreadsAlive = true;
 
 private:
-    // Ptr to afWorld
-    afWorldPtr m_afWorld;
 
     // Positions of all child joints
     std::vector<float> m_joint_positions;
@@ -802,7 +942,7 @@ private:
     btVector3 m_dpos;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
-    GeometryType m_visualGeometryType, m_collisionGeometryType;
+    afGeometryType m_visualGeometryType, m_collisionGeometryType;
 };
 
 ///
@@ -883,8 +1023,6 @@ protected:
 
     static afSoftBodyConfigProperties m_configProps;
 
-protected:
-
     afWorldPtr m_afWorld;
 };
 
@@ -938,7 +1076,7 @@ enum JointType{
 ///
 /// \brief The afJoint class
 ///
-class afJoint{
+class afJoint: public afBaseObject{
     friend class afRigidBody;
     friend class afGripperLink;
     friend class afMultiBody;
@@ -992,21 +1130,12 @@ public:
     // Method to remove the afJoint
     void remove();
 
-    std::string getName(){return m_name;}
-
     bool isPassive(){return m_passive;}
 
     bool isFeedBackEnabled(){return m_feedbackEnabled;}
 
-    // Hard coded for now
-    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
-
-    // Do nothing for Joint
-    void setFrameSize(double size){}
-
 protected:
 
-    std::string m_name;
     std::string m_parentName, m_childName;
     std::string m_jointName;
     btVector3 m_axisA, m_axisB;
@@ -1093,7 +1222,6 @@ public:
 
 protected:
     bool m_actuate = false;
-
 };
 
 
@@ -1506,13 +1634,13 @@ public:
     // want the cameras base class "cGenericObject" to be representing the
     // kinematics. Instead we want the afRigidBody to do so.
     // This method returns the camera "look at" position vector for this camera.
-    inline cVector3d getLookVector()  const { return (-m_localRot.getCol0()); }
+    inline cVector3d getLookVector()  const { return (-m_visualMesh->getLocalRot().getCol0()); }
 
     // This method returns the "up" vector for this camera.
-    inline cVector3d getUpVector()    const { return (m_localRot.getCol2()); }
+    inline cVector3d getUpVector()    const { return (m_visualMesh->getLocalRot().getCol2()); }
 
     // This method returns the "right direction" vector for this camera.
-    inline cVector3d getRightVector() const { return (m_localRot.getCol1()); }
+    inline cVector3d getRightVector() const { return (m_visualMesh->getLocalRot().getCol1()); }
 
     // This method returns the field view angle in Radians.
     inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
@@ -1679,7 +1807,6 @@ protected:
 #endif
 
 private:
-    afWorldPtr m_afWorld;
 
     // Hold the cCamera private and shield it's kinematics represented
     // by cGenericObject from the world since we want afRidigBody to
@@ -1756,9 +1883,6 @@ protected:
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     ambf_comm::LightType m_lightType;
 #endif
-
-private:
-    afWorldPtr m_afWorld;
 };
 
 
@@ -1809,19 +1933,11 @@ struct afRenderOptions{
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public cBulletWorld, public afConfigHandler, public afComm{
+class afWorld: public afConfigHandler, public afComm{
 
     friend class afMultiBody;
 
 public:
-
-    afWorld(std::string a_global_namespace);
-
-    virtual ~afWorld();
-
-    virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
-
-    virtual void render(afRenderOptions &options);
 
     // Template method to add various types of objects
     template<typename T, typename TMap>
@@ -1835,6 +1951,14 @@ public:
     template <typename Tvec, typename TMap>
     Tvec getObjects(TMap* tMap);
 
+    afWorld(std::string a_global_namespace);
+
+    virtual ~afWorld();
+
+    virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    virtual void render(afRenderOptions &options);
+
     bool createDefaultWorld();
 
     double getEnclosureLength();
@@ -1844,6 +1968,8 @@ public:
     double getEnclosureHeight();
 
     void getEnclosureExtents(double &length, double &width, double &height);
+
+    void showVisualFrame(afBaseObject* a_obj);
 
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
 
@@ -1858,7 +1984,33 @@ public:
 
     void resetDynamicBodies(bool reset_time=false);
 
+    void setGravity(double x, double y, double z);
+
+    // This method assigns integration settings of simulator.
+    void setIntegrationSettings(const double a_integrationTimeStep = 0.001, const int a_integrationMaxIterations = 1) { setIntegrationTimeStep(a_integrationTimeStep); setIntegrationMaxIterations(a_integrationMaxIterations); }
+
+    // This method sets the internal integration time step of the simulation.
+    void setIntegrationTimeStep(const double a_integrationTimeStep = 0.001) { m_integrationTimeStep = cMax(a_integrationTimeStep, 0.000001); }
+
+    // The method returns the integration time step of the simulation.
+    double getIntegrationTimeStep() { return (m_integrationTimeStep); }
+
+    // This method sets the maximum number of iteration per integration time step.
+    void setIntegrationMaxIterations(const int a_integrationMaxIterations = 1) { m_integrationMaxIterations = cMax(a_integrationMaxIterations, 1); }
+
+    //! This method returns the maximum number of iteration per integration time step.
+    int getIntegrationMaxIterations() { return (m_integrationMaxIterations);}
+
     int getMaxIterations(){return m_maxIterations;}
+
+    // This method returns the current simulation time
+    double getWallTime(){return m_wallClock;}
+
+    // This method returns the current simulation time
+    double getSimulationTime(){return m_simulationTime;}
+
+    // This method gets the time difference between current time and last simulation time
+    double getSimulationDeltaTime();
 
     double computeStepSize(bool adjust_intetration_steps = false);
 
@@ -1869,6 +2021,10 @@ public:
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updatePositionFromDynamics(void);
+
+    void addChild(cGenericObject* a_cObject);
+
+    void removeChild(cGenericObject* a_cObject);
 
     bool addAFLight(afLightPtr a_rb, std::string a_name);
 
@@ -1956,21 +2112,11 @@ public:
 
     std::string resolveGlobalNamespace(std::string a_name);
 
-    std::string getNamespace(){return m_namespace;}
-
-    std::string setWorldNamespace(std::string a_namespace){m_namespace = a_namespace;}
-
     std::string getGlobalNamespace(){return m_global_namespace;}
 
     void setGlobalNamespace(std::string a_namespace);
 
     virtual void afExecuteCommand(double dt);
-
-    // The collision groups are sorted by integer indices. A group is an array of
-    // rigid bodies that collide with each other. The bodies in one group
-    // are not meant to collide with bodies from another group. Lastly
-    // the a body can be a part of multiple groups
-    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
@@ -1992,6 +2138,16 @@ public:
     virtual void enableShaderProgram();
 
     void loadSkyBox();
+
+    // The collision groups are sorted by integer indices. A group is an array of
+    // rigid bodies that collide with each other. The bodies in one group
+    // are not meant to collide with bodies from another group. Lastly
+    // the a body can be a part of multiple groups
+    std::map<int, std::vector<afRigidBodyPtr> > m_collisionGroups;
+
+public:
+
+    std::list<afBaseObject*> m_afChildrenObject;
 
     GLFWwindow* m_mainWindow;
 
@@ -2072,6 +2228,31 @@ public:
     // a frequency counter to measure the simulation haptic rate
     cFrequencyCounter m_freqCounterHaptics;
 
+public:
+
+    cWorld* m_chaiWorld;
+
+    // Bullet dynamics world.
+    btDiscreteDynamicsWorld* m_bulletWorld;
+
+    // Bullet broad phase collision detection algorithm.
+    btBroadphaseInterface* m_bulletBroadphase;
+
+    // Bullet collision configuration.
+    btCollisionConfiguration* m_bulletCollisionConfiguration;
+
+    // Bullet collision dispatcher.
+    btCollisionDispatcher* m_bulletCollisionDispatcher;
+
+    // Bullet physics solver.
+    btConstraintSolver* m_bulletSolver;
+
+    // Bullet Softbody World Info
+    btSoftBodyWorldInfo* m_bulletSoftBodyWorldInfo;
+
+    // Bullet Soft Body Solver
+    btSoftBodySolver* m_bulletSoftBodySolver;
+
 
 protected:
 
@@ -2093,11 +2274,24 @@ protected:
 
     afVehicleMap m_afVehicleMap;
 
-    std::string m_namespace;
-
     // If this string is set, it will force itself to preeced all nampespaces
     // regardless of whether any namespace starts with a '/' or not.
     std::string m_global_namespace;
+
+    // Current time of simulation.
+    double m_simulationTime;
+
+    // Integration time step.
+    double m_integrationTimeStep;
+
+    // Wall Clock in Secs
+    double m_wallClock;
+
+    // Last Simulation Time
+    double m_lastSimulationTime;
+
+    // Maximum number of iterations.
+    int m_integrationMaxIterations;
 
 private:
 
@@ -2132,15 +2326,13 @@ struct afPickingConstraintData{
 ///
 /// \brief The afMultiBody class
 ///
-class afMultiBody{
+class afMultiBody: public afBaseObject{
 
     friend class afRigidBody;
     friend class afSoftBody;
     friend class afJoint;
 
 public:
-
-    afMultiBody();
 
     afMultiBody(afWorldPtr a_afWorld);
 
@@ -2153,8 +2345,6 @@ public:
     inline std::string getLowResMeshesPath(){return m_multibody_low_res_meshes_path;}
 
     inline std::string getMultiBodyPath(){return m_multibody_path;}
-
-    inline std::string getNamespace(){return m_namespace;}
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -2175,13 +2365,6 @@ public:
     // method however it searches in the local multibody space than the world space
     afRigidBodyPtr getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr = NULL);
 
-
-    // Hard coded for now
-    cVector3d getBoundaryMax(){return cVector3d(0.5, 0.5, 0.5);}
-
-    // Do nothing for MB
-    void setFrameSize(double size){}
-
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
     double m_jointCFM = 0.1;
@@ -2191,7 +2374,6 @@ protected:
     afWorldPtr m_afWorld;
 
     std::string m_multibody_high_res_meshes_path, m_multibody_low_res_meshes_path;
-    std::string m_namespace="";
     std::string m_multibody_path;
 
 protected:
@@ -2240,7 +2422,7 @@ struct afWheel{
     WheelBodyType m_wheelBodyType;
 };
 
-class afVehicle: public afBaseObject{
+class afVehicle: public afInertialObject{
 public:
     afVehicle(afWorldPtr a_afWorld);
 

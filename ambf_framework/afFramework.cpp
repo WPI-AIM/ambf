@@ -203,6 +203,88 @@ cTransform toCtransform(const btTransform &btTrans){
 }
 
 
+///
+/// \brief afShapeGeometry::setScale
+/// \param a_scale
+///
+afShapeGeometry::afShapeGeometry()
+{
+    m_posOffset.set(0, 0, 0);
+    m_rotOffset.identity();
+    m_shapeType = afShapeType::AF_INVALID;
+}
+
+bool afShapeGeometry::copyShapeOffsetData(YAML::Node *offsetNode)
+{
+    bool valid = true;
+    double px = shapeOffset["position"]["x"].as<double>();
+    double py = shapeOffset["position"]["y"].as<double>();
+    double pz = shapeOffset["position"]["z"].as<double>();
+    double roll =  shapeOffset["orientation"]["r"].as<double>();
+    double pitch = shapeOffset["orientation"]["p"].as<double>();
+    double yaw =   shapeOffset["orientation"]["y"].as<double>();
+
+    m_posOffset.set(px, py, pz);
+    m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+
+    return valid;
+}
+
+
+///
+/// \brief afShapeGeometry::copyGeometryData
+/// \param geometryNode
+/// \return
+///
+bool afShapeGeometry::copyGeometryData(YAML::Node *geometryNode)
+{
+    bool valid = true;
+
+    switch (m_shapeType) {
+    case afShapeType::AF_BOX:
+        shapeGeometry.m_dx = geometryNode["x"].as<double>();
+        shapeGeometry.m_dy = geometryNode["y"].as<double>();
+        shapeGeometry.m_dz = geometryNode["z"].as<double>();
+        break;
+    case afShapeType::AF_SPHERE:
+        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
+        break;
+    case afShapeType::AF_CAPSULE:
+        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
+        shapeGeometry.m_height = geometryNode["height"].as<double>();
+        break;
+    case afShapeType::AF_CONE:
+        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
+        shapeGeometry.m_height = geometryNode["height"].as<double>();
+        break;
+    case afShapeType::AF_PLANE:
+        shapeGeometry.m_planeOffset = geometryNode["offset"].as<double>();
+        shapeGeometry.m_nx = geometryNode["normal"]["x"].as<double>();
+        shapeGeometry.m_ny = geometryNode["normal"]["y"].as<double>();
+        shapeGeometry.m_nz = geometryNode["normal"]["z"].as<double>();
+        break;
+    default:
+        valid = false;
+        break;
+    }
+
+    return valid;
+}
+
+void afShapeGeometry::setScale(double a_scale)
+{
+    m_scale = a_scale;
+    m_dx *= m_scale;
+    m_dy *= m_scale;
+    m_dz *= m_scale;
+    m_radius *= m_scale;
+    m_height *= m_scale;
+    m_dx *= m_scale;
+    m_planeOffset *= m_scale;
+
+}
+
+
 template<typename T>
 ///
 /// \brief afUtils::getNonCollidingIdx
@@ -476,6 +558,101 @@ std::string afUtils::mergeNamespace(std::string a_namespace1, std::string a_name
     }
     else{
         return a_namespace1 + a_namespace2;
+    }
+}
+
+
+///
+/// \brief afUtils::getShapeTypeFromString
+/// \param a_shape_str
+/// \return
+///
+afShapeType afUtils::getShapeTypeFromString(const std::string &a_shape_str){
+    afShapeType shapeType;
+    if (a_shape_str.compare("Box") == 0 || a_shape_str.compare("box") == 0 || a_shape_str.compare("BOX") == 0){
+        shapeType = afShapeType::AF_BOX;
+    }
+    else if (a_shape_str.compare("Sphere") == 0 || a_shape_str.compare("sphere") == 0 || a_shape_str.compare("SPHERE") == 0){
+        shapeType = afShapeType::AF_SPHERE;
+    }
+    else if (a_shape_str.compare("Cylinder") == 0 || a_shape_str.compare("cylinder") == 0 || a_shape_str.compare("CYLINDER") == 0){
+        shapeType = afShapeType::AF_CYLINDER;
+    }
+    else if (a_shape_str.compare("Capsule") == 0 || a_shape_str.compare("capsule") == 0 || a_shape_str.compare("CAPSULE") == 0){
+        shapeType = afShapeType::AF_CAPSULE;
+    }
+    else if (a_shape_str.compare("Cone") == 0 || a_shape_str.compare("cone") == 0 || a_shape_str.compare("CONE") == 0){
+        shapeType = afShapeType::AF_CONE;
+    }
+    else if (a_shape_str.compare("Plane") == 0 || a_shape_str.compare("plane") == 0 || a_shape_str.compare("PLANE") == 0){
+        shapeType = afShapeType::AF_PLANE;
+
+    }
+    else{
+        shapeType = afShapeType::AF_INVALID;
+    }
+}
+
+
+///
+/// \brief afUtils::createVisualShape
+/// \param mesh
+/// \param a_shapeGeometry
+///
+void afUtils::createVisualShape(cMesh *mesh, const afShapeGeometry& a_shapeGeometry){
+
+    int xs = 32;
+    int ys = 32;
+    int zs = 5;
+
+    double dx = a_shapeGeometry.m_dx;
+    double dy = a_shapeGeometry.m_dy;
+    double dz = a_shapeGeometry.m_dz;
+
+    double nx = a_shapeGeometry.m_nx;
+    double ny = a_shapeGeometry.m_ny;
+    double nz = a_shapeGeometry.m_nz;
+
+    double offset = a_shapeGeometry.m_planeOffset;
+
+    double radius = a_shapeGeometry.m_radius;
+    double height = a_shapeGeometry.m_height;
+
+    cVector3d posOffset = a_shapeGeometry.m_posOffset;
+    cMatrix3d rotOffset = a_shapeGeometry.m_rotOffset;
+
+    switch (a_shapeGeometry.m_shapeType) {
+    case afShapeType::AF_BOX:
+        cCreateBox(mesh, dx, dy, dz, posOffset, rotOffset);
+        break;
+    case afShapeType::AF_SPHERE:
+        cCreateSphere(mesh, radius, xs, ys, posOffset, rotOffset);
+        break;
+    case afShapeType::AF_CYLINDER:
+        posOffset[2] -= 0.5 * height;
+        cCreateCylinder(mesh, height, radius, xs, ys, zs, true, true, posOffset, rotOffset);
+        break;
+    case afShapeType::AF_CAPSULE:
+        posOffset[2] -= 0.5 * height;
+        cCreateEllipsoid(mesh, radius, radius, height, xs, ys, posOffset, rotOffset);
+        break;
+    case afShapeType::AF_CONE:
+        posOffset[2] -= 0.5 * height;
+        cCreateCone(mesh, height, radius, 0, xs, ys, zs, true, true, posOffset, rotOffset);
+        break;
+    case afShapeType::AF_PLANE:
+        cVector3d pos;
+        cVector3d normal(nx, ny, nz);
+        normal.normalize();
+        pos = normal * offset;
+        cQuaternion rot_quat = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(cVector3d(0, 0, 1), normal);
+        cMatrix3d rot_mat;
+        rot_quat.toRotMat(rot_mat);
+        cCreatePlane(mesh, 100, 100, pos, rot_mat);
+        break;
+    default:
+        // Throw some warning or error as shape not understood
+        break;
     }
 }
 
@@ -911,7 +1088,7 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 /// \brief afObject::afObject
 /// \param a_afWorld
 ///
-afBaseObject::afBaseObject(afWorldPtr a_afWorld): cBulletMultiMesh(a_afWorld){
+afBaseObject::afBaseObject(afWorldPtr a_afWorld){
     m_afWorld = a_afWorld;
 }
 
@@ -924,13 +1101,183 @@ afBaseObject::~afBaseObject(){
 
 }
 
+///
+/// \brief afBaseObject::getLocalPos
+/// \return
+///
+cVector3d afBaseObject::getLocalPos()
+{
+    return m_visualMesh->getLocalPos();
+}
+
+
+///
+/// \brief afBaseObject::getLocalRot
+/// \return
+///
+cMatrix3d afBaseObject::getLocalRot()
+{
+    return m_visualMesh->getLocalRot();
+}
+
+
+///
+/// \brief afBaseObject::getLocalTransform
+/// \return
+///
+cTransform afBaseObject::getLocalTransform()
+{
+    return m_visualMesh->getLocalTransform();
+}
+
+
+///
+/// \brief afBaseObject::setLocalPos
+/// \param pos
+///
+void afBaseObject::setLocalPos(const cVector3d &pos)
+{
+        setLocalPos(pos);
+}
+
+///
+/// \brief afBaseObject::setLocalPos
+/// \param px
+/// \param py
+/// \param pz
+///
+void afBaseObject::setLocalPos(double px, double py, double pz)
+{
+    cVector3d pos(px, py, pz);
+    setLocalPos(pos);
+}
+
+
+///
+/// \brief afBaseObject::setLocalRot
+/// \param mat
+///
+void afBaseObject::setLocalRot(const cMatrix3d &a_mat)
+{
+    cMatrix3d mat = a_mat;
+    mat.orthogonalize();
+    m_visualMesh->setLocalRot(mat);
+}
+
+
+///
+/// \brief afBaseObject::setLocalRot
+/// \param mat
+///
+void afBaseObject::setLocalRot(const cQuaternion &quat)
+{
+    cMatrix3d mat;
+    quat.toRotMat(mat);
+    setLocalRot(mat);
+}
+
+
+///
+/// \brief afBaseObject::setLocalRot
+/// \param qx
+/// \param qy
+/// \param qz
+/// \param qw
+///
+void afBaseObject::setLocalRot(double qx, double qy, double qz, double qw)
+{
+    cQuaternion quat(qw, qx, qy, qz);
+    setLocalRot(quat);
+}
+
+
+///
+/// \brief afBaseObject::setLocalTransform
+/// \param trans
+///
+void afBaseObject::setLocalTransform(const cTransform &trans)
+{
+    m_visualMesh->setLocalTransform(trans);
+}
+
+
+///
+/// \brief afBaseObject::getBoundaryMin
+/// \return
+///
+cVector3d afBaseObject::getBoundaryMin()
+{
+    return m_visualMesh->getBoundaryMin();
+}
+
+
+///
+/// \brief afBaseObject::getBoundaryMax
+/// \return
+///
+cVector3d afBaseObject::getBoundaryMax()
+{
+    return m_visualMesh->getBoundaryMax();
+}
+
+
+///
+/// \brief afBaseObject::setFrameSize
+/// \param a_size
+///
+void afBaseObject::setFrameSize(double a_size)
+{
+    m_visualMesh->setFrameSize(a_size);
+}
+
+
+///
+/// \brief afBaseObject::loadFromFile
+/// \param a_filename
+/// \return
+///
+bool afBaseObject::loadFromFile(std::string a_filename)
+{
+    return m_visualMesh->loadFromFile(a_filename);
+}
+
+
+///
+/// \brief afBaseObject::setScale
+/// \param a_scale
+///
+void afBaseObject::setScale(double a_scale)
+{
+    m_scale = a_scale;
+    m_visualMesh->scale(m_scale);
+}
+
+
+///
+/// \brief afBaseObject::addChild
+/// \param a_visualMesh
+///
+void afBaseObject::addChild(cGenericObject *a_cObject)
+{
+    m_visualMesh->addChild(a_cObject);
+}
+
+
+///
+/// \brief afBaseObject::removeChild
+/// \param a_cObject
+///
+void afBaseObject::removeChild(cGenericObject *a_cObject)
+{
+    m_visualMesh->removeChild(a_cObject);
+}
+
 
 ///
 /// \brief afActuator::afActuator
 /// \param a_afWorld
 ///
 afActuator::afActuator(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-
 }
 
 
@@ -1189,12 +1536,235 @@ void afConstraintActuator::updatePositionFromDynamics(){
 }
 
 
+///
+/// \brief afInertialObject::afInertialObject
+/// \param a_afWorld
+///
+afInertialObject::afInertialObject(afWorldPtr a_afWorld): afBaseObject(a_afWorld)
+{
+
+}
+
+
+///
+/// \brief afInertialObject::~afInertialObject
+///
+afInertialObject::~afInertialObject()
+{
+
+}
+
+
+///
+/// \brief afInertialObject::estimateInertia
+///
+void afInertialObject::estimateInertia()
+{
+    if (m_bulletCollisionShape)
+    {
+        // compute inertia
+        m_bulletCollisionShape->calculateLocalInertia(m_mass, m_inertia);
+
+    }
+}
+
+///
+/// \brief afInertialObject::setInertia
+/// \param ix
+/// \param iy
+/// \param iz
+///
+void afInertialObject::setInertia(double ix, double iy, double iz)
+{
+    m_inertia = btVector3(ix, iy, iz);
+}
+
+void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
+{
+    m_T_iINb = a_trans;
+}
+
+
+///
+/// \brief afInertialObject::computeInertialOffset
+/// \param mesh
+/// \return
+///
+btVector3 afInertialObject::computeInertialOffset(cMesh* mesh){
+    cVector3d intertialOffset(0, 0, 0);
+    cVector3d vPos;
+    // Sanity Check
+    if (mesh){
+        int nvertices = mesh->getNumVertices();
+        int i;
+        double idx;
+        for (i = 0, idx = 0 ; i < nvertices ; i++, idx++){
+            vPos = mesh->m_vertices->getLocalPos(i);
+            intertialOffset = ((( idx ) / ( idx + 1.0 )) * intertialOffset) + (( 1.0 / ( idx + 1.0 )) * vPos);
+        }
+    }
+    return btVector3(intertialOffset.x(), intertialOffset.y(), intertialOffset.z());
+}
+
+
+///
+/// \brief afInertialObject::applyForceAtPointOnBody
+/// \param a_forceInWorld
+/// \param a_pointInWorld
+///
+void afInertialObject::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const cVector3d &a_pointInWorld){
+    if (m_bulletRigidBody){
+        btTransform T_bodyInWorld = m_bulletRigidBody->getWorldTransform();
+        btTransform T_worldInBody = T_bodyInWorld.inverse(); // Invert once here so we dont have to invert multiple times.
+        btVector3 worldForce = toBTvec(a_forceInWorld);
+        btVector3 worldPoint = toBTvec(a_pointInWorld);
+        btVector3 localForce = T_worldInBody.getBasis() * worldForce;
+        btVector3 localPoint = T_worldInBody * worldPoint;
+        btVector3 localTorque = localPoint.cross(localForce);
+        btVector3 worldTorque = T_worldInBody.getBasis() * localTorque;
+
+        m_bulletRigidBody->applyCentralForce(worldForce);
+        m_bulletRigidBody->applyTorque(worldTorque);
+    }
+
+}
+
+
+///
+/// \brief afInertialObject::applyForce
+/// \param a_force
+/// \param offset
+///
+void afInertialObject::applyForce(const cVector3d &a_force, const cVector3d &a_offset)
+{
+    btVector3 force = afUtils::convertDataType<btVector3, cVector3d>(a_force);
+    btVector3 offset = afUtils::convertDataType<btVector3, cVector3d>(a_offset);
+    m_bulletRigidBody->applyForce(force, offset);
+}
+
+
+///
+/// \brief afInertialObject::applyTorque
+/// \param a_torque
+///
+void afInertialObject::applyTorque(const cVector3d &a_torque)
+{
+    btVector3 torque = afUtils::convertDataType<btVector3, cVector3d>(a_torque);
+    m_bulletRigidBody->applyTorque(torque);
+}
+
+
+///
+/// \brief afInertialObject::buildContactTriangles
+/// \param a_margin
+/// \param lowResMesh
+///
+void afInertialObject::buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh){
+    // create compound shape
+    btCompoundShape* compound = new btCompoundShape();
+    m_bulletCollisionShape = compound;
+
+    std::vector<cMesh*> *v_meshes;
+    if (lowResMesh ){
+        v_meshes = lowResMesh->m_meshes;
+    }
+    else{
+        v_meshes = m_visualMesh->m_meshes;
+    }
+
+    // create collision detector for each mesh
+    std::vector<cMesh*>::iterator it;
+    for (it = v_meshes->begin(); it < v_meshes->end(); it++)
+    {
+        cMesh* mesh = (*it);
+
+        // bullet mesh
+        btTriangleMesh* bulletMesh = new btTriangleMesh();
+
+        // read number of triangles of the object
+        unsigned int numTriangles = mesh->m_triangles->getNumElements();
+
+        // add all triangles to Bullet model
+        for (unsigned int i=0; i<numTriangles; i++)
+        {
+            unsigned int vertexIndex0 = mesh->m_triangles->getVertexIndex0(i);
+            unsigned int vertexIndex1 = mesh->m_triangles->getVertexIndex1(i);
+            unsigned int vertexIndex2 = mesh->m_triangles->getVertexIndex2(i);
+
+            cVector3d vertex0 = mesh->m_vertices->getLocalPos(vertexIndex0);
+            cVector3d vertex1 = mesh->m_vertices->getLocalPos(vertexIndex1);
+            cVector3d vertex2 = mesh->m_vertices->getLocalPos(vertexIndex2);
+
+            bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                btVector3(vertex2(0), vertex2(1), vertex2(2)));
+        }
+
+        // create mesh collision model
+        btGImpactMeshShape* collisionShape = new btGImpactMeshShape(bulletMesh);
+
+        // assign settings
+        collisionShape->setMargin(a_margin);
+        collisionShape->updateBound();
+
+        // add to compound object
+        btTransform localTrans;
+        btVector3 pos;
+        btQuaternion q;
+
+        // set new position
+        cVector3d posMesh = mesh->getLocalPos();
+        pos[0] = posMesh(0);
+        pos[1] = posMesh(1);
+        pos[2] = posMesh(2);
+
+        // set new orientation
+        cMatrix3d rotMesh = mesh->getLocalRot();
+        cQuaternion quaternion;
+        quaternion.fromRotMat(rotMesh);
+
+        q.setW(quaternion.w);
+        q.setX(quaternion.x);
+        q.setY(quaternion.y);
+        q.setZ(quaternion.z);
+
+        // set new transform
+        localTrans.setOrigin(pos);
+        localTrans.setRotation(q);
+
+        // Apply the inertial transform offset
+        localTrans *= getInverseInertialOffsetTransform();
+
+        // add collision shape to compound
+        compound->addChildShape(localTrans, collisionShape);
+    }
+}
+
+
+///
+/// \brief afInertialObject::buildDynamicModel
+///
+void afInertialObject::buildDynamicModel()
+{
+
+    // create rigid body
+    btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
+    m_bulletRigidBody = new btRigidBody(rigidBodyCI);
+
+    // by default deactivate sleeping mode
+    m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
+    m_bulletRigidBody->setSleepingThresholds(0, 0);
+
+    // add bullet rigid body to bullet world
+    m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
+}
+
 
 ///
 /// \brief afBody::afBody
 /// \param a_world
 ///
-afRigidBody::afRigidBody(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+afRigidBody::afRigidBody(afWorldPtr a_afWorld): afInertialObject(a_afWorld){
     m_afWorld = a_afWorld;
     setFrameSize(0.5);
     m_mesh_name.clear();
@@ -1302,7 +1872,7 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_afWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
     }
-    m_meshes->clear();
+    m_visualMesh->m_meshes->clear();
 }
 
 
@@ -1436,7 +2006,7 @@ void afRigidBody::updateDownwardHeirarchyForRemoval(){
 void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
     //TODO: TEST THIS LOGIC RIGOROUSLY
     if (this == a_childBody){
-        std::cerr << "INFO, BODY \"" << this->m_name << "\": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
+        std::cerr << "INFO, BODY \"" << m_name << "\": CANNOT HAVE ITSELF AS ITS CHILD" << std::endl;
     }
     else{
         /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1466,6 +2036,7 @@ void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt
         }
     }
 }
+
 
 ///
 /// \brief afBody::load
@@ -1559,8 +2130,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     bool _visual_geometry_valid = false;
     bool _collision_geometry_valid = false;
-    m_visualGeometryType = GeometryType::invalid;
-    m_collisionGeometryType = GeometryType::invalid;
+    m_visualGeometryType = afGeometryType::invalid;
+    m_collisionGeometryType = afGeometryType::invalid;
     boost::filesystem::path high_res_filepath;
     boost::filesystem::path low_res_filepath;
     std::string _visual_shape_str;
@@ -1570,32 +2141,32 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     if (bodyCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
-        m_collisionGeometryType = GeometryType::shape;
+        m_collisionGeometryType = afGeometryType::shape;
         _collision_shape_str = bodyCollisionShape.as<std::string>();
     }
     else if (bodyCompoundCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
-        m_collisionGeometryType = GeometryType::compound_shape;
+        m_collisionGeometryType = afGeometryType::compound_shape;
     }
 
     if (bodyShape.IsDefined()){
         _visual_geometry_valid = true;
-        m_visualGeometryType = GeometryType::shape;
+        m_visualGeometryType = afGeometryType::shape;
         _visual_shape_str = bodyShape.as<std::string>();
         if (!_collision_geometry_valid){
             _collision_shape_str = _visual_shape_str;
             _collision_geometry_valid = true;
-            m_collisionGeometryType = GeometryType::shape;
+            m_collisionGeometryType = afGeometryType::shape;
             bodyCollisionGeometry = bodyGeometry;
             bodyCollisionShape = bodyShape;
         }
     }
     else if (bodyCompoundShape.IsDefined()){
         _visual_geometry_valid = true;
-        m_visualGeometryType = GeometryType::compound_shape;
+        m_visualGeometryType = afGeometryType::compound_shape;
         if (!_collision_geometry_valid){
             _collision_geometry_valid = true;
-            m_collisionGeometryType = GeometryType::compound_shape;
+            m_collisionGeometryType = afGeometryType::compound_shape;
             bodyCompoundCollisionShape = bodyCompoundShape;
         }
     }
@@ -1618,7 +2189,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
             }
             _visual_geometry_valid = true;
-            m_visualGeometryType = GeometryType::mesh;
+            m_visualGeometryType = afGeometryType::mesh;
         }
 
         // Only check for collision mesh definition if visual mesh is defined
@@ -1637,7 +2208,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                         low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
                     }
                     _collision_geometry_valid = true;
-                    m_collisionGeometryType = GeometryType::mesh;
+                    m_collisionGeometryType = afGeometryType::mesh;
                 }
             }
             else{
@@ -1653,7 +2224,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                     low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
                 }
                 _collision_geometry_valid = true;
-                m_collisionGeometryType = GeometryType::mesh;
+                m_collisionGeometryType = afGeometryType::mesh;
             }
         }
     }
@@ -1687,13 +2258,13 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_scale = bodyScale.as<double>();
     }
 
-    if (m_visualGeometryType == GeometryType::mesh){
-        if ( loadFromFile(high_res_filepath.c_str()) ){
+    if (m_visualGeometryType == afGeometryType::mesh){
+        if (loadFromFile(high_res_filepath.c_str()) ){
             if(m_scale != 1.0){
-                this->scale(m_scale);
+                this->setScale(m_scale);
             }
-            setUseDisplayList(true);
-            markForUpdate(false);
+            m_visualMesh->setUseDisplayList(true);
+            m_visualMesh->markForUpdate(false);
         }
         else{
             std::cerr << "WARNING: Body "
@@ -1702,150 +2273,32 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
     }
 
-    else if (m_visualGeometryType == GeometryType::shape){
-        int dx = 32; // Default x resolution for shape
-        int dy = 32; // Default y resolution for shape
-        int dz = 5; // Default z resolution for shape
-        if (bodyGeometry["dx"].IsDefined()){
-            dx = bodyGeometry["dx"].as<int>();
-        }
-        if (bodyGeometry["dy"].IsDefined()){
-            dy = bodyGeometry["dy"].as<int>();
-        }
-        if (bodyGeometry["dz"].IsDefined()){
-            dz = bodyGeometry["dZ"].as<int>();
-        }
+    else if (m_visualGeometryType == afGeometryType::shape){
+        afShapeGeometry shapeGeometry;
+        shapeGeometry.m_shapeType = afUtils::getShapeTypeFromString(_visual_shape_str);
+        shapeGeometry.copyGeometryData(&bodyGeometry);
+        shapeGeometry.setScale(m_scale);
         cMesh* tempMesh = new cMesh();
-        if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
-            double x = bodyGeometry["x"].as<double>();
-            double y = bodyGeometry["y"].as<double>();
-            double z = bodyGeometry["z"].as<double>();
-            x *= m_scale;
-            y *= m_scale;
-            z *= m_scale;
-            cCreateBox(tempMesh, x, y, z);
-        }
-        else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-            double radius = bodyGeometry["radius"].as<double>();
-            radius *= m_scale;
-            cCreateSphere(tempMesh, radius, dx, dy);
-        }
-        else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-            double radius = bodyGeometry["radius"].as<double>();
-            double height = bodyGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * height));
-        }
-        else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-            double radius = bodyGeometry["radius"].as<double>();
-            double height = bodyGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy);
-        }
-        else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
-            double radius = bodyGeometry["radius"].as<double>();
-            double height = bodyGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * height));
-        }
-        else if (_visual_shape_str.compare("Plane") == 0 || _visual_shape_str.compare("plane") == 0 || _visual_shape_str.compare("PLANE") == 0){
-            double offset = bodyGeometry["offset"].as<double>();
-
-            double nx = bodyGeometry["normal"]["x"].as<double>();
-            double ny = bodyGeometry["normal"]["y"].as<double>();
-            double nz = bodyGeometry["normal"]["z"].as<double>();
-
-            offset *= m_scale;
-            cVector3d pos;
-            cVector3d normal(nx, ny, nz);
-            normal.normalize();
-            pos = normal * offset;
-            cQuaternion rot_quat = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(cVector3d(0, 0, 1), normal);
-            cMatrix3d rot_mat;
-            rot_quat.toRotMat(rot_mat);
-            cCreatePlane(tempMesh, 100, 100, pos, rot_mat);
-        }
-        m_meshes->push_back(tempMesh);
+        afUtils::createVisualShape(tempMesh, shapeGeometry);
+        m_visualMesh->m_meshes->push_back(tempMesh);
     }
 
-    else if (m_visualGeometryType == GeometryType::compound_shape){
+    else if (m_visualGeometryType == afGeometryType::compound_shape){
         // First of all, set the inertial offset to 0.
         bodyInertialOffsetPos = bodyNode["inertial offset undef"];
         for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
             _visual_shape_str = bodyCompoundShape[shapeIdx]["shape"].as<std::string>();
             bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
-            int dx = 32; // Default x resolution for shape
-            int dy = 32; // Default y resolution for shape
-            int dz = 5; // Default z resolution for shape
-            double px = shapeOffset["position"]["x"].as<double>();
-            double py = shapeOffset["position"]["y"].as<double>();
-            double pz = shapeOffset["position"]["z"].as<double>();
-            double roll =  shapeOffset["orientation"]["r"].as<double>();
-            double pitch = shapeOffset["orientation"]["p"].as<double>();
-            double yaw =   shapeOffset["orientation"]["y"].as<double>();
-            cVector3d shapePos(px, py, pz);
-            cMatrix3d shapeRot;
-            shapeRot.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
-            if (bodyGeometry["dx"].IsDefined()){
-                dx = bodyGeometry["dx"].as<int>();
-            }
-            if (bodyGeometry["dy"].IsDefined()){
-                dy = bodyGeometry["dy"].as<int>();
-            }
-            if (bodyGeometry["dz"].IsDefined()){
-                dz = bodyGeometry["dz"].as<int>();
-            }
-            cMesh* tempMesh = new cMesh();
-            if (_visual_shape_str.compare("Box") == 0 || _visual_shape_str.compare("box") == 0 || _visual_shape_str.compare("BOX") == 0){
-                double x = bodyGeometry["x"].as<double>();
-                double y = bodyGeometry["y"].as<double>();
-                double z = bodyGeometry["z"].as<double>();
-                x *= m_scale;
-                y *= m_scale;
-                z *= m_scale;
-                //                std::cerr << "---------------------" << std::endl;
-                //                std::cerr << shapeIdx << std::endl;
-                //                std::cerr << "Geometry : " << x << " " << y << " " << z << std::endl;
-                //                std::cerr << "Location : " << std::endl;
-                //                std::cerr << "\tRotation: " << pitch << " " << roll << " " << yaw << std::endl;
-                //                std::cerr << "\tPosition: " << px << " " << py << " " << pz << std::endl;
-                //                std::cerr << "Scale    : "  << m_scale << std::endl;
 
-                cCreateBox(tempMesh, x, y, z, shapePos, shapeRot);
-            }
-            else if (_visual_shape_str.compare("Sphere") == 0 || _visual_shape_str.compare("sphere") == 0 || _visual_shape_str.compare("SPHERE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                radius *= m_scale;
-                cCreateSphere(tempMesh, radius, dx, dy, shapePos, shapeRot);
-            }
-            else if (_visual_shape_str.compare("Cylinder") == 0 || _visual_shape_str.compare("cylinder") == 0 || _visual_shape_str.compare("CYLINDER") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                shapePos.set(shapePos.x(), shapePos.y(), shapePos.z() - 0.5 * height);
-                cCreateCylinder(tempMesh, height, radius, dx, dy, dz, true, true, shapePos, shapeRot);
-            }
-            else if (_visual_shape_str.compare("Capsule") == 0 || _visual_shape_str.compare("capsule") == 0 || _visual_shape_str.compare("CAPSULE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                cCreateEllipsoid(tempMesh, radius, radius, height, dx, dy, shapePos, shapeRot);
-            }
-            else if (_visual_shape_str.compare("Cone") == 0 || _visual_shape_str.compare("cone") == 0 || _visual_shape_str.compare("CONE") == 0){
-                double radius = bodyGeometry["radius"].as<double>();
-                double height = bodyGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                shapePos.set(shapePos.x(), shapePos.y(), shapePos.z() - 0.5 * height);
-                cCreateCone(tempMesh, height, radius, 0, dx, dy, dz, true, true, shapePos, shapeRot);
-            }
-            m_meshes->push_back(tempMesh);
+            afShapeGeometry shapeGeometry;
+            shapeGeometry.m_shapeType = afUtils::getShapeTypeFromString(_visual_shape_str);
+            shapeGeometry.copyGeometryData(&bodyGeometry);
+            shapeGeometry.copyShapeOffsetData(&shapeOffset);
+            shapeGeometry.setScale(m_scale);
+            cMesh* tempMesh = new cMesh();
+            afUtils::createVisualShape(tempMesh, shapeGeometry);
+            m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
 
@@ -1858,8 +2311,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         b = bodyColorRGBA["b"].as<float>();
         a = bodyColorRGBA["a"].as<float>();
         mat.setColorf(r, g, b, a);
-        setMaterial(mat);
-        setTransparencyLevel(a);
+        m_visualMesh->setMaterial(mat);
+        m_visualMesh->setTransparencyLevel(a);
     }
     else if(bodyColorComponents.IsDefined()){
 
@@ -1894,14 +2347,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             mat.setShininess(shininess);
         }
         a = bodyColorComponents["transparency"].as<float>();
-        setMaterial(mat);
-        setTransparencyLevel(a);
+        m_visualMesh->setMaterial(mat);
+        m_visualMesh->setTransparencyLevel(a);
     }
     else if(bodyColor.IsDefined()){
         std::vector<double> rgba = m_afWorld->getColorRGBA(bodyColor.as<std::string>());
         mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-        setMaterial(mat);
-        setTransparencyLevel(rgba[3]);
+        m_visualMesh->setMaterial(mat);
+        m_visualMesh->setTransparencyLevel(rgba[3]);
     }
 
     // Load any shader that have been defined
@@ -1952,7 +2405,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     // Begin loading the collision geometry
-    if(m_collisionGeometryType == GeometryType::mesh){
+    if(m_collisionGeometryType == afGeometryType::mesh){
         m_lowResMesh.removeAllMesh();
         if( m_lowResMesh.loadFromFile(low_res_filepath.c_str()) ){
             if(m_scale != 1.0){
@@ -1978,7 +2431,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
 
     }
-    else if (m_collisionGeometryType == GeometryType::shape){
+    else if (m_collisionGeometryType == afGeometryType::shape){
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
         btCollisionShape* singleCollisionShape;
         std::string _shape_str = bodyCollisionShape.as<std::string>();
@@ -2125,7 +2578,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
 
     }
-    else if (m_collisionGeometryType == GeometryType::compound_shape){
+    else if (m_collisionGeometryType == afGeometryType::compound_shape){
         btCollisionShape* singleCollisionShape;
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
@@ -2305,11 +2758,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     if(m_mass == 0.0){
-        setInertia(cVector3d(0, 0, 0));
+        setInertia(0, 0, 0);
     }
     else{
         if(bodyInertia.IsDefined()){
-            setInertia(cVector3d(bodyInertia["ix"].as<double>(), bodyInertia["iy"].as<double>(), bodyInertia["iz"].as<double>()));
+            setInertia(bodyInertia["ix"].as<double>(), bodyInertia["iy"].as<double>(), bodyInertia["iz"].as<double>());
             if (m_inertia.x() < 0.0 || m_inertia.y() < 0.0 || m_inertia.z() < 0.0 ){
                 std::cerr << "WARNING: Body "
                           << m_name
@@ -2317,7 +2770,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 return 0;
             }
         }
-        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == GeometryType::shape || m_collisionGeometryType == GeometryType::compound_shape){
+        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == afGeometryType::shape || m_collisionGeometryType == afGeometryType::compound_shape){
             estimateInertia();
         }
     }
@@ -2347,8 +2800,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     m_initialPos = T_mINw.getLocalPos();
     m_initialRot = T_mINw.getLocalRot();
-    setLocalPos(T_mINw.getLocalPos());
-    setLocalRot(T_mINw.getLocalRot());
+    setLocalPos(m_initialPos);
+    setLocalRot(m_initialRot);
 
     if (bodyLinDamping.IsDefined())
         m_surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
@@ -2405,7 +2858,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     setConfigProperties(this, &m_surfaceProps);
-    m_afWorld->addChild(this);
+    m_afWorld->addChild(this->m_visualMesh);
     return true;
 }
 
@@ -2445,7 +2898,7 @@ void afRigidBody::enableShaderProgram(){
                          "\n \t VERTEX: " << m_vsFilePath.c_str() <<
                          "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
 
-            setShaderProgram(shaderProgram);
+            m_visualMesh->setShaderProgram(shaderProgram);
         }
         else{
             std::cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
@@ -2456,7 +2909,7 @@ void afRigidBody::enableShaderProgram(){
         }
     }
     // Check if the shader has been assigned by afWorld
-    else if (getShaderProgram() != nullptr){
+    else if (m_visualMesh->getShaderProgram() != nullptr){
         m_shaderProgramDefined = true;
     }
     else{
@@ -2464,27 +2917,6 @@ void afRigidBody::enableShaderProgram(){
     }
 }
 
-
-///
-/// \brief afRigidBody::computeInertialOffset
-/// \param mesh
-/// \return
-///
-btVector3 afRigidBody::computeInertialOffset(cMesh* mesh){
-    cVector3d intertialOffset(0, 0, 0);
-    cVector3d vPos;
-    // Sanity Check
-    if (mesh){
-        int nvertices = mesh->getNumVertices();
-        int i;
-        double idx;
-        for (i = 0, idx = 0 ; i < nvertices ; i++, idx++){
-            vPos = mesh->m_vertices->getLocalPos(i);
-            intertialOffset = ((( idx ) / ( idx + 1.0 )) * intertialOffset) + (( 1.0 / ( idx + 1.0 )) * vPos);
-        }
-    }
-    return btVector3(intertialOffset.x(), intertialOffset.y(), intertialOffset.z());
-}
 
 ///
 /// \brief afBody::compute_gains
@@ -2496,7 +2928,7 @@ void afRigidBody::computeControllerGains(){
 
     double P_lin, D_lin, P_ang, D_ang;
     double lumped_mass = m_mass;
-    cVector3d lumped_intertia = m_inertia;
+    btVector3 lumped_intertia = m_inertia;
     std::vector<afChildJointPair>::iterator sjIt;
     for(sjIt = m_CJ_PairsActive.begin() ; sjIt != m_CJ_PairsActive.end() ; ++sjIt){
         lumped_mass += sjIt->m_childBody->getMass();
@@ -2547,14 +2979,10 @@ void afRigidBody::updatePositionFromDynamics()
         btQuaternion q = T_mINw.getRotation();
 
         // set new position
-        m_localPos.set(pos[0],pos[1],pos[2]);
+        setLocalPos(pos[0], pos[1], pos[2]);
 
         // set new orientation
-        cQuaternion quaternion(q.getW(), q.getX(), q.getY(), q.getZ());
-        quaternion.toRotMat(m_localRot);
-
-        // orthogonalize frame
-        m_localRot.orthogonalize();
+        setLocalRot(q.getW(), q.getX(), q.getY(), q.getZ());
     }
 
     // Update the data for sensors
@@ -2573,10 +3001,11 @@ void afRigidBody::updatePositionFromDynamics()
     if(m_afRigidBodyCommPtr.get() != nullptr){
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         cQuaternion q;
-        q.fromRotMat(m_localRot);
+        q.fromRotMat(m_visualMesh->getLocalRot());
 
         // Update the Pose
-        m_afRigidBodyCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cVector3d localPos = getLocalPos();
+        m_afRigidBodyCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
         m_afRigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         // Update the Wrench
@@ -2910,29 +3339,6 @@ void afRigidBody::afObjectSetJointEfforts(){
 
 
 ///
-/// \brief afRigidBody::applyForceAtPoint
-/// \param a_forceInWorldFrame
-/// \param a_pointInLocalFrame
-///
-void afRigidBody::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, const cVector3d &a_pointInWorld){
-    if (m_bulletRigidBody){
-        btTransform T_bodyInWorld = m_bulletRigidBody->getWorldTransform();
-        btTransform T_worldInBody = T_bodyInWorld.inverse(); // Invert once here so we dont have to invert multiple times.
-        btVector3 worldForce = toBTvec(a_forceInWorld);
-        btVector3 worldPoint = toBTvec(a_pointInWorld);
-        btVector3 localForce = T_worldInBody.getBasis() * worldForce;
-        btVector3 localPoint = T_worldInBody * worldPoint;
-        btVector3 localTorque = localPoint.cross(localForce);
-        btVector3 worldTorque = T_worldInBody.getBasis() * localTorque;
-
-        m_bulletRigidBody->applyCentralForce(worldForce);
-        m_bulletRigidBody->applyTorque(worldTorque);
-    }
-
-}
-
-
-///
 /// \brief afRigidBody::setAngle
 /// \param angle
 ///
@@ -3050,7 +3456,7 @@ afRigidBody::~afRigidBody(){
 
 ///
 /// \brief afSoftBody::afSoftBody
-/// \param a_chaiWorld
+/// \param a_afWorld
 ///
 afSoftBody::afSoftBody(afWorldPtr a_afWorld): afSoftMultiMesh(a_afWorld){
     m_afWorld = a_afWorld;
@@ -3442,7 +3848,7 @@ void afJointController::boundImpulse(double &effort_cmd){
 ///
 /// \brief afJoint::afJoint
 ///
-afJoint::afJoint(afWorldPtr a_afWorld){
+afJoint::afJoint(afWorldPtr a_afWorld): afBaseObject(m_afWorld){
     m_afWorld = a_afWorld;
     m_posArray.resize(m_jpSize);
     m_dtArray.resize(m_jpSize);
@@ -5014,7 +5420,6 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
 
 ///
 /// \brief afWorld::afWorld
-/// \param a_chaiWorld
 /// \param a_global_namespace
 ///
 afWorld::afWorld(std::string a_global_namespace){
@@ -5037,7 +5442,7 @@ afWorld::afWorld(std::string a_global_namespace){
     setGlobalNamespace(a_global_namespace);
 
     m_pointCloudHandlerPtr = new afPointCloudsHandler(this);
-    addChild(m_pointCloudHandlerPtr);
+    addChild(m_pointCloudHandlerPtr->m_visualMesh);
 }
 
 afWorld::~afWorld()
@@ -5169,6 +5574,29 @@ void afWorld::resetDynamicBodies(bool reset_time){
 
 
 ///
+/// \brief afWorld::setGravity
+/// \param x
+/// \param y
+/// \param z
+///
+void afWorld::setGravity(double x, double y, double z)
+{
+    m_bulletWorld->setGravity(btVector3(x, y, z));
+}
+
+
+///
+/// \brief afWorld::getSimulationDeltaTime
+/// \return
+///
+double afWorld::getSimulationDeltaTime()
+{
+    double dt = m_simulationTime - m_lastSimulationTime;
+    return dt;
+}
+
+
+///
 /// \brief afWorld::afExecuteCommand
 /// \param dt
 ///
@@ -5213,7 +5641,7 @@ void afWorld::afExecuteCommand(double dt){
                     mpUnit.m_pchPtr = pchPtr;
                     m_pointCloudHandlerPtr->m_pcMap[topic_name] = mpUnit;
                     // Add as child, the header in PC message can override the parent later
-                    m_pointCloudHandlerPtr->addChild(mpPtr);
+                    addChild(mpPtr);
                 }
 
 
@@ -5370,21 +5798,40 @@ void afWorld::updatePositionFromDynamics()
     }
 #endif
 
-    afUpdateTimes(getWallTime(), getSimulationTime());
-    std::list<cBulletGenericObject*>::iterator i;
-
     estimateBodyWrenches();
 
-    for(i = m_bodies.begin(); i != m_bodies.end(); ++i)
+    afUpdateTimes(getWallTime(), getSimulationTime());
+    std::list<afBaseObject*>::iterator i;
+
+    for(i = m_afChildrenObject.begin(); i != m_afChildrenObject.end(); ++i)
     {
-        cBulletGenericObject* nextItem = *i;
-        nextItem->updatePositionFromDynamics();
+        afBaseObject* nextObj = *i;
+        nextObj->updatePositionFromDynamics();
     }
 
 //    afSensorMap::iterator senIt;
 //    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
 //        (senIt->second)->updatePositionFromDynamics();
-//    }
+    //    }
+}
+
+///
+/// \brief afWorld::addVisualMesh
+/// \param a_visualMesh
+///
+void afWorld::addChild(cGenericObject *a_cObject)
+{
+    m_chaiWorld->addChild(a_cObject);
+}
+
+
+///
+/// \brief afWorld::removeChild
+/// \param a_cObject
+///
+void afWorld::removeChild(cGenericObject *a_cObject)
+{
+    m_chaiWorld->removeChild(a_cObject);
 }
 
 
@@ -5585,17 +6032,17 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         }
     }
 
-    cVector3d gravityVector(0, 0, -9.81);
+    double gx = 0.0;
+    double gy = 0.0;
+    double gz = -9.81;
 
     if (worldGravity.IsDefined()){
-        double x, y, z;
-        x = worldGravity["x"].as<double>();
-        y = worldGravity["y"].as<double>();
-        z = worldGravity["z"].as<double>();
-        gravityVector.set(x, y, z);
+        gx = worldGravity["x"].as<double>();
+        gy = worldGravity["y"].as<double>();
+        gz = worldGravity["z"].as<double>();
     }
 
-    setGravity(gravityVector);
+    setGravity(gx, gy, gz);
 
     if (worldEnclosureData.IsDefined()){
         m_encl_length = worldEnclosureData["length"].as<double>();
@@ -5759,7 +6206,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
 void afWorld::render(afRenderOptions &options)
 {
     // Update shadow maps once
-    updateShadowMaps(false, options.m_mirroredDisplay);
+    m_chaiWorld->updateShadowMaps(false, options.m_mirroredDisplay);
 
     afCameraMap::iterator camIt;
     for (camIt = m_afCameraMap.begin(); camIt != m_afCameraMap.end(); ++ camIt){
@@ -5942,7 +6389,7 @@ void afWorld::enableShaderProgram(){
 
             afRigidBodyVec rbVec = getAFRigidBodies();
             for (int i = 0 ; i < rbVec.size() ; i++){
-                rbVec[i]->setShaderProgram(shaderProgram);
+                rbVec[i]->m_visualMesh->setShaderProgram(shaderProgram);
             }
 
         }
@@ -6231,8 +6678,8 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 if (m_pickedAFRigidBody){
                     std::cerr << "User picked AF rigid body: " << m_pickedAFRigidBody->m_name << std::endl;
                     m_pickedBulletRigidBody = body;
-                    m_pickedAFRigidBodyColor = m_pickedAFRigidBody->m_material->copy();
-                    m_pickedAFRigidBody->setMaterial(m_pickColor);
+                    m_pickedAFRigidBodyColor = m_pickedAFRigidBody->m_visualMesh->m_material->copy();
+                    m_pickedAFRigidBody->m_visualMesh->setMaterial(m_pickColor);
                     m_savedState = m_pickedBulletRigidBody->getActivationState();
                     m_pickedBulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
                 }
@@ -6373,7 +6820,7 @@ void afWorld::removePickingConstraint(){
     }
 
     if (m_pickedAFRigidBody){
-        m_pickedAFRigidBody->setMaterial(m_pickedAFRigidBodyColor);
+        m_pickedAFRigidBody->m_visualMesh->setMaterial(m_pickedAFRigidBodyColor);
     }
 
     if (m_pickedSoftBody){
@@ -6471,8 +6918,8 @@ void afCamera::setDepthPublishInterval(uint a_interval){
 /// \return
 ///
 cVector3d afCamera::getGlobalPos(){
-    if (getParent()){
-        return getParent()->getLocalTransform() * getLocalPos();
+    if (m_visualMesh->getParent()){
+        return m_visualMesh->getParent()->getLocalTransform() * getLocalPos();
     }
     else{
         return getLocalPos();
@@ -6485,8 +6932,8 @@ cVector3d afCamera::getGlobalPos(){
 /// \param a_pos
 ///
 void afCamera::setTargetPos(cVector3d a_pos){
-    if(getParent()){
-        cTransform T_inv = getParent()->getLocalTransform();
+    if(m_visualMesh->getParent()){
+        cTransform T_inv = m_visualMesh->getParent()->getLocalTransform();
         T_inv.invert();
         //        a_pos = T_inv * a_pos;
     }
@@ -6510,7 +6957,7 @@ void afCamera::showTargetPos(bool a_show){
 cVector3d afCamera::getTargetPos(){
     cTransform _T_pInw;
     _T_pInw.identity();
-    if (getParent()){
+    if (m_visualMesh->getParent()){
         //        _T_pInw = getParent()->getLocalTransform();
     }
     return _T_pInw * getLocalTransform() * m_targetPos;
@@ -6597,12 +7044,8 @@ bool afCamera::createDefaultCamera(){
     s_cameraIdx++;
 
     // Assign the Window Camera Handles
-    m_afWorld->addChild(this);
+    m_afWorld->addChild(this->m_visualMesh);
 
-    // Make sure to set the mass to 0 as this is a kinematic body
-    m_mass = 0.0;
-    // Build the model which inturn adds this body to bullet world
-    buildDynamicModel();
     return true;
 }
 
@@ -6755,7 +7198,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         }
         else{
             m_parentName = "";
-            a_world->addChild(this);
+            a_world->addChild(this->m_visualMesh);
         }
 
         //////////////////////////////////////////////////////////////////////////////////////
@@ -6874,11 +7317,6 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
         s_windowIdx++;
         s_cameraIdx++;
-
-        // Make sure to set the mass to 0 as this is a kinematic body
-        m_mass = 0.0;
-        // Build the model which inturn adds this body to bullet world
-        buildDynamicModel();
 
 
         if (m_publishImage || m_publishDepth){
@@ -7237,7 +7675,7 @@ bool afCamera::resolveParenting(std::string a_parent_name){
     if (!m_parentName.empty()){
         afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
         if (pBody){
-            pBody->addChild(this);
+            pBody->addChild(this->m_visualMesh);
             // Now also update the postion and orientation, w.r.t the parent.
             setView(m_camPos, m_camLookAt, m_camUp);
             m_initialPos = getLocalPos();
@@ -7302,8 +7740,8 @@ void afCamera::afExecuteCommand(double dt){
 
                 if (m_parentName.compare(parent_name) != 0){
                     // Parent has changed. Find the appropriate parent
-                    if (getParent() != nullptr){
-                        getParent()->removeChild(this);
+                    if (m_visualMesh->getParent() != nullptr){
+                        m_visualMesh->getParent()->removeChild(this->m_visualMesh);
                     }
 
                     resolveParenting(parent_name);
@@ -7389,9 +7827,10 @@ void afCamera::updatePositionFromDynamics()
         }
 
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        m_afCameraCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cVector3d localPos = getLocalPos();
+        m_afCameraCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
         cQuaternion q;
-        q.fromRotMat(m_localRot);
+        q.fromRotMat(getLocalRot());
         m_afCameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         m_write_count++;
@@ -7582,9 +8021,6 @@ bool afLight::createDefaultLight(){
     m_spotLight->setEnabled(true);
     m_afWorld->addChild(m_spotLight);
 
-    m_mass = 0.0;
-    buildDynamicModel();
-
     return true;
 }
 
@@ -7672,7 +8108,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         }
         else{
             m_parentName = "";
-            a_world->addChild(this);
+            a_world->addChild(m_visualMesh);
         }
 
         setLocalPos(_location);
@@ -7708,8 +8144,6 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         }
         m_spotLight->setEnabled(true);
 
-        m_mass = 0.0;
-        buildDynamicModel();
     }
 
     return _is_valid;
@@ -7754,7 +8188,7 @@ void afLight::setDir(const cVector3d &a_direction){
     v2.normalize();
 
     // update rotation matrix
-    m_localRot.setCol(v0,v1,v2);
+    setLocalRot(cMatrix3d(v0,v1,v2));
 }
 
 
@@ -7771,7 +8205,7 @@ bool afLight::resolveParenting(std::string a_parent_name){
     if (!m_parentName.empty()){
         afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
         if (pBody){
-            pBody->addChild(this);
+            pBody->addChild(m_visualMesh);
             // Now also update the postion and orientation, w.r.t the parent.
             setLocalPos(m_initialPos);
             setLocalRot(m_initialRot);
@@ -7827,8 +8261,8 @@ void afLight::afExecuteCommand(double dt){
 
                 if (m_parentName.compare(parent_name) != 0){
                     // Parent has changed. Find the appropriate parent
-                    if (getParent() != nullptr){
-                        getParent()->removeChild(this);
+                    if (m_visualMesh->getParent() != nullptr){
+                        m_visualMesh->getParent()->removeChild(m_visualMesh);
                     }
 
                     resolveParenting(parent_name);
@@ -7863,9 +8297,10 @@ void afLight::updatePositionFromDynamics()
         }
 
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        m_afLightCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cVector3d localPos = getLocalPos();
+        m_afLightCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
         cQuaternion q;
-        q.fromRotMat(m_localRot);
+        q.fromRotMat(getLocalRot());
         m_afLightCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         m_write_count++;
@@ -7879,13 +8314,7 @@ void afLight::updatePositionFromDynamics()
 }
 
 
-///
-/// \brief afMultiBody::afMultiBody
-///
-afMultiBody::afMultiBody(){
-}
-
-afMultiBody::afMultiBody(afWorldPtr a_afWorld){
+afMultiBody::afMultiBody(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_afWorld = a_afWorld;
 
     //    m_pickDragVector = new cMesh();
@@ -7894,7 +8323,7 @@ afMultiBody::afMultiBody(afWorldPtr a_afWorld){
     //    m_pickDragVector->setShowEnabled(false);
     //    m_pickDragVector->setUseDisplayList(true);
     //    m_pickDragVector->markForUpdate(false);
-    //    m_chaiWorld->addChild(m_pickDragVector);
+    //    m_chaiWorld->addVisualMesh(m_pickDragVector);
 }
 
 
@@ -8283,18 +8712,8 @@ template <typename T, typename TMap>
 ///
 bool afWorld::addObject(T a_obj, std::string a_name, TMap* a_map){
     (*a_map)[a_name] = a_obj;
-
-    // Set the size of the frame.
-    cVector3d bounds = a_obj->getBoundaryMax();
-    double frame_size;
-    if (bounds.length() > 0.001){
-        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
-        frame_size = max_axis * 1.2;
-    }
-    else{
-        frame_size = 0.5;
-    }
-    a_obj->setFrameSize(frame_size);
+    m_afChildrenObject.push_back(a_obj);
+    showVisualFrame(a_obj);
     return true;
 }
 
@@ -8365,6 +8784,24 @@ TVec afWorld::getObjects(TMap* a_map){
     }
 
     return _objects;
+}
+
+
+///
+/// \brief afWorld::showVisualFrame
+///
+void afWorld::showVisualFrame(afBaseObject* a_obj){
+    // Set the size of the frame.
+    cVector3d bounds = a_obj->getBoundaryMax();
+    double frame_size;
+    if (bounds.length() > 0.001){
+        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
+        frame_size = max_axis * 1.2;
+    }
+    else{
+        frame_size = 0.5;
+    }
+    a_obj->setFrameSize(frame_size);
 }
 
 
@@ -8602,7 +9039,7 @@ afMultiBody::~afMultiBody(){
     //    }
 }
 
-afVehicle::afVehicle(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+afVehicle::afVehicle(afWorldPtr a_afWorld): afInertialObject(a_afWorld){
 
 }
 
@@ -8808,7 +9245,7 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_chassis->m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
     m_afWorld->m_bulletWorld->addVehicle(m_vehicle);
-    m_afWorld->addChild(this);
+    m_afWorld->addChild(m_visualMesh);
 
     m_vehicle->setCoordinateSystem(1, 2, 0);
 
@@ -8924,16 +9361,14 @@ void afVehicle::updatePositionFromDynamics(){
 
     }
 
-    // Update the Local Transform
-    setLocalTransform(m_chassis->getLocalTransform());
-
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afVehicleCommPtr.get() != nullptr){
 
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        m_afVehicleCommPtr->cur_position(m_localPos.x(), m_localPos.y(), m_localPos.z());
+        cVector3d localPos = getLocalPos();
+        m_afVehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
         cQuaternion q;
-        q.fromRotMat(m_localRot);
+        q.fromRotMat(getLocalRot());
         m_afVehicleCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
         // Since the mass and inertia aren't going to change that often, write them

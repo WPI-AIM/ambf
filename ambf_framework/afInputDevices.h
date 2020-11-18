@@ -124,13 +124,13 @@ public:
 
     inline void applyForce(cVector3d force){
         if (m_rootLink->m_activeControllerType == afControlType::force){
-            m_rootLink->addExternalForce(force);
+            m_rootLink->applyForce(force);
         }
     }
 
     inline void applyTorque(cVector3d torque){
         if (m_rootLink->m_activeControllerType == afControlType::force){
-            m_rootLink->addExternalTorque(torque);
+            m_rootLink->applyTorque(torque);
         }
     }
 
