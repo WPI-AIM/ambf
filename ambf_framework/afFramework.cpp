@@ -207,25 +207,45 @@ cTransform toCtransform(const btTransform &btTrans){
 /// \brief afShapeGeometry::setScale
 /// \param a_scale
 ///
-afShapeGeometry::afShapeGeometry()
+afPrimitiveGeometry::afPrimitiveGeometry()
 {
     m_posOffset.set(0, 0, 0);
     m_rotOffset.identity();
-    m_shapeType = afShapeType::AF_INVALID;
+    m_shapeType = afShapeType::INVALID;
+    m_axisType = afAxisType::Z;
 }
 
-bool afShapeGeometry::copyShapeOffsetData(YAML::Node *offsetNode)
+
+///
+/// \brief afShapeGeometry::copyShapeOffsetData
+/// \param offsetNode
+/// \return
+///
+bool afPrimitiveGeometry::copyShapeOffsetData(YAML::Node *offset_node)
 {
     bool valid = true;
-    double px = shapeOffset["position"]["x"].as<double>();
-    double py = shapeOffset["position"]["y"].as<double>();
-    double pz = shapeOffset["position"]["z"].as<double>();
-    double roll =  shapeOffset["orientation"]["r"].as<double>();
-    double pitch = shapeOffset["orientation"]["p"].as<double>();
-    double yaw =   shapeOffset["orientation"]["y"].as<double>();
 
-    m_posOffset.set(px, py, pz);
-    m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+    YAML::Node offsetNode = *offset_node;
+
+    if (offsetNode.IsDefined()){
+
+        if (offsetNode["position"].IsDefined()){
+            double px = offsetNode["position"]["x"].as<double>();
+            double py = offsetNode["position"]["y"].as<double>();
+            double pz = offsetNode["position"]["z"].as<double>();
+            m_posOffset.set(px, py, pz);
+        }
+
+        if (offsetNode["orientation"].IsDefined()){
+            double roll =  offsetNode["orientation"]["r"].as<double>();
+            double pitch = offsetNode["orientation"]["p"].as<double>();
+            double yaw =   offsetNode["orientation"]["y"].as<double>();
+            m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+        }
+    }
+    else{
+        valid = false;
+    }
 
     return valid;
 }
@@ -236,52 +256,172 @@ bool afShapeGeometry::copyShapeOffsetData(YAML::Node *offsetNode)
 /// \param geometryNode
 /// \return
 ///
-bool afShapeGeometry::copyGeometryData(YAML::Node *geometryNode)
+bool afPrimitiveGeometry::copyGeometryData(YAML::Node *geometry_node)
 {
     bool valid = true;
 
+    YAML::Node geometryNode = *geometry_node;
+
+    if(geometryNode["axis"].IsDefined()){
+        std::string axis = geometryNode["axis"].as<std::string>();
+
+        if (axis.compare("x") == 0 || axis.compare("X") == 0){
+            m_axisType = afAxisType::X;
+        }
+        else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
+            m_axisType = afAxisType::Y;
+        }
+        else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
+            m_axisType = afAxisType::Z;
+        }
+        else{
+            std::cerr << "WARNING: Axis string \"" << axis << "\" not understood!\n";
+            m_axisType = afAxisType::Z;
+        }
+    }
+
     switch (m_shapeType) {
-    case afShapeType::AF_BOX:
-        shapeGeometry.m_dx = geometryNode["x"].as<double>();
-        shapeGeometry.m_dy = geometryNode["y"].as<double>();
-        shapeGeometry.m_dz = geometryNode["z"].as<double>();
+    case afShapeType::BOX:{
+        double dx, dy, dz;
+        dx = geometryNode["x"].as<double>();
+        dy = geometryNode["y"].as<double>();
+        dz = geometryNode["z"].as<double>();
+        m_dimensions.set(dx, dy, dz);
         break;
-    case afShapeType::AF_SPHERE:
-        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
+    }
+    case afShapeType::SPHERE:{
+        m_radius = geometryNode["radius"].as<double>();
         break;
-    case afShapeType::AF_CAPSULE:
-        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
-        shapeGeometry.m_height = geometryNode["height"].as<double>();
+    }
+    case afShapeType::CAPSULE:{
+        m_radius = geometryNode["radius"].as<double>();
+        m_height = geometryNode["height"].as<double>();
         break;
-    case afShapeType::AF_CONE:
-        shapeGeometry.m_radius = geometryNode["radius"].as<double>();
-        shapeGeometry.m_height = geometryNode["height"].as<double>();
+    }
+    case afShapeType::CONE:{
+        m_radius = geometryNode["radius"].as<double>();
+        m_height = geometryNode["height"].as<double>();
         break;
-    case afShapeType::AF_PLANE:
-        shapeGeometry.m_planeOffset = geometryNode["offset"].as<double>();
-        shapeGeometry.m_nx = geometryNode["normal"]["x"].as<double>();
-        shapeGeometry.m_ny = geometryNode["normal"]["y"].as<double>();
-        shapeGeometry.m_nz = geometryNode["normal"]["z"].as<double>();
+    }
+    case afShapeType::PLANE:{
+        double nx, ny, nz;
+        nx = geometryNode["normal"]["x"].as<double>();
+        ny = geometryNode["normal"]["y"].as<double>();
+        nz = geometryNode["normal"]["z"].as<double>();
+        m_planeNormal.set(nx, ny, nz);
+        m_planeConstant = geometryNode["offset"].as<double>();
         break;
-    default:
+    }
+    default:{
         valid = false;
         break;
+    }
     }
 
     return valid;
 }
 
-void afShapeGeometry::setScale(double a_scale)
+
+///
+/// \brief afPrimitiveGeometry::setPlaneData
+/// \param normal_x
+/// \param normal_y
+/// \param normal_z
+/// \param plane_constant
+///
+void afPrimitiveGeometry::setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant)
+{
+    m_planeNormal.set(normal_x, normal_y, normal_z);
+    m_planeConstant = plane_constant;
+    m_shapeType = afShapeType::PLANE;
+}
+
+
+////
+/// \brief afPrimitiveGeometry::setBoxData
+/// \param dimension_x
+/// \param dimension_y
+/// \param dimension_z
+///
+void afPrimitiveGeometry::setBoxData(double dimension_x, double dimension_y, double dimension_z)
+{
+    m_dimensions.set(dimension_x, dimension_y, dimension_z);
+    m_shapeType = afShapeType::BOX;
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setSphereData
+/// \param radius
+///
+void afPrimitiveGeometry::setSphereData(double radius)
+{
+    m_radius = radius;
+    m_shapeType = afShapeType::SPHERE;
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setCapsuleData
+/// \param radius
+/// \param height
+/// \param axis
+///
+void afPrimitiveGeometry::setCapsuleData(double radius, double height, afAxisType axis)
+{
+    m_radius = radius;
+    m_height = height;
+    m_axisType = axis;
+    m_shapeType = afShapeType::CAPSULE;
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setConeData
+/// \param radius
+/// \param height
+/// \param axis
+///
+void afPrimitiveGeometry::setConeData(double radius, double height, afAxisType axis)
+{
+    m_radius = radius;
+    m_height = height;
+    m_axisType = axis;
+    m_shapeType = afShapeType::CONE;
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setPosOffset
+/// \param px
+/// \param py
+/// \param pz
+///
+void afPrimitiveGeometry::setPosOffset(double px, double py, double pz)
+{
+    m_posOffset.set(px, py, pz);
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setRotOffset
+/// \param roll
+/// \param pitch
+/// \param yaw
+///
+void afPrimitiveGeometry::setRotOffset(double roll, double pitch, double yaw)
+{
+    m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+}
+
+
+///
+/// \brief afPrimitiveGeometry::setScale
+/// \param a_scale
+///
+void afPrimitiveGeometry::setScale(double a_scale)
 {
     m_scale = a_scale;
-    m_dx *= m_scale;
-    m_dy *= m_scale;
-    m_dz *= m_scale;
-    m_radius *= m_scale;
-    m_height *= m_scale;
-    m_dx *= m_scale;
-    m_planeOffset *= m_scale;
-
 }
 
 
@@ -570,77 +710,86 @@ std::string afUtils::mergeNamespace(std::string a_namespace1, std::string a_name
 afShapeType afUtils::getShapeTypeFromString(const std::string &a_shape_str){
     afShapeType shapeType;
     if (a_shape_str.compare("Box") == 0 || a_shape_str.compare("box") == 0 || a_shape_str.compare("BOX") == 0){
-        shapeType = afShapeType::AF_BOX;
+        shapeType = afShapeType::BOX;
     }
     else if (a_shape_str.compare("Sphere") == 0 || a_shape_str.compare("sphere") == 0 || a_shape_str.compare("SPHERE") == 0){
-        shapeType = afShapeType::AF_SPHERE;
+        shapeType = afShapeType::SPHERE;
     }
     else if (a_shape_str.compare("Cylinder") == 0 || a_shape_str.compare("cylinder") == 0 || a_shape_str.compare("CYLINDER") == 0){
-        shapeType = afShapeType::AF_CYLINDER;
+        shapeType = afShapeType::CYLINDER;
     }
     else if (a_shape_str.compare("Capsule") == 0 || a_shape_str.compare("capsule") == 0 || a_shape_str.compare("CAPSULE") == 0){
-        shapeType = afShapeType::AF_CAPSULE;
+        shapeType = afShapeType::CAPSULE;
     }
     else if (a_shape_str.compare("Cone") == 0 || a_shape_str.compare("cone") == 0 || a_shape_str.compare("CONE") == 0){
-        shapeType = afShapeType::AF_CONE;
+        shapeType = afShapeType::CONE;
     }
     else if (a_shape_str.compare("Plane") == 0 || a_shape_str.compare("plane") == 0 || a_shape_str.compare("PLANE") == 0){
-        shapeType = afShapeType::AF_PLANE;
+        shapeType = afShapeType::PLANE;
 
     }
     else{
-        shapeType = afShapeType::AF_INVALID;
+        shapeType = afShapeType::INVALID;
     }
 }
 
 
 ///
 /// \brief afUtils::createVisualShape
-/// \param mesh
 /// \param a_shapeGeometry
+/// \return
 ///
-void afUtils::createVisualShape(cMesh *mesh, const afShapeGeometry& a_shapeGeometry){
+cMesh* afUtils::createVisualShape(const afPrimitiveGeometry& a_primitiveGeometry){
 
     int xs = 32;
     int ys = 32;
     int zs = 5;
 
-    double dx = a_shapeGeometry.m_dx;
-    double dy = a_shapeGeometry.m_dy;
-    double dz = a_shapeGeometry.m_dz;
+    cVector3d dims = a_primitiveGeometry.getDimensions();
+    double dx = dims.x();
+    double dy = dims.y();
+    double dz = dims.z();
 
-    double nx = a_shapeGeometry.m_nx;
-    double ny = a_shapeGeometry.m_ny;
-    double nz = a_shapeGeometry.m_nz;
+    cVector3d pNormal = a_primitiveGeometry.getPlaneNormal();
+    double nx = pNormal.x();
+    double ny = pNormal.y();
+    double nz = pNormal.z();
 
-    double offset = a_shapeGeometry.m_planeOffset;
+    double offset = a_primitiveGeometry.getPlaneConstant();
 
-    double radius = a_shapeGeometry.m_radius;
-    double height = a_shapeGeometry.m_height;
+    double radius = a_primitiveGeometry.getRadius();
+    double height = a_primitiveGeometry.getHeight();
 
-    cVector3d posOffset = a_shapeGeometry.m_posOffset;
-    cMatrix3d rotOffset = a_shapeGeometry.m_rotOffset;
+    cVector3d posOffset = a_primitiveGeometry.getPosOffset();
+    cMatrix3d rotOffset = a_primitiveGeometry.getRotOffset();
 
-    switch (a_shapeGeometry.m_shapeType) {
-    case afShapeType::AF_BOX:
-        cCreateBox(mesh, dx, dy, dz, posOffset, rotOffset);
+    cMesh* tempMesh = new cMesh();
+
+    switch (a_primitiveGeometry.getShapeType()) {
+    case afShapeType::BOX:{
+        cCreateBox(tempMesh, dx, dy, dz, posOffset, rotOffset);
         break;
-    case afShapeType::AF_SPHERE:
-        cCreateSphere(mesh, radius, xs, ys, posOffset, rotOffset);
+    }
+    case afShapeType::SPHERE:{
+        cCreateSphere(tempMesh, radius, xs, ys, posOffset, rotOffset);
         break;
-    case afShapeType::AF_CYLINDER:
-        posOffset[2] -= 0.5 * height;
-        cCreateCylinder(mesh, height, radius, xs, ys, zs, true, true, posOffset, rotOffset);
+    }
+    case afShapeType::CYLINDER:{
+        posOffset.set(posOffset.x(), posOffset.y(), posOffset.z() - 0.5 * height);
+        cCreateCylinder(tempMesh, height, radius, xs, ys, zs, true, true, posOffset, rotOffset);
         break;
-    case afShapeType::AF_CAPSULE:
-        posOffset[2] -= 0.5 * height;
-        cCreateEllipsoid(mesh, radius, radius, height, xs, ys, posOffset, rotOffset);
+    }
+    case afShapeType::CAPSULE:{
+        posOffset.set(posOffset.x(), posOffset.y(), posOffset.z() - 0.5 * height);
+        cCreateEllipsoid(tempMesh, radius, radius, height, xs, ys, posOffset, rotOffset);
         break;
-    case afShapeType::AF_CONE:
-        posOffset[2] -= 0.5 * height;
-        cCreateCone(mesh, height, radius, 0, xs, ys, zs, true, true, posOffset, rotOffset);
+    }
+    case afShapeType::CONE:{
+        posOffset.set(posOffset.x(), posOffset.y(), posOffset.z() - 0.5 * height);
+        cCreateCone(tempMesh, height, radius, 0, xs, ys, zs, true, true, posOffset, rotOffset);
         break;
-    case afShapeType::AF_PLANE:
+    }
+    case afShapeType::PLANE:{
         cVector3d pos;
         cVector3d normal(nx, ny, nz);
         normal.normalize();
@@ -648,12 +797,117 @@ void afUtils::createVisualShape(cMesh *mesh, const afShapeGeometry& a_shapeGeome
         cQuaternion rot_quat = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(cVector3d(0, 0, 1), normal);
         cMatrix3d rot_mat;
         rot_quat.toRotMat(rot_mat);
-        cCreatePlane(mesh, 100, 100, pos, rot_mat);
+        cCreatePlane(tempMesh, 100, 100, pos, rot_mat);
         break;
-    default:
+    }
+    default:{
+        delete tempMesh;
+        tempMesh == nullptr;
         // Throw some warning or error as shape not understood
         break;
     }
+    }
+    return tempMesh;
+}
+
+btCollisionShape *afUtils::createCollisionShape(const afPrimitiveGeometry &a_primitiveGeometry)
+{
+    cVector3d dims = a_primitiveGeometry.getDimensions();
+    double dx = dims.x();
+    double dy = dims.y();
+    double dz = dims.z();
+
+    cVector3d pNormal = a_primitiveGeometry.getPlaneNormal();
+    double nx = pNormal.x();
+    double ny = pNormal.y();
+    double nz = pNormal.z();
+
+    double offset = a_primitiveGeometry.getPlaneConstant();
+
+    double radius = a_primitiveGeometry.getRadius();
+    double height = a_primitiveGeometry.getHeight();
+
+    btCollisionShape* tempCollisionShape;
+
+    switch (a_primitiveGeometry.getShapeType()) {
+    case afShapeType::BOX:{
+        btVector3 halfExtents(dx/2, dy/2, dz/2);
+        tempCollisionShape = new btBoxShape(halfExtents);
+        break;
+    }
+    case afShapeType::SPHERE:{
+        tempCollisionShape = new btSphereShape(radius);
+        break;
+    }
+    case afShapeType::CYLINDER:{
+        height = height / 2;
+        switch (a_primitiveGeometry.getAxisType()) {
+        case afAxisType::X:{
+            btVector3 halfExtents(height, radius, radius);
+            tempCollisionShape = new btCylinderShapeX(halfExtents);
+            break;
+        }
+        case afAxisType::Y:{
+            btVector3 halfExtents(radius, height, radius);
+            tempCollisionShape = new btCylinderShape(halfExtents);
+            break;
+        }
+        case afAxisType::Z:{
+            btVector3 halfExtents(radius, radius, height);
+            tempCollisionShape = new btCylinderShapeZ(halfExtents);
+            break;
+        }
+        }
+        break;
+    }
+    case afShapeType::CAPSULE:{
+        height = height - 2*radius;
+        switch (a_primitiveGeometry.getAxisType()) {
+        case afAxisType::X:{
+            tempCollisionShape = new btCapsuleShapeX(radius, height);
+            break;
+        }
+        case afAxisType::Y:{
+            tempCollisionShape = new btCapsuleShape(radius, height);
+            break;
+        }
+        case afAxisType::Z:{
+            tempCollisionShape = new btCapsuleShapeZ(radius, height);
+            break;
+        }
+        }
+        break;
+    }
+    case afShapeType::CONE:{
+        switch (a_primitiveGeometry.getAxisType()) {
+        case afAxisType::X:{
+            tempCollisionShape = new btConeShapeX(radius, height);
+            break;
+        }
+        case afAxisType::Y:{
+            tempCollisionShape = new btConeShape(radius, height);
+            break;
+        }
+        case afAxisType::Z:{
+            tempCollisionShape = new btConeShapeZ(radius, height);
+            break;
+        }
+        }
+        break;
+    }
+    case afShapeType::PLANE:{
+        tempCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
+        break;
+    }
+    default:{
+        tempCollisionShape == nullptr;
+        // Throw some warning or error as shape not understood
+        break;
+    }
+    }
+
+    return tempCollisionShape;
+
 }
 
 
@@ -2130,8 +2384,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     bool _visual_geometry_valid = false;
     bool _collision_geometry_valid = false;
-    m_visualGeometryType = afGeometryType::invalid;
-    m_collisionGeometryType = afGeometryType::invalid;
+    m_visualGeometryType = afGeometryType::INVALID;
+    m_collisionGeometryType = afGeometryType::INVALID;
     boost::filesystem::path high_res_filepath;
     boost::filesystem::path low_res_filepath;
     std::string _visual_shape_str;
@@ -2141,32 +2395,32 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
 
     if (bodyCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
-        m_collisionGeometryType = afGeometryType::shape;
+        m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
         _collision_shape_str = bodyCollisionShape.as<std::string>();
     }
     else if (bodyCompoundCollisionShape.IsDefined()){
         _collision_geometry_valid = true;
-        m_collisionGeometryType = afGeometryType::compound_shape;
+        m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
     }
 
     if (bodyShape.IsDefined()){
         _visual_geometry_valid = true;
-        m_visualGeometryType = afGeometryType::shape;
+        m_visualGeometryType = afGeometryType::SINGLE_SHAPE;
         _visual_shape_str = bodyShape.as<std::string>();
         if (!_collision_geometry_valid){
             _collision_shape_str = _visual_shape_str;
             _collision_geometry_valid = true;
-            m_collisionGeometryType = afGeometryType::shape;
+            m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
             bodyCollisionGeometry = bodyGeometry;
             bodyCollisionShape = bodyShape;
         }
     }
     else if (bodyCompoundShape.IsDefined()){
         _visual_geometry_valid = true;
-        m_visualGeometryType = afGeometryType::compound_shape;
+        m_visualGeometryType = afGeometryType::COMPOUND_SHAPE;
         if (!_collision_geometry_valid){
             _collision_geometry_valid = true;
-            m_collisionGeometryType = afGeometryType::compound_shape;
+            m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
             bodyCompoundCollisionShape = bodyCompoundShape;
         }
     }
@@ -2189,7 +2443,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
             }
             _visual_geometry_valid = true;
-            m_visualGeometryType = afGeometryType::mesh;
+            m_visualGeometryType = afGeometryType::MESH;
         }
 
         // Only check for collision mesh definition if visual mesh is defined
@@ -2208,7 +2462,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                         low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
                     }
                     _collision_geometry_valid = true;
-                    m_collisionGeometryType = afGeometryType::mesh;
+                    m_collisionGeometryType = afGeometryType::MESH;
                 }
             }
             else{
@@ -2224,7 +2478,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                     low_res_filepath = mB->getLowResMeshesPath() + m_collision_mesh_name;
                 }
                 _collision_geometry_valid = true;
-                m_collisionGeometryType = afGeometryType::mesh;
+                m_collisionGeometryType = afGeometryType::MESH;
             }
         }
     }
@@ -2258,7 +2512,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_scale = bodyScale.as<double>();
     }
 
-    if (m_visualGeometryType == afGeometryType::mesh){
+    if (m_visualGeometryType == afGeometryType::MESH){
         if (loadFromFile(high_res_filepath.c_str()) ){
             if(m_scale != 1.0){
                 this->setScale(m_scale);
@@ -2273,17 +2527,16 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
     }
 
-    else if (m_visualGeometryType == afGeometryType::shape){
-        afShapeGeometry shapeGeometry;
-        shapeGeometry.m_shapeType = afUtils::getShapeTypeFromString(_visual_shape_str);
-        shapeGeometry.copyGeometryData(&bodyGeometry);
-        shapeGeometry.setScale(m_scale);
-        cMesh* tempMesh = new cMesh();
-        afUtils::createVisualShape(tempMesh, shapeGeometry);
+    else if (m_visualGeometryType == afGeometryType::SINGLE_SHAPE){
+        afPrimitiveGeometry primitiveGeometry;
+        primitiveGeometry.setShapeType(afUtils::getShapeTypeFromString(_visual_shape_str));
+        primitiveGeometry.copyGeometryData(&bodyGeometry);
+        primitiveGeometry.setScale(m_scale);
+        cMesh* tempMesh = afUtils::createVisualShape(primitiveGeometry);
         m_visualMesh->m_meshes->push_back(tempMesh);
     }
 
-    else if (m_visualGeometryType == afGeometryType::compound_shape){
+    else if (m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
         // First of all, set the inertial offset to 0.
         bodyInertialOffsetPos = bodyNode["inertial offset undef"];
         for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
@@ -2291,13 +2544,12 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
 
-            afShapeGeometry shapeGeometry;
-            shapeGeometry.m_shapeType = afUtils::getShapeTypeFromString(_visual_shape_str);
-            shapeGeometry.copyGeometryData(&bodyGeometry);
-            shapeGeometry.copyShapeOffsetData(&shapeOffset);
-            shapeGeometry.setScale(m_scale);
-            cMesh* tempMesh = new cMesh();
-            afUtils::createVisualShape(tempMesh, shapeGeometry);
+            afPrimitiveGeometry primitiveGeometry;
+            primitiveGeometry.setShapeType(afUtils::getShapeTypeFromString(_visual_shape_str));
+            primitiveGeometry.copyGeometryData(&bodyGeometry);
+            primitiveGeometry.copyShapeOffsetData(&shapeOffset);
+            primitiveGeometry.setScale(m_scale);
+            cMesh* tempMesh = afUtils::createVisualShape(primitiveGeometry);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
@@ -2405,7 +2657,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     // Begin loading the collision geometry
-    if(m_collisionGeometryType == afGeometryType::mesh){
+    if(m_collisionGeometryType == afGeometryType::MESH){
         m_lowResMesh.removeAllMesh();
         if( m_lowResMesh.loadFromFile(low_res_filepath.c_str()) ){
             if(m_scale != 1.0){
@@ -2431,272 +2683,64 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         }
 
     }
-    else if (m_collisionGeometryType == afGeometryType::shape){
+    else if (m_collisionGeometryType == afGeometryType::SINGLE_SHAPE){
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
-        btCollisionShape* singleCollisionShape;
-        std::string _shape_str = bodyCollisionShape.as<std::string>();
-        btTransform shapeOffsetTrans;
-        if (bodyCollisionOffset.IsDefined()){
-            double px = bodyCollisionOffset["position"]["x"].as<double>();
-            double py = bodyCollisionOffset["position"]["y"].as<double>();
-            double pz = bodyCollisionOffset["position"]["z"].as<double>();
-            double roll =  bodyCollisionOffset["orientation"]["r"].as<double>();
-            double pitch = bodyCollisionOffset["orientation"]["p"].as<double>();
-            double yaw =   bodyCollisionOffset["orientation"]["y"].as<double>();
-            btVector3 shapePos(px, py, pz);
-            btMatrix3x3 shapeRot;
-            shapeRot.setEulerZYX(roll, pitch, yaw);
-            shapeOffsetTrans.setBasis(shapeRot);
-            shapeOffsetTrans.setOrigin(shapePos);
+        std::string shape_str = bodyCollisionShape.as<std::string>();
+        btTransform T_off;
+
+        afPrimitiveGeometry primitiveGeometry;
+        primitiveGeometry.setShapeType(afUtils::getShapeTypeFromString(shape_str));
+        primitiveGeometry.copyGeometryData(&bodyCollisionGeometry);
+        if (primitiveGeometry.copyShapeOffsetData(&bodyCollisionOffset)){
+            T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(primitiveGeometry.getPosOffset(), primitiveGeometry.getRotOffset()));
         }
         else{
             // If a shape offset is not defined, set the shape offset equal to the intertial offset transform
-            // This is to take care of legacy ADF where a shape offset is not set.
-            shapeOffsetTrans = getInertialOffsetTransform();
+            // This is to take care of legacy ADF where the shape offset was not set.
+            T_off = getInertialOffsetTransform();
         }
+        primitiveGeometry.setScale(m_scale);
+        btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(primitiveGeometry);
 
-        // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
-        // Thus for a plane, instead of using a compound, use the single collision shape.
-        bool is_plane = false;
-
-        if (_shape_str.compare("Box") == 0 || _shape_str.compare("box") == 0 ||_shape_str.compare("BOX") == 0){
-            double x = bodyCollisionGeometry["x"].as<double>();
-            double y = bodyCollisionGeometry["y"].as<double>();
-            double z = bodyCollisionGeometry["z"].as<double>();
-            x *= m_scale;
-            y *= m_scale;
-            z *= m_scale;
-            btVector3 halfExtents(x/2, y/2, z/2);
-            singleCollisionShape = new btBoxShape(halfExtents);
+        // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
+        // Thus instead of using a compound, use the single collision shape.
+        if (primitiveGeometry.getShapeType() == afShapeType::PLANE){
+            m_bulletCollisionShape = singleCollisionShape;
         }
-        else if (_shape_str.compare("Plane") == 0 || _shape_str.compare("plane") == 0 ||_shape_str.compare("PLANE") == 0){
-            double offset = bodyCollisionGeometry["offset"].as<double>();
-
-            double nx = bodyCollisionGeometry["normal"]["x"].as<double>();
-            double ny = bodyCollisionGeometry["normal"]["y"].as<double>();
-            double nz = bodyCollisionGeometry["normal"]["z"].as<double>();
-            offset *= m_scale;
-            // A bug in Bullet where a compound plane shape doesn't collide with soft bodies.
-            // Thus for a plane, instead of using a compound, use the single collision shape.
-            is_plane = true;
-            m_bulletCollisionShape = new btStaticPlaneShape(btVector3(nx, ny, nz), offset);
-        }
-        else if (_shape_str.compare("Sphere") == 0 || _shape_str.compare("sphere") == 0 ||_shape_str.compare("SPHERE") == 0){
-            double radius = bodyCollisionGeometry["radius"].as<double>();
-            radius *= m_scale;
-            singleCollisionShape = new btSphereShape(radius);
-        }
-        else if (_shape_str.compare("Cylinder") == 0 || _shape_str.compare("cylinder") == 0 ||_shape_str.compare("CYLINDER") == 0){
-            double radius = bodyCollisionGeometry["radius"].as<double>();
-            double height = bodyCollisionGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            std::string axis = "z";
-            if(bodyCollisionGeometry["axis"].IsDefined()){
-                axis = bodyCollisionGeometry["axis"].as<std::string>();
-            }
-            if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                btVector3 halfExtents(height/2, radius, radius);
-                singleCollisionShape = new btCylinderShapeX(halfExtents);
-            }
-            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                btVector3 halfExtents(radius, height/2, radius);
-                singleCollisionShape = new btCylinderShape(halfExtents);
-            }
-            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                btVector3 halfExtents(radius, radius, height/2);
-                singleCollisionShape = new btCylinderShapeZ(halfExtents);
-            }
-            else{
-                std::cerr << "WARNING: Body "
-                          << m_name
-                          << "'s axis \"" << axis << "\" not understood?\n";
-                btVector3 halfExtents(radius, radius, height/2);
-                singleCollisionShape = new btCylinderShapeZ(halfExtents);
-            }
-        }
-        else if (_shape_str.compare("Capsule") == 0 || _shape_str.compare("capsule") == 0 ||_shape_str.compare("CAPSULE") == 0){
-            double radius = bodyCollisionGeometry["radius"].as<double>();
-            double height = bodyCollisionGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            // Adjust for height as bullet treats the height as the distance
-            // between the two spheres forming the capsule's ends.
-            height = height - 2*radius;
-            std::string axis = "z";
-            if(bodyCollisionGeometry["axis"].IsDefined()){
-                axis = bodyCollisionGeometry["axis"].as<std::string>();
-            }
-            if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                singleCollisionShape = new btCapsuleShapeX(radius, height);
-            }
-            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                singleCollisionShape = new btCapsuleShape(radius, height);
-            }
-            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                singleCollisionShape = new btCapsuleShapeZ(radius, height);
-            }
-            else{
-                std::cerr << "WARNING: Body "
-                          << m_name
-                          << "'s axis \"" << axis << "\" not understood?\n";
-                singleCollisionShape = new btCapsuleShapeZ(radius, height);
-            }
-        }
-        else if (_shape_str.compare("Cone") == 0 || _shape_str.compare("cone") == 0 ||_shape_str.compare("CONE") == 0){
-            double radius = bodyCollisionGeometry["radius"].as<double>();
-            double height = bodyCollisionGeometry["height"].as<double>();
-            radius *= m_scale;
-            height *= m_scale;
-            std::string axis = "z";
-            if(bodyCollisionGeometry["axis"].IsDefined()){
-                axis = bodyCollisionGeometry["axis"].as<std::string>();
-            }
-            if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                singleCollisionShape = new btConeShapeX(radius, height);
-            }
-            else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                singleCollisionShape = new btConeShape(radius, height);
-            }
-            else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                singleCollisionShape = new btConeShapeZ(radius, height);
-            }
-            else{
-                std::cerr << "WARNING: Body "
-                          << m_name
-                          << "'s axis \"" << axis << "\" not understood?\n";
-                singleCollisionShape = new btConeShapeZ(radius, height);
-            }
-        }
-
-        // Now, a collision shape has to address both an inertial offset transform as well as
-        // a shape offset.
-
-        if (is_plane == false){
-            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
+        else{
+            // Now, a collision shape has to address both an inertial offset transform as well as
+            // a shape offset.
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * T_off, singleCollisionShape);
             m_bulletCollisionShape = compoundCollisionShape;
         }
 
     }
-    else if (m_collisionGeometryType == afGeometryType::compound_shape){
-        btCollisionShape* singleCollisionShape;
+    else if (m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE){
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
         for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
             bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
-            double px = shapeOffset["position"]["x"].as<double>();
-            double py = shapeOffset["position"]["y"].as<double>();
-            double pz = shapeOffset["position"]["z"].as<double>();
-            double roll =  shapeOffset["orientation"]["r"].as<double>();
-            double pitch = shapeOffset["orientation"]["p"].as<double>();
-            double yaw =   shapeOffset["orientation"]["y"].as<double>();
-            btVector3 shapePos(px, py, pz);
-            btMatrix3x3 shapeRot;
-            shapeRot.setEulerZYX(roll, pitch, yaw);
-            btTransform shapeOffsetTrans(shapeRot, shapePos);
-            if (shape_str.compare("Box") == 0 || shape_str.compare("box") == 0 ||shape_str.compare("BOX") == 0){
-                double x = bodyCollisionGeometry["x"].as<double>();
-                double y = bodyCollisionGeometry["y"].as<double>();
-                double z = bodyCollisionGeometry["z"].as<double>();
-                x *= m_scale;
-                y *= m_scale;
-                z *= m_scale;
-                btVector3 halfExtents(x/2, y/2, z/2);
-               singleCollisionShape = new btBoxShape(halfExtents);
+            btTransform T_off;
+
+            afPrimitiveGeometry primitiveGeometry;
+            primitiveGeometry.setShapeType(afUtils::getShapeTypeFromString(shape_str));
+            primitiveGeometry.copyGeometryData(&bodyCollisionGeometry);
+            if (primitiveGeometry.copyShapeOffsetData(&shapeOffset)){
+                T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(primitiveGeometry.getPosOffset(), primitiveGeometry.getRotOffset()));
             }
-            else if (shape_str.compare("Sphere") == 0 || shape_str.compare("sphere") == 0 ||shape_str.compare("SPHERE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                radius *= m_scale;
-                singleCollisionShape = new btSphereShape(radius);
+            else{
+                T_off.setIdentity();
             }
-            else if (shape_str.compare("Cylinder") == 0 || shape_str.compare("cylinder") == 0 ||shape_str.compare("CYLINDER") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    btVector3 halfExtents(height/2, radius, radius);
-                    singleCollisionShape = new btCylinderShapeX(halfExtents);
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    btVector3 halfExtents(radius, height/2, radius);
-                    singleCollisionShape = new btCylinderShape(halfExtents);
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    btVector3 halfExtents(radius, radius, height/2);
-                    singleCollisionShape = new btCylinderShapeZ(halfExtents);
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    btVector3 halfExtents(radius, radius, height/2);
-                    singleCollisionShape = new btCylinderShapeZ(halfExtents);
-                }
-            }
-            else if (shape_str.compare("Capsule") == 0 || shape_str.compare("capsule") == 0 ||shape_str.compare("CAPSULE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                // Adjust for height as bullet treats the height as the distance
-                // between the two spheres forming the capsule's ends.
-                height = height - 2*radius;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    singleCollisionShape = new btCapsuleShapeX(radius, height);
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    singleCollisionShape = new btCapsuleShape(radius, height);
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    singleCollisionShape = new btCapsuleShapeZ(radius, height);
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    singleCollisionShape = new btCapsuleShapeZ(radius, height);
-                }
-            }
-            else if (shape_str.compare("Cone") == 0 || shape_str.compare("cone") == 0 ||shape_str.compare("CONE") == 0){
-                double radius = bodyCollisionGeometry["radius"].as<double>();
-                double height = bodyCollisionGeometry["height"].as<double>();
-                radius *= m_scale;
-                height *= m_scale;
-                std::string axis = "z";
-                if(bodyCollisionGeometry["axis"].IsDefined()){
-                    axis = bodyCollisionGeometry["axis"].as<std::string>();
-                }
-                if (axis.compare("x") == 0 || axis.compare("X") == 0){
-                    singleCollisionShape = new btConeShapeX(radius, height);
-                }
-                else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-                    singleCollisionShape = new btConeShape(radius, height);
-                }
-                else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-                    singleCollisionShape = new btConeShapeZ(radius, height);
-                }
-                else{
-                    std::cerr << "WARNING: Body "
-                              << m_name
-                              << "'s axis \"" << axis << "\" not understood?\n";
-                    singleCollisionShape = new btConeShapeZ(radius, height);
-                }
-            }
+
+            primitiveGeometry.setScale(m_scale);
+            btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(primitiveGeometry);
+
             // Here again, we consider both the inertial offset transform and the
             // shape offset transfrom. This will change the legacy behavior but
             // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
             // shape. So they shall be updated.
-            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffsetTrans, singleCollisionShape);
+            compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * T_off, singleCollisionShape);
         }
         m_bulletCollisionShape = compoundCollisionShape;
     }
@@ -2721,7 +2765,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["linear"]["D"].as<double>();
             m_controller.setLinearGains(P, I, D);
-            m_controller.m_positionOutputType = afControlType::force;
+            m_controller.m_positionOutputType = afControlType::FORCE;
             m_lin_gains_defined = true;
         }
 
@@ -2738,7 +2782,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             }
             D = bodyController["angular"]["D"].as<double>();
             m_controller.setAngularGains(P, I, D);
-            m_controller.m_orientationOutputType = afControlType::force;
+            m_controller.m_orientationOutputType = afControlType::FORCE;
             m_ang_gains_defined = true;
         }
     }
@@ -2747,14 +2791,14 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // Use preset values for the controller since we are going to be using its output for the
         // internal velocity controller
         m_controller.setLinearGains(10, 0, 0);
-        m_controller.m_positionOutputType = afControlType::velocity;
+        m_controller.m_positionOutputType = afControlType::VELOCITY;
     }
 
     if(!m_ang_gains_defined){
         // Use preset values for the controller since we are going to be using its output for the
         // internal velocity controller
         m_controller.setAngularGains(10, 0, 0);
-        m_controller.m_orientationOutputType = afControlType::velocity;
+        m_controller.m_orientationOutputType = afControlType::VELOCITY;
     }
 
     if(m_mass == 0.0){
@@ -2770,7 +2814,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 return 0;
             }
         }
-        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == afGeometryType::shape || m_collisionGeometryType == afGeometryType::compound_shape){
+        else if (m_lowResMesh.m_meshes->size() > 0 || m_collisionGeometryType == afGeometryType::SINGLE_SHAPE || m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE){
             estimateInertia();
         }
     }
@@ -3110,7 +3154,7 @@ void afRigidBody::afExecuteCommand(double dt){
 
         // IF THE COMMAND IS OF TYPE FORCE
         if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
-            m_activeControllerType = afControlType::force;
+            m_activeControllerType = afControlType::FORCE;
             if (m_bulletRigidBody){
                 force.setValue(afCommand.wrench.force.x,
                                afCommand.wrench.force.y,
@@ -3126,7 +3170,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE POSITION
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-            m_activeControllerType = afControlType::position;
+            m_activeControllerType = afControlType::POSITION;
             // If the body is kinematic, we just want to control the position
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
                 btTransform Tcommand;
@@ -3181,7 +3225,7 @@ void afRigidBody::afExecuteCommand(double dt){
                 // Use the internal Cartesian Rotation Controller to Compute Output
                 rCommand = m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
 
-                if (m_controller.m_positionOutputType == afControlType::force){
+                if (m_controller.m_positionOutputType == afControlType::FORCE){
                     // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
                     // Use the internal Cartesian Position Controller
                     m_bulletRigidBody->applyCentralForce(pCommand);
@@ -3199,7 +3243,7 @@ void afRigidBody::afExecuteCommand(double dt){
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
-            m_activeControllerType = afControlType::velocity;
+            m_activeControllerType = afControlType::VELOCITY;
             if (m_bulletRigidBody){
                 lin_vel.setValue(afCommand.twist.linear.x,
                                  afCommand.twist.linear.y,
@@ -3947,7 +3991,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     m_lowerLimit = -100;
     m_upperLimit = 100;
     //Default joint type is revolute if not type is specified
-    m_jointType = JointType::revolute;
+    m_jointType = afJointType::REVOLUTE;
     m_jointDamping = 0.0; // Initialize damping to 0
 
     m_mB = mB;
@@ -4096,7 +4140,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_controller.D = jointController["D"].as<double>();
 
         // If the PID controller in defined, the gains will be used to command the joint force (effort)
-        m_controller.m_outputType == afControlType::force;
+        m_controller.m_outputType == afControlType::FORCE;
     }
     else{
         // If the controller gains are not defined, a velocity based control will be used.
@@ -4105,7 +4149,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_controller.P = 10;
         m_controller.I = 0;
         m_controller.D = 0;
-        m_controller.m_outputType == afControlType::velocity;
+        m_controller.m_outputType == afControlType::VELOCITY;
     }
 
     // Bullet takes the x axis as the default for prismatic joints
@@ -4115,48 +4159,48 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         if ((strcmp(jointType.as<std::string>().c_str(), "hinge") == 0)
                 || (strcmp(jointType.as<std::string>().c_str(), "revolute") == 0)
                 || (strcmp(jointType.as<std::string>().c_str(), "continuous") == 0)){
-            m_jointType = JointType::revolute;
+            m_jointType = afJointType::REVOLUTE;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "slider") == 0)
                  || (strcmp(jointType.as<std::string>().c_str(), "prismatic") == 0)){
-            m_jointType = JointType::prismatic;
+            m_jointType = afJointType::PRISMATIC;
             // For this case constraint axis is the world x axis
             ax_cINp.setValue(1, 0, 0);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "fixed") == 0)){
-            m_jointType = JointType::fixed;
+            m_jointType = afJointType::FIXED;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "spring") == 0)){
-            m_jointType = JointType::linear_spring;
+            m_jointType = afJointType::LINEAR_SPRING;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "linear spring") == 0)){
-            m_jointType = JointType::linear_spring;
+            m_jointType = afJointType::LINEAR_SPRING;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "torsion spring") == 0)){
-            m_jointType = JointType::torsion_spring;
+            m_jointType = afJointType::TORSION_SPRING;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "torsional spring") == 0)){
-            m_jointType = JointType::torsion_spring;
+            m_jointType = afJointType::TORSION_SPRING;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "angular spring") == 0)){
-            m_jointType = JointType::torsion_spring;
+            m_jointType = afJointType::TORSION_SPRING;
             // For this case constraint axis is the world z axis
             ax_cINp.setValue(0, 0, 1);
         }
         else if ((strcmp(jointType.as<std::string>().c_str(), "p2p") == 0)){
-            m_jointType = JointType::p2p;
+            m_jointType = afJointType::P2P;
             // For this case the constraint axis doesnt matter
             ax_cINp.setValue(0, 0, 1);
         }
@@ -4214,7 +4258,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     frameB.setOrigin(m_pvtB);
 
     // If the joint is revolute, hinge or continous
-    if (m_jointType == JointType::revolute){
+    if (m_jointType == afJointType::REVOLUTE){
 #ifdef USE_PIVOT_AXIS_METHOD
         m_btConstraint = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
 #else
@@ -4241,7 +4285,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
     // If the joint is slider, prismatic or linear
-    else if (m_jointType == JointType::prismatic){
+    else if (m_jointType == afJointType::PRISMATIC){
         m_slider = new btSliderConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
         m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
         m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
@@ -4277,7 +4321,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     }
 
     // If the joint is a spring
-    else if (m_jointType == JointType::linear_spring || m_jointType == JointType::torsion_spring){
+    else if (m_jointType == afJointType::LINEAR_SPRING || m_jointType == afJointType::TORSION_SPRING){
         m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
 
         // Initialize all the 6 axes to 0 stiffness and damping
@@ -4294,10 +4338,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         // or torsional [0-2] -> linear, [3-5] -> rotational
         int _axisNumber = -1;
 
-        if (m_jointType == JointType::linear_spring){
+        if (m_jointType == afJointType::LINEAR_SPRING){
             _axisNumber = 2;
         }
-        else if (m_jointType == JointType::torsion_spring){
+        else if (m_jointType == afJointType::TORSION_SPRING){
             _axisNumber = 5;
         }
 
@@ -4309,7 +4353,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
             // Somehow bullets springs limits for rotational joints are inverted.
             // So handle them internally rather than breaking AMBF description specificaiton
-            if (m_jointType == JointType::torsion_spring){
+            if (m_jointType == afJointType::TORSION_SPRING){
                 double _temp = _low;
                 _low = - _high;
                 _high = - _temp;
@@ -4330,7 +4374,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             double _equiblirium = jointNode["equiblirium point"].as<double>();
             // The equiblirium offset if also inverted for torsional springs
             // Fix it internally rather than breaking AMBF description specificaiton
-            if (m_jointType == JointType::torsion_spring){
+            if (m_jointType == afJointType::TORSION_SPRING){
                 _equiblirium = - _equiblirium;
             }
             m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
@@ -4357,7 +4401,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
 
         m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-    else if (m_jointType == JointType::p2p){
+    else if (m_jointType == afJointType::P2P){
         // p2p joint doesnt concern itself with rotations, its set using just the pivot information
         m_p2p = new btPoint2PointConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB);
         m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
@@ -4375,7 +4419,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
         m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-    else if (m_jointType == JointType::fixed){
+    else if (m_jointType == afJointType::FIXED){
         m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
         //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
@@ -4430,12 +4474,12 @@ void afJoint::commandPosition(double &position_cmd){
     // The torque commands disable the motor, so double check and re-enable the motor
     // if it was set to be enabled in the first place
     if (m_enableActuator){
-        if (m_jointType == JointType::revolute || m_jointType == JointType::prismatic){
+        if (m_jointType == afJointType::REVOLUTE || m_jointType == afJointType::PRISMATIC){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
-            if (m_controller.m_outputType == afControlType::force){
+            if (m_controller.m_outputType == afControlType::FORCE){
                 commandEffort(command);
             }
             else{
@@ -4456,8 +4500,8 @@ void afJoint::commandPosition(double &position_cmd){
 /// \param skip_motor_check
 ///
 void afJoint::commandEffort(double &cmd, bool skip_motor_check){
-    if (m_jointType == JointType::revolute || m_jointType == JointType::torsion_spring){
-        if (m_jointType == JointType::revolute && ! skip_motor_check){
+    if (m_jointType == afJointType::REVOLUTE || m_jointType == afJointType::TORSION_SPRING){
+        if (m_jointType == afJointType::REVOLUTE && ! skip_motor_check){
             m_hinge->enableMotor(false);
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
@@ -4465,8 +4509,8 @@ void afJoint::commandEffort(double &cmd, bool skip_motor_check){
         m_btConstraint->getRigidBodyA().applyTorque(-hingeAxisInWorld * cmd);
         m_btConstraint->getRigidBodyB().applyTorque(hingeAxisInWorld * cmd);
     }
-    else if (m_jointType == JointType::prismatic || m_jointType == JointType::linear_spring){
-        if (m_jointType == JointType::prismatic && ! skip_motor_check){
+    else if (m_jointType == afJointType::PRISMATIC || m_jointType == afJointType::LINEAR_SPRING){
+        if (m_jointType == afJointType::PRISMATIC && ! skip_motor_check){
             m_slider->setPoweredLinMotor(false);
         }
         btTransform trA = m_btConstraint->getRigidBodyA().getWorldTransform();
@@ -4483,12 +4527,12 @@ void afJoint::commandEffort(double &cmd, bool skip_motor_check){
 /// \param cmd
 ///
 void afJoint::commandVelocity(double &velocity_cmd){
-    if (m_jointType == JointType::revolute){
+    if (m_jointType == afJointType::REVOLUTE){
         m_hinge->enableMotor(true);
         m_hinge->setMotorTargetVelocity(velocity_cmd);
 
     }
-    else if (m_jointType == JointType::prismatic){
+    else if (m_jointType == afJointType::PRISMATIC){
         m_slider->setPoweredLinMotor(true);
         m_slider->setTargetLinMotorVelocity(velocity_cmd);
     }
@@ -4499,13 +4543,13 @@ void afJoint::commandVelocity(double &velocity_cmd){
 /// \return
 ///
 double afJoint::getPosition(){
-    if (m_jointType == JointType::revolute)
+    if (m_jointType == afJointType::REVOLUTE)
         return m_hinge->getHingeAngle();
-    else if (m_jointType == JointType::prismatic)
+    else if (m_jointType == afJointType::PRISMATIC)
         return m_slider->getLinearPos();
-    else if (m_jointType == JointType::fixed)
+    else if (m_jointType == afJointType::FIXED)
         return 0;
-    else if (m_jointType == JointType::linear_spring){
+    else if (m_jointType == afJointType::LINEAR_SPRING){
         // Adapted form btSlider Constraint
         btGeneric6DofSpringConstraint* springConstraint = (btGeneric6DofSpringConstraint*) m_btConstraint;
         btTransform transA, transB;
@@ -4517,7 +4561,7 @@ double afJoint::getPosition(){
         btScalar angle = deltaPivot.dot(tAINW.getBasis().getColumn(2));
         return 1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
     }
-    else if (m_jointType == JointType::torsion_spring){
+    else if (m_jointType == afJointType::TORSION_SPRING){
         // Adapted from btHingeConstraint with slight modifications for spring constraint
         btGeneric6DofSpringConstraint* springConstraint = (btGeneric6DofSpringConstraint*) m_btConstraint;
         btTransform transA, transB;
@@ -5054,7 +5098,7 @@ void afRayTracerSensor::afExecuteCommand(double dt){
 ///
 afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_afWorld){
     m_afWorld = a_afWorld;
-    m_sensorType = afSensorType::proximity;
+    m_sensorType = afSensorType::PROXIMITY;
 }
 
 
@@ -5074,7 +5118,7 @@ afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_
     m_contactNormalStiffness = 0;
     m_contactNormalDamping = 0;
 
-    m_sensorType = afSensorType::resistance;
+    m_sensorType = afSensorType::RESISTANCE;
 }
 
 
@@ -5767,10 +5811,10 @@ void afWorld::estimateBodyWrenches(){
             jnt->m_afChildBody->m_estimatedTorque += T_jINc;
 
             // We can also estimate the joint effort using the parent axes.
-            if (jnt->m_jointType == revolute || jnt->m_jointType == torsion_spring){
+            if (jnt->m_jointType == afJointType::REVOLUTE || jnt->m_jointType == afJointType::TORSION_SPRING){
                 jnt->m_estimatedEffort = btDot(jnt->m_axisA, T_jINp);
             }
-            else if (jnt->m_jointType == prismatic || jnt->m_jointType == linear_spring){
+            else if (jnt->m_jointType == afJointType::PRISMATIC || jnt->m_jointType == afJointType::LINEAR_SPRING){
                 jnt->m_estimatedEffort = btDot(jnt->m_axisA, F_jINp);
             }
             else{
@@ -7075,17 +7119,17 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     YAML::Node cameraPublishDepthInterval = cameraNode["publish depth interval"];
     YAML::Node cameraMultiPass = cameraNode["multipass"];
 
-    bool _is_valid = true;
+    bool is_valid = true;
     double _clipping_plane_limits[2], _field_view_angle;
-    double _stereoEyeSeperation, _stereoFocalLength, _orthoViewWidth;
-    std::string _stereoModeStr;
-    int _monitorToLoad = -1;
-    bool _useMultiPassTransparency = false;
+    double stereoEyeSeperation, stereoFocalLength, _orthoViewWidth;
+    std::string stereoModeStr;
+    int monitorToLoad = -1;
+    bool useMultiPassTransparency = false;
 
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
-    _stereoFocalLength = 2.0;
-    _stereoEyeSeperation = 0.02;
+    stereoFocalLength = 2.0;
+    stereoEyeSeperation = 0.02;
 
     if (cameraName.IsDefined()){
         m_name = cameraName.as<std::string>();
@@ -7104,21 +7148,21 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << std::endl;
-        _is_valid = false;
+        is_valid = false;
     }
     if (cameraLookAtData.IsDefined()){
         m_camLookAt = toXYZ<cVector3d>(&cameraLookAtData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << std::endl;
-        _is_valid = false;
+        is_valid = false;
     }
     if (cameraUpData.IsDefined()){
         m_camUp = toXYZ<cVector3d>(&cameraUpData);
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << std::endl;
-        _is_valid = false;
+        is_valid = false;
     }
     if (cameraClippingPlaneData.IsDefined()){
         _clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
@@ -7126,7 +7170,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
     else{
         std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << std::endl;
-        _is_valid = false;
+        is_valid = false;
     }
     if (cameraFieldViewAngleData.IsDefined()){
         _field_view_angle = cameraFieldViewAngleData.as<double>();
@@ -7143,19 +7187,19 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
          m_orthographic = false;
     }
     if (cameraStereo.IsDefined()){
-        _stereoModeStr = cameraStereo["mode"].as<std::string>();
-        if (_stereoModeStr.compare("PASSIVE") || _stereoModeStr.compare("passive") || _stereoModeStr.compare("Passive")){
+        stereoModeStr = cameraStereo["mode"].as<std::string>();
+        if (stereoModeStr.compare("PASSIVE") || stereoModeStr.compare("passive") || stereoModeStr.compare("Passive")){
             m_stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
         }
-        _stereoEyeSeperation = cameraStereo["eye separation"].as<double>();
-        _stereoFocalLength = cameraStereo["focal length"].as<double>();
+        stereoEyeSeperation = cameraStereo["eye separation"].as<double>();
+        stereoFocalLength = cameraStereo["focal length"].as<double>();
     }
     if (cameraMonitor.IsDefined()){
-        _monitorToLoad = cameraMonitor.as<int>();
-        if (_monitorToLoad < 0 || _monitorToLoad >= s_numMonitors){
-            std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" MONITOR NUMBER \"" << _monitorToLoad
+        monitorToLoad = cameraMonitor.as<int>();
+        if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
+            std::cerr << "INFO: CAMERA \"" << a_camera_name << "\" MONITOR NUMBER \"" << monitorToLoad
                       << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << std::endl;
-            _monitorToLoad = -1;
+            monitorToLoad = -1;
         }
 
     }
@@ -7182,10 +7226,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
 
     if (cameraMultiPass.IsDefined()){
-        _useMultiPassTransparency = cameraMultiPass.as<bool>();
+        useMultiPassTransparency = cameraMultiPass.as<bool>();
     }
 
-    if(_is_valid){
+    if(is_valid){
         m_camera = new cCamera(a_world);
         m_camera->setLocalPos(0, 0, 0);
         cMatrix3d I3;
@@ -7213,8 +7257,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_camera->setStereoMode(m_stereMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
-        m_camera->setStereoEyeSeparation(_stereoEyeSeperation);
-        m_camera->setStereoFocalLength(_stereoFocalLength);
+        m_camera->setStereoEyeSeparation(stereoEyeSeperation);
+        m_camera->setStereoFocalLength(stereoFocalLength);
 
         // set vertical mirrored display mode
         m_camera->setMirrorVertical(false);
@@ -7226,7 +7270,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
             m_camera->setFieldViewAngleRad(_field_view_angle);
         }
 
-        m_camera->setUseMultipassTransparency(_useMultiPassTransparency);
+        m_camera->setUseMultipassTransparency(useMultiPassTransparency);
 
         std::string window_name = "AMBF Simulator Window " + std::to_string(s_cameraIdx + 1);
         if (m_controllingDevNames.size() > 0){
@@ -7237,15 +7281,15 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         }
 
         // create display context
-        if (_monitorToLoad == -1){
+        if (monitorToLoad == -1){
             if (s_cameraIdx < s_numMonitors){
-                _monitorToLoad = s_cameraIdx;
+                monitorToLoad = s_cameraIdx;
             }
             else{
-                _monitorToLoad = 0;
+                monitorToLoad = 0;
             }
         }
-        m_monitor = s_monitors[_monitorToLoad];
+        m_monitor = s_monitors[monitorToLoad];
 
         // compute desired size of window
         const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
@@ -7429,7 +7473,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         }
     }
 
-    return _is_valid;
+    return is_valid;
 }
 
 
@@ -8121,24 +8165,24 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
         m_spotLight->setShadowMapEnabled(true);
 
-        ShadowQuality sQ = (ShadowQuality) _shadow_quality;
+        afShadowQuality sQ = (afShadowQuality) _shadow_quality;
         switch (sQ) {
-        case ShadowQuality::no_shadow:
+        case afShadowQuality::NO_SHADOW:
             m_spotLight->setShadowMapEnabled(false);
             break;
-        case ShadowQuality::very_low:
+        case afShadowQuality::VERR_LOW:
             m_spotLight->m_shadowMap->setQualityVeryLow();
             break;
-        case ShadowQuality::low:
+        case afShadowQuality::LOW:
             m_spotLight->m_shadowMap->setQualityLow();
             break;
-        case ShadowQuality::medium:
+        case afShadowQuality::MEDIUM:
             m_spotLight->m_shadowMap->setQualityMedium();
             break;
-        case ShadowQuality::high:
+        case afShadowQuality::HIGH:
             m_spotLight->m_shadowMap->setQualityHigh();
             break;
-        case ShadowQuality::very_high:
+        case afShadowQuality::VERY_HIGH:
             m_spotLight->m_shadowMap->setQualityVeryHigh();
             break;
         }
@@ -9139,10 +9183,10 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
                 m_wheels[i].m_wheelBody->m_bulletRigidBody->setMassProps(0.0, inertia);
                 // Print some info here to inform the user that we are setting the mass
                 // and inertia to zero to make the wheel static.
-                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::RIGID_BODY;
+                m_wheels[i].m_wheelBodyType = afWheelBodyType::RIGID_BODY;
             }
             else{
-                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+                m_wheels[i].m_wheelBodyType = afWheelBodyType::INVALID;
                 std::cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " BODY NAMED \"" << rb_name << "\" FOR VEHICLE \""
                           << m_name << "\", SKIPPING WHEEL!" << std::endl;
                 continue;
@@ -9167,10 +9211,10 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
             m_wheels[i].m_mesh = new cMultiMesh();
             if (m_wheels[i].m_mesh->loadFromFile(high_res_filepath.c_str())){
                 m_afWorld->addChild(m_wheels[i].m_mesh);
-                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::MESH;
+                m_wheels[i].m_wheelBodyType = afWheelBodyType::MESH;
             }
             else{
-                m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+                m_wheels[i].m_wheelBodyType = afWheelBodyType::INVALID;
                 std::cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " MESH NAMED \"" << mesh_name << "\" FOR VEHICLE \""
                           << m_name << "\", SKIPPING WHEEL!" << std::endl;
                 continue;
@@ -9179,7 +9223,7 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
         }
         else{
-            m_wheels[i].m_wheelBodyType = afWheel::WheelBodyType::INVALID;
+            m_wheels[i].m_wheelBodyType = afWheelBodyType::INVALID;
             std::cerr << "ERROR! UNABLE TO FIND \"MESH\" OR \"BODY\" FIELD FOR WHEEL OF VEHICLE \""
                       << m_name << "\", SKIPPING WHEEL!" << std::endl;
             continue;
@@ -9348,10 +9392,10 @@ void afVehicle::updatePositionFromDynamics(){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
         cTransform cTrans = toCtransform(btTrans);
-        if (m_wheels[i].m_wheelBodyType == afWheel::WheelBodyType::MESH){
+        if (m_wheels[i].m_wheelBodyType == afWheelBodyType::MESH){
             m_wheels[i].m_mesh->setLocalTransform(cTrans);
         }
-        else if (m_wheels[i].m_wheelBodyType == afWheel::WheelBodyType::RIGID_BODY){
+        else if (m_wheels[i].m_wheelBodyType == afWheelBodyType::RIGID_BODY){
 //            m_wheels[i].m_wheelBody->m_bulletRigidBody->setWorldTransform(btTrans);
             m_wheels[i].m_wheelBody->m_bulletRigidBody->getMotionState()->setWorldTransform(btTrans);
         }

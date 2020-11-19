@@ -148,115 +148,6 @@ class afPointCloudsHandler;
 typedef cMultiPoint* cMultiPointPtr;
 
 
-///
-/// \brief toBTvec
-/// \param cVec
-/// \return
-///
-btVector3 toBTvec(const cVector3d &cVec);
-
-///
-/// \brief toCvec
-/// \param bVec
-/// \return
-///
-cVector3d toCvec(const btVector3 &bVec);
-
-template <typename T>
-///
-/// \brief toXYZ
-/// \param node
-/// \return
-///
-T toXYZ(YAML::Node* node);
-
-
-template <typename T>
-///
-/// \brief toRPY
-/// \param node
-/// \param v
-/// \return
-///
-T toRPY(YAML::Node* node);
-
-///
-/// \brief The afShapeType enum
-///
-enum class afShapeType{
-    AF_PLANE = 0,
-    AF_BOX = 1,
-    AF_SPHERE = 2,
-    AF_CYLINDER = 3,
-    AF_CAPSULE = 4,
-    AF_CONE = 5,
-    AF_INVALID = 6
-};
-
-
-///
-/// \brief The afShapeGeometry struct
-///
-struct afShapeGeometry{
-public:
-
-    afShapeGeometry();
-
-    bool copyShapeOffsetData(YAML::Node* offsetNode);
-
-    bool copyGeometryData(YAML::Node* geometryNode);
-
-    void setScale(double a_scale);
-
-    double m_radius = 0;
-    double m_height = 0;
-    double m_dx = 0; // x dim
-    double m_dy = 0; // y dim
-    double m_dz = 0; // z dim
-
-    double m_nx = 0; // plane normal x
-    double m_ny = 0; // plane normal y
-    double m_nz = 1; // plane normal z
-
-    double m_planeOffset = 0;
-
-    afShapeType m_shapeType;
-
-    cVector3d m_posOffset;
-    cMatrix3d m_rotOffset;
-
-private:
-    double m_scale = 1.0;
-};
-
-///
-/// \brief The afUtils class
-///
-class afUtils{
-public:
-
-    afUtils(){}
-    template<typename T1, typename T2>
-    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
-
-    template<typename T1, typename T2>
-    static T1 convertDataType(const T2 &r);
-
-    template <typename T>
-    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
-
-    static std::string removeAdjacentBackSlashes(std::string a_name);
-    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
-
-    static void debugPrint(int line, std::string filename){
-        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
-    }
-
-    static afShapeType getShapeTypeFromString(const std::string & a_shape_str);
-
-    static void createVisualShape(cMesh* mesh, const afShapeGeometry& a_shapeGeometry);
-};
-
 static std::string AF_DEPTH_COMPUTE_VTX =
         " attribute vec3 aPosition;                                  \n"
         " attribute vec3 aNormal;                                    \n"
@@ -314,6 +205,262 @@ static std::string AF_DEPTH_COMPUTE_FRAG =
         "     gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);             \n"
         " }                                                                                   \n";
 
+///
+/// \brief toBTvec
+/// \param cVec
+/// \return
+///
+btVector3 toBTvec(const cVector3d &cVec);
+
+///
+/// \brief toCvec
+/// \param bVec
+/// \return
+///
+cVector3d toCvec(const btVector3 &bVec);
+
+template <typename T>
+///
+/// \brief toXYZ
+/// \param node
+/// \return
+///
+T toXYZ(YAML::Node* node);
+
+
+template <typename T>
+///
+/// \brief toRPY
+/// \param node
+/// \param v
+/// \return
+///
+T toRPY(YAML::Node* node);
+
+///
+/// \brief The afShapeType enum
+///
+enum class afShapeType{
+    PLANE = 0,
+    BOX = 1,
+    SPHERE = 2,
+    CYLINDER = 3,
+    CAPSULE = 4,
+    CONE = 5,
+    INVALID = 6
+};
+
+
+enum class afAxisType{
+    X = 0,
+    Y = 1,
+    Z = 2
+};
+
+
+enum class afCommType{
+    ACTUATOR,
+    CAMERA,
+    LIGHT,
+    OBJECT,
+    RIGID_BODY,
+    SOFT_BODY,
+    SENSOR,
+    VEHICLE,
+    WORLD
+};
+
+
+///
+/// \brief The Geometrytype enum
+///
+enum class afGeometryType{
+    INVALID= 0, MESH = 1, SINGLE_SHAPE = 2, COMPOUND_SHAPE = 3
+};
+
+
+///
+/// \brief The afControlType enum
+///
+enum class afControlType{
+  POSITION=0,
+  FORCE=1,
+  VELOCITY=2
+};
+
+
+///
+/// \brief The JointType enum
+///
+enum class afJointType{
+    REVOLUTE = 0,
+    PRISMATIC = 1,
+    LINEAR_SPRING = 2,
+    TORSION_SPRING = 3,
+    P2P = 4,
+    FIXED = 5
+};
+
+
+///
+/// \brief The afActuatorType enum
+///
+enum class afActuatorType{
+    CONSTRAINT = 0
+};
+
+
+///
+/// \brief The afSensorType enum
+///
+enum class afSensorType{
+    PROXIMITY=0, RANGE=1, RESISTANCE=2
+};
+
+
+///
+/// \brief The afBodyType enum
+///
+enum class afBodyType{
+    RIGID_BODY=0, SOFT_BODY=1
+};
+
+///
+/// \brief The ShadowQuality enum
+///
+enum class afShadowQuality{
+    NO_SHADOW=0,
+    VERR_LOW=1,
+    LOW=2,
+    MEDIUM=3,
+    HIGH=4,
+    VERY_HIGH=5
+};
+
+
+///
+/// \brief The WheelBodyType enum
+///
+enum class afWheelBodyType{
+    MESH=0,
+    RIGID_BODY=1,
+    INVALID=2
+};
+
+
+///
+/// \brief The afShapeGeometry struct
+///
+struct afPrimitiveGeometry{
+public:
+
+    afPrimitiveGeometry();
+
+    // Copy data specified via ADF node
+    bool copyShapeOffsetData(YAML::Node* offsetNode);
+
+    // Copy data specified via ADF node
+    bool copyGeometryData(YAML::Node* geometryNode);
+
+    // Helper methods for primitive shapes
+    // Required variables for creating a Plane
+    void setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant);
+
+    // Required variables for creating a Box
+    void setBoxData(double dimension_x, double dimension_y, double dimension_z);
+
+    // Required variables for creating a Sphere
+    void setSphereData(double radius);
+
+    // Required variables for creating a Capsule
+    void setCapsuleData(double radius, double height, afAxisType axis);
+
+    // Required variables for creating a Cone
+    void setConeData(double radius, double height, afAxisType axis);
+
+    // Pos Offset of the Shape
+    void setPosOffset(double px, double py, double pz);
+
+    // Rot Offset of the Shape
+    void setRotOffset(double roll, double pitch, double yaw);
+
+    inline void setShapeType(afShapeType shapeType){m_shapeType = shapeType;}
+
+    inline void setAxisType(afAxisType axisType){m_axisType = axisType;}
+
+    void setScale(double a_scale);
+
+    inline cVector3d getDimensions() const {return m_dimensions * m_scale;}
+
+    inline double getRadius() const {return m_radius * m_scale;}
+
+    inline double getHeight() const {return m_height * m_scale;}
+
+    inline double getPlaneConstant() const {return m_planeConstant * m_scale;}
+
+    inline cVector3d getPlaneNormal() const {return m_planeNormal;}
+
+    inline afShapeType getShapeType() const {return m_shapeType;}
+
+    inline afAxisType getAxisType() const {return m_axisType;}
+
+    inline cVector3d getPosOffset() const {return m_posOffset;}
+
+    inline cMatrix3d getRotOffset() const {return m_rotOffset;}
+
+private:
+    double m_radius = 0;
+
+    double m_height = 0;
+
+    cVector3d m_dimensions;
+
+    cVector3d m_planeNormal;
+
+    double m_planeConstant = 0;
+
+    afShapeType m_shapeType;
+
+    afAxisType m_axisType;
+
+    cVector3d m_posOffset;
+
+    cMatrix3d m_rotOffset;
+
+    double m_scale = 1.0;
+};
+
+///
+/// \brief The afUtils class
+///
+class afUtils{
+public:
+
+    afUtils(){}
+    template<typename T1, typename T2>
+    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+
+    template<typename T1, typename T2>
+    static T1 convertDataType(const T2 &r);
+
+    template <typename T>
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
+
+    static std::string removeAdjacentBackSlashes(std::string a_name);
+
+    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+
+    static void debugPrint(int line, std::string filename){
+        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    }
+
+    static afShapeType getShapeTypeFromString(const std::string & a_shape_str);
+
+    static cMesh* createVisualShape(const afPrimitiveGeometry& a_shapeGeometry);
+
+    static btCollisionShape* createCollisionShape(const afPrimitiveGeometry& a_shapeGeometry);
+};
+
 
 ///
 /// \brief The afConfigHandler class
@@ -359,50 +506,46 @@ protected:
 };
 
 
-enum afCommType{
-    ACTUATOR,
-    CAMERA,
-    LIGHT,
-    OBJECT,
-    RIGID_BODY,
-    SOFT_BODY,
-    SENSOR,
-    VEHICLE,
-    WORLD
-};
-
-
 class afComm{
 public:
     afComm(){}
 
     virtual void afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
-    //! This method is to retrieve all the commands for appropriate af comm instances.
+    // This method is to retrieve all the commands for appropriate af comm instances.
     virtual void afExecuteCommand(double dt=0.001);
 
     //! This method applies updates Wall and Sim Time for AF State Message.
     virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
 
+    // Check if object is active or passive for communication
+    inline bool isPassive(){return m_passive;}
+
+    // Get Name of this object
     inline std::string getName(){return m_name;}
 
-    inline std::string setName(std::string a_name){m_name = a_name;}
-
+    // Get Namespace for this object
     inline std::string getNamespace(){return m_namespace; }
 
+    // Get Min publishing frequency for this object
+    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
+
+    // Get Max publishing frequency for this object
+    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
+
+    // Get the type of communication instance
+    afCommType getCommType(){return m_commType;}
+
+    // Set Name of object
+    inline std::string setName(std::string a_name){m_name = a_name;}
+
+    // Set namespace for this object
     inline std::string setNamespace(std::string a_namespace){m_namespace = a_namespace; }
 
-    //! AF CHAI Env
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
-    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
-    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
-    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
-    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
-    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
-    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
-#endif
+    // Set as passive so it doesn't communication outside
+    inline void setPassive(bool a_passive){m_passive = a_passive;}
+
+public:
 
     // Flag to check if the any params have been set on the server for this comm instance
     bool m_paramsSet=false;
@@ -415,20 +558,28 @@ public:
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
 
-    // Get the type of communication instance
-    afCommType getCommType(){return m_commType;}
-
     // Min publishing frequency
     int m_min_publish_frequency=50;
 
     // Max publishing frequency
     int m_max_publish_frequency=1000;
 
-    // If passive, this instance will not be reported
-    // for communication purposess.
+    // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
 
     std::string m_name;
+
+    //! AF CHAI Env
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
+    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
+    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
+    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
+    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
+    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
+    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
+    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+#endif
 
 protected:
     // The namespace for this body, this namespace affect afComm and the stored name of the body
@@ -469,20 +620,6 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 
 };
 
-///
-/// \brief The Geometrytype enum
-///
-enum afGeometryType{
-    invalid= 0, mesh = 1, shape = 2, compound_shape = 3
-};
-
-
-enum class afControlType{
-  position=0,
-  force=1,
-  velocity=2
-};
-
 
 ///
 /// \brief The afCartesianController struct
@@ -521,10 +658,10 @@ public:
     void boundEffort(double effort_cmd);
 
     // The default output type is velocity
-    afControlType m_positionOutputType = afControlType::velocity;
+    afControlType m_positionOutputType = afControlType::VELOCITY;
 
     // The default output type is velocity
-    afControlType m_orientationOutputType = afControlType::velocity;
+    afControlType m_orientationOutputType = afControlType::VELOCITY;
 
 private:
     // PID Controller Gains for Linear and Angular Controller
@@ -595,15 +732,21 @@ public:
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics(){}
 
-    inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
-
-    inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
-
     inline cVector3d getLocalPos();
 
     inline cMatrix3d getLocalRot();
 
     inline cTransform getLocalTransform();
+
+    // Get Initial Position of this body
+    inline cVector3d getInitialPosition(){return m_initialPos;}
+
+    // Get Initial Rotation of this body
+    inline cMatrix3d getInitialRotation(){return m_initialRot;}
+
+    cVector3d getBoundaryMin();
+
+    cVector3d getBoundaryMax();
 
     void setLocalPos(const cVector3d &pos);
 
@@ -617,23 +760,12 @@ public:
 
     void setLocalTransform(const cTransform &trans);
 
-    // Get Initial Position of this body
-    inline cVector3d getInitialPosition(){return m_initialPos;}
+    inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
 
-    // Get Initial Rotation of this body
-    inline cMatrix3d getInitialRotation(){return m_initialRot;}
+    inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
 
     // This method toggles the viewing of frames of this rigid body.
     inline void toggleFrameVisibility(){m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());}
-
-    // Get Min/Max publishing frequency for afObjectState for this body
-    inline int getMinPublishFrequency(){return m_min_publish_frequency;}
-
-    inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
-
-    cVector3d getBoundaryMin();
-
-    cVector3d getBoundaryMax();
 
     void setFrameSize(double a_size);
 
@@ -648,10 +780,6 @@ public:
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
     virtual bool resolveParenting(std::string a_parent_name = ""){}
-
-    bool isPassive(){return m_passive;}
-
-    void setPassive(bool a_passive){m_passive = a_passive;}
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -681,6 +809,11 @@ protected:
     // Scale of mesh
     double m_scale;
 };
+
+
+class afVisualObject: public afBaseObject{
+
+}
 
 
 class afInertialObject: public afBaseObject{
@@ -823,7 +956,7 @@ public:
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
     // If the Position Controller is active, disable Position Controller from Haptic Device
-    afControlType m_activeControllerType = afControlType::force;
+    afControlType m_activeControllerType = afControlType::FORCE;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
@@ -1058,20 +1191,9 @@ public:
     void boundEffort(double& effort_cmd);
 
     // The default output type is velocity
-    afControlType m_outputType = afControlType::velocity;
+    afControlType m_outputType = afControlType::VELOCITY;
 };
 
-///
-/// \brief The JointType enum
-///
-enum JointType{
-    revolute = 0,
-    prismatic = 1,
-    linear_spring = 2,
-    torsion_spring = 3,
-    p2p = 4,
-    fixed = 5
-};
 
 ///
 /// \brief The afJoint class
@@ -1125,7 +1247,7 @@ public:
     double getEffort();
 
     // Type of Joint to know what different operations to perform at the ambf level
-    JointType m_jointType;
+    afJointType m_jointType;
 
     // Method to remove the afJoint
     void remove();
@@ -1186,11 +1308,6 @@ private:
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
 
-};
-
-
-enum afActuatorType{
-    constraint = 0
 };
 
 
@@ -1287,11 +1404,6 @@ private:
     bool m_active = false;
 };
 
-//-----------------------------------------------------------------------------
-enum afSensorType{
-    proximity=0, range=1, resistance=2
-};
-
 ///
 /// \brief The afSensor class
 ///
@@ -1333,10 +1445,10 @@ public:
     }
 };
 
-// Declare enum to find out later what type of body we sensed
-enum class afBodyType{
-    RIGID_BODY=0, SOFT_BODY=1};
 
+///
+/// \brief The afRayTracerResult struct
+///
 struct afRayTracerResult{
 
     // Direction rel to parent that this sensor is looking at
@@ -1838,20 +1950,6 @@ private:
 
     // Incremented every scene update (render method call)
     uint m_sceneUpdateCounter = 0;
-};
-
-//-----------------------------------------------------------------------------
-
-///
-/// \brief The ShadowQuality enum
-///
-enum ShadowQuality{
-    no_shadow=0,
-    very_low=1,
-    low=2,
-    medium=3,
-    high=4,
-    very_high=5
 };
 
 
@@ -2394,12 +2492,6 @@ private:
 
 
 struct afWheel{
-    enum class WheelBodyType{
-        MESH=0,
-        RIGID_BODY=1,
-        INVALID=2
-    };
-
     cMultiMesh* m_mesh;
     afRigidBodyPtr m_wheelBody = 0;
     double m_width;
@@ -2419,7 +2511,7 @@ struct afWheel{
     double m_max_engine_power = 0.0;
     double m_max_brake_power = 0.0;
 
-    WheelBodyType m_wheelBodyType;
+    afWheelBodyType m_wheelBodyType;
 };
 
 class afVehicle: public afInertialObject{

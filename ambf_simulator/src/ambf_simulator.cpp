@@ -1448,7 +1448,7 @@ void updatePhysics(){
                 if (g_enableGrippingAssist){
                     for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
                         afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
-                        if (sensorPtr->m_sensorType == afSensorType::proximity){
+                        if (sensorPtr->m_sensorType == afSensorType::PROXIMITY){
                             afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                             for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
                                 if (proximitySensorPtr->isTriggered(i) && simDev->m_gripper_angle < 0.5){
@@ -1554,14 +1554,14 @@ void updatePhysics(){
 
                 rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
 
-                if (phyDev->m_controller.m_positionOutputType == afControlType::force){
+                if (phyDev->m_controller.m_positionOutputType == afControlType::FORCE){
                     simDev->applyForce(pCommand);
                 }
                 else{
                     simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
                 }
 
-                if (phyDev->m_controller.m_orientationOutputType == afControlType::force){
+                if (phyDev->m_controller.m_orientationOutputType == afControlType::FORCE){
                     simDev->applyTorque(rCommand);
                 }
                 else{
