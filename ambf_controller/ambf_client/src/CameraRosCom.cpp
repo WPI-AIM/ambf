@@ -52,8 +52,12 @@ void CameraRosCom::init(){
 }
 
 CameraRosCom::~CameraRosCom(){
-    ros::shutdown();
     std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+//    ros::shutdown();
+}
+
+void CameraRosCom::rosShutdown() {
+    ros::shutdown();
 }
 
 void CameraRosCom::reset_cmd(){

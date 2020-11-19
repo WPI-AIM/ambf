@@ -70,6 +70,8 @@ public:
     WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     ~WorldRosCom();
     virtual void init();
+    virtual const std::string getObjectType() { return "WORLD"; }
+    virtual const std::string getObjectName() { return "World"; }
 
 protected:
     bool m_enableSimThrottle;

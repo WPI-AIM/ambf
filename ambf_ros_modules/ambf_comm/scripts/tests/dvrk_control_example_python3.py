@@ -38,18 +38,18 @@ time.sleep(0.2)
 # print(psm_handle.get_rot())
 # psm_handle.set_joint_pos(0, 0)
 
-print(kuka_handle.get_rot())
+# print(kuka_handle.get_rot())
 kuka_handle.set_joint_pos(0, 0)
 # # print(' ')
 # # print('MTM Wrist Fixed Rotation:')
 # # print(mtm_wrist_handle.get_rpy())
-
+print("kuka_handle.get_num_joints(): ", kuka_handle.get_num_joints())
 # print('\n\n----')
 # # input("Let's get Joints and Children Info. Press Enter to continue...")
 # # We can get the number of children and joints connected to each object as
 # ecm_num_joints = ecm_handle.get_num_joints() # Get the number of joints of this object
 # psm_children_names = psm_handle.get_children_names() # Get a list of children names belonging to this obj
-kuka_children_names = kuka_handle.get_children_names()
+# kuka_children_names = kuka_handle.get_children_names()
 # # print('Number of Joints in ECM:')
 # # print(ecm_num_joints)
 
@@ -61,9 +61,9 @@ kuka_children_names = kuka_handle.get_children_names()
 # for name in psm_children_names:
 #      print("psm_handle.get_joint_pos()", name)
 
-print(kuka_children_names)
-for name in kuka_children_names:
-	print("kuka_handle.get_joint_pos()", name)
+# print(kuka_children_names)
+# for name in kuka_children_names:
+# 	print("kuka_handle.get_joint_pos()", name)
 
 
 # print('\n\n----')

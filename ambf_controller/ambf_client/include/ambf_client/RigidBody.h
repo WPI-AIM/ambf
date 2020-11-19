@@ -92,9 +92,8 @@ public:
     inline std::vector<float> get_all_joint_effort() { return m_State.joint_efforts; } //TBT
     inline int get_num_joints() { return m_State.joint_positions.size(); } //TBT
     inline std::vector<std::string> get_joint_names() { return m_State.joint_names; } //TBT
+    inline float get_mass() { return m_State.mass; }
     tf::Vector3 get_inertia();
-
-
 
     tf::Vector3 get_force_command(); //TBT
     tf::Vector3 get_torque_command(); //TBT
