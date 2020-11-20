@@ -123,13 +123,13 @@ public:
     void updatePose();
 
     inline void applyForce(cVector3d force){
-        if (m_rootLink->m_activeControllerType == afControlType::FORCE){
+        if (m_rootLink->m_controlOutputType == afControlType::FORCE){
             m_rootLink->applyForce(force);
         }
     }
 
     inline void applyTorque(cVector3d torque){
-        if (m_rootLink->m_activeControllerType == afControlType::FORCE){
+        if (m_rootLink->m_controlOutputType == afControlType::FORCE){
             m_rootLink->applyTorque(torque);
         }
     }

@@ -95,8 +95,7 @@ class afRigidBody;
 class afSoftBody;
 class afJoint;
 class afWorld;
-struct afRigidBodySurfaceProperties;
-struct afSoftBodyConfigProperties;
+struct afSurfaceProperties;
 struct afRenderOptions;
 
 typedef afMultiBody* afMultiBodyPtr;
@@ -104,8 +103,6 @@ typedef afRigidBody* afRigidBodyPtr;
 typedef afSoftBody* afSoftBodyPtr;
 typedef afJoint* afJointPtr;
 typedef afWorld* afWorldPtr;
-typedef afRigidBodySurfaceProperties* afRigidBodySurfacePropertiesPtr;
-typedef afSoftBodyConfigProperties* afSoftBodyConfigPropertiesPtr;
 typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
 typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
 typedef std::map<std::string, afJointPtr> afJointMap;
@@ -430,6 +427,28 @@ private:
     double m_scale = 1.0;
 };
 
+
+///
+/// \brief The afSurfaceProperties struct
+///
+struct afSurfaceProperties{
+public:
+    afSurfaceProperties(){
+        m_linear_damping = 0.04;
+        m_angular_damping = 0.1;
+        m_static_friction = 0.5;
+        m_dynamic_friction = 0.5;
+        m_rolling_friction = 0.01;
+        m_restitution = 0.1;
+    }
+    double m_linear_damping;
+    double m_angular_damping;
+    double m_static_friction;
+    double m_dynamic_friction;
+    double m_rolling_friction;
+    double m_restitution;
+};
+
 ///
 /// \brief The afUtils class
 ///
@@ -593,27 +612,6 @@ private:
 
 
 ///
-/// \brief The afBodySurfaceProperties struct
-///
-struct afRigidBodySurfaceProperties{
-public:
-    afRigidBodySurfaceProperties(){
-        m_linear_damping = 0.04;
-        m_angular_damping = 0.1;
-        m_static_friction = 0.5;
-        m_dynamic_friction = 0.5;
-        m_rolling_friction = 0.01;
-        m_restitution = 0.1;
-    }
-    double m_linear_damping;
-    double m_angular_damping;
-    double m_static_friction;
-    double m_dynamic_friction;
-    double m_rolling_friction;
-    double m_restitution;
-};
-
-///
 /// \brief The afSoftBodySurfaceProperties struct
 ///
 struct afSoftBodyConfigProperties: public btSoftBody::Config{
@@ -656,6 +654,8 @@ public:
     void boundImpulse(double effort_cmd);
     // Yet to be implemented
     void boundEffort(double effort_cmd);
+
+    void setOutputType(afControlType type);
 
     // The default output type is velocity
     afControlType m_positionOutputType = afControlType::VELOCITY;
@@ -732,11 +732,15 @@ public:
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics(){}
 
-    inline cVector3d getLocalPos();
+    cVector3d getLocalPos();
 
-    inline cMatrix3d getLocalRot();
+    cMatrix3d getLocalRot();
 
-    inline cTransform getLocalTransform();
+    cTransform getLocalTransform();
+
+    cVector3d getBoundaryMin();
+
+    cVector3d getBoundaryMax();
 
     // Get Initial Position of this body
     inline cVector3d getInitialPosition(){return m_initialPos;}
@@ -744,9 +748,9 @@ public:
     // Get Initial Rotation of this body
     inline cMatrix3d getInitialRotation(){return m_initialRot;}
 
-    cVector3d getBoundaryMin();
+    afBaseObject* getParentObject();
 
-    cVector3d getBoundaryMax();
+    inline cMultiMesh* getVisualMesh(){return m_visualMesh;}
 
     void setLocalPos(const cVector3d &pos);
 
@@ -760,22 +764,33 @@ public:
 
     void setLocalTransform(const cTransform &trans);
 
+    void setParentObject(afBaseObject* a_afObject);
+
     inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
 
     inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
 
-    // This method toggles the viewing of frames of this rigid body.
-    inline void toggleFrameVisibility(){m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());}
-
     void setFrameSize(double a_size);
 
-    bool loadFromFile(std::string a_filename);
-
     void setScale(double a_scale);
+
+    void setWrappedObject(cGenericObject* object);
+
+    // This method toggles the viewing of frames of this rigid body.
+    void toggleFrameVisibility();
+
+    bool loadFromFile(std::string a_filename);
 
     void addChild(cGenericObject* a_cObject);
 
     void removeChild(cGenericObject* a_cObject);
+
+    void updateVisualPose();
+
+    void updateWrappedObjectPose();
+
+    // Enable Shader Program Associate with this object
+    virtual void enableShaderProgram(){}
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -787,17 +802,6 @@ public:
     // Parent body name defined in the ADF
     std::string m_parentName;
 
-    // Enable Shader Program Associate with this object
-    virtual void enableShaderProgram(){}
-
-    // Flag for the Shader Program
-    bool m_shaderProgramDefined = false;
-
-    boost::filesystem::path m_vsFilePath;
-    boost::filesystem::path m_fsFilePath;
-
-    cMultiMesh* m_visualMesh;
-
 protected:
 
     // Initial location of Rigid Body
@@ -808,38 +812,31 @@ protected:
 
     // Scale of mesh
     double m_scale;
+
+    // Flag for the Shader Program
+    bool m_shaderProgramDefined = false;
+
+    boost::filesystem::path m_vsFilePath;
+    boost::filesystem::path m_fsFilePath;
+
+    cMultiMesh* m_visualMesh;
+
+    // This could be a cCamera, cLight etc.
+    cGenericObject* m_wrappedObject;
+
+    cTransform m_localTransform;
+
+    afBaseObject* m_parentObject;
 };
 
 
-class afVisualObject: public afBaseObject{
-
-}
-
-
+///
+/// \brief The afInertialObject class
+///
 class afInertialObject: public afBaseObject{
 public:
     afInertialObject(afWorldPtr a_afWorld);
     ~afInertialObject();
-
-    virtual void buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh);
-
-    virtual void buildDynamicModel();
-
-    inline double getMass(){return m_mass;}
-
-    inline void setMass(double a_mass){m_mass = a_mass;}
-
-    void estimateInertia();
-
-    void setInertia(double ix, double iy, double iz);
-
-    inline btVector3 getInertia(){return m_inertia;}
-
-    void setInertialOffsetTransform(btTransform & a_trans);
-
-    inline btTransform getInertialOffsetTransform(){return m_T_iINb;}
-
-    inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
 
     // Apply force that is specified in the world frame at a point specified in world frame
     // This force is first converted into body frame and then is used to compute
@@ -852,8 +849,32 @@ public:
 
     void applyTorque(const cVector3d &a_torque);
 
+    virtual void buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh);
+
+    virtual void buildDynamicModel();
+
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
+
+    void estimateInertia();
+
+    inline double getMass(){return m_mass;}
+
+    inline btVector3 getInertia(){return m_inertia;}
+
+    inline btTransform getInertialOffsetTransform(){return m_T_iINb;}
+
+    inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
+
+    inline afSurfaceProperties getSurfaceProperties(){m_surfaceProperties;}
+
+    inline void setMass(double a_mass){m_mass = a_mass;}
+
+    void setInertia(double ix, double iy, double iz);
+
+    void setInertialOffsetTransform(btTransform & a_trans);
+
+    void setSurfaceProperties(const afSurfaceProperties& props);
 
     btRigidBody* m_bulletRigidBody;
 
@@ -924,9 +945,6 @@ public:
     // Set the angles based on the num elements in the argument vector
     virtual void setAngle(std::vector<double> &angle);
 
-    // Set the config properties, this include, damping, friction restitution
-    static void setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_surfaceProps);
-
     // Cleanup this rigid body
     void remove();
 
@@ -956,7 +974,7 @@ public:
     inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
     // If the Position Controller is active, disable Position Controller from Haptic Device
-    afControlType m_activeControllerType = afControlType::FORCE;
+    afControlType m_activeControllerType;
 
     // Instance of Cartesian Controller
     afCartesianController m_controller;
@@ -1031,9 +1049,6 @@ protected:
 
     // Update the joint efforts of children in afObject State Message
     virtual void afObjectSetJointEfforts();
-
-    // Surface properties for damping, friction and restitution
-    static afRigidBodySurfaceProperties m_surfaceProps;
 
     // Collision groups for this rigid body
     std::vector<int> m_collisionGroupsIdx;
@@ -1742,17 +1757,14 @@ public:
                      const cVector3d& a_localLookAt,
                      const cVector3d& a_localUp);
 
-    // The following 5 methods override the cCamera internals as we don't
-    // want the cameras base class "cGenericObject" to be representing the
-    // kinematics. Instead we want the afRigidBody to do so.
     // This method returns the camera "look at" position vector for this camera.
-    inline cVector3d getLookVector()  const { return (-m_visualMesh->getLocalRot().getCol0()); }
+    inline cVector3d getLookVector()  const { return -m_camera->getLookVector(); }
 
     // This method returns the "up" vector for this camera.
-    inline cVector3d getUpVector()    const { return (m_visualMesh->getLocalRot().getCol2()); }
+    inline cVector3d getUpVector()    const { return m_camera->getUpVector(); }
 
     // This method returns the "right direction" vector for this camera.
-    inline cVector3d getRightVector() const { return (m_visualMesh->getLocalRot().getCol1()); }
+    inline cVector3d getRightVector() const { return m_camera->getRightVector(); }
 
     // This method returns the field view angle in Radians.
     inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }

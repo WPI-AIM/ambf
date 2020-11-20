@@ -1203,6 +1203,12 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     enable(true);
 }
 
+void afCartesianController::setOutputType(afControlType type)
+{
+    m_positionOutputType = type;
+    m_orientationOutputType = type;
+}
+
 template <>
 ///
 /// \brief afCartesianController::computeOutput ts is the time_scale and computed as a fraction of fixed time-step (dt-fixed) and dynamic time-step (dt)
@@ -1355,13 +1361,14 @@ afBaseObject::~afBaseObject(){
 
 }
 
+
 ///
 /// \brief afBaseObject::getLocalPos
 /// \return
 ///
 cVector3d afBaseObject::getLocalPos()
 {
-    return m_visualMesh->getLocalPos();
+    return m_localTransform.getLocalPos();
 }
 
 
@@ -1371,7 +1378,7 @@ cVector3d afBaseObject::getLocalPos()
 ///
 cMatrix3d afBaseObject::getLocalRot()
 {
-    return m_visualMesh->getLocalRot();
+    return m_localTransform.getLocalRot();
 }
 
 
@@ -1381,7 +1388,7 @@ cMatrix3d afBaseObject::getLocalRot()
 ///
 cTransform afBaseObject::getLocalTransform()
 {
-    return m_visualMesh->getLocalTransform();
+    return m_localTransform;
 }
 
 
@@ -1391,7 +1398,7 @@ cTransform afBaseObject::getLocalTransform()
 ///
 void afBaseObject::setLocalPos(const cVector3d &pos)
 {
-        setLocalPos(pos);
+    return m_localTransform.setLocalPos(pos);
 }
 
 ///
@@ -1415,7 +1422,7 @@ void afBaseObject::setLocalRot(const cMatrix3d &a_mat)
 {
     cMatrix3d mat = a_mat;
     mat.orthogonalize();
-    m_visualMesh->setLocalRot(mat);
+    m_localTransform.setLocalRot(mat);
 }
 
 
@@ -1451,7 +1458,17 @@ void afBaseObject::setLocalRot(double qx, double qy, double qz, double qw)
 ///
 void afBaseObject::setLocalTransform(const cTransform &trans)
 {
-    m_visualMesh->setLocalTransform(trans);
+    m_localTransform = trans;
+}
+
+
+///
+/// \brief afBaseObject::setParentObject
+/// \param a_afObject
+///
+void afBaseObject::setParentObject(afBaseObject *a_afObject)
+{
+    m_parentObject = a_afObject;
 }
 
 
@@ -1486,6 +1503,14 @@ void afBaseObject::setFrameSize(double a_size)
 
 
 ///
+/// \brief afBaseObject::toggleFrameVisibility
+///
+void afBaseObject::toggleFrameVisibility(){
+    m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+}
+
+
+///
 /// \brief afBaseObject::loadFromFile
 /// \param a_filename
 /// \return
@@ -1508,12 +1533,22 @@ void afBaseObject::setScale(double a_scale)
 
 
 ///
+/// \brief afBaseObject::setWrappedObject
+/// \param object
+///
+void afBaseObject::setWrappedObject(cGenericObject *object)
+{
+    m_wrappedObject = object;
+}
+
+
+///
 /// \brief afBaseObject::addChild
 /// \param a_visualMesh
 ///
 void afBaseObject::addChild(cGenericObject *a_cObject)
 {
-    m_visualMesh->addChild(a_cObject);
+    m_wrappedObject->addChild(a_cObject);
 }
 
 
@@ -1523,7 +1558,31 @@ void afBaseObject::addChild(cGenericObject *a_cObject)
 ///
 void afBaseObject::removeChild(cGenericObject *a_cObject)
 {
-    m_visualMesh->removeChild(a_cObject);
+    m_wrappedObject->removeChild(a_cObject);
+}
+
+void afBaseObject::updateVisualPose()
+{
+    if (m_visualMesh != nullptr){
+        if (m_parentObject != nullptr){
+            m_visualMesh->setLocalTransform(m_parentObject->getLocalTransform() * m_localTransform);
+        }
+        else{
+            m_visualMesh->setLocalTransform(m_localTransform);
+        }
+    }
+}
+
+void afBaseObject::updateWrappedObjectPose()
+{
+    if (m_wrappedObject != nullptr){
+        if (m_parentObject != nullptr){
+            m_wrappedObject->setLocalTransform(m_parentObject->getLocalTransform() * m_localTransform);
+        }
+        else{
+            m_wrappedObject->setLocalTransform(m_localTransform);
+        }
+    }
 }
 
 
@@ -1796,7 +1855,13 @@ void afConstraintActuator::updatePositionFromDynamics(){
 ///
 afInertialObject::afInertialObject(afWorldPtr a_afWorld): afBaseObject(a_afWorld)
 {
-
+    // Set some defaults
+    m_linear_damping = 0.04;
+    m_angular_damping = 0.1;
+    m_static_friction = 0.5;
+    m_dynamic_friction = 0.5;
+    m_rolling_friction = 0.01;
+    m_restitution = 0.1;
 }
 
 
@@ -1822,6 +1887,23 @@ void afInertialObject::estimateInertia()
     }
 }
 
+
+///
+/// \brief afInertialObject::getSurfaceProperties
+/// \return
+///
+afSurfaceProperties afInertialObject::getSurfaceProperties()
+{
+    afSurfaceProperties props;
+    props.m_linear_damping = m_bulletRigidBody->getLinearDamping();
+    props.m_angular_damping = m_bulletRigidBody->getAngularDamping();
+    props.m_static_friction = m_bulletRigidBody->getFriction();
+    props.m_rolling_friction = m_bulletRigidBody->getRollingFriction();
+    props.m_restitution = m_bulletRigidBody->getRestitution();
+
+    return props;
+}
+
 ///
 /// \brief afInertialObject::setInertia
 /// \param ix
@@ -1836,6 +1918,14 @@ void afInertialObject::setInertia(double ix, double iy, double iz)
 void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
 {
     m_T_iINb = a_trans;
+}
+
+void afInertialObject::setSurfaceProperties(const afSurfaceProperties &a_props)
+{
+    m_bulletRigidBody->setFriction(m_surfaceProperties.m_static_friction);
+    m_bulletRigidBody->setDamping(m_surfaceProperties.m_linear_damping, m_surfaceProperties.m_angular_damping);
+    m_bulletRigidBody->setRollingFriction(m_surfaceProperties.m_rolling_friction);
+    m_bulletRigidBody->setRestitution(m_surfaceProperties.m_restitution);
 }
 
 
@@ -2623,7 +2713,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         m_shaderProgramDefined = true;
     }
 
-    // Load the inertial offset. If the body is a componnd shape, the "inertial offset"
+    // Load the inertial offset. If the body is a compound shape, the "inertial offset"
     // will be ignored, as per collision shape "offset" will be used.
 
     btTransform inertial_offset_trans;
@@ -2847,16 +2937,25 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     setLocalPos(m_initialPos);
     setLocalRot(m_initialRot);
 
-    if (bodyLinDamping.IsDefined())
-        m_surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
-    if (bodyAngDamping.IsDefined())
-        m_surfaceProps.m_angular_damping = bodyAngDamping.as<double>();
-    if (bodyStaticFriction.IsDefined())
-        m_surfaceProps.m_static_friction = bodyStaticFriction.as<double>();
-    if (bodyRollingFriction.IsDefined())
-        m_surfaceProps.m_rolling_friction = bodyRollingFriction.as<double>();
-    if (bodyRestitution.IsDefined())
-        m_surfaceProps.m_restitution = bodyRestitution.as<double>();
+    afSurfaceProperties surfaceProps;
+
+    if (bodyLinDamping.IsDefined()){
+        surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
+    }
+    if (bodyAngDamping.IsDefined()){
+        surfaceProps.m_angular_damping = bodyAngDamping.as<double>();
+    }
+    if (bodyStaticFriction.IsDefined()){
+        surfaceProps.m_static_friction = bodyStaticFriction.as<double>();
+    }
+    if (bodyRollingFriction.IsDefined()){
+        surfaceProps.m_rolling_friction = bodyRollingFriction.as<double>();
+    }
+    if (bodyRestitution.IsDefined()){
+        surfaceProps.m_restitution = bodyRestitution.as<double>();
+    }
+
+    setSurfaceProperties(surfaceProps);
 
     if (bodyPublishChildrenNames.IsDefined()){
         m_publish_children_names = bodyPublishChildrenNames.as<bool>();
@@ -2992,18 +3091,6 @@ void afRigidBody::computeControllerGains(){
         m_controller.setAngularGains(P_ang, 0, D_ang);
         m_ang_gains_defined = true;
     }
-}
-
-///
-/// \brief afBody::set_surface_properties
-/// \param a_body
-/// \param a_props
-///
-void afRigidBody::setConfigProperties(const afRigidBodyPtr a_body, const afRigidBodySurfacePropertiesPtr a_props){
-    a_body->m_bulletRigidBody->setFriction(a_props->m_static_friction);
-    a_body->m_bulletRigidBody->setDamping(a_props->m_linear_damping, a_props->m_angular_damping);
-    a_body->m_bulletRigidBody->setRollingFriction(a_props->m_rolling_friction);
-    a_body->m_bulletRigidBody->setRestitution(a_props->m_restitution);
 }
 
 
@@ -3154,7 +3241,7 @@ void afRigidBody::afExecuteCommand(double dt){
 
         // IF THE COMMAND IS OF TYPE FORCE
         if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
-            m_activeControllerType = afControlType::FORCE;
+            m_activeControllerType =  afControlType::FORCE;
             if (m_bulletRigidBody){
                 force.setValue(afCommand.wrench.force.x,
                                afCommand.wrench.force.y,
@@ -6962,11 +7049,11 @@ void afCamera::setDepthPublishInterval(uint a_interval){
 /// \return
 ///
 cVector3d afCamera::getGlobalPos(){
-    if (m_visualMesh->getParent()){
-        return m_visualMesh->getParent()->getLocalTransform() * getLocalPos();
+    if (m_camera->getParent()){
+        return m_camera->getParent()->getLocalTransform() * getLocalPos();
     }
     else{
-        return getLocalPos();
+        return m_camera->getLocalPos();
     }
 }
 
@@ -6976,8 +7063,8 @@ cVector3d afCamera::getGlobalPos(){
 /// \param a_pos
 ///
 void afCamera::setTargetPos(cVector3d a_pos){
-    if(m_visualMesh->getParent()){
-        cTransform T_inv = m_visualMesh->getParent()->getLocalTransform();
+    if(m_camera->getParent()){
+        cTransform T_inv = m_camera->getParent()->getLocalTransform();
         T_inv.invert();
         //        a_pos = T_inv * a_pos;
     }
@@ -7001,7 +7088,7 @@ void afCamera::showTargetPos(bool a_show){
 cVector3d afCamera::getTargetPos(){
     cTransform _T_pInw;
     _T_pInw.identity();
-    if (m_visualMesh->getParent()){
+    if (m_camera->getParent()){
         //        _T_pInw = getParent()->getLocalTransform();
     }
     return _T_pInw * getLocalTransform() * m_targetPos;
@@ -7231,10 +7318,10 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
     if(is_valid){
         m_camera = new cCamera(a_world);
-        m_camera->setLocalPos(0, 0, 0);
+        setLocalPos(0, 0, 0);
         cMatrix3d I3;
         I3.identity();
-        m_camera->setLocalRot(I3);
+        setLocalRot(I3);
         addChild(m_camera);
 
         if (cameraParent.IsDefined()){
