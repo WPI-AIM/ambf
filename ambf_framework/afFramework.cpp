@@ -69,7 +69,7 @@ double afWorld::m_encl_width;
 double afWorld::m_encl_height;
 int afWorld::m_maxIterations;
 
-GLFWwindow* afCamera::s_mainWindow = NULL;
+GLFWwindow* afCamera::s_mainWindow = nullptr;
 GLFWmonitor** afCamera::s_monitors;
 int afCamera::s_numMonitors = 0;
 int afCamera::s_numWindows = 0;
@@ -733,6 +733,8 @@ afPrimitiveShapeType afUtils::getShapeTypeFromString(const std::string &a_shape_
     else{
         shapeType = afPrimitiveShapeType::INVALID;
     }
+
+    return shapeType;
 }
 
 
@@ -751,7 +753,7 @@ cMaterial afUtils::getMatrialFromNode(YAML::Node *a_node)
 
     cMaterial mat;
     mat.setShininess(64);
-    double r, g, b, a;
+    float r=0.5, g=0.5, b=0.5, a = 1.0;
     if(colorRGBANode.IsDefined()){
         r = colorRGBANode["r"].as<float>();
         g = colorRGBANode["g"].as<float>();
@@ -767,7 +769,7 @@ cMaterial afUtils::getMatrialFromNode(YAML::Node *a_node)
             mat.m_diffuse.set(r, g, b);
         }
         if (colorComponentsNode["ambient"].IsDefined()){
-            double level = colorComponentsNode["ambient"]["level"].as<float>();
+            float level = colorComponentsNode["ambient"]["level"].as<float>();
             r *= level;
             g *= level;
             b *= level;
@@ -786,8 +788,8 @@ cMaterial afUtils::getMatrialFromNode(YAML::Node *a_node)
             mat.m_emission.set(r, g, b);
         }
         if (colorComponentsNode["shininess"].IsDefined()){
-            double shininess;
-            shininess = colorComponentsNode["shininess"].as<int>();
+            unsigned int shininess;
+            shininess = colorComponentsNode["shininess"].as<uint>();
             mat.setShininess(shininess);
         }
         a = colorComponentsNode["transparency"].as<float>();
@@ -868,9 +870,9 @@ afCartesianController afUtils::getCartControllerFromNode(YAML::Node *a_node)
 ///
 cMesh* afUtils::createVisualShape(const afPrimitiveShape& a_primitiveShape){
 
-    int xs = 32;
-    int ys = 32;
-    int zs = 5;
+    uint xs = 32;
+    uint ys = 32;
+    uint zs = 5;
 
     cVector3d dims = a_primitiveShape.getDimensions();
     double dx = dims.x();
@@ -929,7 +931,7 @@ cMesh* afUtils::createVisualShape(const afPrimitiveShape& a_primitiveShape){
     }
     default:{
         delete tempMesh;
-        tempMesh == nullptr;
+        tempMesh = nullptr;
         // Throw some warning or error as shape not understood
         break;
     }
@@ -1033,7 +1035,7 @@ btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShape &a_primit
         break;
     }
     default:{
-        tempCollisionShape == nullptr;
+        tempCollisionShape = nullptr;
         // Throw some warning or error as shape not understood
         break;
     }
@@ -1885,7 +1887,7 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
         m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
     }
 
-    if (m_parentBody == NULL){
+    if (m_parentBody == nullptr){
         std::cerr << "ERROR: ACTUATOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
         return 0;
     }
@@ -1992,9 +1994,9 @@ void afConstraintActuator::deactuate(){
         m_afWorld->m_bulletWorld->removeConstraint(m_constraint);
         delete m_constraint;
 
-        m_constraint = 0;
-        m_childBody = 0;
-        m_childSotBody = 0;
+        m_constraint = nullptr;
+        m_childBody = nullptr;
+        m_childSotBody = nullptr;
         m_softBodyFaceIdx = -1;
     }
     m_active = false;
@@ -2131,8 +2133,8 @@ btVector3 afInertialObject::computeInertialOffset(cMesh* mesh){
     cVector3d vPos;
     // Sanity Check
     if (mesh){
-        int nvertices = mesh->getNumVertices();
-        int i;
+        uint nvertices = mesh->getNumVertices();
+        uint i;
         double idx;
         for (i = 0, idx = 0 ; i < nvertices ; i++, idx++){
             vPos = mesh->m_vertices->getLocalPos(i);
@@ -2231,7 +2233,7 @@ void afRigidBody::updateUpwardHeirarchyForAddition(afRigidBodyPtr a_childBody, a
     //1a. We add the child body and all of it's children to this body
     std::vector<afChildJointPair> cjPairs;
     cjPairs = a_childBody->m_CJ_PairsAll;
-    for (int i = 0 ; i < cjPairs.size() ; i++){
+    for (unsigned long i = 0 ; i < cjPairs.size() ; i++){
         cjPairs[i].m_directConnection = false; // Make sure to mark that these are not directly connected to the body
     }
     cjPairs.push_back(afChildJointPair(a_childBody, a_jnt, true));
@@ -2375,7 +2377,7 @@ void afRigidBody::updateDownwardHeirarchyForRemoval(){
 
     // First we want to remove
     std::vector<afChildJointPair> parentsChildrenJointPairs = m_CJ_PairsAll;
-    parentsChildrenJointPairs.push_back( afChildJointPair(this, NULL));
+    parentsChildrenJointPairs.push_back( afChildJointPair(this, nullptr));
     std::vector<afChildJointPair>::iterator pCJIt;
     std::vector<afRigidBodyPtr>::iterator pIt;
 
@@ -2413,7 +2415,7 @@ void afRigidBody::updateDownwardHeirarchyForRemoval(){
     // Also update the Active CJ Pairs tree.
     parentsChildrenJointPairs.clear();
     parentsChildrenJointPairs = m_CJ_PairsActive;
-    parentsChildrenJointPairs.push_back( afChildJointPair(this, NULL));
+    parentsChildrenJointPairs.push_back( afChildJointPair(this, nullptr));
 
     for (pCJIt = parentsChildrenJointPairs.begin() ; pCJIt != parentsChildrenJointPairs.end() ; ++pCJIt){
         for (pIt = m_parentBodies.begin() ; pIt != m_parentBodies.end(); ++pIt){
@@ -2907,7 +2909,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     createInertialObject();
 
     cVector3d tempPos(0, 0, 0);
-    cMatrix3d tempRot(0, 0, 0);
+    cMatrix3d tempRot;
     if(bodyPos.IsDefined()){
         tempPos = toXYZ<cVector3d>(&bodyPos);
         setLocalPos(tempPos);
@@ -2973,7 +2975,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     // a body can be a part of multiple groups to allow advanced collision behavior.
 
     if (bodyCollisionGroups.IsDefined()){
-        for (int gIdx = 0 ; gIdx < bodyCollisionGroups.size() ; gIdx++){
+        for (unsigned long gIdx = 0 ; gIdx < bodyCollisionGroups.size() ; gIdx++){
             int gNum = bodyCollisionGroups[gIdx].as<int>();
             // Sanity check for the group number
             if (gNum >= 0 && gNum <= 999){
@@ -3034,7 +3036,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
     else if(m_visualGeometryType == afGeometryType::SINGLE_SHAPE ||
             m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
 
-        for(int sI = 0 ; sI < attribs.m_visualPrimitiveShapes.size() ; sI++){
+        for(unsigned long sI = 0 ; sI < attribs.m_visualPrimitiveShapes.size() ; sI++){
             afPrimitiveShape pS = attribs.m_visualPrimitiveShapes[sI];
             cMesh* tempMesh = afUtils::createVisualShape(pS);;
             m_visualMesh->m_meshes->push_back(tempMesh);
@@ -3079,7 +3081,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
         }
         else{
             btCompoundShape* compoundCollisionShape = new btCompoundShape();
-            for (int sI = 0 ; sI < attribs.m_collisionPrimitiveShapes.size() ; sI++){
+            for (unsigned long sI = 0 ; sI < attribs.m_collisionPrimitiveShapes.size() ; sI++){
                 afPrimitiveShape pS = attribs.m_collisionPrimitiveShapes[sI];
                 btCollisionShape* collShape = afUtils::createCollisionShape(pS);
 
@@ -3160,7 +3162,7 @@ void afRigidBody::enableShaderProgram(){
         cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
         if (shaderProgram->linkProgram()){
             // Just empty Pts to let us use the shader
-            cGenericObject* go;
+            cGenericObject* go=nullptr;
             cRenderOptions ro;
             shaderProgram->use(go, ro);
             // Set the ID for shadow and normal maps.
@@ -3929,7 +3931,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
     }
 
     cMaterial _mat;
-    double _r, _g, _b, _a;
+    float _r, _g, _b, _a;
     if(softBodyColorRGBA.IsDefined()){
         _r = softBodyColorRGBA["r"].as<float>();
         _g = softBodyColorRGBA["g"].as<float>();
@@ -4020,10 +4022,10 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         if (cfg_kSS_SPLT_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSS_SPLT_CL = cfg_kSS_SPLT_CL.as<double>();
         if (cfg_maxvolume.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_maxvolume.as<double>();
         if (cfg_timescale.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_timescale.as<double>();
-        if (cfg_viterations.IsDefined()) m_bulletSoftBody->m_cfg.viterations = cfg_viterations.as<double>();
-        if (cfg_piterations.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterations.as<double>();
-        if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<double>();
-        if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<double>();
+        if (cfg_viterations.IsDefined()) m_bulletSoftBody->m_cfg.viterations = cfg_viterations.as<int>();
+        if (cfg_piterations.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterations.as<int>();
+        if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<int>();
+        if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<int>();
         if (cfg_flags.IsDefined()){
             m_bulletSoftBody->m_cfg.collisions = cfg_flags.as<int>();
         }
@@ -4240,9 +4242,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             return 0;
         }
         // If the body is not world, print what we just did
-        if ((!strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
-                &&(!strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
-                &&(!strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
+        if (!(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
+                && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
+                && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
             //            std::cerr <<"INFO: JOINT: \"" << m_name <<
             //                        "\'s\" PARENT BODY \"" << m_parentName <<
             //                        "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
@@ -4258,9 +4260,9 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             return 0;
         }
         // If the body is not world, print what we just did
-        if ((!strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
-                &&(!strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
-                &&(!strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
+        if ( !(strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
+                && !(strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
+                && !(strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
             std::cerr <<"INFO: JOINT: \"" << m_name <<
                         "\'s\" CHILD BODY \"" << m_childName <<
                         "\" FOUND IN ANOTHER AMBF CONFIG," << std::endl;
@@ -4354,7 +4356,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_controller.D = jointController["D"].as<double>();
 
         // If the PID controller in defined, the gains will be used to command the joint force (effort)
-        m_controller.m_outputType == afControlType::FORCE;
+        m_controller.m_outputType = afControlType::FORCE;
     }
     else{
         // If the controller gains are not defined, a velocity based control will be used.
@@ -4363,7 +4365,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_controller.P = 10;
         m_controller.I = 0;
         m_controller.D = 0;
-        m_controller.m_outputType == afControlType::VELOCITY;
+        m_controller.m_outputType = afControlType::VELOCITY;
     }
 
     // Bullet takes the x axis as the default for prismatic joints
@@ -5199,7 +5201,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
         }
     }
 
-#if C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
     m_afSensorCommPtr->set_count(m_count);
     m_afSensorCommPtr->set_name(m_name);
     m_afSensorCommPtr->set_parent_name(m_parentName);
@@ -6918,7 +6920,7 @@ afVehicleVec afWorld::getAFVehicles(){
 ///
 bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorld){
     btDynamicsWorld* m_dynamicsWorld = m_bulletWorld;
-    if (m_dynamicsWorld == 0)
+    if (m_dynamicsWorld == nullptr)
         return false;
 
     btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
@@ -7076,7 +7078,7 @@ void afWorld::removePickingConstraint(){
 
     if (m_pickedBulletRigidBody){
         m_pickSphere->setShowEnabled(false);
-        m_pickedBulletRigidBody = 0;
+        m_pickedBulletRigidBody = nullptr;
     }
 
     if (m_pickedAFRigidBody){
@@ -7085,7 +7087,7 @@ void afWorld::removePickingConstraint(){
 
     if (m_pickedSoftBody){
         m_pickSphere->setShowEnabled(false);
-        m_pickedSoftBody = 0;
+        m_pickedSoftBody = nullptr;
         m_pickedNodeIdx = -1;
         m_pickedNodeMass = 0;
     }
@@ -7269,7 +7271,7 @@ bool afCamera::createDefaultCamera(){
     int h = 0.5 * _mode->height;
     int x = 0.5 * (_mode->width - w);
     int y = 0.5 * (_mode->height - h);
-    m_window = glfwCreateWindow(w, h, "AMBF Simulator", NULL, NULL);
+    m_window = glfwCreateWindow(w, h, "AMBF Simulator", nullptr, nullptr);
     s_mainWindow = m_window;
 
     m_win_x = x;
@@ -7517,7 +7519,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
         m_width = w;
         m_height = h;
 
-        m_window = glfwCreateWindow(w, h, window_name.c_str(), NULL, s_mainWindow);
+        m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
         if (s_windowIdx == 0){
             s_mainWindow = m_window;
         }
@@ -8715,7 +8717,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     }
 
     /// Loading Sensors
-    afSensorPtr sensorPtr = 0;
+    afSensorPtr sensorPtr = nullptr;
     size_t totalSensors = multiBodySensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
         std::string sensor_name = multiBodySensors[i].as<std::string>();
@@ -8758,7 +8760,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
     }
 
     /// Loading Sensors
-    afActuatorPtr actuatorPtr = 0;
+    afActuatorPtr actuatorPtr = nullptr;
     size_t totalActuators = multiBodyActuators.size();
     for (size_t i = 0; i < totalActuators; ++i) {
         std::string actuator_name = multiBodyActuators[i].as<std::string>();
@@ -8875,7 +8877,7 @@ afRigidBodyPtr afMultiBody::getAFRigidBodyLocal(std::string a_name, bool suppres
                 std::cerr << rbIt->first << std::endl;
             }
         }
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -9007,7 +9009,7 @@ T afWorld::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
         for (int i = 0 ; i < matching_obj_names.size() ; i++){
             std::cerr << "\t" << i << ") " << matching_obj_names[i] << std::endl;
         }
-        return NULL;
+        return nullptr;
     }
     else{
         if (!suppress_warning){
@@ -9019,7 +9021,7 @@ T afWorld::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
                 std::cerr << oIt->first << std::endl;
             }
         }
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -9115,7 +9117,7 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
             std::cerr << rbIt->first << std::endl;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -9153,7 +9155,7 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
             std::cerr << sbIt->first << std::endl;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -9187,7 +9189,7 @@ afVehiclePtr afWorld::getAFVehicle(std::string a_name, bool suppress_warning){
 afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
     if (!a_bodyPtr){
         std::cerr << "ERROR, BODY PTR IS NULL, CAN\'T LOOK UP ROOT BODIES" << std::endl;
-        return 0;
+        return nullptr;
     }
 
     /// Find Root Body
@@ -9350,7 +9352,7 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_chassis = m_afWorld->getAFRigidBody(chassis_name);
 
-    if (m_chassis == NULL){
+    if (m_chassis == nullptr){
         result = false;
         return result;
     }
