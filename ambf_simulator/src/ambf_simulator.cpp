@@ -741,10 +741,10 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
                 afSimulatedDevice* sDev = ccu_vec[ccuIdx]->m_simulatedDevicePtr;
                 pDev->setPosClutched(pDev->getPos());
                 pDev->setRotClutched(pDev->getRot());
-                sDev->setPosRef(sDev->m_rootLink->getInitialPosition());
-                sDev->setRotRef(sDev->m_rootLink->getInitialRotation());
-                sDev->setPosRefOrigin(sDev->m_rootLink->getInitialPosition() / pDev->m_workspaceScale);
-                sDev->setRotRefOrigin(sDev->m_rootLink->getInitialRotation());
+                sDev->setPosRef(sDev->m_rootLink->getInitialTransform().getLocalPos());
+                sDev->setRotRef(sDev->m_rootLink->getInitialTransform().getLocalRot());
+                sDev->setPosRefOrigin(sDev->m_rootLink->getInitialTransform().getLocalPos() / pDev->m_workspaceScale);
+                sDev->setRotRefOrigin(sDev->m_rootLink->getInitialTransform().getLocalRot());
             }
         }
 

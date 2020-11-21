@@ -97,6 +97,7 @@ class afJoint;
 class afWorld;
 struct afSurfaceProperties;
 struct afRenderOptions;
+struct afCartesianController;
 
 typedef afMultiBody* afMultiBodyPtr;
 typedef afRigidBody* afRigidBodyPtr;
@@ -234,20 +235,18 @@ template <typename T>
 ///
 T toRPY(YAML::Node* node);
 
+
 ///
-/// \brief The afShapeType enum
+/// \brief The afActuatorType enum
 ///
-enum class afShapeType{
-    PLANE = 0,
-    BOX = 1,
-    SPHERE = 2,
-    CYLINDER = 3,
-    CAPSULE = 4,
-    CONE = 5,
-    INVALID = 6
+enum class afActuatorType{
+    CONSTRAINT = 0
 };
 
 
+///
+/// \brief The afAxisType enum
+///
 enum class afAxisType{
     X = 0,
     Y = 1,
@@ -255,6 +254,17 @@ enum class afAxisType{
 };
 
 
+///
+/// \brief The afBodyType enum
+///
+enum class afBodyType{
+    RIGID_BODY=0, SOFT_BODY=1
+};
+
+
+///
+/// \brief The afCommType enum
+///
 enum class afCommType{
     ACTUATOR,
     CAMERA,
@@ -269,20 +279,23 @@ enum class afCommType{
 
 
 ///
-/// \brief The Geometrytype enum
-///
-enum class afGeometryType{
-    INVALID= 0, MESH = 1, SINGLE_SHAPE = 2, COMPOUND_SHAPE = 3
-};
-
-
-///
 /// \brief The afControlType enum
 ///
 enum class afControlType{
   POSITION=0,
   FORCE=1,
   VELOCITY=2
+};
+
+
+///
+/// \brief The afGeometryType enum
+///
+enum class afGeometryType{
+    INVALID=0,
+    MESH=1,
+    SINGLE_SHAPE=2,
+    COMPOUND_SHAPE=3
 };
 
 
@@ -300,10 +313,16 @@ enum class afJointType{
 
 
 ///
-/// \brief The afActuatorType enum
+/// \brief The afPrimitiveShapeType enum
 ///
-enum class afActuatorType{
-    CONSTRAINT = 0
+enum class afPrimitiveShapeType{
+    INVALID = 0,
+    PLANE = 1,
+    BOX = 2,
+    SPHERE = 3,
+    CYLINDER = 4,
+    CAPSULE = 5,
+    CONE = 6,
 };
 
 
@@ -311,16 +330,11 @@ enum class afActuatorType{
 /// \brief The afSensorType enum
 ///
 enum class afSensorType{
-    PROXIMITY=0, RANGE=1, RESISTANCE=2
+    PROXIMITY=0,
+    RANGE=1,
+    RESISTANCE=2
 };
 
-
-///
-/// \brief The afBodyType enum
-///
-enum class afBodyType{
-    RIGID_BODY=0, SOFT_BODY=1
-};
 
 ///
 /// \brief The ShadowQuality enum
@@ -336,9 +350,9 @@ enum class afShadowQuality{
 
 
 ///
-/// \brief The WheelBodyType enum
+/// \brief The afWheelRepresentationType enum
 ///
-enum class afWheelBodyType{
+enum class afWheelRepresentationType{
     MESH=0,
     RIGID_BODY=1,
     INVALID=2
@@ -346,18 +360,18 @@ enum class afWheelBodyType{
 
 
 ///
-/// \brief The afShapeGeometry struct
+/// \brief The afPrimitiveShape struct
 ///
-struct afPrimitiveGeometry{
+struct afPrimitiveShape{
 public:
 
-    afPrimitiveGeometry();
+    afPrimitiveShape();
 
     // Copy data specified via ADF node
     bool copyShapeOffsetData(YAML::Node* offsetNode);
 
     // Copy data specified via ADF node
-    bool copyGeometryData(YAML::Node* geometryNode);
+    bool copyPrimitiveShapeData(YAML::Node* shapeNode);
 
     // Helper methods for primitive shapes
     // Required variables for creating a Plane
@@ -381,7 +395,7 @@ public:
     // Rot Offset of the Shape
     void setRotOffset(double roll, double pitch, double yaw);
 
-    inline void setShapeType(afShapeType shapeType){m_shapeType = shapeType;}
+    inline void setShapeType(afPrimitiveShapeType shapeType){m_shapeType = shapeType;}
 
     inline void setAxisType(afAxisType axisType){m_axisType = axisType;}
 
@@ -397,7 +411,7 @@ public:
 
     inline cVector3d getPlaneNormal() const {return m_planeNormal;}
 
-    inline afShapeType getShapeType() const {return m_shapeType;}
+    inline afPrimitiveShapeType getShapeType() const {return m_shapeType;}
 
     inline afAxisType getAxisType() const {return m_axisType;}
 
@@ -416,7 +430,7 @@ private:
 
     double m_planeConstant = 0;
 
-    afShapeType m_shapeType;
+    afPrimitiveShapeType m_shapeType;
 
     afAxisType m_axisType;
 
@@ -463,7 +477,7 @@ public:
     static T1 convertDataType(const T2 &r);
 
     template <typename T>
-    static std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* a_tMap);
 
     static std::string removeAdjacentBackSlashes(std::string a_name);
 
@@ -473,11 +487,17 @@ public:
         std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
     }
 
-    static afShapeType getShapeTypeFromString(const std::string & a_shape_str);
+    static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
 
-    static cMesh* createVisualShape(const afPrimitiveGeometry& a_shapeGeometry);
+    static cMaterial getMatrialFromNode(YAML::Node* a_node);
 
-    static btCollisionShape* createCollisionShape(const afPrimitiveGeometry& a_shapeGeometry);
+    static afCartesianController getCartControllerFromNode(YAML::Node* a_node);
+
+    static cMesh* createVisualShape(const afPrimitiveShape& a_primitiveShape);
+
+    static btCollisionShape* createCollisionShape(const afPrimitiveShape& a_primitiveShape);
+
+    static btCompoundShape* createCollisionShapeFromMesh(cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
 };
 
 
@@ -501,7 +521,7 @@ public:
     std::string getInputDevicesConfig();
     // Get color's rgba values from the name of the color. Color names are defined
     // in the color config file
-    std::vector<double> getColorRGBA(std::string a_color_name);
+    static std::vector<double> getColorRGBA(std::string a_color_name);
     // Load the base config file
     bool loadBaseConfig(std::string file);
     // Get the nuber of multibody config files defined in launch config file
@@ -742,11 +762,8 @@ public:
 
     cVector3d getBoundaryMax();
 
-    // Get Initial Position of this body
-    inline cVector3d getInitialPosition(){return m_initialPos;}
-
-    // Get Initial Rotation of this body
-    inline cMatrix3d getInitialRotation(){return m_initialRot;}
+    // Get Initial Pose of this body
+    inline cTransform getInitialTransform(){return m_initialTransform;}
 
     afBaseObject* getParentObject();
 
@@ -766,9 +783,7 @@ public:
 
     void setParentObject(afBaseObject* a_afObject);
 
-    inline void setInitialPosition(cVector3d a_pos){m_initialPos = a_pos;}
-
-    inline void setInitialRotation(cMatrix3d a_rot){m_initialRot = a_rot;}
+    inline void setInitialTransform(cTransform a_trans){m_initialTransform = a_trans;}
 
     void setFrameSize(double a_size);
 
@@ -802,13 +817,12 @@ public:
     // Parent body name defined in the ADF
     std::string m_parentName;
 
+    // Filepath to the visual mesh
+    boost::filesystem::path m_visualMeshFilePath;
+
 protected:
-
     // Initial location of Rigid Body
-    cVector3d m_initialPos;
-
-    // Initial rotation of Ridig Body
-    cMatrix3d m_initialRot;
+    cTransform m_initialTransform;
 
     // Scale of mesh
     double m_scale;
@@ -816,8 +830,8 @@ protected:
     // Flag for the Shader Program
     bool m_shaderProgramDefined = false;
 
-    boost::filesystem::path m_vsFilePath;
-    boost::filesystem::path m_fsFilePath;
+    boost::filesystem::path m_vtxShaderFilePath;
+    boost::filesystem::path m_fragShaderFilePath;
 
     cMultiMesh* m_visualMesh;
 
@@ -849,9 +863,7 @@ public:
 
     void applyTorque(const cVector3d &a_torque);
 
-    virtual void buildContactTriangles(const double a_margin, cMultiMesh* lowResMesh);
-
-    virtual void buildDynamicModel();
+    void createInertialObject();
 
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
@@ -866,7 +878,7 @@ public:
 
     inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
 
-    inline afSurfaceProperties getSurfaceProperties(){m_surfaceProperties;}
+    afSurfaceProperties getSurfaceProperties();
 
     inline void setMass(double a_mass){m_mass = a_mass;}
 
@@ -877,6 +889,12 @@ public:
     void setSurfaceProperties(const afSurfaceProperties& props);
 
     btRigidBody* m_bulletRigidBody;
+
+    // Filepath to the collision mesh
+    boost::filesystem::path m_collisionMeshFilePath;
+
+    // cMultiMesh representation of collision mesh
+    cMultiMesh* m_collisionMesh;
 
 protected:
     //! Inertial Offset Transform defined in the body frame
@@ -894,6 +912,45 @@ protected:
 
     // Inertia
     btVector3 m_inertia;
+};
+
+
+///
+/// \brief The afRigidBodyAttributes struct
+///
+struct afRigidBodyAttributes{
+    afRigidBodyAttributes(){
+
+    }
+
+    std::string m_name;
+    std::string m_namespace;
+    boost::filesystem::path m_visualMeshFilePath;
+    boost::filesystem::path m_collisionMeshFilePath;
+    cTransform m_location;
+    std::string m_meshName;
+    afGeometryType m_visualGeometryType;
+    std::vector<afPrimitiveShape> m_visualPrimitiveShapes;
+    double m_collisionMargin;
+    afGeometryType m_collisionGeometryType;
+    std::vector<afPrimitiveShape> m_collisionPrimitiveShapes;
+    double m_scale;
+    double m_mass;
+    btVector3 m_inertia;
+    btTransform m_inertialOffset;
+    afCartesianController m_controller;
+    cMaterial m_material;
+    afSurfaceProperties m_surfaceProperties;
+    bool m_publishChildrenNames;
+    bool m_publishJointNames;
+    bool m_publishJointPositions;
+    uint m_minPublishFreq;
+    uint m_maxPublishFreq;
+    std::vector<uint> m_collisionGroups;
+    bool m_passive;
+    bool m_shaderDefined;
+    std::string m_vtxShaderFilePath;
+    std::string m_fragShaderFilePath;
 };
 
 
@@ -923,6 +980,9 @@ public:
 
     // Load rigid body named by from the rb_node specification
     virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
+
+    // Load rigid body named by from the rb_node specification
+    virtual bool loadRigidBody(afRigidBodyAttributes &attribs);
 
     // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
@@ -990,17 +1050,8 @@ protected:
     // Name of visual and collision mesh
     std::string m_mesh_name, m_collision_mesh_name;
 
-    // cMultiMesh representation of collision mesh
-    cMultiMesh m_lowResMesh;
-
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
-
-    // Check if the linear gains have been defined
-    bool m_lin_gains_defined = false;
-
-    // Check if the linear gains have been defined
-    bool m_ang_gains_defined = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -1017,8 +1068,8 @@ protected:
     // Actuators for this Rigid Body
     afActuatorVec m_afActuators;
 
-    // Function of compute body's controllers based on lumped masses
-    void computeControllerGains();
+    // Method to estimate controller gains based on lumped masses
+    void estimateCartesianControllerGains(afCartesianController& controller, bool computeLinear = true, bool computeAngular = true);
 
     // Internal method called for population densely connected body tree
     void addParentBody(afRigidBodyPtr a_body);
@@ -1051,7 +1102,7 @@ protected:
     virtual void afObjectSetJointEfforts();
 
     // Collision groups for this rigid body
-    std::vector<int> m_collisionGroupsIdx;
+    std::vector<int> m_collisionGroups;
 
     // pool of threads for solving the body's sensors in paralled
     std::vector<std::thread*> m_sensorThreads;
@@ -1090,7 +1141,8 @@ private:
     btVector3 m_dpos;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
-    afGeometryType m_visualGeometryType, m_collisionGeometryType;
+    afGeometryType m_visualGeometryType;
+    afGeometryType m_collisionGeometryType;
 };
 
 ///
@@ -1130,9 +1182,6 @@ public:
 
     // Set angles of connected joints
     void setAngle(std::vector<double> &angle, double dt);
-
-    // Set softbody config properties
-    static void setConfigProperties(const afSoftBodyPtr a_body, const afSoftBodyConfigPropertiesPtr a_configProps);
 
 public:
     std::string m_namespace;
@@ -2523,7 +2572,7 @@ struct afWheel{
     double m_max_engine_power = 0.0;
     double m_max_brake_power = 0.0;
 
-    afWheelBodyType m_wheelBodyType;
+    afWheelRepresentationType m_wheelRepresentationType;
 };
 
 class afVehicle: public afInertialObject{

@@ -193,7 +193,7 @@ bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::strin
 /// \return
 ///
 bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD){
-    YAML::Node physicaDeviceNode = *pd_node;
+    YAML::Node& physicaDeviceNode = *pd_node;
     if (physicaDeviceNode.IsNull()){
         std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
         return 0;
@@ -503,8 +503,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
 
         simDevice->m_rootLink->setLocalPos(position);
         simDevice->m_rootLink->setLocalRot(rotation);
-        simDevice->m_rootLink->setInitialPosition(position);
-        simDevice->m_rootLink->setInitialRotation(rotation);
+        simDevice->m_rootLink->setInitialTransform(cTransform(position, rotation));
         m_simRotInitial = rotation;
     }
     else{
