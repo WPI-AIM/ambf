@@ -209,7 +209,7 @@ cTransform toCtransform(const btTransform &btTrans){
 /// \brief afShapeGeometry::setScale
 /// \param a_scale
 ///
-afPrimitiveShape::afPrimitiveShape()
+afPrimitiveShapeAttributes::afPrimitiveShapeAttributes()
 {
     m_posOffset.set(0, 0, 0);
     m_rotOffset.identity();
@@ -223,7 +223,7 @@ afPrimitiveShape::afPrimitiveShape()
 /// \param offsetNode
 /// \return
 ///
-bool afPrimitiveShape::copyShapeOffsetData(YAML::Node *offset_node)
+bool afPrimitiveShapeAttributes::copyShapeOffsetData(YAML::Node *offset_node)
 {
     bool valid = true;
 
@@ -258,7 +258,7 @@ bool afPrimitiveShape::copyShapeOffsetData(YAML::Node *offset_node)
 /// \param shape_node
 /// \return
 ///
-bool afPrimitiveShape::copyPrimitiveShapeData(YAML::Node *shape_node)
+bool afPrimitiveShapeAttributes::copyPrimitiveShapeData(YAML::Node *shape_node)
 {
     bool valid = true;
 
@@ -331,7 +331,7 @@ bool afPrimitiveShape::copyPrimitiveShapeData(YAML::Node *shape_node)
 /// \param normal_z
 /// \param plane_constant
 ///
-void afPrimitiveShape::setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant)
+void afPrimitiveShapeAttributes::setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant)
 {
     m_planeNormal.set(normal_x, normal_y, normal_z);
     m_planeConstant = plane_constant;
@@ -345,7 +345,7 @@ void afPrimitiveShape::setPlaneData(double normal_x, double normal_y, double nor
 /// \param dimension_y
 /// \param dimension_z
 ///
-void afPrimitiveShape::setBoxData(double dimension_x, double dimension_y, double dimension_z)
+void afPrimitiveShapeAttributes::setBoxData(double dimension_x, double dimension_y, double dimension_z)
 {
     m_dimensions.set(dimension_x, dimension_y, dimension_z);
     m_shapeType = afPrimitiveShapeType::BOX;
@@ -356,7 +356,7 @@ void afPrimitiveShape::setBoxData(double dimension_x, double dimension_y, double
 /// \brief afPrimitiveGeometry::setSphereData
 /// \param radius
 ///
-void afPrimitiveShape::setSphereData(double radius)
+void afPrimitiveShapeAttributes::setSphereData(double radius)
 {
     m_radius = radius;
     m_shapeType = afPrimitiveShapeType::SPHERE;
@@ -369,7 +369,7 @@ void afPrimitiveShape::setSphereData(double radius)
 /// \param height
 /// \param axis
 ///
-void afPrimitiveShape::setCapsuleData(double radius, double height, afAxisType axis)
+void afPrimitiveShapeAttributes::setCapsuleData(double radius, double height, afAxisType axis)
 {
     m_radius = radius;
     m_height = height;
@@ -384,7 +384,7 @@ void afPrimitiveShape::setCapsuleData(double radius, double height, afAxisType a
 /// \param height
 /// \param axis
 ///
-void afPrimitiveShape::setConeData(double radius, double height, afAxisType axis)
+void afPrimitiveShapeAttributes::setConeData(double radius, double height, afAxisType axis)
 {
     m_radius = radius;
     m_height = height;
@@ -399,7 +399,7 @@ void afPrimitiveShape::setConeData(double radius, double height, afAxisType axis
 /// \param py
 /// \param pz
 ///
-void afPrimitiveShape::setPosOffset(double px, double py, double pz)
+void afPrimitiveShapeAttributes::setPosOffset(double px, double py, double pz)
 {
     m_posOffset.set(px, py, pz);
 }
@@ -411,7 +411,7 @@ void afPrimitiveShape::setPosOffset(double px, double py, double pz)
 /// \param pitch
 /// \param yaw
 ///
-void afPrimitiveShape::setRotOffset(double roll, double pitch, double yaw)
+void afPrimitiveShapeAttributes::setRotOffset(double roll, double pitch, double yaw)
 {
     m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
 }
@@ -421,7 +421,7 @@ void afPrimitiveShape::setRotOffset(double roll, double pitch, double yaw)
 /// \brief afPrimitiveGeometry::setScale
 /// \param a_scale
 ///
-void afPrimitiveShape::setScale(double a_scale)
+void afPrimitiveShapeAttributes::setScale(double a_scale)
 {
     m_scale = a_scale;
 }
@@ -868,33 +868,33 @@ afCartesianController afUtils::getCartControllerFromNode(YAML::Node *a_node)
 /// \param a_primitiveShape
 /// \return
 ///
-cMesh* afUtils::createVisualShape(const afPrimitiveShape& a_primitiveShape){
+cMesh* afUtils::createVisualShape(const afPrimitiveShapeAttributes& a_attribs){
 
     uint xs = 32;
     uint ys = 32;
     uint zs = 5;
 
-    cVector3d dims = a_primitiveShape.getDimensions();
+    cVector3d dims = a_attribs.getDimensions();
     double dx = dims.x();
     double dy = dims.y();
     double dz = dims.z();
 
-    cVector3d pNormal = a_primitiveShape.getPlaneNormal();
+    cVector3d pNormal = a_attribs.getPlaneNormal();
     double nx = pNormal.x();
     double ny = pNormal.y();
     double nz = pNormal.z();
 
-    double offset = a_primitiveShape.getPlaneConstant();
+    double offset = a_attribs.getPlaneConstant();
 
-    double radius = a_primitiveShape.getRadius();
-    double height = a_primitiveShape.getHeight();
+    double radius = a_attribs.getRadius();
+    double height = a_attribs.getHeight();
 
-    cVector3d posOffset = a_primitiveShape.getPosOffset();
-    cMatrix3d rotOffset = a_primitiveShape.getRotOffset();
+    cVector3d posOffset = a_attribs.getPosOffset();
+    cMatrix3d rotOffset = a_attribs.getRotOffset();
 
     cMesh* tempMesh = new cMesh();
 
-    switch (a_primitiveShape.getShapeType()) {
+    switch (a_attribs.getShapeType()) {
     case afPrimitiveShapeType::BOX:{
         cCreateBox(tempMesh, dx, dy, dz, posOffset, rotOffset);
         break;
@@ -945,26 +945,26 @@ cMesh* afUtils::createVisualShape(const afPrimitiveShape& a_primitiveShape){
 /// \param a_primitiveShape
 /// \return
 ///
-btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShape &a_primitiveShape)
+btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShapeAttributes &a_attribs)
 {
-    cVector3d dims = a_primitiveShape.getDimensions();
+    cVector3d dims = a_attribs.getDimensions();
     double dx = dims.x();
     double dy = dims.y();
     double dz = dims.z();
 
-    cVector3d pNormal = a_primitiveShape.getPlaneNormal();
+    cVector3d pNormal = a_attribs.getPlaneNormal();
     double nx = pNormal.x();
     double ny = pNormal.y();
     double nz = pNormal.z();
 
-    double offset = a_primitiveShape.getPlaneConstant();
+    double offset = a_attribs.getPlaneConstant();
 
-    double radius = a_primitiveShape.getRadius();
-    double height = a_primitiveShape.getHeight();
+    double radius = a_attribs.getRadius();
+    double height = a_attribs.getHeight();
 
     btCollisionShape* tempCollisionShape;
 
-    switch (a_primitiveShape.getShapeType()) {
+    switch (a_attribs.getShapeType()) {
     case afPrimitiveShapeType::BOX:{
         btVector3 halfExtents(dx/2, dy/2, dz/2);
         tempCollisionShape = new btBoxShape(halfExtents);
@@ -976,7 +976,7 @@ btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShape &a_primit
     }
     case afPrimitiveShapeType::CYLINDER:{
         height = height / 2;
-        switch (a_primitiveShape.getAxisType()) {
+        switch (a_attribs.getAxisType()) {
         case afAxisType::X:{
             btVector3 halfExtents(height, radius, radius);
             tempCollisionShape = new btCylinderShapeX(halfExtents);
@@ -997,7 +997,7 @@ btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShape &a_primit
     }
     case afPrimitiveShapeType::CAPSULE:{
         height = height - 2*radius;
-        switch (a_primitiveShape.getAxisType()) {
+        switch (a_attribs.getAxisType()) {
         case afAxisType::X:{
             tempCollisionShape = new btCapsuleShapeX(radius, height);
             break;
@@ -1014,7 +1014,7 @@ btCollisionShape *afUtils::createCollisionShape(const afPrimitiveShape &a_primit
         break;
     }
     case afPrimitiveShapeType::CONE:{
-        switch (a_primitiveShape.getAxisType()) {
+        switch (a_attribs.getAxisType()) {
         case afAxisType::X:{
             tempCollisionShape = new btConeShapeX(radius, height);
             break;
@@ -1067,7 +1067,7 @@ btCompoundShape* afUtils::createCollisionShapeFromMesh(cMultiMesh* a_collisionMe
 
     btCompoundShape* compoundShape = new btCompoundShape();
 
-    for (int mI = 0 ; mI < a_collisionMesh->getNumMeshes() ; mI++){
+    for (uint mI = 0 ; mI < a_collisionMesh->getNumMeshes() ; mI++){
 
         cMesh* mesh = a_collisionMesh->getMesh(mI);
 
@@ -2714,11 +2714,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     else if (m_visualGeometryType == afGeometryType::SINGLE_SHAPE){
-        afPrimitiveShape primitiveShape;
-        primitiveShape.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
-        primitiveShape.copyPrimitiveShapeData(&bodyGeometry);
-        primitiveShape.setScale(m_scale);
-        cMesh* tempMesh = afUtils::createVisualShape(primitiveShape);
+        afPrimitiveShapeAttributes shapeAttribs;
+        shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
+        shapeAttribs.copyPrimitiveShapeData(&bodyGeometry);
+        shapeAttribs.setScale(m_scale);
+        cMesh* tempMesh = afUtils::createVisualShape(shapeAttribs);
         m_visualMesh->m_meshes->push_back(tempMesh);
     }
 
@@ -2730,12 +2730,12 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
 
-            afPrimitiveShape primitiveShape;
-            primitiveShape.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
-            primitiveShape.copyPrimitiveShapeData(&bodyGeometry);
-            primitiveShape.copyShapeOffsetData(&shapeOffset);
-            primitiveShape.setScale(m_scale);
-            cMesh* tempMesh = afUtils::createVisualShape(primitiveShape);;
+            afPrimitiveShapeAttributes shapeAttribs;
+            shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
+            shapeAttribs.copyPrimitiveShapeData(&bodyGeometry);
+            shapeAttribs.copyShapeOffsetData(&shapeOffset);
+            shapeAttribs.setScale(m_scale);
+            cMesh* tempMesh = afUtils::createVisualShape(shapeAttribs);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
@@ -2822,23 +2822,23 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         std::string shape_str = bodyCollisionShape.as<std::string>();
         btTransform T_off;
 
-        afPrimitiveShape primitiveShape;
-        primitiveShape.setShapeType(afUtils::getShapeTypeFromString(shape_str));
-        primitiveShape.copyPrimitiveShapeData(&bodyCollisionGeometry);
-        if (primitiveShape.copyShapeOffsetData(&bodyCollisionOffset)){
-            T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(primitiveShape.getPosOffset(), primitiveShape.getRotOffset()));
+        afPrimitiveShapeAttributes shapeAttribs;
+        shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(shape_str));
+        shapeAttribs.copyPrimitiveShapeData(&bodyCollisionGeometry);
+        if (shapeAttribs.copyShapeOffsetData(&bodyCollisionOffset)){
+            T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(shapeAttribs.getPosOffset(), shapeAttribs.getRotOffset()));
         }
         else{
             // If a shape offset is not defined, set the shape offset equal to the intertial offset transform
             // This is to take care of legacy ADF where the shape offset was not set.
             T_off = getInertialOffsetTransform();
         }
-        primitiveShape.setScale(m_scale);
-        btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(primitiveShape);
+        shapeAttribs.setScale(m_scale);
+        btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(shapeAttribs);
 
         // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
         // Thus instead of using a compound, use the single collision shape.
-        if (primitiveShape.getShapeType() == afPrimitiveShapeType::PLANE){
+        if (shapeAttribs.getShapeType() == afPrimitiveShapeType::PLANE){
             m_bulletCollisionShape = singleCollisionShape;
         }
         else{
@@ -2857,18 +2857,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
             btTransform T_off;
 
-            afPrimitiveShape primitiveShape;
-            primitiveShape.setShapeType(afUtils::getShapeTypeFromString(shape_str));
-            primitiveShape.copyPrimitiveShapeData(&bodyCollisionGeometry);
-            if (primitiveShape.copyShapeOffsetData(&shapeOffset)){
-                T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(primitiveShape.getPosOffset(), primitiveShape.getRotOffset()));
+            afPrimitiveShapeAttributes shapeAttribs;
+            shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(shape_str));
+            shapeAttribs.copyPrimitiveShapeData(&bodyCollisionGeometry);
+            if (shapeAttribs.copyShapeOffsetData(&shapeOffset)){
+                T_off = afUtils::convertDataType<btTransform, cTransform>(cTransform(shapeAttribs.getPosOffset(), shapeAttribs.getRotOffset()));
             }
             else{
                 T_off.setIdentity();
             }
 
-            primitiveShape.setScale(m_scale);
-            btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(primitiveShape);
+            shapeAttribs.setScale(m_scale);
+            btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(shapeAttribs);
 
             // Here again, we consider both the inertial offset transform and the
             // shape offset transfrom. This will change the legacy behavior but
@@ -3037,7 +3037,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
             m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
 
         for(unsigned long sI = 0 ; sI < attribs.m_visualPrimitiveShapes.size() ; sI++){
-            afPrimitiveShape pS = attribs.m_visualPrimitiveShapes[sI];
+            afPrimitiveShapeAttributes pS = attribs.m_visualPrimitiveShapes[sI];
             cMesh* tempMesh = afUtils::createVisualShape(pS);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
@@ -3076,13 +3076,13 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
             return false;
         }
         else if (attribs.m_collisionPrimitiveShapes.size() == 1 && attribs.m_collisionPrimitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
-            afPrimitiveShape pS = attribs.m_collisionPrimitiveShapes[0];
+            afPrimitiveShapeAttributes pS = attribs.m_collisionPrimitiveShapes[0];
             m_bulletCollisionShape =  afUtils::createCollisionShape(pS);
         }
         else{
             btCompoundShape* compoundCollisionShape = new btCompoundShape();
             for (unsigned long sI = 0 ; sI < attribs.m_collisionPrimitiveShapes.size() ; sI++){
-                afPrimitiveShape pS = attribs.m_collisionPrimitiveShapes[sI];
+                afPrimitiveShapeAttributes pS = attribs.m_collisionPrimitiveShapes[sI];
                 btCollisionShape* collShape = afUtils::createCollisionShape(pS);
 
                 // Here again, we consider both the inertial offset transform and the
@@ -3101,7 +3101,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
 
-    for (int gI = 0 ; gI < attribs.m_collisionGroups.size() ; gI++){
+    for (uint gI = 0 ; gI < attribs.m_collisionGroups.size() ; gI++){
         int group =  attribs.m_collisionGroups[gI];
         // Sanity check for the group number
         if (group >= 0 && group <= 999){
@@ -4977,17 +4977,18 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
 
     if (sensorArray.IsDefined()){
         m_count = sensorArray.size();
-        m_sensedResults.resize(m_count);
-        for (int i = 0 ; i < m_count ; i++){
+        m_raysAttribs.resize(m_count);
+        m_rayTracerResults.resize(m_count);
+        for (uint i = 0 ; i < m_count ; i++){
             YAML::Node offsetNode = sensorArray[i]["offset"];
             YAML::Node directionNode = sensorArray[i]["direction"];
             cVector3d offset = toXYZ<cVector3d>(&offsetNode);
             cVector3d dir = toXYZ<cVector3d>(&directionNode);
-            m_sensedResults[i].m_range = m_range;
-            m_sensedResults[i].m_rayFromLocal = getLocalTransform() * offset;
-            m_sensedResults[i].m_direction = getLocalRot() * dir;
-            m_sensedResults[i].m_direction.normalize();
-            m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
+            m_raysAttribs[i].m_range = m_range;
+            m_raysAttribs[i].m_rayFromLocal = getLocalTransform() * offset;
+            m_raysAttribs[i].m_direction = getLocalRot() * dir;
+            m_raysAttribs[i].m_direction.normalize();
+            m_raysAttribs[i].m_rayToLocal = m_raysAttribs[i].m_rayFromLocal + m_raysAttribs[i].m_direction * m_raysAttribs[i].m_range;
 
         }
         result = true;
@@ -5001,14 +5002,15 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
             cMesh* sourceMesh = (*multiMesh->m_meshes)[0];
             if (sourceMesh){
                 m_count = sourceMesh->m_triangles->getNumElements();
-                m_sensedResults.resize(m_count);
-                for (int i = 0 ; i < m_count ; i++ ){
+                m_raysAttribs.resize(m_count);
+                m_rayTracerResults.resize(m_count);
+                for (uint i = 0 ; i < m_count ; i++ ){
 
-                    m_sensedResults[i].m_range = m_range;
+                    m_raysAttribs[i].m_range = m_range;
 
-                    int vIdx0 = sourceMesh->m_triangles->getVertexIndex0(i);
-                    int vIdx1 = sourceMesh->m_triangles->getVertexIndex1(i);
-                    int vIdx2 = sourceMesh->m_triangles->getVertexIndex2(i);
+                    uint vIdx0 = sourceMesh->m_triangles->getVertexIndex0(i);
+                    uint vIdx1 = sourceMesh->m_triangles->getVertexIndex1(i);
+                    uint vIdx2 = sourceMesh->m_triangles->getVertexIndex2(i);
 
                     cVector3d v0 = sourceMesh->m_vertices->getLocalPos(vIdx0);
                     cVector3d v1 = sourceMesh->m_vertices->getLocalPos(vIdx1);
@@ -5022,10 +5024,10 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
                     cVector3d dir = cCross(e1, e2);
 
                     dir.normalize();
-                    m_sensedResults[i].m_rayFromLocal = getLocalTransform() * centroid ;
-                    m_sensedResults[i].m_direction = getLocalRot() * dir;
-                    m_sensedResults[i].m_direction.normalize();
-                    m_sensedResults[i].m_rayToLocal = m_sensedResults[i].m_rayFromLocal + m_sensedResults[i].m_direction * m_sensedResults[i].m_range;
+                    m_raysAttribs[i].m_rayFromLocal = getLocalTransform() * centroid ;
+                    m_raysAttribs[i].m_direction = getLocalRot() * dir;
+                    m_raysAttribs[i].m_direction.normalize();
+                    m_raysAttribs[i].m_rayToLocal = m_raysAttribs[i].m_rayFromLocal + m_raysAttribs[i].m_direction * m_raysAttribs[i].m_range;
                 }
             }
             delete multiMesh;
@@ -5044,7 +5046,7 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         YAML::Node verSpanNode = sensorParametric["vertical angle"];
         YAML::Node startOffsetNode = sensorParametric["start offset"];
 
-        int resolution = resolutionNode.as<int>();
+        uint resolution = resolutionNode.as<uint>();
         double horizontal_span = horSpanNode.as<double>();
         double vertical_span = verSpanNode.as<double>();
         double start_offset = startOffsetNode.as<double>();
@@ -5059,13 +5061,14 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
         double h_step = horizontal_span / (resolution - 1);
         double v_step = vertical_span / (resolution - 1);
         m_count = resolution * resolution;
-        m_sensedResults.resize(m_count);
+        m_raysAttribs.resize(m_count);
+        m_rayTracerResults.resize(m_count);
 
         // Choose an initial point facing the +ve x direction
         cVector3d point(1, 0, 0);
-        for (int i = 0 ; i < resolution ; i++){
+        for (uint i = 0 ; i < resolution ; i++){
             double h_angle = h_start + i * h_step;
-            for (int j = 0 ; j < resolution ; j++){
+            for (uint j = 0 ; j < resolution ; j++){
                 double v_angle = v_start + j * v_step;
 
                 cMatrix3d mat;
@@ -5077,14 +5080,12 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, std::string node_nam
                 cVector3d ray_to = ray_from + dir * m_range;
 
                 dir.normalize();
-                int sIdx = resolution * i + j;
-                m_sensedResults[sIdx].m_range = m_range;
-                m_sensedResults[sIdx].m_rayFromLocal = getLocalTransform() * ray_from ;
-                m_sensedResults[sIdx].m_direction = getLocalRot() * dir;
-                m_sensedResults[sIdx].m_direction.normalize();
-                m_sensedResults[sIdx].m_rayToLocal = m_sensedResults[sIdx].m_rayFromLocal +
-                        m_sensedResults[sIdx].m_direction *
-                        m_sensedResults[sIdx].m_range;
+                uint sIdx = resolution * i + j;
+                m_raysAttribs[sIdx].m_range = m_range;
+                m_raysAttribs[sIdx].m_rayFromLocal = getLocalTransform() * ray_from ;
+                m_raysAttribs[sIdx].m_direction = getLocalRot() * dir;
+                m_raysAttribs[sIdx].m_direction.normalize();
+                m_raysAttribs[sIdx].m_rayToLocal = m_raysAttribs[sIdx].m_rayFromLocal + m_raysAttribs[sIdx].m_direction * m_raysAttribs[sIdx].m_range;
             }
 
         }
@@ -5113,30 +5114,30 @@ void afRayTracerSensor::updatePositionFromDynamics(){
         return;
     }
     cTransform T_bInw = m_parentBody->getLocalTransform();
-    for (int i = 0 ; i < m_count ; i++){
+    for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld = toBTvec(T_bInw *  m_sensedResults[i].m_rayFromLocal);
-        rayToWorld = toBTvec(T_bInw *  m_sensedResults[i].m_rayToLocal);
+        rayFromWorld = toBTvec(T_bInw *  m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld = toBTvec(T_bInw *  m_raysAttribs[i].m_rayToLocal);
 
         // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
-            m_sensedResults[i].m_fromSphereMesh->setLocalPos(toCvec(rayFromWorld) );
-            m_sensedResults[i].m_toSphereMesh->setLocalPos(toCvec(rayToWorld) );
+            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(toCvec(rayFromWorld) );
+            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(toCvec(rayToWorld) );
         }
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
         if (rayCallBack.hasHit()){
             if (m_showSensor){
-                m_sensedResults[i].m_hitSphereMesh->setLocalPos(toCvec(rayCallBack.m_hitPointWorld));
-                m_sensedResults[i].m_hitSphereMesh->setShowEnabled(true);
+                m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(toCvec(rayCallBack.m_hitPointWorld));
+                m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(true);
             }
-            m_sensedResults[i].m_triggered = true;
+            m_rayTracerResults[i].m_triggered = true;
             if (rayCallBack.m_collisionObject->getInternalType()
                     == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
-                m_sensedResults[i].m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(rayCallBack.m_collisionObject);
-                m_sensedResults[i].m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_sensedResults[i].m_sensedBTRigidBody);
-                m_sensedResults[i].m_sensedBodyType = afBodyType::RIGID_BODY;
+                m_rayTracerResults[i].m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(rayCallBack.m_collisionObject);
+                m_rayTracerResults[i].m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_rayTracerResults[i].m_sensedBTRigidBody);
+                m_rayTracerResults[i].m_sensedBodyType = afBodyType::RIGID_BODY;
             }
             else if (rayCallBack.m_collisionObject->getInternalType()
                      == btCollisionObject::CollisionObjectTypes::CO_SOFT_BODY){
@@ -5164,11 +5165,11 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                 }
                 // If sensedBodyFaceIdx is not -1, we sensed some face. Lets capture it
                 if (sensedSoftBodyFaceIdx > -1){
-                    m_sensedResults[i].m_sensedSoftBodyFaceIdx = sensedSoftBodyFaceIdx;
-                    m_sensedResults[i].m_sensedSoftBodyFace = &sensedSoftBody->m_faces[sensedSoftBodyFaceIdx];
-                    m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
-                    m_sensedResults[i].m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_sensedResults[i].m_sensedBTSoftBody);
-                    m_sensedResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
+                    m_rayTracerResults[i].m_sensedSoftBodyFaceIdx = sensedSoftBodyFaceIdx;
+                    m_rayTracerResults[i].m_sensedSoftBodyFace = &sensedSoftBody->m_faces[sensedSoftBodyFaceIdx];
+                    m_rayTracerResults[i].m_sensedBTSoftBody = sensedSoftBody;
+                    m_rayTracerResults[i].m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_rayTracerResults[i].m_sensedBTSoftBody);
+                    m_rayTracerResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
                 }
                 // Reset the maxDistance for node checking
                 maxDistance = 0.1;
@@ -5182,22 +5183,22 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                 }
                 // If sensedBodyNodeIdx is not -1, we sensed some node. Lets capture it
                 if (sensedSoftBodyNodeIdx > -1){
-                    m_sensedResults[i].m_sensedSoftBodyNodeIdx = sensedSoftBodyNodeIdx;
-                    m_sensedResults[i].m_sensedSoftBodyNode = &sensedSoftBody->m_nodes[sensedSoftBodyNodeIdx];
-                    m_sensedResults[i].m_sensedBTSoftBody = sensedSoftBody;
-                    m_sensedResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
+                    m_rayTracerResults[i].m_sensedSoftBodyNodeIdx = sensedSoftBodyNodeIdx;
+                    m_rayTracerResults[i].m_sensedSoftBodyNode = &sensedSoftBody->m_nodes[sensedSoftBodyNodeIdx];
+                    m_rayTracerResults[i].m_sensedBTSoftBody = sensedSoftBody;
+                    m_rayTracerResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
                 }
             }
-            m_sensedResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
-            m_sensedResults[i].m_contactNormal = toCvec(rayCallBack.m_hitNormalWorld);
-            m_sensedResults[i].m_sensedLocationWorld = toCvec(rayCallBack.m_hitPointWorld);
+            m_rayTracerResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
+            m_rayTracerResults[i].m_contactNormal = toCvec(rayCallBack.m_hitNormalWorld);
+            m_rayTracerResults[i].m_sensedLocationWorld = toCvec(rayCallBack.m_hitPointWorld);
         }
         else{
             if(m_showSensor){
-                m_sensedResults[i].m_hitSphereMesh->setShowEnabled(false);
+                m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(false);
             }
-            m_sensedResults[i].m_triggered = false;
-            m_sensedResults[i].m_depthFraction = 0;
+            m_rayTracerResults[i].m_triggered = false;
+            m_rayTracerResults[i].m_depthFraction = 0;
         }
     }
 
@@ -5251,7 +5252,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
 ///
 void afRayTracerSensor::enableVisualization(){
     for (int i = 0 ; i < m_count ; i++){
-        if (m_sensedResults[i].m_hitSphereMesh == nullptr){
+        if (m_rayTracerResults[i].m_hitSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
@@ -5259,10 +5260,10 @@ void afRayTracerSensor::enableVisualization(){
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
-            m_sensedResults[i].m_hitSphereMesh = mesh;
+            m_rayTracerResults[i].m_hitSphereMesh = mesh;
         }
 
-        if (m_sensedResults[i].m_fromSphereMesh == nullptr){
+        if (m_rayTracerResults[i].m_fromSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
@@ -5270,10 +5271,10 @@ void afRayTracerSensor::enableVisualization(){
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
-            m_sensedResults[i].m_fromSphereMesh = mesh;
+            m_rayTracerResults[i].m_fromSphereMesh = mesh;
         }
 
-        if (m_sensedResults[i].m_toSphereMesh == nullptr){
+        if (m_rayTracerResults[i].m_toSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
             m_afWorld->addChild(mesh);
@@ -5281,10 +5282,10 @@ void afRayTracerSensor::enableVisualization(){
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
-            m_sensedResults[i].m_toSphereMesh = mesh;
+            m_rayTracerResults[i].m_toSphereMesh = mesh;
         }
 
-        if (m_sensedResults[i].m_hitNormalMesh == nullptr){
+        if (m_rayTracerResults[i].m_hitNormalMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateArrow(mesh, m_visibilitySphereRadius*10,
                          m_visibilitySphereRadius*0.5,
@@ -5296,7 +5297,7 @@ void afRayTracerSensor::enableVisualization(){
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
-            m_sensedResults[i].m_hitNormalMesh = mesh;
+            m_rayTracerResults[i].m_hitNormalMesh = mesh;
         }
     }
 }
@@ -5389,16 +5390,16 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, std::string node_na
             m_contactNormalDamping = sensorContactDamping.as<double>();
         }
 
-        m_resistanceContacts.resize(m_count);
+        m_rayContactResults.resize(m_count);
 
-        for (int i = 0 ; i < m_count ; i++){
-            m_resistanceContacts[i].m_bodyAContactPointLocal.set(0,0,0);
-            m_resistanceContacts[i].m_bodyBContactPointLocal.set(0,0,0);
+        for (uint i = 0 ; i < m_count ; i++){
+            m_rayContactResults[i].m_bodyAContactPointLocal.set(0,0,0);
+            m_rayContactResults[i].m_bodyBContactPointLocal.set(0,0,0);
 
-            m_resistanceContacts[i].m_tangentialError.set(0,0,0);
-            m_resistanceContacts[i].m_tangentialErrorLast.set(0,0,0);
+            m_rayContactResults[i].m_tangentialError.set(0,0,0);
+            m_rayContactResults[i].m_tangentialErrorLast.set(0,0,0);
 
-            m_resistanceContacts[i].m_contactPointsValid = false;
+            m_rayContactResults[i].m_contactPointsValid = false;
 
         }
     }
@@ -5417,14 +5418,14 @@ void afResistanceSensor::updatePositionFromDynamics(){
         return;
     }
 
-    for (int i = 0 ; i < m_count ; i++){
+    for (uint i = 0 ; i < m_count ; i++){
 
         if (isTriggered(i)){
             if (m_showSensor){
-                m_sensedResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
-                m_sensedResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
-                                                                cVector3d>(cVector3d(0,0,1), m_sensedResults[i].m_contactNormal));
-                m_sensedResults[i].m_hitNormalMesh->setShowEnabled(true);
+                m_rayTracerResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
+                m_rayTracerResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
+                                                                cVector3d>(cVector3d(0,0,1), m_rayTracerResults[i].m_contactNormal));
+                m_rayTracerResults[i].m_hitNormalMesh->setShowEnabled(true);
             }
 
             btVector3 F_s_w(0,0,0); // Due to "stick" friction
@@ -5444,7 +5445,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 btVector3 P_cINa = T_wINa * P_cINw;
                 btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
                 btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
-                btVector3 N_a = toBTvec(m_sensedResults[i].m_direction);
+                btVector3 N_a = toBTvec(m_raysAttribs[i].m_direction);
                 btVector3 N_aINw = T_aINw.getBasis() * N_a;
 
                 btTransform T_bINw = getSensedBTRigidBody(i)->getWorldTransform();
@@ -5452,23 +5453,23 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 btVector3 P_cINb = T_wINb * P_cINw;
                 btVector3 vel_bINw = getSensedBTRigidBody(i)->getLinearVelocity();
                 btVector3 omega_bINw = getSensedBTRigidBody(i)->getAngularVelocity();
-                btVector3 N_bINw = toBTvec(m_sensedResults[i].m_contactNormal);
+                btVector3 N_bINw = toBTvec(m_rayTracerResults[i].m_contactNormal);
                 btVector3 N_b = T_wINb.getBasis() * N_bINw;
 
-                double depthFractionLast = m_sensedResults[i].m_depthFraction;
+                double depthFractionLast = m_rayTracerResults[i].m_depthFraction;
 
-                if (m_sensedResults[i].m_depthFraction < 0 || m_sensedResults[i].m_depthFraction > 1){
-                    std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_sensedResults[i].m_depthFraction <<
+                if (m_rayTracerResults[i].m_depthFraction < 0 || m_rayTracerResults[i].m_depthFraction > 1){
+                    std::cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_rayTracerResults[i].m_depthFraction <<
                                  ". It should be between [0-1]" << std::endl;
-                    std::cerr << "Ray Start: "<< m_sensedResults[i].m_rayFromLocal <<"\nRay End: " << m_sensedResults[i].m_rayToLocal <<
+                    std::cerr << "Ray Start: "<< m_raysAttribs[i].m_rayFromLocal <<"\nRay End: " << m_raysAttribs[i].m_rayToLocal <<
                                  "\nSensed Point: " << toCvec(P_cINa) << std::endl;
                     std::cerr << "----------\n";
-                    m_sensedResults[i].m_depthFraction = 0;
+                    m_rayTracerResults[i].m_depthFraction = 0;
                 }
 
                 // First calculate the normal contact force
-                btVector3 F_n_a = ((m_contactNormalStiffness * m_sensedResults[i].m_depthFraction)
-                                   + m_contactNormalDamping * (m_sensedResults[i].m_depthFraction - depthFractionLast)) * (N_a);
+                btVector3 F_n_a = ((m_contactNormalStiffness * m_rayTracerResults[i].m_depthFraction)
+                                   + m_contactNormalDamping * (m_rayTracerResults[i].m_depthFraction - depthFractionLast)) * (N_a);
                 F_n_w = T_aINw.getBasis() * F_n_a;
 
                 double coeffScale = 1;
@@ -5476,9 +5477,9 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     coeffScale = F_n_w.length();
                 }
 
-                if(m_resistanceContacts[i].m_contactPointsValid){
-                    btVector3 P_aINw = T_aINw * toBTvec(m_resistanceContacts[i].m_bodyAContactPointLocal);
-                    btVector3 P_bINw = T_bINw * toBTvec(m_resistanceContacts[i].m_bodyBContactPointLocal);
+                if(m_rayContactResults[i].m_contactPointsValid){
+                    btVector3 P_aINw = T_aINw * toBTvec(m_rayContactResults[i].m_bodyAContactPointLocal);
+                    btVector3 P_bINw = T_bINw * toBTvec(m_rayContactResults[i].m_bodyBContactPointLocal);
                     btVector3 error;
                     error = P_aINw - P_bINw;
                     btVector3 orthogonalError = N_aINw.cross(error);
@@ -5492,16 +5493,16 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     }
 
                     btVector3 tangentialError = errorMag * errorDir;
-                    btVector3 tangentialErrorLast = toBTvec(m_resistanceContacts[i].m_tangentialErrorLast);
-                    m_resistanceContacts[i].m_tangentialErrorLast = m_resistanceContacts[i].m_tangentialError;
-                    m_resistanceContacts[i].m_tangentialError = toCvec(tangentialError);
+                    btVector3 tangentialErrorLast = toBTvec(m_rayContactResults[i].m_tangentialErrorLast);
+                    m_rayContactResults[i].m_tangentialErrorLast = m_rayContactResults[i].m_tangentialError;
+                    m_rayContactResults[i].m_tangentialError = toCvec(tangentialError);
 
                     if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
                         F_s_w = m_staticContactFriction * coeffScale * tangentialError +
                                 m_staticContactDamping * (tangentialError - tangentialErrorLast);
                     }
                     else{
-                        m_resistanceContacts[i].m_contactPointsValid = false;
+                        m_rayContactResults[i].m_contactPointsValid = false;
                     }
 
                     //                std::cerr << "F Static: " << F_static << std::endl;
@@ -5510,9 +5511,9 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     //                std::cerr << "------------\n";
                 }
                 else{
-                    m_resistanceContacts[i].m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint(i)));
-                    m_resistanceContacts[i].m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint(i)));
-                    m_resistanceContacts[i].m_contactPointsValid = true;
+                    m_rayContactResults[i].m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint(i)));
+                    m_rayContactResults[i].m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint(i)));
+                    m_rayContactResults[i].m_contactPointsValid = true;
                 }
 
                 // Calculate the friction due to sliding velocities
@@ -5566,11 +5567,11 @@ void afResistanceSensor::updatePositionFromDynamics(){
             }
         }
         else{
-            m_resistanceContacts[i].m_contactPointsValid = false;
-            m_resistanceContacts[i].m_firstTrigger = true;
+            m_rayContactResults[i].m_contactPointsValid = false;
+            m_rayContactResults[i].m_firstTrigger = true;
 
             if(m_showSensor){
-                m_sensedResults[i].m_hitNormalMesh->setShowEnabled(false);
+                m_rayTracerResults[i].m_hitNormalMesh->setShowEnabled(false);
             }
         }
     }
@@ -6065,7 +6066,7 @@ void afWorld::updatePositionFromDynamics()
     afUpdateTimes(getWallTime(), getSimulationTime());
     std::list<afBaseObject*>::iterator i;
 
-    for(i = m_afChildrenObject.begin(); i != m_afChildrenObject.end(); ++i)
+    for(i = m_afChildrenObjects.begin(); i != m_afChildrenObjects.end(); ++i)
     {
         afBaseObject* nextObj = *i;
         nextObj->updatePositionFromDynamics();
@@ -7162,7 +7163,8 @@ bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_loca
 /// \param a_interval
 ///
 void afCamera::setImagePublishInterval(uint a_interval){
-    m_imagePublishInterval = cMax(a_interval, (uint)1 );
+    uint minInterval = 1;
+    m_imagePublishInterval = cMax(a_interval, minInterval);
 }
 
 
@@ -7171,7 +7173,8 @@ void afCamera::setImagePublishInterval(uint a_interval){
 /// \param a_interval
 ///
 void afCamera::setDepthPublishInterval(uint a_interval){
-    m_depthPublishInterval = cMax(a_interval, (uint)1 );
+    uint minInterval = 1;
+    m_depthPublishInterval = cMax(a_interval, minInterval);
 }
 
 
@@ -7421,7 +7424,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
 
     }
     if (cameraControllingDevicesData.IsDefined()){
-        for(int idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
+        for(uint idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
             m_controllingDevNames.push_back( cameraControllingDevicesData[idx].as<std::string>());
         }
     }
@@ -7431,7 +7434,8 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, std::string a_camera_name, 
     }
 
     if (cameraPublishImageInterval.IsDefined()){
-        m_imagePublishInterval = cMax(cameraPublishImageInterval.as<uint>(), (uint)1);
+        uint minInterval = 1;
+        m_imagePublishInterval = cMax(cameraPublishImageInterval.as<uint>(), minInterval);
     }
 
     if (cameraPublishDepth.IsDefined()){
@@ -8182,7 +8186,7 @@ afCamera::~afCamera(){
 
 }
 
-int dcntr = 0;
+
 ///
 /// \brief afCamera::render
 /// \param options
@@ -8969,7 +8973,7 @@ template <typename T, typename TMap>
 ///
 bool afWorld::addObject(T a_obj, std::string a_name, TMap* a_map){
     (*a_map)[a_name] = a_obj;
-    m_afChildrenObject.push_back(a_obj);
+    m_afChildrenObjects.push_back(a_obj);
     showVisualFrame(a_obj);
     return true;
 }
