@@ -97,7 +97,8 @@ class afJoint;
 class afWorld;
 struct afSurfaceProperties;
 struct afRenderOptions;
-struct afCartesianController;
+class afCartesianController;
+class afJointController;
 
 typedef afMultiBody* afMultiBodyPtr;
 typedef afRigidBody* afRigidBodyPtr;
@@ -507,9 +508,8 @@ public:
 class afConfigHandler{
 
 public:
-
     afConfigHandler();
-    virtual ~afConfigHandler(){}
+    ~afConfigHandler(){}
     std::string getConfigFile(std::string a_config_name);
     // The the multibody config file name at specifc index
     std::string getMultiBodyConfig(int i=0);
@@ -548,6 +548,7 @@ protected:
 class afComm{
 public:
     afComm(){}
+    virtual ~afComm(){}
 
     virtual void afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
@@ -576,10 +577,10 @@ public:
     afCommType getCommType(){return m_commType;}
 
     // Set Name of object
-    inline std::string setName(std::string a_name){m_name = a_name;}
+    inline void setName(std::string a_name){m_name = a_name;}
 
     // Set namespace for this object
-    inline std::string setNamespace(std::string a_namespace){m_namespace = a_namespace; }
+    inline void setNamespace(std::string a_namespace){m_namespace = a_namespace; }
 
     // Set as passive so it doesn't communication outside
     inline void setPassive(bool a_passive){m_passive = a_passive;}
@@ -642,7 +643,7 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 ///
 /// \brief The afCartesianController struct
 ///
-struct afCartesianController{
+class afCartesianController{
 public:
     afCartesianController();
 
@@ -698,6 +699,41 @@ private:
 
     // Flag to enable disable this controller
     bool m_enabled;
+};
+
+
+///
+/// \brief The afJointController class
+///
+class afJointController{
+public:
+    // Set some default values of PID
+    // TODO: Maybe set PID's to 0 so the
+    // user has to explicitly set them
+    double P = 1000;
+    double I = 0;
+    double D = 50;
+    double e[4] = {0, 0, 0, 0};
+    double ie[4] = {0, 0, 0, 0};
+    double de[4] = {0, 0, 0, 0};
+    double t[4]= {0, 0, 0, 0};
+    double Ie_sum = 0.0;
+    size_t queue_length = 4;
+    double output;
+    double max_impulse;
+    double max_effort;
+
+    // Store the last effort command to compute and bound max impulse
+    double m_last_cmd = 0;
+
+    double computeOutput(double process_val, double set_point, double current_time);
+
+    void boundImpulse(double& effort_cmd);
+
+    void boundEffort(double& effort_cmd);
+
+    // The default output type is velocity
+    afControlType m_outputType = afControlType::VELOCITY;
 };
 
 
@@ -809,7 +845,7 @@ public:
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
-    virtual bool resolveParenting(std::string a_parent_name = ""){}
+    virtual bool resolveParenting(std::string a_parent_name){return true;}
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -916,41 +952,385 @@ protected:
 
 
 ///
-/// \brief The afRigidBodyAttributes struct
+/// \brief The afBaseAttributes struct
 ///
-struct afRigidBodyAttributes{
-    afRigidBodyAttributes(){
-
-    }
+struct afBaseAttributes{
+public:
+    afBaseAttributes(){}
 
     std::string m_name;
     std::string m_namespace;
-    boost::filesystem::path m_visualMeshFilePath;
-    boost::filesystem::path m_collisionMeshFilePath;
-    cTransform m_location;
-    std::string m_meshName;
-    afGeometryType m_visualGeometryType;
-    std::vector<afPrimitiveShape> m_visualPrimitiveShapes;
+};
+
+
+///
+/// \brief The afCollisionAttributes struct
+///
+struct afCollisionAttributes{
+public:
+    afCollisionAttributes(){}
+
     double m_collisionMargin;
     afGeometryType m_collisionGeometryType;
     std::vector<afPrimitiveShape> m_collisionPrimitiveShapes;
-    double m_scale;
+    std::vector<uint> m_collisionGroups;
+};
+
+
+///
+/// \brief The afCommunicationAttributes struct
+///
+struct afCommunicationAttributes{
+public:
+    afCommunicationAttributes(){}
+
+    uint m_minPublishFreq;
+    uint m_maxPublishFreq;
+    bool m_passive;
+};
+
+
+///
+/// \brief The afCartesianControllerAttributes struct
+///
+struct afCartesianControllerAttributes{
+public:
+    afCartesianControllerAttributes(){}
+
+    afCartesianController m_controller;
+};
+
+
+///
+/// \brief The afInertialAttributes struct
+///
+struct afInertialAttributes{
+public:
+    afInertialAttributes(){}
+
     double m_mass;
     btVector3 m_inertia;
     btTransform m_inertialOffset;
-    afCartesianController m_controller;
-    cMaterial m_material;
     afSurfaceProperties m_surfaceProperties;
+};
+
+
+///
+/// \brief The afJointControllerAttributes struct
+///
+struct afJointControllerAttributes{
+public:
+    afJointControllerAttributes(){}
+
+    afJointController m_jointController;
+};
+
+
+///
+/// \brief The afHeirarcyAttributes struct
+///
+struct afHierarchyAttributes{
+public:
+    afHierarchyAttributes(){}
+
+    std::string m_parentName;
+    std::string m_childName;
+};
+
+///
+/// \brief The afKinematicAttributes struct
+///
+struct afKinematicAttributes{
+public:
+    afKinematicAttributes(){}
+
+    cTransform m_location;
+    double m_scale;
+};
+
+
+///
+/// \brief The afVisualAttributes struct
+///
+struct afVisualAttributes{
+    afVisualAttributes(){}
+
+    std::string m_meshName;
+    boost::filesystem::path m_visualMeshFilePath;
+    boost::filesystem::path m_collisionMeshFilePath;
+    afGeometryType m_visualGeometryType;
+    std::vector<afPrimitiveShape> m_visualPrimitiveShapes;
+    cMaterial m_material;
+
+
+    bool m_shaderDefined;
+    boost::filesystem::path m_vtxShaderFilePath;
+    boost::filesystem::path m_fragShaderFilePath;
+};
+
+
+
+///
+/// \brief The afActuatorAttributes struct
+///
+struct afActuatorAttributes:
+        public afBaseAttributes,
+        public afCommunicationAttributes,
+        public afKinematicAttributes,
+        public afHierarchyAttributes
+{
+public:
+    afActuatorAttributes(){}
+
+    afActuatorType m_actuatorType;
+};
+
+
+
+///
+/// \brief The afConstraintActuatorAttributes struct
+///
+struct afConstraintActuatorAttributes: public afActuatorAttributes{
+public:
+    afConstraintActuatorAttributes(){}
+
+    bool m_visible;
+    float m_visibleSize;
+    float m_maxImpulse;
+    float m_tau;
+};
+
+
+
+///
+/// \brief The afCameraAttributes struct
+///
+struct afCameraAttributes:
+        public afBaseAttributes,
+        public afHierarchyAttributes,
+        public afKinematicAttributes
+{
+public:
+    afCameraAttributes(){}
+
+    cVector3d m_lookAt;
+    cVector3d m_up;
+    float m_nearPlane;
+    float m_farPlane;
+    float m_fieldViewAngle;
+    float m_orthoViewWidth;
+    bool m_stereo;
+    std::vector<std::string> m_controllingDeviceNames;
+    uint m_monitor;
+    bool m_publishImage;
+    bool m_publishDesph;
+    uint m_publishImageInterval;
+    uint m_publishDepthInterval;
+    bool m_multiPass;
+};
+
+
+///
+/// \brief The afLightAttributes struct
+///
+struct afLightAttributes:
+        public afBaseAttributes,
+        public afHierarchyAttributes,
+        public afKinematicAttributes
+{
+public:
+    afLightAttributes(){}
+
+    float m_spotExponent;
+    float m_cuttoffAngle;
+    cVector3d m_direction;
+
+    afShadowQuality m_shadowQuality;
+};
+
+
+
+///
+/// \brief The afJointAttributes struct
+///
+struct afJointAttributes:
+        public afBaseAttributes,
+        public afCommunicationAttributes,
+        public afJointControllerAttributes,
+        public afHierarchyAttributes
+{
+
+public:
+    afJointAttributes();
+
+    cVector3d m_parentPivot;
+    cVector3d m_childPivot;
+    cVector3d m_parentAxis;
+    cVector3d m_childAxis;
+    cTransform m_transformInParent;
+    bool m_enableMotor;
+    bool m_enableFeedback;
+    uint m_maxMotorImpulse;
+    float m_limitLow;
+    float m_limitHigh;
+    float m_erp;
+    float m_cfm;
+    float m_offset;
+    float m_damping;
+    float m_stiffness;
+    afJointType m_jointType;
+    afJointController m_controller;
+    bool m_ignoreInterCollision;
+};
+
+
+///
+/// \brief The afRigidBodyAttributes struct
+///
+struct afRigidBodyAttributes:
+        public afBaseAttributes,
+        public afCommunicationAttributes,
+        public afCollisionAttributes,
+        public afCartesianControllerAttributes,
+        public afInertialAttributes,
+        public afKinematicAttributes,
+        public afVisualAttributes
+{
+public:
+    afRigidBodyAttributes(){}
+
     bool m_publishChildrenNames;
     bool m_publishJointNames;
     bool m_publishJointPositions;
-    uint m_minPublishFreq;
-    uint m_maxPublishFreq;
-    std::vector<uint> m_collisionGroups;
-    bool m_passive;
-    bool m_shaderDefined;
-    std::string m_vtxShaderFilePath;
-    std::string m_fragShaderFilePath;
+};
+
+
+///
+/// \brief The afSensorAttributes struct
+///
+struct afSensorAttributes:
+        public afBaseAttributes,
+        public afCommunicationAttributes,
+        public afKinematicAttributes,
+        public afHierarchyAttributes
+{
+public:
+    afSensorAttributes(){}
+
+    bool m_visible;
+    float m_visibleSize;
+    float m_maxImpulse;
+    float m_tau;
+    float m_range;
+
+    afSensorType m_sensorType;
+};
+
+
+///
+/// \brief The afResistanceSensorAttributes struct
+///
+
+struct afResistanceSensorAttributes: public afSensorAttributes{
+public:
+    afResistanceSensorAttributes(){}
+
+    float m_friction;
+    float m_contactArea;
+    float m_contactStiffness;
+    float m_contactDamping;
+
+};
+
+
+///
+/// \brief The afSoftBodyAttributes struct
+///
+struct afSoftBodyAttributes:
+        public afBaseAttributes,
+        public afCommunicationAttributes,
+        public afCollisionAttributes,
+        public afCartesianControllerAttributes,
+        public afInertialAttributes,
+        public afKinematicAttributes,
+        public afVisualAttributes
+{
+public:
+    afSoftBodyAttributes(){}
+
+    float m_kLST;
+    float mkAST;
+    float m_kVST;
+    float m_kVCF;
+    float m_kDP;
+    float m_kDG;
+    float m_kLF;
+    float m_kPR;
+    float m_kVC;
+    float m_kDF;
+    float m_kMT;
+    float m_kCHR;
+    float m_kKHR;
+    float m_kSHR;
+    float m_kAHR;
+    float m_kSRHR_CL;
+    float m_kSKHR_CL;
+    float m_kSSHR_CL;
+    float m_kSR_SPLT_CL;
+    float m_kSK_SPLT_CL;
+    float m_kSS_SPLT_CL;
+    float m_maxVolume;
+    float m_timeScale;
+    uint m_vIterations;
+    uint m_pIterations;
+    uint m_dIterations;
+    uint m_cIterations;
+    uint m_flags;
+    uint m_bendingConstraint;
+    uint m_clusters;
+    std::vector<uint> m_fixedNodes;
+
+};
+
+
+struct afWheelAttributes{
+public:
+    afWheelAttributes(){}
+
+
+};
+
+
+///
+/// \brief The afVehicleAttributes struct
+///
+struct afVehicleAttributes{
+public:
+    afVehicleAttributes(){}
+
+
+
+};
+
+
+
+///
+/// \brief The afMultiBodyAttributes struct
+///
+struct afMultiBodyAttributes{
+public:
+    afMultiBodyAttributes(){}
+
+
+};
+
+
+///
+/// \brief The afWorldAttributes struct
+///
+struct afWorldAttributes{
+public:
+    afWorldAttributes(){}
 };
 
 
@@ -1225,41 +1605,6 @@ protected:
 
 
 ///
-/// \brief The afJointController class
-///
-class afJointController{
-public:
-    // Set some default values of PID
-    // TODO: Maybe set PID's to 0 so the
-    // user has to explicitly set them
-    double P = 1000;
-    double I = 0;
-    double D = 50;
-    double e[4] = {0, 0, 0, 0};
-    double ie[4] = {0, 0, 0, 0};
-    double de[4] = {0, 0, 0, 0};
-    double t[4]= {0, 0, 0, 0};
-    double Ie_sum = 0.0;
-    size_t queue_length = 4;
-    double output;
-    double max_impulse;
-    double max_effort;
-
-    // Store the last effort command to compute and bound max impulse
-    double m_last_cmd = 0;
-
-    double computeOutput(double process_val, double set_point, double current_time);
-
-    void boundImpulse(double& effort_cmd);
-
-    void boundEffort(double& effort_cmd);
-
-    // The default output type is velocity
-    afControlType m_outputType = afControlType::VELOCITY;
-};
-
-
-///
 /// \brief The afJoint class
 ///
 class afJoint: public afBaseObject{
@@ -1372,6 +1717,14 @@ private:
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
 
+};
+
+
+struct afActuatorAttributes{
+    afActuatorAttributes();
+
+    std::string m_parentName;
+    std::string m_name;
 };
 
 
