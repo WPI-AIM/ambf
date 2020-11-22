@@ -1,4 +1,4 @@
-//==============================================================================
+﻿//==============================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2020, AMBF
@@ -412,14 +412,14 @@ int main(int argc, char* argv[])
                 getline( ss, mbFilename, ',' );
                 mbFileNames.push_back(mbFilename);
             }
-            for (int idx = 0 ; idx < mbFileNames.size() ; idx++){
+            for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
                 g_afWorld->loadADF(mbFileNames[idx], true);
             }
         }
 
         // Process the Multi-body index files
         if (!g_cmdOpts.multiBodiesToLoad.empty()){
-            std::vector<int> mbIndexes;
+            std::vector<uint> mbIndexes;
             std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
             loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
             std::stringstream ss(loadMBs);
@@ -429,7 +429,7 @@ int main(int argc, char* argv[])
                 getline( ss, mbIdx, ',' );
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
-            for (int idx = 0 ; idx < mbIndexes.size() ; idx++){
+            for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
                 g_afWorld->loadADF(mbIndexes[idx], true);
             }
         }

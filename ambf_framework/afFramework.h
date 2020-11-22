@@ -529,7 +529,7 @@ public:
     ~afConfigHandler(){}
     std::string getConfigFile(std::string a_config_name);
     // The the multibody config file name at specifc index
-    std::string getMultiBodyConfig(int i=0);
+    std::string getMultiBodyConfig(uint i=0);
     // Get the filename of the color config file
     std::string getColorConfig();
     // Get the world config filename
@@ -616,10 +616,10 @@ public:
     unsigned short m_read_count = 0;
 
     // Min publishing frequency
-    int m_min_publish_frequency=50;
+    uint m_min_publish_frequency=50;
 
     // Max publishing frequency
-    int m_max_publish_frequency=1000;
+    uint m_max_publish_frequency=1000;
 
     // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
@@ -735,7 +735,7 @@ public:
     double de[4] = {0, 0, 0, 0};
     double t[4]= {0, 0, 0, 0};
     double Ie_sum = 0.0;
-    size_t queue_length = 4;
+    uint queue_length = 4;
     double output;
     double max_impulse;
     double max_effort;
@@ -1041,11 +1041,11 @@ protected:
 
 
 ///
-/// \brief The afBaseAttributes struct
+/// \brief The afIdentificationAttributes struct
 ///
-struct afBaseAttributes{
+struct afIdentificationAttributes{
 public:
-    afBaseAttributes(){}
+    afIdentificationAttributes(){}
 
     std::string m_name;
     std::string m_namespace;
@@ -1163,7 +1163,7 @@ struct afVisualAttributes{
 /// \brief The afActuatorAttributes struct
 ///
 struct afActuatorAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afCommunicationAttributes,
         public afKinematicAttributes,
         public afHierarchyAttributes
@@ -1195,7 +1195,7 @@ public:
 /// \brief The afCameraAttributes struct
 ///
 struct afCameraAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afHierarchyAttributes,
         public afKinematicAttributes
 {
@@ -1223,7 +1223,7 @@ public:
 /// \brief The afLightAttributes struct
 ///
 struct afLightAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afHierarchyAttributes,
         public afKinematicAttributes
 {
@@ -1243,7 +1243,7 @@ public:
 /// \brief The afJointAttributes struct
 ///
 struct afJointAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afCommunicationAttributes,
         public afJointControllerAttributes,
         public afHierarchyAttributes
@@ -1277,7 +1277,7 @@ public:
 /// \brief The afRigidBodyAttributes struct
 ///
 struct afRigidBodyAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afCommunicationAttributes,
         public afCollisionAttributes,
         public afCartesianControllerAttributes,
@@ -1298,7 +1298,7 @@ public:
 /// \brief The afSensorAttributes struct
 ///
 struct afSensorAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afCommunicationAttributes,
         public afKinematicAttributes,
         public afHierarchyAttributes
@@ -1350,7 +1350,7 @@ public:
 /// \brief The afSoftBodyAttributes struct
 ///
 struct afSoftBodyAttributes:
-        public afBaseAttributes,
+        public afIdentificationAttributes,
         public afCommunicationAttributes,
         public afCollisionAttributes,
         public afCartesianControllerAttributes,
@@ -1396,10 +1396,31 @@ public:
 };
 
 
+///
+/// \brief The afWheelAttributes struct
+///
 struct afWheelAttributes{
 public:
     afWheelAttributes(){}
 
+    double m_width;
+    double m_radius;
+    double m_friction;
+    double m_suspensionStiffness;
+    double m_suspensionDamping;
+    double m_suspensionCompression;
+    double m_suspensionRestLength;
+    double m_rollInfluence;
+    cVector3d m_downDirection;
+    cVector3d m_axelDirection;
+    cVector3d m_offset;
+    bool m_isFront = false;
+    double m_high_steering_lim = 0.0;
+    double m_low_steering_lim = 0.0;
+    double m_max_engine_power = 0.0;
+    double m_max_brake_power = 0.0;
+
+    afWheelRepresentationType m_wheelRepresentationType;
 
 };
 
@@ -1407,7 +1428,10 @@ public:
 ///
 /// \brief The afVehicleAttributes struct
 ///
-struct afVehicleAttributes{
+struct afVehicleAttributes:
+        public afIdentificationAttributes,
+        public afVisualAttributes
+{
 public:
     afVehicleAttributes(){}
 
@@ -1493,10 +1517,10 @@ public:
 
     // function to check if this rigid body is part of the collision group
     // at a_idx
-    bool checkCollisionGroupIdx(int a_idx);
+    bool checkCollisionGroupIdx(uint a_idx);
     // function to check if this rigid body is part of the collision group
     // at a_idxs
-    bool isCommonCollisionGroupIdx(std::vector<int> a_idx);
+    bool isCommonCollisionGroupIdx(std::vector<uint> a_idx);
 
     // Check if the btRigidbody is child of this afBody
     bool isChild(btRigidBody* a_body);
@@ -1591,14 +1615,14 @@ protected:
     std::vector<std::thread*> m_sensorThreads;
 
     // Block size. i.e. number of sensors per thread
-    int m_sensorThreadBlockSize = 10;
+    uint m_sensorThreadBlockSize = 10;
 
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
     // endIdx = startIdx + m_sensorThreadBlockSize - 1
     // to compute the two indexes. The runs a loop to solve the indexes
     // in between so that we can progress in parallel
-    bool updateBodySensors(int threadIdx);
+    bool updateBodySensors(uint threadIdx);
 
     // boolean flags for each thread to progress
     std::vector<bool> m_threadUpdateFlags;
@@ -1813,7 +1837,7 @@ private:
     afJointController m_controller;
 
     // Vector of joint positions containing the last n joint values.
-    int m_jpSize = 2;
+    uint m_jpSize = 2;
     std::vector<double> m_posArray;
     std::vector<double> m_dtArray;
 
@@ -2128,18 +2152,18 @@ private:
 class afDepthPointCloud{
     friend class afCamera;
 public:
-    int setup(int a_width, int a_height, int a_numFields);
+    bool setup(uint a_width, uint a_height, uint a_numFields);
     ~afDepthPointCloud();
 
-    inline int getWidth(){return m_width;}
-    inline int getHeight(){return m_height;}
-    inline int getNumFields(){return m_numFields;}
+    inline uint getWidth(){return m_width;}
+    inline uint getHeight(){return m_height;}
+    inline uint getNumFields(){return m_numFields;}
 
 protected:
     float *m_data = nullptr;
-    int m_width=0;
-    int m_height=0;
-    int m_numFields=0;
+    uint m_width=0;
+    uint m_height=0;
+    uint m_numFields=0;
 };
 
 
@@ -2287,7 +2311,7 @@ public:
     cMatrix3d camRot, camRotPre;
 
     // Window parameters
-    int m_width, m_height;
+    uint m_width, m_height;
     int m_win_x, m_win_y;
 
     std::vector<std::string> m_controllingDevNames;
@@ -2665,7 +2689,7 @@ public:
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
     bool loadADF(std::string a_adf_filepath, bool enable_comm);
 
-    bool loadADF(int i, bool enable_comm);
+    bool loadADF(uint i, bool enable_comm);
 
     void loadAllADFs(bool enable_com);
 
@@ -2930,28 +2954,17 @@ private:
 };
 
 
+///
+/// \brief The afWheel struct
+///
 struct afWheel{
+
     cMultiMesh* m_mesh;
     afRigidBodyPtr m_wheelBody = nullptr;
-    double m_width;
-    double m_radius;
-    double m_friction;
-    double m_suspensionStiffness;
-    double m_suspensionDamping;
-    double m_suspensionCompression;
-    double m_suspensionRestLength;
-    double m_rollInfluence;
-    cVector3d m_downDirection;
-    cVector3d m_axelDirection;
-    cVector3d m_offset;
-    bool m_isFront = false;
-    double m_high_steering_lim = 0.0;
-    double m_low_steering_lim = 0.0;
-    double m_max_engine_power = 0.0;
-    double m_max_brake_power = 0.0;
 
     afWheelRepresentationType m_wheelRepresentationType;
 };
+
 
 class afVehicle: public afInertialObject{
 public:
@@ -2974,8 +2987,9 @@ protected:
     btRaycastVehicle* m_vehicle = nullptr;
     btRaycastVehicle::btVehicleTuning m_tuning;
     afRigidBodyPtr m_chassis;
-    int m_numWheels = 0;
+    uint m_numWheels = 0;
     std::vector<afWheel> m_wheels;
+    std::vector<afWheelAttributes> m_wheelAttribs;
 };
 
 

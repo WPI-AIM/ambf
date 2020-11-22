@@ -1219,7 +1219,7 @@ std::string afConfigHandler::getInputDevicesConfig(){
 /// \brief afConfigHandler::get_puzzle_config
 /// \return
 ///
-std::string afConfigHandler::getMultiBodyConfig(int i){
+std::string afConfigHandler::getMultiBodyConfig(uint i){
     if (i <= getNumMBConfigs()){
         return s_multiBodyConfigFileNames[i];
     }
@@ -1869,8 +1869,8 @@ bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, std::string n
     m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
 
     if (actuatorPublishFrequency.IsDefined()){
-        m_min_publish_frequency = actuatorPublishFrequency["low"].as<int>();
-        m_max_publish_frequency = actuatorPublishFrequency["high"].as<int>();
+        m_min_publish_frequency = actuatorPublishFrequency["low"].as<uint>();
+        m_max_publish_frequency = actuatorPublishFrequency["high"].as<uint>();
     }
 
     if (actuatorVisible.IsDefined()){
@@ -2473,7 +2473,7 @@ void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt
         //2. Now we add this body as the parent of all the children of the child body
         std::vector<afChildJointPair> cjPairs;
         cjPairs = a_childBody->m_CJ_PairsAll;
-        for (int i = 0 ; i < cjPairs.size() ; i++){
+        for (uint i = 0 ; i < cjPairs.size() ; i++){
             cjPairs[i].m_directConnection = false; // Make sure to mark that these are not directly connected to the body
         }
         cjPairs.push_back(afChildJointPair(a_childBody, a_jnt, true));
@@ -2725,7 +2725,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     else if (m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
         // First of all, set the inertial offset to 0.
         bodyInertialOffsetPos = bodyNode["inertial offset undef"];
-        for(int shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
+        for(uint shapeIdx = 0 ; shapeIdx < bodyCompoundShape.size() ; shapeIdx++){
             visual_shape_str = bodyCompoundShape[shapeIdx]["shape"].as<std::string>();
             bodyGeometry = bodyCompoundShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundShape[shapeIdx]["offset"];
@@ -2851,7 +2851,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
     else if (m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE){
         btCompoundShape* compoundCollisionShape = new btCompoundShape();
-        for (int shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
+        for (uint shapeIdx = 0 ; shapeIdx < bodyCompoundCollisionShape.size() ; shapeIdx++){
             std::string shape_str = bodyCompoundCollisionShape[shapeIdx]["shape"].as<std::string>();
             bodyCollisionGeometry = bodyCompoundCollisionShape[shapeIdx]["geometry"];
             YAML::Node shapeOffset = bodyCompoundCollisionShape[shapeIdx]["offset"];
@@ -2965,8 +2965,8 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     }
 
     if (bodyPublishFrequency.IsDefined()){
-        m_min_publish_frequency = bodyPublishFrequency["low"].as<int>();
-        m_max_publish_frequency = bodyPublishFrequency["high"].as<int>();
+        m_min_publish_frequency = bodyPublishFrequency["low"].as<uint>();
+        m_max_publish_frequency = bodyPublishFrequency["high"].as<uint>();
     }
 
     // The collision groups are sorted by integer indices. A group consists of a set of
@@ -3102,7 +3102,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
     // the a body can be a part of multiple groups
 
     for (uint gI = 0 ; gI < attribs.m_collisionGroups.size() ; gI++){
-        int group =  attribs.m_collisionGroups[gI];
+        uint group =  attribs.m_collisionGroups[gI];
         // Sanity check for the group number
         if (group >= 0 && group <= 999){
             m_afWorld->m_collisionGroups[group].push_back(this);
@@ -3347,15 +3347,15 @@ void afRigidBody::updatePositionFromDynamics()
 /// \param threadIdx
 /// \return
 ///
-bool afRigidBody::updateBodySensors(int threadIdx){
-    int startIdx = threadIdx * m_sensorThreadBlockSize;
-    int endIdx = startIdx + m_sensorThreadBlockSize;
+bool afRigidBody::updateBodySensors(uint threadIdx){
+    uint startIdx = threadIdx * m_sensorThreadBlockSize;
+    uint endIdx = startIdx + m_sensorThreadBlockSize;
 
     endIdx = endIdx > m_afSensors.size() ? m_afSensors.size() : endIdx;
     while (m_keepSensorThreadsAlive){
         if (m_threadUpdateFlags[threadIdx] == true){
 
-            for (int idx = startIdx ; idx < endIdx ; idx++){
+            for (uint idx = startIdx ; idx < endIdx ; idx++){
                 m_afSensors[idx]->updatePositionFromDynamics();
             }
 
@@ -3642,9 +3642,9 @@ void afRigidBody::setAngle(std::vector<double> &angles){
 /// \param a_idx
 /// \return
 ///
-bool afRigidBody::checkCollisionGroupIdx(int a_idx){
+bool afRigidBody::checkCollisionGroupIdx(uint a_idx){
     bool in_group = false;
-    for (int i = 0 ; i < m_collisionGroups.size() ; i++){
+    for (uint i = 0 ; i < m_collisionGroups.size() ; i++){
         if (m_collisionGroups[i] == a_idx){
             in_group = true;
             break;
@@ -3659,10 +3659,10 @@ bool afRigidBody::checkCollisionGroupIdx(int a_idx){
 /// \param a_idx
 /// \return
 ///
-bool afRigidBody::isCommonCollisionGroupIdx(std::vector<int> a_idx){
+bool afRigidBody::isCommonCollisionGroupIdx(std::vector<uint> a_idx){
     bool in_group = false;
-    for (int i = 0 ; i < a_idx.size() ; i ++){
-        for (int j = 0 ; j < m_collisionGroups.size() ; j++){
+    for (uint i = 0 ; i < a_idx.size() ; i ++){
+        for (uint j = 0 ; j < m_collisionGroups.size() ; j++){
             if (a_idx[i] == m_collisionGroups[j]){
                 in_group = true;
                 break;
@@ -3949,7 +3949,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             _mat.m_diffuse.set(_r, _g, _b);
         }
         if (softBodyColorComponents["ambient"].IsDefined()){
-            double _level = softBodyColorComponents["ambient"]["level"].as<float>();
+            float _level = softBodyColorComponents["ambient"]["level"].as<float>();
             _r *= _level;
             _g *= _level;
             _b *= _level;
@@ -4034,7 +4034,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
             m_bulletSoftBody->generateBendingConstraints(_bending);
         }
         if (cfg_fixed_nodes.IsDefined()){
-            for (int i = 0 ; i < cfg_fixed_nodes.size() ; i++){
+            for (uint i = 0 ; i < cfg_fixed_nodes.size() ; i++){
                 int nodeIdx = cfg_fixed_nodes[i].as<int>();
                 if (nodeIdx < m_bulletSoftBody->m_nodes.size()){
                     m_bulletSoftBody->setMass(nodeIdx, 0);
@@ -4064,8 +4064,8 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
 /// \return
 ///
 double afJointController::computeOutput(double process_val, double set_point, double current_time){
-    int n = queue_length - 1;
-    for (size_t i = 0 ; i < n ; i++){
+    uint n = queue_length - 1;
+    for (uint i = 0 ; i < n ; i++){
         t[i] = t[i+1];
         e[i] = e[i+1];
         de[i] = de[i+1];
@@ -4669,7 +4669,7 @@ void afJoint::remove(){
 ///
 void afJoint::applyDamping(const double &dt){
     // First lets configure what type of joint is this.
-    for (int i = 0 ; i < m_jpSize-1 ; i++){
+    for (uint i = 0 ; i < m_jpSize-1 ; i++){
         m_posArray[i] = m_posArray[i+1];
         m_dtArray[i] = m_dtArray[i+1];
     }
@@ -5251,7 +5251,7 @@ void afRayTracerSensor::updatePositionFromDynamics(){
 /// \brief afRayTracerSensor::visualize
 ///
 void afRayTracerSensor::enableVisualization(){
-    for (int i = 0 ; i < m_count ; i++){
+    for (uint i = 0 ; i < m_count ; i++){
         if (m_rayTracerResults[i].m_hitSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
@@ -6672,7 +6672,7 @@ void afWorld::enableShaderProgram(){
 /// \param enable_comm
 ///
 void afWorld::loadAllADFs(bool enable_comm){
-    for (int i = 0 ; i < getNumMBConfigs(); i++){
+    for (uint i = 0 ; i < getNumMBConfigs(); i++){
         loadADF(i, enable_comm);
     }
 }
@@ -6684,7 +6684,7 @@ void afWorld::loadAllADFs(bool enable_comm){
 /// \param enable_comm
 /// \return
 ///
-bool afWorld::loadADF(int i, bool enable_comm){
+bool afWorld::loadADF(uint i, bool enable_comm){
     if (i >= getNumMBConfigs()){
         std::cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
                      getNumMBConfigs() - 1 << " INDEXED MULTI-BODIES DEFINED" << std::endl;
@@ -7835,16 +7835,16 @@ void afCamera::computeDepthOnGPU()
 //                  (GLvoid*)(m_depthBufferColorImage2)
 //                  );
 
-    int width = m_depthBufferColorImage->getWidth();
-    int height = m_depthBufferColorImage->getHeight();
-    int bbp = m_depthBufferColorImage->getBytesPerPixel();
+    uint width = m_depthBufferColorImage->getWidth();
+    uint height = m_depthBufferColorImage->getHeight();
+    uint bbp = m_depthBufferColorImage->getBytesPerPixel();
 
     double varScale = pow(2, sizeof(uint) * 8);
 
-    for (int y_span = 0 ; y_span < height ; y_span++){
-        for (int x_span = 0 ; x_span < width ; x_span++){
+    for (uint y_span = 0 ; y_span < height ; y_span++){
+        for (uint x_span = 0 ; x_span < width ; x_span++){
 
-            int idx = (y_span * width + x_span);
+            uint idx = (y_span * width + x_span);
             unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bbp + 0];
             unsigned char xByte1 = m_depthBufferColorImage->getData()[idx * bbp + 1];
             unsigned char xByte2 = m_depthBufferColorImage->getData()[idx * bbp + 2];
@@ -8896,14 +8896,14 @@ void afMultiBody::ignoreCollisionChecking(){
     afRigidBodyMap::iterator rBodyItA = m_afRigidBodyMapLocal.begin();
     std::vector<btRigidBody*> rBodiesVec;
     rBodiesVec.resize(m_afRigidBodyMapLocal.size());
-    int i=0;
+    uint i=0;
     for ( ; rBodyItA != m_afRigidBodyMapLocal.end() ; ++rBodyItA){
         rBodiesVec[i] = rBodyItA->second->m_bulletRigidBody;
         i++;
     }
     if (rBodiesVec.size() >0){
-        for (int i = 0 ; i < rBodiesVec.size() - 1 ; i++){
-            for (int j = i+1 ; j < rBodiesVec.size() ; j++){
+        for (uint i = 0 ; i < rBodiesVec.size() - 1 ; i++){
+            for (uint j = i+1 ; j < rBodiesVec.size() ; j++){
                 rBodiesVec[i]->setIgnoreCollisionCheck(rBodiesVec[j], true);
             }
         }
@@ -8944,10 +8944,10 @@ void afMultiBody::removeOverlappingCollisionChecking(){
             }
         }
         if (pvtAandConnectedBodyVec.size() > 1){
-            for (int pvtIdx1 = 0 ; pvtIdx1 < pvtAandConnectedBodyVec.size() - 1 ; pvtIdx1++ ){
+            for (uint pvtIdx1 = 0 ; pvtIdx1 < pvtAandConnectedBodyVec.size() - 1 ; pvtIdx1++ ){
                 btVector3 pvtA1 = pvtAandConnectedBodyVec[pvtIdx1].first;
                 btRigidBody* connectedBodyA1 = pvtAandConnectedBodyVec[pvtIdx1].second;
-                for (int pvtIdx2 = pvtIdx1 + 1 ; pvtIdx2 < pvtAandConnectedBodyVec.size() ; pvtIdx2++ ){
+                for (uint pvtIdx2 = pvtIdx1 + 1 ; pvtIdx2 < pvtAandConnectedBodyVec.size() ; pvtIdx2++ ){
                     btVector3 pvtA2 = pvtAandConnectedBodyVec[pvtIdx2].first;
                     btRigidBody* connectedBodyA2 = pvtAandConnectedBodyVec[pvtIdx2].second;
                     btVector3 diff = pvtA1 - pvtA2;
@@ -9207,7 +9207,7 @@ afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
     else{
         bodyParentsCount.resize(a_bodyPtr->m_parentBodies.size());
         std::vector<afRigidBodyPtr>::const_iterator rIt = a_bodyPtr->m_parentBodies.begin();
-        for (int parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
+        for (uint parentNum=0; rIt != a_bodyPtr->m_parentBodies.end() ; parentNum++, ++rIt){
             if ((*rIt)->m_parentBodies.size() == 0){
                 rootParentBody = (*rIt);
                 rootParents++;
@@ -9370,8 +9370,9 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_numWheels = vehicleWheels.size();
     m_wheels.resize(m_numWheels);
+    m_wheelAttribs.resize(m_numWheels);
 
-    for (int i = 0 ; i < m_numWheels ; i++){
+    for (uint i = 0 ; i < m_numWheels ; i++){
         YAML::Node rigidBodyName = vehicleWheels[i]["body"];
         YAML::Node meshName = vehicleWheels[i]["mesh"];
         YAML::Node widthNode = vehicleWheels[i]["width"];
@@ -9444,55 +9445,55 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
 
         if (widthNode.IsDefined()){
-            m_wheels[i].m_width = widthNode.as<double>();
+            m_wheelAttribs[i].m_width = widthNode.as<double>();
         }
 
         if (radiusNode.IsDefined()){
-            m_wheels[i].m_radius = radiusNode.as<double>();
+            m_wheelAttribs[i].m_radius = radiusNode.as<double>();
         }
 
         if (frictionNode.IsDefined()){
-            m_wheels[i].m_friction = frictionNode.as<double>();
+            m_wheelAttribs[i].m_friction = frictionNode.as<double>();
         }
 
         if (suspensionNode.IsDefined()){
-            m_wheels[i].m_suspensionStiffness = suspensionNode["stiffness"].as<double>();
-            m_wheels[i].m_suspensionDamping = suspensionNode["damping"].as<double>();
-            m_wheels[i].m_suspensionCompression = suspensionNode["compression"].as<double>();
-            m_wheels[i].m_suspensionRestLength = suspensionNode["rest length"].as<double>();
+            m_wheelAttribs[i].m_suspensionStiffness = suspensionNode["stiffness"].as<double>();
+            m_wheelAttribs[i].m_suspensionDamping = suspensionNode["damping"].as<double>();
+            m_wheelAttribs[i].m_suspensionCompression = suspensionNode["compression"].as<double>();
+            m_wheelAttribs[i].m_suspensionRestLength = suspensionNode["rest length"].as<double>();
         }
 
         if (rollInfluenceNode.IsDefined()){
-            m_wheels[i].m_rollInfluence = rollInfluenceNode.as<double>();
+            m_wheelAttribs[i].m_rollInfluence = rollInfluenceNode.as<double>();
         }
 
         if (downDirNode.IsDefined()){
-            m_wheels[i].m_downDirection = toXYZ<cVector3d>(&downDirNode);
+            m_wheelAttribs[i].m_downDirection = toXYZ<cVector3d>(&downDirNode);
         }
 
         if (axelDirNode.IsDefined()){
-            m_wheels[i].m_axelDirection = toXYZ<cVector3d>(&axelDirNode);
+            m_wheelAttribs[i].m_axelDirection = toXYZ<cVector3d>(&axelDirNode);
         }
 
         if (offsetNode.IsDefined()){
-            m_wheels[i].m_offset = toXYZ<cVector3d>(&offsetNode);
+            m_wheelAttribs[i].m_offset = toXYZ<cVector3d>(&offsetNode);
         }
 
         if (frontNode.IsDefined()){
-            m_wheels[i].m_isFront = frontNode.as<bool>();
+            m_wheelAttribs[i].m_isFront = frontNode.as<bool>();
         }
 
         if (steeringLimitsNode.IsDefined()){
-            m_wheels[i].m_high_steering_lim = steeringLimitsNode["high"].as<double>();
-            m_wheels[i].m_low_steering_lim = steeringLimitsNode["low"].as<double>();
+            m_wheelAttribs[i].m_high_steering_lim = steeringLimitsNode["high"].as<double>();
+            m_wheelAttribs[i].m_low_steering_lim = steeringLimitsNode["low"].as<double>();
         }
 
         if (maxEnginePowerNode.IsDefined()){
-            m_wheels[i].m_max_engine_power = maxEnginePowerNode.as<double>();
+            m_wheelAttribs[i].m_max_engine_power = maxEnginePowerNode.as<double>();
         }
 
         if (maxBrakePowerNode.IsDefined()){
-            m_wheels[i].m_max_brake_power = maxBrakePowerNode.as<double>();
+            m_wheelAttribs[i].m_max_brake_power = maxBrakePowerNode.as<double>();
         }
 
     }
@@ -9506,24 +9507,24 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
 
     m_vehicle->setCoordinateSystem(1, 2, 0);
 
-    for (int i = 0 ; i < m_numWheels ; i++){
-        btVector3 off = toBTvec(m_wheels[i].m_offset);
-        btVector3 dir = toBTvec(m_wheels[i].m_downDirection);
-        btVector3 axel_dir = toBTvec(m_wheels[i].m_axelDirection);
+    for (uint i = 0 ; i < m_numWheels ; i++){
+        btVector3 off = toBTvec(m_wheelAttribs[i].m_offset);
+        btVector3 dir = toBTvec(m_wheelAttribs[i].m_downDirection);
+        btVector3 axel_dir = toBTvec(m_wheelAttribs[i].m_axelDirection);
 
         off = T_oInc.inverse() * off;
         dir = T_oInc.getBasis().inverse() * dir;
 
-        m_vehicle->addWheel(off, dir, axel_dir, m_wheels[i].m_suspensionRestLength, m_wheels[i].m_radius, m_tuning, m_wheels[i].m_isFront);
+        m_vehicle->addWheel(off, dir, axel_dir, m_wheelAttribs[i].m_suspensionRestLength, m_wheelAttribs[i].m_radius, m_tuning, m_wheelAttribs[i].m_isFront);
     }
 
-    for (int i = 0 ; i < m_numWheels ; i++){
+    for (uint i = 0 ; i < m_numWheels ; i++){
         btWheelInfo& wheelInfo = m_vehicle->getWheelInfo(i);
-        wheelInfo.m_suspensionStiffness = m_wheels[i].m_suspensionStiffness;
-        wheelInfo.m_wheelsDampingRelaxation = m_wheels[i].m_suspensionDamping;
-        wheelInfo.m_wheelsDampingCompression = m_wheels[i].m_suspensionCompression;
-        wheelInfo.m_frictionSlip = m_wheels[i].m_friction;
-        wheelInfo.m_rollInfluence = m_wheels[i].m_rollInfluence;
+        wheelInfo.m_suspensionStiffness = m_wheelAttribs[i].m_suspensionStiffness;
+        wheelInfo.m_wheelsDampingRelaxation = m_wheelAttribs[i].m_suspensionDamping;
+        wheelInfo.m_wheelsDampingCompression = m_wheelAttribs[i].m_suspensionCompression;
+        wheelInfo.m_frictionSlip = m_wheelAttribs[i].m_friction;
+        wheelInfo.m_rollInfluence = m_wheelAttribs[i].m_rollInfluence;
     }
 
     return result;
@@ -9543,7 +9544,7 @@ void afVehicle::afExecuteCommand(double dt){
     if (af_cmd.brake == true){
         for (int i = 0 ; i < m_numWheels ; i++){
             m_vehicle->applyEngineForce(0.0, i);
-            m_vehicle->setBrake(m_wheels[i].m_max_brake_power, i);
+            m_vehicle->setBrake(m_wheelAttribs[i].m_max_brake_power, i);
         }
     }
     else{
@@ -9555,7 +9556,7 @@ void afVehicle::afExecuteCommand(double dt){
 
         for (int i = 0 ; i < maxWheelCount ; i++){
             double val = af_cmd.wheel_power[i];
-            val = cClamp(val, -m_wheels[i].m_max_engine_power, m_wheels[i].m_max_engine_power);
+            val = cClamp(val, -m_wheelAttribs[i].m_max_engine_power, m_wheelAttribs[i].m_max_engine_power);
             m_vehicle->applyEngineForce(val, i);
         }
 
@@ -9563,7 +9564,7 @@ void afVehicle::afExecuteCommand(double dt){
 
         for (int i = 0 ; i < maxWheelCount ; i++){
             double val = af_cmd.wheel_brake[i];
-            val = cClamp(val, 0.0, m_wheels[i].m_max_brake_power);
+            val = cClamp(val, 0.0, m_wheelAttribs[i].m_max_brake_power);
             m_vehicle->setBrake(val, i);
         }
     }
@@ -9572,7 +9573,7 @@ void afVehicle::afExecuteCommand(double dt){
 
     for (int i = 0 ; i < maxWheelCount ; i++){
         double val = af_cmd.wheel_steering[i];
-        val = cClamp(val, m_wheels[i].m_low_steering_lim, m_wheels[i].m_high_steering_lim);
+        val = cClamp(val, m_wheelAttribs[i].m_low_steering_lim, m_wheels[i].m_high_steering_lim);
         m_vehicle->setSteeringValue(val, i);
     }
 
@@ -9601,7 +9602,7 @@ void afVehicle::afExecuteCommand(double dt){
 /// \brief afVehicle::updatePositionFromDynamics
 ///
 void afVehicle::updatePositionFromDynamics(){
-    for (int i = 0; i < m_numWheels ; i++){
+    for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
         cTransform cTrans = toCtransform(btTrans);
@@ -9647,19 +9648,14 @@ void afVehicle::updatePositionFromDynamics(){
 /// \param a_numFields
 /// \return
 ///
-int afDepthPointCloud::setup(int a_width, int a_height, int a_numFields)
+bool afDepthPointCloud::setup(uint a_width, uint a_height, uint a_numFields)
 {
-    if ( (a_width <= 0) || (a_height <= 0) || (a_numFields <= 0) ){
-        // PRINT SOME ERROR MESSAGE
-        return -1;
-    }
-
     m_width = a_width;
     m_height = a_height;
     m_numFields = a_numFields;
     m_data = (float*) malloc(m_width * m_height * m_numFields * sizeof(float));
 
-    return 1;
+    return true;
 }
 
 
