@@ -48,6 +48,7 @@
 
 //------------------------------------------------------------------------------
 #include "afSoftMultiMesh.h"
+#include "afAttributes.h"
 #include "CBullet.h"
 #include "chai3d.h"
 #include <yaml-cpp/yaml.h>
@@ -94,7 +95,6 @@ class afRigidBody;
 class afSoftBody;
 class afJoint;
 class afWorld;
-struct afSurfaceProperties;
 struct afRenderOptions;
 class afCartesianController;
 class afJointController;
@@ -239,247 +239,10 @@ template <typename T>
 T toRPY(YAML::Node* node);
 
 
-///
-/// \brief The afActuatorType enum
-///
-enum class afActuatorType{
-    CONSTRAINT = 0
-};
-
-
-///
-/// \brief The afAxisType enum
-///
-enum class afAxisType{
-    X = 0,
-    Y = 1,
-    Z = 2
-};
-
-
-///
-/// \brief The afBodyType enum
-///
-enum class afBodyType{
-    RIGID_BODY=0, SOFT_BODY=1
-};
-
-
-///
-/// \brief The afCommType enum
-///
-enum class afCommType{
-    ACTUATOR,
-    CAMERA,
-    LIGHT,
-    OBJECT,
-    RIGID_BODY,
-    SOFT_BODY,
-    SENSOR,
-    VEHICLE,
-    WORLD
-};
-
-
-///
-/// \brief The afControlType enum
-///
-enum class afControlType{
-  POSITION=0,
-  FORCE=1,
-  VELOCITY=2
-};
-
-
-///
-/// \brief The afGeometryType enum
-///
-enum class afGeometryType{
-    INVALID=0,
-    MESH=1,
-    SINGLE_SHAPE=2,
-    COMPOUND_SHAPE=3
-};
-
-
-///
-/// \brief The JointType enum
-///
-enum class afJointType{
-    REVOLUTE = 0,
-    PRISMATIC = 1,
-    LINEAR_SPRING = 2,
-    TORSION_SPRING = 3,
-    P2P = 4,
-    FIXED = 5
-};
-
-
-///
-/// \brief The afPrimitiveShapeType enum
-///
-enum class afPrimitiveShapeType{
-    INVALID = 0,
-    PLANE = 1,
-    BOX = 2,
-    SPHERE = 3,
-    CYLINDER = 4,
-    CAPSULE = 5,
-    CONE = 6,
-};
-
-
-///
-/// \brief The afSensorType enum
-///
-enum class afSensorType{
-    PROXIMITY = 0,
-    RANGE = 1,
-    RESISTANCE = 2
-};
-
-
-///
-/// \brief The afSensactorSpecificationType enum
-///
-enum class afSensactorSpecificationType{
-    ARRAY = 0,
-    MESH = 1,
-    PARAMETRIC = 2
-};
-
-
-///
-/// \brief The ShadowQuality enum
-///
-enum class afShadowQuality{
-    NO_SHADOW=0,
-    VERR_LOW=1,
-    LOW=2,
-    MEDIUM=3,
-    HIGH=4,
-    VERY_HIGH=5
-};
-
-
-///
-/// \brief The afWheelRepresentationType enum
-///
-enum class afWheelRepresentationType{
-    MESH=0,
-    RIGID_BODY=1,
-    INVALID=2
-};
-
-
-///
-/// \brief The afPrimitiveShapeAttributes struct
-///
-struct afPrimitiveShapeAttributes{
-public:
-
-    afPrimitiveShapeAttributes();
-
-    // Copy data specified via ADF node
-    bool copyShapeOffsetData(YAML::Node* offsetNode);
-
-    // Copy data specified via ADF node
-    bool copyPrimitiveShapeData(YAML::Node* shapeNode);
-
-    // Helper methods for primitive shapes
-    // Required variables for creating a Plane
-    void setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant);
-
-    // Required variables for creating a Box
-    void setBoxData(double dimension_x, double dimension_y, double dimension_z);
-
-    // Required variables for creating a Sphere
-    void setSphereData(double radius);
-
-    // Required variables for creating a Capsule
-    void setCapsuleData(double radius, double height, afAxisType axis);
-
-    // Required variables for creating a Cone
-    void setConeData(double radius, double height, afAxisType axis);
-
-    // Pos Offset of the Shape
-    void setPosOffset(double px, double py, double pz);
-
-    // Rot Offset of the Shape
-    void setRotOffset(double roll, double pitch, double yaw);
-
-    inline void setShapeType(afPrimitiveShapeType shapeType){m_shapeType = shapeType;}
-
-    inline void setAxisType(afAxisType axisType){m_axisType = axisType;}
-
-    void setScale(double a_scale);
-
-    inline cVector3d getDimensions() const {return m_dimensions * m_scale;}
-
-    inline double getRadius() const {return m_radius * m_scale;}
-
-    inline double getHeight() const {return m_height * m_scale;}
-
-    inline double getPlaneConstant() const {return m_planeConstant * m_scale;}
-
-    inline cVector3d getPlaneNormal() const {return m_planeNormal;}
-
-    inline afPrimitiveShapeType getShapeType() const {return m_shapeType;}
-
-    inline afAxisType getAxisType() const {return m_axisType;}
-
-    inline cVector3d getPosOffset() const {return m_posOffset;}
-
-    inline cMatrix3d getRotOffset() const {return m_rotOffset;}
-
-private:
-    double m_radius = 0;
-
-    double m_height = 0;
-
-    cVector3d m_dimensions;
-
-    cVector3d m_planeNormal;
-
-    double m_planeConstant = 0;
-
-    afPrimitiveShapeType m_shapeType;
-
-    afAxisType m_axisType;
-
-    cVector3d m_posOffset;
-
-    cMatrix3d m_rotOffset;
-
-    double m_scale = 1.0;
-};
-
-
 class afRayTracerUnitsCreator{
 
 };
 
-
-///
-/// \brief The afSurfaceProperties struct
-///
-struct afSurfaceProperties{
-public:
-    afSurfaceProperties(){
-        m_linear_damping = 0.04;
-        m_angular_damping = 0.1;
-        m_static_friction = 0.5;
-        m_dynamic_friction = 0.5;
-        m_rolling_friction = 0.01;
-        m_restitution = 0.1;
-    }
-    double m_linear_damping;
-    double m_angular_damping;
-    double m_static_friction;
-    double m_dynamic_friction;
-    double m_rolling_friction;
-    double m_restitution;
-};
 
 ///
 /// \brief The afUtils class
@@ -660,7 +423,7 @@ struct afSoftBodyConfigProperties: public btSoftBody::Config{
 ///
 /// \brief The afCartesianController struct
 ///
-class afCartesianController{
+class afCartesianController: public afCartesianControllerAttributes{
 public:
     afCartesianController();
 
@@ -695,12 +458,6 @@ public:
 
     void setOutputType(afControlType type);
 
-    // The default output type is velocity
-    afControlType m_positionOutputType = afControlType::VELOCITY;
-
-    // The default output type is velocity
-    afControlType m_orientationOutputType = afControlType::VELOCITY;
-
 private:
     // PID Controller Gains for Linear and Angular Controller
     double P_lin, I_lin, D_lin;
@@ -722,14 +479,12 @@ private:
 ///
 /// \brief The afJointController class
 ///
-class afJointController{
+class afJointController: public afJointControllerAttributes{
 public:
     // Set some default values of PID
     // TODO: Maybe set PID's to 0 so the
     // user has to explicitly set them
-    double P = 1000;
-    double I = 0;
-    double D = 50;
+
     double e[4] = {0, 0, 0, 0};
     double ie[4] = {0, 0, 0, 0};
     double de[4] = {0, 0, 0, 0};
@@ -750,24 +505,6 @@ public:
     void boundEffort(double& effort_cmd);
 
     // The default output type is velocity
-    afControlType m_outputType = afControlType::VELOCITY;
-};
-
-
-///
-/// \brief The afRayAttributes struct
-///
-struct afRayAttributes{
-    // Direction rel to parent that this sensor is looking at
-    cVector3d m_direction;
-
-    // Range of this sensor, i.e. how far can it sense
-    double m_range;
-
-    // Based on the location, direciton and range, calculate
-    // start and end points for the ray tracing in Local Frame
-    cVector3d m_rayFromLocal;
-    cVector3d m_rayToLocal;
 };
 
 
@@ -1003,7 +740,7 @@ public:
 
     inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
 
-    afSurfaceProperties getSurfaceProperties();
+    afSurfaceAttributes getSurfaceProperties();
 
     inline void setMass(double a_mass){m_mass = a_mass;}
 
@@ -1011,7 +748,7 @@ public:
 
     void setInertialOffsetTransform(btTransform & a_trans);
 
-    void setSurfaceProperties(const afSurfaceProperties& props);
+    void setSurfaceProperties(const afSurfaceAttributes& props);
 
     btRigidBody* m_bulletRigidBody;
 
@@ -1037,427 +774,6 @@ protected:
 
     // Inertia
     btVector3 m_inertia;
-};
-
-
-///
-/// \brief The afIdentificationAttributes struct
-///
-struct afIdentificationAttributes{
-public:
-    afIdentificationAttributes(){}
-
-    std::string m_name;
-    std::string m_namespace;
-};
-
-
-///
-/// \brief The afCollisionAttributes struct
-///
-struct afCollisionAttributes{
-public:
-    afCollisionAttributes(){}
-
-    double m_collisionMargin;
-    afGeometryType m_collisionGeometryType;
-    std::vector<afPrimitiveShapeAttributes> m_collisionPrimitiveShapes;
-    std::vector<uint> m_collisionGroups;
-};
-
-
-///
-/// \brief The afCommunicationAttributes struct
-///
-struct afCommunicationAttributes{
-public:
-    afCommunicationAttributes(){}
-
-    uint m_minPublishFreq;
-    uint m_maxPublishFreq;
-    bool m_passive;
-};
-
-
-///
-/// \brief The afCartesianControllerAttributes struct
-///
-struct afCartesianControllerAttributes{
-public:
-    afCartesianControllerAttributes(){}
-
-    afCartesianController m_controller;
-};
-
-
-///
-/// \brief The afInertialAttributes struct
-///
-struct afInertialAttributes{
-public:
-    afInertialAttributes(){}
-
-    double m_mass;
-    btVector3 m_inertia;
-    btTransform m_inertialOffset;
-    afSurfaceProperties m_surfaceProperties;
-};
-
-
-///
-/// \brief The afJointControllerAttributes struct
-///
-struct afJointControllerAttributes{
-public:
-    afJointControllerAttributes(){}
-
-    afJointController m_jointController;
-};
-
-
-///
-/// \brief The afHeirarcyAttributes struct
-///
-struct afHierarchyAttributes{
-public:
-    afHierarchyAttributes(){}
-
-    std::string m_parentName;
-    std::string m_childName;
-};
-
-///
-/// \brief The afKinematicAttributes struct
-///
-struct afKinematicAttributes{
-public:
-    afKinematicAttributes(){}
-
-    cTransform m_location;
-    double m_scale;
-};
-
-
-///
-/// \brief The afVisualAttributes struct
-///
-struct afVisualAttributes{
-    afVisualAttributes(){}
-
-    std::string m_meshName;
-    boost::filesystem::path m_visualMeshFilePath;
-    boost::filesystem::path m_collisionMeshFilePath;
-    afGeometryType m_visualGeometryType;
-    std::vector<afPrimitiveShapeAttributes> m_visualPrimitiveShapes;
-    cMaterial m_material;
-
-
-    bool m_shaderDefined;
-    boost::filesystem::path m_vtxShaderFilePath;
-    boost::filesystem::path m_fragShaderFilePath;
-};
-
-
-
-///
-/// \brief The afActuatorAttributes struct
-///
-struct afActuatorAttributes:
-        public afIdentificationAttributes,
-        public afCommunicationAttributes,
-        public afKinematicAttributes,
-        public afHierarchyAttributes
-{
-public:
-    afActuatorAttributes(){}
-
-    afActuatorType m_actuatorType;
-};
-
-
-
-///
-/// \brief The afConstraintActuatorAttributes struct
-///
-struct afConstraintActuatorAttributes: public afActuatorAttributes{
-public:
-    afConstraintActuatorAttributes(){}
-
-    bool m_visible;
-    float m_visibleSize;
-    float m_maxImpulse;
-    float m_tau;
-};
-
-
-
-///
-/// \brief The afCameraAttributes struct
-///
-struct afCameraAttributes:
-        public afIdentificationAttributes,
-        public afHierarchyAttributes,
-        public afKinematicAttributes
-{
-public:
-    afCameraAttributes(){}
-
-    cVector3d m_lookAt;
-    cVector3d m_up;
-    float m_nearPlane;
-    float m_farPlane;
-    float m_fieldViewAngle;
-    float m_orthoViewWidth;
-    bool m_stereo;
-    std::vector<std::string> m_controllingDeviceNames;
-    uint m_monitor;
-    bool m_publishImage;
-    bool m_publishDesph;
-    uint m_publishImageInterval;
-    uint m_publishDepthInterval;
-    bool m_multiPass;
-};
-
-
-///
-/// \brief The afLightAttributes struct
-///
-struct afLightAttributes:
-        public afIdentificationAttributes,
-        public afHierarchyAttributes,
-        public afKinematicAttributes
-{
-public:
-    afLightAttributes(){}
-
-    float m_spotExponent;
-    float m_cuttoffAngle;
-    cVector3d m_direction;
-
-    afShadowQuality m_shadowQuality;
-};
-
-
-
-///
-/// \brief The afJointAttributes struct
-///
-struct afJointAttributes:
-        public afIdentificationAttributes,
-        public afCommunicationAttributes,
-        public afJointControllerAttributes,
-        public afHierarchyAttributes
-{
-
-public:
-    afJointAttributes();
-
-    cVector3d m_parentPivot;
-    cVector3d m_childPivot;
-    cVector3d m_parentAxis;
-    cVector3d m_childAxis;
-    cTransform m_transformInParent;
-    bool m_enableMotor;
-    bool m_enableFeedback;
-    uint m_maxMotorImpulse;
-    float m_limitLow;
-    float m_limitHigh;
-    float m_erp;
-    float m_cfm;
-    float m_offset;
-    float m_damping;
-    float m_stiffness;
-    afJointType m_jointType;
-    afJointController m_controller;
-    bool m_ignoreInterCollision;
-};
-
-
-///
-/// \brief The afRigidBodyAttributes struct
-///
-struct afRigidBodyAttributes:
-        public afIdentificationAttributes,
-        public afCommunicationAttributes,
-        public afCollisionAttributes,
-        public afCartesianControllerAttributes,
-        public afInertialAttributes,
-        public afKinematicAttributes,
-        public afVisualAttributes
-{
-public:
-    afRigidBodyAttributes(){}
-
-    bool m_publishChildrenNames;
-    bool m_publishJointNames;
-    bool m_publishJointPositions;
-};
-
-
-///
-/// \brief The afSensorAttributes struct
-///
-struct afSensorAttributes:
-        public afIdentificationAttributes,
-        public afCommunicationAttributes,
-        public afKinematicAttributes,
-        public afHierarchyAttributes
-{
-public:
-    afSensorAttributes(){}
-
-    bool m_visible;
-    float m_visibleSize;
-    float m_maxImpulse;
-    float m_tau;
-    float m_range;
-
-    afSensorType m_sensorType;
-};
-
-
-///
-/// \brief The afResistanceSensorAttributes struct
-///
-
-struct afRayTracerSensorAttributes: public afSensorAttributes{
-public:
-    afRayTracerSensorAttributes(){}
-
-    std::vector<afRayAttributes> m_raysAttribs;
-};
-
-
-///
-/// \brief The afResistanceSensorAttributes struct
-///
-
-struct afResistanceSensorAttributes: public afRayTracerSensorAttributes{
-public:
-    afResistanceSensorAttributes(){}
-
-    double m_contactNormalStiffness;
-    double m_contactNormalDamping;
-    double m_staticContactFriction;
-    double m_staticContactDamping;
-    double m_dynamicFriction;
-    double m_contactArea;
-    bool m_useVariableCoeff;
-};
-
-
-///
-/// \brief The afSoftBodyAttributes struct
-///
-struct afSoftBodyAttributes:
-        public afIdentificationAttributes,
-        public afCommunicationAttributes,
-        public afCollisionAttributes,
-        public afCartesianControllerAttributes,
-        public afInertialAttributes,
-        public afKinematicAttributes,
-        public afVisualAttributes
-{
-public:
-    afSoftBodyAttributes(){}
-
-    float m_kLST;
-    float mkAST;
-    float m_kVST;
-    float m_kVCF;
-    float m_kDP;
-    float m_kDG;
-    float m_kLF;
-    float m_kPR;
-    float m_kVC;
-    float m_kDF;
-    float m_kMT;
-    float m_kCHR;
-    float m_kKHR;
-    float m_kSHR;
-    float m_kAHR;
-    float m_kSRHR_CL;
-    float m_kSKHR_CL;
-    float m_kSSHR_CL;
-    float m_kSR_SPLT_CL;
-    float m_kSK_SPLT_CL;
-    float m_kSS_SPLT_CL;
-    float m_maxVolume;
-    float m_timeScale;
-    uint m_vIterations;
-    uint m_pIterations;
-    uint m_dIterations;
-    uint m_cIterations;
-    uint m_flags;
-    uint m_bendingConstraint;
-    uint m_clusters;
-    std::vector<uint> m_fixedNodes;
-
-};
-
-
-///
-/// \brief The afWheelAttributes struct
-///
-struct afWheelAttributes{
-public:
-    afWheelAttributes(){}
-
-    double m_width;
-    double m_radius;
-    double m_friction;
-    double m_suspensionStiffness;
-    double m_suspensionDamping;
-    double m_suspensionCompression;
-    double m_suspensionRestLength;
-    double m_rollInfluence;
-    cVector3d m_downDirection;
-    cVector3d m_axelDirection;
-    cVector3d m_offset;
-    bool m_isFront = false;
-    double m_high_steering_lim = 0.0;
-    double m_low_steering_lim = 0.0;
-    double m_max_engine_power = 0.0;
-    double m_max_brake_power = 0.0;
-
-    afWheelRepresentationType m_wheelRepresentationType;
-
-};
-
-
-///
-/// \brief The afVehicleAttributes struct
-///
-struct afVehicleAttributes:
-        public afIdentificationAttributes,
-        public afVisualAttributes
-{
-public:
-    afVehicleAttributes(){}
-
-
-
-};
-
-
-
-///
-/// \brief The afMultiBodyAttributes struct
-///
-struct afMultiBodyAttributes{
-public:
-    afMultiBodyAttributes(){}
-
-
-};
-
-
-///
-/// \brief The afWorldAttributes struct
-///
-struct afWorldAttributes{
-public:
-    afWorldAttributes(){}
 };
 
 
@@ -2311,7 +1627,7 @@ public:
     cMatrix3d camRot, camRotPre;
 
     // Window parameters
-    uint m_width, m_height;
+    int m_width, m_height;
     int m_win_x, m_win_y;
 
     std::vector<std::string> m_controllingDevNames;

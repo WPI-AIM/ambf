@@ -223,6 +223,7 @@ include_directories (${GLFW_INCLUDE_DIRS})
 
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)
+include_directories (${PROJECT_SOURCE_DIR}/adf_loader)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d-bullet/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d-gel/src)
@@ -245,7 +246,9 @@ include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/external/vorbis
 include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/src/Theora)
 
 # static library source files
-file (GLOB_RECURSE source RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
+file (GLOB_RECURSE source_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
+# static library source files
+file (GLOB_RECURSE source_adf_loader RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/adf_loader/*.cpp ${PROJECT_SOURCE_DIR}/adf_loader/*.h)
 
 # static library external dependencies source files
 file (GLOB_RECURSE source_chai3d  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.h)
@@ -281,7 +284,7 @@ endif ()
 list (REMOVE_ITEM source_theora ${source_theora_exclude})
 
 # group source files (MSVC likes this)
-foreach (FILE ${source} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
+foreach (FILE ${source_framework} ${source_adf_loader} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
   get_filename_component (PARENT_DIR "${FILE}" PATH)
   string (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
   string (REPLACE "/" "\\" GROUP "${GROUP}")
@@ -304,10 +307,14 @@ endif ()
 add_definitions (${PROJECT_DEFINITIONS} -DGLEW_STATIC -DAL_ALEXT_PROTOTYPES -DAL_BUILD_LIBRARY -DAL_LIBTYPE_STATIC -D__THEORA -D_LIB)
 
 # static library
-add_library (ambf_framework STATIC ${source} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds}
+add_library (ambf_framework STATIC ${source_framework} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds}
  ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_chai3d}
  ${source_chai3d_bullet} ${source_chai3d_gel} ${source_bullet_collision} ${source_bullet_dynamics}
  ${source_bullet_softbody} ${source_bullet_linearmath} )
+
+
+# static library
+add_library (adf_loader STATIC ${source_adf_loader})
 
 # To ensure the ambf_ros_modules are build before the ambf_framework,
 # add catkin's targets as build dependency

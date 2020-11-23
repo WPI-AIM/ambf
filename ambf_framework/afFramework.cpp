@@ -205,228 +205,6 @@ cTransform toCtransform(const btTransform &btTrans){
 }
 
 
-///
-/// \brief afShapeGeometry::setScale
-/// \param a_scale
-///
-afPrimitiveShapeAttributes::afPrimitiveShapeAttributes()
-{
-    m_posOffset.set(0, 0, 0);
-    m_rotOffset.identity();
-    m_shapeType = afPrimitiveShapeType::INVALID;
-    m_axisType = afAxisType::Z;
-}
-
-
-///
-/// \brief afShapeGeometry::copyShapeOffsetData
-/// \param offsetNode
-/// \return
-///
-bool afPrimitiveShapeAttributes::copyShapeOffsetData(YAML::Node *offset_node)
-{
-    bool valid = true;
-
-    YAML::Node offsetNode = *offset_node;
-
-    if (offsetNode.IsDefined()){
-
-        if (offsetNode["position"].IsDefined()){
-            double px = offsetNode["position"]["x"].as<double>();
-            double py = offsetNode["position"]["y"].as<double>();
-            double pz = offsetNode["position"]["z"].as<double>();
-            m_posOffset.set(px, py, pz);
-        }
-
-        if (offsetNode["orientation"].IsDefined()){
-            double roll =  offsetNode["orientation"]["r"].as<double>();
-            double pitch = offsetNode["orientation"]["p"].as<double>();
-            double yaw =   offsetNode["orientation"]["y"].as<double>();
-            m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
-        }
-    }
-    else{
-        valid = false;
-    }
-
-    return valid;
-}
-
-
-///
-/// \brief afPrimitiveShape::copyPrimitiveShapeData
-/// \param shape_node
-/// \return
-///
-bool afPrimitiveShapeAttributes::copyPrimitiveShapeData(YAML::Node *shape_node)
-{
-    bool valid = true;
-
-    YAML::Node shapeNode = *shape_node;
-
-    if(shapeNode["axis"].IsDefined()){
-        std::string axis = shapeNode["axis"].as<std::string>();
-
-        if (axis.compare("x") == 0 || axis.compare("X") == 0){
-            m_axisType = afAxisType::X;
-        }
-        else if (axis.compare("y") == 0 || axis.compare("Y") == 0){
-            m_axisType = afAxisType::Y;
-        }
-        else if (axis.compare("z") == 0 || axis.compare("Z") == 0){
-            m_axisType = afAxisType::Z;
-        }
-        else{
-            std::cerr << "WARNING: Axis string \"" << axis << "\" not understood!\n";
-            m_axisType = afAxisType::Z;
-        }
-    }
-
-    switch (m_shapeType) {
-    case afPrimitiveShapeType::BOX:{
-        double dx, dy, dz;
-        dx = shapeNode["x"].as<double>();
-        dy = shapeNode["y"].as<double>();
-        dz = shapeNode["z"].as<double>();
-        m_dimensions.set(dx, dy, dz);
-        break;
-    }
-    case afPrimitiveShapeType::SPHERE:{
-        m_radius = shapeNode["radius"].as<double>();
-        break;
-    }
-    case afPrimitiveShapeType::CAPSULE:{
-        m_radius = shapeNode["radius"].as<double>();
-        m_height = shapeNode["height"].as<double>();
-        break;
-    }
-    case afPrimitiveShapeType::CONE:{
-        m_radius = shapeNode["radius"].as<double>();
-        m_height = shapeNode["height"].as<double>();
-        break;
-    }
-    case afPrimitiveShapeType::PLANE:{
-        double nx, ny, nz;
-        nx = shapeNode["normal"]["x"].as<double>();
-        ny = shapeNode["normal"]["y"].as<double>();
-        nz = shapeNode["normal"]["z"].as<double>();
-        m_planeNormal.set(nx, ny, nz);
-        m_planeConstant = shapeNode["offset"].as<double>();
-        break;
-    }
-    default:{
-        valid = false;
-        break;
-    }
-    }
-
-    return valid;
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setPlaneData
-/// \param normal_x
-/// \param normal_y
-/// \param normal_z
-/// \param plane_constant
-///
-void afPrimitiveShapeAttributes::setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant)
-{
-    m_planeNormal.set(normal_x, normal_y, normal_z);
-    m_planeConstant = plane_constant;
-    m_shapeType = afPrimitiveShapeType::PLANE;
-}
-
-
-////
-/// \brief afPrimitiveGeometry::setBoxData
-/// \param dimension_x
-/// \param dimension_y
-/// \param dimension_z
-///
-void afPrimitiveShapeAttributes::setBoxData(double dimension_x, double dimension_y, double dimension_z)
-{
-    m_dimensions.set(dimension_x, dimension_y, dimension_z);
-    m_shapeType = afPrimitiveShapeType::BOX;
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setSphereData
-/// \param radius
-///
-void afPrimitiveShapeAttributes::setSphereData(double radius)
-{
-    m_radius = radius;
-    m_shapeType = afPrimitiveShapeType::SPHERE;
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setCapsuleData
-/// \param radius
-/// \param height
-/// \param axis
-///
-void afPrimitiveShapeAttributes::setCapsuleData(double radius, double height, afAxisType axis)
-{
-    m_radius = radius;
-    m_height = height;
-    m_axisType = axis;
-    m_shapeType = afPrimitiveShapeType::CAPSULE;
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setConeData
-/// \param radius
-/// \param height
-/// \param axis
-///
-void afPrimitiveShapeAttributes::setConeData(double radius, double height, afAxisType axis)
-{
-    m_radius = radius;
-    m_height = height;
-    m_axisType = axis;
-    m_shapeType = afPrimitiveShapeType::CONE;
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setPosOffset
-/// \param px
-/// \param py
-/// \param pz
-///
-void afPrimitiveShapeAttributes::setPosOffset(double px, double py, double pz)
-{
-    m_posOffset.set(px, py, pz);
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setRotOffset
-/// \param roll
-/// \param pitch
-/// \param yaw
-///
-void afPrimitiveShapeAttributes::setRotOffset(double roll, double pitch, double yaw)
-{
-    m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
-}
-
-
-///
-/// \brief afPrimitiveGeometry::setScale
-/// \param a_scale
-///
-void afPrimitiveShapeAttributes::setScale(double a_scale)
-{
-    m_scale = a_scale;
-}
-
-
 template<typename T>
 ///
 /// \brief afUtils::getNonCollidingIdx
@@ -2086,9 +1864,9 @@ void afInertialObject::estimateInertia()
 /// \brief afInertialObject::getSurfaceProperties
 /// \return
 ///
-afSurfaceProperties afInertialObject::getSurfaceProperties()
+afSurfaceAttributes afInertialObject::getSurfaceProperties()
 {
-    afSurfaceProperties props;
+    afSurfaceAttributes props;
     props.m_linear_damping = m_bulletRigidBody->getLinearDamping();
     props.m_angular_damping = m_bulletRigidBody->getAngularDamping();
     props.m_static_friction = m_bulletRigidBody->getFriction();
@@ -2114,7 +1892,7 @@ void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
     m_T_iINb = a_trans;
 }
 
-void afInertialObject::setSurfaceProperties(const afSurfaceProperties &a_props)
+void afInertialObject::setSurfaceProperties(const afSurfaceAttributes &a_props)
 {
     m_bulletRigidBody->setFriction(a_props.m_static_friction);
     m_bulletRigidBody->setRollingFriction(a_props.m_rolling_friction);
@@ -2932,7 +2710,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     m_initialTransform = T_mINw;
     setLocalTransform(T_iINw);
 
-    afSurfaceProperties surfaceProps;
+    afSurfaceAttributes surfaceProps;
 
     if (bodyLinDamping.IsDefined()){
         surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
@@ -3125,7 +2903,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes &attribs)
     setInitialTransform(T_mINw);
     setLocalTransform(T_mINw);
 
-    setSurfaceProperties(attribs.m_surfaceProperties);
+    setSurfaceProperties(attribs.m_surfaceAttribs);
 
     m_publish_children_names = attribs.m_publishChildrenNames;
     m_publish_joint_names = attribs.m_publishJointNames;
@@ -5224,14 +5002,14 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     measurements.resize(m_count);
 
     for (int i = 0 ; i < m_count ; i++){
-        triggers[i] = m_sensedResults[i].m_triggered;
-        measurements[i] = m_sensedResults[i].m_depthFraction;
-        if (m_sensedResults[i].m_triggered){
-            if (m_sensedResults[i].m_sensedAFRigidBody){
-                sensed_obj_names[i] = m_sensedResults[i].m_sensedAFRigidBody->m_name;
+        triggers[i] = m_rayTracerResults[i].m_triggered;
+        measurements[i] = m_rayTracerResults[i].m_depthFraction;
+        if (m_rayTracerResults[i].m_triggered){
+            if (m_rayTracerResults[i].m_sensedAFRigidBody){
+                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedAFRigidBody->m_name;
             }
-            if (m_sensedResults[i].m_sensedAFSoftBody){
-                sensed_obj_names[i] = m_sensedResults[i].m_sensedAFSoftBody->m_name;
+            if (m_rayTracerResults[i].m_sensedAFSoftBody){
+                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedAFSoftBody->m_name;
             }
         }
         else{
@@ -6813,21 +6591,21 @@ void afWorld::buildCollisionGroups(){
     if (m_collisionGroups.size() > 0){
         std::vector<int> groupNumbers;
 
-        std::map<int, std::vector<afRigidBodyPtr> >::iterator cgIt;
+        std::map<uint, std::vector<afRigidBodyPtr> >::iterator cgIt;
         for(cgIt = m_collisionGroups.begin() ; cgIt != m_collisionGroups.end() ; ++cgIt){
             groupNumbers.push_back(cgIt->first);
         }
 
-        for (int i = 0 ; i < groupNumbers.size() - 1 ; i++){
+        for (uint i = 0 ; i < groupNumbers.size() - 1 ; i++){
             int aIdx = groupNumbers[i];
             std::vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
-            for (int j = i + 1 ; j < groupNumbers.size() ; j ++){
+            for (uint j = i + 1 ; j < groupNumbers.size() ; j ++){
                 int bIdx = groupNumbers[j];
                 std::vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
 
-                for(int aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
+                for(uint aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
                     afRigidBodyPtr bodyA = grpA[aBodyIdx];
-                    for(int bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
+                    for(uint bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
                         afRigidBodyPtr bodyB = grpB[bBodyIdx];
                         if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroups))
                             bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
@@ -8383,24 +8161,24 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         m_spotLight->setCutOffAngleDeg(_cuttoff_angle * (180/3.14));
         m_spotLight->setShadowMapEnabled(true);
 
-        afShadowQuality sQ = (afShadowQuality) _shadow_quality;
+        afShadowQualityType sQ = (afShadowQualityType) _shadow_quality;
         switch (sQ) {
-        case afShadowQuality::NO_SHADOW:
+        case afShadowQualityType::NO_SHADOW:
             m_spotLight->setShadowMapEnabled(false);
             break;
-        case afShadowQuality::VERR_LOW:
+        case afShadowQualityType::VERR_LOW:
             m_spotLight->m_shadowMap->setQualityVeryLow();
             break;
-        case afShadowQuality::LOW:
+        case afShadowQualityType::LOW:
             m_spotLight->m_shadowMap->setQualityLow();
             break;
-        case afShadowQuality::MEDIUM:
+        case afShadowQualityType::MEDIUM:
             m_spotLight->m_shadowMap->setQualityMedium();
             break;
-        case afShadowQuality::HIGH:
+        case afShadowQualityType::HIGH:
             m_spotLight->m_shadowMap->setQualityHigh();
             break;
-        case afShadowQuality::VERY_HIGH:
+        case afShadowQualityType::VERY_HIGH:
             m_spotLight->m_shadowMap->setQualityVeryHigh();
             break;
         }
@@ -9573,7 +9351,7 @@ void afVehicle::afExecuteCommand(double dt){
 
     for (int i = 0 ; i < maxWheelCount ; i++){
         double val = af_cmd.wheel_steering[i];
-        val = cClamp(val, m_wheelAttribs[i].m_low_steering_lim, m_wheels[i].m_high_steering_lim);
+        val = cClamp(val, m_wheelAttribs[i].m_low_steering_lim, m_wheelAttribs[i].m_high_steering_lim);
         m_vehicle->setSteeringValue(val, i);
     }
 
