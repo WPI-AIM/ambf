@@ -48,6 +48,7 @@
 
 //------------------------------------------------------------------------------
 #include "afSoftMultiMesh.h"
+#include "afUtils.h"
 #include "afAttributes.h"
 #include "CBullet.h"
 #include "chai3d.h"
@@ -241,44 +242,6 @@ T toRPY(YAML::Node* node);
 
 class afRayTracerUnitsCreator{
 
-};
-
-
-///
-/// \brief The afUtils class
-///
-class afUtils{
-public:
-
-    afUtils(){}
-    template<typename T1, typename T2>
-    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
-
-    template<typename T1, typename T2>
-    static T1 convertDataType(const T2 &r);
-
-    template <typename T>
-    static std::string getNonCollidingIdx(std::string a_body_name, const T* a_tMap);
-
-    static std::string removeAdjacentBackSlashes(std::string a_name);
-
-    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
-
-    static void debugPrint(int line, std::string filename){
-        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
-    }
-
-    static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
-
-    static cMaterial getMatrialFromNode(YAML::Node* a_node);
-
-    static afCartesianController getCartControllerFromNode(YAML::Node* a_node);
-
-    static cMesh* createVisualShape(const afPrimitiveShapeAttributes& a_primitiveShape);
-
-    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes& a_primitiveShape);
-
-    static btCompoundShape* createCollisionShapeFromMesh(cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
 };
 
 

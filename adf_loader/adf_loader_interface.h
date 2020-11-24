@@ -42,9 +42,21 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
-#ifndef AF_ADF_LOADER_H
-#define AF_ADF_LOADER_H
+#ifndef AF_ADF_LOADER_INTERFACE_H
+#define AF_ADF_LOADER_INTERFACE_H
 //------------------------------------------------------------------------------
 
+#include "adf_loader_base.h"
+#include "version_1_0/adf_loader_1_0.h"
+
+using namespace ambf;
+
+class ADFLoaderInterface{
+public:
+    ADFLoaderInterface();
+
+protected:
+    ADFLoaderBase* m_adfLoader;
+};
 
 #endif

@@ -48,7 +48,7 @@
 #include <yaml-cpp/yaml.h>
 #include <afEnums.h>
 #include <chai3d.h>
-#include "btBulletDynamicsCommon.h"
+#include <btBulletDynamicsCommon.h>
 #include <boost/filesystem/path.hpp>
 
 using namespace chai3d;
@@ -63,12 +63,6 @@ struct afPrimitiveShapeAttributes{
 public:
 
     afPrimitiveShapeAttributes();
-
-    // Copy data specified via ADF node
-    bool copyShapeOffsetData(YAML::Node* offsetNode);
-
-    // Copy data specified via ADF node
-    bool copyPrimitiveShapeData(YAML::Node* shapeNode);
 
     // Helper methods for primitive shapes
     // Required variables for creating a Plane
@@ -116,7 +110,8 @@ public:
 
     inline cMatrix3d getRotOffset() const {return m_rotOffset;}
 
-private:
+public:
+
     double m_radius = 0;
 
     double m_height = 0;
@@ -175,6 +170,7 @@ struct afCollisionAttributes{
 public:
     afCollisionAttributes(){}
 
+    std::string m_collisionMeshName;
     boost::filesystem::path m_collisionMeshFilePath;
     double m_collisionMargin;
     afGeometryType m_collisionGeometryType;
@@ -295,7 +291,7 @@ public:
 struct afVisualAttributes{
     afVisualAttributes(){}
 
-    std::string m_meshName;
+    std::string m_visualMeshName;
     boost::filesystem::path m_visualMeshFilePath;
     afGeometryType m_visualGeometryType;
     std::vector<afPrimitiveShapeAttributes> m_visualPrimitiveShapes;

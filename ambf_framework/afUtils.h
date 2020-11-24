@@ -42,7 +42,49 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
-#include <adf_loader_interface.h>
+#ifndef AF_UTILS_H
+#define AF_UTILS_H
+
+#include <string>
+#include <btBulletDynamicsCommon.h>
+#include <chai3d.h>
+
+//------------------------------------------------------------------------------
+namespace ambf{
+
+class afPrimitiveShapeAttributes;
+
+///
+/// \brief The afUtils class
+///
+class afUtils{
+public:
+
+    afUtils(){}
+    template<typename T1, typename T2>
+    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+
+    template<typename T1, typename T2>
+    static T1 convertDataType(const T2 &r);
+
+    template <typename T>
+    static std::string getNonCollidingIdx(std::string a_body_name, const T* a_tMap);
+
+    static std::string removeAdjacentBackSlashes(std::string a_name);
+
+    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+
+    static void debugPrint(int line, std::string filename){
+        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    }
+
+    static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+
+    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+
+    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
+};
 
 
-
+}
+#endif
