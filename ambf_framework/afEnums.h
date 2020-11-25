@@ -68,14 +68,15 @@ enum class afAxisType{
 /// \brief The afBodyType enum
 ///
 enum class afBodyType{
-    RIGID_BODY=0, SOFT_BODY=1
+    RIGID_BODY=0,
+    SOFT_BODY=1
 };
 
 
 ///
-/// \brief The afCommType enum
+/// \brief The afObjectType enum
 ///
-enum class afCommType{
+enum class afObjectType{
     ACTUATOR,
     CAMERA,
     LIGHT,

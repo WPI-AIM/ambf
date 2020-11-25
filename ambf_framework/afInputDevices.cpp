@@ -481,7 +481,7 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // running
         if(_simulatedMBDefined){
             std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afCreateCommInstance(afCommType::RIGID_BODY,
+            simDevice->m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
                                                         _sDevName,
                                                         m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
                                                         simDevice->m_rootLink->getMinPublishFrequency(),
@@ -606,7 +606,7 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     m_afCursor = new afRigidBody(a_afWorld);
     m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
     a_afWorld->addChild(m_afCursor->m_visualMesh);
-    m_afCursor->afCreateCommInstance(afCommType::OBJECT,
+    m_afCursor->afCreateCommInstance(afObjectType::OBJECT,
                                      a_name, m_afWorld->resolveGlobalNamespace(a_namespace),
                                      minPF,
                                      maxPF);

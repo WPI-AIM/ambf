@@ -45,6 +45,7 @@
 #include "afUtils.h"
 
 using namespace ambf;
+using namespace adf_loader_1_0;
 
 template <>
 ///
@@ -112,9 +113,9 @@ cVector3d ADFUtils::toRPY<cVector3d>(YAML::Node *node){
 /// \param mat
 /// \return
 ///
-bool ADFUtils::getMatrialFromNode(YAML::Node *mat_node, cMaterial* m)
+bool ADFUtils::getMatrialFromNode(YAML::Node *a_node, cMaterial* m)
 {
-    YAML::Node& matNode = *mat_node;
+    YAML::Node& matNode = *a_node;
 
     YAML::Node colorNameNode = matNode["color"];
     YAML::Node colorRGBANode = matNode["color rgba"];
@@ -169,6 +170,127 @@ bool ADFUtils::getMatrialFromNode(YAML::Node *mat_node, cMaterial* m)
 //    }
 
     return true;
+}
+
+bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node shadersNode = node["shaders"];
+
+    bool valid = true;
+
+    if (shadersNode.IsDefined()){
+        boost::filesystem::path shader_path = shadersNode["path"].as<std::string>();
+
+        attribs->m_vtxShaderFilePath = shader_path / shadersNode["vertex"].as<std::string>();
+        attribs->m_fragShaderFilePath = shader_path / shadersNode["fragment"].as<std::string>();
+
+        attribs->m_shaderDefined = true;
+    }
+    else{
+        attribs->m_shaderDefined = false;
+        valid = false;
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node meshNode = node["mesh"];
+    YAML::Node shapeNode = node["shape"];
+    YAML::Node compoundShapeNode = node["compound shape"];
+    YAML::Node geometryNode = node["geometry"];
+    YAML::Node scaleNode = node["scale"];
+    YAML::Node meshPathHRNode = node["high resolution path"];
+
+    bool valid = false;
+
+    std::string shape_str;
+
+    if(scaleNode.IsDefined()){
+        attribs->m_scale = scaleNode.as<double>();
+    }
+
+    if (shapeNode.IsDefined()){
+        attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
+        shape_str = shapeNode.as<std::string>();
+        afPrimitiveShapeAttributes shapeAttribs;
+        shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+        ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
+        shapeAttribs.setScale(attribs->m_scale);
+        attribs->m_primitiveShapes.push_back(shapeAttribs);
+    }
+    else if (compoundShapeNode.IsDefined()){
+        attribs->m_geometryType = afGeometryType::COMPOUND_SHAPE;
+        for(uint shapeIdx = 0 ; shapeIdx < compoundShapeNode.size() ; shapeIdx++){
+            shape_str = compoundShapeNode[shapeIdx]["shape"].as<std::string>();
+            geometryNode = compoundShapeNode[shapeIdx]["geometry"];
+            YAML::Node shapeOffset = compoundShapeNode[shapeIdx]["offset"];
+
+            afPrimitiveShapeAttributes shapeAttribs;
+            shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+            ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
+            ADFUtils::copyShapeOffsetData(&shapeOffset, &shapeAttribs);
+            shapeAttribs.setScale(attribs->m_scale);
+            attribs->m_primitiveShapes.push_back(shapeAttribs);
+        }
+    }
+    else if(meshNode.IsDefined()){
+        attribs->m_meshName = meshNode.as<std::string>();
+        if (!attribs->m_meshName.empty()){
+            // Each rigid body can have a seperate path for its low and high res meshes
+            // Incase they are defined, we use these paths and if they are not, we use
+            // the paths for the whole file
+            if (meshPathHRNode.IsDefined()){
+                boost::filesystem::path visualPath = meshPathHRNode.as<std::string>();
+                attribs->m_meshFilePath = visualPath / attribs->m_meshName;
+            }
+            attribs->m_geometryType = afGeometryType::MESH;
+        }
+        else{
+            valid = false;
+        }
+    }
+    else{
+        valid = false;
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getSurfaceAttribsFromNode(YAML::Node *a_node, afSurfaceAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node linDampingNode = node["damping"]["linear"];
+    YAML::Node angDampingNode = node["damping"]["angular"];
+    YAML::Node staticFrictionNode = node["friction"]["static"];
+    YAML::Node rollingFrictionNode = node["friction"]["rolling"];
+    YAML::Node restitutionNode = node["restitution"];
+
+    bool valid = true;
+
+    if (linDampingNode.IsDefined()){
+        attribs->m_linearDamping = linDampingNode.as<double>();
+    }
+    if (angDampingNode.IsDefined()){
+        attribs->m_angularDamping = angDampingNode.as<double>();
+    }
+    if (staticFrictionNode.IsDefined()){
+        attribs->m_staticFriction = staticFrictionNode.as<double>();
+    }
+    if (rollingFrictionNode.IsDefined()){
+        attribs->m_rollingFriction = rollingFrictionNode.as<double>();
+    }
+    if (restitutionNode.IsDefined()){
+        attribs->m_restitution = restitutionNode.as<double>();
+    }
+
+    return valid;
 }
 
 
@@ -239,6 +361,242 @@ bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianC
     return true;
 }
 
+bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node scaleNode = node["scale"];
+    YAML::Node collisionMarginNode = node["collision margin"];
+    YAML::Node collisionGroupsNode = node["collision groups"];
+
+    YAML::Node collisionMeshNode = node["collision mesh"];
+
+    YAML::Node collisionShapeNode = node["collision shape"];
+    YAML::Node collisionOffsetNode = node["collision offset"];
+    YAML::Node collisionGeometryNode = node["collision geometry"];
+
+    YAML::Node compoundCollisionShapeNode = node["compound collision shape"];
+
+    YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node meshPathLRNode = node["low resolution path"];
+
+
+    bool valid = true;
+    std::string shape_str;
+
+    if(scaleNode.IsDefined()){
+        attribs->m_scale = scaleNode.as<double>();
+    }
+
+    if (collisionMarginNode.IsDefined()){
+        attribs->m_margin = collisionMarginNode.as<double>();
+    }
+
+    if (collisionGroupsNode.IsDefined()){
+        for (uint gIdx = 0 ; gIdx < collisionGroupsNode.size() ; gIdx++){
+            int gNum = collisionGroupsNode[gIdx].as<int>();
+            // Sanity check for the group number
+            if (gNum >= 0 && gNum <= 999){
+                attribs->m_groups.push_back(gNum);
+            }
+            else{
+                std::cerr << "WARNING: Body Collision group number is \""
+                          << gNum
+                          << "\" but should be between [0 - 999], ignoring\n";
+            }
+        }
+    }
+
+    if(collisionShapeNode.IsDefined()){
+        attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
+        shape_str = collisionShapeNode.as<std::string>();
+        afPrimitiveShapeAttributes shapeAttribs;
+        shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+        ADFUtils::copyPrimitiveShapeData(&collisionGeometryNode, &shapeAttribs);
+        ADFUtils::copyShapeOffsetData(&collisionOffsetNode, &shapeAttribs);
+        shapeAttribs.setScale(attribs->m_scale);
+        attribs->m_primitiveShapes.push_back(shapeAttribs);
+    }
+    else if(compoundCollisionShapeNode.IsDefined()){
+        attribs->m_geometryType = afGeometryType::COMPOUND_SHAPE;
+        for (uint shapeIdx = 0 ; shapeIdx < compoundCollisionShapeNode.size() ; shapeIdx++){
+            shape_str = compoundCollisionShapeNode[shapeIdx]["shape"].as<std::string>();
+            YAML::Node _collisionGeometryNode = compoundCollisionShapeNode[shapeIdx]["geometry"];
+            YAML::Node _shapeOffsetNode = compoundCollisionShapeNode[shapeIdx]["offset"];
+
+            afPrimitiveShapeAttributes shapeAttribs;
+            shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+            ADFUtils::copyPrimitiveShapeData(&_collisionGeometryNode, &shapeAttribs);
+            ADFUtils::copyShapeOffsetData(&_shapeOffsetNode, &shapeAttribs);
+            shapeAttribs.setScale(attribs->m_scale);
+            attribs->m_primitiveShapes.push_back(shapeAttribs);
+        }
+    }
+    else if (collisionMeshNode.IsDefined()){
+        attribs->m_meshName = collisionMeshNode.as<std::string>();
+        if (!attribs->m_meshName.empty()){
+            if (meshPathLRNode.IsDefined()){
+                boost::filesystem::path collPath = meshPathLRNode.as<std::string>();
+                attribs->m_meshFilePath = collPath / attribs->m_meshName;
+            }
+            else if(meshPathHRNode.IsDefined()){
+                boost::filesystem::path collPath = meshPathHRNode.as<std::string>();
+                attribs->m_meshFilePath = collPath / attribs->m_meshName;
+            }
+            else{
+                attribs->m_meshFilePath = "";
+            }
+            attribs->m_geometryType = afGeometryType::MESH;
+        }
+        else{
+            valid = false;
+        }
+    }
+    else{
+        valid = false;
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getCommunicationAttribsFromNode(YAML::Node *a_node, afCommunicationAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+    YAML::Node passiveNode = node["passive"];
+
+    bool valid = true;
+
+    if (publishFrequencyNode.IsDefined()){
+        attribs->m_minPublishFreq = publishFrequencyNode["low"].as<uint>();
+        attribs->m_maxPublishFreq = publishFrequencyNode["high"].as<uint>();
+    }
+
+    if (passiveNode.IsDefined()){
+        attribs->m_passive = passiveNode.as<double>();
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttributes *attribs)
+{
+
+}
+
+bool ADFUtils::getIdentificationAttribsFromNode(YAML::Node *a_node, afIdentificationAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+
+    bool valid;
+
+    if(nameNode.IsDefined()){
+        std::string name = nameNode.as<std::string>();
+        name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
+        attribs->m_name = name;
+        valid = true;
+    }
+
+    if (namespaceNode.IsDefined()){
+        attribs->m_namespace = namespaceNode.as<std::string>();
+        valid = true;
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttributes *attribs)
+{
+    YAML::Node &node = *a_node;
+
+    YAML::Node massNode = node["mass"];
+    YAML::Node inertiaNode = node["inertia"];
+    YAML::Node inertialOffset = node["inertial offset"];
+
+    bool valid = true;
+
+    if(!massNode.IsDefined()){
+        std::cerr << "WARNING: Body's mass is not defined, ignoring!\n";
+        return false;
+    }
+    else{
+        attribs->m_mass = massNode.as<double>();
+    }
+
+    if(inertiaNode.IsDefined()){
+        double ix = inertiaNode["ix"].as<double>();
+        double iy = inertiaNode["ix"].as<double>();
+        double iz = inertiaNode["ix"].as<double>();
+
+        attribs->m_inertia.setValue(ix, iy, iz);
+        attribs->m_estimateInertia = false;
+    }
+    else{
+        attribs->m_estimateInertia = true;
+    }
+
+    if(inertialOffset.IsDefined()){
+        YAML::Node _inertialOffsetPos = inertialOffset["position"];
+        YAML::Node _inertialOffsetRot = inertialOffset["orientation"];
+
+        if (_inertialOffsetPos.IsDefined()){
+            btVector3 iP = ADFUtils::toXYZ<btVector3>(&_inertialOffsetPos);
+            attribs->m_inertialOffset.setOrigin(iP);
+        }
+
+        if (_inertialOffsetRot.IsDefined()){
+            double r = _inertialOffsetRot["r"].as<double>();
+            double p = _inertialOffsetRot["p"].as<double>();
+            double y = _inertialOffsetRot["y"].as<double>();
+            btMatrix3x3 iR;
+            iR.setEulerZYX(y, p, r);
+            attribs->m_inertialOffset.setBasis(iR);
+        }
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointControllerAttributes *attribs)
+{
+
+}
+
+bool ADFUtils::getKinematicAttribsFromNode(YAML::Node *a_node, afKinematicAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+
+    bool valid = true;
+
+    if(posNode.IsDefined()){
+        cVector3d pos = ADFUtils::toXYZ<cVector3d>(&posNode);
+        attribs->m_location.setLocalPos(pos);
+    }
+    else{
+        valid = false;
+    }
+
+    if(rotNode.IsDefined()){
+        double r = rotNode["r"].as<double>();
+        double p = rotNode["p"].as<double>();
+        double y = rotNode["y"].as<double>();
+        cMatrix3d rot;
+        rot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
+        attribs->m_location.setLocalRot(rot);
+    }
+    else{
+        valid = false;
+    }
+
+    return valid;
+}
+
 
 ///
 /// \brief ADFUtils::getShapeTypeFromString
@@ -287,7 +645,6 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
     YAML::Node offsetNode = *offset_node;
 
     if (offsetNode.IsDefined()){
-
         if (offsetNode["position"].IsDefined()){
             double px = offsetNode["position"]["x"].as<double>();
             double py = offsetNode["position"]["y"].as<double>();
@@ -403,7 +760,7 @@ bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_n
 
 }
 
-bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttributes *a_attribsRB)
+bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttributes *a_rb_attribs)
 {
     YAML::Node& rbNode = *rb_node;
     if (rbNode.IsNull()){
@@ -411,7 +768,7 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
         return false;
     }
 
-    if (a_attribsRB == nullptr){
+    if (a_rb_attribs == nullptr){
         std::cerr << "ERROR: RIGID BODY ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
@@ -423,6 +780,8 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
     YAML::Node posNode = rbNode["location"]["position"];
     YAML::Node rotNode = rbNode["location"]["orientation"];
     YAML::Node scaleNode = rbNode["scale"];
+    YAML::Node massNode = rbNode["mass"];
+    YAML::Node inertiaNode = rbNode["inertia"];
     YAML::Node meshNode = rbNode["mesh"];
     YAML::Node shapeNode = rbNode["shape"];
     YAML::Node compoundShapeNode = rbNode["compound shape"];
@@ -433,8 +792,7 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
     YAML::Node collisionOffsetNode = rbNode["collision offset"];
     YAML::Node collisionGeometryNode = rbNode["collision geometry"];
     YAML::Node compoundCollisionShapeNode = rbNode["compound collision shape"];
-    YAML::Node massNode = rbNode["mass"];
-    YAML::Node inertiaNode = rbNode["inertia"];
+    YAML::Node collisionGroupsNode = rbNode["collision groups"];
     YAML::Node inertialOffsetPosNode = rbNode["inertial offset"]["position"];
     YAML::Node inertialOffsetRotNode = rbNode["inertial offset"]["orientation"];
     YAML::Node controllerNode = rbNode["controller"];
@@ -447,7 +805,6 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
     YAML::Node publishJointNamesNode = rbNode["publish joint names"];
     YAML::Node publishJointPositionsNode = rbNode["publish joint positions"];
     YAML::Node publishFrequencyNode = rbNode["publish frequency"];
-    YAML::Node collisionGroupsNode = rbNode["collision groups"];
     YAML::Node passiveNode = rbNode["passive"];
     YAML::Node shadersNode = rbNode["shaders"];
 
@@ -455,112 +812,116 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
     if(nameNode.IsDefined()){
         std::string name = nameNode.as<std::string>();
         name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
-        a_attribsRB->m_name = name;
+        a_rb_attribs>m_name = name;
     }
 
-    a_attribsRB->m_visualGeometryType = afGeometryType::INVALID;
-    a_attribsRB->m_collisionGeometryType = afGeometryType::INVALID;
+    if (namespaceNode.IsDefined()){
+        a_rb_attribs->m_namespace = namespaceNode.as<std::string>();
+    }
+
+    a_rb_attribs->m_visualAttribs.m_geometryType= afGeometryType::INVALID;
+    a_rb_attribs->m_collisionAttribs.m_geometryType = afGeometryType::INVALID;
 
     std::string visual_shape_str;
     std::string collision_shape_str;
 
     if (collisionShapeNode.IsDefined()){
-        a_attribsRB->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
+        a_rb_attribs->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
         collision_shape_str = collisionShapeNode.as<std::string>();
     }
     else if (compoundCollisionShapeNode.IsDefined()){
-        a_attribsRB->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
+        a_rb_attribs->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
     }
 
     if (shapeNode.IsDefined()){
-        a_attribsRB->m_visualGeometryType = afGeometryType::SINGLE_SHAPE;
+        a_rb_attribs->m_visualGeometryType = afGeometryType::SINGLE_SHAPE;
         visual_shape_str = shapeNode.as<std::string>();
-        if (a_attribsRB->m_collisionGeometryType == afGeometryType::INVALID){
+        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
             collision_shape_str = visual_shape_str;
-            a_attribsRB->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
+            a_rb_attribs->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
             collisionGeometryNode = geometryNode;
             collisionShapeNode = shapeNode;
         }
     }
     else if (compoundShapeNode.IsDefined()){
-        a_attribsRB->m_visualGeometryType = afGeometryType::COMPOUND_SHAPE;
-        if (a_attribsRB->m_collisionGeometryType == afGeometryType::INVALID){
-            a_attribsRB->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
+        a_rb_attribs->m_visualGeometryType = afGeometryType::COMPOUND_SHAPE;
+        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
+            a_rb_attribs->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
             compoundCollisionShapeNode = compoundShapeNode;
         }
     }
     else if(meshNode.IsDefined()){
-        a_attribsRB->m_visualMeshName= meshNode.as<std::string>();
-        if (!a_attribsRB->m_visualMeshName.empty()){
+        a_rb_attribs->m_visualMeshName= meshNode.as<std::string>();
+        if (!a_rb_attribs->m_visualMeshName.empty()){
             // Each ridig body can have a seperate path for its low and high res meshes
             // Incase they are defined, we use those paths and if they are not, we use
             // the paths for the whole file
             if (meshPathHRNode.IsDefined()){
-                a_attribsRB->m_visualMeshFilePath = meshPathHRNode.as<std::string>() + a_attribsRB->m_visualMeshName;
+                a_rb_attribs->m_visualMeshFilePath = meshPathHRNode.as<std::string>() + a_rb_attribs->m_visualMeshName;
             }
-            a_attribsRB->m_visualGeometryType = afGeometryType::MESH;
+            a_rb_attribs->m_visualGeometryType = afGeometryType::MESH;
         }
 
         // Only check for collision mesh definition if visual mesh is defined
-        if (a_attribsRB->m_collisionGeometryType == afGeometryType::INVALID){
+        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
             if(collisionMeshNode.IsDefined()){
-                a_attribsRB->m_collisionMeshName = collisionMeshNode.as<std::string>();
+                a_rb_attribs->m_collisionMeshName = collisionMeshNode.as<std::string>();
             }
             else{
-                a_attribsRB->m_collisionMeshName = a_attribsRB->m_visualMeshName;
+                a_rb_attribs->m_collisionMeshName = a_rb_attribs->m_visualMeshName;
             }
 
-            if (!a_attribsRB->m_collisionMeshName.empty()){
+            if (!a_rb_attribs->m_collisionMeshName.empty()){
                 if (meshPathLRNode.IsDefined()){
-                    a_attribsRB->m_collisionMeshFilePath = meshPathLRNode.as<std::string>() + a_attribsRB->m_collisionMeshName;
+                    a_rb_attribs->m_collisionMeshFilePath = meshPathLRNode.as<std::string>() + a_rb_attribs->m_collisionMeshName;
                 }
                 else{
                     // If low res path is not defined, use the high res path to load the high-res mesh for collision
-                    a_attribsRB->m_collisionMeshFilePath = a_attribsRB->m_visualMeshFilePath / a_attribsRB->m_collisionMeshName;
+                    a_rb_attribs->m_collisionMeshFilePath = a_rb_attribs->m_visualMeshFilePath / a_rb_attribs->m_collisionMeshName;
                 }
-                a_attribsRB->m_collisionGeometryType = afGeometryType::MESH;
+                a_rb_attribs->m_collisionGeometryType = afGeometryType::MESH;
             }
         }
     }
 
     if(!massNode.IsDefined()){
         std::cerr << "WARNING: Body "
-                  << a_attribsRB->m_name
+                  << a_rb_attribs->m_name
                   << "'s mass is not defined, hence ignoring\n";
         return false;
     }
     else if(massNode.as<double>() < 0.0){
         std::cerr << "WARNING: Body "
-                  << a_attribsRB->m_name
-                  << "'s mass is \"" << a_attribsRB->m_mass << "\". Mass cannot be negative, ignoring\n";
+                  << a_rb_attribs->m_name
+                  << "'s mass is \"" << a_rb_attribs->m_mass << "\". Mass cannot be negative, ignoring\n";
         return false;
 
     }
-    else if (a_attribsRB->m_visualGeometryType == afGeometryType::INVALID && massNode.as<double>() > 0.0 && !inertiaNode.IsDefined()){
+    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::INVALID && massNode.as<double>() > 0.0 && !inertiaNode.IsDefined()){
         std::cerr << "WARNING: Body "
-                  << a_attribsRB->m_name
+                  << a_rb_attribs->m_name
                   << "'s geometry is empty, mass > 0 and no intertia defined, hence ignoring\n";
         return false;
     }
-    else if (a_attribsRB->m_visualGeometryType == afGeometryType::INVALID  && massNode.as<double>() > 0.0 && inertiaNode.IsDefined()){
+    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::INVALID  && massNode.as<double>() > 0.0 && inertiaNode.IsDefined()){
         std::cerr << "INFO: Body "
-                  << a_attribsRB->m_name
+                  << a_rb_attribs->m_name
                   << "'s mesh field is empty but mass and interia defined\n";
     }
 
     if(scaleNode.IsDefined()){
-        a_attribsRB->m_scale = scaleNode.as<double>();
+        a_rb_attribs->m_scale = scaleNode.as<double>();
     }
 
-    if (a_attribsRB->m_visualGeometryType == afGeometryType::SINGLE_SHAPE){
+    if (a_rb_attribs->m_visualGeometryType == afGeometryType::SINGLE_SHAPE){
         afPrimitiveShapeAttributes shapeAttribs;
         shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(visual_shape_str));
         ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
-        shapeAttribs.setScale(a_attribsRB->m_scale);
-        a_attribsRB->m_visualPrimitiveShapes.push_back(shapeAttribs);
+        shapeAttribs.setScale(a_rb_attribs->m_scale);
+        a_rb_attribs->m_visualPrimitiveShapes.push_back(shapeAttribs);
     }
 
-    else if (a_attribsRB->m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
+    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
         // First of all, set the inertial offset to 0.
         // Is this still necessary?
         inertialOffsetPosNode = rbNode["inertial offset undef"];
@@ -573,21 +934,21 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
             shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(visual_shape_str));
             ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&shapeOffset, &shapeAttribs);
-            shapeAttribs.setScale(a_attribsRB->m_scale);
-            a_attribsRB->m_visualPrimitiveShapes.push_back(shapeAttribs);
+            shapeAttribs.setScale(a_rb_attribs->m_scale);
+            a_rb_attribs->m_visualPrimitiveShapes.push_back(shapeAttribs);
         }
     }
 
-    ADFUtils::getMatrialFromNode(&rbNode, &a_attribsRB->m_material);
+    ADFUtils::getMatrialFromNode(&rbNode, &a_rb_attribs->m_material);
 
     // Load any shader that have been defined
     if (shadersNode.IsDefined()){
         boost::filesystem::path shader_path = shadersNode["path"].as<std::string>();
 
-        a_attribsRB->m_vtxShaderFilePath = shader_path / shadersNode["vertex"].as<std::string>();
-        a_attribsRB->m_fragShaderFilePath = shader_path / shadersNode["fragment"].as<std::string>();
+        a_rb_attribs->m_vtxShaderFilePath = shader_path / shadersNode["vertex"].as<std::string>();
+        a_rb_attribs->m_fragShaderFilePath = shader_path / shadersNode["fragment"].as<std::string>();
 
-        a_attribsRB->m_shaderDefined = true;
+        a_rb_attribs->m_shaderDefined = true;
     }
 
     // Load the inertial offset. If the body is a compound shape, the "inertial offset"
@@ -602,7 +963,7 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
 
     if(inertialOffsetPosNode.IsDefined()){
         inertialOffsetPos = ADFUtils::toXYZ<btVector3>(&inertialOffsetPosNode);
-        inertialOffsetPos = a_attribsRB->m_scale * inertialOffsetPos;
+        inertialOffsetPos = a_rb_attribs->m_scale * inertialOffsetPos;
         if(inertialOffsetRotNode.IsDefined()){
             double r = inertialOffsetRotNode["r"].as<double>();
             double p = inertialOffsetRotNode["p"].as<double>();
@@ -613,30 +974,26 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
 
     inertialOffsetTrans.setOrigin(inertialOffsetPos);
     inertialOffsetTrans.setRotation(inertialOffsetRot);
-    a_attribsRB->m_inertialOffset = inertialOffsetTrans;
+    a_rb_attribs->m_inertialOffset = inertialOffsetTrans;
 
     // Load Collision Margins
     if (collisionMarginNode.IsDefined()){
-        a_attribsRB->m_collisionMargin = collisionMarginNode.as<double>();
+        a_rb_attribs->m_collisionMargin = collisionMarginNode.as<double>();
     }
 
-    if (namespaceNode.IsDefined()){
-        a_attribsRB->m_namespace = namespaceNode.as<std::string>();
-    }
-
-    a_attribsRB->m_mass = massNode.as<double>();
+    a_rb_attribs->m_mass = massNode.as<double>();
 
     afCartesianControllerAttributes controllerAttribs;
     ADFUtils::getCartControllerAttribsFromNode(&controllerNode, &controllerAttribs);
 
-    a_attribsRB->P_lin = controllerAttribs.P_lin;
-    a_attribsRB->I_lin = controllerAttribs.I_lin;
-    a_attribsRB->D_lin = controllerAttribs.D_lin;
-    a_attribsRB->P_ang = controllerAttribs.P_ang;
-    a_attribsRB->I_ang = controllerAttribs.I_ang;
-    a_attribsRB->D_ang = controllerAttribs.D_ang;
-    a_attribsRB->m_positionOutputType = controllerAttribs.m_positionOutputType;
-    a_attribsRB->m_orientationOutputType = controllerAttribs.m_orientationOutputType;
+    a_rb_attribs->P_lin = controllerAttribs.P_lin;
+    a_rb_attribs->I_lin = controllerAttribs.I_lin;
+    a_rb_attribs->D_lin = controllerAttribs.D_lin;
+    a_rb_attribs->P_ang = controllerAttribs.P_ang;
+    a_rb_attribs->I_ang = controllerAttribs.I_ang;
+    a_rb_attribs->D_ang = controllerAttribs.D_ang;
+    a_rb_attribs->m_positionOutputType = controllerAttribs.m_positionOutputType;
+    a_rb_attribs->m_orientationOutputType = controllerAttribs.m_orientationOutputType;
 
 
    // Inertial origin in world
@@ -657,45 +1014,45 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
     }
 
     // Mesh Origin in World
-    cTransform T_mINw = T_iINw * afUtils::convertDataType<cTransform, btTransform>(a_attribsRB->m_inertialOffset);
+    cTransform T_mINw = T_iINw * afUtils::convertDataType<cTransform, btTransform>(a_rb_attribs->m_inertialOffset);
 
-    a_attribsRB->m_location = T_mINw;
+    a_rb_attribs->m_location = T_mINw;
 
     afSurfaceAttributes surfaceAttribs;
 
     if (linDampingNode.IsDefined()){
-        surfaceAttribs.m_linear_damping = linDampingNode.as<double>();
+        surfaceAttribs.m_linearDamping = linDampingNode.as<double>();
     }
     if (angDampingNode.IsDefined()){
-        surfaceAttribs.m_angular_damping = angDampingNode.as<double>();
+        surfaceAttribs.m_angularDamping = angDampingNode.as<double>();
     }
     if (staticFrictionNode.IsDefined()){
-        surfaceAttribs.m_static_friction = staticFrictionNode.as<double>();
+        surfaceAttribs.m_staticFriction = staticFrictionNode.as<double>();
     }
     if (rollingFrictionNode.IsDefined()){
-        surfaceAttribs.m_rolling_friction = rollingFrictionNode.as<double>();
+        surfaceAttribs.m_rollingFriction = rollingFrictionNode.as<double>();
     }
     if (restitutionNode.IsDefined()){
         surfaceAttribs.m_restitution = restitutionNode.as<double>();
     }
 
-    a_attribsRB->m_surfaceAttribs = surfaceAttribs;
+    a_rb_attribs->m_surfaceAttribs = surfaceAttribs;
 
     if (publishChildrenNamesNode.IsDefined()){
-        a_attribsRB->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
+        a_rb_attribs->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
     }
 
     if (publishJointNamesNode.IsDefined()){
-        a_attribsRB->m_publishJointNames = publishJointNamesNode.as<bool>();
+        a_rb_attribs->m_publishJointNames = publishJointNamesNode.as<bool>();
     }
 
     if (publishJointPositionsNode.IsDefined()){
-        a_attribsRB->m_publishJointPositions = publishJointPositionsNode.as<bool>();
+        a_rb_attribs->m_publishJointPositions = publishJointPositionsNode.as<bool>();
     }
 
     if (publishFrequencyNode.IsDefined()){
-        a_attribsRB->m_minPublishFreq = publishFrequencyNode["low"].as<uint>();
-        a_attribsRB->m_maxPublishFreq = publishFrequencyNode["high"].as<uint>();
+        a_rb_attribs->m_minPublishFreq = publishFrequencyNode["low"].as<uint>();
+        a_rb_attribs->m_maxPublishFreq = publishFrequencyNode["high"].as<uint>();
     }
 
     // The collision groups are sorted by integer indices. A group consists of a set of
@@ -708,18 +1065,18 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttribut
             int gNum = collisionGroupsNode[gIdx].as<int>();
             // Sanity check for the group number
             if (gNum >= 0 && gNum <= 999){
-                a_attribsRB->m_collisionGroups.push_back(gNum);
+                a_rb_attribs->m_collisionGroups.push_back(gNum);
             }
             else{
                 std::cerr << "WARNING: Body "
-                          << a_attribsRB->m_name
+                          << a_rb_attribs->m_name
                           << "'s group number is \"" << gNum << "\" which should be between [0 - 999], ignoring\n";
             }
         }
     }
 
     if (passiveNode.IsDefined()){
-        a_attribsRB->m_passive = passiveNode.as<bool>();
+        a_rb_attribs->m_passive = passiveNode.as<bool>();
     }
 
 

@@ -241,7 +241,6 @@ T toRPY(YAML::Node* node);
 
 
 class afRayTracerUnitsCreator{
-
 };
 
 
@@ -293,7 +292,7 @@ public:
     afComm(){}
     virtual ~afComm(){}
 
-    virtual void afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+    virtual void afCreateCommInstance(afObjectType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     // This method is to retrieve all the commands for appropriate af comm instances.
     virtual void afExecuteCommand(double dt=0.001);
@@ -317,7 +316,7 @@ public:
     inline int getMaxPublishFrequency(){return m_max_publish_frequency;}
 
     // Get the type of communication instance
-    afCommType getCommType(){return m_commType;}
+    afObjectType getCommType(){return m_commType;}
 
     // Set Name of object
     inline void setName(std::string a_name){m_name = a_name;}
@@ -371,7 +370,7 @@ protected:
 
 
 private:
-    afCommType m_commType;
+    afObjectType m_commType;
 };
 
 

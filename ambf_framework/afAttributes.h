@@ -154,12 +154,13 @@ struct afRayAttributes{
 ///
 /// \brief The afTaxonomyAttributes struct
 ///
-struct afTaxonomyAttributes{
+struct afIdentificationAttributes{
 public:
-    afTaxonomyAttributes(){}
+    afIdentificationAttributes(){}
 
     std::string m_name;
     std::string m_namespace;
+    afObjectType m_objectType;
 };
 
 
@@ -170,12 +171,13 @@ struct afCollisionAttributes{
 public:
     afCollisionAttributes(){}
 
-    std::string m_collisionMeshName;
-    boost::filesystem::path m_collisionMeshFilePath;
-    double m_collisionMargin;
-    afGeometryType m_collisionGeometryType;
-    std::vector<afPrimitiveShapeAttributes> m_collisionPrimitiveShapes;
-    std::vector<uint> m_collisionGroups;
+    std::string m_meshName;
+    double m_scale;
+    boost::filesystem::path m_meshFilePath;
+    double m_margin;
+    afGeometryType m_geometryType;
+    std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
+    std::vector<uint> m_groups;
 };
 
 
@@ -226,18 +228,18 @@ public:
 struct afSurfaceAttributes{
 public:
     afSurfaceAttributes(){
-        m_linear_damping = 0.04;
-        m_angular_damping = 0.1;
-        m_static_friction = 0.5;
-        m_dynamic_friction = 0.5;
-        m_rolling_friction = 0.01;
+        m_linearDamping = 0.04;
+        m_angularDamping = 0.1;
+        m_staticFriction = 0.5;
+        m_dynamicFriction = 0.5;
+        m_rollingFriction = 0.01;
         m_restitution = 0.1;
     }
-    double m_linear_damping;
-    double m_angular_damping;
-    double m_static_friction;
-    double m_dynamic_friction;
-    double m_rolling_friction;
+    double m_linearDamping;
+    double m_angularDamping;
+    double m_staticFriction;
+    double m_dynamicFriction;
+    double m_rollingFriction;
     double m_restitution;
 };
 
@@ -251,6 +253,7 @@ public:
 
     double m_mass;
     btVector3 m_inertia;
+    bool m_estimateInertia = false;
     btTransform m_inertialOffset;
     afSurfaceAttributes m_surfaceAttribs;
 };
@@ -281,7 +284,6 @@ public:
     afKinematicAttributes(){}
 
     cTransform m_location;
-    double m_scale;
 };
 
 
@@ -291,10 +293,11 @@ public:
 struct afVisualAttributes{
     afVisualAttributes(){}
 
-    std::string m_visualMeshName;
-    boost::filesystem::path m_visualMeshFilePath;
-    afGeometryType m_visualGeometryType;
-    std::vector<afPrimitiveShapeAttributes> m_visualPrimitiveShapes;
+    std::string m_meshName;
+    double m_scale;
+    boost::filesystem::path m_meshFilePath;
+    afGeometryType m_geometryType;
+    std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     cMaterial m_material;
 };
 
@@ -315,16 +318,17 @@ public:
 ///
 /// \brief The afActuatorAttributes struct
 ///
-struct afActuatorAttributes:
-        public afTaxonomyAttributes,
-        public afCommunicationAttributes,
-        public afKinematicAttributes,
-        public afHierarchyAttributes
+struct afActuatorAttributes
 {
 public:
     afActuatorAttributes(){}
 
     afActuatorType m_actuatorType;
+
+    afInertialAttributes m_identificationAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afHierarchyAttributes m_heirarchyAttribs;
 };
 
 
@@ -346,10 +350,7 @@ public:
 ///
 /// \brief The afCameraAttributes struct
 ///
-struct afCameraAttributes:
-        public afTaxonomyAttributes,
-        public afHierarchyAttributes,
-        public afKinematicAttributes
+struct afCameraAttributes
 {
 public:
     afCameraAttributes(){}
@@ -368,16 +369,17 @@ public:
     uint m_publishImageInterval;
     uint m_publishDepthInterval;
     bool m_multiPass;
+
+    afIdentificationAttributes m_identificationAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
+    afKinematicAttributes m_kinematicAttribs;
 };
 
 
 ///
 /// \brief The afLightAttributes struct
 ///
-struct afLightAttributes:
-        public afTaxonomyAttributes,
-        public afHierarchyAttributes,
-        public afKinematicAttributes
+struct afLightAttributes
 {
 public:
     afLightAttributes(){}
@@ -387,6 +389,10 @@ public:
     cVector3d m_direction;
 
     afShadowQualityType m_shadowQuality;
+
+    afIdentificationAttributes m_identificationAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
+    afKinematicAttributes m_kinematicAttribs;
 };
 
 
@@ -394,11 +400,7 @@ public:
 ///
 /// \brief The afJointAttributes struct
 ///
-struct afJointAttributes:
-        public afTaxonomyAttributes,
-        public afCommunicationAttributes,
-        public afJointControllerAttributes,
-        public afHierarchyAttributes
+struct afJointAttributes
 {
 
 public:
@@ -420,23 +422,20 @@ public:
     float m_damping;
     float m_stiffness;
     afJointType m_jointType;
-    afJointControllerAttributes m_controllerAttribs;
     bool m_ignoreInterCollision;
+
+    afIdentificationAttributes m_identificationAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afJointControllerAttributes m_controllerAttribs;
 };
 
 
 ///
 /// \brief The afRigidBodyAttributes struct
 ///
-struct afRigidBodyAttributes:
-        public afTaxonomyAttributes,
-        public afCommunicationAttributes,
-        public afCollisionAttributes,
-        public afCartesianControllerAttributes,
-        public afInertialAttributes,
-        public afKinematicAttributes,
-        public afVisualAttributes,
-        public afShaderAttributes
+struct afRigidBodyAttributes
 {
 public:
     afRigidBodyAttributes(){}
@@ -444,19 +443,21 @@ public:
     bool m_publishChildrenNames;
     bool m_publishJointNames;
     bool m_publishJointPositions;
+
+    afIdentificationAttributes m_identificationAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afCollisionAttributes m_collisionAttribs;
+    afCartesianControllerAttributes m_controllerAttribs;
+    afInertialAttributes m_inertialAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afVisualAttributes m_visualAttribs;
+    afShaderAttributes m_shaderAttribs;
 };
 
 ///
 /// \brief The afSoftBodyAttributes struct
 ///
-struct afSoftBodyAttributes:
-        public afTaxonomyAttributes,
-        public afCommunicationAttributes,
-        public afCollisionAttributes,
-        public afCartesianControllerAttributes,
-        public afInertialAttributes,
-        public afKinematicAttributes,
-        public afVisualAttributes
+struct afSoftBodyAttributes
 {
 public:
     afSoftBodyAttributes(){}
@@ -493,31 +494,36 @@ public:
     uint m_clusters;
     std::vector<uint> m_fixedNodes;
 
+    afIdentificationAttributes m_identificationAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afCollisionAttributes m_collisionAttribs;
+    afCartesianControllerAttributes m_controllerAttribs;
+    afInertialAttributes m_inertialAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afVisualAttributes m_visualAttribs;
+    afShaderAttributes m_shaderAttribs;
 };
 
 ///
 /// \brief The afVehicleAttributes struct
 ///
-struct afVehicleAttributes:
-        public afTaxonomyAttributes,
-        public afVisualAttributes
+struct afVehicleAttributes
 {
 public:
     afVehicleAttributes(){}
 
-
-
+    afIdentificationAttributes m_identificationAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afInertialAttributes m_inertialAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afVisualAttributes m_visualAttribs;
 };
 
 
 ///
 /// \brief The afSensorAttributes struct
 ///
-struct afSensorAttributes:
-        public afTaxonomyAttributes,
-        public afCommunicationAttributes,
-        public afKinematicAttributes,
-        public afHierarchyAttributes
+struct afSensorAttributes
 {
 public:
     afSensorAttributes(){}
@@ -529,6 +535,11 @@ public:
     float m_range;
 
     afSensorType m_sensorType;
+
+    afIdentificationAttributes m_identificationAttribs;
+    afCommunicationAttributes m_communicationAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
 };
 
 
@@ -567,7 +578,7 @@ public:
 ///
 /// \brief The afMultiBodyAttributes struct
 ///
-struct afMultiBodyAttributes: public afTaxonomyAttributes{
+struct afMultiBodyAttributes{
 public:
     afMultiBodyAttributes(){}
 
@@ -582,6 +593,8 @@ public:
     std::vector <afActuatorAttributes> m_actuatorAttribs;
 
     bool m_ignoreInterCollision;
+
+    afIdentificationAttributes m_identificationAttribs;
 };
 
 
@@ -610,7 +623,6 @@ public:
     double m_max_brake_power = 0.0;
 
     afWheelRepresentationType m_wheelRepresentationType;
-
 };
 
 

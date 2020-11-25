@@ -372,31 +372,31 @@ std::vector<double> afConfigHandler::getColorRGBA(std::string a_color_name){
 /// \param a_max_freq
 /// \param time_out
 ///
-void afComm::afCreateCommInstance(afCommType type, std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
+void afComm::afCreateCommInstance(afObjectType type, std::string a_name, std::string a_namespace, int a_min_freq, int a_max_freq, double time_out){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     switch (type) {
-    case afCommType::ACTUATOR:
+    case afObjectType::ACTUATOR:
         m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::CAMERA:
+    case afObjectType::CAMERA:
         m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::LIGHT:
+    case afObjectType::LIGHT:
         m_afLightCommPtr.reset(new ambf_comm::Light(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::OBJECT:
+    case afObjectType::OBJECT:
         m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::RIGID_BODY:
+    case afObjectType::RIGID_BODY:
         m_afRigidBodyCommPtr.reset(new ambf_comm::RigidBody(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::SENSOR:
+    case afObjectType::SENSOR:
         m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::VEHICLE:
+    case afObjectType::VEHICLE:
         m_afVehicleCommPtr.reset(new ambf_comm::Vehicle(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
-    case afCommType::WORLD:
+    case afObjectType::WORLD:
         m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
     default:
@@ -1184,10 +1184,10 @@ void afInertialObject::estimateInertia()
 afSurfaceAttributes afInertialObject::getSurfaceProperties()
 {
     afSurfaceAttributes props;
-    props.m_linear_damping = m_bulletRigidBody->getLinearDamping();
-    props.m_angular_damping = m_bulletRigidBody->getAngularDamping();
-    props.m_static_friction = m_bulletRigidBody->getFriction();
-    props.m_rolling_friction = m_bulletRigidBody->getRollingFriction();
+    props.m_linearDamping = m_bulletRigidBody->getLinearDamping();
+    props.m_angularDamping = m_bulletRigidBody->getAngularDamping();
+    props.m_staticFriction = m_bulletRigidBody->getFriction();
+    props.m_rollingFriction = m_bulletRigidBody->getRollingFriction();
     props.m_restitution = m_bulletRigidBody->getRestitution();
 
     return props;
@@ -1211,9 +1211,9 @@ void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
 
 void afInertialObject::setSurfaceProperties(const afSurfaceAttributes &a_props)
 {
-    m_bulletRigidBody->setFriction(a_props.m_static_friction);
-    m_bulletRigidBody->setRollingFriction(a_props.m_rolling_friction);
-    m_bulletRigidBody->setDamping(a_props.m_linear_damping, a_props.m_angular_damping);
+    m_bulletRigidBody->setFriction(a_props.m_staticFriction);
+    m_bulletRigidBody->setRollingFriction(a_props.m_rollingFriction);
+    m_bulletRigidBody->setDamping(a_props.m_linearDamping, a_props.m_angularDamping);
     m_bulletRigidBody->setRestitution(a_props.m_restitution);
 }
 
@@ -2030,16 +2030,16 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     afSurfaceAttributes surfaceProps;
 
     if (bodyLinDamping.IsDefined()){
-        surfaceProps.m_linear_damping = bodyLinDamping.as<double>();
+        surfaceProps.m_linearDamping = bodyLinDamping.as<double>();
     }
     if (bodyAngDamping.IsDefined()){
-        surfaceProps.m_angular_damping = bodyAngDamping.as<double>();
+        surfaceProps.m_angularDamping = bodyAngDamping.as<double>();
     }
     if (bodyStaticFriction.IsDefined()){
-        surfaceProps.m_static_friction = bodyStaticFriction.as<double>();
+        surfaceProps.m_staticFriction = bodyStaticFriction.as<double>();
     }
     if (bodyRollingFriction.IsDefined()){
-        surfaceProps.m_rolling_friction = bodyRollingFriction.as<double>();
+        surfaceProps.m_rollingFriction = bodyRollingFriction.as<double>();
     }
     if (bodyRestitution.IsDefined()){
         surfaceProps.m_restitution = bodyRestitution.as<double>();
@@ -5372,7 +5372,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<std::string>());
     }
 
-    afCreateCommInstance(afCommType::WORLD,
+    afCreateCommInstance(afObjectType::WORLD,
                          m_name,
                          resolveGlobalNamespace(m_namespace),
                          50,
@@ -5484,7 +5484,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             YAML::Node lightNode = worldNode[light_name];
             if (lightPtr->loadLight(&lightNode, light_name, this)){
                 addAFLight(lightPtr, light_name);
-                lightPtr->afCreateCommInstance(afCommType::LIGHT,
+                lightPtr->afCreateCommInstance(afObjectType::LIGHT,
                                                lightPtr->m_name,
                                                resolveGlobalNamespace(lightPtr->getNamespace()),
                                                lightPtr->getMinPublishFrequency(),
@@ -5498,7 +5498,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createDefaultLight()){
             addAFLight(lightPtr, "default_light");
-            lightPtr->afCreateCommInstance(afCommType::LIGHT,
+            lightPtr->afCreateCommInstance(afObjectType::LIGHT,
                                            lightPtr->m_name,
                                            resolveGlobalNamespace(lightPtr->getNamespace()),
                                            lightPtr->getMinPublishFrequency(),
@@ -5514,7 +5514,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
                 YAML::Node cameraNode = worldNode[camera_name];
                 if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
                     addAFCamera(cameraPtr, camera_name);
-                    cameraPtr->afCreateCommInstance(afCommType::CAMERA,
+                    cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
                                                     cameraPtr->m_name,
                                                     resolveGlobalNamespace(cameraPtr->getNamespace()),
                                                     cameraPtr->getMinPublishFrequency(),
@@ -5529,7 +5529,7 @@ bool afWorld::loadWorld(std::string a_world_config, bool showGUI){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createDefaultCamera()){
                 addAFCamera(cameraPtr, "default_camera");
-                cameraPtr->afCreateCommInstance(afCommType::CAMERA,
+                cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
                                                 cameraPtr->m_name,
                                                 resolveGlobalNamespace(cameraPtr->getNamespace()),
                                                 cameraPtr->getMinPublishFrequency(),
@@ -7789,7 +7789,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                 else{
                     // Only create a comm instance if the body is not passive
                     if (rBodyPtr->isPassive() == false){
-                        rBodyPtr->afCreateCommInstance(afCommType::RIGID_BODY,
+                        rBodyPtr->afCreateCommInstance(afObjectType::RIGID_BODY,
                                                        rBodyPtr->m_name + remap_str,
                                                        m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
                                                        rBodyPtr->getMinPublishFrequency(),
@@ -7841,7 +7841,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                     m_afWorld->addAFSensor(sensorPtr, m_namespace + sensor_name + remap_str);
 //                    if (enable_comm){
                         std::cerr << "LOADING SENSOR COMM \n";
-                        sensorPtr->afCreateCommInstance(afCommType::SENSOR,
+                        sensorPtr->afCreateCommInstance(afObjectType::SENSOR,
                                                         sensorPtr->m_name + remap_str,
                                                         m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
                                                         sensorPtr->getMinPublishFrequency(),
@@ -7881,7 +7881,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
                     m_afWorld->addAFActuator(actuatorPtr, m_namespace + actuator_name + remap_str);
 //                    if (enable_comm){
                         std::cerr << "LOADING ACTUATOR COMM \n";
-                        actuatorPtr->afCreateCommInstance(afCommType::ACTUATOR,
+                        actuatorPtr->afCreateCommInstance(afObjectType::ACTUATOR,
                                                         actuatorPtr->m_name + remap_str,
                                                         m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
                                                         actuatorPtr->getMinPublishFrequency(),
@@ -7932,7 +7932,7 @@ bool afMultiBody::loadMultiBody(std::string a_adf_filepath, bool enable_comm){
             m_afVehicleMapLocal[vehiclePtr->getNamespace() + veh_name] = vehiclePtr;
             if (enable_comm){
 
-                vehiclePtr->afCreateCommInstance(afCommType::VEHICLE,
+                vehiclePtr->afCreateCommInstance(afObjectType::VEHICLE,
                                                  vehiclePtr->m_name + remap_str,
                                                  m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
                                                  vehiclePtr->getMinPublishFrequency(),

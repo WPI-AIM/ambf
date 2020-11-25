@@ -50,12 +50,33 @@
 
 using namespace ambf;
 
+namespace adf_loader_1_0{
 
-class ADFUtils{
+class ADFUtils: public ADFUtilsBase{
 public:
-    static bool getMatrialFromNode(YAML::Node* a_node, cMaterial* mat);
+    virtual bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs);
 
-    static bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs);
+    virtual bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs);
+
+    virtual bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs);
+
+    virtual bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs);
+
+    virtual bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs);
+
+    virtual bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs);
+
+    virtual bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs);
+
+    virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs);
+
+    virtual bool getMatrialFromNode(YAML::Node* a_node, cMaterial* mat);
+
+    virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs);
+
+    virtual bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs);
+
+    virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
 
     static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
 
@@ -137,4 +158,5 @@ public:
 public:
 
 };
+}
 #endif
