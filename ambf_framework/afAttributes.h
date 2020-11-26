@@ -57,6 +57,18 @@ using namespace chai3d;
 namespace ambf {
 
 ///
+/// \brief The afKinematicAttributes struct
+///
+struct afKinematicAttributes{
+public:
+    afKinematicAttributes(){}
+
+    cTransform m_location;
+    double m_scale;
+};
+
+
+///
 /// \brief The afPrimitiveShapeAttributes struct
 ///
 struct afPrimitiveShapeAttributes{
@@ -90,15 +102,15 @@ public:
 
     inline void setAxisType(afAxisType axisType){m_axisType = axisType;}
 
-    void setScale(double a_scale);
+    void setShapeScale(double a_scale){m_shapeScale = a_scale;}
 
-    inline cVector3d getDimensions() const {return m_dimensions * m_scale;}
+    inline cVector3d getDimensions() const {return m_dimensions * m_shapeScale;}
 
-    inline double getRadius() const {return m_radius * m_scale;}
+    inline double getRadius() const {return m_radius * m_shapeScale;}
 
-    inline double getHeight() const {return m_height * m_scale;}
+    inline double getHeight() const {return m_height * m_shapeScale;}
 
-    inline double getPlaneConstant() const {return m_planeConstant * m_scale;}
+    inline double getPlaneConstant() const {return m_planeConstant * m_shapeScale;}
 
     inline cVector3d getPlaneNormal() const {return m_planeNormal;}
 
@@ -130,7 +142,8 @@ public:
 
     cMatrix3d m_rotOffset;
 
-    double m_scale = 1.0;
+private:
+    double m_shapeScale = 1.0;
 };
 
 
@@ -172,7 +185,6 @@ public:
     afCollisionAttributes(){}
 
     std::string m_meshName;
-    double m_scale;
     boost::filesystem::path m_meshFilePath;
     double m_margin;
     afGeometryType m_geometryType;
@@ -277,24 +289,12 @@ public:
 
 
 ///
-/// \brief The afKinematicAttributes struct
-///
-struct afKinematicAttributes{
-public:
-    afKinematicAttributes(){}
-
-    cTransform m_location;
-};
-
-
-///
 /// \brief The afVisualAttributes struct
 ///
 struct afVisualAttributes{
     afVisualAttributes(){}
 
     std::string m_meshName;
-    double m_scale;
     boost::filesystem::path m_meshFilePath;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
@@ -423,11 +423,11 @@ public:
     float m_stiffness;
     afJointType m_jointType;
     bool m_ignoreInterCollision;
+    double m_equilibriumPoint;
 
     afIdentificationAttributes m_identificationAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
     afCommunicationAttributes m_communicationAttribs;
-    afKinematicAttributes m_kinematicAttribs;
     afJointControllerAttributes m_controllerAttribs;
 };
 
@@ -452,6 +452,7 @@ public:
     afKinematicAttributes m_kinematicAttribs;
     afVisualAttributes m_visualAttribs;
     afShaderAttributes m_shaderAttribs;
+    afSurfaceAttributes m_surfaceAttribs;
 };
 
 ///
@@ -463,7 +464,7 @@ public:
     afSoftBodyAttributes(){}
 
     float m_kLST;
-    float mkAST;
+    float m_kAST;
     float m_kVST;
     float m_kVCF;
     float m_kDP;
@@ -492,6 +493,7 @@ public:
     uint m_flags;
     uint m_bendingConstraint;
     uint m_clusters;
+    bool m_randomizeConstraints;
     std::vector<uint> m_fixedNodes;
 
     afIdentificationAttributes m_identificationAttribs;
@@ -515,7 +517,6 @@ public:
     afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afInertialAttributes m_inertialAttribs;
-    afKinematicAttributes m_kinematicAttribs;
     afVisualAttributes m_visualAttribs;
 };
 

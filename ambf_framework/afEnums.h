@@ -119,7 +119,8 @@ enum class afJointType{
     LINEAR_SPRING = 2,
     TORSION_SPRING = 3,
     P2P = 4,
-    FIXED = 5
+    FIXED = 5,
+    INVALID = 6
 };
 
 

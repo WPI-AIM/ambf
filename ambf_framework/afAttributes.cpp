@@ -151,12 +151,3 @@ void afPrimitiveShapeAttributes::setRotOffset(double roll, double pitch, double 
     m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
 }
 
-
-///
-/// \brief afPrimitiveGeometry::setScale
-/// \param a_scale
-///
-void afPrimitiveShapeAttributes::setScale(double a_scale)
-{
-    m_scale = a_scale;
-}

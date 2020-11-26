@@ -1812,7 +1812,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         afPrimitiveShapeAttributes shapeAttribs;
         shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
         shapeAttribs.copyPrimitiveShapeData(&bodyGeometry);
-        shapeAttribs.setScale(m_scale);
+        shapeAttribs.setShapeScale(m_scale);
         cMesh* tempMesh = afUtils::createVisualShape(shapeAttribs);
         m_visualMesh->m_meshes->push_back(tempMesh);
     }
@@ -1829,7 +1829,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             shapeAttribs.setShapeType(afUtils::getShapeTypeFromString(visual_shape_str));
             shapeAttribs.copyPrimitiveShapeData(&bodyGeometry);
             shapeAttribs.copyShapeOffsetData(&shapeOffset);
-            shapeAttribs.setScale(m_scale);
+            shapeAttribs.setShapeScale(m_scale);
             cMesh* tempMesh = afUtils::createVisualShape(shapeAttribs);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
@@ -1928,7 +1928,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
             // This is to take care of legacy ADF where the shape offset was not set.
             T_off = getInertialOffsetTransform();
         }
-        shapeAttribs.setScale(m_scale);
+        shapeAttribs.setShapeScale(m_scale);
         btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(&shapeAttribs);
 
         // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
@@ -1962,7 +1962,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 T_off.setIdentity();
             }
 
-            shapeAttribs.setScale(m_scale);
+            shapeAttribs.setShapeScale(m_scale);
             btCollisionShape* singleCollisionShape = afUtils::createCollisionShape(shapeAttribs);
 
             // Here again, we consider both the inertial offset transform and the
@@ -3680,6 +3680,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_spring->setLimit(_axisNumber, _low, _high);
             m_spring->enableSpring(_axisNumber, true);
         }
+
+        ROS_INFO
 
         if (jointNode["equiblirium point"].IsDefined()){
             double _equiblirium = jointNode["equiblirium point"].as<double>();

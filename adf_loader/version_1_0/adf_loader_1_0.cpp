@@ -172,6 +172,7 @@ bool ADFUtils::getMatrialFromNode(YAML::Node *a_node, cMaterial* m)
     return true;
 }
 
+
 bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *attribs)
 {
     YAML::Node& node = *a_node;
@@ -204,16 +205,11 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     YAML::Node shapeNode = node["shape"];
     YAML::Node compoundShapeNode = node["compound shape"];
     YAML::Node geometryNode = node["geometry"];
-    YAML::Node scaleNode = node["scale"];
     YAML::Node meshPathHRNode = node["high resolution path"];
 
     bool valid = false;
 
     std::string shape_str;
-
-    if(scaleNode.IsDefined()){
-        attribs->m_scale = scaleNode.as<double>();
-    }
 
     if (shapeNode.IsDefined()){
         attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
@@ -221,7 +217,6 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
         afPrimitiveShapeAttributes shapeAttribs;
         shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
         ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
-        shapeAttribs.setScale(attribs->m_scale);
         attribs->m_primitiveShapes.push_back(shapeAttribs);
     }
     else if (compoundShapeNode.IsDefined()){
@@ -235,7 +230,6 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
             shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
             ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&shapeOffset, &shapeAttribs);
-            shapeAttribs.setScale(attribs->m_scale);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
         }
     }
@@ -301,7 +295,10 @@ bool ADFUtils::getSurfaceAttribsFromNode(YAML::Node *a_node, afSurfaceAttributes
 ///
 bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianControllerAttributes* attribs)
 {
-    YAML::Node& controllerNode = *a_node;
+    YAML::Node& node = *a_node;
+
+    YAML::Node controllerNode = node["controller"];
+
     if(controllerNode.IsDefined()){
         double P, I, D;
         // Check if the linear controller is defined
@@ -365,16 +362,13 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
 {
     YAML::Node& node = *a_node;
 
-    YAML::Node scaleNode = node["scale"];
     YAML::Node collisionMarginNode = node["collision margin"];
     YAML::Node collisionGroupsNode = node["collision groups"];
 
     YAML::Node collisionMeshNode = node["collision mesh"];
-
     YAML::Node collisionShapeNode = node["collision shape"];
     YAML::Node collisionOffsetNode = node["collision offset"];
     YAML::Node collisionGeometryNode = node["collision geometry"];
-
     YAML::Node compoundCollisionShapeNode = node["compound collision shape"];
 
     YAML::Node meshPathHRNode = node["high resolution path"];
@@ -383,10 +377,6 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
 
     bool valid = true;
     std::string shape_str;
-
-    if(scaleNode.IsDefined()){
-        attribs->m_scale = scaleNode.as<double>();
-    }
 
     if (collisionMarginNode.IsDefined()){
         attribs->m_margin = collisionMarginNode.as<double>();
@@ -414,7 +404,6 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
         ADFUtils::copyPrimitiveShapeData(&collisionGeometryNode, &shapeAttribs);
         ADFUtils::copyShapeOffsetData(&collisionOffsetNode, &shapeAttribs);
-        shapeAttribs.setScale(attribs->m_scale);
         attribs->m_primitiveShapes.push_back(shapeAttribs);
     }
     else if(compoundCollisionShapeNode.IsDefined()){
@@ -428,7 +417,6 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
             shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
             ADFUtils::copyPrimitiveShapeData(&_collisionGeometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&_shapeOffsetNode, &shapeAttribs);
-            shapeAttribs.setScale(attribs->m_scale);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
         }
     }
@@ -481,7 +469,30 @@ bool ADFUtils::getCommunicationAttribsFromNode(YAML::Node *a_node, afCommunicati
 
 bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttributes *attribs)
 {
+    YAML::Node &node = &a_node;
 
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node childNameNode = node["child"];
+
+    bool valid = true;
+
+    if (childNameNode.IsDefined()){
+        attribs->m_childName = childNameNode.as<std::string>();
+        valid = true;
+    }
+    else{
+        valid = false;
+    }
+
+    if (!parentNameNode.IsDefined()){
+        attribs->m_parentName = parentNameNode.as<std::string>();
+        valid = true;
+    }
+    else{
+        valid = false;
+    }
+
+    return valid;
 }
 
 bool ADFUtils::getIdentificationAttribsFromNode(YAML::Node *a_node, afIdentificationAttributes *attribs)
@@ -571,8 +582,13 @@ bool ADFUtils::getKinematicAttribsFromNode(YAML::Node *a_node, afKinematicAttrib
 
     YAML::Node posNode = node["location"]["position"];
     YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node scaleNode = node["scale"];
 
     bool valid = true;
+
+    if(scaleNode.IsDefined()){
+        attribs->m_scale = scaleNode.as<double>();
+    }
 
     if(posNode.IsDefined()){
         cVector3d pos = ADFUtils::toXYZ<cVector3d>(&posNode);
@@ -760,325 +776,84 @@ bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_n
 
 }
 
-bool ADFLoader_1_0::loadRigidBody(YAML::Node *rb_node, ambf::afRigidBodyAttributes *a_rb_attribs)
+bool ADFLoader_1_0::loadRigidBody(YAML::Node *a_node, ambf::afRigidBodyAttributes *attribs)
 {
-    YAML::Node& rbNode = *rb_node;
-    if (rbNode.IsNull()){
-        std::cerr << "ERROR: RIGID BODY " << rbNode << " NODE IS NULL\n";
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: RIGID BODY " << node << " NODE IS NULL\n";
         return false;
     }
 
-    if (a_rb_attribs == nullptr){
+    if (attribs == nullptr){
         std::cerr << "ERROR: RIGID BODY ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
     // Declare all the yaml parameters that we want to look for
-    YAML::Node nameNode = rbNode["name"];
-    YAML::Node namespaceNode = rbNode["namespace"];
-    YAML::Node meshPathHRNode = rbNode["high resolution path"];
-    YAML::Node meshPathLRNode = rbNode["low resolution path"];
-    YAML::Node posNode = rbNode["location"]["position"];
-    YAML::Node rotNode = rbNode["location"]["orientation"];
-    YAML::Node scaleNode = rbNode["scale"];
-    YAML::Node massNode = rbNode["mass"];
-    YAML::Node inertiaNode = rbNode["inertia"];
-    YAML::Node meshNode = rbNode["mesh"];
-    YAML::Node shapeNode = rbNode["shape"];
-    YAML::Node compoundShapeNode = rbNode["compound shape"];
-    YAML::Node geometryNode = rbNode["geometry"];
-    YAML::Node collisionMarginNode = rbNode["collision margin"];
-    YAML::Node collisionMeshNode = rbNode["collision mesh"];
-    YAML::Node collisionShapeNode = rbNode["collision shape"];
-    YAML::Node collisionOffsetNode = rbNode["collision offset"];
-    YAML::Node collisionGeometryNode = rbNode["collision geometry"];
-    YAML::Node compoundCollisionShapeNode = rbNode["compound collision shape"];
-    YAML::Node collisionGroupsNode = rbNode["collision groups"];
-    YAML::Node inertialOffsetPosNode = rbNode["inertial offset"]["position"];
-    YAML::Node inertialOffsetRotNode = rbNode["inertial offset"]["orientation"];
-    YAML::Node controllerNode = rbNode["controller"];
-    YAML::Node linDampingNode = rbNode["damping"]["linear"];
-    YAML::Node angDampingNode = rbNode["damping"]["angular"];
-    YAML::Node staticFrictionNode = rbNode["friction"]["static"];
-    YAML::Node rollingFrictionNode = rbNode["friction"]["rolling"];
-    YAML::Node restitutionNode = rbNode["restitution"];
-    YAML::Node publishChildrenNamesNode = rbNode["publish children names"];
-    YAML::Node publishJointNamesNode = rbNode["publish joint names"];
-    YAML::Node publishJointPositionsNode = rbNode["publish joint positions"];
-    YAML::Node publishFrequencyNode = rbNode["publish frequency"];
-    YAML::Node passiveNode = rbNode["passive"];
-    YAML::Node shadersNode = rbNode["shaders"];
+    // IDENTIFICATION
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    // KINEMATICS
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node scaleNode = node["scale"];
+    // INERTIAL
+    YAML::Node massNode = node["mass"];
+    YAML::Node inertiaNode = node["inertia"];
+    YAML::Node inertialOffsetPosNode = node["inertial offset"]["position"];
+    YAML::Node inertialOffsetRotNode = node["inertial offset"]["orientation"];
+    // VISUAL
+    YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node meshPathLRNode = node["low resolution path"];
+    YAML::Node meshNode = node["mesh"];
+    YAML::Node shapeNode = node["shape"];
+    YAML::Node compoundShapeNode = node["compound shape"];
+    YAML::Node geometryNode = node["geometry"];
+    YAML::Node shadersNode = node["shaders"];
+    // COLLISION
+    YAML::Node collisionMarginNode = node["collision margin"];
+    YAML::Node collisionMeshNode = node["collision mesh"];
+    YAML::Node collisionShapeNode = node["collision shape"];
+    YAML::Node collisionOffsetNode = node["collision offset"];
+    YAML::Node collisionGeometryNode = node["collision geometry"];
+    YAML::Node compoundCollisionShapeNode = node["compound collision shape"];
+    YAML::Node collisionGroupsNode = node["collision groups"];
+    // CONTROLLERS
+    YAML::Node controllerNode = node["controller"];
+    // SURFACE PROPS
+    YAML::Node linDampingNode = node["damping"]["linear"];
+    YAML::Node angDampingNode = node["damping"]["angular"];
+    YAML::Node staticFrictionNode = node["friction"]["static"];
+    YAML::Node rollingFrictionNode = node["friction"]["rolling"];
+    YAML::Node restitutionNode = node["restitution"];
+    // COMMUNICATION
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+    YAML::Node passiveNode = node["passive"];
+    // Rigid Body Specific
+    YAML::Node publishChildrenNamesNode = node["publish children names"];
+    YAML::Node publishJointNamesNode = node["publish joint names"];
+    YAML::Node publishJointPositionsNode = node["publish joint positions"];
 
+    ADFUtils adfUtils;
 
-    if(nameNode.IsDefined()){
-        std::string name = nameNode.as<std::string>();
-        name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
-        a_rb_attribs>m_name = name;
-    }
-
-    if (namespaceNode.IsDefined()){
-        a_rb_attribs->m_namespace = namespaceNode.as<std::string>();
-    }
-
-    a_rb_attribs->m_visualAttribs.m_geometryType= afGeometryType::INVALID;
-    a_rb_attribs->m_collisionAttribs.m_geometryType = afGeometryType::INVALID;
-
-    std::string visual_shape_str;
-    std::string collision_shape_str;
-
-    if (collisionShapeNode.IsDefined()){
-        a_rb_attribs->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
-        collision_shape_str = collisionShapeNode.as<std::string>();
-    }
-    else if (compoundCollisionShapeNode.IsDefined()){
-        a_rb_attribs->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
-    }
-
-    if (shapeNode.IsDefined()){
-        a_rb_attribs->m_visualGeometryType = afGeometryType::SINGLE_SHAPE;
-        visual_shape_str = shapeNode.as<std::string>();
-        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
-            collision_shape_str = visual_shape_str;
-            a_rb_attribs->m_collisionGeometryType = afGeometryType::SINGLE_SHAPE;
-            collisionGeometryNode = geometryNode;
-            collisionShapeNode = shapeNode;
-        }
-    }
-    else if (compoundShapeNode.IsDefined()){
-        a_rb_attribs->m_visualGeometryType = afGeometryType::COMPOUND_SHAPE;
-        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
-            a_rb_attribs->m_collisionGeometryType = afGeometryType::COMPOUND_SHAPE;
-            compoundCollisionShapeNode = compoundShapeNode;
-        }
-    }
-    else if(meshNode.IsDefined()){
-        a_rb_attribs->m_visualMeshName= meshNode.as<std::string>();
-        if (!a_rb_attribs->m_visualMeshName.empty()){
-            // Each ridig body can have a seperate path for its low and high res meshes
-            // Incase they are defined, we use those paths and if they are not, we use
-            // the paths for the whole file
-            if (meshPathHRNode.IsDefined()){
-                a_rb_attribs->m_visualMeshFilePath = meshPathHRNode.as<std::string>() + a_rb_attribs->m_visualMeshName;
-            }
-            a_rb_attribs->m_visualGeometryType = afGeometryType::MESH;
-        }
-
-        // Only check for collision mesh definition if visual mesh is defined
-        if (a_rb_attribs->m_collisionGeometryType == afGeometryType::INVALID){
-            if(collisionMeshNode.IsDefined()){
-                a_rb_attribs->m_collisionMeshName = collisionMeshNode.as<std::string>();
-            }
-            else{
-                a_rb_attribs->m_collisionMeshName = a_rb_attribs->m_visualMeshName;
-            }
-
-            if (!a_rb_attribs->m_collisionMeshName.empty()){
-                if (meshPathLRNode.IsDefined()){
-                    a_rb_attribs->m_collisionMeshFilePath = meshPathLRNode.as<std::string>() + a_rb_attribs->m_collisionMeshName;
-                }
-                else{
-                    // If low res path is not defined, use the high res path to load the high-res mesh for collision
-                    a_rb_attribs->m_collisionMeshFilePath = a_rb_attribs->m_visualMeshFilePath / a_rb_attribs->m_collisionMeshName;
-                }
-                a_rb_attribs->m_collisionGeometryType = afGeometryType::MESH;
-            }
-        }
-    }
-
-    if(!massNode.IsDefined()){
-        std::cerr << "WARNING: Body "
-                  << a_rb_attribs->m_name
-                  << "'s mass is not defined, hence ignoring\n";
-        return false;
-    }
-    else if(massNode.as<double>() < 0.0){
-        std::cerr << "WARNING: Body "
-                  << a_rb_attribs->m_name
-                  << "'s mass is \"" << a_rb_attribs->m_mass << "\". Mass cannot be negative, ignoring\n";
-        return false;
-
-    }
-    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::INVALID && massNode.as<double>() > 0.0 && !inertiaNode.IsDefined()){
-        std::cerr << "WARNING: Body "
-                  << a_rb_attribs->m_name
-                  << "'s geometry is empty, mass > 0 and no intertia defined, hence ignoring\n";
-        return false;
-    }
-    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::INVALID  && massNode.as<double>() > 0.0 && inertiaNode.IsDefined()){
-        std::cerr << "INFO: Body "
-                  << a_rb_attribs->m_name
-                  << "'s mesh field is empty but mass and interia defined\n";
-    }
-
-    if(scaleNode.IsDefined()){
-        a_rb_attribs->m_scale = scaleNode.as<double>();
-    }
-
-    if (a_rb_attribs->m_visualGeometryType == afGeometryType::SINGLE_SHAPE){
-        afPrimitiveShapeAttributes shapeAttribs;
-        shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(visual_shape_str));
-        ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
-        shapeAttribs.setScale(a_rb_attribs->m_scale);
-        a_rb_attribs->m_visualPrimitiveShapes.push_back(shapeAttribs);
-    }
-
-    else if (a_rb_attribs->m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
-        // First of all, set the inertial offset to 0.
-        // Is this still necessary?
-        inertialOffsetPosNode = rbNode["inertial offset undef"];
-        for(uint shapeIdx = 0 ; shapeIdx < compoundShapeNode.size() ; shapeIdx++){
-            visual_shape_str = compoundShapeNode[shapeIdx]["shape"].as<std::string>();
-            geometryNode = compoundShapeNode[shapeIdx]["geometry"];
-            YAML::Node shapeOffset = compoundShapeNode[shapeIdx]["offset"];
-
-            afPrimitiveShapeAttributes shapeAttribs;
-            shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(visual_shape_str));
-            ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
-            ADFUtils::copyShapeOffsetData(&shapeOffset, &shapeAttribs);
-            shapeAttribs.setScale(a_rb_attribs->m_scale);
-            a_rb_attribs->m_visualPrimitiveShapes.push_back(shapeAttribs);
-        }
-    }
-
-    ADFUtils::getMatrialFromNode(&rbNode, &a_rb_attribs->m_material);
-
-    // Load any shader that have been defined
-    if (shadersNode.IsDefined()){
-        boost::filesystem::path shader_path = shadersNode["path"].as<std::string>();
-
-        a_rb_attribs->m_vtxShaderFilePath = shader_path / shadersNode["vertex"].as<std::string>();
-        a_rb_attribs->m_fragShaderFilePath = shader_path / shadersNode["fragment"].as<std::string>();
-
-        a_rb_attribs->m_shaderDefined = true;
-    }
-
-    // Load the inertial offset. If the body is a compound shape, the "inertial offset"
-    // will be ignored, as per collision shape "offset" will be used.
-
-    btTransform inertialOffsetTrans;
-    btVector3 inertialOffsetPos;
-    btQuaternion inertialOffsetRot;
-
-    inertialOffsetPos.setValue(0,0,0);
-    inertialOffsetRot.setEuler(0,0,0);
-
-    if(inertialOffsetPosNode.IsDefined()){
-        inertialOffsetPos = ADFUtils::toXYZ<btVector3>(&inertialOffsetPosNode);
-        inertialOffsetPos = a_rb_attribs->m_scale * inertialOffsetPos;
-        if(inertialOffsetRotNode.IsDefined()){
-            double r = inertialOffsetRotNode["r"].as<double>();
-            double p = inertialOffsetRotNode["p"].as<double>();
-            double y = inertialOffsetRotNode["y"].as<double>();
-            inertialOffsetRot.setEulerZYX(y, p, r);
-        }
-    }
-
-    inertialOffsetTrans.setOrigin(inertialOffsetPos);
-    inertialOffsetTrans.setRotation(inertialOffsetRot);
-    a_rb_attribs->m_inertialOffset = inertialOffsetTrans;
-
-    // Load Collision Margins
-    if (collisionMarginNode.IsDefined()){
-        a_rb_attribs->m_collisionMargin = collisionMarginNode.as<double>();
-    }
-
-    a_rb_attribs->m_mass = massNode.as<double>();
-
-    afCartesianControllerAttributes controllerAttribs;
-    ADFUtils::getCartControllerAttribsFromNode(&controllerNode, &controllerAttribs);
-
-    a_rb_attribs->P_lin = controllerAttribs.P_lin;
-    a_rb_attribs->I_lin = controllerAttribs.I_lin;
-    a_rb_attribs->D_lin = controllerAttribs.D_lin;
-    a_rb_attribs->P_ang = controllerAttribs.P_ang;
-    a_rb_attribs->I_ang = controllerAttribs.I_ang;
-    a_rb_attribs->D_ang = controllerAttribs.D_ang;
-    a_rb_attribs->m_positionOutputType = controllerAttribs.m_positionOutputType;
-    a_rb_attribs->m_orientationOutputType = controllerAttribs.m_orientationOutputType;
-
-
-   // Inertial origin in world
-    cTransform T_iINw;
-    T_iINw.identity();
-
-    if(posNode.IsDefined()){
-        T_iINw.setLocalPos(ADFUtils::toXYZ<cVector3d>(&posNode));
-    }
-
-    if(rotNode.IsDefined()){
-        double r = rotNode["r"].as<double>();
-        double p = rotNode["p"].as<double>();
-        double y = rotNode["y"].as<double>();
-        cMatrix3d rot;
-        rot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        T_iINw.setLocalRot(rot);
-    }
-
-    // Mesh Origin in World
-    cTransform T_mINw = T_iINw * afUtils::convertDataType<cTransform, btTransform>(a_rb_attribs->m_inertialOffset);
-
-    a_rb_attribs->m_location = T_mINw;
-
-    afSurfaceAttributes surfaceAttribs;
-
-    if (linDampingNode.IsDefined()){
-        surfaceAttribs.m_linearDamping = linDampingNode.as<double>();
-    }
-    if (angDampingNode.IsDefined()){
-        surfaceAttribs.m_angularDamping = angDampingNode.as<double>();
-    }
-    if (staticFrictionNode.IsDefined()){
-        surfaceAttribs.m_staticFriction = staticFrictionNode.as<double>();
-    }
-    if (rollingFrictionNode.IsDefined()){
-        surfaceAttribs.m_rollingFriction = rollingFrictionNode.as<double>();
-    }
-    if (restitutionNode.IsDefined()){
-        surfaceAttribs.m_restitution = restitutionNode.as<double>();
-    }
-
-    a_rb_attribs->m_surfaceAttribs = surfaceAttribs;
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
+    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+    adfUtils.getSurfaceAttribsFromNode(&node, &attribs->m_surfaceAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (publishChildrenNamesNode.IsDefined()){
-        a_rb_attribs->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
+        attribs->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
     }
 
     if (publishJointNamesNode.IsDefined()){
-        a_rb_attribs->m_publishJointNames = publishJointNamesNode.as<bool>();
+        attribs->m_publishJointNames = publishJointNamesNode.as<bool>();
     }
 
     if (publishJointPositionsNode.IsDefined()){
-        a_rb_attribs->m_publishJointPositions = publishJointPositionsNode.as<bool>();
+        attribs->m_publishJointPositions = publishJointPositionsNode.as<bool>();
     }
-
-    if (publishFrequencyNode.IsDefined()){
-        a_rb_attribs->m_minPublishFreq = publishFrequencyNode["low"].as<uint>();
-        a_rb_attribs->m_maxPublishFreq = publishFrequencyNode["high"].as<uint>();
-    }
-
-    // The collision groups are sorted by integer indices. A group consists of a set of
-    // afRigidBodies that collide with each other. The bodies in one group
-    // should not collide with bodies from another group. Moreover,
-    // a body can be a part of multiple groups to allow advanced collision behavior.
-
-    if (collisionGroupsNode.IsDefined()){
-        for (unsigned long gIdx = 0 ; gIdx < collisionGroupsNode.size() ; gIdx++){
-            int gNum = collisionGroupsNode[gIdx].as<int>();
-            // Sanity check for the group number
-            if (gNum >= 0 && gNum <= 999){
-                a_rb_attribs->m_collisionGroups.push_back(gNum);
-            }
-            else{
-                std::cerr << "WARNING: Body "
-                          << a_rb_attribs->m_name
-                          << "'s group number is \"" << gNum << "\" which should be between [0 - 999], ignoring\n";
-            }
-        }
-    }
-
-    if (passiveNode.IsDefined()){
-        a_rb_attribs->m_passive = passiveNode.as<bool>();
-    }
-
 
     return true;
 }
@@ -1099,33 +874,33 @@ bool ADFLoader_1_0::loadSoftBody(std::string sb_config_file, std::string node_na
     return loadSoftBody(&softBodyNode, attribs);
 }
 
-bool ADFLoader_1_0::loadSoftBody(YAML::Node *sb_node, afSoftBodyAttributes *attribs)
+bool ADFLoader_1_0::loadSoftBody(YAML::Node *a_node, afSoftBodyAttributes *attribs)
 {
-    YAML::Node& sbNode = *sb_node;
-    if (sbNode.IsNull()){
-        std::cerr << "ERROR: SOFT BODY'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: SOFT BODY'S YAML NODE IS NULL\n";
         return 0;
     }
     // Declare all the yaml parameters that we want to look for
-    YAML::Node nameNode = sbNode["name"];
-    YAML::Node meshNode = sbNode["mesh"];
-    YAML::Node collisionMarginNode = sbNode["collision margin"];
-    YAML::Node scaleNode = sbNode["scale"];
-    YAML::Node inertialOffsetPosNode = sbNode["inertial offset"]["position"];
-    YAML::Node inertialOffsetRotNode = sbNode["inertial offset"]["orientation"];
-    YAML::Node meshPathHRNode = sbNode["high resolution path"];
-    YAML::Node meshPathLRNode = sbNode["low resolution path"];
-    YAML::Node mameSpaceNode = sbNode["namespace"];
-    YAML::Node massNode = sbNode["mass"];
-    YAML::Node linGainNode = sbNode["linear gain"];
-    YAML::Node angGainNode = sbNode["angular gain"];
-    YAML::Node posNode = sbNode["location"]["position"];
-    YAML::Node rotNode = sbNode["location"]["orientation"];
-    YAML::Node colorNode = sbNode["color"];
-    YAML::Node colorRGBANode = sbNode["color rgba"];
-    YAML::Node colorComponentsNode = sbNode["color components"];
-    YAML::Node configDataNode = sbNode["config"];
-    YAML::Node randomizeConstraintsNode = sbNode["randomize constraints"];
+    YAML::Node nameNode = node["name"];
+    YAML::Node meshNode = node["mesh"];
+    YAML::Node collisionMarginNode = node["collision margin"];
+    YAML::Node scaleNode = node["scale"];
+    YAML::Node inertialOffsetPosNode = node["inertial offset"]["position"];
+    YAML::Node inertialOffsetRotNode = node["inertial offset"]["orientation"];
+    YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node meshPathLRNode = node["low resolution path"];
+    YAML::Node mameSpaceNode = node["namespace"];
+    YAML::Node massNode = node["mass"];
+    YAML::Node linGainNode = node["linear gain"];
+    YAML::Node angGainNode = node["angular gain"];
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node colorNode = node["color"];
+    YAML::Node colorRGBANode = node["color rgba"];
+    YAML::Node colorComponentsNode = node["color components"];
+
+    YAML::Node configDataNode = node["config"];
 
     YAML::Node cfg_kLSTNode = configDataNode["kLST"];
     YAML::Node cfg_kASTNode = configDataNode["kAST"];
@@ -1160,248 +935,535 @@ bool ADFLoader_1_0::loadSoftBody(YAML::Node *sb_node, afSoftBodyAttributes *attr
     YAML::Node cfg_clustersNode = configDataNode["clusters"];
     YAML::Node cfg_fixed_nodesNode = configDataNode["fixed nodes"];
 
-    if(nameNode.IsDefined()){
-        m_name = nameNode.as<std::string>();
-        m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
-    }
+    YAML::Node randomizeConstraintsNode = node["randomize constraints"];
 
-    if(meshNode.IsDefined())
-        m_mesh_name = meshNode.as<std::string>();
+    ADFUtils adfUtils;
 
-    if(scaleNode.IsDefined())
-        m_scale = scaleNode.as<double>();
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
+    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
-    if(inertialOffsetPosNode.IsDefined()){
-        btTransform trans;
-        btQuaternion quat;
-        btVector3 pos;
-        quat.setEulerZYX(0,0,0);
-        pos.setValue(0,0,0);
-        if(inertialOffsetRotNode.IsDefined()){
-            double r = inertialOffsetRotNode["r"].as<double>();
-            double p = inertialOffsetRotNode["p"].as<double>();
-            double y = inertialOffsetRotNode["y"].as<double>();
-            quat.setEulerZYX(y, p, r);
-        }
-        pos = toXYZ<btVector3>(&inertialOffsetPosNode);
-        trans.setRotation(quat);
-        trans.setOrigin(pos);
-        setInertialOffsetTransform(trans);
-    }
-
-    boost::filesystem::path high_res_filepath;
-    boost::filesystem::path low_res_filepath;
-    if (meshPathHRNode.IsDefined()){
-        high_res_filepath = meshPathHRNode.as<std::string>() + m_mesh_name;
-        if (high_res_filepath.is_relative()){
-            high_res_filepath =  mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
-        }
-    }
-    else{
-        high_res_filepath = mB->getHighResMeshesPath() + m_mesh_name;
-    }
-    if (meshPathLRNode.IsDefined()){
-        low_res_filepath = meshPathLRNode.as<std::string>() + m_mesh_name;
-        if (low_res_filepath.is_relative()){
-            low_res_filepath = mB->getMultiBodyPath() + '/' + low_res_filepath.c_str();
-        }
-    }
-    else{
-        low_res_filepath = mB->getLowResMeshesPath() + m_mesh_name;
-    }
-    double _collision_margin = 0.1;
-    if(collisionMarginNode.IsDefined()){
-        _collision_margin = collisionMarginNode.as<double>();
-    }
-
-    if (loadFromFile(high_res_filepath.c_str())){
-        scale(m_scale);
-    }
-    else{
-        // If we can't find the visual mesh, we can proceed with
-        // printing just a warning
-        std::cerr << "WARNING: Soft Body " << m_name
-                  << "'s mesh " << high_res_filepath << " not found\n";
-    }
-
-    if(m_lowResMesh.loadFromFile(low_res_filepath.c_str())){
-        buildContactTriangles(_collision_margin, &m_lowResMesh);
-        m_lowResMesh.scale(m_scale);
-    }
-    else{
-        // If we can't find the collision mesh, then we have a problem,
-        // stop loading this softbody and return with 0
-        std::cerr << "WARNING: Soft Body " << m_name
-                  << "'s mesh " << low_res_filepath << " not found\n";
-        return 0;
-    }
-
-    if(mameSpaceNode.IsDefined()){
-        m_namespace = afUtils::removeAdjacentBackSlashes(mameSpaceNode.as<std::string>());
-    }
-    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
-
-    if(massNode.IsDefined()){
-        m_mass = massNode.as<double>();
-        if(linGainNode.IsDefined()){
-            K_lin = linGainNode["P"].as<double>();
-            D_lin = linGainNode["D"].as<double>();
-            _lin_gains_computed = true;
-        }
-        if(angGainNode.IsDefined()){
-            K_ang = angGainNode["P"].as<double>();
-            D_ang = angGainNode["D"].as<double>();
-            _ang_gains_computed = true;
-        }
-    }
-
-    buildDynamicModel();
-
-    if(posNode.IsDefined()){
-        pos = toXYZ<cVector3d>(&posNode);
-        setLocalPos(pos);
-    }
-
-    if(rotNode.IsDefined()){
-        double r = rotNode["r"].as<double>();
-        double p = rotNode["p"].as<double>();
-        double y = rotNode["y"].as<double>();
-        rot.setExtrinsicEulerRotationRad(y,p,r,cEulerOrder::C_EULER_ORDER_XYZ);
-        setLocalRot(rot);
-    }
-
-    cMaterial _mat;
-    float _r, _g, _b, _a;
-    if(colorRGBANode.IsDefined()){
-        _r = colorRGBANode["r"].as<float>();
-        _g = colorRGBANode["g"].as<float>();
-        _b = colorRGBANode["b"].as<float>();
-        _a = colorRGBANode["a"].as<float>();
-        _mat.setColorf(_r, _g, _b, _a);
-        m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(colorRGBANode["a"].as<float>());
-    }
-    else if(colorComponentsNode.IsDefined()){
-        if (colorComponentsNode["diffuse"].IsDefined()){
-            _r = colorComponentsNode["diffuse"]["r"].as<float>();
-            _g = colorComponentsNode["diffuse"]["g"].as<float>();
-            _b = colorComponentsNode["diffuse"]["b"].as<float>();
-            _mat.m_diffuse.set(_r, _g, _b);
-        }
-        if (colorComponentsNode["ambient"].IsDefined()){
-            float _level = colorComponentsNode["ambient"]["level"].as<float>();
-            _r *= _level;
-            _g *= _level;
-            _b *= _level;
-            _mat.m_ambient.set(_r, _g, _b);
-        }
-        if (colorComponentsNode["specular"].IsDefined()){
-            _r = colorComponentsNode["specular"]["r"].as<float>();
-            _g = colorComponentsNode["specular"]["g"].as<float>();
-            _b = colorComponentsNode["specular"]["b"].as<float>();
-            _mat.m_specular.set(_r, _g, _b);
-        }
-        if (colorComponentsNode["emission"].IsDefined()){
-            _r = colorComponentsNode["emission"]["r"].as<float>();
-            _g = colorComponentsNode["emission"]["g"].as<float>();
-            _b = colorComponentsNode["emission"]["b"].as<float>();
-            _mat.m_emission.set(_r, _g, _b);
-        }
-
-        _a = colorComponentsNode["transparency"].as<float>();
-        _mat.setTransparencyLevel(_a);
-        m_gelMesh.setMaterial(_mat);
-        //        m_gelMesh.setTransparencyLevel(_a);
-    }
-    else if(colorNode.IsDefined()){
-        std::vector<double> rgba = m_afWorld->getColorRGBA(colorNode.as<std::string>());
-        _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-        m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(rgba[3]);
-    }
 
     if (configDataNode.IsNull()){
         printf("Warning, no soft body config properties defined");
     }
     else{
         if (cfg_kLSTNode.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kLST = cfg_kLSTNode.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kLST = cfg_kLSTNode.as<double>();
+            attribs->m_kLST = cfg_kLSTNode.as<float>();
         }
         if (cfg_kASTNode.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kAST = cfg_kASTNode.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kAST = cfg_kASTNode.as<double>();
+            attribs->m_kAST = cfg_kASTNode.as<float>();
         }
         if (cfg_kVSTNode.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kVST = cfg_kVSTNode.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kVST = cfg_kVSTNode.as<double>();
+            attribs->m_kVST = cfg_kVSTNode.as<float>();
         }
-        if (cfg_kVCFNode.IsDefined()) m_bulletSoftBody->m_cfg.kVCF = cfg_kVCFNode.as<double>();
-        if (cfg_kDPNode.IsDefined()) m_bulletSoftBody->m_cfg.kDP = cfg_kDPNode.as<double>();
-        if (cfg_kDGNode.IsDefined()) m_bulletSoftBody->m_cfg.kDG = cfg_kDGNode.as<double>();
-        if (cfg_kLFNode.IsDefined()) m_bulletSoftBody->m_cfg.kLF = cfg_kLFNode.as<double>();
-        if (cfg_kPRNode.IsDefined()) m_bulletSoftBody->m_cfg.kPR = cfg_kPRNode.as<double>();
-        if (cfg_kVCNode.IsDefined()) m_bulletSoftBody->m_cfg.kVC = cfg_kVCNode.as<double>();
-        if (cfg_kDFNode.IsDefined()) m_bulletSoftBody->m_cfg.kDF = cfg_kDFNode.as<double>();
+        if (cfg_kVCFNode.IsDefined()){
+            attribs->m_kVCF = cfg_kVCFNode.as<float>();
+        }
+        if (cfg_kDPNode.IsDefined()){
+            attribs->m_kDP = cfg_kDPNode.as<float>();
+        }
+        if (cfg_kDGNode.IsDefined()){
+            attribs->m_kDG = cfg_kDGNode.as<float>();
+        }
+        if (cfg_kLFNode.IsDefined()){
+            attribs->m_kLF = cfg_kLFNode.as<float>();
+        }
+        if (cfg_kPRNode.IsDefined()) {
+            attribs->m_kPR = cfg_kPRNode.as<float>();
+        }
+        if (cfg_kVCNode.IsDefined()) {
+            attribs->m_kVC = cfg_kVCNode.as<float>();
+        }
+        if (cfg_kDFNode.IsDefined()) {
+            attribs->m_kDF = cfg_kDFNode.as<float>();
+        }
         if (cfg_kMTNode.IsDefined()){
-            m_bulletSoftBody->m_cfg.kMT = cfg_kMTNode.as<double>();
-            m_bulletSoftBody->setPose(false, true);
+           attribs->m_kMT = cfg_kMTNode.as<float>();
         }
-        if (cfg_kCHRNode.IsDefined()) m_bulletSoftBody->m_cfg.kCHR = cfg_kCHRNode.as<double>();
-        if (cfg_kKHRNode.IsDefined()) m_bulletSoftBody->m_cfg.kKHR = cfg_kKHRNode.as<double>();
-        if (cfg_kSHRNode.IsDefined()) m_bulletSoftBody->m_cfg.kSHR = cfg_kSHRNode.as<double>();
-        if (cfg_kAHRNode.IsDefined()) m_bulletSoftBody->m_cfg.kAHR = cfg_kAHRNode.as<double>();
-        if (cfg_kSRHR_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSRHR_CL = cfg_kSRHR_CLNode.as<double>();
-        if (cfg_kSKHR_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSKHR_CL = cfg_kSKHR_CLNode.as<double>();
-        if (cfg_kSSHR_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSSHR_CL = cfg_kSSHR_CLNode.as<double>();
-        if (cfg_kSR_SPLT_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSR_SPLT_CL = cfg_kSR_SPLT_CLNode.as<double>();
-        if (cfg_kSK_SPLT_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSK_SPLT_CL = cfg_kSK_SPLT_CLNode.as<double>();
-        if (cfg_kSS_SPLT_CLNode.IsDefined()) m_bulletSoftBody->m_cfg.kSS_SPLT_CL = cfg_kSS_SPLT_CLNode.as<double>();
-        if (cfg_maxvolumeNode.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_maxvolumeNode.as<double>();
-        if (cfg_timescaleNode.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_timescaleNode.as<double>();
-        if (cfg_viterationsNode.IsDefined()) m_bulletSoftBody->m_cfg.viterations = cfg_viterationsNode.as<int>();
-        if (cfg_piterationsNode.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterationsNode.as<int>();
-        if (cfg_diterationsNode.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterationsNode.as<int>();
-        if (cfg_citerationsNode.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerationsNode.as<int>();
+        if (cfg_kCHRNode.IsDefined()) {
+            attribs->m_kCHR = cfg_kCHRNode.as<float>();
+        }
+        if (cfg_kKHRNode.IsDefined()) {
+           attribs->m_kKHR = cfg_kKHRNode.as<float>();
+        }
+        if (cfg_kSHRNode.IsDefined()) {
+           attribs->m_kSHR = cfg_kSHRNode.as<float>();
+        }
+        if (cfg_kAHRNode.IsDefined()) {
+           attribs->m_kAHR = cfg_kAHRNode.as<float>();
+        }
+        if (cfg_kSRHR_CLNode.IsDefined()) {
+            attribs->m_kSRHR_CL = cfg_kSRHR_CLNode.as<float>();
+        }
+        if (cfg_kSKHR_CLNode.IsDefined()) {
+            attribs->m_kSKHR_CL = cfg_kSKHR_CLNode.as<float>();
+        }
+        if (cfg_kSSHR_CLNode.IsDefined()) {
+            attribs->m_kSSHR_CL = cfg_kSSHR_CLNode.as<float>();
+        }
+        if (cfg_kSR_SPLT_CLNode.IsDefined()) {
+           attribs->m_kSR_SPLT_CL = cfg_kSR_SPLT_CLNode.as<float>();
+        }
+        if (cfg_kSK_SPLT_CLNode.IsDefined()) {
+            attribs->m_kSK_SPLT_CL = cfg_kSK_SPLT_CLNode.as<float>();
+        }
+        if (cfg_kSS_SPLT_CLNode.IsDefined()) {
+            attribs->m_kSS_SPLT_CL = cfg_kSS_SPLT_CLNode.as<float>();
+        }
+        if (cfg_maxvolumeNode.IsDefined()) {
+            attribs->m_maxVolume = cfg_maxvolumeNode.as<float>();
+        }
+        if (cfg_timescaleNode.IsDefined()) {
+            attribs->m_timeScale = cfg_timescaleNode.as<float>();
+        }
+        if (cfg_viterationsNode.IsDefined()) {
+           attribs->m_vIterations = cfg_viterationsNode.as<int>();
+        }
+        if (cfg_piterationsNode.IsDefined()) {
+           attribs->m_pIterations = cfg_piterationsNode.as<int>();
+        }
+        if (cfg_diterationsNode.IsDefined()) {
+           attribs->m_dIterations = cfg_diterationsNode.as<int>();
+        }
+        if (cfg_citerationsNode.IsDefined()) {
+            attribs->m_cIterations = cfg_citerationsNode.as<int>();
+        }
         if (cfg_flagsNode.IsDefined()){
-            m_bulletSoftBody->m_cfg.collisions = cfg_flagsNode.as<int>();
+            attribs->m_flags = cfg_flagsNode.as<int>();
         }
         if (cfg_bendingConstraintNode.IsDefined()){
-            int _bending = cfg_bendingConstraintNode.as<int>();
-            m_bulletSoftBody->generateBendingConstraints(_bending);
+            attribs->m_bendingConstraint = cfg_bendingConstraintNode.as<int>();
         }
         if (cfg_fixed_nodesNode.IsDefined()){
             for (uint i = 0 ; i < cfg_fixed_nodesNode.size() ; i++){
-                int nodeIdx = cfg_fixed_nodesNode[i].as<int>();
-                if (nodeIdx < m_bulletSoftBody->m_nodes.size()){
-                    m_bulletSoftBody->setMass(nodeIdx, 0);
-                }
+                attribs->m_fixedNodes.push_back(i);
             }
         }
         if(cfg_clustersNode.IsDefined()){
-            int num_clusters = cfg_clustersNode.as<int>();
-            m_bulletSoftBody->generateClusters(num_clusters);
+            attribs->m_clusters = cfg_clustersNode.as<int>();
         }
     }
 
-    if (randomizeConstraintsNode.IsDefined())
-        if (randomizeConstraintsNode.as<bool>() == true)
-            m_bulletSoftBody->randomizeConstraints();
+    if (randomizeConstraintsNode.IsDefined()){
+        attribs->m_randomizeConstraints = randomizeConstraintsNode.as<bool>();
+    }
 
-    m_afWorld->addChild(this);
     return true;
 }
 
 bool ADFLoader_1_0::loadJoint(std::string jnt_config_file, std::string node_name, ambf::afJointAttributes *attribs)
 {
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(jnt_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO JOINT CONFIG: " << jnt_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseJointNode = baseNode[node_name];
+    return loadJoint(&baseJointNode, attribs);
 
 }
 
-bool ADFLoader_1_0::loadJoint(YAML::Node *jnt_node, ambf::afJointAttributes *attribs)
+bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, ambf::afJointAttributes *attribs)
 {
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: JOINT'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node childNameNode = node["child"];
+    YAML::Node nameNode = node["name"];
+    YAML::Node parentPivotNode = node["parent pivot"];
+    YAML::Node childPivotNode = node["child pivot"];
+    YAML::Node parentAxisNode = node["parent axis"];
+    YAML::Node childAxisNode = node["child axis"];
+    YAML::Node originNode = node["origin"];
+    YAML::Node axisNode = node["axis"];
+    YAML::Node enableMotorNode = node["enable motor"];
+    YAML::Node enableFeedbackNode = node["enable feedback"];
+    YAML::Node maxMotorImpulseNode = node["max motor impulse"];
+    YAML::Node limitsNode = node["joint limits"];
+    YAML::Node erpNode = node["joint erp"];
+    YAML::Node cfmNode = node["joint cfm"];
+    YAML::Node offsetNode = node["offset"];
+    YAML::Node dampingNode = node["damping"];
+    YAML::Node stiffnessNode = node["stiffness"];
+    YAML::Node typeNode = node["type"];
+    YAML::Node controllerNode = node["controller"];
+    YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
+    YAML::Node equilibriumPointNode = node["equilibrium point"];
+    YAML::Node passiveNode = node["passive"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+
+    attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
+    attribs->m_childPivot = ADFUtils::toXYZ<cVector3d>(&childPivotNode);
+    attribs->m_parentAxis = ADFUtils::toXYZ<cVector3d>(&parentAxisNode);
+    attribs->m_childAxis = ADFUtils::toXYZ<cVector3d>(&childAxisNode);
+    attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
+
+    // Joint Transform in Parent
+    btTransform T_j_p;
+    // Joint Axis
+    btVector3 joint_axis(0,0,1);
+    m_enableActuator = true;
+    m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
+    m_jointOffset = 0.0;
+    m_lowerLimit = -100;
+    m_upperLimit = 100;
+    //Default joint type is revolute if not type is specified
+    m_jointType = afJointType::REVOLUTE;
+    m_jointDamping = 0.0; // Initialize damping to 0
+
+    bool _ignore_inter_collision = true;
+
+    m_pvtA = toXYZ<btVector3>( &jointParentPivot);
+    m_axisA = toXYZ<btVector3>( &jointParentAxis);
+    m_pvtB = toXYZ<btVector3>( &jointChildPivot);
+    m_axisB = toXYZ<btVector3>( &jointChildAxis);
+
+    // Scale the pivot before transforming as the default scale methods don't move this pivot
+    m_pvtA *= m_afParentBody->m_scale;
+    m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
+    m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
+    m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
+    m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
+
+    if(jointOffset.IsDefined()){
+        m_jointOffset = jointOffset.as<double>();
+    }
+
+    if (jointDamping.IsDefined()){
+        m_jointDamping = jointDamping.as<double>();
+    }
+
+    if(jointLimits.IsDefined()){
+        if (jointLimits["low"].IsDefined())
+            m_lowerLimit = jointLimits["low"].as<double>();
+        if (jointLimits["high"].IsDefined())
+            m_upperLimit = jointLimits["high"].as<double>();
+    }
+
+    if (jointController.IsDefined()){
+        if( (jointController["P"]).IsDefined())
+            m_controller.P = jointController["P"].as<double>();
+        if( (jointController["I"]).IsDefined())
+            m_controller.I = jointController["I"].as<double>();
+        if( (jointController["D"]).IsDefined())
+            m_controller.D = jointController["D"].as<double>();
+
+        // If the PID controller in defined, the gains will be used to command the joint force (effort)
+        m_controller.m_outputType = afControlType::FORCE;
+    }
+    else{
+        // If the controller gains are not defined, a velocity based control will be used.
+        // The tracking velocity can be controller by setting "max motor impulse" field
+        // for the joint data-block in the ADF file.
+        m_controller.P = 10;
+        m_controller.I = 0;
+        m_controller.D = 0;
+        m_controller.m_outputType = afControlType::VELOCITY;
+    }
+
+    // Bullet takes the x axis as the default for prismatic joints
+    btVector3 ax_cINp;
+
+    if (jointType.IsDefined()){
+        if ((strcmp(jointType.as<std::string>().c_str(), "hinge") == 0)
+                || (strcmp(jointType.as<std::string>().c_str(), "revolute") == 0)
+                || (strcmp(jointType.as<std::string>().c_str(), "continuous") == 0)){
+            m_jointType = afJointType::REVOLUTE;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "slider") == 0)
+                 || (strcmp(jointType.as<std::string>().c_str(), "prismatic") == 0)){
+            m_jointType = afJointType::PRISMATIC;
+            // For this case constraint axis is the world x axis
+            ax_cINp.setValue(1, 0, 0);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "fixed") == 0)){
+            m_jointType = afJointType::FIXED;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "spring") == 0)){
+            m_jointType = afJointType::LINEAR_SPRING;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "linear spring") == 0)){
+            m_jointType = afJointType::LINEAR_SPRING;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "torsion spring") == 0)){
+            m_jointType = afJointType::TORSION_SPRING;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "torsional spring") == 0)){
+            m_jointType = afJointType::TORSION_SPRING;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "angular spring") == 0)){
+            m_jointType = afJointType::TORSION_SPRING;
+            // For this case constraint axis is the world z axis
+            ax_cINp.setValue(0, 0, 1);
+        }
+        else if ((strcmp(jointType.as<std::string>().c_str(), "p2p") == 0)){
+            m_jointType = afJointType::P2P;
+            // For this case the constraint axis doesnt matter
+            ax_cINp.setValue(0, 0, 1);
+        }
+
+    }
+
+    double _jointERP, _jointCFM;
+
+    if(jointERP.IsDefined()){
+        _jointERP = jointERP.as<double>();
+    }
+    else{
+        _jointERP = mB->m_jointERP;
+    }
+
+    if(jointCFM.IsDefined()){
+        _jointCFM = jointCFM.as<double>();
+    }
+    else{
+        _jointCFM = mB->m_jointCFM;
+    }
+
+    if (jointIgnoreInterCollision.IsDefined()){
+        _ignore_inter_collision = jointIgnoreInterCollision.as<bool>();
+    }
+
+    if (jointPassive.IsDefined()){
+        m_passive = jointPassive.as<bool>();
+    }
+
+    // Compute frameA and frameB from constraint axis data. This step is common
+    // for all joints, the only thing that changes in the constraint axis which can be
+    // set the appropriate joint type
+
+    btTransform frameA, frameB;
+    frameA.setIdentity();
+    frameB.setIdentity();
+
+    // Rotation of constraint in parent axis as quaternion
+    btQuaternion Q_conINp;
+    Q_conINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_cINp, m_axisA);
+    frameA.setRotation(Q_conINp);
+    frameA.setOrigin(m_pvtA);
+
+    // Rotation of child axis in parent axis as Quaternion
+    btQuaternion Q_cINp;
+    Q_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
+
+    // Offset rotation along the parent axis
+    btQuaternion Q_offINp;
+    Q_offINp.setRotation(m_axisA, m_jointOffset);
+    // We need to post-multiply frameA's rot to cancel out the shift in axis, then
+    // the offset along joint axis and finally frameB's axis alignment in frameA.
+    frameB.setRotation( Q_cINp.inverse() * Q_offINp.inverse() * Q_conINp);
+    frameB.setOrigin(m_pvtB);
+
+    // If the joint is revolute, hinge or continous
+    if (m_jointType == afJointType::REVOLUTE){
+#ifdef USE_PIVOT_AXIS_METHOD
+        m_btConstraint = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
+#else
+        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
+        m_hinge->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_hinge->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+#endif
+        // Don't enable motor yet, only enable when set position is called
+        // this keeps the joint behave freely when it's launched
+        if(jointMaxMotorImpulse.IsDefined()){
+            double max_impulse = jointMaxMotorImpulse.as<double>();
+            m_hinge->enableAngularMotor(false, 0.0, max_impulse);
+        }
+        else{
+            m_hinge->enableAngularMotor(false, 0.0, 0.1);
+        }
+
+        if(jointLimits.IsDefined()){
+            m_hinge->setLimit(m_lowerLimit, m_upperLimit);
+        }
+
+        m_btConstraint = m_hinge;
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    }
+    // If the joint is slider, prismatic or linear
+    else if (m_jointType == afJointType::PRISMATIC){
+        m_slider = new btSliderConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
+        m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+
+        if (jointEnableMotor.IsDefined()){
+            m_enableActuator = jointEnableMotor.as<int>();
+            // Don't enable motor yet, only enable when set position is called
+            if(jointMaxMotorImpulse.IsDefined()){
+                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            }
+        }
+
+        if(jointLimits.IsDefined()){
+            m_slider->setLowerLinLimit(m_lowerLimit);
+            m_slider->setUpperLinLimit(m_upperLimit);
+        }
+
+        if(jointMaxMotorImpulse.IsDefined()){
+            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            // Ugly hack, divide by (default) fixed timestep to max linear motor force
+            // since m_slider does have a max impulse setting method.
+            m_slider->setMaxLinMotorForce(m_controller.max_impulse / 0.001);
+        }
+        else{
+            // Default to 1000.0
+            m_slider->setMaxLinMotorForce(1000);
+            m_slider->setPoweredLinMotor(false);
+        }
+
+        m_btConstraint = m_slider;
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    }
+
+    // If the joint is a spring
+    else if (m_jointType == afJointType::LINEAR_SPRING || m_jointType == afJointType::TORSION_SPRING){
+        m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
+
+        // Initialize all the 6 axes to 0 stiffness and damping
+        // and limits also set to 0-0
+        for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
+            m_spring->setLimit(axIdx, 0.0, 0.0);
+            m_spring->setStiffness(axIdx, 0.0);
+            m_spring->setDamping(axIdx, 0.0);
+            m_spring->enableSpring(axIdx, false);
+        }
+
+        // We treat springs along the z axes of constraint, thus chosed
+        // the appropriate axis number based on if the spring is linear
+        // or torsional [0-2] -> linear, [3-5] -> rotational
+        int _axisNumber = -1;
+
+        if (m_jointType == afJointType::LINEAR_SPRING){
+            _axisNumber = 2;
+        }
+        else if (m_jointType == afJointType::TORSION_SPRING){
+            _axisNumber = 5;
+        }
+
+        double _low, _high;
+        if (jointLimits.IsDefined()){
+
+            _high =  jointLimits["high"].as<double>();
+            _low = jointLimits["low"].as<double>();
+
+            // Somehow bullets springs limits for rotational joints are inverted.
+            // So handle them internally rather than breaking AMBF description specificaiton
+            if (m_jointType == afJointType::TORSION_SPRING){
+                double _temp = _low;
+                _low = - _high;
+                _high = - _temp;
+
+            }
+
+            btVector3 _limLow, _limHigh;
+            _limLow.setValue(0, 0, 0);
+            _limHigh.setValue(0, 0, 0);
+            _limLow.setZ(_low);
+            _limHigh.setZ(_low);
+
+            m_spring->setLimit(_axisNumber, _low, _high);
+            m_spring->enableSpring(_axisNumber, true);
+        }
+
+        if (node["equiblirium point"].IsDefined()){
+            double _equiblirium = node["equiblirium point"].as<double>();
+            // The equiblirium offset if also inverted for torsional springs
+            // Fix it internally rather than breaking AMBF description specificaiton
+            if (m_jointType == afJointType::TORSION_SPRING){
+                _equiblirium = - _equiblirium;
+            }
+            m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
+        }
+        else{
+            m_spring->setEquilibriumPoint(_axisNumber, _low + ((_high - _low) / 2));
+        }
+
+        // Calculcated a stiffness value based on the masses of connected bodies.
+        double _stiffness = 10 * m_afParentBody->getMass() + m_afChildBody->getMass();
+        // If stiffness defined, override the above value
+        if (jointStiffness.IsDefined()){
+            _stiffness = jointStiffness.as<double>();
+        }
+        m_spring->setStiffness(_axisNumber, _stiffness);
+
+        m_spring->setDamping(_axisNumber, m_jointDamping);
+
+        m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
+        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
+
+        m_btConstraint = m_spring;
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    }
+    else if (m_jointType == afJointType::P2P){
+        // p2p joint doesnt concern itself with rotations, its set using just the pivot information
+        m_p2p = new btPoint2PointConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB);
+        m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+
+        if (jointEnableMotor.IsDefined()){
+            m_enableActuator = jointEnableMotor.as<int>();
+            // Don't enable motor yet, only enable when set position is called
+            if(jointMaxMotorImpulse.IsDefined()){
+                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            }
+        }
+
+        m_btConstraint = m_p2p;
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    }
+    else if (m_jointType == afJointType::FIXED){
+        m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
+        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
+        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    }
+
+    if (jointEnableFeedback.IsDefined()){
+        if (m_btConstraint != nullptr){
+            m_feedbackEnabled = jointEnableFeedback.as<bool>();
+            if (m_feedbackEnabled){
+                m_btConstraint->enableFeedback(m_feedbackEnabled);
+                m_feedback = new btJointFeedback();
+                m_btConstraint->setJointFeedback(m_feedback);
+            }
+        }
+    }
+    return true;
 
 }
 
