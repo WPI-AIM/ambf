@@ -103,16 +103,16 @@ public:
     virtual bool loadJoint(YAML::Node* jnt_node, afJointAttributes* attribs);
 
     // Load sensor from the ADF file with the name of the sensor specified
-    virtual bool loadSensor(std::string sen_config_file, std::string node_name, afSensorAttributes* attribs);
+    virtual bool loadRayTracerSensor(std::string sen_config_file, std::string node_name, afSensorAttributes* attribs);
 
     // Load joint from a YAML::Node
-    virtual bool loadSensor(YAML::Node* sen_node, afSensorAttributes* attribs);
+    virtual bool loadRayTracerSensor(YAML::Node* sen_node, afSensorAttributes* attribs);
 
     // Load actuator from the ADF file with the name of the actuator specified
-    virtual bool loadActutator(std::string act_config_file, std::string node_name, afActuatorAttributes* attribs);
+    virtual bool loadActuator(std::string act_config_file, std::string node_name, afActuatorAttributes* attribs);
 
     // Load actuator from a YAML::Node
-    virtual bool loadActutator(YAML::Node* act_node, afActuatorAttributes* attribs);
+    virtual bool loadActuator(YAML::Node* act_node, afActuatorAttributes* attribs);
 
     // Load sensor from the ADF file with the name of the sensor specified
     virtual bool loadVehicle(std::string vh_config_file, std::string node_name, afVehicleAttributes* attribs);

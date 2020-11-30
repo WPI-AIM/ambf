@@ -287,6 +287,44 @@ bool ADFUtils::getSurfaceAttribsFromNode(YAML::Node *a_node, afSurfaceAttributes
     return valid;
 }
 
+afJointType ADFUtils::getJointTypeFromString(const std::string &a_joint_str)
+{
+    afJointType jointType;
+
+    if ((strcmp(a_joint_str.c_str(), "hinge") == 0)
+            || (strcmp(a_joint_str.c_str(), "revolute") == 0)
+            || (strcmp(a_joint_str.c_str(), "continuous") == 0)){
+        jointType = afJointType::REVOLUTE;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "slider") == 0)
+             || (strcmp(a_joint_str.c_str(), "prismatic") == 0)){
+        jointType = afJointType::PRISMATIC;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "fixed") == 0)){
+        jointType = afJointType::FIXED;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "spring") == 0)){
+        jointType = afJointType::LINEAR_SPRING;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "linear spring") == 0)){
+        jointType = afJointType::LINEAR_SPRING;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "torsion spring") == 0)
+             || (strcmp(a_joint_str.c_str(), "torsional spring") == 0)
+             || (strcmp(a_joint_str.c_str(), "angular spring") == 0)){
+        jointType = afJointType::TORSION_SPRING;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "p2p") == 0)){
+        jointType = afJointType::P2P;
+    }
+    else{
+        std::cerr << "ERROR! JOINT TYPE NOT UNDERSTOOD \n";
+        jointType = afJointType::INVALID;
+    }
+
+    return jointType;
+}
+
 
 ///
 /// \brief afUtils::getCartControllerFromNode
@@ -469,7 +507,7 @@ bool ADFUtils::getCommunicationAttribsFromNode(YAML::Node *a_node, afCommunicati
 
 bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttributes *attribs)
 {
-    YAML::Node &node = &a_node;
+    YAML::Node &node = *a_node;
 
     YAML::Node parentNameNode = node["parent"];
     YAML::Node childNameNode = node["child"];
@@ -573,7 +611,31 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
 
 bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointControllerAttributes *attribs)
 {
+    YAML::Node & node = *a_node;
+    YAML::Node controllerNode = node["controller"];
 
+    if (controllerNode.IsDefined()){
+        if( (controllerNode["P"]).IsDefined())
+            attribs->P = controllerNode["P"].as<double>();
+        if( (controllerNode["I"]).IsDefined())
+            attribs->I = controllerNode["I"].as<double>();
+        if( (controllerNode["D"]).IsDefined())
+            attribs->D = controllerNode["D"].as<double>();
+
+        // If the PID controller in defined, the gains will be used to command the joint force (effort)
+        attribs->m_outputType = afControlType::FORCE;
+    }
+    else{
+        // If the controller gains are not defined, a velocity based control will be used.
+        // The tracking velocity can be controller by setting "max motor impulse" field
+        // for the joint data-block in the ADF file.
+        attribs->P = 10;
+        attribs->I = 0;
+        attribs->D = 0;
+        attribs->m_outputType = afControlType::VELOCITY;
+    }
+
+    return true;
 }
 
 bool ADFUtils::getKinematicAttribsFromNode(YAML::Node *a_node, afKinematicAttributes *attribs)
@@ -761,7 +823,7 @@ bool ADFUtils::copyPrimitiveShapeData(YAML::Node *shape_node, afPrimitiveShapeAt
 }
 
 
-bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_name, ambf::afRigidBodyAttributes *a_attribsRB)
+bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_name, afRigidBodyAttributes *a_attribsRB)
 {
     YAML::Node rootNode;
     try{
@@ -776,7 +838,7 @@ bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_n
 
 }
 
-bool ADFLoader_1_0::loadRigidBody(YAML::Node *a_node, ambf::afRigidBodyAttributes *attribs)
+bool ADFLoader_1_0::loadRigidBody(YAML::Node *a_node, afRigidBodyAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1055,7 +1117,7 @@ bool ADFLoader_1_0::loadSoftBody(YAML::Node *a_node, afSoftBodyAttributes *attri
     return true;
 }
 
-bool ADFLoader_1_0::loadJoint(std::string jnt_config_file, std::string node_name, ambf::afJointAttributes *attribs)
+bool ADFLoader_1_0::loadJoint(std::string jnt_config_file, std::string node_name, afJointAttributes *attribs)
 {
     YAML::Node baseNode;
     try{
@@ -1072,11 +1134,11 @@ bool ADFLoader_1_0::loadJoint(std::string jnt_config_file, std::string node_name
 
 }
 
-bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, ambf::afJointAttributes *attribs)
+bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, afJointAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        std::cerr << "ERROR: JOINT'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
+        std::cerr << "ERROR: JOINT'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
     // Declare all the yaml parameters that we want to look for
@@ -1108,401 +1170,344 @@ bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, ambf::afJointAttributes *attri
 
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    adfUtils.getJointControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
 
     attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
     attribs->m_childPivot = ADFUtils::toXYZ<cVector3d>(&childPivotNode);
     attribs->m_parentAxis = ADFUtils::toXYZ<cVector3d>(&parentAxisNode);
     attribs->m_childAxis = ADFUtils::toXYZ<cVector3d>(&childAxisNode);
     attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
+    attribs->m_jointType = ADFUtils::getJointTypeFromString(typeNode.as<std::string>());
 
-    // Joint Transform in Parent
-    btTransform T_j_p;
-    // Joint Axis
-    btVector3 joint_axis(0,0,1);
-    m_enableActuator = true;
-    m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
-    m_jointOffset = 0.0;
-    m_lowerLimit = -100;
-    m_upperLimit = 100;
-    //Default joint type is revolute if not type is specified
-    m_jointType = afJointType::REVOLUTE;
-    m_jointDamping = 0.0; // Initialize damping to 0
 
-    bool _ignore_inter_collision = true;
-
-    m_pvtA = toXYZ<btVector3>( &jointParentPivot);
-    m_axisA = toXYZ<btVector3>( &jointParentAxis);
-    m_pvtB = toXYZ<btVector3>( &jointChildPivot);
-    m_axisB = toXYZ<btVector3>( &jointChildAxis);
-
-    // Scale the pivot before transforming as the default scale methods don't move this pivot
-    m_pvtA *= m_afParentBody->m_scale;
-    m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
-    m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
-    m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
-    m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
-
-    if(jointOffset.IsDefined()){
-        m_jointOffset = jointOffset.as<double>();
+    if(offsetNode.IsDefined()){
+        attribs->m_offset= offsetNode.as<double>();
     }
 
-    if (jointDamping.IsDefined()){
-        m_jointDamping = jointDamping.as<double>();
+    if (dampingNode.IsDefined()){
+        attribs->m_damping = dampingNode.as<double>();
     }
 
-    if(jointLimits.IsDefined()){
-        if (jointLimits["low"].IsDefined())
-            m_lowerLimit = jointLimits["low"].as<double>();
-        if (jointLimits["high"].IsDefined())
-            m_upperLimit = jointLimits["high"].as<double>();
+    if(limitsNode.IsDefined()){
+        attribs->m_lowerLimit = limitsNode["low"].as<double>();
+        attribs->m_upperLimit = limitsNode["high"].as<double>();
+        attribs->m_enableLimits = true;
     }
 
-    if (jointController.IsDefined()){
-        if( (jointController["P"]).IsDefined())
-            m_controller.P = jointController["P"].as<double>();
-        if( (jointController["I"]).IsDefined())
-            m_controller.I = jointController["I"].as<double>();
-        if( (jointController["D"]).IsDefined())
-            m_controller.D = jointController["D"].as<double>();
-
-        // If the PID controller in defined, the gains will be used to command the joint force (effort)
-        m_controller.m_outputType = afControlType::FORCE;
-    }
-    else{
-        // If the controller gains are not defined, a velocity based control will be used.
-        // The tracking velocity can be controller by setting "max motor impulse" field
-        // for the joint data-block in the ADF file.
-        m_controller.P = 10;
-        m_controller.I = 0;
-        m_controller.D = 0;
-        m_controller.m_outputType = afControlType::VELOCITY;
+    if(enableMotorNode.IsDefined()){
+        attribs->m_enableMotor = enableFeedbackNode.as<bool>();
     }
 
-    // Bullet takes the x axis as the default for prismatic joints
-    btVector3 ax_cINp;
-
-    if (jointType.IsDefined()){
-        if ((strcmp(jointType.as<std::string>().c_str(), "hinge") == 0)
-                || (strcmp(jointType.as<std::string>().c_str(), "revolute") == 0)
-                || (strcmp(jointType.as<std::string>().c_str(), "continuous") == 0)){
-            m_jointType = afJointType::REVOLUTE;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "slider") == 0)
-                 || (strcmp(jointType.as<std::string>().c_str(), "prismatic") == 0)){
-            m_jointType = afJointType::PRISMATIC;
-            // For this case constraint axis is the world x axis
-            ax_cINp.setValue(1, 0, 0);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "fixed") == 0)){
-            m_jointType = afJointType::FIXED;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "spring") == 0)){
-            m_jointType = afJointType::LINEAR_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "linear spring") == 0)){
-            m_jointType = afJointType::LINEAR_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "torsion spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "torsional spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "angular spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<std::string>().c_str(), "p2p") == 0)){
-            m_jointType = afJointType::P2P;
-            // For this case the constraint axis doesnt matter
-            ax_cINp.setValue(0, 0, 1);
-        }
-
+    if(maxMotorImpulseNode.IsDefined()){
+        attribs->m_maxMotorImpulse = maxMotorImpulseNode.as<double>();
     }
 
-    double _jointERP, _jointCFM;
-
-    if(jointERP.IsDefined()){
-        _jointERP = jointERP.as<double>();
-    }
-    else{
-        _jointERP = mB->m_jointERP;
+    if(stiffnessNode.IsDefined()){
+        attribs->m_stiffness = stiffnessNode.as<double>();
     }
 
-    if(jointCFM.IsDefined()){
-        _jointCFM = jointCFM.as<double>();
-    }
-    else{
-        _jointCFM = mB->m_jointCFM;
+    if(equilibriumPointNode.IsDefined()){
+        attribs->m_equilibriumPoint = equilibriumPointNode.as<double>();
     }
 
-    if (jointIgnoreInterCollision.IsDefined()){
-        _ignore_inter_collision = jointIgnoreInterCollision.as<bool>();
+    if(erpNode.IsDefined()){
+        attribs->m_erp = erpNode.as<double>();
     }
 
-    if (jointPassive.IsDefined()){
-        m_passive = jointPassive.as<bool>();
+    if(cfmNode.IsDefined()){
+        attribs->m_cfm = cfmNode.as<double>();
     }
 
-    // Compute frameA and frameB from constraint axis data. This step is common
-    // for all joints, the only thing that changes in the constraint axis which can be
-    // set the appropriate joint type
-
-    btTransform frameA, frameB;
-    frameA.setIdentity();
-    frameB.setIdentity();
-
-    // Rotation of constraint in parent axis as quaternion
-    btQuaternion Q_conINp;
-    Q_conINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_cINp, m_axisA);
-    frameA.setRotation(Q_conINp);
-    frameA.setOrigin(m_pvtA);
-
-    // Rotation of child axis in parent axis as Quaternion
-    btQuaternion Q_cINp;
-    Q_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
-
-    // Offset rotation along the parent axis
-    btQuaternion Q_offINp;
-    Q_offINp.setRotation(m_axisA, m_jointOffset);
-    // We need to post-multiply frameA's rot to cancel out the shift in axis, then
-    // the offset along joint axis and finally frameB's axis alignment in frameA.
-    frameB.setRotation( Q_cINp.inverse() * Q_offINp.inverse() * Q_conINp);
-    frameB.setOrigin(m_pvtB);
-
-    // If the joint is revolute, hinge or continous
-    if (m_jointType == afJointType::REVOLUTE){
-#ifdef USE_PIVOT_AXIS_METHOD
-        m_btConstraint = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
-#else
-        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-        m_hinge->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_hinge->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-#endif
-        // Don't enable motor yet, only enable when set position is called
-        // this keeps the joint behave freely when it's launched
-        if(jointMaxMotorImpulse.IsDefined()){
-            double max_impulse = jointMaxMotorImpulse.as<double>();
-            m_hinge->enableAngularMotor(false, 0.0, max_impulse);
-        }
-        else{
-            m_hinge->enableAngularMotor(false, 0.0, 0.1);
-        }
-
-        if(jointLimits.IsDefined()){
-            m_hinge->setLimit(m_lowerLimit, m_upperLimit);
-        }
-
-        m_btConstraint = m_hinge;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
-    }
-    // If the joint is slider, prismatic or linear
-    else if (m_jointType == afJointType::PRISMATIC){
-        m_slider = new btSliderConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-        m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-
-        if (jointEnableMotor.IsDefined()){
-            m_enableActuator = jointEnableMotor.as<int>();
-            // Don't enable motor yet, only enable when set position is called
-            if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            }
-        }
-
-        if(jointLimits.IsDefined()){
-            m_slider->setLowerLinLimit(m_lowerLimit);
-            m_slider->setUpperLinLimit(m_upperLimit);
-        }
-
-        if(jointMaxMotorImpulse.IsDefined()){
-            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            // Ugly hack, divide by (default) fixed timestep to max linear motor force
-            // since m_slider does have a max impulse setting method.
-            m_slider->setMaxLinMotorForce(m_controller.max_impulse / 0.001);
-        }
-        else{
-            // Default to 1000.0
-            m_slider->setMaxLinMotorForce(1000);
-            m_slider->setPoweredLinMotor(false);
-        }
-
-        m_btConstraint = m_slider;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    if (ignoreInterCollisionNode.IsDefined()){
+       attribs->m_ignoreInterCollision = ignoreInterCollisionNode.as<bool>();
     }
 
-    // If the joint is a spring
-    else if (m_jointType == afJointType::LINEAR_SPRING || m_jointType == afJointType::TORSION_SPRING){
-        m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-
-        // Initialize all the 6 axes to 0 stiffness and damping
-        // and limits also set to 0-0
-        for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
-            m_spring->setLimit(axIdx, 0.0, 0.0);
-            m_spring->setStiffness(axIdx, 0.0);
-            m_spring->setDamping(axIdx, 0.0);
-            m_spring->enableSpring(axIdx, false);
-        }
-
-        // We treat springs along the z axes of constraint, thus chosed
-        // the appropriate axis number based on if the spring is linear
-        // or torsional [0-2] -> linear, [3-5] -> rotational
-        int _axisNumber = -1;
-
-        if (m_jointType == afJointType::LINEAR_SPRING){
-            _axisNumber = 2;
-        }
-        else if (m_jointType == afJointType::TORSION_SPRING){
-            _axisNumber = 5;
-        }
-
-        double _low, _high;
-        if (jointLimits.IsDefined()){
-
-            _high =  jointLimits["high"].as<double>();
-            _low = jointLimits["low"].as<double>();
-
-            // Somehow bullets springs limits for rotational joints are inverted.
-            // So handle them internally rather than breaking AMBF description specificaiton
-            if (m_jointType == afJointType::TORSION_SPRING){
-                double _temp = _low;
-                _low = - _high;
-                _high = - _temp;
-
-            }
-
-            btVector3 _limLow, _limHigh;
-            _limLow.setValue(0, 0, 0);
-            _limHigh.setValue(0, 0, 0);
-            _limLow.setZ(_low);
-            _limHigh.setZ(_low);
-
-            m_spring->setLimit(_axisNumber, _low, _high);
-            m_spring->enableSpring(_axisNumber, true);
-        }
-
-        if (node["equiblirium point"].IsDefined()){
-            double _equiblirium = node["equiblirium point"].as<double>();
-            // The equiblirium offset if also inverted for torsional springs
-            // Fix it internally rather than breaking AMBF description specificaiton
-            if (m_jointType == afJointType::TORSION_SPRING){
-                _equiblirium = - _equiblirium;
-            }
-            m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
-        }
-        else{
-            m_spring->setEquilibriumPoint(_axisNumber, _low + ((_high - _low) / 2));
-        }
-
-        // Calculcated a stiffness value based on the masses of connected bodies.
-        double _stiffness = 10 * m_afParentBody->getMass() + m_afChildBody->getMass();
-        // If stiffness defined, override the above value
-        if (jointStiffness.IsDefined()){
-            _stiffness = jointStiffness.as<double>();
-        }
-        m_spring->setStiffness(_axisNumber, _stiffness);
-
-        m_spring->setDamping(_axisNumber, m_jointDamping);
-
-        m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
-        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
-
-        m_btConstraint = m_spring;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
-    }
-    else if (m_jointType == afJointType::P2P){
-        // p2p joint doesnt concern itself with rotations, its set using just the pivot information
-        m_p2p = new btPoint2PointConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB);
-        m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-
-        if (jointEnableMotor.IsDefined()){
-            m_enableActuator = jointEnableMotor.as<int>();
-            // Don't enable motor yet, only enable when set position is called
-            if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
-            }
-        }
-
-        m_btConstraint = m_p2p;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
-    }
-    else if (m_jointType == afJointType::FIXED){
-        m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
-        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
+    if (enableFeedbackNode.IsDefined()){
+        attribs->m_enableFeedback = enableFeedbackNode.as<bool>();
     }
 
-    if (jointEnableFeedback.IsDefined()){
-        if (m_btConstraint != nullptr){
-            m_feedbackEnabled = jointEnableFeedback.as<bool>();
-            if (m_feedbackEnabled){
-                m_btConstraint->enableFeedback(m_feedbackEnabled);
-                m_feedback = new btJointFeedback();
-                m_btConstraint->setJointFeedback(m_feedback);
-            }
-        }
-    }
     return true;
+}
+
+bool ADFLoader_1_0::loadSensor(std::string sen_config_file, std::string node_name, afSensorAttributes *attribs)
+{
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(sen_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sen_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseSensorNode = baseNode[node_name];
+    return loadSensor(&baseSensorNode, attribs);
 
 }
 
-bool ADFLoader_1_0::loadSensor(std::string sen_config_file, std::string node_name, ambf::afSensorAttributes *attribs)
+bool ADFLoader_1_0::loadSensor(YAML::Node *a_node, afSensorAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: SENSOR'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    return result;
+
+}
+
+bool ADFLoader_1_0::loadRayTracerSensor(std::string sen_config_file, std::string node_name, afRayTracerSensorAttributes *attribs)
+{
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(sen_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sen_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseSensorNode = baseNode[node_name];
+    return loadRayTracerSensor(&baseSensorNode, attribs);
+
+}
+
+bool ADFLoader_1_0::loadRayTracerSensor(YAML::Node *a_node, afRayTracerSensorAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: SENSOR'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+    YAML::Node rangeNode = node["range"];
+    YAML::Node visibleNode = node["visible"];
+    YAML::Node visibleSizeNode = node["visible size"];
+    YAML::Node arrayNode = node["array"];
+    YAML::Node meshNode = node["mesh"];
+    YAML::Node parametricNode = node["parametric"];
+
+    loadSensor(&node, attribs);
+
+    attribs->m_specificationType = afSensactorSpecificationType::INVALID;
+
+    if(rangeNode.IsDefined()){
+        attribs->m_range = rangeNode.as<double>();
+    }
+
+    if (visibleNode.IsDefined()){
+        attribs->m_visible = visibleNode.as<bool>();
+    }
+
+    if (visibleSizeNode.IsDefined()){
+        attribs->m_visibleSize = visibleSizeNode.as<double>();
+    }
+
+    if (arrayNode.IsDefined()){
+        uint count = arrayNode.size();
+        attribs->m_raysAttribs.resize(count);
+        cTransform T_sINp = attribs->m_kinematicAttribs.m_location;
+        cMatrix3d R_sINp = T_sINp.getLocalRot();
+        for (uint i = 0 ; i < count ; i++){
+            YAML::Node offsetNode = arrayNode[i]["offset"];
+            YAML::Node directionNode = arrayNode[i]["direction"];
+
+            cVector3d offset, start, dir, end;
+
+            offset = ADFUtils::toXYZ<cVector3d>(&offsetNode);
+            dir = ADFUtils::toXYZ<cVector3d>(&directionNode);
+            start = T_sINp * offset;
+            dir = R_sINp * dir;
+            dir.normalize();
+            end = start + dir * attribs->m_range;
+
+            attribs->m_raysAttribs[i].m_range = attribs->m_range;
+            attribs->m_raysAttribs[i].m_rayFromLocal = start;
+            attribs->m_raysAttribs[i].m_direction = dir;
+            attribs->m_raysAttribs[i].m_rayToLocal = end;
+        }
+        attribs->m_specificationType = afSensactorSpecificationType::ARRAY;
+        result = true;
+    }
+
+    else if (meshNode.IsDefined()){
+        attribs->m_contourMesh = meshNode.as<std::string>();
+        attribs->m_specificationType = afSensactorSpecificationType::MESH;
+        result = true;
+    }
+    else if (parametricNode.IsDefined()){
+        YAML::Node resolutionNode = parametricNode["resolution"];
+        YAML::Node horSpanNode = parametricNode["horizontal angle"];
+        YAML::Node verSpanNode = parametricNode["vertical angle"];
+        YAML::Node startOffsetNode = parametricNode["start offset"];
+
+        uint resolution = resolutionNode.as<uint>();
+        double horizontal_span = horSpanNode.as<double>();
+        double vertical_span = verSpanNode.as<double>();
+        double start_offset = startOffsetNode.as<double>();
+
+        if (resolution < 2){
+            std::cerr << "ERROR! FOR SENSOR \"" << attribs->m_identificationAttribs.m_name << "\" RESOLUTION MUST BE GREATER THAN EQUAL TO 2. IGNORING! \n";
+            return false;
+        }
+
+        double h_start = -horizontal_span / 2.0;
+        double v_start = -vertical_span / 2.0;
+        double h_step = horizontal_span / (resolution - 1);
+        double v_step = vertical_span / (resolution - 1);
+        attribs->m_raysAttribs.resize(resolution * resolution);
+
+        // Choose an initial point facing the +ve x direction
+        cVector3d nx(1, 0, 0);
+        cTransform T_sINp = attribs->m_kinematicAttribs.m_location;
+        cMatrix3d R_sINp = T_sINp.getLocalRot();
+        for (uint i = 0 ; i < resolution ; i++){
+            double h_angle = h_start + i * h_step;
+            for (uint j = 0 ; j < resolution ; j++){
+                double v_angle = v_start + j * v_step;
+
+                cMatrix3d deltaR;
+                cVector3d start, dir, end;
+
+                deltaR.setExtrinsicEulerRotationRad(0, v_angle, h_angle, cEulerOrder::C_EULER_ORDER_XYZ);
+                start = T_sINp * (deltaR * (nx * start_offset));
+                dir = R_sINp * deltaR * nx;
+                dir.normalize();
+                end = start + dir * attribs->m_range;
+
+                uint sIdx = resolution * i + j;
+                attribs->m_raysAttribs[sIdx].m_range = attribs->m_range;
+                attribs->m_raysAttribs[sIdx].m_rayFromLocal = start;
+                attribs->m_raysAttribs[sIdx].m_direction = dir;
+                attribs->m_raysAttribs[sIdx].m_rayToLocal = end;
+            }
+
+        }
+        result = true;
+        attribs->m_specificationType = afSensactorSpecificationType::PARAMETRIC;
+    }
+    else{
+        result = false;
+    }
+
+    return result;
+
+}
+
+bool ADFLoader_1_0::loadActuator(std::string act_config_file, std::string node_name, afActuatorAttributes *attribs)
 {
 
 }
 
-bool ADFLoader_1_0::loadSensor(YAML::Node *sen_node, ambf::afSensorAttributes *attribs)
+bool ADFLoader_1_0::loadActuator(YAML::Node *a_node, afActuatorAttributes *attribs)
+{
+}
+
+bool ADFLoader_1_0::loadConstraintActuator(std::string act_config_file, std::string node_name, afConstraintActuatorAttributes *attribs)
+{
+
+    YAML::Node baseNode;
+    try{
+        baseNode = YAML::LoadFile(act_config_file);
+    }catch (std::exception &e){
+        std::cerr << "[Exception]: " << e.what() << std::endl;
+        std::cerr << "ERROR! FAILED TO ACTUATOR CONFIG: " << act_config_file << std::endl;
+        return 0;
+    }
+    if (baseNode.IsNull()) return false;
+
+    YAML::Node baseActuatorNode = baseNode[node_name];
+    return loadConstraintActuator(&baseActuatorNode, attribs);
+}
+
+bool ADFLoader_1_0::loadConstraintActuator(YAML::Node *a_node, afConstraintActuatorAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+    YAML::Node visibleNode = node["visible"];
+    YAML::Node visibleSizeNode = node["visible size"];
+    YAML::Node maxImpulseNode = node["max impulse"];
+    YAML::Node tauNode = node["tau"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_heirarchyAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    if (visibleNode.IsDefined()){
+        attribs->m_visible = visibleNode.as<bool>();
+    }
+
+    if (maxImpulseNode.IsDefined()){
+        attribs->m_maxImpulse = maxImpulseNode.as<double>();
+    }
+
+    if (tauNode.IsDefined()){
+        attribs->m_tau = tauNode.as<double>();
+    }
+
+    return result;
+
+}
+
+bool ADFLoader_1_0::loadVehicle(std::string vh_config_file, std::string node_name, afVehicleAttributes *attribs)
 {
 
 }
 
-bool ADFLoader_1_0::loadActutator(std::string act_config_file, std::string node_name, ambf::afActuatorAttributes *attribs)
+bool ADFLoader_1_0::loadVehicle(YAML::Node *vh_node, afVehicleAttributes *attribs)
 {
 
 }
 
-bool ADFLoader_1_0::loadActutator(YAML::Node *act_node, ambf::afActuatorAttributes *attribs)
+bool ADFLoader_1_0::loadMultiBody(std::string mb_config_file, afMultiBodyAttributes *attribs)
 {
 
 }
 
-bool ADFLoader_1_0::loadVehicle(std::string vh_config_file, std::string node_name, ambf::afVehicleAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadVehicle(YAML::Node *vh_node, ambf::afVehicleAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadMultiBody(std::string mb_config_file, ambf::afMultiBodyAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadWorld(std::string wd_config_file, ambf::afWorldAttributes *attribs)
+bool ADFLoader_1_0::loadWorld(std::string wd_config_file, afWorldAttributes *attribs)
 {
 
 }

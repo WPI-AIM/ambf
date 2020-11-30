@@ -154,7 +154,8 @@ enum class afSensorType{
 enum class afSensactorSpecificationType{
     ARRAY = 0,
     MESH = 1,
-    PARAMETRIC = 2
+    PARAMETRIC = 2,
+    INVALID = 3
 };
 
 

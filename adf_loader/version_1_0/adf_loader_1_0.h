@@ -78,6 +78,8 @@ public:
 
     virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
 
+    static afJointType getJointTypeFromString(const std::string & a_joint_str);
+
     static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
 
     // Copy data specified via ADF node
@@ -137,11 +139,29 @@ public:
     // Load joint from a YAML::Node
     virtual bool loadSensor(YAML::Node* sen_node, afSensorAttributes* attribs);
 
+    // Load sensor from the ADF file with the name of the sensor specified
+    virtual bool loadRayTracerSensor(std::string sen_config_file, std::string node_name, afRayTracerSensorAttributes* attribs);
+
+    // Load joint from a YAML::Node
+    virtual bool loadRayTracerSensor(YAML::Node* sen_node, afRayTracerSensorAttributes* attribs);
+
+    // Load sensor from the ADF file with the name of the sensor specified
+    virtual bool loadResistanceSensor(std::string sen_config_file, std::string node_name, afResistanceSensorAttributes* attribs);
+
+    // Load joint from a YAML::Node
+    virtual bool loadResistanceSensor(YAML::Node* sen_node, afResistanceSensorAttributes* attribs);
+
     // Load actuator from the ADF file with the name of the actuator specified
-    virtual bool loadActutator(std::string act_config_file, std::string node_name, afActuatorAttributes* attribs);
+    virtual bool loadActuator(std::string act_config_file, std::string node_name, afActuatorAttributes* attribs);
 
     // Load actuator from a YAML::Node
-    virtual bool loadActutator(YAML::Node* act_node, afActuatorAttributes* attribs);
+    virtual bool loadActuator(YAML::Node* act_node, afActuatorAttributes* attribs);
+
+    // Load actuator from the ADF file with the name of the actuator specified
+    virtual bool loadConstraintActuator(std::string act_config_file, std::string node_name, afConstraintActuatorAttributes* attribs);
+
+    // Load actuator from a YAML::Node
+    virtual bool loadConstraintActuator(YAML::Node* act_node, afConstraintActuatorAttributes* attribs);
 
     // Load sensor from the ADF file with the name of the sensor specified
     virtual bool loadVehicle(std::string vh_config_file, std::string node_name, afVehicleAttributes* attribs);

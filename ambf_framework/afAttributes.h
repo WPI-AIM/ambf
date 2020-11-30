@@ -325,7 +325,7 @@ public:
 
     afActuatorType m_actuatorType;
 
-    afInertialAttributes m_identificationAttribs;
+    afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afHierarchyAttributes m_heirarchyAttribs;
@@ -414,14 +414,15 @@ public:
     bool m_enableMotor;
     bool m_enableFeedback;
     uint m_maxMotorImpulse;
-    float m_limitLow;
-    float m_limitHigh;
+    float m_lowerLimit;
+    float m_upperLimit;
     float m_erp;
     float m_cfm;
     float m_offset;
     float m_damping;
     float m_stiffness;
     afJointType m_jointType;
+    bool m_enableLimits;
     bool m_ignoreInterCollision;
     double m_equilibriumPoint;
 
@@ -529,12 +530,6 @@ struct afSensorAttributes
 public:
     afSensorAttributes(){}
 
-    bool m_visible;
-    float m_visibleSize;
-    float m_maxImpulse;
-    float m_tau;
-    float m_range;
-
     afSensorType m_sensorType;
 
     afIdentificationAttributes m_identificationAttribs;
@@ -552,6 +547,15 @@ public:
 struct afRayTracerSensorAttributes: public afSensorAttributes{
 public:
     afRayTracerSensorAttributes(){}
+
+    bool m_visible;
+    float m_visibleSize;
+    float m_maxImpulse;
+    float m_tau;
+    float m_range;
+
+    std::string m_contourMesh;
+    afSensactorSpecificationType m_specificationType;
 
     std::vector<afRayAttributes> m_raysAttribs;
 };
