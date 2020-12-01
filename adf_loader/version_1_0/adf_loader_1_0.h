@@ -78,6 +78,8 @@ public:
 
     virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
 
+    virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
+
     static afJointType getJointTypeFromString(const std::string & a_joint_str);
 
     static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
@@ -115,65 +117,46 @@ class ADFLoader_1_0: public ADFLoaderBase{
 public:
     ADFLoader_1_0();
 
-    // Load rigid body from the ADF file with the name of the body specified
-    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afRigidBodyAttributes* attribs);
+    virtual bool loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
+
+    // Load Light
+    virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);
+
+    // Load Camera
+    virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs);
 
     // Load rigid body from a YAML::Node
-    virtual bool loadRigidBody(YAML::Node* rb_node, afRigidBodyAttributes* attribs);
-
-    // Load soft body from the ADF file with the name of the body specified
-    virtual bool loadSoftBody(std::string sb_config_file, std::string node_name, afSoftBodyAttributes* attribs);
+    virtual bool loadRigidBodyAttribs(YAML::Node* a_node, afRigidBodyAttributes* attribs);
 
     // Load soft body from a YAML::Node
-    virtual bool loadSoftBody(YAML::Node* sb_node, afSoftBodyAttributes* attribs);
-
-    // Load joint from the ADF file with the name of the body specified
-    virtual bool loadJoint(std::string jnt_config_file, std::string node_name, afJointAttributes* attribs);
+    virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs);
 
     // Load joint from a YAML::Node
-    virtual bool loadJoint(YAML::Node* jnt_node, afJointAttributes* attribs);
-
-    // Load sensor from the ADF file with the name of the sensor specified
-    virtual bool loadSensor(std::string sen_config_file, std::string node_name, afSensorAttributes* attribs);
+    virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs);
 
     // Load joint from a YAML::Node
-    virtual bool loadSensor(YAML::Node* sen_node, afSensorAttributes* attribs);
-
-    // Load sensor from the ADF file with the name of the sensor specified
-    virtual bool loadRayTracerSensor(std::string sen_config_file, std::string node_name, afRayTracerSensorAttributes* attribs);
+    virtual bool loadSensorAttribs(YAML::Node* a_node, afSensorAttributes* attribs);
 
     // Load joint from a YAML::Node
-    virtual bool loadRayTracerSensor(YAML::Node* sen_node, afRayTracerSensorAttributes* attribs);
-
-    // Load sensor from the ADF file with the name of the sensor specified
-    virtual bool loadResistanceSensor(std::string sen_config_file, std::string node_name, afResistanceSensorAttributes* attribs);
+    virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afRayTracerSensorAttributes* attribs);
 
     // Load joint from a YAML::Node
-    virtual bool loadResistanceSensor(YAML::Node* sen_node, afResistanceSensorAttributes* attribs);
-
-    // Load actuator from the ADF file with the name of the actuator specified
-    virtual bool loadActuator(std::string act_config_file, std::string node_name, afActuatorAttributes* attribs);
+    virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs);
 
     // Load actuator from a YAML::Node
-    virtual bool loadActuator(YAML::Node* act_node, afActuatorAttributes* attribs);
-
-    // Load actuator from the ADF file with the name of the actuator specified
-    virtual bool loadConstraintActuator(std::string act_config_file, std::string node_name, afConstraintActuatorAttributes* attribs);
+    virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs);
 
     // Load actuator from a YAML::Node
-    virtual bool loadConstraintActuator(YAML::Node* act_node, afConstraintActuatorAttributes* attribs);
-
-    // Load sensor from the ADF file with the name of the sensor specified
-    virtual bool loadVehicle(std::string vh_config_file, std::string node_name, afVehicleAttributes* attribs);
+    virtual bool loadConstraintActuatorAttribs(YAML::Node* a_node, afConstraintActuatorAttributes* attribs);
 
     // Load sensor from a YAML::Node
-    virtual bool loadVehicle(YAML::Node* vh_node, afVehicleAttributes* attribs);
+    virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
     // Load multibody from ADF file
-    virtual bool loadMultiBody(std::string mb_config_file, afMultiBodyAttributes* attribs);
+    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
 
     // Load world from ADF file
-    virtual bool loadWorld(std::string wd_config_file, afWorldAttributes* attribs);
+    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
 
 public:
 

@@ -77,14 +77,18 @@ enum class afBodyType{
 /// \brief The afObjectType enum
 ///
 enum class afObjectType{
+    OBJECT,
     ACTUATOR,
+    CONSTRAINT_ACTUATOR,
     CAMERA,
     LIGHT,
-    OBJECT,
     RIGID_BODY,
     SOFT_BODY,
     SENSOR,
+    RAYTRACER_SENSOR,
+    RESISTANCE_SENSOR,
     VEHICLE,
+    MULTIBODY,
     WORLD
 };
 
@@ -164,7 +168,7 @@ enum class afSensactorSpecificationType{
 ///
 enum class afShadowQualityType{
     NO_SHADOW=0,
-    VERR_LOW=1,
+    VERY_LOW=1,
     LOW=2,
     MEDIUM=3,
     HIGH=4,

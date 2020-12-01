@@ -50,7 +50,7 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-namespace ambf {
+using namespace ambf;
 using namespace chai3d;
 //------------------------------------------------------------------------------
 
@@ -3680,8 +3680,6 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_spring->setLimit(_axisNumber, _low, _high);
             m_spring->enableSpring(_axisNumber, true);
         }
-
-        ROS_INFO
 
         if (jointNode["equiblirium point"].IsDefined()){
             double _equiblirium = jointNode["equiblirium point"].as<double>();
@@ -7485,7 +7483,7 @@ bool afLight::loadLight(YAML::Node* a_light_node, std::string a_light_name, afWo
         case afShadowQualityType::NO_SHADOW:
             m_spotLight->setShadowMapEnabled(false);
             break;
-        case afShadowQualityType::VERR_LOW:
+        case afShadowQualityType::VERY_LOW:
             m_spotLight->m_shadowMap->setQualityVeryLow();
             break;
         case afShadowQualityType::LOW:
@@ -8581,16 +8579,16 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, std::string node_name, afM
         }
 
         if (steeringLimitsNode.IsDefined()){
-            m_wheelAttribs[i].m_high_steering_lim = steeringLimitsNode["high"].as<double>();
-            m_wheelAttribs[i].m_low_steering_lim = steeringLimitsNode["low"].as<double>();
+            m_wheelAttribs[i].m_steeringLimitMax = steeringLimitsNode["high"].as<double>();
+            m_wheelAttribs[i].m_steeringLimitMin = steeringLimitsNode["low"].as<double>();
         }
 
         if (maxEnginePowerNode.IsDefined()){
-            m_wheelAttribs[i].m_max_engine_power = maxEnginePowerNode.as<double>();
+            m_wheelAttribs[i].m_enginePowerMax = maxEnginePowerNode.as<double>();
         }
 
         if (maxBrakePowerNode.IsDefined()){
-            m_wheelAttribs[i].m_max_brake_power = maxBrakePowerNode.as<double>();
+            m_wheelAttribs[i].m_brakePowerMax = maxBrakePowerNode.as<double>();
         }
 
     }
@@ -8641,7 +8639,7 @@ void afVehicle::afExecuteCommand(double dt){
     if (af_cmd.brake == true){
         for (int i = 0 ; i < m_numWheels ; i++){
             m_vehicle->applyEngineForce(0.0, i);
-            m_vehicle->setBrake(m_wheelAttribs[i].m_max_brake_power, i);
+            m_vehicle->setBrake(m_wheelAttribs[i].m_brakePowerMax, i);
         }
     }
     else{
@@ -8653,7 +8651,7 @@ void afVehicle::afExecuteCommand(double dt){
 
         for (int i = 0 ; i < maxWheelCount ; i++){
             double val = af_cmd.wheel_power[i];
-            val = cClamp(val, -m_wheelAttribs[i].m_max_engine_power, m_wheelAttribs[i].m_max_engine_power);
+            val = cClamp(val, -m_wheelAttribs[i].m_enginePowerMax, m_wheelAttribs[i].m_enginePowerMax);
             m_vehicle->applyEngineForce(val, i);
         }
 
@@ -8661,7 +8659,7 @@ void afVehicle::afExecuteCommand(double dt){
 
         for (int i = 0 ; i < maxWheelCount ; i++){
             double val = af_cmd.wheel_brake[i];
-            val = cClamp(val, 0.0, m_wheelAttribs[i].m_max_brake_power);
+            val = cClamp(val, 0.0, m_wheelAttribs[i].m_brakePowerMax);
             m_vehicle->setBrake(val, i);
         }
     }
@@ -8670,7 +8668,7 @@ void afVehicle::afExecuteCommand(double dt){
 
     for (int i = 0 ; i < maxWheelCount ; i++){
         double val = af_cmd.wheel_steering[i];
-        val = cClamp(val, m_wheelAttribs[i].m_low_steering_lim, m_wheelAttribs[i].m_high_steering_lim);
+        val = cClamp(val, m_wheelAttribs[i].m_steeringLimitMin, m_wheelAttribs[i].m_steeringLimitMax);
         m_vehicle->setSteeringValue(val, i);
     }
 
@@ -8766,6 +8764,4 @@ afDepthPointCloud::~afDepthPointCloud()
     }
 }
 
-
-}
 //------------------------------------------------------------------------------

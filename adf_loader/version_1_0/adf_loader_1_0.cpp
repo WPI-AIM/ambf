@@ -210,6 +210,14 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     bool valid = false;
 
     std::string shape_str;
+    attribs->m_geometryType = afGeometryType::INVALID;
+
+    // Each rigid body can have a seperate path for its low and high res meshes
+    // Incase they are defined, we use these paths and if they are not, we use
+    // the paths for the whole file
+    if (meshPathHRNode.IsDefined()){
+        attribs->m_meshPath = meshPathHRNode.as<std::string>();
+    }
 
     if (shapeNode.IsDefined()){
         attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
@@ -236,13 +244,6 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     else if(meshNode.IsDefined()){
         attribs->m_meshName = meshNode.as<std::string>();
         if (!attribs->m_meshName.empty()){
-            // Each rigid body can have a seperate path for its low and high res meshes
-            // Incase they are defined, we use these paths and if they are not, we use
-            // the paths for the whole file
-            if (meshPathHRNode.IsDefined()){
-                boost::filesystem::path visualPath = meshPathHRNode.as<std::string>();
-                attribs->m_meshFilePath = visualPath / attribs->m_meshName;
-            }
             attribs->m_geometryType = afGeometryType::MESH;
         }
         else{
@@ -282,6 +283,98 @@ bool ADFUtils::getSurfaceAttribsFromNode(YAML::Node *a_node, afSurfaceAttributes
     }
     if (restitutionNode.IsDefined()){
         attribs->m_restitution = restitutionNode.as<double>();
+    }
+
+    return valid;
+}
+
+bool ADFUtils::getWheelAttribsFromNode(YAML::Node *a_node, afWheelAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+
+    YAML::Node rigidBodyNameNode = node["body"];
+    YAML::Node meshNameNode = node["mesh"];
+    YAML::Node widthNode = node["width"];
+    YAML::Node radiusNode = node["radius"];
+    YAML::Node frictionNode = node["friction"];
+    YAML::Node suspensionNode = node["suspension"];
+    YAML::Node rollInfluenceNode = node["roll influence"];
+    YAML::Node downDirNode = node["down direction"];
+    YAML::Node axelDirNode = node["axel direction"];
+    YAML::Node offsetNode = node["offset"];
+    YAML::Node frontNode = node["front"];
+    YAML::Node steeringLimitsNode = node["steering limits"];
+    YAML::Node maxEnginePowerNode = node["max engine power"];
+    YAML::Node maxBrakePowerNode = node["max brake power"];
+
+    bool valid = true;
+
+    attribs->m_representationType = afWheelRepresentationType::INVALID;
+
+    if (rigidBodyNameNode.IsDefined()){
+        attribs->m_wheelBodyName = rigidBodyNameNode.as<std::string>();
+        attribs->m_representationType = afWheelRepresentationType::RIGID_BODY;
+    }
+    else if (meshNameNode.IsDefined()){
+        attribs->m_visualAttribs.m_meshName = meshNameNode.as<std::string>();
+        attribs->m_representationType = afWheelRepresentationType::MESH;
+    }
+    else{
+        std::cerr << "ERROR! UNABLE TO FIND \"MESH\" OR \"BODY\" FIELD FOR WHEEL OF VEHICLE. SKIPPING WHEEL!" << std::endl;
+        return false;
+    }
+
+
+    if (widthNode.IsDefined()){
+        attribs->m_width = widthNode.as<double>();
+    }
+
+    if (radiusNode.IsDefined()){
+        attribs->m_radius = radiusNode.as<double>();
+    }
+
+    if (frictionNode.IsDefined()){
+        attribs->m_friction = frictionNode.as<double>();
+    }
+
+    if (suspensionNode.IsDefined()){
+        attribs->m_suspensionAttribs.m_stiffness = suspensionNode["stiffness"].as<double>();
+        attribs->m_suspensionAttribs.m_damping = suspensionNode["damping"].as<double>();
+        attribs->m_suspensionAttribs.m_compression = suspensionNode["compression"].as<double>();
+        attribs->m_suspensionAttribs.m_restLength = suspensionNode["rest length"].as<double>();
+    }
+
+    if (rollInfluenceNode.IsDefined()){
+        attribs->m_rollInfluence = rollInfluenceNode.as<double>();
+    }
+
+    if (downDirNode.IsDefined()){
+        attribs->m_downDirection = toXYZ<cVector3d>(&downDirNode);
+    }
+
+    if (axelDirNode.IsDefined()){
+       attribs->m_axelDirection = toXYZ<cVector3d>(&axelDirNode);
+    }
+
+    if (offsetNode.IsDefined()){
+        attribs->m_offset = toXYZ<cVector3d>(&offsetNode);
+    }
+
+    if (frontNode.IsDefined()){
+        attribs->m_isFront = frontNode.as<bool>();
+    }
+
+    if (steeringLimitsNode.IsDefined()){
+        attribs->m_steeringLimitMax = steeringLimitsNode["high"].as<double>();
+        attribs->m_steeringLimitMin = steeringLimitsNode["low"].as<double>();
+    }
+
+    if (maxEnginePowerNode.IsDefined()){
+        attribs->m_enginePowerMax = maxEnginePowerNode.as<double>();
+    }
+
+    if (maxBrakePowerNode.IsDefined()){
+        attribs->m_brakePowerMax = maxBrakePowerNode.as<double>();
     }
 
     return valid;
@@ -416,6 +509,8 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
     bool valid = true;
     std::string shape_str;
 
+    attribs->m_geometryType = afGeometryType::INVALID;
+
     if (collisionMarginNode.IsDefined()){
         attribs->m_margin = collisionMarginNode.as<double>();
     }
@@ -433,6 +528,14 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
                           << "\" but should be between [0 - 999], ignoring\n";
             }
         }
+    }
+
+
+    if (meshPathLRNode.IsDefined()){
+        attribs->m_meshPath = meshPathLRNode.as<std::string>();
+    }
+    else if(meshPathHRNode.IsDefined()){
+        attribs->m_meshPath = meshPathHRNode.as<std::string>();
     }
 
     if(collisionShapeNode.IsDefined()){
@@ -461,17 +564,6 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
     else if (collisionMeshNode.IsDefined()){
         attribs->m_meshName = collisionMeshNode.as<std::string>();
         if (!attribs->m_meshName.empty()){
-            if (meshPathLRNode.IsDefined()){
-                boost::filesystem::path collPath = meshPathLRNode.as<std::string>();
-                attribs->m_meshFilePath = collPath / attribs->m_meshName;
-            }
-            else if(meshPathHRNode.IsDefined()){
-                boost::filesystem::path collPath = meshPathHRNode.as<std::string>();
-                attribs->m_meshFilePath = collPath / attribs->m_meshName;
-            }
-            else{
-                attribs->m_meshFilePath = "";
-            }
             attribs->m_geometryType = afGeometryType::MESH;
         }
         else{
@@ -823,22 +915,195 @@ bool ADFUtils::copyPrimitiveShapeData(YAML::Node *shape_node, afPrimitiveShapeAt
 }
 
 
-bool ADFLoader_1_0::loadRigidBody(std::string rb_config_file, std::string node_name, afRigidBodyAttributes *a_attribsRB)
+bool ADFLoader_1_0::loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
 {
     YAML::Node rootNode;
     try{
-        rootNode = YAML::LoadFile(rb_config_file);
+        rootNode = YAML::LoadFile(root_config_file);
     }catch(std::exception &e){
         std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << rb_config_file << std::endl;
+        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << root_config_file << std::endl;
         return 0;
     }
-    YAML::Node rb_node = rootNode[node_name];
-    return loadRigidBody(&rb_node, a_attribsRB);
-
+    YAML::Node node = rootNode[a_objName];
+    switch (a_objType) {
+    case afObjectType::CONSTRAINT_ACTUATOR:
+        return loadConstraintActuatorAttribs(&node, (afConstraintActuatorAttributes*)attribs);
+    case afObjectType::RAYTRACER_SENSOR:
+        return loadRayTracerSensorAttribs(&node, (afRayTracerSensorAttributes*)attribs);
+    case afObjectType::RESISTANCE_SENSOR:
+        return loadResistanceSensorAttribs(&node, (afResistanceSensorAttributes*)attribs);
+    case afObjectType::RIGID_BODY:
+        return loadRigidBodyAttribs(&node, (afRigidBodyAttributes*)attribs);
+    case afObjectType::SOFT_BODY:
+        return loadSoftBodyAttribs(&node, (afSoftBodyAttributes*)attribs);
+    case afObjectType::VEHICLE:
+        return loadVehicleAttribs(&node, (afVehicleAttributes*)attribs);
+    case afObjectType::LIGHT:
+        return loadLightAttribs(&node, (afLightAttributes*)attribs);
+    case afObjectType::CAMERA:
+        return loadCameraAttribs(&node, (afCameraAttributes*)attribs);
+    default:
+        return false;
+    }
 }
 
-bool ADFLoader_1_0::loadRigidBody(YAML::Node *a_node, afRigidBodyAttributes *attribs)
+bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: LIGHT'S " << node << " NODE IS NULL\n";
+        return false;
+    }
+
+    if (attribs == nullptr){
+        std::cerr << "ERROR: LIGHT'S ATTRIBUTES IS A NULLPTR\n";
+        return false;
+    }
+
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node parentNode = node["parent"];
+    YAML::Node locationNode = node["location"];
+    YAML::Node directionNode = node["direction"];
+    YAML::Node spotExponentNode = node["spot exponent"];
+    YAML::Node shadowQualityNode = node["shadow quality"];
+    YAML::Node cuttOffAngleNode = node["cutoff angle"];
+
+    bool valid = true;
+
+    cVector3d location, direction;
+    double spot_exponent, cuttoff_angle;
+    int shadow_quality;
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+
+    if (directionNode.IsDefined()){
+        attribs->m_direction = ADFUtils::toXYZ<cVector3d>(&directionNode);
+    }
+
+    if (spotExponentNode.IsDefined()){
+        attribs->m_spotExponent = spotExponentNode.as<double>();
+    }
+
+    if (shadowQualityNode.IsDefined()){
+        attribs->m_shadowQuality = shadowQualityNode.as<uint>();
+    }
+
+    if (cuttOffAngleNode.IsDefined()){
+        attribs->m_cuttoffAngle = cuttOffAngleNode.as<double>();
+    }
+
+    return valid;
+}
+
+bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: CAMERA'S " << node << " NODE IS NULL\n";
+        return false;
+    }
+
+    if (attribs == nullptr){
+        std::cerr << "ERROR: CAMERA'S ATTRIBUTES IS A NULLPTR\n";
+        return false;
+    }
+
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node parentNode = node["parent"];
+    YAML::Node locationNode = node["location"];
+    YAML::Node lookAtNode = node["look at"];
+    YAML::Node upNode = node["up"];
+    YAML::Node clippingPlaneNode = node["clipping plane"];
+    YAML::Node fieldViewAngleNode = node["field view angle"];
+    YAML::Node orthoWidthNode = node["orthographic view width"];
+    YAML::Node stereoNode = node["stereo"];
+    YAML::Node controllingDevicesDataNode = node["controlling devices"];
+    YAML::Node monitorNode = node["monitor"];
+    YAML::Node publishImageNode = node["publish image"];
+    YAML::Node publishImageIntervalNode = node["publish image interval"];
+    YAML::Node publishDepthNode = node["publish depth"];
+    YAML::Node publishDepthIntervalNode = node["publish depth interval"];
+    YAML::Node multiPassNode = node["multipass"];
+
+    bool valid = true;
+
+    ADFUtils adfUtils;
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+
+    if (lookAtNode.IsDefined()){
+        attribs->m_lookAt = ADFUtils::toXYZ<cVector3d>(&lookAtNode);
+    }
+
+    if (upNode.IsDefined()){
+        attribs->m_up = ADFUtils::toXYZ<cVector3d>(&upNode);
+    }
+
+    if (clippingPlaneNode.IsDefined()){
+        attribs->m_nearPlane = clippingPlaneNode["near"].as<double>();
+        attribs->m_farPlane = clippingPlaneNode["far"].as<double>();
+    }
+
+    if (fieldViewAngleNode.IsDefined()){
+        attribs->m_fieldViewAngle = fieldViewAngleNode.as<double>();
+    }
+
+    if (orthoWidthNode.IsDefined()){
+        attribs->m_orthographic = true;
+        attribs->m_orthoViewWidth = orthoWidthNode.as<double>();
+    }
+
+    if (stereoNode.IsDefined()){
+        std::string mode_str = stereoNode["mode"].as<std::string>();
+        if (mode_str.compare("PASSIVE") || mode_str.compare("passive") || mode_str.compare("Passive")){
+            attribs->m_stereo = true;
+        }
+        attribs->m_stereoEyeSeparation = stereoNode["eye separation"].as<double>();
+        attribs->m_stereFocalLength = stereoNode["focal length"].as<double>();
+    }
+
+    if (monitorNode.IsDefined()){
+        attribs->m_monitorNumber = monitorNode.as<uint>();
+    }
+
+    if (controllingDevicesDataNode.IsDefined()){
+        for(uint idx = 0 ; idx < controllingDevicesDataNode.size() ; idx++){
+            attribs->m_controllingDeviceNames.push_back( controllingDevicesDataNode[idx].as<std::string>());
+        }
+    }
+
+    if (publishImageNode.IsDefined()){
+        attribs->m_publishImage = publishImageNode.as<bool>();
+    }
+
+    if (publishImageIntervalNode.IsDefined()){
+        attribs->m_publishImageInterval = publishImageIntervalNode.as<uint>();
+    }
+
+    if (publishDepthNode.IsDefined()){
+        attribs->m_publishDepth = publishDepthNode.as<bool>();
+    }
+
+    if (publishDepthIntervalNode.IsDefined()){
+        attribs->m_publishDepthInterval = publishDepthIntervalNode.as<uint>();
+    }
+
+    if (multiPassNode.IsDefined()){
+        attribs->m_multiPass = multiPassNode.as<bool>();
+    }
+
+    return valid;
+}
+
+bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -920,23 +1185,7 @@ bool ADFLoader_1_0::loadRigidBody(YAML::Node *a_node, afRigidBodyAttributes *att
     return true;
 }
 
-bool ADFLoader_1_0::loadSoftBody(std::string sb_config_file, std::string node_name, afSoftBodyAttributes *attribs)
-{
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(sb_config_file);
-    }catch(std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << sb_config_file << std::endl;
-        return 0;
-    }
-
-    YAML::Node softBodyNode = baseNode[node_name];
-
-    return loadSoftBody(&softBodyNode, attribs);
-}
-
-bool ADFLoader_1_0::loadSoftBody(YAML::Node *a_node, afSoftBodyAttributes *attribs)
+bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1117,24 +1366,7 @@ bool ADFLoader_1_0::loadSoftBody(YAML::Node *a_node, afSoftBodyAttributes *attri
     return true;
 }
 
-bool ADFLoader_1_0::loadJoint(std::string jnt_config_file, std::string node_name, afJointAttributes *attribs)
-{
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(jnt_config_file);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO JOINT CONFIG: " << jnt_config_file << std::endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseJointNode = baseNode[node_name];
-    return loadJoint(&baseJointNode, attribs);
-
-}
-
-bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, afJointAttributes *attribs)
+bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1230,24 +1462,7 @@ bool ADFLoader_1_0::loadJoint(YAML::Node *a_node, afJointAttributes *attribs)
     return true;
 }
 
-bool ADFLoader_1_0::loadSensor(std::string sen_config_file, std::string node_name, afSensorAttributes *attribs)
-{
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(sen_config_file);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sen_config_file << std::endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseSensorNode = baseNode[node_name];
-    return loadSensor(&baseSensorNode, attribs);
-
-}
-
-bool ADFLoader_1_0::loadSensor(YAML::Node *a_node, afSensorAttributes *attribs)
+bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1272,27 +1487,9 @@ bool ADFLoader_1_0::loadSensor(YAML::Node *a_node, afSensorAttributes *attribs)
     adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     return result;
-
 }
 
-bool ADFLoader_1_0::loadRayTracerSensor(std::string sen_config_file, std::string node_name, afRayTracerSensorAttributes *attribs)
-{
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(sen_config_file);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sen_config_file << std::endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseSensorNode = baseNode[node_name];
-    return loadRayTracerSensor(&baseSensorNode, attribs);
-
-}
-
-bool ADFLoader_1_0::loadRayTracerSensor(YAML::Node *a_node, afRayTracerSensorAttributes *attribs)
+bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSensorAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1315,7 +1512,7 @@ bool ADFLoader_1_0::loadRayTracerSensor(YAML::Node *a_node, afRayTracerSensorAtt
     YAML::Node meshNode = node["mesh"];
     YAML::Node parametricNode = node["parametric"];
 
-    loadSensor(&node, attribs);
+    loadSensorAttribs(&node, attribs);
 
     attribs->m_specificationType = afSensactorSpecificationType::INVALID;
 
@@ -1359,6 +1556,8 @@ bool ADFLoader_1_0::loadRayTracerSensor(YAML::Node *a_node, afRayTracerSensorAtt
     }
 
     else if (meshNode.IsDefined()){
+        // We are not going to load the mesh in the loader and this would restrict us in using a
+        // specific mesh processing library, thus let the ambf_framework load the mesh.
         attribs->m_contourMesh = meshNode.as<std::string>();
         attribs->m_specificationType = afSensactorSpecificationType::MESH;
         result = true;
@@ -1422,33 +1621,7 @@ bool ADFLoader_1_0::loadRayTracerSensor(YAML::Node *a_node, afRayTracerSensorAtt
 
 }
 
-bool ADFLoader_1_0::loadActuator(std::string act_config_file, std::string node_name, afActuatorAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadActuator(YAML::Node *a_node, afActuatorAttributes *attribs)
-{
-}
-
-bool ADFLoader_1_0::loadConstraintActuator(std::string act_config_file, std::string node_name, afConstraintActuatorAttributes *attribs)
-{
-
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(act_config_file);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO ACTUATOR CONFIG: " << act_config_file << std::endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseActuatorNode = baseNode[node_name];
-    return loadConstraintActuator(&baseActuatorNode, attribs);
-}
-
-bool ADFLoader_1_0::loadConstraintActuator(YAML::Node *a_node, afConstraintActuatorAttributes *attribs)
+bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1458,9 +1631,36 @@ bool ADFLoader_1_0::loadConstraintActuator(YAML::Node *a_node, afConstraintActua
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
-    YAML::Node parentNameNode = node["parent"];
     YAML::Node nameNode = node["name"];
     YAML::Node namespaceNode = node["namespace"];
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    return result;
+}
+
+bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstraintActuatorAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    YAML::Node parentNameNode = node["parent"];
     YAML::Node posNode = node["location"]["position"];
     YAML::Node rotNode = node["location"]["orientation"];
     YAML::Node publishFrequencyNode = node["publish frequency"];
@@ -1469,15 +1669,14 @@ bool ADFLoader_1_0::loadConstraintActuator(YAML::Node *a_node, afConstraintActua
     YAML::Node maxImpulseNode = node["max impulse"];
     YAML::Node tauNode = node["tau"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_heirarchyAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    loadActuatorAttribs(&node, attribs);
 
     if (visibleNode.IsDefined()){
         attribs->m_visible = visibleNode.as<bool>();
+    }
+
+    if (visibleSizeNode.IsDefined()){
+        attribs->m_visibleSize = visibleSizeNode.as<bool>();
     }
 
     if (maxImpulseNode.IsDefined()){
@@ -1489,25 +1688,55 @@ bool ADFLoader_1_0::loadConstraintActuator(YAML::Node *a_node, afConstraintActua
     }
 
     return result;
-
 }
 
-bool ADFLoader_1_0::loadVehicle(std::string vh_config_file, std::string node_name, afVehicleAttributes *attribs)
+bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: VEHICLE'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node nameNode = node["name"];
+    YAML::Node nameSpaceNode = node["namespace"];
+    YAML::Node chassisNode = node["chassis"];
+    YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node wheelsNode = node["wheels"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+
+    if (chassisNode.IsDefined()){
+        attribs->m_chassisBodyName = chassisNode.as<std::string>();
+    }
+
+    boost::filesystem::path high_res_filepath;
+
+    if (meshPathHRNode.IsDefined()){
+        attribs->m_wheelsVisualPath = meshPathHRNode.as<std::string>();
+    }
+
+    for (uint i = 0 ; i < wheelsNode.size() ; i++){
+        afWheelAttributes _wheelAttribs;
+        YAML::Node _wheelNode = wheelsNode[i];
+        if (adfUtils.getWheelAttribsFromNode(&_wheelNode, &_wheelAttribs)){
+            attribs->m_wheelAttribs.push_back(_wheelAttribs);
+        }
+    }
+
+    return result;
+}
+
+bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes *attribs)
 {
 
 }
 
-bool ADFLoader_1_0::loadVehicle(YAML::Node *vh_node, afVehicleAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadMultiBody(std::string mb_config_file, afMultiBodyAttributes *attribs)
-{
-
-}
-
-bool ADFLoader_1_0::loadWorld(std::string wd_config_file, afWorldAttributes *attribs)
+bool ADFLoader_1_0::loadWorldAttribs(YAML::Node* a_node, afWorldAttributes *attribs)
 {
 
 }

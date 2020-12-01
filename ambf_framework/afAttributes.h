@@ -185,7 +185,7 @@ public:
     afCollisionAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_meshFilePath;
+    boost::filesystem::path m_meshPath;
     double m_margin;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
@@ -295,7 +295,7 @@ struct afVisualAttributes{
     afVisualAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_meshFilePath;
+    boost::filesystem::path m_meshPath;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     cMaterial m_material;
@@ -315,20 +315,25 @@ public:
 };
 
 
+struct afBaseObjectAttributes{
+    // Base Struct that can be used to later cast specific Object Attributes
+    afIdentificationAttributes m_identificationAttribs;
+};
+
+
 ///
 /// \brief The afActuatorAttributes struct
 ///
-struct afActuatorAttributes
+struct afActuatorAttributes: public afBaseObjectAttributes
 {
 public:
     afActuatorAttributes(){}
 
     afActuatorType m_actuatorType;
 
-    afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afKinematicAttributes m_kinematicAttribs;
-    afHierarchyAttributes m_heirarchyAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
 };
 
 
@@ -350,7 +355,7 @@ public:
 ///
 /// \brief The afCameraAttributes struct
 ///
-struct afCameraAttributes
+struct afCameraAttributes: public afBaseObjectAttributes
 {
 public:
     afCameraAttributes(){}
@@ -361,16 +366,18 @@ public:
     float m_farPlane;
     float m_fieldViewAngle;
     float m_orthoViewWidth;
+    bool m_orthographic;
     bool m_stereo;
+    float m_stereoEyeSeparation;
+    float m_stereFocalLength;
     std::vector<std::string> m_controllingDeviceNames;
-    uint m_monitor;
+    uint m_monitorNumber;
     bool m_publishImage;
-    bool m_publishDesph;
+    bool m_publishDepth;
     uint m_publishImageInterval;
     uint m_publishDepthInterval;
     bool m_multiPass;
 
-    afIdentificationAttributes m_identificationAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
 };
@@ -379,7 +386,7 @@ public:
 ///
 /// \brief The afLightAttributes struct
 ///
-struct afLightAttributes
+struct afLightAttributes: public afBaseObjectAttributes
 {
 public:
     afLightAttributes(){}
@@ -388,9 +395,8 @@ public:
     float m_cuttoffAngle;
     cVector3d m_direction;
 
-    afShadowQualityType m_shadowQuality;
+    uint m_shadowQuality;
 
-    afIdentificationAttributes m_identificationAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
 };
@@ -400,7 +406,7 @@ public:
 ///
 /// \brief The afJointAttributes struct
 ///
-struct afJointAttributes
+struct afJointAttributes: public afBaseObjectAttributes
 {
 
 public:
@@ -426,7 +432,6 @@ public:
     bool m_ignoreInterCollision;
     double m_equilibriumPoint;
 
-    afIdentificationAttributes m_identificationAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afJointControllerAttributes m_controllerAttribs;
@@ -436,7 +441,7 @@ public:
 ///
 /// \brief The afRigidBodyAttributes struct
 ///
-struct afRigidBodyAttributes
+struct afRigidBodyAttributes: public afBaseObjectAttributes
 {
 public:
     afRigidBodyAttributes(){}
@@ -445,7 +450,6 @@ public:
     bool m_publishJointNames;
     bool m_publishJointPositions;
 
-    afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afCollisionAttributes m_collisionAttribs;
     afCartesianControllerAttributes m_controllerAttribs;
@@ -459,7 +463,7 @@ public:
 ///
 /// \brief The afSoftBodyAttributes struct
 ///
-struct afSoftBodyAttributes
+struct afSoftBodyAttributes: public afBaseObjectAttributes
 {
 public:
     afSoftBodyAttributes(){}
@@ -497,7 +501,6 @@ public:
     bool m_randomizeConstraints;
     std::vector<uint> m_fixedNodes;
 
-    afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afCollisionAttributes m_collisionAttribs;
     afCartesianControllerAttributes m_controllerAttribs;
@@ -507,32 +510,67 @@ public:
     afShaderAttributes m_shaderAttribs;
 };
 
+
+///
+/// \brief The afWheelAttributes struct
+///
+struct afWheelAttributes{
+public:
+    afWheelAttributes(){}
+
+    double m_width;
+    double m_radius;
+    double m_friction;
+
+    double m_rollInfluence;
+    cVector3d m_downDirection;
+    cVector3d m_axelDirection;
+    cVector3d m_offset;
+    bool m_isFront = false;
+    double m_steeringLimitMin = 0.0;
+    double m_steeringLimitMax = 0.0;
+    double m_enginePowerMax = 0.0;
+    double m_brakePowerMax = 0.0;
+
+    afVisualAttributes m_visualAttribs;
+    std::string m_wheelBodyName;
+    afWheelRepresentationType m_representationType;
+
+    struct afSuspensionAttributes{
+        double m_stiffness;
+        double m_damping;
+        double m_compression;
+        double m_restLength;
+    };
+
+    afSuspensionAttributes m_suspensionAttribs;
+
+
+};
+
 ///
 /// \brief The afVehicleAttributes struct
 ///
-struct afVehicleAttributes
+struct afVehicleAttributes: public afBaseObjectAttributes
 {
 public:
     afVehicleAttributes(){}
-
-    afIdentificationAttributes m_identificationAttribs;
-    afCommunicationAttributes m_communicationAttribs;
-    afInertialAttributes m_inertialAttribs;
-    afVisualAttributes m_visualAttribs;
+    std::string m_chassisBodyName;
+    boost::filesystem::path m_wheelsVisualPath;
+    std::vector<afWheelAttributes> m_wheelAttribs;
 };
 
 
 ///
 /// \brief The afSensorAttributes struct
 ///
-struct afSensorAttributes
+struct afSensorAttributes: public afBaseObjectAttributes
 {
 public:
     afSensorAttributes(){}
 
     afSensorType m_sensorType;
 
-    afIdentificationAttributes m_identificationAttribs;
     afCommunicationAttributes m_communicationAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
@@ -556,7 +594,6 @@ public:
 
     std::string m_contourMesh;
     afSensactorSpecificationType m_specificationType;
-
     std::vector<afRayAttributes> m_raysAttribs;
 };
 
@@ -583,7 +620,7 @@ public:
 ///
 /// \brief The afMultiBodyAttributes struct
 ///
-struct afMultiBodyAttributes{
+struct afMultiBodyAttributes: afBaseObjectAttributes{
 public:
     afMultiBodyAttributes(){}
 
@@ -598,36 +635,6 @@ public:
     std::vector <afActuatorAttributes> m_actuatorAttribs;
 
     bool m_ignoreInterCollision;
-
-    afIdentificationAttributes m_identificationAttribs;
-};
-
-
-///
-/// \brief The afWheelAttributes struct
-///
-struct afWheelAttributes{
-public:
-    afWheelAttributes(){}
-
-    double m_width;
-    double m_radius;
-    double m_friction;
-    double m_suspensionStiffness;
-    double m_suspensionDamping;
-    double m_suspensionCompression;
-    double m_suspensionRestLength;
-    double m_rollInfluence;
-    cVector3d m_downDirection;
-    cVector3d m_axelDirection;
-    cVector3d m_offset;
-    bool m_isFront = false;
-    double m_high_steering_lim = 0.0;
-    double m_low_steering_lim = 0.0;
-    double m_max_engine_power = 0.0;
-    double m_max_brake_power = 0.0;
-
-    afWheelRepresentationType m_wheelRepresentationType;
 };
 
 
