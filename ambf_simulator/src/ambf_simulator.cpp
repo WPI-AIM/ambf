@@ -393,9 +393,9 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    if (g_afWorld->loadBaseConfig(g_cmdOpts.launchFilePath)){
+    if (g_afWorld->loadLaunchFile(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
-        std::string world_filename = g_afWorld->getWorldConfig();
+        std::string world_filename = g_afWorld->getWorldFilepath();
         g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
 
         g_cameras = g_afWorld->getAFCameras();
@@ -413,7 +413,7 @@ int main(int argc, char* argv[])
                 mbFileNames.push_back(mbFilename);
             }
             for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
-                g_afWorld->loadADF(mbFileNames[idx], true);
+                g_afWorld->loadMultiBody(mbFileNames[idx], true);
             }
         }
 
@@ -430,7 +430,7 @@ int main(int argc, char* argv[])
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
             for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
-                g_afWorld->loadADF(mbIndexes[idx], true);
+                g_afWorld->loadMultiBody(mbIndexes[idx], true);
             }
         }
 
@@ -526,10 +526,10 @@ int main(int argc, char* argv[])
             getline( ss, devIndex, ',' );
             devIndices.push_back(std::stoi(devIndex));
         }
-        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), devIndices);
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesFilepath(), devIndices);
     }
     else{
-        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesConfig(), g_cmdOpts.numDevicesToLoad);
+        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesFilepath(), g_cmdOpts.numDevicesToLoad);
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
             if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
-                g_afWorld->loadADF(paths[i], true);
+                g_afWorld->loadMultiBody(paths[i], true);
             }
             else{
                 std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
@@ -1448,7 +1448,7 @@ void updatePhysics(){
                 if (g_enableGrippingAssist){
                     for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
                         afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
-                        if (sensorPtr->m_sensorType == afSensorType::PROXIMITY){
+                        if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
                             afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
                             for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
                                 if (proximitySensorPtr->isTriggered(i) && simDev->m_gripper_angle < 0.5){

@@ -185,7 +185,7 @@ public:
     afCollisionAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_meshPath;
+    boost::filesystem::path m_path;
     double m_margin;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
@@ -295,7 +295,7 @@ struct afVisualAttributes{
     afVisualAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_meshPath;
+    boost::filesystem::path m_path;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     cMaterial m_material;
@@ -310,8 +310,9 @@ public:
     afShaderAttributes(){}
 
     bool m_shaderDefined;
-    boost::filesystem::path m_vtxShaderFilePath;
-    boost::filesystem::path m_fragShaderFilePath;
+    boost::filesystem::path m_path;
+    boost::filesystem::path m_vtxShader;
+    boost::filesystem::path m_fragShader;
 };
 
 
@@ -620,12 +621,14 @@ public:
 ///
 /// \brief The afMultiBodyAttributes struct
 ///
-struct afMultiBodyAttributes: afBaseObjectAttributes{
+struct afMultiBodyAttributes: public afBaseObjectAttributes{
 public:
     afMultiBodyAttributes(){}
 
-    boost::filesystem::path m_highResPath;
-    boost::filesystem::path m_lowResPath;
+    boost::filesystem::path m_visualMeshesPath;
+    boost::filesystem::path m_collisionMeshesPath;
+
+    std::string m_namespace;
 
     std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     std::vector <afSoftBodyAttributes> m_softBodyAttribs;
@@ -642,9 +645,49 @@ public:
 ///
 /// \brief The afWorldAttributes struct
 ///
-struct afWorldAttributes{
+struct afWorldAttributes: public afBaseObjectAttributes{
 public:
     afWorldAttributes(){}
+
+    std::vector<afLightAttributes> m_lightAttribs;
+    std::vector<afCameraAttributes> m_cameraAttribs;
+
+    cVector3d m_gravity;
+
+    uint m_maxIterations;
+
+    boost::filesystem::path m_environmentFilePath;
+
+    struct afSkyBoxAttributes{
+
+        boost::filesystem::path m_path;
+        std::string m_leftImage;
+        std::string m_frontImage;
+        std::string m_rightImage;
+        std::string m_backImage;
+        std::string m_topImage;
+        std::string m_bottomImage;
+
+        afShaderAttributes m_shaderAttribs;
+
+        bool m_use = false;
+    };
+
+    struct afEnclosure{
+        double m_width;
+        double m_height;
+        double m_length;
+
+        bool m_use = false;
+    };
+
+    afEnclosure m_enclosure;
+
+    afSkyBoxAttributes m_skyBoxAttribs;
+
+    std::string m_namespace;
+
+    afShaderAttributes m_shaderAttribs;
 };
 
 }

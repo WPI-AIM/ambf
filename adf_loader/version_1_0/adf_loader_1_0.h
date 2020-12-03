@@ -80,7 +80,11 @@ public:
 
     virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
 
-    static afJointType getJointTypeFromString(const std::string & a_joint_str);
+    static afActuatorType getActuatorTypeFromString(const std::string & a_str);
+
+    static afJointType getJointTypeFromString(const std::string & a_str);
+
+    static afSensorType getSensorTypeFromString(const std::string & a_str);
 
     static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
 
@@ -153,10 +157,10 @@ public:
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
     // Load multibody from ADF file
-    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
+    virtual bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
+    virtual bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
 
 public:
 

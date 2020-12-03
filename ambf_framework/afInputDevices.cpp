@@ -1109,7 +1109,7 @@ bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_co
 ///
 bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices){
     if (a_input_devices_config.empty()){
-        a_input_devices_config = m_afWorld->getInputDevicesConfig();
+        a_input_devices_config = m_afWorld->getInputDevicesFilepath();
     }
     YAML::Node inputDevicesNode;
     try{

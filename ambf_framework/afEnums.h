@@ -50,7 +50,8 @@
 /// \brief The afActuatorType enum
 ///
 enum class afActuatorType{
-    CONSTRAINT = 0
+    CONSTRAINT = 0,
+    INVALID = 1
 };
 
 
@@ -146,9 +147,10 @@ enum class afPrimitiveShapeType{
 /// \brief The afSensorType enum
 ///
 enum class afSensorType{
-    PROXIMITY = 0,
+    RAYTRACER = 0,
     RANGE = 1,
-    RESISTANCE = 2
+    RESISTANCE = 2,
+    INVALID = 3
 };
 
 

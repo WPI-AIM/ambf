@@ -221,27 +221,6 @@ btVector3 toBTvec(const cVector3d &cVec);
 ///
 cVector3d toCvec(const btVector3 &bVec);
 
-template <typename T>
-///
-/// \brief toXYZ
-/// \param node
-/// \return
-///
-T toXYZ(YAML::Node* node);
-
-
-template <typename T>
-///
-/// \brief toRPY
-/// \param node
-/// \param v
-/// \return
-///
-T toRPY(YAML::Node* node);
-
-
-class afRayTracerUnitsCreator{
-};
 
 
 ///
@@ -254,36 +233,35 @@ public:
     ~afConfigHandler(){}
     std::string getConfigFile(std::string a_config_name);
     // The the multibody config file name at specifc index
-    std::string getMultiBodyConfig(uint i=0);
+    std::string getMultiBodyFilepath(uint i=0);
     // Get the filename of the color config file
-    std::string getColorConfig();
+    std::string getColorFilepath();
     // Get the world config filename
-    std::string getWorldConfig();
+    std::string getWorldFilepath();
     // Get the config file for input devices
-    std::string getInputDevicesConfig();
+    std::string getInputDevicesFilepath();
     // Get color's rgba values from the name of the color. Color names are defined
     // in the color config file
     static std::vector<double> getColorRGBA(std::string a_color_name);
     // Load the base config file
-    bool loadBaseConfig(std::string file);
+    bool loadLaunchFile(std::string file);
     // Get the nuber of multibody config files defined in launch config file
-    inline ulong getNumMBConfigs(){return s_multiBodyConfigFileNames.size();}
+    inline ulong getNumMBFilepaths(){return s_multiBodyFilepaths.size();}
 
-    std::string getBasePath(){return s_basePath.c_str();}
+    std::string getLaunchFilepath(){return s_launchFilePath.c_str();}
 
 private:
 
-    static boost::filesystem::path s_basePath;
-    static std::string s_colorConfigFileName;
-    static std::vector<std::string> s_multiBodyConfigFileNames;
-    static std::string s_worldConfigFileName;
-    static std::string s_inputDevicesConfigFileName;
+    static boost::filesystem::path s_launchFilePath;
+    static std::string s_colorFilepath;
+    static std::vector<std::string> s_multiBodyFilepaths;
+    static std::string s_worldFilePath;
+    static std::string s_inputDevicesFilepath;
     YAML::Node configNode;
 
 protected:
 
     static YAML::Node s_colorsNode;
-
 };
 
 
@@ -760,14 +738,8 @@ public:
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
 
-    // Load rigid body named by node_name from the a config file that may contain many bodies
-    virtual bool loadRigidBody(std::string rb_config_file, std::string node_name, afMultiBodyPtr mB);
-
     // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(YAML::Node* rb_node, std::string node_name, afMultiBodyPtr mB);
-
-    // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(afRigidBodyAttributes &attribs);
+    virtual bool loadRigidBody(const afRigidBodyAttributes* attribs);
 
     // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
@@ -1965,11 +1937,11 @@ public:
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
 
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
-    bool loadADF(std::string a_adf_filepath, bool enable_comm);
+    bool loadMultiBody(std::string a_adf_filepath, bool enable_comm);
 
-    bool loadADF(uint i, bool enable_comm);
+    bool loadMultiBody(uint i, bool enable_comm);
 
-    void loadAllADFs(bool enable_com);
+    void loadAllMultiBodies(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
