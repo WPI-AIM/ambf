@@ -121,6 +121,11 @@ class ADFLoader_1_0: public ADFLoaderBase{
 public:
     ADFLoader_1_0();
 
+    // Must set this version string in the constructor of each loader.
+    using ADFLoaderBase::m_version;
+
+    virtual std::string getLoaderVersion(){return m_version;}
+
     virtual bool loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
 
     // Load Light
@@ -156,14 +161,16 @@ public:
     // Load sensor from a YAML::Node
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
+    // Load Input Device Attributes
+    virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
+
     // Load multibody from ADF file
     virtual bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
 
     // Load world from ADF file
     virtual bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
 
-public:
-
+    virtual bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
 };
 }
 #endif

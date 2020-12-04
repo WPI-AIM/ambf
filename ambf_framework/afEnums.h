@@ -82,6 +82,7 @@ enum class afObjectType{
     ACTUATOR,
     CONSTRAINT_ACTUATOR,
     CAMERA,
+    INPUT_DEVICE,
     LIGHT,
     RIGID_BODY,
     SOFT_BODY,

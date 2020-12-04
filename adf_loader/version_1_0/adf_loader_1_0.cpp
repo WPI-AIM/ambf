@@ -940,6 +940,11 @@ bool ADFUtils::copyPrimitiveShapeData(YAML::Node *shape_node, afPrimitiveShapeAt
 }
 
 
+ADFLoader_1_0::ADFLoader_1_0()
+{
+    m_version = "1.0";
+}
+
 bool ADFLoader_1_0::loadObjectAttribs(string root_config_file, string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
 {
     YAML::Node rootNode;
@@ -968,6 +973,8 @@ bool ADFLoader_1_0::loadObjectAttribs(string root_config_file, string a_objName,
         return loadLightAttribs(&node, (afLightAttributes*)attribs);
     case afObjectType::CAMERA:
         return loadCameraAttribs(&node, (afCameraAttributes*)attribs);
+    case afObjectType::INPUT_DEVICE:
+        return loadInputDeviceAttributes(&node, (afInputDeviceAttributes*)attribs);
     default:
         return false;
     }
@@ -1757,6 +1764,143 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     return result;
 }
 
+
+bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        std::cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    YAML::Node hardwareNameNode = node["hardware name"];
+    YAML::Node hapticGainNode = node["haptic gain"];
+    YAML::Node controllerGainNode = node["controller gain"];
+    YAML::Node enableJointControlNode = node["enable joint control"];
+    YAML::Node deadbandNode = node["deadband"];
+    YAML::Node maxForceNode = node["max force"];
+    YAML::Node maxJerkNode = node["max jerk"];
+    YAML::Node workspaceScalingNode = node["workspace scaling"];
+    YAML::Node simulatedMultiBodyNode = node["simulated multibody"];
+    YAML::Node rootLinkNode = node["root link"];
+    YAML::Node locationNode = node["location"];
+    YAML::Node orientationOffsetNode = node["orientation offset"];
+    YAML::Node buttonMappingNode = node["button mapping"];
+    YAML::Node visibleNode = node["visible"];
+    YAML::Node visibleSizeNode = node["visible size"];
+    YAML::Node visibleColorNode = node["visible color"];
+    YAML::Node pairCamerasNode = node["pair cameras"];
+
+    // For the simulated gripper, the user can specify a MultiBody config to load.
+    // We shall load this file as a proxy for Physical Input device in the simulation.
+    // We shall get the root link of this multibody (baselink) and set Cartesian Position
+    // control on this body.
+
+    // Further, the user can sepcify a root link for the MultiBody config file. If this
+    // is defined we shall infact use the specific link which can be different from
+    // the bodies base link.
+
+    // A second use case arises, in which the user doesnt want to provide a config file
+    // but wants to bind the physical input device to an existing multibody in the simulation.
+    // In this case, the user should specify just the root link and we shall try to find a
+    // body in simulation matching that name. Once succesful we shall then be able to control
+    // that link/body in Position control mode and control all the joints lower in heirarchy.
+
+    ADFUtils adfUtils;
+
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+
+    // set the control gains fields as controller fields.
+    node["controller"] = controllerGainNode;
+    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_SDEControllerAttribs);
+
+    if (hardwareNameNode.IsDefined()){
+        attribs->m_hardwareName = hardwareNameNode.as<std::string>();
+    }
+    else{
+        std::cerr << "ERROR: PHYSICAL DEVICES HARDWARE NAME NOT DEFINED, IGNORING \n";
+        return 0;
+    }
+
+    if (workspaceScalingNode.IsDefined()){
+        attribs->m_workspaceScale = workspaceScalingNode.as<double>();
+    }
+
+    if (simulatedMultiBodyNode.IsDefined()){
+        attribs->m_sdeFilepath = simulatedMultiBodyNode.as<std::string>();
+    }
+
+
+    if (rootLinkNode.IsDefined()){
+        attribs->m_rootLink = rootLinkNode.as<std::string>();
+    }
+
+
+    if (hapticGainNode.IsDefined()){
+        attribs->m_IIDControllerAttribs.P_lin = hapticGainNode["linear"].as<double>();
+        attribs->m_IIDControllerAttribs.P_ang = hapticGainNode["angular"].as<double>();
+    }
+
+    if (deadbandNode.IsDefined()){
+        attribs->m_deadBand = deadbandNode.as<double>();
+    }
+
+    if (maxForceNode.IsDefined()){
+        attribs->m_maxForce = maxForceNode.as<double>();
+    }
+
+    if (maxJerkNode.IsDefined()){
+        attribs->m_maxJerk = maxJerkNode.as<double>();
+    }
+
+    if (enableJointControlNode.IsDefined()){
+        attribs->m_enableSDEJointControl = enableJointControlNode.as<bool>();
+    }
+
+    if (orientationOffsetNode.IsDefined()){
+            cVector3d rpy_offset;
+            rpy_offset = ADFUtils::toRPY<cVector3d>(&orientationOffsetNode);
+            cMatrix3d rot;
+            rot.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
+            attribs->m_orientationOffset.setLocalRot(rot);
+    }
+
+    if (buttonMappingNode.IsDefined()){
+        if (buttonMappingNode["a1"].IsDefined()){
+            attribs->m_buttons.A1 = buttonMappingNode["a1"].as<int>();
+        }
+        if (buttonMappingNode["a2"].IsDefined()){
+            attribs->m_buttons.A2 = buttonMappingNode["a2"].as<int>();
+        }
+        if (buttonMappingNode["g1"].IsDefined()){
+            attribs->m_buttons.G1 = buttonMappingNode["g1"].as<int>();
+        }
+        if (buttonMappingNode["next mode"].IsDefined()){
+            attribs->m_buttons.NEXT_MODE = buttonMappingNode["next mode"].as<int>();
+        }
+        if (buttonMappingNode["prev mode"].IsDefined()){
+            attribs->m_buttons.PREV_MODE = buttonMappingNode["prev mode"].as<int>();
+        }
+    }
+
+    if(pairCamerasNode.IsDefined()){
+        for(int i = 0 ; i < pairCamerasNode.size() ; i++){
+            std::string camName = pairCamerasNode[i].as<std::string>();
+            attribs->m_pairedCamerasNames.push_back(camName);
+        }
+    }
+
+    if (visibleNode.IsDefined()){
+        attribs->m_visible = visibleNode.as<bool>();
+    }
+
+    if (visibleSizeNode.IsDefined()){
+        attribs->m_visibleSize = visibleSizeNode.as<double>();
+    }
+
+    return true;
+}
+
 bool ADFLoader_1_0::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttributes *attribs)
 {
     YAML::Node node;
@@ -2000,4 +2144,84 @@ bool ADFLoader_1_0::loadWorldAttribs(std::string a_filepath, afWorldAttributes *
     adfUtils.getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
 
     return true;
+}
+
+bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
+{
+    YAML::Node node;
+
+    try{
+        node = YAML::LoadFile(a_filepath);
+    }
+    catch (exception &e){
+        cerr << e.what() << endl;
+        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_filepath << endl;
+        cerr << "PLEASE PROVIDE A VALID LAUNCH FILE. EXITING \n";
+        return 0;
+    }
+
+
+    //Declare all the YAML Params that we want to look for
+    YAML::Node worldFilepathNode = node["world config"];
+    YAML::Node colorFilepathNode = node["color config"];
+    YAML::Node inputDevicesFilepathNode = node["input devices config"];
+    YAML::Node multiBodyFilepathsNode = node["multibody configs"];
+
+
+    attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
+
+    if(worldFilepathNode.IsDefined()){
+        boost::filesystem::path world_cfg_filename = worldFilepathNode.as<string>();
+        if (world_cfg_filename.is_relative()){
+            world_cfg_filename = m_launchFilePath / world_cfg_filename;
+        }
+        attribs->m_worldFilePath = world_cfg_filename.c_str();
+    }
+    else{
+        cerr << "ERROR! WORLD CONFIG NOT DEFINED \n";
+        return 0;
+    }
+
+    if(inputDevicesFilepathNode.IsDefined()){
+        boost::filesystem::path input_devices_cfg_filename = inputDevicesFilepathNode.as<string>();
+        if (input_devices_cfg_filename.is_relative()){
+            input_devices_cfg_filename = m_launchFilePath / input_devices_cfg_filename;
+        }
+        attribs->m_inputDevicesFilepath = input_devices_cfg_filename.c_str();
+    }
+    else{
+        cerr << "ERROR! INPUT DEVICES CONFIG NOT DEFINED \n";
+        return 0;
+    }
+
+    if(colorFilepathNode.IsDefined()){
+        boost::filesystem::path color_cfg_filename = colorFilepathNode.as<string>();
+        if (color_cfg_filename.is_relative()){
+            color_cfg_filename = m_launchFilePath / color_cfg_filename;
+        }
+        attribs->m_colorFilepath = color_cfg_filename.c_str();
+        attribs->m_colorsNode = YAML::LoadFile(m_colorFilepath.c_str());
+        if (!m_colorsNode){
+            cerr << "ERROR! COLOR CONFIG NOT FOUND \n";
+        }
+    }
+    else{
+        return 0;
+    }
+
+    if (multiBodyFilepathsNode.IsDefined()){
+        for (size_t i = 0 ; i < multiBodyFilepathsNode.size() ; i++){
+            boost::filesystem::path mb_cfg_filename =  multiBodyFilepathsNode[i].as<string>();
+            if (mb_cfg_filename.is_relative()){
+                mb_cfg_filename = m_launchFilePath / mb_cfg_filename;
+            }
+            attribs->m_multiBodyFilepaths.push_back(string(mb_cfg_filename.c_str()));
+        }
+    }
+    else{
+        cerr << "PATH AND MULTIBODY CONFIG NOT DEFINED \n";
+        return 0;
+    }
+
+    return 1;
 }

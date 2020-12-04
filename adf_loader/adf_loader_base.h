@@ -47,6 +47,7 @@
 //------------------------------------------------------------------------------
 
 #include "afAttributes.h"
+#include <assert.h>
 
 using namespace ambf;
 
@@ -83,6 +84,12 @@ public:
 class ADFLoaderBase{
 public:
     ADFLoaderBase();
+    ~ADFLoaderBase();
+
+    // Get the version of the this loader
+    virtual std::string getLoaderVersion();
+
+    bool setLoader(ADFLoaderBase* a_loader);
 
     virtual bool loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
 
@@ -108,18 +115,24 @@ public:
     // Load sensor from a YAML::Node
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
+    // Load Input Device Attributes
+    virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
+
     // Load multibody from ADF file
     virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
 
     // Load world from ADF file
     virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
 
-public:
-    static unsigned int getVersion(){return m_adfVersion;}
+    // Load the launch file
+    virtual bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
 
 protected:
+    ADFLoaderBase* m_loader;
 
-    static unsigned int m_adfVersion;
+    std::string m_version = "NULL";
+
+    bool cleanUp();
 
 };
 #endif

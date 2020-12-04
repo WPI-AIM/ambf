@@ -208,61 +208,59 @@ static std::string AF_DEPTH_COMPUTE_FRAG =
         " }                                                                                   \n";
 
 ///
-/// \brief toBTvec
+/// \brief cVec2btVec
 /// \param cVec
 /// \return
 ///
-btVector3 toBTvec(const cVector3d &cVec);
-
+btVector3 toBTvec(const cVector3d &cVec){
+    btVector3 bVec(cVec.x(), cVec.y(), cVec.z());
+    return bVec;
+}
 ///
-/// \brief toCvec
+/// \brief btVec2cVec
 /// \param bVec
 /// \return
 ///
-cVector3d toCvec(const btVector3 &bVec);
+cVector3d toCvec(const btVector3 &bVec){
+    cVector3d cVec(bVec.x(), bVec.y(), bVec.z());
+    return cVec;
+}
 
+///
+/// \brief toBTtransfrom
+/// \param cTrans
+/// \return
+///
+btTransform toBTtransfrom(const cTransform &cTrans){
+    btTransform btTrans;
+    btVector3 btVec(cTrans.getLocalPos().x(), cTrans.getLocalPos().y(), cTrans.getLocalPos().z());
+    btTrans.setOrigin(btVec);
+    cQuaternion cQuat;
+    cQuat.fromRotMat(cTrans.getLocalRot());
+
+    btQuaternion btQuat(cQuat.x, cQuat.y, cQuat.z, cQuat.w);
+    btTrans.setRotation(btQuat);
+
+    return btTrans;
+}
 
 
 ///
-/// \brief The afConfigHandler class
+/// \brief toCtransform
+/// \param btTrans
+/// \return
 ///
-class afConfigHandler{
+cTransform toCtransform(const btTransform &btTrans){
+    cTransform cTrans;
+    cVector3d cVec(btTrans.getOrigin().x(), btTrans.getOrigin().y(), btTrans.getOrigin().z());
+    cTrans.setLocalPos(cVec);
 
-public:
-    afConfigHandler();
-    ~afConfigHandler(){}
-    std::string getConfigFile(std::string a_config_name);
-    // The the multibody config file name at specifc index
-    std::string getMultiBodyFilepath(uint i=0);
-    // Get the filename of the color config file
-    std::string getColorFilepath();
-    // Get the world config filename
-    std::string getWorldFilepath();
-    // Get the config file for input devices
-    std::string getInputDevicesFilepath();
-    // Get color's rgba values from the name of the color. Color names are defined
-    // in the color config file
-    static std::vector<double> getColorRGBA(std::string a_color_name);
-    // Load the base config file
-    bool loadLaunchFile(std::string file);
-    // Get the nuber of multibody config files defined in launch config file
-    inline ulong getNumMBFilepaths(){return s_multiBodyFilepaths.size();}
-
-    std::string getLaunchFilepath(){return s_launchFilePath.c_str();}
-
-private:
-
-    static boost::filesystem::path s_launchFilePath;
-    static std::string s_colorFilepath;
-    static std::vector<std::string> s_multiBodyFilepaths;
-    static std::string s_worldFilePath;
-    static std::string s_inputDevicesFilepath;
-    YAML::Node configNode;
-
-protected:
-
-    static YAML::Node s_colorsNode;
-};
+    cQuaternion cQuat(btTrans.getRotation().w(), btTrans.getRotation().x(), btTrans.getRotation().y(), btTrans.getRotation().z());
+    cMatrix3d cRot;
+    cQuat.toRotMat(cRot);
+    cTrans.setLocalRot(cRot);
+    return cTrans;
+}
 
 
 class afComm{
@@ -1747,7 +1745,7 @@ struct afRenderOptions{
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afConfigHandler, public afComm{
+class afWorld: public afComm{
 
     friend class afMultiBody;
 

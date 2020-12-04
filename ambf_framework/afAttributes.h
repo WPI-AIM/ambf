@@ -641,6 +641,53 @@ public:
 };
 
 
+struct afInputDeviceAttributes: public afIdentificationAttributes{
+public:
+    afInputDeviceAttributes();
+
+    std::string m_hardwareName;
+
+    afCartesianControllerAttributes m_IIDControllerAttribs;
+    afCartesianControllerAttributes m_SDEControllerAttribs;
+
+    bool m_enableSDEJointControl;
+    double m_deadBand;
+    double m_maxForce;
+    double m_maxJerk;
+    double m_workspaceScale;
+
+    boost::filesystem::path m_sdeFilepath;
+    std::string m_rootLink;
+
+    bool m_sdeDefined = false;
+    bool m_rootLinkDefined = false;
+
+    afKinematicAttributes m_kinematicAttribs;
+    cTransform m_orientationOffset;
+
+    bool m_visible;
+    double m_visibleSize;
+    std::vector<std::string> m_pairedCamerasNames;
+
+    struct afButtons{
+        int A1; // Action 1 Button
+        int A2; // Action 2 Button
+        int G1; // Gripper 1 Button
+        int NEXT_MODE; // Next Mode Button
+        int PREV_MODE; // Prev Mode Button
+    };
+
+    afButtons m_buttons;
+};
+
+
+struct afTeleRoboticUnitAttributes{
+
+    boost::filesystem::path m_path;
+    std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
+};
+
+
 
 ///
 /// \brief The afWorldAttributes struct
@@ -688,6 +735,15 @@ public:
     std::string m_namespace;
 
     afShaderAttributes m_shaderAttribs;
+};
+
+
+struct afLaunchAttributes{
+    boost::filesystem::path m_path;
+    boost::filesystem::path m_colorFilepath;
+    std::vector<boost::filesystem::path> m_multiBodyFilepaths;
+    boost::filesystem::path m_worldFilePath;
+    boost::filesystem::path m_inputDevicesFilepath;
 };
 
 }

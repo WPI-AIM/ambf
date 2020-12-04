@@ -403,7 +403,8 @@ public:
     bool m_use_cam_frame_rot;
     MODES m_simModes;
     std::string m_mode_str;
-    std::vector<MODES> m_modes_enum_vec {MODES::CAM_CLUTCH_CONTROL,
+    std::vector<MODES> m_modes_enum_vec {
+        MODES::CAM_CLUTCH_CONTROL,
                 MODES::GRIPPER_JAW_CONTROL,
                 MODES::CHANGE_CONT_LIN_GAIN,
                 MODES::CHANGE_CONT_ANG_GAIN,

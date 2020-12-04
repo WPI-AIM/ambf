@@ -35,7 +35,6 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
     \version   1.0$
 */
@@ -49,14 +48,59 @@
 #include "adf_loader_base.h"
 #include "version_1_0/adf_loader_1_0.h"
 
+enum class adfVersion{
+    VERSION_1_0,
+    INVALID
+
+};
+
+// To use or not use boost::filesystem?
+typedef boost::filesystem bf;
+
 using namespace ambf;
 
-class ADFLoaderInterface{
+class ADFLoaderInterface: public ADFLoaderBase{
 public:
-    ADFLoaderInterface();
+    ADFLoaderInterface(){}
+
+    adfVersion getFileVersion(std::string a_filepath);
+
+    adfVersion getFileVersion(YAML::Node *a_node);
+
+    bool setLoaderVersion(adfVersion);
+
+    adfVersion getVersionFromString(std::string a_str);
+
+    // Load the base config file
+    bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
+
+    // The the multibody config file name at specifc index
+    bf::path getMultiBodyFilepath(uint i=0);
+
+    // Get the filename of the color config file
+    bf::path getColorFilepath(){return m_launchAttribs.m_colorFilepath;}
+
+    // Get the world config filename
+    bf::path getWorldFilepath(){return m_launchAttribs.m_worldFilePath;}
+
+    // Get the config file for input devices
+    bf::path getInputDevicesFilepath(){return m_launchAttribs.m_inputDevicesFilepath;}
+
+    // Get color's rgba values from the name of the color. Color names are defined
+    // in the color config file
+    std::vector<double> getColorRGBA(std::string a_color_name);
+
+    // Get the nuber of multibody config files defined in launch config file
+    ulong getNumMBFilepaths(){return m_launchAttribs.m_multiBodyFilepaths.size();}
+
+    // Get the filepath of the launch file
+    bf::path getLaunchFilepath(){return m_launchAttribs.m_path;}
 
 protected:
-    ADFLoaderBase* m_adfLoader;
+    YAML::Node m_colorsNode;
+
+private:
+    afLaunchAttributes m_launchAttribs;
 };
 
 #endif
