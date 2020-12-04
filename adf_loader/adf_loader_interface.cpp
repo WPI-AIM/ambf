@@ -47,15 +47,6 @@
 using namespace std;
 using namespace adf_loader_1_0;
 
-///
-/// \brief afConfigHandler::load_yaml
-/// \param a_config_file
-/// \return
-///
-bool ADFLoaderInterface::loadLaunchFile(string a_filepath, afLaunchAttributes* attribs){
-
-}
-
 
 ///
 /// \brief afConfigHandler::get_puzzle_config
@@ -72,7 +63,6 @@ string ADFLoaderInterface::getMultiBodyFilepath(uint i){
     }
 }
 
-
 ///
 /// \brief afConfigHandler::get_color_rgba
 /// \param a_color_name
@@ -80,7 +70,8 @@ string ADFLoaderInterface::getMultiBodyFilepath(uint i){
 ///
 adfVersion ADFLoaderInterface::getFileVersion(string a_filepath)
 {
-
+    YAML::Node node = YAML::LoadAllFromFile(a_filepath);
+    return getFileVersion(&node);
 }
 
 adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
@@ -115,21 +106,22 @@ bool ADFLoaderInterface::setLoaderVersion(adfVersion a_version){
         }
         break;
     }
-//    case afLoaderVersion::VERSION_2_0:{
-//        if (getVersionFromString(getVersion()) == a_version){
-//            // Have already loaded the right version. Ignore
-//            break;
-//        }
-//        else{
-//            ADFLoader_2_0 loader = new ADFLoader_2_0();
-//            setLoader(loader);
-//        }
-//        break;
-//    }
     default:
         break;
     }
 
+    return true;
+}
+
+bool ADFLoaderInterface::setLoaderVersionForFile(string a_filepath)
+{
+    adfVersion version = getVersionFromString(a_filepath);
+
+    if (version == adfVersion::INVALID){
+        cerr << "ERROR! COULDN'T DETERMINE THE CORRECT ADF LOADER FOR THE FILE \"" << a_filepath << "\"" << endl;
+        return 0;
+    }
+    setLoaderVersion(version);
     return true;
 }
 
@@ -164,3 +156,49 @@ vector<double> ADFLoaderInterface::getColorRGBA(string a_color_name){
     }
     return rgba;
 }
+
+bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, afObjectType a_type, afBaseObjectAttributes *attribs)
+{
+    if (setLoaderVersionForFile(a_filepath)){
+        return false;
+    }
+    else{
+        return m_loader->loadObjectAttribs(a_filepath, a_objName, a_type, attribs);
+    }
+
+}
+
+
+bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *attribs)
+{
+    if (setLoaderVersionForFile(a_filepath)){
+        return false;
+    }
+    else{
+        return m_loader->loadWorldAttribs(a_filepath, attribs);
+    }
+}
+
+bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttributes *attribs)
+{
+    if (setLoaderVersionForFile(a_filepath)){
+        return false;
+    }
+    else{
+        return m_loader->loadMultiBodyAttribs(a_filepath, attribs);
+    }
+}
+
+bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
+{
+    if (setLoaderVersionForFile(a_filepath)){
+        return false;
+    }
+    else{
+        return m_loader->loadLaunchFileAttribs(a_filepath, attribs);
+    }
+}
+
+
+
+

@@ -83,18 +83,19 @@ public:
 ///
 class ADFLoaderBase{
 public:
-    ADFLoaderBase();
-    ~ADFLoaderBase();
+    ADFLoaderBase(){}
+    ~ADFLoaderBase(){}
 
     // Get the version of the this loader
     virtual std::string getLoaderVersion();
 
-    bool setLoader(ADFLoaderBase* a_loader);
+    // Load object attributes
+    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
 
-    virtual bool loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
-
+    // Load Light Attributes
     virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);
 
+    // Load Camera Attributes
     virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs);
 
     // Load rigid body from a YAML::Node
@@ -125,14 +126,17 @@ public:
     virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
 
     // Load the launch file
-    virtual bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
-
-protected:
-    ADFLoaderBase* m_loader;
-
-    std::string m_version = "NULL";
+    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs);
 
     bool cleanUp();
 
+    bool isLoaderValid();
+
+    bool setLoader(ADFLoaderBase* a_loader);
+
+protected:
+    std::string m_version = "NULL";
+
+    ADFLoaderBase* m_loader;
 };
 #endif

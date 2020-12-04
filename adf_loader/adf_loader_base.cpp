@@ -44,21 +44,86 @@
 
 using namespace std;
 
-ADFLoaderBase::ADFLoaderBase()
-{
+ADFLoaderBase::ADFLoaderBase(){
     m_loader = nullptr;
 }
 
-ADFLoaderBase::~ADFLoaderBase()
-{
+ADFLoaderBase::~ADFLoaderBase(){
     cleanUp();
 }
 
-string ADFLoaderBase::getVersion()
+string ADFLoaderBase::getLoaderVersion()
 {
-    assert(m_loader == nullptr);
-    return m_loader->getVersion();
+    isLoaderValid();
+    return m_loader->getLoaderVersion();
 }
+
+bool ADFLoaderBase::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadLightAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadCameraAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadRigidBodyAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadSoftBodyAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadJointAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadRayTracerSensorAttribs(YAML::Node *a_node, afSensorAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadRayTracerSensorAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadActuatorAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadVehicleAttribs(YAML::Node *a_node, afVehicleAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadVehicleAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadInputDeviceAttributes(YAML::Node *a_node, afInputDeviceAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadInputDeviceAttributes(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadMultiBodyAttribs(a_node, attribs);
+}
+
+bool ADFLoaderBase::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attribs)
+{
+    isLoaderValid();
+    return m_loader->loadMultiBodyAttribs(a_node, attribs);
+}
+
 
 bool ADFLoaderBase::setLoader(ADFLoaderBase *a_loader)
 {
@@ -66,83 +131,6 @@ bool ADFLoaderBase::setLoader(ADFLoaderBase *a_loader)
     return true;
 }
 
-bool ADFLoaderBase::loadObjectAttribs(string a_filepath, string a_objName, afObjectType a_type, afBaseObjectAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadObjectAttribs(a_filepath, a_objName, a_type, attribs);
-}
-
-bool ADFLoaderBase::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadLightAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadCameraAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadRigidBodyAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadSoftBodyAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadJointAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadRayTracerSensorAttribs(YAML::Node *a_node, afSensorAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadRayTracerSensorAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadActuatorAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadVehicleAttribs(YAML::Node *a_node, afVehicleAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadVehicleAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadInputDeviceAttributes(YAML::Node *a_node, afInputDeviceAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadInputDeviceAttributes(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadMultiBodyAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadMultiBodyAttribs(a_node, attribs);
-}
-
-bool ADFLoaderBase::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
-{
-    assert(m_loader == nullptr);
-    return m_loader->loadLaunchFileAttribs(a_filepath, attribs);
-}
 
 bool ADFLoaderBase::cleanUp()
 {
@@ -150,4 +138,9 @@ bool ADFLoaderBase::cleanUp()
         delete m_loader;
     }
     return true;
+}
+
+bool ADFLoaderBase::isLoaderValid()
+{
+    assert(m_loader == nullptr);
 }

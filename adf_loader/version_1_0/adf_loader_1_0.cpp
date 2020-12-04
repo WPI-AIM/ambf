@@ -945,16 +945,14 @@ ADFLoader_1_0::ADFLoader_1_0()
     m_version = "1.0";
 }
 
-bool ADFLoader_1_0::loadObjectAttribs(string root_config_file, string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
+bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
 {
-    YAML::Node rootNode;
-    try{
-        rootNode = YAML::LoadFile(root_config_file);
-    }catch(exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << root_config_file << endl;
+    YAML::Node& rootNode = *a_node;
+    if (rootNode.IsNull()){
+        cerr << "ERROR: OBJECT'S YAML NODE IS NULL\n";
         return 0;
     }
+
     YAML::Node node = rootNode[a_objName];
     switch (a_objType) {
     case afObjectType::CONSTRAINT_ACTUATOR:
@@ -1769,7 +1767,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        std::cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -1815,10 +1813,10 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_SDEControllerAttribs);
 
     if (hardwareNameNode.IsDefined()){
-        attribs->m_hardwareName = hardwareNameNode.as<std::string>();
+        attribs->m_hardwareName = hardwareNameNode.as<string>();
     }
     else{
-        std::cerr << "ERROR: PHYSICAL DEVICES HARDWARE NAME NOT DEFINED, IGNORING \n";
+        cerr << "ERROR: PHYSICAL DEVICES HARDWARE NAME NOT DEFINED, IGNORING \n";
         return 0;
     }
 
@@ -1827,12 +1825,12 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     }
 
     if (simulatedMultiBodyNode.IsDefined()){
-        attribs->m_sdeFilepath = simulatedMultiBodyNode.as<std::string>();
+        attribs->m_sdeFilepath = simulatedMultiBodyNode.as<string>();
     }
 
 
     if (rootLinkNode.IsDefined()){
-        attribs->m_rootLink = rootLinkNode.as<std::string>();
+        attribs->m_rootLink = rootLinkNode.as<string>();
     }
 
 
@@ -1885,7 +1883,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     if(pairCamerasNode.IsDefined()){
         for(int i = 0 ; i < pairCamerasNode.size() ; i++){
-            std::string camName = pairCamerasNode[i].as<std::string>();
+            string camName = pairCamerasNode[i].as<string>();
             attribs->m_pairedCamerasNames.push_back(camName);
         }
     }
@@ -1901,16 +1899,11 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     return true;
 }
 
-bool ADFLoader_1_0::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttributes *attribs)
+bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttributes *attribs)
 {
-    YAML::Node node;
-
-    try{
-        node = YAML::LoadFile(a_filepath);
-    }
-    catch (exception &e){
-        cerr << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD ADF FILE: " << a_filepath << endl;
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: MULTIBODY'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -1931,21 +1924,15 @@ bool ADFLoader_1_0::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttribute
     bool valid = true;
 
     if(meshPathHRNode.IsDefined()){
-        attribs->m_visualMeshesPath = meshPathHRNode.as<std::string>();
-        if (attribs->m_visualMeshesPath.is_relative()){
-            attribs->m_visualMeshesPath = boost::filesystem::path(a_filepath).parent_path() / attribs->m_visualMeshesPath;
-        }
+        attribs->m_visualMeshesPath = meshPathHRNode.as<string>();
     }
 
     if(meshPathLRNode.IsDefined()){
-        attribs->m_visualMeshesPath = meshPathLRNode.as<std::string>();
-        if (attribs->m_visualMeshesPath.is_relative()){
-            attribs->m_visualMeshesPath = boost::filesystem::path(a_filepath).parent_path() / attribs->m_visualMeshesPath;
-        }
+        attribs->m_visualMeshesPath = meshPathLRNode.as<string>();
     }
 
     if (nameSpaceNode.IsDefined()){
-        attribs->m_namespace = nameSpaceNode.as<std::string>();
+        attribs->m_namespace = nameSpaceNode.as<string>();
     }
 
     // Loading Rigid Bodies
@@ -2049,19 +2036,13 @@ bool ADFLoader_1_0::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttribute
     return valid;
 }
 
-bool ADFLoader_1_0::loadWorldAttribs(std::string a_filepath, afWorldAttributes *attribs)
+bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attribs)
 {
-    YAML::Node node;
-    try{
-        node = YAML::LoadFile(a_filepath);
-    }catch(exception &e){
-        cerr << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_filepath << endl;
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: WORLD'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
-
-    boost::filesystem::path qualifiedPath = boost::filesystem::path(a_filepath).parent_path();
-    cerr << "INFO! WORLD CONFIG PATH: " << qualifiedPath.c_str() << endl;
 
     YAML::Node namespaceNode = node["namespace"];
     YAML::Node enclosureDataNode = node["enclosure"];
@@ -2146,20 +2127,13 @@ bool ADFLoader_1_0::loadWorldAttribs(std::string a_filepath, afWorldAttributes *
     return true;
 }
 
-bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
+bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes *attribs)
 {
-    YAML::Node node;
-
-    try{
-        node = YAML::LoadFile(a_filepath);
-    }
-    catch (exception &e){
-        cerr << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_filepath << endl;
-        cerr << "PLEASE PROVIDE A VALID LAUNCH FILE. EXITING \n";
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: LAUNCH FILE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
-
 
     //Declare all the YAML Params that we want to look for
     YAML::Node worldFilepathNode = node["world config"];
@@ -2168,13 +2142,8 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes 
     YAML::Node multiBodyFilepathsNode = node["multibody configs"];
 
 
-    attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
-
     if(worldFilepathNode.IsDefined()){
         boost::filesystem::path world_cfg_filename = worldFilepathNode.as<string>();
-        if (world_cfg_filename.is_relative()){
-            world_cfg_filename = m_launchFilePath / world_cfg_filename;
-        }
         attribs->m_worldFilePath = world_cfg_filename.c_str();
     }
     else{
@@ -2183,11 +2152,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes 
     }
 
     if(inputDevicesFilepathNode.IsDefined()){
-        boost::filesystem::path input_devices_cfg_filename = inputDevicesFilepathNode.as<string>();
-        if (input_devices_cfg_filename.is_relative()){
-            input_devices_cfg_filename = m_launchFilePath / input_devices_cfg_filename;
-        }
-        attribs->m_inputDevicesFilepath = input_devices_cfg_filename.c_str();
+        attribs->m_inputDevicesFilepath = inputDevicesFilepathNode.as<string>();
     }
     else{
         cerr << "ERROR! INPUT DEVICES CONFIG NOT DEFINED \n";
@@ -2195,15 +2160,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes 
     }
 
     if(colorFilepathNode.IsDefined()){
-        boost::filesystem::path color_cfg_filename = colorFilepathNode.as<string>();
-        if (color_cfg_filename.is_relative()){
-            color_cfg_filename = m_launchFilePath / color_cfg_filename;
-        }
-        attribs->m_colorFilepath = color_cfg_filename.c_str();
-        attribs->m_colorsNode = YAML::LoadFile(m_colorFilepath.c_str());
-        if (!m_colorsNode){
-            cerr << "ERROR! COLOR CONFIG NOT FOUND \n";
-        }
+        attribs->m_colorFilepath  = colorFilepathNode.as<string>();
     }
     else{
         return 0;
@@ -2211,11 +2168,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes 
 
     if (multiBodyFilepathsNode.IsDefined()){
         for (size_t i = 0 ; i < multiBodyFilepathsNode.size() ; i++){
-            boost::filesystem::path mb_cfg_filename =  multiBodyFilepathsNode[i].as<string>();
-            if (mb_cfg_filename.is_relative()){
-                mb_cfg_filename = m_launchFilePath / mb_cfg_filename;
-            }
-            attribs->m_multiBodyFilepaths.push_back(string(mb_cfg_filename.c_str()));
+            attribs->m_multiBodyFilepaths.push_back(multiBodyFilepathsNode[i].as<string>());
         }
     }
     else{

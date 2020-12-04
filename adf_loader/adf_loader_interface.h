@@ -59,48 +59,38 @@ typedef boost::filesystem bf;
 
 using namespace ambf;
 
-class ADFLoaderInterface: public ADFLoaderBase{
+class ADFLoaderInterface{
 public:
     ADFLoaderInterface(){}
+
+    // Load World Attribs
+    bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
+
+    // Load Multibody Attribs
+    bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
+
+    // Load the Launch file Attribs
+    bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
 
     adfVersion getFileVersion(std::string a_filepath);
 
     adfVersion getFileVersion(YAML::Node *a_node);
 
-    bool setLoaderVersion(adfVersion);
-
     adfVersion getVersionFromString(std::string a_str);
-
-    // Load the base config file
-    bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
 
     // The the multibody config file name at specifc index
     bf::path getMultiBodyFilepath(uint i=0);
-
-    // Get the filename of the color config file
-    bf::path getColorFilepath(){return m_launchAttribs.m_colorFilepath;}
-
-    // Get the world config filename
-    bf::path getWorldFilepath(){return m_launchAttribs.m_worldFilePath;}
-
-    // Get the config file for input devices
-    bf::path getInputDevicesFilepath(){return m_launchAttribs.m_inputDevicesFilepath;}
 
     // Get color's rgba values from the name of the color. Color names are defined
     // in the color config file
     std::vector<double> getColorRGBA(std::string a_color_name);
 
-    // Get the nuber of multibody config files defined in launch config file
-    ulong getNumMBFilepaths(){return m_launchAttribs.m_multiBodyFilepaths.size();}
+    bool setLoaderVersion(adfVersion);
 
-    // Get the filepath of the launch file
-    bf::path getLaunchFilepath(){return m_launchAttribs.m_path;}
+    bool setLoaderVersionForFile(std::string a_filepath);
 
 protected:
     YAML::Node m_colorsNode;
-
-private:
-    afLaunchAttributes m_launchAttribs;
 };
 
 #endif

@@ -126,7 +126,7 @@ public:
 
     virtual std::string getLoaderVersion(){return m_version;}
 
-    virtual bool loadObjectAttribs(std::string root_config_file, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
+    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
 
     // Load Light
     virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);
@@ -165,12 +165,13 @@ public:
     virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
 
     // Load multibody from ADF file
-    virtual bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
+    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
+    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
 
-    virtual bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
+    // Load Launch File Attribs
+    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs);
 };
 }
 #endif
