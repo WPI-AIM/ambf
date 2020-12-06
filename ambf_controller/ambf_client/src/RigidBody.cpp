@@ -108,6 +108,8 @@ void RigidBody::set_pos(double px, double py, double pz) {
     tf::Quaternion rot_quat = this->get_rot_command();
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+
+    this->apply_command();
 }
 
 
@@ -122,6 +124,8 @@ void RigidBody::set_rpy(double roll, double pitch, double yaw) {
     rot_quat.setRPY(roll, pitch, yaw);
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+
+    this->apply_command();
 }
 
 ///
@@ -134,6 +138,8 @@ void RigidBody::set_rpy(double roll, double pitch, double yaw) {
 void RigidBody::set_rot(tf::Quaternion rot_quat) {
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+
+    this->apply_command();
 }
 
 bool RigidBody::is_joint_idx_valid(int joint_idx) {
@@ -427,6 +433,8 @@ void RigidBody::set_joint_pos(int joint_idx, float pos) {
 template<>
 void RigidBody::set_joint_pos(std::string joint_name, float pos) {
     int joint_idx = get_joint_idx_from_name(joint_name);
+    if(joint_idx == -1) return;
+
     set_joint_pos(joint_idx, pos);
 }
 
@@ -448,6 +456,8 @@ void RigidBody::set_joint_vel(int joint_idx, float vel) {
 template<>
 void RigidBody::set_joint_vel(std::string joint_name, float vel) {
     int joint_idx = get_joint_idx_from_name(joint_name);
+    if(joint_idx == -1) return;
+
     set_joint_vel(joint_idx, vel);
 }
 
@@ -467,6 +477,8 @@ void RigidBody::set_joint_effort(int joint_idx, float effort) {
 template<>
 void RigidBody::set_joint_effort(std::string joint_name, float effort) {
     int joint_idx = get_joint_idx_from_name(joint_name);
+    if(joint_idx == -1) return;
+
     set_joint_effort(joint_idx, effort);
 }
 
@@ -489,6 +501,8 @@ void RigidBody::set_joint_control(int joint_idx, float command, int control_type
 
     m_Cmd.joint_cmds[joint_idx] = command;
     m_Cmd.joint_cmds_types[joint_idx] = control_type;
+
+    this->apply_command();
 }
 
 void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type) {
@@ -510,7 +524,7 @@ void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_comm
         m_Cmd.joint_cmds[joint_idx] = command;
         m_Cmd.joint_cmds_types[joint_idx] = control_type;
     }
-
+    this->apply_command();
 }
 
 void RigidBody::set_all_joint_control(std::vector<float> joints_command, int control_type) {
@@ -521,12 +535,18 @@ void RigidBody::set_all_joint_control(std::vector<float> joints_command, int con
         return;
     }
 
+    if(m_Cmd.joint_cmds.size() != n_jnts) {
+        m_Cmd.joint_cmds.resize(n_jnts, 0.0);
+        m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
+    }
+
     for(int joint_idx = 0; joint_idx < n_jnts; joint_idx++) {
         float command = joints_command[joint_idx];
         m_Cmd.joint_cmds[joint_idx] = command;
         m_Cmd.joint_cmds_types[joint_idx] = control_type;
     }
 
+    this->apply_command();
 }
 
 extern "C"{

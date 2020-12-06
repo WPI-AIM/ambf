@@ -80,3 +80,9 @@ void RigidBodyRosCom::sub_cb(ambf_msgs::RigidBodyStateConstPtr msg){
     m_State = *msg;
     m_watchDogPtr->acknowledge_wd();
 }
+
+void RigidBodyRosCom::apply_command() {
+    m_Cmd.header.stamp = ros::Time::now();
+    m_pub.publish(m_Cmd);
+    m_watchDogPtr->acknowledge_wd();
+}

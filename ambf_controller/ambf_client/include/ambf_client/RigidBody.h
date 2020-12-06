@@ -127,19 +127,19 @@ public:
     void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);  //TBT
 
     template<typename T>
-    void set_joint_pos(T t, float pos);
+    void set_joint_pos(T t, float pos); //TBT
     void set_multiple_joint_pos(std::map<int, float> joints_idx_pos_map); //TBT
     void set_all_joint_pos(std::vector<float> joints_pos); //TBT
 
     template<typename T>
-    void set_joint_vel(T t, float vel);
+    void set_joint_vel(T t, float vel); //TBT
     void set_multiple_joint_vel(std::map<int, float> joints_idx_vel_map); //TBT
     void set_all_joint_vel(std::vector<float> joints_vel);
 
     template<typename T>
-    void set_joint_effort(T t, float effort);
+    void set_joint_effort(T t, float effort); //TBT
     void set_multiple_joint_effort(std::map<int, float> joints_idx_effort_map); //TBT
-    void set_all_joint_effort(std::vector<float> joints_effort);
+    void set_all_joint_effort(std::vector<float> joints_effort); //TBT
 
 private:
     void set_joint_control(int joint_idx, float command, int control_type);
