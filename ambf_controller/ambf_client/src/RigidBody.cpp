@@ -41,6 +41,18 @@ namespace ambf_client{
 RigidBody::RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RigidBodyRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
+bool RigidBody::is_active() {
+    return m_Cmd.publish_children_names && m_Cmd.publish_joint_names && m_Cmd.publish_joint_positions;
+}
+
+void RigidBody::set_active() {
+    m_Cmd.publish_children_names = true;
+    m_Cmd.publish_joint_names = true;
+    m_Cmd.publish_joint_positions = true;
+
+    this->apply_command();
+}
+
 tf::Vector3 RigidBody::get_pos() {
     double px = m_State.pose.position.x;
     double py = m_State.pose.position.y;
@@ -290,6 +302,8 @@ void RigidBody::set_force(double fx, double fy, double fz){
     tf::Vector3 f(fx, fy, fz);
     tf::vector3TFToMsg(f, m_Cmd.wrench.force);
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->apply_command();
 }
 
 
@@ -305,6 +319,8 @@ void RigidBody::set_torque(double nx, double ny, double nz){
     tf::Vector3 n(nx, ny, nz);
     tf::vector3TFToMsg(f, m_Cmd.wrench.force);
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->apply_command();
 }
 
 void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
@@ -312,6 +328,8 @@ void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
 
     tf::vector3TFToMsg(f, m_Cmd.wrench.force);
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->apply_command();
 }
 
 /////
@@ -331,6 +349,8 @@ void RigidBody::set_pose(const tf::Pose pose) {
     m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_POSITION;
 
     tf::poseTFToMsg(pose, m_Cmd.pose);
+
+    this->apply_command();
 }
 
 ///
@@ -345,6 +365,8 @@ void RigidBody::set_linear_vel(double vx, double vy, double vz){
 
     tf::vector3TFToMsg(v, m_Cmd.twist.linear);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
+
+    this->apply_command();
 }
 
 ///
@@ -359,6 +381,8 @@ void RigidBody::set_angular_vel(double ax, double ay, double az){
 
     tf::vector3TFToMsg(v, m_Cmd.twist.linear);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
+
+    this->apply_command();
 }
 
 void RigidBody::set_twist(tf::Vector3 v, tf::Vector3 a) {
@@ -366,6 +390,8 @@ void RigidBody::set_twist(tf::Vector3 v, tf::Vector3 a) {
 
     tf::vector3TFToMsg(v, m_Cmd.twist.linear);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
+
+    this->apply_command();
 }
 
 void RigidBody::set_twist(geometry_msgs::Twist twist) {
@@ -377,6 +403,8 @@ void RigidBody::set_twist(geometry_msgs::Twist twist) {
     m_Cmd.twist.angular.x = twist.angular.x;
     m_Cmd.twist.angular.y = twist.angular.y;
     m_Cmd.twist.angular.z = twist.angular.z;
+
+    this->apply_command();
 }
 
 void RigidBody::wrench_command(double fx, double fy, double fz, double nx, double ny, double nz) {
@@ -387,6 +415,8 @@ void RigidBody::wrench_command(double fx, double fy, double fz, double nx, doubl
 
     tf::Vector3 n(nx, ny, nz);
     tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->apply_command();
 }
 
 void RigidBody::pose_command(double px, double py, double pz, double qx, double qy, double qz, double qw) {
@@ -398,6 +428,8 @@ void RigidBody::pose_command(double px, double py, double pz, double qx, double 
 
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+
+    this->apply_command();
 }
 
 void RigidBody::velocity_command(double vx, double vy, double vz, double ax, double ay, double az) {
@@ -408,6 +440,8 @@ void RigidBody::velocity_command(double vx, double vy, double vz, double ax, dou
 
     tf::Vector3 a(ax, ay, az);
     tf::vector3TFToMsg(a, m_Cmd.twist.angular);
+
+    this->apply_command();
 }
 
 
@@ -491,8 +525,11 @@ void RigidBody::set_all_joint_effort(std::vector<float> joints_effort) {
 }
 
 void RigidBody::set_joint_control(int joint_idx, float command, int control_type) {
+    if(!this->is_active()) this->set_active();
+
     if(!is_joint_idx_valid(joint_idx)) return;
     int n_jnts = get_num_joints();
+    std::cout << "n_jnts: " << n_jnts << std::endl;
 
     if(m_Cmd.joint_cmds.size() != n_jnts) {
         m_Cmd.joint_cmds.resize(n_jnts, 0.0);
@@ -506,6 +543,8 @@ void RigidBody::set_joint_control(int joint_idx, float command, int control_type
 }
 
 void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type) {
+    if(!this->is_active()) this->set_active();
+
     int n_jnts = get_num_joints();
 
     int min_joint_index = joints_idx_command_map.begin()->first;
@@ -528,6 +567,8 @@ void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_comm
 }
 
 void RigidBody::set_all_joint_control(std::vector<float> joints_command, int control_type) {
+    if(!this->is_active()) this->set_active();
+
     int n_jnts = get_num_joints();
 
     if(joints_command.size() != n_jnts) {
@@ -548,6 +589,9 @@ void RigidBody::set_all_joint_control(std::vector<float> joints_command, int con
 
     this->apply_command();
 }
+
+
+
 
 extern "C"{
 

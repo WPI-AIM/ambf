@@ -123,6 +123,7 @@ void RosComBase<T_cmd, T_state>::run_publishers(){
         m_custom_queue.callAvailable();
         ros::MultiThreadedSpinner spinner(0);
         spinner.spin(&m_custom_queue);
+
         if(m_watchDogPtr->is_wd_expired()){
             m_watchDogPtr->consolePrint(m_name);
             reset_cmd();

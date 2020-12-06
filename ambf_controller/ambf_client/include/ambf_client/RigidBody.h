@@ -52,7 +52,7 @@ public:
     RigidBody(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 
     // Getters Common to Object class
-    bool is_active(); //TBD - its always active
+
     inline int get_sim_step() { return m_State.sim_step; } //TBT - To be tested
     inline int get_num_of_children(){return m_State.children_names.size();}
     inline std::vector<std::string> get_children_names(){return m_State.children_names;}
@@ -141,10 +141,13 @@ public:
     void set_multiple_joint_effort(std::map<int, float> joints_idx_effort_map); //TBT
     void set_all_joint_effort(std::vector<float> joints_effort); //TBT
 
+
 private:
     void set_joint_control(int joint_idx, float command, int control_type);
     void set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type);
     void set_all_joint_control(std::vector<float> joints_command, int control_type);
+    bool is_active();
+    void set_active();
 };
 
 

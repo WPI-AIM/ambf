@@ -65,12 +65,18 @@ int main(int argc, char* argv[])
          std::cout << object_name << std::endl;
      }
 
-     std::string link_name = "base";
-     rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
-     usleep(250000);
-    link_handler->set_joint_pos(0, 0.0);
-    std::cout << "link_handler->get_num_of_children(): " << link_handler->get_num_of_children() << std::endl;
+    std::string link_name = "base";
+    rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
+    usleep(250000);
 
+
+    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
+    for(int i = 0; i < 5; i++) {
+        link_handler->set_all_joint_effort(joints_command);
+        usleep(250000);
+
+        std::cout << "link_handler->get_num_of_children(): " << link_handler->get_num_of_children() << std::endl;
+    }
 
 //    link_handler->set_joint_pos<int>(1, 100.0); // works now
 //    link_handler->set_joint_pos<std::string>("link1-link2", 100.0);
@@ -81,10 +87,10 @@ int main(int argc, char* argv[])
 //    link_handler->set_joint_effort<int>(1, 0.1);
 //    link_handler->set_joint_effort<std::string>("link6-link7", 0.1);
 
-    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
+//    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
 //    link_handler->set_all_joint_pos(joints_command);
 //    link_handler->set_all_joint_vel(joints_command);
-    link_handler->set_all_joint_effort(joints_command);
+//    link_handler->set_all_joint_effort(joints_command);
 
 //     string psm_baselink = "psm/baselink";
 //    // cout << "psm_baselink: " << psm_baselink << "\n";
