@@ -172,6 +172,7 @@ int RigidBody::get_joint_idx_from_name(std::string joint_name) {
 
     if(it != joint_names.end()) {
         int joint_idx = std::distance(joint_names.begin(), it);
+
         return joint_idx;
     }
 
@@ -481,7 +482,6 @@ void RigidBody::set_joint_control(int joint_idx, float command, int control_type
     if(!is_joint_idx_valid(joint_idx)) return;
     int n_jnts = get_num_joints();
 
-
     if(m_Cmd.joint_cmds.size() != n_jnts) {
         m_Cmd.joint_cmds.resize(n_jnts, 0.0);
         m_Cmd.joint_cmds_types.resize(n_jnts, control_type);
@@ -489,7 +489,6 @@ void RigidBody::set_joint_control(int joint_idx, float command, int control_type
 
     m_Cmd.joint_cmds[joint_idx] = command;
     m_Cmd.joint_cmds_types[joint_idx] = control_type;
-
 }
 
 void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_command_map ,int control_type) {

@@ -58,8 +58,33 @@ int main(int argc, char* argv[])
 //    client.printSummary();
 //    vector<string> object_names;
 
-//     object_names = client.getRigidBodyNames();
-     usleep(20000);
+     std::vector<std::string> object_names = client.getRigidBodyNames();
+//     usleep(20000);
+     std::cout << "main - list of object names:" << std::endl;
+     for(std::string object_name : object_names) {
+         std::cout << object_name << std::endl;
+     }
+
+     std::string link_name = "base";
+     rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
+     usleep(250000);
+
+    std::cout << "link_handler->get_num_of_children(): " << link_handler->get_num_of_children() << std::endl;
+
+
+    link_handler->set_joint_pos<int>(1, 0.1);
+    link_handler->set_joint_pos<std::string>("link6-link7", 0.1);
+
+    link_handler->set_joint_vel<int>(1, 0.1);
+    link_handler->set_joint_vel<std::string>("link6-link7", 0.1);
+
+    link_handler->set_joint_effort<int>(1, 0.1);
+    link_handler->set_joint_effort<std::string>("link6-link7", 0.1);
+
+    std::vector<float> joints_command = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+    link_handler->set_all_joint_pos(joints_command);
+    link_handler->set_all_joint_vel(joints_command);
+    link_handler->set_all_joint_effort(joints_command);
 
 //     string psm_baselink = "psm/baselink";
 //    // cout << "psm_baselink: " << psm_baselink << "\n";
@@ -117,7 +142,7 @@ int main(int argc, char* argv[])
 //    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
 //    printVector3("joint_position", joint_position);
 //    client.printSummary();
-    client.cleanUp();
+//    client.cleanUp();
 //    client.~Client();
 
 	return 0;

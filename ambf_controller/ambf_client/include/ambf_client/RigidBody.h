@@ -75,7 +75,7 @@ public:
     bool is_joint_idx_valid(int joint_idx); //TBT
     tf::Vector3 get_linear_vel(); //TBT
     tf::Vector3 get_angular_vel(); //TBT
-    int get_joint_idx_from_name(std::string joint_name); //TBT
+    int get_joint_idx_from_name(std::string joint_name);
     std::string get_joint_name_from_idx(int joint_idx); //TBT
 
     template<typename T> //TBT
@@ -127,17 +127,17 @@ public:
     void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);  //TBT
 
     template<typename T>
-    void set_joint_pos(T t, float pos); //TBT
+    void set_joint_pos(T t, float pos);
     void set_multiple_joint_pos(std::map<int, float> joints_idx_pos_map); //TBT
     void set_all_joint_pos(std::vector<float> joints_pos); //TBT
 
     template<typename T>
-    void set_joint_vel(T t, float vel); //TBT
+    void set_joint_vel(T t, float vel);
     void set_multiple_joint_vel(std::map<int, float> joints_idx_vel_map); //TBT
     void set_all_joint_vel(std::vector<float> joints_vel);
 
     template<typename T>
-    void set_joint_effort(T t, float effort); //TBT
+    void set_joint_effort(T t, float effort);
     void set_multiple_joint_effort(std::map<int, float> joints_idx_effort_map); //TBT
     void set_all_joint_effort(std::vector<float> joints_effort);
 
