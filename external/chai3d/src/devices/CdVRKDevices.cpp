@@ -187,20 +187,20 @@ cDvrkDevice::cDvrkDevice(unsigned int a_deviceNumber)
             tip_trans.setOrigin(tf::Vector3(0,0,0));
 
             tip_rot.setRPY(0, M_PI/2, 0);
-            home_rot.setRPY(3.058663, -1.055021, -1.500306);
+            home_rot.setRPY(0, 0, -1.57079);
         }
         else if(std::strcmp(dev_name.c_str(), "MTML") == 0){
             home_trans.setOrigin(tf::Vector3(0.181025, -0.0163, -0.2620));
             tip_trans.setOrigin(tf::Vector3(0,0,0));
 
             tip_rot.setRPY(0, M_PI/2, 0);
-            home_rot.setRPY(3.058663, -1.055021, -1.500306);
+            home_rot.setRPY(0, 0, -1.57079);
         }
 
         home_trans.setRotation(home_rot);
         tip_trans.setRotation(tip_rot);
 
-        mtm_device->set_origin_frame(home_trans * tip_trans);
+        mtm_device->set_origin_frame(home_trans);
         mtm_device->affix_tip_frame(tip_trans);
 
     }
