@@ -46,7 +46,6 @@
 //------------------------------------------------------------------------------
 
 #include "adf_loader_base.h"
-#include "version_1_0/adf_loader_1_0.h"
 
 enum class adfVersion{
     VERSION_1_0,
@@ -54,20 +53,22 @@ enum class adfVersion{
 
 };
 
-// To use or not use boost::filesystem?
-typedef boost::filesystem bf;
-
 using namespace ambf;
 
 class ADFLoaderInterface{
 public:
-    ADFLoaderInterface(){}
+    ADFLoaderInterface();
+
+    bool loadObjectAttribs(std::string a_filepath, std::string a_objectName, afObjectType a_type, afBaseObjectAttributes* attribs);
 
     // Load World Attribs
     bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
 
     // Load Multibody Attribs
     bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
+
+    // Load Multibody Attribs
+    bool loadInputDeviceAttribs(std::string a_filepath, afInputDeviceAttributes* attribs);
 
     // Load the Launch file Attribs
     bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
@@ -78,9 +79,6 @@ public:
 
     adfVersion getVersionFromString(std::string a_str);
 
-    // The the multibody config file name at specifc index
-    bf::path getMultiBodyFilepath(uint i=0);
-
     // Get color's rgba values from the name of the color. Color names are defined
     // in the color config file
     std::vector<double> getColorRGBA(std::string a_color_name);
@@ -89,8 +87,22 @@ public:
 
     bool setLoaderVersionForFile(std::string a_filepath);
 
+    bool cleanUp();
+
+    bool isLoaderValid();
+
+    bool setLoader(ADFLoaderBase* a_loader);
+
+    // Get the version of the this loader
+    std::string getLoaderVersion();
+
 protected:
+
+
     YAML::Node m_colorsNode;
+
+private:
+    ADFLoaderBase* m_loader;
 };
 
 #endif

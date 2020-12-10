@@ -45,14 +45,225 @@
 #ifndef AF_ATTRIBUTES_H
 #define AF_ATTRIBUTES_H
 //------------------------------------------------------------------------------
-#include <yaml-cpp/yaml.h>
 #include <afEnums.h>
-#include <chai3d.h>
-#include <btBulletDynamicsCommon.h>
 #include <boost/filesystem/path.hpp>
+#include <math.h>
 
-using namespace chai3d;
+typedef unsigned int uint;
 
+
+struct afVector3d{
+
+    afVector3d(){
+        set(0, 0, 0);
+    }
+    afVector3d(double x, double y, double z){
+        set(x, y, z);
+    }
+
+    void set(double x, double y, double z){
+        m_x = x;
+        m_y = y;
+        m_z = z;
+    }
+
+    afVector3d operator *(double a_scale) const{
+        afVector3d v;
+        v.m_x *= a_scale;
+        v.m_y *= a_scale;
+        v.m_z *= a_scale;
+        return v;
+    }
+
+    afVector3d operator *(double a_scale) {
+        afVector3d v;
+        v.m_x *= a_scale;
+        v.m_y *= a_scale;
+        v.m_z *= a_scale;
+        return v;
+    }
+
+    afVector3d operator +(afVector3d vIn){
+        afVector3d vOut;
+        vOut.m_x = m_x + vIn.m_x;
+        vOut.m_x = m_y + vIn.m_y;
+        vOut.m_x = m_z + vIn.m_z;
+        return vOut;
+    }
+
+    void normalize(){
+        double mag = m_x * m_x + m_y * m_y + m_z * m_z;
+        double magInv = 1.0 / mag;
+        m_x += magInv;
+        m_y *= magInv;
+        m_z *= magInv;
+    }
+
+    double m_x;
+    double m_y;
+    double m_z;
+};
+
+
+struct afMatrix3d{
+
+    afMatrix3d(){
+        setIdentity();
+    }
+
+    afMatrix3d(double roll, double pitch, double yaw){
+        setRPY(roll, pitch, yaw);
+    }
+
+    double setRPY(double roll, double pitch, double yaw){
+        double cr = cos(roll);
+        double cp = cos(pitch);
+        double cy = cos(yaw);
+        double sr = sin(roll);
+        double sp = sin(pitch);
+        double sy = sin(yaw);
+
+        m_data[0][0] = cy * cp ; m_data[0][1] = cy * sp * sr - sy * cr; m_data[0][2] = cy * sp * cr + sy * sr;
+        m_data[1][0] = sy * cp ; m_data[1][1] = sy * sp * sr + cy * cr; m_data[1][2] = sy * sp * cr - cy * sr;
+        m_data[2][0] = -sp * cp; m_data[2][1] = cp * sr               ; m_data[2][2] = cp * cr;
+    }
+
+    void getRPY(double& roll, double& pitch, double& yaw){
+        yaw = atan2(m_data[1][0], m_data[0][0]);
+        pitch = atan2(-m_data[2][0], sqrt( pow(m_data[2][1], 2) + pow(m_data[2][2], 2) ));
+        roll = atan2(m_data[2][1], m_data[2][2]);
+    }
+
+    void setIdentity(){
+        for (int r = 0 ; r < 3 ; r++){
+            for (int c = 0 ; c < 3 ; c++){
+                m_data[r][c] = 0.0;
+            }
+        }
+        m_data[0][0] = 1.0;
+        m_data[1][1] = 1.0;
+        m_data[2][2] = 1.0;
+    }
+
+    afVector3d operator *(afVector3d vIn){
+        afVector3d vOut;
+
+        vOut.m_x = m_data[0][0] * vIn.m_x + m_data[0][1] * vIn.m_y + m_data[0][2] * vOut.m_z;
+        vOut.m_y = m_data[1][0] * vIn.m_x + m_data[1][1] * vIn.m_y + m_data[1][2] * vOut.m_z;
+        vOut.m_z = m_data[2][0] * vIn.m_x + m_data[2][1] * vIn.m_y + m_data[2][2] * vOut.m_z;
+
+        return vOut;
+    }
+
+    afMatrix3d operator *(afMatrix3d rIn){
+        afMatrix3d rOut;
+        rOut(0, 0) = m_data[0][0] * rIn(0, 0) + m_data[0][1] * rIn(1, 0) + m_data[0][2] * rIn(2, 0);
+        rOut(1, 0) = m_data[1][0] * rIn(0, 0) + m_data[1][1] * rIn(1, 0) + m_data[1][2] * rIn(2, 0);
+        rOut(2, 0) = m_data[2][0] * rIn(0, 0) + m_data[2][1] * rIn(1, 0) + m_data[2][2] * rIn(2, 0);
+
+        rOut(0, 1) = m_data[0][0] * rIn(0, 1) + m_data[0][1] * rIn(1, 1) + m_data[0][2] * rIn(2, 1);
+        rOut(1, 1) = m_data[1][0] * rIn(0, 1) + m_data[1][1] * rIn(1, 1) + m_data[1][2] * rIn(2, 1);
+        rOut(2, 1) = m_data[2][0] * rIn(0, 1) + m_data[2][1] * rIn(1, 1) + m_data[2][2] * rIn(2, 1);
+
+        rOut(0, 2) = m_data[0][0] * rIn(0, 2) + m_data[0][1] * rIn(1, 2) + m_data[0][2] * rIn(2, 2);
+        rOut(1, 2) = m_data[1][0] * rIn(0, 2) + m_data[1][1] * rIn(1, 2) + m_data[1][2] * rIn(2, 2);
+        rOut(2, 2) = m_data[2][0] * rIn(0, 2) + m_data[2][1] * rIn(1, 2) + m_data[2][2] * rIn(2, 2);
+
+        return rOut;
+    }
+
+    void operator *=(afMatrix3d rIn){
+        double d[3][3];
+        d[0][0] = m_data[0][0] * rIn(0, 0) + m_data[0][1] * rIn(1, 0) + m_data[0][2] * rIn(2, 0);
+        d[1][0] = m_data[1][0] * rIn(0, 0) + m_data[1][1] * rIn(1, 0) + m_data[1][2] * rIn(2, 0);
+        d[2][0] = m_data[2][0] * rIn(0, 0) + m_data[2][1] * rIn(1, 0) + m_data[2][2] * rIn(2, 0);
+
+        d[0][1] = m_data[0][0] * rIn(0, 1) + m_data[0][1] * rIn(1, 1) + m_data[0][2] * rIn(2, 1);
+        d[1][1] = m_data[1][0] * rIn(0, 1) + m_data[1][1] * rIn(1, 1) + m_data[1][2] * rIn(2, 1);
+        d[2][1] = m_data[2][0] * rIn(0, 1) + m_data[2][1] * rIn(1, 1) + m_data[2][2] * rIn(2, 1);
+
+        d[0][2] = m_data[0][0] * rIn(0, 2) + m_data[0][1] * rIn(1, 2) + m_data[0][2] * rIn(2, 2);
+        d[1][2] = m_data[1][0] * rIn(0, 2) + m_data[1][1] * rIn(1, 2) + m_data[1][2] * rIn(2, 2);
+        d[2][2] = m_data[2][0] * rIn(0, 2) + m_data[2][1] * rIn(1, 2) + m_data[2][2] * rIn(2, 2);
+
+        for (int r = 0 ; r < 3 ; r++){
+            for (int c = 0 ; c < 3 ; c++){
+                m_data[r][c] = d[r][c];
+            }
+        }
+    }
+
+    void transpose(){
+        double d;
+
+        d = m_data[0][1]; m_data[0][1] = m_data[1][0]; m_data[1][0] = d;
+        d = m_data[0][2]; m_data[0][2] = m_data[2][0]; m_data[2][0] = d;
+        d = m_data[1][2]; m_data[1][2] = m_data[2][1]; m_data[2][1] = d;
+    }
+
+    afMatrix3d getTranspose(){
+        double d;
+        afMatrix3d rot = (*this);
+        rot.transpose();
+        return rot;
+    }
+
+    double& operator () (const uint m_row, const uint m_col){
+        assert(m_row < 3);
+        assert(m_col < 3);
+        return m_data[m_row][m_col];
+    }
+
+private:
+    double m_data[3][3];
+};
+
+
+struct afTransform{
+
+    afTransform(){
+        m_P.set(0, 0, 0);
+        m_R.setIdentity();
+    }
+
+    afTransform(afVector3d pos, afMatrix3d rot){
+        m_P = pos;
+        m_R = rot;
+    }
+
+    afTransform operator *(afTransform tIn){
+        afMatrix3d rot = m_R * tIn.getRotation();
+        afVector3d pos = m_R * tIn.getPosition() + m_P;
+        afTransform tOut(pos, rot);
+        return tOut;
+    }
+
+    afVector3d operator *(afVector3d vIn){
+        afVector3d vOut;
+        vOut = m_R * vIn + m_P;
+        return vOut;
+    }
+
+    afVector3d getPosition(){
+        return m_P;
+    }
+
+    afMatrix3d getRotation(){
+        return m_R;
+    }
+
+    void setPosition(afVector3d& v){
+        m_P = v;
+    }
+
+    void setRotation(afMatrix3d& m){
+        m_R = m;
+    }
+
+private:
+    afVector3d m_P;
+    afMatrix3d m_R;
+};
 
 namespace ambf {
 
@@ -63,7 +274,7 @@ struct afKinematicAttributes{
 public:
     afKinematicAttributes(){}
 
-    cTransform m_location;
+    afTransform m_location;
     double m_scale;
 };
 
@@ -74,7 +285,7 @@ public:
 struct afPrimitiveShapeAttributes{
 public:
 
-    afPrimitiveShapeAttributes();
+    afPrimitiveShapeAttributes(){}
 
     // Helper methods for primitive shapes
     // Required variables for creating a Plane
@@ -104,7 +315,7 @@ public:
 
     void setShapeScale(double a_scale){m_shapeScale = a_scale;}
 
-    inline cVector3d getDimensions() const {return m_dimensions * m_shapeScale;}
+    inline afVector3d getDimensions() const {return m_dimensions * m_shapeScale;}
 
     inline double getRadius() const {return m_radius * m_shapeScale;}
 
@@ -112,15 +323,15 @@ public:
 
     inline double getPlaneConstant() const {return m_planeConstant * m_shapeScale;}
 
-    inline cVector3d getPlaneNormal() const {return m_planeNormal;}
+    inline afVector3d getPlaneNormal() const {return m_planeNormal;}
 
     inline afPrimitiveShapeType getShapeType() const {return m_shapeType;}
 
     inline afAxisType getAxisType() const {return m_axisType;}
 
-    inline cVector3d getPosOffset() const {return m_posOffset;}
+    inline afVector3d getPosOffset() const {return m_posOffset;}
 
-    inline cMatrix3d getRotOffset() const {return m_rotOffset;}
+    inline afMatrix3d getRotOffset() const {return m_rotOffset;}
 
 public:
 
@@ -128,9 +339,9 @@ public:
 
     double m_height = 0;
 
-    cVector3d m_dimensions;
+    afVector3d m_dimensions;
 
-    cVector3d m_planeNormal;
+    afVector3d m_planeNormal;
 
     double m_planeConstant = 0;
 
@@ -138,9 +349,9 @@ public:
 
     afAxisType m_axisType;
 
-    cVector3d m_posOffset;
+    afVector3d m_posOffset;
 
-    cMatrix3d m_rotOffset;
+    afMatrix3d m_rotOffset;
 
 private:
     double m_shapeScale = 1.0;
@@ -152,15 +363,15 @@ private:
 ///
 struct afRayAttributes{
     // Direction rel to parent that this sensor is looking at
-    cVector3d m_direction;
+    afVector3d m_direction;
 
     // Range of this sensor, i.e. how far can it sense
     double m_range;
 
     // Based on the location, direciton and range, calculate
     // start and end points for the ray tracing in Local Frame
-    cVector3d m_rayFromLocal;
-    cVector3d m_rayToLocal;
+    afVector3d m_rayFromLocal;
+    afVector3d m_rayToLocal;
 };
 
 
@@ -264,9 +475,9 @@ public:
     afInertialAttributes(){}
 
     double m_mass;
-    btVector3 m_inertia;
+    afVector3d m_inertia;
     bool m_estimateInertia = false;
-    btTransform m_inertialOffset;
+    afTransform m_inertialOffset;
     afSurfaceAttributes m_surfaceAttribs;
 };
 
@@ -288,6 +499,22 @@ public:
 };
 
 
+struct afColorAttributes{
+    afColorAttributes(){}
+
+    struct afRGBA{
+        double m_R, m_G, m_B;
+    };
+    afRGBA m_specular;
+    afRGBA m_diffuse;
+    afRGBA m_emission;
+    double m_ambient = 1.0;
+    double m_alpha = 1.0;
+    unsigned int m_shininiess = 64;
+
+};
+
+
 ///
 /// \brief The afVisualAttributes struct
 ///
@@ -298,7 +525,7 @@ struct afVisualAttributes{
     boost::filesystem::path m_path;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
-    cMaterial m_material;
+    afColorAttributes m_colorAttribs;
 };
 
 
@@ -361,8 +588,8 @@ struct afCameraAttributes: public afBaseObjectAttributes
 public:
     afCameraAttributes(){}
 
-    cVector3d m_lookAt;
-    cVector3d m_up;
+    afVector3d m_lookAt;
+    afVector3d m_up;
     float m_nearPlane;
     float m_farPlane;
     float m_fieldViewAngle;
@@ -394,7 +621,7 @@ public:
 
     float m_spotExponent;
     float m_cuttoffAngle;
-    cVector3d m_direction;
+    afVector3d m_direction;
 
     uint m_shadowQuality;
 
@@ -411,13 +638,13 @@ struct afJointAttributes: public afBaseObjectAttributes
 {
 
 public:
-    afJointAttributes();
+    afJointAttributes(){}
 
-    cVector3d m_parentPivot;
-    cVector3d m_childPivot;
-    cVector3d m_parentAxis;
-    cVector3d m_childAxis;
-    cTransform m_transformInParent;
+    afVector3d m_parentPivot;
+    afVector3d m_childPivot;
+    afVector3d m_parentAxis;
+    afVector3d m_childAxis;
+    afTransform m_transformInParent;
     bool m_enableMotor;
     bool m_enableFeedback;
     uint m_maxMotorImpulse;
@@ -524,9 +751,9 @@ public:
     double m_friction;
 
     double m_rollInfluence;
-    cVector3d m_downDirection;
-    cVector3d m_axelDirection;
-    cVector3d m_offset;
+    afVector3d m_downDirection;
+    afVector3d m_axelDirection;
+    afVector3d m_offset;
     bool m_isFront = false;
     double m_steeringLimitMin = 0.0;
     double m_steeringLimitMax = 0.0;
@@ -638,6 +865,7 @@ public:
     std::vector <afActuatorAttributes> m_actuatorAttribs;
 
     bool m_ignoreInterCollision;
+    boost::filesystem::path m_path;
 };
 
 
@@ -663,7 +891,7 @@ public:
     bool m_rootLinkDefined = false;
 
     afKinematicAttributes m_kinematicAttribs;
-    cTransform m_orientationOffset;
+    afTransform m_orientationOffset;
 
     bool m_visible;
     double m_visibleSize;
@@ -699,7 +927,7 @@ public:
     std::vector<afLightAttributes> m_lightAttribs;
     std::vector<afCameraAttributes> m_cameraAttribs;
 
-    cVector3d m_gravity;
+    afVector3d m_gravity;
 
     uint m_maxIterations;
 
@@ -735,14 +963,20 @@ public:
     std::string m_namespace;
 
     afShaderAttributes m_shaderAttribs;
+
+    boost::filesystem::path m_path;
 };
 
 
 struct afLaunchAttributes{
     boost::filesystem::path m_path;
+
     boost::filesystem::path m_colorFilepath;
+
     std::vector<boost::filesystem::path> m_multiBodyFilepaths;
+
     boost::filesystem::path m_worldFilePath;
+
     boost::filesystem::path m_inputDevicesFilepath;
 };
 

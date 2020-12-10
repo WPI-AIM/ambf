@@ -43,25 +43,15 @@
 
 //------------------------------------------------------------------------------
 #include <adf_loader_interface.h>
+#include <version_1_0/adf_loader_1_0.h>
+
+#include <assert.h>
+#include <iostream>
 
 using namespace std;
 using namespace adf_loader_1_0;
 
 
-///
-/// \brief afConfigHandler::get_puzzle_config
-/// \return
-///
-string ADFLoaderInterface::getMultiBodyFilepath(uint i){
-    if (i <= getNumMBFilepaths()){
-        return m_multiBodyFilepaths[i];
-    }
-    else{
-        //printf("i = %d, Whereas only %d multi bodies specified", i, s_multiBodyConfigFileNames.size());
-        printf("i = %d, Whereas only %lu multi bodies specified", i, (unsigned long)m_multiBodyFilepaths.size());
-        return "";
-    }
-}
 
 ///
 /// \brief afConfigHandler::get_color_rgba
@@ -70,20 +60,20 @@ string ADFLoaderInterface::getMultiBodyFilepath(uint i){
 ///
 adfVersion ADFLoaderInterface::getFileVersion(string a_filepath)
 {
-    YAML::Node node = YAML::LoadAllFromFile(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
     return getFileVersion(&node);
 }
 
 adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
 {
-    assert(a_node == nullptr);
+    assert(a_node != nullptr);
 
     YAML::Node &node = *a_node;
 
     YAML::Node versionNode = node["adf version"];
 
     if (versionNode.IsDefined()){
-        std::string versionStr = versionNode.as<string>();
+        string versionStr = versionNode.as<string>();
 
         return getVersionFromString(versionStr);
     }
@@ -96,12 +86,17 @@ adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
 bool ADFLoaderInterface::setLoaderVersion(adfVersion a_version){
     switch (a_version) {
     case adfVersion::VERSION_1_0:{
+        if (m_loader == nullptr){
+            ADFLoader_1_0* loader = new ADFLoader_1_0;
+            setLoader(loader);
+        }
+
         if (getVersionFromString(getLoaderVersion()) == a_version){
             // Have already loaded the right version. Ignore
             break;
         }
         else{
-            ADFLoader_1_0 loader = new ADFLoader_1_0();
+            ADFLoader_1_0* loader = new ADFLoader_1_0;
             setLoader(loader);
         }
         break;
@@ -115,7 +110,7 @@ bool ADFLoaderInterface::setLoaderVersion(adfVersion a_version){
 
 bool ADFLoaderInterface::setLoaderVersionForFile(string a_filepath)
 {
-    adfVersion version = getVersionFromString(a_filepath);
+    adfVersion version = getFileVersion(a_filepath);
 
     if (version == adfVersion::INVALID){
         cerr << "ERROR! COULDN'T DETERMINE THE CORRECT ADF LOADER FOR THE FILE \"" << a_filepath << "\"" << endl;
@@ -159,44 +154,84 @@ vector<double> ADFLoaderInterface::getColorRGBA(string a_color_name){
 
 bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, afObjectType a_type, afBaseObjectAttributes *attribs)
 {
-    if (setLoaderVersionForFile(a_filepath)){
+    if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        return m_loader->loadObjectAttribs(a_filepath, a_objName, a_type, attribs);
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        return m_loader->loadObjectAttribs(&node, a_objName, a_type, attribs);
     }
 
 }
 
 
+ADFLoaderInterface::ADFLoaderInterface()
+{
+    m_loader = nullptr;
+}
+
 bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *attribs)
 {
-    if (setLoaderVersionForFile(a_filepath)){
+    if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        return m_loader->loadWorldAttribs(a_filepath, attribs);
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
+        return m_loader->loadWorldAttribs(&node, attribs);
     }
 }
 
 bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttributes *attribs)
 {
-    if (setLoaderVersionForFile(a_filepath)){
+    if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        return m_loader->loadMultiBodyAttribs(a_filepath, attribs);
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
+        return m_loader->loadMultiBodyAttribs(&node, attribs);
     }
 }
 
 bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
 {
-    if (setLoaderVersionForFile(a_filepath)){
+    if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        return m_loader->loadLaunchFileAttribs(a_filepath, attribs);
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
+        return m_loader->loadLaunchFileAttribs(&node, attribs);
     }
+}
+
+
+string ADFLoaderInterface::getLoaderVersion()
+{
+    isLoaderValid();
+    return m_loader->getLoaderVersion();
+}
+
+
+bool ADFLoaderInterface::setLoader(ADFLoaderBase *a_loader)
+{
+    m_loader = a_loader;
+    return true;
+}
+
+
+bool ADFLoaderInterface::cleanUp()
+{
+    if (m_loader != nullptr){
+        delete m_loader;
+    }
+    return true;
+}
+
+bool ADFLoaderInterface::isLoaderValid()
+{
+    assert(m_loader != nullptr);
 }
 
 

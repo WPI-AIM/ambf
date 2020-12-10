@@ -48,62 +48,32 @@ using namespace ambf;
 using namespace adf_loader_1_0;
 using namespace std;
 
-template <>
-///
-/// \brief toXYZ<btVector3>
-/// \param node
-/// \return
-///
-btVector3 ADFUtils::toXYZ<btVector3>(YAML::Node* a_node){
-    btVector3 v;
-    YAML::Node & node = *a_node;
-    v.setX(node["x"].as<double>());
-    v.setY(node["y"].as<double>());
-    v.setZ(node["z"].as<double>());
-    return v;
-}
-
-template <>
 ///
 /// \brief toXYZ<cVector3d>
 /// \param node
 /// \return
 ///
-cVector3d ADFUtils::toXYZ<cVector3d>(YAML::Node* a_node){
-    cVector3d v;
+afVector3d ADFUtils::positionFromNode(YAML::Node* a_node){
+    afVector3d v;
     YAML::Node & node = *a_node;
-    v.x(node["x"].as<double>());
-    v.y(node["y"].as<double>());
-    v.z(node["z"].as<double>());
+    v.m_x = node["x"].as<double>();
+    v.m_y = node["y"].as<double>();
+    v.m_z = node["z"].as<double>();
     return v;
 }
 
-template<>
-///
-/// \brief toRPY<btVector3>
-/// \param node
-/// \return
-///
-btVector3 ADFUtils::toRPY<btVector3>(YAML::Node* a_node){
-    btVector3 v;
-    YAML::Node & node = *a_node;
-    v.setX(node["r"].as<double>());
-    v.setY(node["p"].as<double>());
-    v.setZ(node["y"].as<double>());
-    return v;
-}
-
-template<>
 ///
 /// \brief toRPY<cVector3>
 /// \param node
 /// \return
 ///
-cVector3d ADFUtils::toRPY<cVector3d>(YAML::Node *node){
-    cVector3d v;
-    v.x((*node)["r"].as<double>());
-    v.y((*node)["p"].as<double>());
-    v.z((*node)["y"].as<double>());
+afMatrix3d ADFUtils::rotationFromNode(YAML::Node *node){
+    afMatrix3d v;
+    double r, p, y;
+    r = (*node)["r"].as<double>();
+    p = (*node)["p"].as<double>();
+    y = (*node)["y"].as<double>();
+    v.setRPY(r, p, y);
     return v;
 }
 
@@ -114,7 +84,7 @@ cVector3d ADFUtils::toRPY<cVector3d>(YAML::Node *node){
 /// \param mat
 /// \return
 ///
-bool ADFUtils::getMatrialFromNode(YAML::Node *a_node, cMaterial* m)
+bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_color)
 {
     YAML::Node& matNode = *a_node;
 
@@ -122,48 +92,37 @@ bool ADFUtils::getMatrialFromNode(YAML::Node *a_node, cMaterial* m)
     YAML::Node colorRGBANode = matNode["color rgba"];
     YAML::Node colorComponentsNode = matNode["color components"];
 
-    cMaterial& mat = *m;
-    mat.setShininess(64);
-    float r=0.5, g=0.5, b=0.5, a = 1.0;
+    afColorAttributes& colorAttribs = *a_color;
+
     if(colorRGBANode.IsDefined()){
-        r = colorRGBANode["r"].as<float>();
-        g = colorRGBANode["g"].as<float>();
-        b = colorRGBANode["b"].as<float>();
-        a = colorRGBANode["a"].as<float>();
-        mat.setColorf(r, g, b, a);
+        colorAttribs.m_diffuse.m_R = colorRGBANode["r"].as<float>();
+        colorAttribs.m_diffuse.m_G = colorRGBANode["g"].as<float>();
+        colorAttribs.m_diffuse.m_B = colorRGBANode["b"].as<float>();
+        colorAttribs.m_alpha = colorRGBANode["a"].as<float>();
     }
     else if(colorComponentsNode.IsDefined()){
-        if (colorComponentsNode["diffuse"].IsDefined()){
-            r = colorComponentsNode["diffuse"]["r"].as<float>();
-            g = colorComponentsNode["diffuse"]["g"].as<float>();
-            b = colorComponentsNode["diffuse"]["b"].as<float>();
-            mat.m_diffuse.set(r, g, b);
-        }
         if (colorComponentsNode["ambient"].IsDefined()){
-            float level = colorComponentsNode["ambient"]["level"].as<float>();
-            r *= level;
-            g *= level;
-            b *= level;
-            mat.m_ambient.set(r, g, b);
+            colorAttribs.m_ambient = colorComponentsNode["ambient"]["level"].as<float>();
+        }
+        if (colorComponentsNode["diffuse"].IsDefined()){
+            colorAttribs.m_diffuse.m_R = colorComponentsNode["diffuse"]["r"].as<float>();
+            colorAttribs.m_diffuse.m_G = colorComponentsNode["diffuse"]["g"].as<float>();
+            colorAttribs.m_diffuse.m_B = colorComponentsNode["diffuse"]["b"].as<float>();
         }
         if (colorComponentsNode["specular"].IsDefined()){
-            r = colorComponentsNode["specular"]["r"].as<float>();
-            g = colorComponentsNode["specular"]["g"].as<float>();
-            b = colorComponentsNode["specular"]["b"].as<float>();
-            mat.m_specular.set(r, g, b);
+            colorAttribs.m_specular.m_R = colorComponentsNode["specular"]["r"].as<float>();
+            colorAttribs.m_specular.m_G = colorComponentsNode["specular"]["g"].as<float>();
+            colorAttribs.m_specular.m_B = colorComponentsNode["specular"]["b"].as<float>();
         }
         if (colorComponentsNode["emission"].IsDefined()){
-            r = colorComponentsNode["emission"]["r"].as<float>();
-            g = colorComponentsNode["emission"]["g"].as<float>();
-            b = colorComponentsNode["emission"]["b"].as<float>();
-            mat.m_emission.set(r, g, b);
+            colorAttribs.m_emission.m_R = colorComponentsNode["emission"]["r"].as<float>();
+            colorAttribs.m_emission.m_G = colorComponentsNode["emission"]["g"].as<float>();
+            colorAttribs.m_emission.m_B = colorComponentsNode["emission"]["b"].as<float>();
         }
         if (colorComponentsNode["shininess"].IsDefined()){
-            unsigned int shininess;
-            shininess = colorComponentsNode["shininess"].as<uint>();
-            mat.setShininess(shininess);
+            colorAttribs.m_shininiess = colorComponentsNode["shininess"].as<uint>();
         }
-        a = colorComponentsNode["transparency"].as<float>();
+        colorAttribs.m_alpha = colorComponentsNode["transparency"].as<float>();
     }
 //    else if(colorNameNode.IsDefined()){
 //        vector<double> rgba = afConfigHandler::getColorRGBA(colorNameNode.as<string>());
@@ -350,15 +309,15 @@ bool ADFUtils::getWheelAttribsFromNode(YAML::Node *a_node, afWheelAttributes *at
     }
 
     if (downDirNode.IsDefined()){
-        attribs->m_downDirection = toXYZ<cVector3d>(&downDirNode);
+        attribs->m_downDirection = positionFromNode(&downDirNode);
     }
 
     if (axelDirNode.IsDefined()){
-       attribs->m_axelDirection = toXYZ<cVector3d>(&axelDirNode);
+       attribs->m_axelDirection = positionFromNode(&axelDirNode);
     }
 
     if (offsetNode.IsDefined()){
-        attribs->m_offset = toXYZ<cVector3d>(&offsetNode);
+        attribs->m_offset = positionFromNode(&offsetNode);
     }
 
     if (frontNode.IsDefined()){
@@ -639,7 +598,7 @@ bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttrib
         valid = false;
     }
 
-    if (!parentNameNode.IsDefined()){
+    if (parentNameNode.IsDefined()){
         attribs->m_parentName = parentNameNode.as<string>();
         valid = true;
     }
@@ -697,7 +656,7 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
         double iy = inertiaNode["ix"].as<double>();
         double iz = inertiaNode["ix"].as<double>();
 
-        attribs->m_inertia.setValue(ix, iy, iz);
+        attribs->m_inertia.set(ix, iy, iz);
         attribs->m_estimateInertia = false;
     }
     else{
@@ -709,17 +668,13 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
         YAML::Node _inertialOffsetRot = inertialOffset["orientation"];
 
         if (_inertialOffsetPos.IsDefined()){
-            btVector3 iP = ADFUtils::toXYZ<btVector3>(&_inertialOffsetPos);
-            attribs->m_inertialOffset.setOrigin(iP);
+            afVector3d pos = ADFUtils::positionFromNode(&_inertialOffsetPos);
+            attribs->m_inertialOffset.setPosition(pos);
         }
 
         if (_inertialOffsetRot.IsDefined()){
-            double r = _inertialOffsetRot["r"].as<double>();
-            double p = _inertialOffsetRot["p"].as<double>();
-            double y = _inertialOffsetRot["y"].as<double>();
-            btMatrix3x3 iR;
-            iR.setEulerZYX(y, p, r);
-            attribs->m_inertialOffset.setBasis(iR);
+            afMatrix3d rot = ADFUtils::rotationFromNode(&_inertialOffsetRot);
+            attribs->m_inertialOffset.setRotation(rot);
         }
     }
 
@@ -770,20 +725,16 @@ bool ADFUtils::getKinematicAttribsFromNode(YAML::Node *a_node, afKinematicAttrib
     }
 
     if(posNode.IsDefined()){
-        cVector3d pos = ADFUtils::toXYZ<cVector3d>(&posNode);
-        attribs->m_location.setLocalPos(pos);
+        afVector3d pos = ADFUtils::positionFromNode(&posNode);
+        attribs->m_location.setPosition(pos);
     }
     else{
         valid = false;
     }
 
     if(rotNode.IsDefined()){
-        double r = rotNode["r"].as<double>();
-        double p = rotNode["p"].as<double>();
-        double y = rotNode["y"].as<double>();
-        cMatrix3d rot;
-        rot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        attribs->m_location.setLocalRot(rot);
+        afMatrix3d rot = ADFUtils::rotationFromNode(&rotNode);
+        attribs->m_location.setRotation(rot);
     }
     else{
         valid = false;
@@ -841,23 +792,19 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
 
     if (offsetNode.IsDefined()){
         if (offsetNode["position"].IsDefined()){
-            double px = offsetNode["position"]["x"].as<double>();
-            double py = offsetNode["position"]["y"].as<double>();
-            double pz = offsetNode["position"]["z"].as<double>();
-            attribs->m_posOffset.set(px, py, pz);
+            YAML::Node _posNode = offsetNode["position"];
+            attribs->m_posOffset = ADFUtils::positionFromNode(&_posNode);
         }
         else{
             attribs->m_posOffset.set(0, 0, 0);
         }
 
         if (offsetNode["orientation"].IsDefined()){
-            double roll =  offsetNode["orientation"]["r"].as<double>();
-            double pitch = offsetNode["orientation"]["p"].as<double>();
-            double yaw =   offsetNode["orientation"]["y"].as<double>();
-            attribs->m_rotOffset.setExtrinsicEulerRotationRad(roll,pitch,yaw,cEulerOrder::C_EULER_ORDER_XYZ);
+            YAML::Node _orientationNode = offsetNode["orientation"];
+            attribs->m_rotOffset = ADFUtils::rotationFromNode(&_orientationNode);
         }
         else{
-            attribs->m_rotOffset.identity();
+            attribs->m_rotOffset.setRPY(0, 0, 0);
         }
     }
     else{
@@ -945,6 +892,10 @@ ADFLoader_1_0::ADFLoader_1_0()
     m_version = "1.0";
 }
 
+string ADFLoader_1_0::getLoaderVersion(){
+    return m_version;
+}
+
 bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
 {
     YAML::Node& rootNode = *a_node;
@@ -1002,7 +953,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
 
     bool valid = true;
 
-    cVector3d location, direction;
+    afVector3d location, direction;
     double spot_exponent, cuttoff_angle;
     int shadow_quality;
 
@@ -1013,7 +964,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
 
     if (directionNode.IsDefined()){
-        attribs->m_direction = ADFUtils::toXYZ<cVector3d>(&directionNode);
+        attribs->m_direction = ADFUtils::positionFromNode(&directionNode);
     }
 
     if (spotExponentNode.IsDefined()){
@@ -1070,11 +1021,11 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
 
     if (lookAtNode.IsDefined()){
-        attribs->m_lookAt = ADFUtils::toXYZ<cVector3d>(&lookAtNode);
+        attribs->m_lookAt = ADFUtils::positionFromNode(&lookAtNode);
     }
 
     if (upNode.IsDefined()){
-        attribs->m_up = ADFUtils::toXYZ<cVector3d>(&upNode);
+        attribs->m_up = ADFUtils::positionFromNode(&upNode);
     }
 
     if (clippingPlaneNode.IsDefined()){
@@ -1436,11 +1387,11 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
     adfUtils.getJointControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
 
-    attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
-    attribs->m_childPivot = ADFUtils::toXYZ<cVector3d>(&childPivotNode);
-    attribs->m_parentAxis = ADFUtils::toXYZ<cVector3d>(&parentAxisNode);
-    attribs->m_childAxis = ADFUtils::toXYZ<cVector3d>(&childAxisNode);
-    attribs->m_parentPivot = ADFUtils::toXYZ<cVector3d>(&parentPivotNode);
+    attribs->m_parentPivot = ADFUtils::positionFromNode(&parentPivotNode);
+    attribs->m_childPivot = ADFUtils::positionFromNode(&childPivotNode);
+    attribs->m_parentAxis = ADFUtils::positionFromNode(&parentAxisNode);
+    attribs->m_childAxis = ADFUtils::positionFromNode(&childAxisNode);
+    attribs->m_parentPivot = ADFUtils::positionFromNode(&parentPivotNode);
     attribs->m_jointType = ADFUtils::getJointTypeFromString(typeNode.as<string>());
 
 
@@ -1453,9 +1404,15 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     }
 
     if(limitsNode.IsDefined()){
-        attribs->m_lowerLimit = limitsNode["low"].as<double>();
-        attribs->m_upperLimit = limitsNode["high"].as<double>();
-        attribs->m_enableLimits = true;
+        if (limitsNode["low"].IsDefined()){
+            attribs->m_lowerLimit = limitsNode["low"].as<double>();
+        }
+        if (limitsNode["high"].IsDefined()){
+            attribs->m_upperLimit = limitsNode["high"].as<double>();
+        }
+        if (limitsNode["low"].IsDefined() && limitsNode["high"].IsDefined()){
+            attribs->m_enableLimits = true;
+        }
     }
 
     if(enableMotorNode.IsDefined()){
@@ -1562,16 +1519,16 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
     if (arrayNode.IsDefined()){
         uint count = arrayNode.size();
         attribs->m_raysAttribs.resize(count);
-        cTransform T_sINp = attribs->m_kinematicAttribs.m_location;
-        cMatrix3d R_sINp = T_sINp.getLocalRot();
+        afTransform T_sINp = attribs->m_kinematicAttribs.m_location;
+        afMatrix3d R_sINp = T_sINp.getRotation();
         for (uint i = 0 ; i < count ; i++){
             YAML::Node offsetNode = arrayNode[i]["offset"];
             YAML::Node directionNode = arrayNode[i]["direction"];
 
-            cVector3d offset, start, dir, end;
+            afVector3d offset, start, dir, end;
 
-            offset = ADFUtils::toXYZ<cVector3d>(&offsetNode);
-            dir = ADFUtils::toXYZ<cVector3d>(&directionNode);
+            offset = ADFUtils::positionFromNode(&offsetNode);
+            dir = ADFUtils::positionFromNode(&directionNode);
             start = T_sINp * offset;
             dir = R_sINp * dir;
             dir.normalize();
@@ -1616,18 +1573,17 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
         attribs->m_raysAttribs.resize(resolution * resolution);
 
         // Choose an initial point facing the +ve x direction
-        cVector3d nx(1, 0, 0);
-        cTransform T_sINp = attribs->m_kinematicAttribs.m_location;
-        cMatrix3d R_sINp = T_sINp.getLocalRot();
+        afVector3d nx(1, 0, 0);
+        afTransform T_sINp = attribs->m_kinematicAttribs.m_location;
+        afMatrix3d R_sINp = T_sINp.getRotation();
         for (uint i = 0 ; i < resolution ; i++){
             double h_angle = h_start + i * h_step;
             for (uint j = 0 ; j < resolution ; j++){
                 double v_angle = v_start + j * v_step;
 
-                cMatrix3d deltaR;
-                cVector3d start, dir, end;
+                afMatrix3d deltaR(0, v_angle, h_angle);
+                afVector3d start, dir, end;
 
-                deltaR.setExtrinsicEulerRotationRad(0, v_angle, h_angle, cEulerOrder::C_EULER_ORDER_XYZ);
                 start = T_sINp * (deltaR * (nx * start_offset));
                 dir = R_sINp * deltaR * nx;
                 dir.normalize();
@@ -1649,6 +1605,11 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
     }
 
     return result;
+
+}
+
+bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistanceSensorAttributes *attribs)
+{
 
 }
 
@@ -1856,11 +1817,8 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     }
 
     if (orientationOffsetNode.IsDefined()){
-            cVector3d rpy_offset;
-            rpy_offset = ADFUtils::toRPY<cVector3d>(&orientationOffsetNode);
-            cMatrix3d rot;
-            rot.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
-            attribs->m_orientationOffset.setLocalRot(rot);
+        afMatrix3d rot = ADFUtils::rotationFromNode(&orientationOffsetNode);
+        attribs->m_orientationOffset.setRotation(rot);
     }
 
     if (buttonMappingNode.IsDefined()){
@@ -2066,7 +2024,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
     }
 
     if (gravityNode.IsDefined()){
-        attribs->m_gravity = ADFUtils::toXYZ<cVector3d>(&gravityNode);
+        attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
     }
 
     if (enclosureDataNode.IsDefined()){

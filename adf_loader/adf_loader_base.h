@@ -47,35 +47,37 @@
 //------------------------------------------------------------------------------
 
 #include "afAttributes.h"
-#include <assert.h>
+#include <yaml-cpp/yaml.h>
 
 using namespace ambf;
 
 class ADFUtilsBase{
 public:
-    virtual bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs);
+    virtual bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs){}
 
-    virtual bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs);
+    virtual bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs){}
 
-    virtual bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs);
+    virtual bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs){}
 
-    virtual bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs);
+    virtual bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs){}
 
-    virtual bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs);
+    virtual bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs){}
 
-    virtual bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs);
+    virtual bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs){}
 
-    virtual bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs);
+    virtual bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs){}
 
-    virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs);
+    virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs){}
 
-    virtual bool getMatrialFromNode(YAML::Node* a_node, cMaterial* mat);
+    virtual bool getColorAttribsFromNode(YAML::Node* a_node, afColorAttributes* color){}
 
-    virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs);
+    virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs){}
 
-    virtual bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs);
+    virtual bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs){}
 
-    virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
+    virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs){}
+
+    virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs){}
 
 };
 ///
@@ -86,57 +88,55 @@ public:
     ADFLoaderBase(){}
     ~ADFLoaderBase(){}
 
-    // Get the version of the this loader
-    virtual std::string getLoaderVersion();
-
     // Load object attributes
-    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
+    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs){}
 
     // Load Light Attributes
-    virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);
+    virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs){}
 
     // Load Camera Attributes
-    virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs);
+    virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs){}
 
     // Load rigid body from a YAML::Node
-    virtual bool loadRigidBodyAttribs(YAML::Node* a_node, afRigidBodyAttributes* attribs);
+    virtual bool loadRigidBodyAttribs(YAML::Node* a_node, afRigidBodyAttributes* attribs){}
 
     // Load soft body from a YAML::Node
-    virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs);
+    virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs){}
 
     // Load joint from a YAML::Node
-    virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs);
+    virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs){}
 
     // Load joint from a YAML::Node
-    virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afSensorAttributes* attribs);
+    virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afRayTracerSensorAttributes* attribs){}
+
+    // Load joint from a YAML::Node
+    virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs){}
 
     // Load actuator from a YAML::Node
-    virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs);
+    virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs){}
+
+    // Load actuator from a YAML::Node
+    virtual bool loadConstraintActuatorAttribs(YAML::Node* a_node, afConstraintActuatorAttributes* attribs){}
 
     // Load sensor from a YAML::Node
-    virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
+    virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs){}
 
     // Load Input Device Attributes
-    virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
+    virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs){}
 
     // Load multibody from ADF file
-    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
+    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs){}
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
+    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs){}
 
     // Load the launch file
-    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs);
+    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs){}
 
-    bool cleanUp();
-
-    bool isLoaderValid();
-
-    bool setLoader(ADFLoaderBase* a_loader);
+    // Get the version of this loader
+    virtual std::string getLoaderVersion();
 
 protected:
     std::string m_version = "NULL";
-
-    ADFLoaderBase* m_loader;
 };
 #endif

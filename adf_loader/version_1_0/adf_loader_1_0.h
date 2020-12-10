@@ -46,9 +46,10 @@
 #define AF_ADF_LOADER_1_0_H
 //------------------------------------------------------------------------------
 
-#include "adf_loader_interface.h"
+#include "adf_loader_base.h"
 
 using namespace ambf;
+using namespace std;
 
 namespace adf_loader_1_0{
 
@@ -70,7 +71,7 @@ public:
 
     virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs);
 
-    virtual bool getMatrialFromNode(YAML::Node* a_node, cMaterial* mat);
+    virtual bool getColorAttribsFromNode(YAML::Node* a_node, afColorAttributes* a_color);
 
     virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs);
 
@@ -80,13 +81,13 @@ public:
 
     virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
 
-    static afActuatorType getActuatorTypeFromString(const std::string & a_str);
+    static afActuatorType getActuatorTypeFromString(const string & a_str);
 
-    static afJointType getJointTypeFromString(const std::string & a_str);
+    static afJointType getJointTypeFromString(const string & a_str);
 
-    static afSensorType getSensorTypeFromString(const std::string & a_str);
+    static afSensorType getSensorTypeFromString(const string & a_str);
 
-    static afPrimitiveShapeType getShapeTypeFromString(const std::string & a_shape_str);
+    static afPrimitiveShapeType getShapeTypeFromString(const string & a_shape_str);
 
     // Copy data specified via ADF node
     static bool copyShapeOffsetData(YAML::Node* offsetNode, afPrimitiveShapeAttributes* attribs);
@@ -94,23 +95,10 @@ public:
     // Copy data specified via ADF node
     static bool copyPrimitiveShapeData(YAML::Node* shapeNode, afPrimitiveShapeAttributes* attribs);
 
-    template <typename T>
-    ///
-    /// \brief toXYZ
-    /// \param node
-    /// \return
-    ///
-    static T toXYZ(YAML::Node* node);
 
+    static afVector3d positionFromNode(YAML::Node* node);
 
-    template <typename T>
-    ///
-    /// \brief toRPY
-    /// \param node
-    /// \param v
-    /// \return
-    ///
-    static T toRPY(YAML::Node* node);
+    static afMatrix3d rotationFromNode(YAML::Node* node);
 };
 
 
@@ -124,9 +112,9 @@ public:
     // Must set this version string in the constructor of each loader.
     using ADFLoaderBase::m_version;
 
-    virtual std::string getLoaderVersion(){return m_version;}
+    virtual string getLoaderVersion();
 
-    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
+    virtual bool loadObjectAttribs(YAML::Node* a_node, string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
 
     // Load Light
     virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);

@@ -737,7 +737,7 @@ public:
     virtual void updatePositionFromDynamics();
 
     // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(const afRigidBodyAttributes* attribs);
+    virtual bool loadRigidBody(afRigidBodyAttributes* attribs);
 
     // Add a child to the afRidigBody tree, this method will internally populate the dense body tree
     virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);

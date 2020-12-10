@@ -46,13 +46,12 @@
 #define AF_UTILS_H
 
 #include <string>
-#include <btBulletDynamicsCommon.h>
-#include <chai3d.h>
+#include <iostream>
+
+using namespace std;
 
 //------------------------------------------------------------------------------
 namespace ambf{
-
-class afPrimitiveShapeAttributes;
 
 ///
 /// \brief The afUtils class
@@ -68,21 +67,21 @@ public:
     static T1 convertDataType(const T2 &r);
 
     template <typename T>
-    static std::string getNonCollidingIdx(std::string a_body_name, const T* a_tMap);
+    static string getNonCollidingIdx(string a_body_name, const T* a_tMap);
 
-    static std::string removeAdjacentBackSlashes(std::string a_name);
+    static string removeAdjacentBackSlashes(string a_name);
 
-    static std::string mergeNamespace(std::string a_namespace1, std::string a_namespace2);
+    static string mergeNamespace(string a_namespace1, string a_namespace2);
 
-    static void debugPrint(int line, std::string filename){
-        std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
+    static void debugPrint(int line, string filename){
+        cerr << "Line: "<< line << ", File: " << filename << endl;
     }
 
-    static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+//    static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
 
-    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+//    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
 
-    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
+//    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
 };
 
 

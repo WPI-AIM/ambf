@@ -1304,17 +1304,17 @@ void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt
 /// \param attribs
 /// \return
 ///
-bool afRigidBody::loadRigidBody(const afRigidBodyAttributes* a_attribs)
+bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
 {
     const afRigidBodyAttributes & attribs = *a_attribs;
 
-    setName(attribs.m_name);
-    setNamespace(attribs.m_namespace);
-    m_visualGeometryType = attribs.m_visualGeometryType;
-    m_visualMeshFilePath = attribs.m_visualMeshFilePath;
-    m_collisionGeometryType = attribs.m_collisionGeometryType;
-    m_collisionMeshFilePath = attribs.m_collisionMeshFilePath;
-    setInertialOffsetTransform(attribs.m_inertialOffset);
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
+    m_visualGeometryType = attribs.m_visualAttribs.m_geometryType;
+    m_visualMeshFilePath = attribs.m_visualAttribs.m_path;
+    m_collisionGeometryType = attribs.m_collisionAttribs.m_geometryType;
+    m_collisionMeshFilePath = attribs.m_collisionAttribs.m_path;
+    setInertialOffsetTransform(attribs.m_inertialAttribs.m_inertialOffset);
 
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
