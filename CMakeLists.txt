@@ -91,7 +91,7 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${O
 # find dependencies
 find_package(yaml-cpp REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS filesystem REQUIRED)
 
 include_directories(${YAML_CPP_INCLUDE_DIR})
 include_directories (${OPENGL_INCLUDE_DIR})
@@ -222,8 +222,9 @@ find_package(GLFW REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
 # header search path
-include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)
+include_directories (${PROJECT_SOURCE_DIR}/ambf_math)
 include_directories (${PROJECT_SOURCE_DIR}/adf_loader)
+include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d-bullet/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d-gel/src)
@@ -245,10 +246,13 @@ include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/external/vorbis
 include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/external/vorbis/lib)
 include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/src/Theora)
 
+
 # static library source files
-file (GLOB_RECURSE source_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
+file (GLOB_RECURSE source_adf_math RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_math/*.cpp ${PROJECT_SOURCE_DIR}/ambf_math/*.h)
 # static library source files
 file (GLOB_RECURSE source_adf_loader RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/adf_loader/*.cpp ${PROJECT_SOURCE_DIR}/adf_loader/*.h)
+# static library source files
+file (GLOB_RECURSE source_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
 
 # static library external dependencies source files
 file (GLOB_RECURSE source_chai3d  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.h)
@@ -309,11 +313,11 @@ add_definitions (${PROJECT_DEFINITIONS} -DGLEW_STATIC -DAL_ALEXT_PROTOTYPES -DAL
 # static library
 add_library (adf_loader ${source_adf_loader})
 
- target_link_libraries(adf_loader ${YAML_CPP_LIBRARIES} ${OPENGL_LIBRARIES} ${})
+target_link_libraries(adf_loader ${YAML_CPP_LIBRARIES} ${Boost_LIBRARIES})
 
 set (ADF_LOADER_LIBRARIES adf_loader)
 
-add_subdirectory (${PROJECT_SOURCE_DIR}/loader_tests)
+add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
 ## static library
 #add_library (ambf_framework STATIC ${source_framework} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds}

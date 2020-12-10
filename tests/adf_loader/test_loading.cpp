@@ -24,6 +24,12 @@ int main(){
         printf("Loaded Multbody File: %i \n", i);
     }
 
+    afAllInputDevicesAttributes allInputDevsAttribs;
+
+    auto inputDevFilePath = launchAttribs.m_path / launchAttribs.m_inputDevicesFilepath;
+
+    loader.loadAllInputDevicesAttribs(inputDevFilePath.c_str(), &allInputDevsAttribs);
+
     printf("Loaded Launch File \n");
 
     return 0;

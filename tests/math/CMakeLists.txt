@@ -33,14 +33,10 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: seb $
 #  $Author: Adnan Munawar $
 #  $Date:  $
 #  $Rev:  $
 
 
 # common settings required to build examples
-find_package (Boost COMPONENTS filesystem REQUIRED)
-message("HERE I AMMMMMMMMMMMMMMMM: " ${ADF_LOADER_LIBRARIES})
-add_executable (loader_test src/test_loading.cpp)
-target_link_libraries (loader_test ${ADF_LOADER_LIBRARIES} ${Boost_LIBRARIES})
+add_executable (math_test test_math.cpp)

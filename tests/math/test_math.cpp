@@ -35,74 +35,55 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
+    \author    <amunawar@wpi.edu>
     \author    Adnan Munawar
     \version   1.0$
 */
 //==============================================================================
 
-//------------------------------------------------------------------------------
-#ifndef AF_ADF_LOADER_INTERFACE_H
-#define AF_ADF_LOADER_INTERFACE_H
-//------------------------------------------------------------------------------
 
-#include "adf_loader_base.h"
 
-enum class adfVersion{
-    VERSION_1_0,
-    INVALID
-
-};
+#include <afMath.h>
+#include <iostream>
 
 using namespace ambf;
 
-class ADFLoaderInterface{
-public:
-    ADFLoaderInterface();
+int main(){
 
-    bool loadObjectAttribs(std::string a_filepath, std::string a_objectName, afObjectType a_type, afBaseObjectAttributes* attribs);
+    afMatrix3d mat;
+    double r = 1.5;
+    double p = -1.5;
+    double y = 2.2;
 
-    // Load World Attribs
-    bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
+    printf("Input RPY: [%f, %f, %f] \n", r, p, y);
+    mat.setRPY(r, p, y);
 
-    // Load Multibody Attribs
-    bool loadMultiBodyAttribs(std::string a_filepath, afMultiBodyAttributes* attribs);
+    mat.getRPY(r, p, y);
 
-    // Load Multibody Attribs
-    bool loadAllInputDevicesAttribs(std::string a_filepath, afAllInputDevicesAttributes* attribs);
-
-    // Load the Launch file Attribs
-    bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);
-
-    adfVersion getFileVersion(std::string a_filepath);
-
-    adfVersion getFileVersion(YAML::Node *a_node);
-
-    adfVersion getVersionFromString(std::string a_str);
-
-    // Get color's rgba values from the name of the color. Color names are defined
-    // in the color config file
-    std::vector<double> getColorRGBA(std::string a_color_name);
-
-    bool setLoaderVersion(adfVersion);
-
-    bool setLoaderVersionForFile(std::string a_filepath);
-
-    bool cleanUp();
-
-    bool isLoaderValid();
-
-    bool setLoader(ADFLoaderBase* a_loader);
-
-    // Get the version of the this loader
-    std::string getLoaderVersion();
-
-protected:
+    printf("Output RPY: [%f, %f, %f] \n", r, p, y);
 
 
-    YAML::Node m_colorsNode;
 
-private:
-    ADFLoaderBase* m_loader;
-};
+    afMatrix3d rot(PI, 0, PI_2);
+    afVector3d pos(10, 0, -20);
+    afTransform T1(rot, pos);
 
-#endif
+
+    afMatrix3d rot2(0, 0, PI_2);
+    afVector3d pos2(0, 0, 5);
+    afTransform T2(rot2, pos2);
+
+    afTransform T3 = T1 * T2;
+
+    printf("T3 is: ");
+
+    T3.print();
+
+    afTransform T4 = T3 * T3.getInverse();
+
+    printf("T4 is: ");
+
+    T4.print();
+
+    return 0;
+}

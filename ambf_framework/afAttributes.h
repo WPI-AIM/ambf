@@ -47,223 +47,9 @@
 //------------------------------------------------------------------------------
 #include <afEnums.h>
 #include <boost/filesystem/path.hpp>
-#include <math.h>
+#include <afMath.h>
 
 typedef unsigned int uint;
-
-
-struct afVector3d{
-
-    afVector3d(){
-        set(0, 0, 0);
-    }
-    afVector3d(double x, double y, double z){
-        set(x, y, z);
-    }
-
-    void set(double x, double y, double z){
-        m_x = x;
-        m_y = y;
-        m_z = z;
-    }
-
-    afVector3d operator *(double a_scale) const{
-        afVector3d v;
-        v.m_x *= a_scale;
-        v.m_y *= a_scale;
-        v.m_z *= a_scale;
-        return v;
-    }
-
-    afVector3d operator *(double a_scale) {
-        afVector3d v;
-        v.m_x *= a_scale;
-        v.m_y *= a_scale;
-        v.m_z *= a_scale;
-        return v;
-    }
-
-    afVector3d operator +(afVector3d vIn){
-        afVector3d vOut;
-        vOut.m_x = m_x + vIn.m_x;
-        vOut.m_x = m_y + vIn.m_y;
-        vOut.m_x = m_z + vIn.m_z;
-        return vOut;
-    }
-
-    void normalize(){
-        double mag = m_x * m_x + m_y * m_y + m_z * m_z;
-        double magInv = 1.0 / mag;
-        m_x += magInv;
-        m_y *= magInv;
-        m_z *= magInv;
-    }
-
-    double m_x;
-    double m_y;
-    double m_z;
-};
-
-
-struct afMatrix3d{
-
-    afMatrix3d(){
-        setIdentity();
-    }
-
-    afMatrix3d(double roll, double pitch, double yaw){
-        setRPY(roll, pitch, yaw);
-    }
-
-    double setRPY(double roll, double pitch, double yaw){
-        double cr = cos(roll);
-        double cp = cos(pitch);
-        double cy = cos(yaw);
-        double sr = sin(roll);
-        double sp = sin(pitch);
-        double sy = sin(yaw);
-
-        m_data[0][0] = cy * cp ; m_data[0][1] = cy * sp * sr - sy * cr; m_data[0][2] = cy * sp * cr + sy * sr;
-        m_data[1][0] = sy * cp ; m_data[1][1] = sy * sp * sr + cy * cr; m_data[1][2] = sy * sp * cr - cy * sr;
-        m_data[2][0] = -sp * cp; m_data[2][1] = cp * sr               ; m_data[2][2] = cp * cr;
-    }
-
-    void getRPY(double& roll, double& pitch, double& yaw){
-        yaw = atan2(m_data[1][0], m_data[0][0]);
-        pitch = atan2(-m_data[2][0], sqrt( pow(m_data[2][1], 2) + pow(m_data[2][2], 2) ));
-        roll = atan2(m_data[2][1], m_data[2][2]);
-    }
-
-    void setIdentity(){
-        for (int r = 0 ; r < 3 ; r++){
-            for (int c = 0 ; c < 3 ; c++){
-                m_data[r][c] = 0.0;
-            }
-        }
-        m_data[0][0] = 1.0;
-        m_data[1][1] = 1.0;
-        m_data[2][2] = 1.0;
-    }
-
-    afVector3d operator *(afVector3d vIn){
-        afVector3d vOut;
-
-        vOut.m_x = m_data[0][0] * vIn.m_x + m_data[0][1] * vIn.m_y + m_data[0][2] * vOut.m_z;
-        vOut.m_y = m_data[1][0] * vIn.m_x + m_data[1][1] * vIn.m_y + m_data[1][2] * vOut.m_z;
-        vOut.m_z = m_data[2][0] * vIn.m_x + m_data[2][1] * vIn.m_y + m_data[2][2] * vOut.m_z;
-
-        return vOut;
-    }
-
-    afMatrix3d operator *(afMatrix3d rIn){
-        afMatrix3d rOut;
-        rOut(0, 0) = m_data[0][0] * rIn(0, 0) + m_data[0][1] * rIn(1, 0) + m_data[0][2] * rIn(2, 0);
-        rOut(1, 0) = m_data[1][0] * rIn(0, 0) + m_data[1][1] * rIn(1, 0) + m_data[1][2] * rIn(2, 0);
-        rOut(2, 0) = m_data[2][0] * rIn(0, 0) + m_data[2][1] * rIn(1, 0) + m_data[2][2] * rIn(2, 0);
-
-        rOut(0, 1) = m_data[0][0] * rIn(0, 1) + m_data[0][1] * rIn(1, 1) + m_data[0][2] * rIn(2, 1);
-        rOut(1, 1) = m_data[1][0] * rIn(0, 1) + m_data[1][1] * rIn(1, 1) + m_data[1][2] * rIn(2, 1);
-        rOut(2, 1) = m_data[2][0] * rIn(0, 1) + m_data[2][1] * rIn(1, 1) + m_data[2][2] * rIn(2, 1);
-
-        rOut(0, 2) = m_data[0][0] * rIn(0, 2) + m_data[0][1] * rIn(1, 2) + m_data[0][2] * rIn(2, 2);
-        rOut(1, 2) = m_data[1][0] * rIn(0, 2) + m_data[1][1] * rIn(1, 2) + m_data[1][2] * rIn(2, 2);
-        rOut(2, 2) = m_data[2][0] * rIn(0, 2) + m_data[2][1] * rIn(1, 2) + m_data[2][2] * rIn(2, 2);
-
-        return rOut;
-    }
-
-    void operator *=(afMatrix3d rIn){
-        double d[3][3];
-        d[0][0] = m_data[0][0] * rIn(0, 0) + m_data[0][1] * rIn(1, 0) + m_data[0][2] * rIn(2, 0);
-        d[1][0] = m_data[1][0] * rIn(0, 0) + m_data[1][1] * rIn(1, 0) + m_data[1][2] * rIn(2, 0);
-        d[2][0] = m_data[2][0] * rIn(0, 0) + m_data[2][1] * rIn(1, 0) + m_data[2][2] * rIn(2, 0);
-
-        d[0][1] = m_data[0][0] * rIn(0, 1) + m_data[0][1] * rIn(1, 1) + m_data[0][2] * rIn(2, 1);
-        d[1][1] = m_data[1][0] * rIn(0, 1) + m_data[1][1] * rIn(1, 1) + m_data[1][2] * rIn(2, 1);
-        d[2][1] = m_data[2][0] * rIn(0, 1) + m_data[2][1] * rIn(1, 1) + m_data[2][2] * rIn(2, 1);
-
-        d[0][2] = m_data[0][0] * rIn(0, 2) + m_data[0][1] * rIn(1, 2) + m_data[0][2] * rIn(2, 2);
-        d[1][2] = m_data[1][0] * rIn(0, 2) + m_data[1][1] * rIn(1, 2) + m_data[1][2] * rIn(2, 2);
-        d[2][2] = m_data[2][0] * rIn(0, 2) + m_data[2][1] * rIn(1, 2) + m_data[2][2] * rIn(2, 2);
-
-        for (int r = 0 ; r < 3 ; r++){
-            for (int c = 0 ; c < 3 ; c++){
-                m_data[r][c] = d[r][c];
-            }
-        }
-    }
-
-    void transpose(){
-        double d;
-
-        d = m_data[0][1]; m_data[0][1] = m_data[1][0]; m_data[1][0] = d;
-        d = m_data[0][2]; m_data[0][2] = m_data[2][0]; m_data[2][0] = d;
-        d = m_data[1][2]; m_data[1][2] = m_data[2][1]; m_data[2][1] = d;
-    }
-
-    afMatrix3d getTranspose(){
-        double d;
-        afMatrix3d rot = (*this);
-        rot.transpose();
-        return rot;
-    }
-
-    double& operator () (const uint m_row, const uint m_col){
-        assert(m_row < 3);
-        assert(m_col < 3);
-        return m_data[m_row][m_col];
-    }
-
-private:
-    double m_data[3][3];
-};
-
-
-struct afTransform{
-
-    afTransform(){
-        m_P.set(0, 0, 0);
-        m_R.setIdentity();
-    }
-
-    afTransform(afVector3d pos, afMatrix3d rot){
-        m_P = pos;
-        m_R = rot;
-    }
-
-    afTransform operator *(afTransform tIn){
-        afMatrix3d rot = m_R * tIn.getRotation();
-        afVector3d pos = m_R * tIn.getPosition() + m_P;
-        afTransform tOut(pos, rot);
-        return tOut;
-    }
-
-    afVector3d operator *(afVector3d vIn){
-        afVector3d vOut;
-        vOut = m_R * vIn + m_P;
-        return vOut;
-    }
-
-    afVector3d getPosition(){
-        return m_P;
-    }
-
-    afMatrix3d getRotation(){
-        return m_R;
-    }
-
-    void setPosition(afVector3d& v){
-        m_P = v;
-    }
-
-    void setRotation(afMatrix3d& m){
-        m_R = m;
-    }
-
-private:
-    afVector3d m_P;
-    afMatrix3d m_R;
-};
 
 namespace ambf {
 
@@ -871,7 +657,7 @@ public:
 
 struct afInputDeviceAttributes: public afIdentificationAttributes{
 public:
-    afInputDeviceAttributes();
+    afInputDeviceAttributes(){}
 
     std::string m_hardwareName;
 
@@ -909,8 +695,10 @@ public:
 };
 
 
-struct afTeleRoboticUnitAttributes{
-
+// Struct for multiple input devices
+struct afAllInputDevicesAttributes{
+public:
+    afAllInputDevicesAttributes(){}
     boost::filesystem::path m_path;
     std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
 };

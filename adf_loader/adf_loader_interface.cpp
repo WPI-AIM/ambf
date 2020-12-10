@@ -194,6 +194,19 @@ bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttr
     }
 }
 
+bool ADFLoaderInterface::loadAllInputDevicesAttribs(string a_filepath, afAllInputDevicesAttributes *attribs)
+{
+    if (!setLoaderVersionForFile(a_filepath)){
+        return false;
+    }
+    else{
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
+        return m_loader->loadAllInputDeviceAttributes(&node, attribs);
+    }
+
+}
+
 bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){

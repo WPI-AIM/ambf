@@ -56,9 +56,9 @@ using namespace std;
 afVector3d ADFUtils::positionFromNode(YAML::Node* a_node){
     afVector3d v;
     YAML::Node & node = *a_node;
-    v.m_x = node["x"].as<double>();
-    v.m_y = node["y"].as<double>();
-    v.m_z = node["z"].as<double>();
+    v(0) = node["x"].as<double>();
+    v(1) = node["y"].as<double>();
+    v(2) = node["z"].as<double>();
     return v;
 }
 
@@ -1787,11 +1787,19 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     if (simulatedMultiBodyNode.IsDefined()){
         attribs->m_sdeFilepath = simulatedMultiBodyNode.as<string>();
+        attribs->m_sdeDefined = true;
+    }
+    else{
+        attribs->m_sdeDefined = false;
     }
 
 
     if (rootLinkNode.IsDefined()){
         attribs->m_rootLink = rootLinkNode.as<string>();
+        attribs->m_rootLinkDefined = true;
+    }
+    else{
+        attribs->m_rootLinkDefined = false;
     }
 
 
@@ -1852,6 +1860,28 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     if (visibleSizeNode.IsDefined()){
         attribs->m_visibleSize = visibleSizeNode.as<double>();
+    }
+
+    return true;
+}
+
+bool ADFLoader_1_0::loadAllInputDeviceAttributes(YAML::Node *a_node, afAllInputDevicesAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: ALL INPUT DEVICES'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    YAML::Node inputDevicesNode = node["input devices"];
+
+    for (int i = 0 ; i < inputDevicesNode.size() ; i++){
+        afInputDeviceAttributes _idAttribs;
+        std::string _devName = inputDevicesNode[i].as<std::string>();
+        YAML::Node _idNode = node[_devName];
+        if (loadInputDeviceAttributes(&_idNode, &_idAttribs)){
+            attribs->m_inputDeviceAttribs.push_back(_idAttribs);
+        }
     }
 
     return true;

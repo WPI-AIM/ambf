@@ -124,6 +124,9 @@ public:
     // Load Input Device Attributes
     virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs){}
 
+    // Load all the input device attributes
+    virtual bool loadAllInputDeviceAttributes(YAML::Node* a_node, afAllInputDevicesAttributes *attribs){}
+
     // Load multibody from ADF file
     virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs){}
 
