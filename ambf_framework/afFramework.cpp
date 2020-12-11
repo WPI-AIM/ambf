@@ -46,10 +46,6 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-#define PI 3.14159
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
 using namespace std;
@@ -79,7 +75,20 @@ bool afCamera::s_imageTransportInitialized = false;
 
 /// End declare static variables
 
+cMesh *afPrimitiveShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primitiveShape)
+{
 
+}
+
+btCollisionShape *afPrimitiveShapeUtils::createCollisionShape(const afPrimitiveShapeAttributes *a_primitiveShape)
+{
+
+}
+
+btCompoundShape *afPrimitiveShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a_collisionMesh, btTransform T_offset, double a_margin)
+{
+
+}
 
 ///
 /// \brief afComm::afCreateCommInstance
@@ -1339,7 +1348,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
 
         for(unsigned long sI = 0 ; sI < attribs.m_visualPrimitiveShapes.size() ; sI++){
             afPrimitiveShapeAttributes pS = attribs.m_visualPrimitiveShapes[sI];
-            cMesh* tempMesh = afUtils::createVisualShape(&pS);;
+            cMesh* tempMesh = afPrimitiveShapeUtils::createVisualShape(&pS);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
@@ -2495,7 +2504,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
         return false;
     }
     m_name = jointName.as<string>();
-    m_name.erase(remove(m_name.begin(), m_name.end(), ' '), m_name.end());
+    m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
     m_parentName = jointParentName.as<string>();
     m_childName = jointChildName.as<string>();
     // Joint Transform in Parent
@@ -3546,6 +3555,18 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     m_afSensorCommPtr->set_sensed_objects(sensed_obj_names);
 
 #endif
+}
+
+void afRayTracerSensor::setRayFromInLocal(const cVector3d &a_rayFrom, uint idx){
+    m_raysAttribs[idx].m_rayFromLocal.set(a_rayFrom.x(), a_rayFrom.y(), a_rayFrom.z());
+}
+
+void afRayTracerSensor::setRayToInLocal(const cVector3d &a_rayTo, uint idx){
+    m_raysAttribs[idx].m_rayToLocal.set(a_rayTo.x(), a_rayTo.y(), a_rayTo.z());
+}
+
+void afRayTracerSensor::setDirection(const cVector3d &a_direction, uint idx){
+    m_raysAttribs[idx].m_direction.set(a_direction.x(), a_direction.y(), a_direction.z());
 }
 
 ///

@@ -53,6 +53,54 @@ typedef unsigned int uint;
 
 namespace ambf {
 
+
+class afPath{
+public:
+    afPath(){}
+
+    afPath(string a_path){m_path = a_path;}
+
+    afPath(boost::filesystem::path a_path){m_path = a_path;}
+
+    std::string c_str(){
+        return m_path.c_str();
+    }
+
+    afPath parent_path(){
+        return afPath(m_path.parent_path());
+    }
+
+
+    boost::filesystem::path& getWrappedObject(){
+        return m_path;
+    }
+
+    boost::filesystem::path getWrappedObject() const{
+        return m_path;
+    }
+
+
+    afPath operator/= (afPath a_path){
+        m_path = m_path / a_path.getWrappedObject();
+    }
+
+    afPath operator/= (std::string a_path){
+        m_path = m_path / boost::filesystem::path(a_path);
+    }
+
+    void operator= ( string a_path){
+        m_path = a_path;
+    }
+
+private:
+    boost::filesystem::path m_path;
+};
+
+inline afPath operator/ (const afPath& a_path1, const afPath& a_path2){
+    afPath outPath(a_path1.getWrappedObject() / a_path2.getWrappedObject());
+    return outPath;
+}
+
 ///
 /// \brief The afKinematicAttributes struct
 ///
@@ -71,29 +119,58 @@ public:
 struct afPrimitiveShapeAttributes{
 public:
 
-    afPrimitiveShapeAttributes(){}
+    afPrimitiveShapeAttributes(){
+        m_posOffset.set(0, 0, 0);
+        m_rotOffset.setIdentity();
+        m_shapeType = afPrimitiveShapeType::INVALID;
+        m_axisType = afAxisType::Z;
+    }
 
     // Helper methods for primitive shapes
     // Required variables for creating a Plane
-    void setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant);
+    void setPlaneData(double normal_x, double normal_y, double normal_z, double plane_constant){
+        m_planeNormal.set(normal_x, normal_y, normal_z);
+        m_planeConstant = plane_constant;
+        m_shapeType = afPrimitiveShapeType::PLANE;
+    }
 
     // Required variables for creating a Box
-    void setBoxData(double dimension_x, double dimension_y, double dimension_z);
+    void setBoxData(double dimension_x, double dimension_y, double dimension_z){
+        m_dimensions.set(dimension_x, dimension_y, dimension_z);
+        m_shapeType = afPrimitiveShapeType::BOX;
+    }
 
     // Required variables for creating a Sphere
-    void setSphereData(double radius);
+    void setSphereData(double radius){
+        m_radius = radius;
+        m_shapeType = afPrimitiveShapeType::SPHERE;
+    }
 
     // Required variables for creating a Capsule
-    void setCapsuleData(double radius, double height, afAxisType axis);
+    void setCapsuleData(double radius, double height, afAxisType axis){
+        m_radius = radius;
+        m_height = height;
+        m_axisType = axis;
+        m_shapeType = afPrimitiveShapeType::CAPSULE;
+    }
 
     // Required variables for creating a Cone
-    void setConeData(double radius, double height, afAxisType axis);
+    void setConeData(double radius, double height, afAxisType axis){
+        m_radius = radius;
+        m_height = height;
+        m_axisType = axis;
+        m_shapeType = afPrimitiveShapeType::CONE;
+    }
 
     // Pos Offset of the Shape
-    void setPosOffset(double px, double py, double pz);
+    void setPosOffset(double px, double py, double pz){
+        m_posOffset.set(px, py, pz);
+    }
 
     // Rot Offset of the Shape
-    void setRotOffset(double roll, double pitch, double yaw);
+    void setRotOffset(double roll, double pitch, double yaw){
+        m_rotOffset.setRPY(roll, pitch, yaw);
+    }
 
     inline void setShapeType(afPrimitiveShapeType shapeType){m_shapeType = shapeType;}
 
@@ -182,7 +259,7 @@ public:
     afCollisionAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_path;
+    afPath m_path;
     double m_margin;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
@@ -308,7 +385,7 @@ struct afVisualAttributes{
     afVisualAttributes(){}
 
     std::string m_meshName;
-    boost::filesystem::path m_path;
+    afPath m_path;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     afColorAttributes m_colorAttribs;
@@ -323,9 +400,9 @@ public:
     afShaderAttributes(){}
 
     bool m_shaderDefined;
-    boost::filesystem::path m_path;
-    boost::filesystem::path m_vtxShader;
-    boost::filesystem::path m_fragShader;
+    afPath m_path;
+    std::string m_vtxShaderFileName;
+    std::string m_fragShaderFileName;
 };
 
 
@@ -570,7 +647,7 @@ struct afVehicleAttributes: public afBaseObjectAttributes
 public:
     afVehicleAttributes(){}
     std::string m_chassisBodyName;
-    boost::filesystem::path m_wheelsVisualPath;
+    afPath m_wheelsVisualPath;
     std::vector<afWheelAttributes> m_wheelAttribs;
 };
 
@@ -630,58 +707,28 @@ public:
 };
 
 
-
-///
-/// \brief The afMultiBodyAttributes struct
-///
-struct afMultiBodyAttributes: public afBaseObjectAttributes{
-public:
-    afMultiBodyAttributes(){}
-
-    boost::filesystem::path m_visualMeshesPath;
-    boost::filesystem::path m_collisionMeshesPath;
-
-    std::string m_namespace;
-
-    std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
-    std::vector <afSoftBodyAttributes> m_softBodyAttribs;
-    std::vector <afVehicleAttributes> m_vehicleAttribs;
-    std::vector <afJointAttributes> m_jointAttribs;
-    std::vector <afSensorAttributes> m_sensorAttribs;
-    std::vector <afActuatorAttributes> m_actuatorAttribs;
-
-    bool m_ignoreInterCollision;
-    boost::filesystem::path m_path;
-};
-
-
-struct afInputDeviceAttributes: public afIdentificationAttributes{
+struct afInputDeviceAttributes: public afBaseObjectAttributes{
 public:
     afInputDeviceAttributes(){}
-
-    std::string m_hardwareName;
-
-    afCartesianControllerAttributes m_IIDControllerAttribs;
-    afCartesianControllerAttributes m_SDEControllerAttribs;
 
     bool m_enableSDEJointControl;
     double m_deadBand;
     double m_maxForce;
     double m_maxJerk;
     double m_workspaceScale;
-
-    boost::filesystem::path m_sdeFilepath;
-    std::string m_rootLink;
-
     bool m_sdeDefined = false;
-    bool m_rootLinkDefined = false;
+    bool m_rootLinkDefined = false; bool m_visible;
+    double m_visibleSize;
 
+    std::string m_hardwareName;
+    std::string m_rootLink;
+    afPath m_sdeFilepath;
+    std::vector<std::string> m_pairedCamerasNames;
+
+    afCartesianControllerAttributes m_IIDControllerAttribs;
+    afCartesianControllerAttributes m_SDEControllerAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afTransform m_orientationOffset;
-
-    bool m_visible;
-    double m_visibleSize;
-    std::vector<std::string> m_pairedCamerasNames;
 
     struct afButtons{
         int A1; // Action 1 Button
@@ -695,11 +742,41 @@ public:
 };
 
 
+struct afFileObjectAttributes{
+public:
+    afFileObjectAttributes(){}
+
+    afPath m_path;
+};
+
+
+///
+/// \brief The afMultiBodyAttributes struct
+///
+struct afMultiBodyAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
+public:
+    afMultiBodyAttributes(){}
+
+    afPath m_visualMeshesPath;
+    afPath m_collisionMeshesPath;
+
+    std::string m_namespace;
+
+    std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
+    std::vector <afSoftBodyAttributes> m_softBodyAttribs;
+    std::vector <afVehicleAttributes> m_vehicleAttribs;
+    std::vector <afJointAttributes> m_jointAttribs;
+    std::vector <afSensorAttributes> m_sensorAttribs;
+    std::vector <afActuatorAttributes> m_actuatorAttribs;
+
+    bool m_ignoreInterCollision;
+};
+
+
 // Struct for multiple input devices
-struct afAllInputDevicesAttributes{
+struct afAllInputDevicesAttributes: public afFileObjectAttributes{
 public:
     afAllInputDevicesAttributes(){}
-    boost::filesystem::path m_path;
     std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
 };
 
@@ -708,7 +785,7 @@ public:
 ///
 /// \brief The afWorldAttributes struct
 ///
-struct afWorldAttributes: public afBaseObjectAttributes{
+struct afWorldAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
 public:
     afWorldAttributes(){}
 
@@ -716,23 +793,20 @@ public:
     std::vector<afCameraAttributes> m_cameraAttribs;
 
     afVector3d m_gravity;
-
     uint m_maxIterations;
-
-    boost::filesystem::path m_environmentFilePath;
+    afPath m_environmentFilePath;
+    afShaderAttributes m_shaderAttribs;
+    std::string m_namespace;
 
     struct afSkyBoxAttributes{
-
-        boost::filesystem::path m_path;
+        afPath m_path;
         std::string m_leftImage;
         std::string m_frontImage;
         std::string m_rightImage;
         std::string m_backImage;
         std::string m_topImage;
         std::string m_bottomImage;
-
         afShaderAttributes m_shaderAttribs;
-
         bool m_use = false;
     };
 
@@ -740,32 +814,19 @@ public:
         double m_width;
         double m_height;
         double m_length;
-
         bool m_use = false;
     };
 
     afEnclosure m_enclosure;
-
     afSkyBoxAttributes m_skyBoxAttribs;
-
-    std::string m_namespace;
-
-    afShaderAttributes m_shaderAttribs;
-
-    boost::filesystem::path m_path;
 };
 
 
-struct afLaunchAttributes{
-    boost::filesystem::path m_path;
-
-    boost::filesystem::path m_colorFilepath;
-
-    std::vector<boost::filesystem::path> m_multiBodyFilepaths;
-
-    boost::filesystem::path m_worldFilePath;
-
-    boost::filesystem::path m_inputDevicesFilepath;
+struct afLaunchAttributes: public afFileObjectAttributes{
+    afPath m_colorFilepath;
+    std::vector<afPath> m_multiBodyFilepaths;
+    afPath m_worldFilePath;
+    afPath m_inputDevicesFilepath;
 };
 
 }

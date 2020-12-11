@@ -10,14 +10,14 @@ int main(){
 
     afWorldAttributes worldAttribs;
 
-    auto worldFilePath = launchAttribs.m_path / launchAttribs.m_worldFilePath;
+    afPath worldFilePath = launchAttribs.m_path / launchAttribs.m_worldFilePath;
 
     loader.loadWorldAttribs(worldFilePath.c_str(), &worldAttribs);
 
     for (int i = 0 ; i < launchAttribs.m_multiBodyFilepaths.size() ; i++){
         afMultiBodyAttributes mbAttribs;
 
-        auto mbFilePath = launchAttribs.m_path / launchAttribs.m_multiBodyFilepaths[0];
+        afPath mbFilePath = launchAttribs.m_path / launchAttribs.m_multiBodyFilepaths[0];
 
         loader.loadMultiBodyAttribs(mbFilePath.c_str(), &mbAttribs);
 
@@ -26,7 +26,7 @@ int main(){
 
     afAllInputDevicesAttributes allInputDevsAttribs;
 
-    auto inputDevFilePath = launchAttribs.m_path / launchAttribs.m_inputDevicesFilepath;
+    afPath inputDevFilePath = launchAttribs.m_path / launchAttribs.m_inputDevicesFilepath;
 
     loader.loadAllInputDevicesAttribs(inputDevFilePath.c_str(), &allInputDevsAttribs);
 

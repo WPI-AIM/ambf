@@ -144,8 +144,8 @@ bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *
     if (shadersNode.IsDefined()){
         attribs->m_path = shadersNode["path"].as<string>();
 
-        attribs->m_vtxShader = shadersNode["vertex"].as<string>();
-        attribs->m_fragShader = shadersNode["fragment"].as<string>();
+        attribs->m_vtxShaderFileName = shadersNode["vertex"].as<string>();
+        attribs->m_fragShaderFileName = shadersNode["fragment"].as<string>();
 
         attribs->m_shaderDefined = true;
     }

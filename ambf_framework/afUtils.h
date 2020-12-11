@@ -76,12 +76,6 @@ public:
     static void debugPrint(int line, string filename){
         cerr << "Line: "<< line << ", File: " << filename << endl;
     }
-
-//    static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
-
-//    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
-
-//    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
 };
 
 

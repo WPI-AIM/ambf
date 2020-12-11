@@ -263,6 +263,16 @@ cTransform toCtransform(const btTransform &btTrans){
 }
 
 
+class afPrimitiveShapeUtils{
+public:
+    static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+
+    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+
+    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
+};
+
+
 class afComm{
 public:
     afComm(){}
@@ -1279,11 +1289,11 @@ public:
     // Get the sensed point in world frame
     inline cVector3d getSensedPoint(uint idx){return m_rayTracerResults[idx].m_sensedLocationWorld;}
 
-    inline void setRayFromInLocal(const cVector3d& a_rayFrom, uint idx){m_raysAttribs[idx].m_rayFromLocal = a_rayFrom;}
+    inline void setRayFromInLocal(const cVector3d& a_rayFrom, uint idx);
 
-    inline void setRayToInLocal(const cVector3d& a_rayTo, uint idx){m_raysAttribs[idx].m_rayToLocal = a_rayTo;}
+    inline void setRayToInLocal(const cVector3d& a_rayTo, uint idx);
 
-    inline void setDirection(const cVector3d& a_direction, uint idx){m_raysAttribs[idx].m_direction = a_direction;}
+    inline void setDirection(const cVector3d& a_direction, uint idx);
 
     inline void setRange(const double& a_range, uint idx){m_raysAttribs[idx].m_range = a_range;}
 
