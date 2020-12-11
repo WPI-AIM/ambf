@@ -575,7 +575,7 @@ bool ADFUtils::getCommunicationAttribsFromNode(YAML::Node *a_node, afCommunicati
     }
 
     if (passiveNode.IsDefined()){
-        attribs->m_passive = passiveNode.as<double>();
+        attribs->m_passive = passiveNode.as<bool>();
     }
 
     return valid;

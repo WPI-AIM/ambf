@@ -177,8 +177,12 @@ bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *
     }
     else{
         YAML::Node node = YAML::LoadFile(a_filepath);
-        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
-        return m_loader->loadWorldAttribs(&node, attribs);
+        bool result = m_loader->loadWorldAttribs(&node, attribs);
+        if (result){
+            afPath parentPath = afPath(a_filepath).parent_path();
+            attribs->resolveRelativePathAttribs(parentPath);
+        }
+        return result;
     }
 }
 
@@ -189,8 +193,12 @@ bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttr
     }
     else{
         YAML::Node node = YAML::LoadFile(a_filepath);
-        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
-        return m_loader->loadMultiBodyAttribs(&node, attribs);
+        bool result = m_loader->loadMultiBodyAttribs(&node, attribs);
+        if (result){
+            afPath parentPath = afPath(a_filepath).parent_path();
+            attribs->resolveRelativePathAttribs(parentPath);
+        }
+        return result;
     }
 }
 
@@ -201,8 +209,12 @@ bool ADFLoaderInterface::loadAllInputDevicesAttribs(string a_filepath, afAllInpu
     }
     else{
         YAML::Node node = YAML::LoadFile(a_filepath);
-        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
-        return m_loader->loadAllInputDeviceAttributes(&node, attribs);
+        bool result = m_loader->loadAllInputDeviceAttributes(&node, attribs);
+        if (result){
+            afPath parentPath = afPath(a_filepath).parent_path();
+            attribs->resolveRelativePathAttribs(parentPath);
+        }
+        return result;
     }
 
 }
@@ -214,8 +226,12 @@ bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttrib
     }
     else{
         YAML::Node node = YAML::LoadFile(a_filepath);
-        attribs->m_path = boost::filesystem::path(a_filepath).parent_path();
-        return m_loader->loadLaunchFileAttribs(&node, attribs);
+        bool result = m_loader->loadLaunchFileAttribs(&node, attribs);
+        if (result){
+            afPath parentPath = afPath(a_filepath).parent_path();
+            attribs->resolveRelativePathAttribs(parentPath);
+        }
+        return result;
     }
 }
 
