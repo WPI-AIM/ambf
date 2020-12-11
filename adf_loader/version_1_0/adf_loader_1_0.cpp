@@ -42,7 +42,7 @@
 //==============================================================================
 
 #include "adf_loader_1_0.h"
-#include "afUtils.h"
+//#include "afUtils.h"
 
 using namespace ambf;
 using namespace adf_loader_1_0;
@@ -1706,8 +1706,6 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
         attribs->m_chassisBodyName = chassisNode.as<string>();
     }
 
-    boost::filesystem::path high_res_filepath;
-
     if (meshPathHRNode.IsDefined()){
         attribs->m_wheelsVisualPath = meshPathHRNode.as<string>();
     }
@@ -1920,7 +1918,7 @@ bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttribut
     }
 
     if (nameSpaceNode.IsDefined()){
-        attribs->m_namespace = nameSpaceNode.as<string>();
+        attribs->m_identificationAttribs.m_namespace = nameSpaceNode.as<string>();
     }
 
     // Loading Rigid Bodies
@@ -2131,8 +2129,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
 
 
     if(worldFilepathNode.IsDefined()){
-        boost::filesystem::path world_cfg_filename = worldFilepathNode.as<string>();
-        attribs->m_worldFilePath = world_cfg_filename.c_str();
+        attribs->m_worldFilePath = worldFilepathNode.as<string>();
     }
     else{
         cerr << "ERROR! WORLD CONFIG NOT DEFINED \n";

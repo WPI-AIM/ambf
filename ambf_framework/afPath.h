@@ -42,66 +42,77 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
-#ifndef AF_UTILS_H
-#define AF_UTILS_H
 
+#include <boost/filesystem/path.hpp>
 #include <string>
-#include <iostream>
 
 using namespace std;
 
-//------------------------------------------------------------------------------
-namespace ambf{
-
-///
-/// \brief The afUtils class
-///
-class afUtils{
+class afPath{
 public:
+    afPath(){}
 
-    afUtils(){}
-    template<typename T1, typename T2>
-    static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
+    afPath(string a_path){m_path = a_path;}
 
-    template<typename T1, typename T2>
-    static T1 convertDataType(const T2 &r);
+    afPath(boost::filesystem::path a_path){m_path = a_path;}
 
-    template <typename T>
-    static string getNonCollidingIdx(string a_body_name, const T* a_tMap);
-
-    static string removeAdjacentBackSlashes(string a_name){
-        std::string cleaned_name;
-        int last_back_slash_idx = -2;
-        for (int i = 0; i < a_name.length() ; i++){
-            if (a_name[i] == '/'){
-                if (i - last_back_slash_idx > 1){
-                    cleaned_name.push_back(a_name[i]);
-                }
-                last_back_slash_idx = i;
-            }
-            else{
-                cleaned_name.push_back(a_name[i]);
-            }
-        }
-        return cleaned_name;
+    std::string c_str(){
+        return m_path.c_str();
     }
 
-    static string mergeNamespace(string a_namespace1, string a_namespace2){
-        a_namespace1 = removeAdjacentBackSlashes(a_namespace1);
-        a_namespace2 = removeAdjacentBackSlashes(a_namespace2);
+    afPath parent_path(){
+        return afPath(m_path.parent_path());
+    }
 
-        if(a_namespace2.find('/') == 0){
-            return a_namespace2;
+    bool is_relative(){
+        return m_path.is_relative();
+    }
+
+    bool is_absolute(){
+        return m_path.is_absolute();
+    }
+
+    bool is_complete(){
+        return m_path.is_complete();
+    }
+
+    // If this path is relative, it will be appended to the provided parent path
+    bool resolvePath(const afPath& a_parentPath){
+        if (is_relative()){
+            m_path = a_parentPath.getWrappedObject() / m_path;
+            return true;
         }
         else{
-            return a_namespace1 + a_namespace2;
+            return false;
         }
     }
 
-    static void debugPrint(int line, string filename){
-        cerr << "Line: "<< line << ", File: " << filename << endl;
+    boost::filesystem::path& getWrappedObject(){
+        return m_path;
     }
+
+    boost::filesystem::path getWrappedObject() const{
+        return m_path;
+    }
+
+
+    afPath operator/= (afPath a_path){
+        m_path = m_path / a_path.getWrappedObject();
+    }
+
+    afPath operator/= (std::string a_path){
+        m_path = m_path / boost::filesystem::path(a_path);
+    }
+
+    void operator= ( string a_path){
+        m_path = a_path;
+    }
+
+private:
+    boost::filesystem::path m_path;
 };
 
+inline afPath operator/ (const afPath& a_path1, const afPath& a_path2){
+    afPath outPath(a_path1.getWrappedObject() / a_path2.getWrappedObject());
+    return outPath;
 }
-#endif

@@ -46,60 +46,13 @@
 #define AF_ATTRIBUTES_H
 //------------------------------------------------------------------------------
 #include <afEnums.h>
-#include <boost/filesystem/path.hpp>
 #include <afMath.h>
+#include <afPath.h>
+#include <afUtils.h>
 
 typedef unsigned int uint;
 
 namespace ambf {
-
-
-class afPath{
-public:
-    afPath(){}
-
-    afPath(string a_path){m_path = a_path;}
-
-    afPath(boost::filesystem::path a_path){m_path = a_path;}
-
-    std::string c_str(){
-        return m_path.c_str();
-    }
-
-    afPath parent_path(){
-        return afPath(m_path.parent_path());
-    }
-
-
-    boost::filesystem::path& getWrappedObject(){
-        return m_path;
-    }
-
-    boost::filesystem::path getWrappedObject() const{
-        return m_path;
-    }
-
-
-    afPath operator/= (afPath a_path){
-        m_path = m_path / a_path.getWrappedObject();
-    }
-
-    afPath operator/= (std::string a_path){
-        m_path = m_path / boost::filesystem::path(a_path);
-    }
-
-    void operator= ( string a_path){
-        m_path = a_path;
-    }
-
-private:
-    boost::filesystem::path m_path;
-};
-
-inline afPath operator/ (const afPath& a_path1, const afPath& a_path2){
-    afPath outPath(a_path1.getWrappedObject() / a_path2.getWrappedObject());
-    return outPath;
-}
 
 ///
 /// \brief The afKinematicAttributes struct
@@ -409,6 +362,12 @@ public:
 struct afBaseObjectAttributes{
     // Base Struct that can be used to later cast specific Object Attributes
     afIdentificationAttributes m_identificationAttribs;
+
+    virtual void resolveRelativeNamespace(string a_parentNamespace){
+        m_identificationAttribs.m_namespace = afUtils::mergeNamespace(a_parentNamespace, m_identificationAttribs.m_namespace);
+    }
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){}
 };
 
 
@@ -549,6 +508,12 @@ public:
     afVisualAttributes m_visualAttribs;
     afShaderAttributes m_shaderAttribs;
     afSurfaceAttributes m_surfaceAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_collisionAttribs.m_path.resolvePath(a_parentPath);
+        m_visualAttribs.m_path.resolvePath(a_parentPath);
+        m_shaderAttribs.m_path.resolvePath(a_parentPath);
+    }
 };
 
 ///
@@ -599,6 +564,12 @@ public:
     afKinematicAttributes m_kinematicAttribs;
     afVisualAttributes m_visualAttribs;
     afShaderAttributes m_shaderAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_collisionAttribs.m_path.resolvePath(a_parentPath);
+        m_visualAttribs.m_path.resolvePath(a_parentPath);
+        m_shaderAttribs.m_path.resolvePath(a_parentPath);
+    }
 };
 
 
@@ -635,8 +606,6 @@ public:
     };
 
     afSuspensionAttributes m_suspensionAttribs;
-
-
 };
 
 ///
@@ -649,6 +618,10 @@ public:
     std::string m_chassisBodyName;
     afPath m_wheelsVisualPath;
     std::vector<afWheelAttributes> m_wheelAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_wheelsVisualPath.resolvePath(a_parentPath);
+    }
 };
 
 
@@ -686,6 +659,10 @@ public:
     std::string m_contourMesh;
     afSensactorSpecificationType m_specificationType;
     std::vector<afRayAttributes> m_raysAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+
+    }
 };
 
 
@@ -739,6 +716,10 @@ public:
     };
 
     afButtons m_buttons;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_sdeFilepath.resolvePath(a_parentPath);
+    }
 };
 
 
@@ -760,8 +741,6 @@ public:
     afPath m_visualMeshesPath;
     afPath m_collisionMeshesPath;
 
-    std::string m_namespace;
-
     std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     std::vector <afSoftBodyAttributes> m_softBodyAttribs;
     std::vector <afVehicleAttributes> m_vehicleAttribs;
@@ -770,6 +749,10 @@ public:
     std::vector <afActuatorAttributes> m_actuatorAttribs;
 
     bool m_ignoreInterCollision;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_path.resolvePath(a_parentPath);
+    }
 };
 
 
@@ -778,6 +761,10 @@ struct afAllInputDevicesAttributes: public afFileObjectAttributes{
 public:
     afAllInputDevicesAttributes(){}
     std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+
+    }
 };
 
 
@@ -819,6 +806,12 @@ public:
 
     afEnclosure m_enclosure;
     afSkyBoxAttributes m_skyBoxAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_skyBoxAttribs.m_path.resolvePath(a_parentPath);
+        m_shaderAttribs.m_path.resolvePath(a_parentPath);
+        m_environmentFilePath.resolvePath(a_parentPath);
+    }
 };
 
 
@@ -827,6 +820,16 @@ struct afLaunchAttributes: public afFileObjectAttributes{
     std::vector<afPath> m_multiBodyFilepaths;
     afPath m_worldFilePath;
     afPath m_inputDevicesFilepath;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_colorFilepath.resolvePath(a_parentPath);
+        m_worldFilePath.resolvePath(a_parentPath);
+        m_inputDevicesFilepath.resolvePath(a_parentPath);
+
+        for (int i = 0 ; i < m_multiBodyFilepaths.size() ; i++){
+            m_multiBodyFilepaths[i].resolvePath(a_parentPath);
+        }
+    }
 };
 
 }
