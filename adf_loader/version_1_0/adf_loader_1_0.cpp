@@ -95,34 +95,34 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
     afColorAttributes& colorAttribs = *a_color;
 
     if(colorRGBANode.IsDefined()){
-        colorAttribs.m_diffuse.m_R = colorRGBANode["r"].as<float>();
-        colorAttribs.m_diffuse.m_G = colorRGBANode["g"].as<float>();
-        colorAttribs.m_diffuse.m_B = colorRGBANode["b"].as<float>();
-        colorAttribs.m_alpha = colorRGBANode["a"].as<float>();
+        colorAttribs.m_diffuse(0) = colorRGBANode["r"].as<double>();
+        colorAttribs.m_diffuse(1) = colorRGBANode["g"].as<double>();
+        colorAttribs.m_diffuse(2) = colorRGBANode["b"].as<double>();
+        colorAttribs.m_alpha = colorRGBANode["a"].as<double>();
     }
     else if(colorComponentsNode.IsDefined()){
         if (colorComponentsNode["ambient"].IsDefined()){
-            colorAttribs.m_ambient = colorComponentsNode["ambient"]["level"].as<float>();
+            colorAttribs.m_ambient = colorComponentsNode["ambient"]["level"].as<double>();
         }
         if (colorComponentsNode["diffuse"].IsDefined()){
-            colorAttribs.m_diffuse.m_R = colorComponentsNode["diffuse"]["r"].as<float>();
-            colorAttribs.m_diffuse.m_G = colorComponentsNode["diffuse"]["g"].as<float>();
-            colorAttribs.m_diffuse.m_B = colorComponentsNode["diffuse"]["b"].as<float>();
+            colorAttribs.m_diffuse(0) = colorComponentsNode["diffuse"]["r"].as<double>();
+            colorAttribs.m_diffuse(1) = colorComponentsNode["diffuse"]["g"].as<double>();
+            colorAttribs.m_diffuse(2) = colorComponentsNode["diffuse"]["b"].as<double>();
         }
         if (colorComponentsNode["specular"].IsDefined()){
-            colorAttribs.m_specular.m_R = colorComponentsNode["specular"]["r"].as<float>();
-            colorAttribs.m_specular.m_G = colorComponentsNode["specular"]["g"].as<float>();
-            colorAttribs.m_specular.m_B = colorComponentsNode["specular"]["b"].as<float>();
+            colorAttribs.m_specular(0) = colorComponentsNode["specular"]["r"].as<double>();
+            colorAttribs.m_specular(1) = colorComponentsNode["specular"]["g"].as<double>();
+            colorAttribs.m_specular(2) = colorComponentsNode["specular"]["b"].as<double>();
         }
         if (colorComponentsNode["emission"].IsDefined()){
-            colorAttribs.m_emission.m_R = colorComponentsNode["emission"]["r"].as<float>();
-            colorAttribs.m_emission.m_G = colorComponentsNode["emission"]["g"].as<float>();
-            colorAttribs.m_emission.m_B = colorComponentsNode["emission"]["b"].as<float>();
+            colorAttribs.m_emission(0) = colorComponentsNode["emission"]["r"].as<double>();
+            colorAttribs.m_emission(1) = colorComponentsNode["emission"]["g"].as<double>();
+            colorAttribs.m_emission(2) = colorComponentsNode["emission"]["b"].as<double>();
         }
         if (colorComponentsNode["shininess"].IsDefined()){
             colorAttribs.m_shininiess = colorComponentsNode["shininess"].as<uint>();
         }
-        colorAttribs.m_alpha = colorComponentsNode["transparency"].as<float>();
+        colorAttribs.m_alpha = colorComponentsNode["transparency"].as<double>();
     }
 //    else if(colorNameNode.IsDefined()){
 //        vector<double> rgba = afConfigHandler::getColorRGBA(colorNameNode.as<string>());
@@ -1251,73 +1251,73 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     }
     else{
         if (cfg_kLSTNode.IsDefined()){
-            attribs->m_kLST = cfg_kLSTNode.as<float>();
+            attribs->m_kLST = cfg_kLSTNode.as<double>();
         }
         if (cfg_kASTNode.IsDefined()){
-            attribs->m_kAST = cfg_kASTNode.as<float>();
+            attribs->m_kAST = cfg_kASTNode.as<double>();
         }
         if (cfg_kVSTNode.IsDefined()){
-            attribs->m_kVST = cfg_kVSTNode.as<float>();
+            attribs->m_kVST = cfg_kVSTNode.as<double>();
         }
         if (cfg_kVCFNode.IsDefined()){
-            attribs->m_kVCF = cfg_kVCFNode.as<float>();
+            attribs->m_kVCF = cfg_kVCFNode.as<double>();
         }
         if (cfg_kDPNode.IsDefined()){
-            attribs->m_kDP = cfg_kDPNode.as<float>();
+            attribs->m_kDP = cfg_kDPNode.as<double>();
         }
         if (cfg_kDGNode.IsDefined()){
-            attribs->m_kDG = cfg_kDGNode.as<float>();
+            attribs->m_kDG = cfg_kDGNode.as<double>();
         }
         if (cfg_kLFNode.IsDefined()){
-            attribs->m_kLF = cfg_kLFNode.as<float>();
+            attribs->m_kLF = cfg_kLFNode.as<double>();
         }
         if (cfg_kPRNode.IsDefined()) {
-            attribs->m_kPR = cfg_kPRNode.as<float>();
+            attribs->m_kPR = cfg_kPRNode.as<double>();
         }
         if (cfg_kVCNode.IsDefined()) {
-            attribs->m_kVC = cfg_kVCNode.as<float>();
+            attribs->m_kVC = cfg_kVCNode.as<double>();
         }
         if (cfg_kDFNode.IsDefined()) {
-            attribs->m_kDF = cfg_kDFNode.as<float>();
+            attribs->m_kDF = cfg_kDFNode.as<double>();
         }
         if (cfg_kMTNode.IsDefined()){
-           attribs->m_kMT = cfg_kMTNode.as<float>();
+           attribs->m_kMT = cfg_kMTNode.as<double>();
         }
         if (cfg_kCHRNode.IsDefined()) {
-            attribs->m_kCHR = cfg_kCHRNode.as<float>();
+            attribs->m_kCHR = cfg_kCHRNode.as<double>();
         }
         if (cfg_kKHRNode.IsDefined()) {
-           attribs->m_kKHR = cfg_kKHRNode.as<float>();
+           attribs->m_kKHR = cfg_kKHRNode.as<double>();
         }
         if (cfg_kSHRNode.IsDefined()) {
-           attribs->m_kSHR = cfg_kSHRNode.as<float>();
+           attribs->m_kSHR = cfg_kSHRNode.as<double>();
         }
         if (cfg_kAHRNode.IsDefined()) {
-           attribs->m_kAHR = cfg_kAHRNode.as<float>();
+           attribs->m_kAHR = cfg_kAHRNode.as<double>();
         }
         if (cfg_kSRHR_CLNode.IsDefined()) {
-            attribs->m_kSRHR_CL = cfg_kSRHR_CLNode.as<float>();
+            attribs->m_kSRHR_CL = cfg_kSRHR_CLNode.as<double>();
         }
         if (cfg_kSKHR_CLNode.IsDefined()) {
-            attribs->m_kSKHR_CL = cfg_kSKHR_CLNode.as<float>();
+            attribs->m_kSKHR_CL = cfg_kSKHR_CLNode.as<double>();
         }
         if (cfg_kSSHR_CLNode.IsDefined()) {
-            attribs->m_kSSHR_CL = cfg_kSSHR_CLNode.as<float>();
+            attribs->m_kSSHR_CL = cfg_kSSHR_CLNode.as<double>();
         }
         if (cfg_kSR_SPLT_CLNode.IsDefined()) {
-           attribs->m_kSR_SPLT_CL = cfg_kSR_SPLT_CLNode.as<float>();
+           attribs->m_kSR_SPLT_CL = cfg_kSR_SPLT_CLNode.as<double>();
         }
         if (cfg_kSK_SPLT_CLNode.IsDefined()) {
-            attribs->m_kSK_SPLT_CL = cfg_kSK_SPLT_CLNode.as<float>();
+            attribs->m_kSK_SPLT_CL = cfg_kSK_SPLT_CLNode.as<double>();
         }
         if (cfg_kSS_SPLT_CLNode.IsDefined()) {
-            attribs->m_kSS_SPLT_CL = cfg_kSS_SPLT_CLNode.as<float>();
+            attribs->m_kSS_SPLT_CL = cfg_kSS_SPLT_CLNode.as<double>();
         }
         if (cfg_maxvolumeNode.IsDefined()) {
-            attribs->m_maxVolume = cfg_maxvolumeNode.as<float>();
+            attribs->m_maxVolume = cfg_maxvolumeNode.as<double>();
         }
         if (cfg_timescaleNode.IsDefined()) {
-            attribs->m_timeScale = cfg_timescaleNode.as<float>();
+            attribs->m_timeScale = cfg_timescaleNode.as<double>();
         }
         if (cfg_viterationsNode.IsDefined()) {
            attribs->m_vIterations = cfg_viterationsNode.as<int>();
@@ -1552,7 +1552,7 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
     else if (meshNode.IsDefined()){
         // We are not going to load the mesh in the loader and this would restrict us in using a
         // specific mesh processing library, thus let the ambf_framework load the mesh.
-        attribs->m_contourMesh = meshNode.as<string>();
+        attribs->m_contourMeshFilepath = meshNode.as<string>();
         attribs->m_specificationType = afSensactorSpecificationType::MESH;
         result = true;
     }
@@ -1799,7 +1799,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
 
     if (rootLinkNode.IsDefined()){
-        attribs->m_rootLink = rootLinkNode.as<string>();
+        attribs->m_rootLinkName = rootLinkNode.as<string>();
         attribs->m_rootLinkDefined = true;
     }
     else{
@@ -1920,7 +1920,7 @@ bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttribut
     }
 
     if(meshPathLRNode.IsDefined()){
-        attribs->m_visualMeshesPath = meshPathLRNode.as<string>();
+        attribs->m_collisionMeshesPath = meshPathLRNode.as<string>();
     }
 
     if (nameSpaceNode.IsDefined()){

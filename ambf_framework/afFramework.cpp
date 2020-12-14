@@ -2404,11 +2404,11 @@ void afJointController::boundImpulse(double &effort_cmd){
     double impulse = ( effort_cmd - m_last_cmd ) / (t[0]- t[1]);
     //    cerr << "Before " << effort_cmd ;
     int sign = 1;
-    if (impulse > max_impulse){
+    if (impulse > m_maxImpulse){
         if (impulse < 0){
             sign = -1;
         }
-        effort_cmd = m_last_cmd + (sign * max_impulse * (t[0]- t[1]));
+        effort_cmd = m_last_cmd + (sign * m_maxImpulse * (t[0]- t[1]));
     }
     //    cerr << " - After " << effort_cmd << " Impulse: " << max_impulse << endl ;
     m_last_cmd = effort_cmd;
@@ -2512,7 +2512,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
     // Joint Axis
     btVector3 joint_axis(0,0,1);
     m_enableActuator = true;
-    m_controller.max_impulse = 10; // max rate of change of effort on Position Controllers
+    m_controller.m_maxImpulse = 10; // max rate of change of effort on Position Controllers
     m_jointOffset = 0.0;
     m_lowerLimit = -100;
     m_upperLimit = 100;
@@ -2820,7 +2820,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
             m_enableActuator = jointEnableMotor.as<int>();
             // Don't enable motor yet, only enable when set position is called
             if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+                m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
             }
         }
 
@@ -2830,10 +2830,10 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
         }
 
         if(jointMaxMotorImpulse.IsDefined()){
-            m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+            m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
             // Ugly hack, divide by (default) fixed timestep to max linear motor force
             // since m_slider does have a max impulse setting method.
-            m_slider->setMaxLinMotorForce(m_controller.max_impulse / 0.001);
+            m_slider->setMaxLinMotorForce(m_controller.m_maxImpulse / 0.001);
         }
         else{
             // Default to 1000.0
@@ -2937,7 +2937,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
             m_enableActuator = jointEnableMotor.as<int>();
             // Don't enable motor yet, only enable when set position is called
             if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.max_impulse = jointMaxMotorImpulse.as<double>();
+                m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
             }
         }
 

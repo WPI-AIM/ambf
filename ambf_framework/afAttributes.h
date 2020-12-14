@@ -59,7 +59,9 @@ namespace ambf {
 ///
 struct afKinematicAttributes{
 public:
-    afKinematicAttributes(){}
+    afKinematicAttributes(){
+        m_scale = 1.0;
+    }
 
     afTransform m_location;
     double m_scale;
@@ -178,7 +180,7 @@ private:
 /// \brief The afRayAttributes struct
 ///
 struct afRayAttributes{
-    // Direction rel to parent that this sensor is looking at
+    // Direction rel to parent that this sensor is pointing to
     afVector3d m_direction;
 
     // Range of this sensor, i.e. how far can it sense
@@ -196,7 +198,9 @@ struct afRayAttributes{
 ///
 struct afIdentificationAttributes{
 public:
-    afIdentificationAttributes(){}
+    afIdentificationAttributes(){
+        m_objectType == afObjectType::INVALID;
+    }
 
     std::string m_name;
     std::string m_namespace;
@@ -209,7 +213,9 @@ public:
 ///
 struct afCollisionAttributes{
 public:
-    afCollisionAttributes(){}
+    afCollisionAttributes(){
+        m_margin = 0.001;
+    }
 
     afPath m_meshFilepath;
     double m_margin;
@@ -224,7 +230,11 @@ public:
 ///
 struct afCommunicationAttributes{
 public:
-    afCommunicationAttributes(){}
+    afCommunicationAttributes(){
+        m_minPublishFreq = 50;
+        m_maxPublishFreq = 1000;
+        m_passive = false;
+    }
 
     uint m_minPublishFreq;
     uint m_maxPublishFreq;
@@ -234,17 +244,27 @@ public:
 
 struct afCartesianControllerAttributes{
 public:
-    afCartesianControllerAttributes(){}
+    afCartesianControllerAttributes(){
+        P_lin = 10;
+        I_lin = 0;
+        D_lin = 1;
+        P_ang = 10;
+        I_ang = 0;
+        D_ang = 1;
+
+        m_positionOutputType = afControlType::VELOCITY;
+        m_orientationOutputType = afControlType::VELOCITY;
+    }
 
     // PID Controller Gains for Linear and Angular Controller
     double P_lin, I_lin, D_lin;
     double P_ang, I_ang, D_ang;
 
     // The default output type is velocity
-    afControlType m_positionOutputType = afControlType::VELOCITY;
+    afControlType m_positionOutputType;
 
     // The default output type is velocity
-    afControlType m_orientationOutputType = afControlType::VELOCITY;
+    afControlType m_orientationOutputType;
 };
 
 
@@ -287,11 +307,14 @@ public:
 ///
 struct afInertialAttributes{
 public:
-    afInertialAttributes(){}
+    afInertialAttributes(){
+        m_mass = 1.0;
+        m_estimateInertia = true;
+    }
 
     double m_mass;
     afVector3d m_inertia;
-    bool m_estimateInertia = false;
+    bool m_estimateInertia;
     afTransform m_inertialOffset;
     afSurfaceAttributes m_surfaceAttribs;
 };
@@ -302,30 +325,41 @@ public:
 ///
 struct afJointControllerAttributes{
 public:
-    afJointControllerAttributes(){}
+    afJointControllerAttributes(){
+        P = 10;
+        I = 0;
+        D = 1;
+        m_outputType = afControlType::VELOCITY;
+        m_maxImpulse = 0.05;
+    }
 
-    afControlType m_outputType = afControlType::VELOCITY;
+    afControlType m_outputType;
 
     double P;
     double I;
     double D;
 
-    double max_impulse;
+    double m_maxImpulse;
 };
 
 
 struct afColorAttributes{
-    afColorAttributes(){}
+    afColorAttributes(){
+        m_specular.set(0.5, 0.5, 0.5);
+        m_diffuse.set(0.5, 0.5, 0.5);
+        m_emission.set(0.5, 0.5, 0.5);
 
-    struct afRGBA{
-        double m_R, m_G, m_B;
-    };
-    afRGBA m_specular;
-    afRGBA m_diffuse;
-    afRGBA m_emission;
-    double m_ambient = 1.0;
-    double m_alpha = 1.0;
-    unsigned int m_shininiess = 64;
+        m_ambient = 1.0;
+        m_alpha = 1.0;
+        m_shininiess = 64;
+    }
+
+    afVector3d m_specular;
+    afVector3d m_diffuse;
+    afVector3d m_emission;
+    double m_ambient;
+    double m_alpha;
+    unsigned int m_shininiess;
 
 };
 
@@ -348,7 +382,9 @@ struct afVisualAttributes{
 ///
 struct afShaderAttributes{
 public:
-    afShaderAttributes(){}
+    afShaderAttributes(){
+        m_shaderDefined = false;
+    }
 
     bool m_shaderDefined;
     afPath m_vtxFilepath;
@@ -389,12 +425,17 @@ public:
 ///
 struct afConstraintActuatorAttributes: public afActuatorAttributes{
 public:
-    afConstraintActuatorAttributes(){}
+    afConstraintActuatorAttributes(){
+        m_visible = false;
+        m_visibleSize = 5.0;
+        m_maxImpulse = 10.0;
+        m_tau = 1.0;
+    }
 
     bool m_visible;
-    float m_visibleSize;
-    float m_maxImpulse;
-    float m_tau;
+    double m_visibleSize;
+    double m_maxImpulse;
+    double m_tau;
 };
 
 
@@ -405,18 +446,33 @@ public:
 struct afCameraAttributes: public afBaseObjectAttributes
 {
 public:
-    afCameraAttributes(){}
+    afCameraAttributes(){
+        m_up.set(0.0, 0.0, 1.0);
+        m_nearPlane = 0.1;
+        m_farPlane = 10.0;
+        m_fieldViewAngle = 70.0;
+        m_orthographic = false;
+        m_stereo = false;
+        m_stereFocalLength = 0.5;
+        m_stereoEyeSeparation = 0.2;
+        m_monitorNumber = 0;
+        m_publishImage = false;
+        m_publishDepth = false;
+        m_publishImageInterval = 1;
+        m_publishDepthInterval = 10;
+        m_multiPass = false;
+    }
 
     afVector3d m_lookAt;
     afVector3d m_up;
-    float m_nearPlane;
-    float m_farPlane;
-    float m_fieldViewAngle;
-    float m_orthoViewWidth;
+    double m_nearPlane;
+    double m_farPlane;
+    double m_fieldViewAngle;
+    double m_orthoViewWidth;
     bool m_orthographic;
     bool m_stereo;
-    float m_stereoEyeSeparation;
-    float m_stereFocalLength;
+    double m_stereoEyeSeparation;
+    double m_stereFocalLength;
     std::vector<std::string> m_controllingDeviceNames;
     uint m_monitorNumber;
     bool m_publishImage;
@@ -436,10 +492,14 @@ public:
 struct afLightAttributes: public afBaseObjectAttributes
 {
 public:
-    afLightAttributes(){}
+    afLightAttributes(){
+        m_spotExponent = 0.7;
+        m_cuttoffAngle = 0.7;
+        m_shadowQuality = 5;
+    }
 
-    float m_spotExponent;
-    float m_cuttoffAngle;
+    double m_spotExponent;
+    double m_cuttoffAngle;
     afVector3d m_direction;
 
     uint m_shadowQuality;
@@ -457,7 +517,19 @@ struct afJointAttributes: public afBaseObjectAttributes
 {
 
 public:
-    afJointAttributes(){}
+    afJointAttributes(){
+        m_enableMotor = true;
+        m_enableFeedback = false;
+        m_enableLimits = false;
+        m_maxMotorImpulse = 0.05;
+        m_offset = 0.0;
+        m_damping = 0.0;
+        m_stiffness = 0.0;
+        m_equilibriumPoint = 0.0;
+        m_ignoreInterCollision = true;
+        m_erp = 0.1;
+        m_cfm = 0.1;
+    }
 
     afVector3d m_parentPivot;
     afVector3d m_childPivot;
@@ -467,13 +539,13 @@ public:
     bool m_enableMotor;
     bool m_enableFeedback;
     uint m_maxMotorImpulse;
-    float m_lowerLimit;
-    float m_upperLimit;
-    float m_erp;
-    float m_cfm;
-    float m_offset;
-    float m_damping;
-    float m_stiffness;
+    double m_lowerLimit;
+    double m_upperLimit;
+    double m_erp;
+    double m_cfm;
+    double m_offset;
+    double m_damping;
+    double m_stiffness;
     afJointType m_jointType;
     bool m_enableLimits;
     bool m_ignoreInterCollision;
@@ -491,7 +563,11 @@ public:
 struct afRigidBodyAttributes: public afBaseObjectAttributes
 {
 public:
-    afRigidBodyAttributes(){}
+    afRigidBodyAttributes(){
+        m_publishJointNames = true;
+        m_publishChildrenNames = false;
+        m_publishJointPositions = true;
+    }
 
     bool m_publishChildrenNames;
     bool m_publishJointNames;
@@ -522,29 +598,29 @@ struct afSoftBodyAttributes: public afBaseObjectAttributes
 public:
     afSoftBodyAttributes(){}
 
-    float m_kLST;
-    float m_kAST;
-    float m_kVST;
-    float m_kVCF;
-    float m_kDP;
-    float m_kDG;
-    float m_kLF;
-    float m_kPR;
-    float m_kVC;
-    float m_kDF;
-    float m_kMT;
-    float m_kCHR;
-    float m_kKHR;
-    float m_kSHR;
-    float m_kAHR;
-    float m_kSRHR_CL;
-    float m_kSKHR_CL;
-    float m_kSSHR_CL;
-    float m_kSR_SPLT_CL;
-    float m_kSK_SPLT_CL;
-    float m_kSS_SPLT_CL;
-    float m_maxVolume;
-    float m_timeScale;
+    double m_kLST;
+    double m_kAST;
+    double m_kVST;
+    double m_kVCF;
+    double m_kDP;
+    double m_kDG;
+    double m_kLF;
+    double m_kPR;
+    double m_kVC;
+    double m_kDF;
+    double m_kMT;
+    double m_kCHR;
+    double m_kKHR;
+    double m_kSHR;
+    double m_kAHR;
+    double m_kSRHR_CL;
+    double m_kSKHR_CL;
+    double m_kSSHR_CL;
+    double m_kSR_SPLT_CL;
+    double m_kSK_SPLT_CL;
+    double m_kSS_SPLT_CL;
+    double m_maxVolume;
+    double m_timeScale;
     uint m_vIterations;
     uint m_pIterations;
     uint m_dIterations;
@@ -577,7 +653,13 @@ public:
 ///
 struct afWheelAttributes{
 public:
-    afWheelAttributes(){}
+    afWheelAttributes(){
+        m_isFront = false;
+        m_steeringLimitMin = 0.0;
+        m_steeringLimitMax = 0.0;
+        m_enginePowerMax = 0.0;
+        m_brakePowerMax = 0.0;
+    }
 
     double m_width;
     double m_radius;
@@ -587,11 +669,11 @@ public:
     afVector3d m_downDirection;
     afVector3d m_axelDirection;
     afVector3d m_offset;
-    bool m_isFront = false;
-    double m_steeringLimitMin = 0.0;
-    double m_steeringLimitMax = 0.0;
-    double m_enginePowerMax = 0.0;
-    double m_brakePowerMax = 0.0;
+    bool m_isFront ;
+    double m_steeringLimitMin;
+    double m_steeringLimitMax;
+    double m_enginePowerMax;
+    double m_brakePowerMax;
 
     afVisualAttributes m_visualAttribs;
     std::string m_wheelBodyName;
@@ -647,20 +729,26 @@ public:
 
 struct afRayTracerSensorAttributes: public afSensorAttributes{
 public:
-    afRayTracerSensorAttributes(){}
+    afRayTracerSensorAttributes(){
+        m_visible = false;
+        m_visibleSize = 1.0;
+        m_maxImpulse = 0.5;
+        m_tau = 0.5;
+        m_range = 0.5;
+    }
 
     bool m_visible;
-    float m_visibleSize;
-    float m_maxImpulse;
-    float m_tau;
-    float m_range;
+    double m_visibleSize;
+    double m_maxImpulse;
+    double m_tau;
+    double m_range;
 
-    std::string m_contourMesh;
+    afPath m_contourMeshFilepath;
     afSensactorSpecificationType m_specificationType;
     std::vector<afRayAttributes> m_raysAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-
+        m_contourMeshFilepath.resolvePath(a_parentPath);
     }
 };
 
@@ -671,7 +759,9 @@ public:
 
 struct afResistanceSensorAttributes: public afRayTracerSensorAttributes{
 public:
-    afResistanceSensorAttributes(){}
+    afResistanceSensorAttributes(){
+        m_useVariableCoeff = false;
+    }
 
     double m_contactNormalStiffness;
     double m_contactNormalDamping;
@@ -685,7 +775,14 @@ public:
 
 struct afInputDeviceAttributes: public afBaseObjectAttributes{
 public:
-    afInputDeviceAttributes(){}
+    afInputDeviceAttributes(){
+        m_enableSDEJointControl = true;
+        m_workspaceScale = 1.0;
+        m_sdeDefined = false;
+        m_rootLinkDefined = false;
+        m_visible = false;
+        m_visibleSize = 1.0;
+    }
 
     bool m_enableSDEJointControl;
     double m_deadBand;
@@ -693,11 +790,12 @@ public:
     double m_maxJerk;
     double m_workspaceScale;
     bool m_sdeDefined = false;
-    bool m_rootLinkDefined = false; bool m_visible;
+    bool m_rootLinkDefined = false;
+    bool m_visible;
     double m_visibleSize;
 
     std::string m_hardwareName;
-    std::string m_rootLink;
+    std::string m_rootLinkName;
     afPath m_sdeFilepath;
     std::vector<std::string> m_pairedCamerasNames;
 
@@ -735,7 +833,9 @@ public:
 ///
 struct afMultiBodyAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
 public:
-    afMultiBodyAttributes(){}
+    afMultiBodyAttributes(){
+        m_ignoreInterCollision = false;
+    }
 
     afPath m_visualMeshesPath;
     afPath m_collisionMeshesPath;
@@ -796,7 +896,10 @@ public:
 ///
 struct afWorldAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
 public:
-    afWorldAttributes(){}
+    afWorldAttributes(){
+        m_maxIterations = 10;
+        m_gravity.set(0, 0, -9.8);
+    }
 
     std::vector<afLightAttributes> m_lightAttribs;
     std::vector<afCameraAttributes> m_cameraAttribs;

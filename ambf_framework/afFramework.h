@@ -440,7 +440,7 @@ public:
     double Ie_sum = 0.0;
     uint queue_length = 4;
     double output;
-    double max_impulse;
+    double m_maxImpulse;
     double max_effort;
 
     // Store the last effort command to compute and bound max impulse

@@ -91,7 +91,8 @@ enum class afObjectType{
     RESISTANCE_SENSOR,
     VEHICLE,
     MULTIBODY,
-    WORLD
+    WORLD,
+    INVALID
 };
 
 
