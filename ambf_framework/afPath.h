@@ -50,7 +50,9 @@ using namespace std;
 
 class afPath{
 public:
-    afPath(){}
+    afPath(){
+        m_path = "";
+    }
 
     afPath(string a_path){m_path = a_path;}
 

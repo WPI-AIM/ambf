@@ -142,10 +142,13 @@ bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *
     bool valid = true;
 
     if (shadersNode.IsDefined()){
-        attribs->m_path = shadersNode["path"].as<string>();
+        afPath localPath = shadersNode["path"].as<string>();
 
-        attribs->m_vtxShaderFileName = shadersNode["vertex"].as<string>();
-        attribs->m_fragShaderFileName = shadersNode["fragment"].as<string>();
+        attribs->m_vtxFilepath = shadersNode["vertex"].as<string>();
+        attribs->m_fragFilepath = shadersNode["fragment"].as<string>();
+
+        attribs->m_vtxFilepath = localPath / attribs->m_vtxFilepath;
+        attribs->m_fragFilepath = localPath / attribs->m_fragFilepath;
 
         attribs->m_shaderDefined = true;
     }
@@ -172,11 +175,13 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     string shape_str;
     attribs->m_geometryType = afGeometryType::INVALID;
 
+    afPath localPath;
+
     // Each rigid body can have a seperate path for its low and high res meshes
     // Incase they are defined, we use these paths and if they are not, we use
     // the paths for the whole file
     if (meshPathHRNode.IsDefined()){
-        attribs->m_path = meshPathHRNode.as<string>();
+        localPath = meshPathHRNode.as<string>();
     }
 
     if (shapeNode.IsDefined()){
@@ -202,8 +207,8 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
         }
     }
     else if(meshNode.IsDefined()){
-        attribs->m_meshName = meshNode.as<string>();
-        if (!attribs->m_meshName.empty()){
+        attribs->m_meshFilepath = localPath / meshNode.as<string>();
+        if (!attribs->m_meshFilepath.c_str().empty()){
             attribs->m_geometryType = afGeometryType::MESH;
         }
         else{
@@ -276,7 +281,7 @@ bool ADFUtils::getWheelAttribsFromNode(YAML::Node *a_node, afWheelAttributes *at
         attribs->m_representationType = afWheelRepresentationType::RIGID_BODY;
     }
     else if (meshNameNode.IsDefined()){
-        attribs->m_visualAttribs.m_meshName = meshNameNode.as<string>();
+        attribs->m_visualAttribs.m_meshFilepath = meshNameNode.as<string>();
         attribs->m_representationType = afWheelRepresentationType::MESH;
     }
     else{
@@ -514,12 +519,13 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         }
     }
 
+    afPath localPath;
 
     if (meshPathLRNode.IsDefined()){
-        attribs->m_path = meshPathLRNode.as<string>();
+        localPath = meshPathLRNode.as<string>();
     }
     else if(meshPathHRNode.IsDefined()){
-        attribs->m_path = meshPathHRNode.as<string>();
+        localPath = meshPathHRNode.as<string>();
     }
 
     if(collisionShapeNode.IsDefined()){
@@ -546,8 +552,8 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         }
     }
     else if (collisionMeshNode.IsDefined()){
-        attribs->m_meshName = collisionMeshNode.as<string>();
-        if (!attribs->m_meshName.empty()){
+        attribs->m_meshFilepath = localPath / collisionMeshNode.as<string>();
+        if (!attribs->m_meshFilepath.c_str().empty()){
             attribs->m_geometryType = afGeometryType::MESH;
         }
         else{
@@ -2063,8 +2069,10 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
     }
 
 
+    afPath localPath;
+
     if (skyBoxNode.IsDefined()){
-        attribs->m_skyBoxAttribs.m_path = skyBoxNode["path"].as<string>();
+        localPath = skyBoxNode["path"].as<string>();
 
         if (skyBoxNode["right"].IsDefined() &&
                 skyBoxNode["left"].IsDefined() &&
@@ -2075,12 +2083,12 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
                 )
         {
 
-            attribs->m_skyBoxAttribs.m_leftImage = skyBoxNode["left"].as<string>();
-            attribs->m_skyBoxAttribs.m_rightImage = skyBoxNode["right"].as<string>();
-            attribs->m_skyBoxAttribs.m_topImage = skyBoxNode["top"].as<string>();
-            attribs->m_skyBoxAttribs.m_bottomImage = skyBoxNode["bottom"].as<string>();
-            attribs->m_skyBoxAttribs.m_frontImage = skyBoxNode["front"].as<string>();
-            attribs->m_skyBoxAttribs.m_backImage = skyBoxNode["back"].as<string>();
+            attribs->m_skyBoxAttribs.m_leftImageFilepath = localPath / skyBoxNode["left"].as<string>();
+            attribs->m_skyBoxAttribs.m_rightImageFilepath = localPath / skyBoxNode["right"].as<string>();
+            attribs->m_skyBoxAttribs.m_topImageFilepath = localPath / skyBoxNode["top"].as<string>();
+            attribs->m_skyBoxAttribs.m_bottomImageFilepath = localPath / skyBoxNode["bottom"].as<string>();
+            attribs->m_skyBoxAttribs.m_frontImageFilepath = localPath / skyBoxNode["front"].as<string>();
+            attribs->m_skyBoxAttribs.m_backImageFilepath = localPath / skyBoxNode["back"].as<string>();
 
             adfUtils.getShaderAttribsFromNode(&skyBoxNode, &attribs->m_skyBoxAttribs.m_shaderAttribs);
 
@@ -2129,7 +2137,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
 
 
     if(worldFilepathNode.IsDefined()){
-        attribs->m_worldFilePath = worldFilepathNode.as<string>();
+        attribs->m_worldFilepath = worldFilepathNode.as<string>();
     }
     else{
         cerr << "ERROR! WORLD CONFIG NOT DEFINED \n";

@@ -211,8 +211,7 @@ struct afCollisionAttributes{
 public:
     afCollisionAttributes(){}
 
-    std::string m_meshName;
-    afPath m_path;
+    afPath m_meshFilepath;
     double m_margin;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
@@ -337,8 +336,7 @@ struct afColorAttributes{
 struct afVisualAttributes{
     afVisualAttributes(){}
 
-    std::string m_meshName;
-    afPath m_path;
+    afPath m_meshFilepath;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     afColorAttributes m_colorAttribs;
@@ -353,9 +351,8 @@ public:
     afShaderAttributes(){}
 
     bool m_shaderDefined;
-    afPath m_path;
-    std::string m_vtxShaderFileName;
-    std::string m_fragShaderFileName;
+    afPath m_vtxFilepath;
+    afPath m_fragFilepath;
 };
 
 
@@ -510,9 +507,10 @@ public:
     afSurfaceAttributes m_surfaceAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_collisionAttribs.m_path.resolvePath(a_parentPath);
-        m_visualAttribs.m_path.resolvePath(a_parentPath);
-        m_shaderAttribs.m_path.resolvePath(a_parentPath);
+        m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
+        m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
     }
 };
 
@@ -566,9 +564,10 @@ public:
     afShaderAttributes m_shaderAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_collisionAttribs.m_path.resolvePath(a_parentPath);
-        m_visualAttribs.m_path.resolvePath(a_parentPath);
-        m_shaderAttribs.m_path.resolvePath(a_parentPath);
+        m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
+        m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
     }
 };
 
@@ -804,18 +803,17 @@ public:
 
     afVector3d m_gravity;
     uint m_maxIterations;
-    afPath m_environmentFilePath;
+    afPath m_environmentFilepath;
     afShaderAttributes m_shaderAttribs;
     std::string m_namespace;
 
     struct afSkyBoxAttributes{
-        afPath m_path;
-        std::string m_leftImage;
-        std::string m_frontImage;
-        std::string m_rightImage;
-        std::string m_backImage;
-        std::string m_topImage;
-        std::string m_bottomImage;
+        afPath m_leftImageFilepath;
+        afPath m_frontImageFilepath;
+        afPath m_rightImageFilepath;
+        afPath m_backImageFilepath;
+        afPath m_topImageFilepath;
+        afPath m_bottomImageFilepath;
         afShaderAttributes m_shaderAttribs;
         bool m_use = false;
     };
@@ -832,9 +830,17 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         m_path.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_path.resolvePath(a_parentPath);
-        m_shaderAttribs.m_path.resolvePath(a_parentPath);
-        m_environmentFilePath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_backImageFilepath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_bottomImageFilepath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_frontImageFilepath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_leftImageFilepath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_rightImageFilepath.resolvePath(a_parentPath);
+        m_skyBoxAttribs.m_topImageFilepath.resolvePath(a_parentPath);
+
+        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+
+        m_environmentFilepath.resolvePath(a_parentPath);
 
         for (uint i = 0 ; i < m_lightAttribs.size() ; i++){
             m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
@@ -849,14 +855,14 @@ public:
 
 struct afLaunchAttributes: public afFileObjectAttributes{
     afPath m_colorFilepath;
-    afPath m_worldFilePath;
+    afPath m_worldFilepath;
     afPath m_inputDevicesFilepath;
     std::vector<afPath> m_multiBodyFilepaths;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         m_path = a_parentPath;
         m_colorFilepath.resolvePath(a_parentPath);
-        m_worldFilePath.resolvePath(a_parentPath);
+        m_worldFilepath.resolvePath(a_parentPath);
         m_inputDevicesFilepath.resolvePath(a_parentPath);
 
         for (uint i = 0 ; i < m_multiBodyFilepaths.size() ; i++){

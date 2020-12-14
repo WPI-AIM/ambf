@@ -6,11 +6,11 @@ int main(){
 
     afLaunchAttributes launchAttribs;
 
-    loader.loadLaunchFileAttribs("/home/adnan/ambf/ambf_models/descriptions/launch.yaml", &launchAttribs);
+    loader.loadLaunchFileAttribs("../../ambf_models/descriptions/launch.yaml", &launchAttribs);
 
     afWorldAttributes worldAttribs;
 
-    loader.loadWorldAttribs(launchAttribs.m_worldFilePath.c_str(), &worldAttribs);
+    loader.loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
 
     for (int i = 0 ; i < launchAttribs.m_multiBodyFilepaths.size() ; i++){
         afMultiBodyAttributes mbAttribs;
