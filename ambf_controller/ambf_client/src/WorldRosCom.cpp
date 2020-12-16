@@ -101,6 +101,14 @@ void WorldRosCom::init(){
 /// \brief WorldRosCom::~WorldRosCom
 ///
 WorldRosCom::~WorldRosCom(){
+
+//    nodePtr.reset();
+//    aspinPtr.reset();
+//    m_watchDogPtr.reset();
+//    m_thread.~thread();
+//    m_custom_queue.clear();
+
+//    m_custom_queue.~CallbackQueue();
     ros::shutdown();
     std::cerr << "Thread Shutdown: " << m_name << std::endl;
 }

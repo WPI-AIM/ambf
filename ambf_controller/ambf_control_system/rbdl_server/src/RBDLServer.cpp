@@ -35,12 +35,12 @@ RigidBodyDynamics::Model* RBDLServer::getModel()
 bool RBDLServer::CreateModel_srv(rbdl_server::RBDLModelRequest& req, rbdl_server::RBDLModelResponse& res) //parses the AMBF model into  rbdl model
 {
 
-    // std::string actuator_config_file;
-    // BuildRBDLModel  buildRBDLModel(actuator_config_file);
-    // body_ids = buildRBDLModel.getRBDLBodyToIDMap();
-    // *model = buildRBDLModel.getRBDLModel();
+     std::string actuator_config_file;
+     BuildRBDLModel  buildRBDLModel(actuator_config_file);
+     body_ids = buildRBDLModel.getRBDLBodyToIDMap();
+     *model = buildRBDLModel.getRBDLModel();
     // buildRBDLModel.cleanUp();
-
+    have_model= true;
     return true;
 }
 

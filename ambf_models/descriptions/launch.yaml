@@ -28,3 +28,4 @@ multibody configs:
   - "./multi-bodies/environments/KnotEnv3/env.yaml" #21
   - "./multi-bodies/environments/TexturedGround/env.yaml" #22
   - "/home/shreyas/Downloads/simulator/exohuman.yaml" #23
+  - "/home/shreyas/Downloads/exo/default.yaml" #24

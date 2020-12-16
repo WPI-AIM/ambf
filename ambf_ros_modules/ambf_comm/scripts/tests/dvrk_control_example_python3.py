@@ -43,7 +43,7 @@ kuka_handle.set_joint_pos(0, 0)
 # # print(' ')
 # # print('MTM Wrist Fixed Rotation:')
 # # print(mtm_wrist_handle.get_rpy())
-print("kuka_handle.get_num_joints(): ", kuka_handle.get_num_joints())
+# print("kuka_handle.get_num_joints(): ", kuka_handle.get_num_joints())
 # print('\n\n----')
 # # input("Let's get Joints and Children Info. Press Enter to continue...")
 # # We can get the number of children and joints connected to each object as

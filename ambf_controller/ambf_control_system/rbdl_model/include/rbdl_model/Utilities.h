@@ -1,6 +1,6 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
-#include <chai3d.h>
+//	#include <chai3d.h>
 #include <yaml-cpp/yaml.h>
 
 #include <rbdl/rbdl.h>
