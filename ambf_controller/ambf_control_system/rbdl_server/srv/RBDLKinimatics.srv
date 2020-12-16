@@ -1,4 +1,0 @@
-float64[] q
----
-string[] names
-geometry_msgs/Point[] points

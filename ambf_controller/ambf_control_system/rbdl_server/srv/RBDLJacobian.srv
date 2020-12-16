@@ -1,5 +1,0 @@
-string body_name
-float64[] q
-geometry_msgs/Point point
----
-std_msgs/Float64MultiArray jacobian
