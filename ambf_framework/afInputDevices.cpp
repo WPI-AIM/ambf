@@ -379,13 +379,13 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     }
 
     if (_simulatedMBDefined){
-        if (!simDevice->loadMultiBody(_simulatedMBConfig, false)){
+        if (!simDevice->loadModel(_simulatedMBConfig, false)){
             m_hDevice->close();
             return 0;
         }
         boost::filesystem::path p(_simulatedMBConfig);
-        m_afWorld->addAFMultiBody(simDevice,
-                                  p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), m_afWorld->getAFMultiBodyMap()));
+        m_afWorld->addAFModel(simDevice,
+                                  p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), m_afWorld->getAFModelMap()));
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (_rootLinkDefined){
@@ -906,7 +906,7 @@ void afPhysicalDevice::applyWrench(cVector3d force, cVector3d torque){
 /// \brief afSimulatedDevice::afSimulatedDevice
 /// \param a_afWorld
 ///
-afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afMultiBody (a_afWorld){
+afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afModel (a_afWorld){
     m_gripper_angle = 0.5;
     P_lc_ramp = 0;
     P_ac_ramp = 0;

@@ -694,11 +694,11 @@ bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointCont
 
     if (controllerNode.IsDefined()){
         if( (controllerNode["P"]).IsDefined())
-            attribs->P = controllerNode["P"].as<double>();
+            attribs->m_P = controllerNode["P"].as<double>();
         if( (controllerNode["I"]).IsDefined())
-            attribs->I = controllerNode["I"].as<double>();
+            attribs->m_I = controllerNode["I"].as<double>();
         if( (controllerNode["D"]).IsDefined())
-            attribs->D = controllerNode["D"].as<double>();
+            attribs->m_D = controllerNode["D"].as<double>();
 
         // If the PID controller in defined, the gains will be used to command the joint force (effort)
         attribs->m_outputType = afControlType::FORCE;
@@ -707,9 +707,9 @@ bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointCont
         // If the controller gains are not defined, a velocity based control will be used.
         // The tracking velocity can be controller by setting "max motor impulse" field
         // for the joint data-block in the ADF file.
-        attribs->P = 10;
-        attribs->I = 0;
-        attribs->D = 0;
+        attribs->m_P = 10;
+        attribs->m_I = 0;
+        attribs->m_D = 0;
         attribs->m_outputType = afControlType::VELOCITY;
     }
 
@@ -1436,6 +1436,9 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     if(equilibriumPointNode.IsDefined()){
         attribs->m_equilibriumPoint = equilibriumPointNode.as<double>();
     }
+    else{
+        attribs->m_equilibriumPoint = attribs->m_lowerLimit + (attribs->m_upperLimit - attribs->m_lowerLimit) / 2.0;
+    }
 
     if(erpNode.IsDefined()){
         attribs->m_erp = erpNode.as<double>();
@@ -1616,7 +1619,51 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
 
 bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistanceSensorAttributes *attribs)
 {
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
 
+    bool result = false;
+        result = loadRayTracerSensorAttribs(a_node, attribs);
+
+        if (result){
+
+            YAML::Node resistiveFrictionNode = node["friction"];
+            YAML::Node contactAreaNode = node["contact area"];
+            YAML::Node contactStiffnessNode = node["contact stiffness"];
+            YAML::Node contactDampingNode = node["contact damping"];
+
+            if (resistiveFrictionNode["static"].IsDefined()){
+                attribs->m_staticContactFriction = resistiveFrictionNode["static"].as<double>();
+            }
+
+            if (resistiveFrictionNode["damping"].IsDefined()){
+                attribs->m_staticContactDamping = resistiveFrictionNode["damping"].as<double>();
+            }
+
+            if (resistiveFrictionNode["dynamic"].IsDefined()){
+                attribs->m_dynamicFriction = resistiveFrictionNode["dynamic"].as<double>();
+            }
+
+            if (resistiveFrictionNode["variable"].IsDefined()){
+                attribs->m_useVariableCoeff = resistiveFrictionNode["variable"].as<bool>();
+            }
+
+            if (contactAreaNode.IsDefined()){
+                attribs->m_contactArea = contactAreaNode.as<double>();
+            }
+
+            if (contactStiffnessNode.IsDefined()){
+                attribs->m_contactNormalStiffness = contactStiffnessNode.as<double>();
+            }
+
+            if (contactDampingNode.IsDefined()){
+                attribs->m_contactNormalDamping = contactDampingNode.as<double>();
+            }
+        }
+        return result;
 }
 
 bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes *attribs)
@@ -1891,7 +1938,7 @@ bool ADFLoader_1_0::loadAllInputDeviceAttributes(YAML::Node *a_node, afAllInputD
     return true;
 }
 
-bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afMultiBodyAttributes *attribs)
+bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afModelAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){

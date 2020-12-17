@@ -186,7 +186,7 @@ bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *
     }
 }
 
-bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afMultiBodyAttributes *attribs)
+bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afModelAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){
         return false;

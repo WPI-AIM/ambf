@@ -72,56 +72,6 @@ std::string afUtils::getNonCollidingIdx(std::string a_body_name, const T* tMap){
 
 template<>
 ///
-/// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
-/// \param v1
-/// \param v2
-/// \return
-///
-cQuaternion afUtils::getRotBetweenVectors<>(const cVector3d &v1, const cVector3d &v2){
-    cQuaternion quat;
-    double rot_angle = cAngle(v1, v2);
-    if ( cAbs(rot_angle) < 0.1){
-        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
-    }
-    else if ( cAbs(rot_angle) > 3.13 ){
-        cVector3d nx(1, 0, 0);
-        double temp_ang = cAngle(v1, nx);
-        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
-            cVector3d rot_axis = cCross(v1, nx);
-            quat.fromAxisAngle(rot_axis, rot_angle);
-        }
-        else{
-            cVector3d ny(0, 1, 0);
-            cVector3d rot_axis = cCross(v2, ny);
-            quat.fromAxisAngle(rot_axis, rot_angle);
-        }
-    }
-    else{
-        cVector3d rot_axis = cCross(v1, v2);
-        quat.fromAxisAngle(rot_axis, rot_angle);
-    }
-
-    return quat;
-}
-
-
-template<>
-///
-/// \brief afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>
-/// \param v1
-/// \param v2
-/// \return
-///
-cMatrix3d afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(const cVector3d &v1, const cVector3d &v2){
-    cMatrix3d rot_mat;
-    cQuaternion quat = getRotBetweenVectors<cQuaternion, cVector3d>(v1, v2);
-    quat.toRotMat(rot_mat);
-    return rot_mat;
-}
-
-
-template<>
-///
 /// \brief afUtils::getRotBetweenVectors<btQuaternion, btVector3>
 /// \param v1
 /// \param v2
@@ -171,14 +121,44 @@ btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector
 
 template<>
 ///
-/// \brief afUtils::convertDataTypes<cVector3d, btVector3>
+/// \brief afUtils::convertDataTypes<btVector3, cVector3d>
 /// \param p
 /// \return
 ///
-cVector3d afUtils::convertDataType<cVector3d, btVector3>(const btVector3 &p){
-    cVector3d cPos(p.x(), p.y(), p.z());
-    return cPos;
+btVector3 afUtils::convertDataType<btVector3, afVector3d>(const afVector3d &p){
+    btVector3 btPos(p(0), p(1), p(2));
+    return btPos;
 }
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<btMatrix3x3, cMatrix3d>
+/// \param r
+/// \return
+///
+btMatrix3x3 afUtils::convertDataType<btMatrix3x3, afMatrix3d>(const afMatrix3d &r){
+    btMatrix3x3 btMat;
+    double r, p, y;
+    r.getRPY(r, p, y);
+    btMat.setEulerYPR(y, p, r);
+    return btMat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<btTransform, cTransform>
+/// \param t
+/// \return
+///
+btTransform afUtils::convertDataType<btTransform, afTransform>(const afTransform &t){
+    btMatrix3x3 btRot = afUtils::convertDataType<btMatrix3x3, afMatrix3d>(t.getRotation());
+    btVector3 btPos = afUtils::convertDataType<btVector3, cVector3d>(t.getPosition());
+    btTransform btMat(btRot, btPos);
+    return btMat;
+}
+
 
 template<>
 ///
@@ -198,40 +178,9 @@ template<>
 /// \param q
 /// \return
 ///
-cQuaternion afUtils::convertDataType<cQuaternion, btQuaternion>(const btQuaternion &q){
-    cQuaternion cQuat(q.w(), q.x(), q.y(), q.z());
-    return cQuat;
-}
-
-
-template<>
-///
-/// \brief afUtils::convertDataTypes<cQuaternion, btQuaternion>
-/// \param q
-/// \return
-///
 btQuaternion afUtils::convertDataType<btQuaternion, cQuaternion>(const cQuaternion &q){
     btQuaternion btQuat(q.x, q.y, q.z, q.w);
     return btQuat;
-}
-
-
-template<>
-///
-/// \brief afUtils::convertDataTypes<cMatrix3d, btMatrix3x3>
-/// \param r
-/// \return
-///
-cMatrix3d afUtils::convertDataType<cMatrix3d, btMatrix3x3>(const btMatrix3x3 &r){
-    btQuaternion btQuat;
-    r.getRotation(btQuat);
-
-    cQuaternion cQuat(btQuat.w(), btQuat.x(), btQuat.y(), btQuat.z());
-
-    cMatrix3d cMat;
-    cQuat.toRotMat(cMat);
-
-    return cMat;
 }
 
 
@@ -255,6 +204,114 @@ btMatrix3x3 afUtils::convertDataType<btMatrix3x3, cMatrix3d>(const cMatrix3d &r)
 
 template<>
 ///
+/// \brief afUtils::convertDataTypes<btTransform, cTransform>
+/// \param t
+/// \return
+///
+btTransform afUtils::convertDataType<btTransform, cTransform>(const cTransform &t){
+    btMatrix3x3 btRot = afUtils::convertDataType<btMatrix3x3, cMatrix3d>(t.getLocalRot());
+    btVector3 btPos = afUtils::convertDataType<btVector3, cVector3d>(t.getLocalPos());
+    btTransform btMat(btRot, btPos);
+    return btMat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cMatrix3d afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(const cVector3d &v1, const cVector3d &v2){
+    cMatrix3d rot_mat;
+    cQuaternion quat = getRotBetweenVectors<cQuaternion, cVector3d>(v1, v2);
+    quat.toRotMat(rot_mat);
+    return rot_mat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cVector3d, btVector3>
+/// \param p
+/// \return
+///
+cVector3d afUtils::convertDataType<cVector3d, btVector3>(const btVector3 &p){
+    cVector3d cPos(p.x(), p.y(), p.z());
+    return cPos;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cQuaternion afUtils::getRotBetweenVectors<>(const cVector3d &v1, const cVector3d &v2){
+    cQuaternion quat;
+    double rot_angle = cAngle(v1, v2);
+    if ( cAbs(rot_angle) < 0.1){
+        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        cVector3d nx(1, 0, 0);
+        double temp_ang = cAngle(v1, nx);
+        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
+            cVector3d rot_axis = cCross(v1, nx);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+        else{
+            cVector3d ny(0, 1, 0);
+            cVector3d rot_axis = cCross(v2, ny);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+    }
+    else{
+        cVector3d rot_axis = cCross(v1, v2);
+        quat.fromAxisAngle(rot_axis, rot_angle);
+    }
+
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cQuaternion, btQuaternion>
+/// \param q
+/// \return
+///
+cQuaternion afUtils::convertDataType<cQuaternion, btQuaternion>(const btQuaternion &q){
+    cQuaternion cQuat(q.w(), q.x(), q.y(), q.z());
+    return cQuat;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cMatrix3d, btMatrix3x3>
+/// \param r
+/// \return
+///
+cMatrix3d afUtils::convertDataType<cMatrix3d, btMatrix3x3>(const btMatrix3x3 &r){
+    btQuaternion btQuat;
+    r.getRotation(btQuat);
+
+    cQuaternion cQuat(btQuat.w(), btQuat.x(), btQuat.y(), btQuat.z());
+
+    cMatrix3d cMat;
+    cQuat.toRotMat(cMat);
+
+    return cMat;
+}
+
+
+
+template<>
+///
 /// \brief afUtils::convertDataTypes<cTransform, btTransform>
 /// \param t
 /// \return
@@ -266,19 +323,6 @@ cTransform afUtils::convertDataType<cTransform, btTransform>(const btTransform &
     return cMat;
 }
 
-
-template<>
-///
-/// \brief afUtils::convertDataTypes<btTransform, cTransform>
-/// \param t
-/// \return
-///
-btTransform afUtils::convertDataType<btTransform, cTransform>(const cTransform &t){
-    btMatrix3x3 btRot = afUtils::convertDataType<btMatrix3x3, cMatrix3d>(t.getLocalRot());
-    btVector3 btPos = afUtils::convertDataType<btVector3, cVector3d>(t.getLocalPos());
-    btTransform btMat(btRot, btPos);
-    return btMat;
-}
 
 
 

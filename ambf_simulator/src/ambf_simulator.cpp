@@ -413,7 +413,7 @@ int main(int argc, char* argv[])
                 mbFileNames.push_back(mbFilename);
             }
             for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
-                g_afWorld->loadMultiBody(mbFileNames[idx], true);
+                g_afWorld->loadModel(mbFileNames[idx], true);
             }
         }
 
@@ -430,7 +430,7 @@ int main(int argc, char* argv[])
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
             for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
-                g_afWorld->loadMultiBody(mbIndexes[idx], true);
+                g_afWorld->loadModel(mbIndexes[idx], true);
             }
         }
 
@@ -657,7 +657,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
             if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
-                g_afWorld->loadMultiBody(paths[i], true);
+                g_afWorld->loadModel(paths[i], true);
             }
             else{
                 std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
@@ -1267,12 +1267,12 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     btVector3 camPos, camTarget;
 
-    camPos = toBTvec(a_cameraPtr->getGlobalPos());
+    camPos = to_btVector(a_cameraPtr->getGlobalPos());
     cVector3d targetPosGlobal = a_cameraPtr->getTargetPos();
     if (a_cameraPtr->m_visualMesh->getParent()){
         targetPosGlobal = a_cameraPtr->m_visualMesh->getParent()->getLocalTransform() * targetPosGlobal;
     }
-    camTarget = toBTvec(targetPosGlobal);
+    camTarget = to_btVector(targetPosGlobal);
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);
@@ -1311,7 +1311,7 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
     rayTo += btScalar(g_winWidthRatio*x) * dHor;
     rayTo -= btScalar(g_winHeightRatio*y) * dVert;
-    cVector3d cRay = toCvec(rayTo);
+    cVector3d cRay = to_cVector3d(rayTo);
     return cRay;
 }
 
@@ -1326,14 +1326,14 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
     // Check if a softbody has been picked
     if (g_afWorld->m_pickedSoftBody){
-        cVector3d delta = g_afWorld->m_pickedNodeGoal - toCvec(g_afWorld->m_pickedNode->m_x);
+        cVector3d delta = g_afWorld->m_pickedNodeGoal - to_cVector3d(g_afWorld->m_pickedNode->m_x);
         static const double maxdrag = 10;
         if (delta.length() > (maxdrag * maxdrag))
         {
             delta.normalize();
             delta = delta * maxdrag;
         }
-        g_afWorld->m_pickedNode->m_v += toBTvec(delta) / timeStep;
+        g_afWorld->m_pickedNode->m_v += to_btVector(delta) / timeStep;
     }
     std::vector<afJointPtr>::const_iterator jIt;
     std::vector<afJointPtr> afJoints = g_afWorld->getAFJoints();
@@ -1458,8 +1458,8 @@ void updatePhysics(){
                                             btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBTRigidBody(i);
                                             if (!rootLink->isChild(bodyBPtr)){
                                                 cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint(i);
-                                                btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
-                                                btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * toBTvec(hitPointInWorld);
+                                                btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
+                                                btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
                                                 simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
                                                 simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
                                                 simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;

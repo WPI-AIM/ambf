@@ -368,8 +368,9 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 /// \brief afObject::afObject
 /// \param a_afWorld
 ///
-afBaseObject::afBaseObject(afWorldPtr a_afWorld){
+afBaseObject::afBaseObject(afWorldPtr a_afWorld, afModelPtr a_afModel){
     m_afWorld = a_afWorld;
+    m_modelPtr = a_afModel;
 }
 
 
@@ -378,6 +379,11 @@ afBaseObject::afBaseObject(afWorldPtr a_afWorld){
 /// \brief afObject::~afObject
 ///
 afBaseObject::~afBaseObject(){
+
+}
+
+bool afBaseObject::createFromAttribs(afBaseObjectAttributes *a_attribs)
+{
 
 }
 
@@ -421,6 +427,11 @@ void afBaseObject::setLocalPos(const cVector3d &pos)
     return m_localTransform.setLocalPos(pos);
 }
 
+void afBaseObject::setLocalPos(const afVector3d &pos)
+{
+    m_localTransform.setLocalPos(cVector3d(pos(0), pos(1), pos(2)));
+}
+
 ///
 /// \brief afBaseObject::setLocalPos
 /// \param px
@@ -443,6 +454,10 @@ void afBaseObject::setLocalRot(const cMatrix3d &a_mat)
     cMatrix3d mat = a_mat;
     mat.orthogonalize();
     m_localTransform.setLocalRot(mat);
+}
+
+void afBaseObject::setLocalRot(const afMatrix3d &mat)
+{
 }
 
 
@@ -622,111 +637,44 @@ afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld): afActuator(a_a
 
 }
 
-
-bool afConstraintActuator::loadActuator(string actuator_config_file, string node_name, afMultiBodyPtr mB, string name_remapping){
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(actuator_config_file);
-    }catch (exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO ACTUATOR CONFIG: " << actuator_config_file << endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseActuatorrNode = baseNode[node_name];
-    return loadActuator(&baseActuatorrNode, node_name, mB, name_remapping);
-}
-
-
-bool afConstraintActuator::loadActuator(YAML::Node *actuator_node, string node_name, afMultiBodyPtr mB, string name_remapping){
-    YAML::Node& actuatorNode = *actuator_node;
-    if (actuatorNode.IsNull()){
-        cerr << "ERROR: ACTUATOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
-        return 0;
-    }
+bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_attribs)
+{
+    afConstraintActuatorAttributes& attribs = *a_attribs;
 
     bool result = true;
-    // Declare all the yaml parameters that we want to look for
-    YAML::Node actuatorParentName = actuatorNode["parent"];
-    YAML::Node actuatorName = actuatorNode["name"];
-    YAML::Node actuatorNamespace = actuatorNode["namespace"];
-    YAML::Node actuatorPos = actuatorNode["location"]["position"];
-    YAML::Node actuatorRot = actuatorNode["location"]["orientation"];
-    YAML::Node actuatorPublishFrequency = actuatorNode["publish frequency"];
-    YAML::Node actuatorVisible = actuatorNode["visible"];
-    YAML::Node actuatorVisibleSize = actuatorNode["visible size"];
-    YAML::Node actuatorMaxImpulse = actuatorNode["max impulse"];
-    YAML::Node actuatorTau = actuatorNode["tau"];
 
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
-    if (actuatorParentName.IsDefined()){
-        m_parentName = actuatorParentName.as<string>();
-    }
-    else{
-        result = false;
-    }
+    m_name = attribs.m_identificationAttribs.m_name;
+    m_namespace = attribs.m_identificationAttribs.m_namespace;
 
-    m_name = actuatorName.as<string>();
+    m_initialTransform = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    setLocalTransform(m_initialTransform);
 
-    if(actuatorPos.IsDefined()){
-        cVector3d pos = toXYZ<cVector3d>(&actuatorPos);
-        m_initialTransform.setLocalPos(pos);
-        setLocalPos(pos);
-    }
+    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
+    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
 
-    if(actuatorRot.IsDefined()){
-        double r = actuatorRot["r"].as<double>();
-        double p = actuatorRot["p"].as<double>();
-        double y = actuatorRot["y"].as<double>();
-        cMatrix3d rot;
-        rot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        m_initialTransform.setLocalRot(rot);
-        setLocalRot(rot);
-    }
-
-    if(actuatorNamespace.IsDefined()){
-        m_namespace = actuatorNamespace.as<string>();
-    }
-    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
-
-    if (actuatorPublishFrequency.IsDefined()){
-        m_min_publish_frequency = actuatorPublishFrequency["low"].as<uint>();
-        m_max_publish_frequency = actuatorPublishFrequency["high"].as<uint>();
-    }
-
-    if (actuatorVisible.IsDefined()){
-        m_showActuator = actuatorVisible.as<bool>();
-    }
-    else{
-        m_showActuator = false;
-    }
+    m_showActuator = attribs.m_visible;
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
+    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
+        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getActuatorMap());
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
+
+        if (m_parentBody == nullptr){
+            cerr << "ERROR: ACTUATOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING ACTUATOR\n";
+            return 0;
+        }
     }
 
-    if (m_parentBody == nullptr){
-        cerr << "ERROR: ACTUATOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING ACTUATOR\n";
-        return 0;
-    }
-    else{
-        m_parentBody->addAFActuator(this);
-    }
+    m_parentBody->addAFActuator(this);
 
-    if (actuatorMaxImpulse.IsDefined()){
-        m_maxImpulse = actuatorMaxImpulse.as<double>();
-    }
-
-    if (actuatorTau.IsDefined()){
-        m_tau = actuatorTau.as<double>();
-    }
+    m_maxImpulse = attribs.m_maxImpulse;
+    m_tau = attribs.m_tau;
 
     return result;
-
 }
 
 
@@ -741,14 +689,14 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody){
     if (a_rigidBody){
         // Since this method does not require an explicit offset, find the relative location
         // of the body and then use it as its offset for the constraint
-        btTransform T_aINp = toBTtransfrom(getLocalTransform());
+        btTransform T_aINp = to_btTransform(getLocalTransform());
         btTransform T_pINw = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform();
         btTransform T_wINc = a_rigidBody->m_bulletRigidBody->getCenterOfMassTransform().inverse();
         btTransform T_aINw = T_pINw * T_aINp;
 
         btTransform T_aINc = T_wINc * T_aINw;
 
-        cVector3d P_aINc = toCvec(T_aINc.getOrigin());
+        cVector3d P_aINc = to_cVector3d(T_aINc.getOrigin());
 
         actuate(a_rigidBody, P_aINc);
     }
@@ -780,8 +728,8 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
     }
 
     if (a_rigidBody){
-        btVector3 pvtA = toBTvec(getLocalPos());
-        btVector3 pvtB = toBTvec(a_bodyOffset);
+        btVector3 pvtA = to_btVector(getLocalPos());
+        btVector3 pvtB = to_btVector(a_bodyOffset);
         m_childBody = a_rigidBody;
         m_constraint = new btPoint2PointConstraint(*m_parentBody->m_bulletRigidBody, *m_childBody->m_bulletRigidBody, pvtA, pvtB);
         m_constraint->m_setting.m_impulseClamp = m_maxImpulse;
@@ -976,8 +924,8 @@ void afInertialObject::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, 
     if (m_bulletRigidBody){
         btTransform T_bodyInWorld = m_bulletRigidBody->getWorldTransform();
         btTransform T_worldInBody = T_bodyInWorld.inverse(); // Invert once here so we dont have to invert multiple times.
-        btVector3 worldForce = toBTvec(a_forceInWorld);
-        btVector3 worldPoint = toBTvec(a_pointInWorld);
+        btVector3 worldForce = to_btVector(a_forceInWorld);
+        btVector3 worldPoint = to_btVector(a_pointInWorld);
         btVector3 localForce = T_worldInBody.getBasis() * worldForce;
         btVector3 localPoint = T_worldInBody * worldPoint;
         btVector3 localTorque = localPoint.cross(localForce);
@@ -997,8 +945,8 @@ void afInertialObject::applyForceAtPointOnBody(const cVector3d &a_forceInWorld, 
 ///
 void afInertialObject::applyForce(const cVector3d &a_force, const cVector3d &a_offset)
 {
-    btVector3 force = afUtils::convertDataType<btVector3, cVector3d>(a_force);
-    btVector3 offset = afUtils::convertDataType<btVector3, cVector3d>(a_offset);
+    btVector3 force = to_btVector(a_force);
+    btVector3 offset = to_btVector(a_offset);
     m_bulletRigidBody->applyForce(force, offset);
 }
 
@@ -1009,7 +957,7 @@ void afInertialObject::applyForce(const cVector3d &a_force, const cVector3d &a_o
 ///
 void afInertialObject::applyTorque(const cVector3d &a_torque)
 {
-    btVector3 torque = afUtils::convertDataType<btVector3, cVector3d>(a_torque);
+    btVector3 torque = to_btVector(a_torque);
     m_bulletRigidBody->applyTorque(torque);
 }
 
@@ -1308,12 +1256,7 @@ void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt
 }
 
 
-///
-/// \brief afRigidBody::loadRigidBody
-/// \param attribs
-/// \return
-///
-bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
+bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 {
     const afRigidBodyAttributes & attribs = *a_attribs;
 
@@ -1399,7 +1342,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
                 // shape offset transfrom. This will change the legacy behavior but
                 // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
                 // shape. So they shall be updated.
-                btTransform shapeOffset = afUtils::convertDataType<btTransform, cTransform>(cTransform(pS.getPosOffset(), pS.getRotOffset()));
+                btTransform shapeOffset = to_btTransform(cTransform(pS.getPosOffset(), pS.getRotOffset()));
                 compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffset, collShape);
             }
             m_bulletCollisionShape = compoundCollisionShape;
@@ -1429,7 +1372,7 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
 
     // inertial origin in world
     cTransform T_iINw = attribs.m_location;
-    cTransform T_mINi = afUtils::convertDataType<cTransform, btTransform>(getInertialOffsetTransform());
+    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
     cTransform T_mINw = T_iINw * T_mINi;
 
     setInitialTransform(T_mINw);
@@ -1440,8 +1383,8 @@ bool afRigidBody::loadRigidBody(afRigidBodyAttributes* a_attribs)
     m_publish_children_names = attribs.m_publishChildrenNames;
     m_publish_joint_names = attribs.m_publishJointNames;
     m_publish_joint_positions = attribs.m_publishJointPositions;
-    m_min_publish_frequency = attribs.m_minPublishFreq;
-    m_max_publish_frequency = attribs.m_maxPublishFreq;
+    m_minPubFreq = attribs.m_minPublishFreq;
+    m_maxPubFreq = attribs.m_maxPublishFreq;
     m_passive = attribs.m_passive;
 
     // Where to add the visual, collision and this object?
@@ -2043,34 +1986,13 @@ afSoftBody::afSoftBody(afWorldPtr a_afWorld): afSoftMultiMesh(a_afWorld){
 }
 
 ///
-/// \brief afSoftBody::load
-/// \param file
-/// \param name
-/// \param mB
-/// \return
-///
-bool afSoftBody::loadSoftBody(string sb_config_file, string node_name, afMultiBodyPtr mB) {
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(sb_config_file);
-    }catch(exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << sb_config_file << endl;
-        return 0;
-    }
-
-    YAML::Node softBodyNode = baseNode[node_name];
-    return loadSoftBody(&softBodyNode, node_name, mB);
-}
-
-///
 /// \brief afSoftBody::loadSofyBody
 /// \param sb_config_data
 /// \param name
 /// \param mB
 /// \return
 ///
-bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afMultiBodyPtr mB) {
+bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afModelPtr mB) {
     YAML::Node& softBodyNode = *sb_node;
     if (softBodyNode.IsNull()){
         cerr << "ERROR: SOFT BODY'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -2164,7 +2086,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afMultiBody
     if (softBodyMeshPathHR.IsDefined()){
         high_res_filepath = softBodyMeshPathHR.as<string>() + m_mesh_name;
         if (high_res_filepath.is_relative()){
-            high_res_filepath =  mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+            high_res_filepath =  mB->getModelPath() + '/' + high_res_filepath.c_str();
         }
     }
     else{
@@ -2173,7 +2095,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afMultiBody
     if (softBodyMeshPathLR.IsDefined()){
         low_res_filepath = softBodyMeshPathLR.as<string>() + m_mesh_name;
         if (low_res_filepath.is_relative()){
-            low_res_filepath = mB->getMultiBodyPath() + '/' + low_res_filepath.c_str();
+            low_res_filepath = mB->getModelPath() + '/' + low_res_filepath.c_str();
         }
     }
     else{
@@ -2365,6 +2287,11 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afMultiBody
     return true;
 }
 
+bool afSoftBody::create(afSoftBodyAttributes *a_attribs)
+{
+
+}
+
 
 ///
 /// \brief afController::computeOutput
@@ -2373,6 +2300,19 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afMultiBody
 /// \param current_time
 /// \return
 ///
+bool afJointController::createFromAttribs(afJointControllerAttributes *a_attribs)
+{
+    afJointControllerAttributes& attribs = *a_attribs;
+
+    m_P = attribs.m_P;
+    m_I = attribs.m_I;
+    m_D = attribs.m_D;
+    m_maxImpulse = attribs.m_maxImpulse;
+    m_outputType = attribs.m_outputType;
+
+    return true;
+}
+
 double afJointController::computeOutput(double process_val, double set_point, double current_time){
     uint n = queue_length - 1;
     for (uint i = 0 ; i < n ; i++){
@@ -2390,7 +2330,7 @@ double afJointController::computeOutput(double process_val, double set_point, do
     de[n] = (e[n] - e[n-1]) / dt;
     ie[n] = Ie_sum + ((e[n] + e[n-1]) / 2 * dt);
     Ie_sum = ie[n];
-    output = (P * e[n]) + (I * ie[n]) + (D * de[n]);
+    output = (m_P * e[n]) + (m_I * ie[n]) + (m_D * de[n]);
     return output;
 }
 
@@ -2424,119 +2364,48 @@ afJoint::afJoint(afWorldPtr a_afWorld): afBaseObject(m_afWorld){
     m_dtArray.resize(m_jpSize);
 }
 
-///
-/// \brief afJoint::print_vec
-/// \param name
-/// \param v
-///
-void afJoint::printVec(string name, btVector3* v){
-    printf("\t -%s: \n "
-           "\t\t px = %f \n "
-           "\t\t py = %f \n "
-           "\t\t pz = %f \n",
-           name.c_str(), v->x(), v->y(), v->z());
-}
 
+bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
+{
+    afJointAttributes &attribs = *a_attribs;
 
-///
-/// \brief afJoint::load
-/// \param file
-/// \param name
-/// \param mB
-/// \param name_remapping
-/// \return
-///
-bool afJoint::loadJoint(string jnt_config_file, string node_name, afMultiBodyPtr mB, string name_remapping){
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(jnt_config_file);
-    }catch (exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO JOINT CONFIG: " << jnt_config_file << endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseJointNode = baseNode[node_name];
-    return loadJoint(&baseJointNode, node_name, mB, name_remapping);
-}
-
-///
-/// \brief afJoint::loadJoint
-/// \param node
-/// \param node_name
-/// \param mB
-/// \param name_remapping
-/// \return
-///
-bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr mB, string name_remapping){
-    YAML::Node& jointNode = *jnt_node;
-    if (jointNode.IsNull()){
-        cerr << "ERROR: JOINT'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
-        return 0;
-    }
-    // Declare all the yaml parameters that we want to look for
-    YAML::Node jointParentName = jointNode["parent"];
-    YAML::Node jointChildName = jointNode["child"];
-    YAML::Node jointName = jointNode["name"];
-    YAML::Node jointParentPivot = jointNode["parent pivot"];
-    YAML::Node jointChildPivot = jointNode["child pivot"];
-    YAML::Node jointParentAxis = jointNode["parent axis"];
-    YAML::Node jointChildAxis = jointNode["child axis"];
-    YAML::Node jointOrigin = jointNode["origin"];
-    YAML::Node jointAxis = jointNode["axis"];
-    YAML::Node jointEnableMotor = jointNode["enable motor"];
-    YAML::Node jointEnableFeedback = jointNode["enable feedback"];
-    YAML::Node jointMaxMotorImpulse = jointNode["max motor impulse"];
-    YAML::Node jointLimits = jointNode["joint limits"];
-    YAML::Node jointERP = jointNode["joint erp"];
-    YAML::Node jointCFM = jointNode["joint cfm"];
-    YAML::Node jointOffset = jointNode["offset"];
-    YAML::Node jointDamping = jointNode["damping"];
-    YAML::Node jointStiffness = jointNode["stiffness"];
-    YAML::Node jointType = jointNode["type"];
-    YAML::Node jointController = jointNode["controller"];
-    YAML::Node jointIgnoreInterCollision = jointNode["ignore inter-collision"];
-    YAML::Node jointPassive = jointNode["passive"];
-
-    if (!jointParentName.IsDefined() || !jointChildName.IsDefined()){
-        cerr << "ERROR: PARENT/CHILD FOR: " << node_name << " NOT DEFINED \n";
-        return false;
-    }
-    m_name = jointName.as<string>();
+    m_name = attribs.m_identificationAttribs.m_name;
     m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
-    m_parentName = jointParentName.as<string>();
-    m_childName = jointChildName.as<string>();
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+    m_childName = attribs.m_hierarchyAttribs.m_childName;
     // Joint Transform in Parent
     btTransform T_j_p;
     // Joint Axis
     btVector3 joint_axis(0,0,1);
-    m_enableActuator = true;
+    m_enableActuator = attribs.m_enableMotor;
     m_controller.m_maxImpulse = 10; // max rate of change of effort on Position Controllers
-    m_jointOffset = 0.0;
-    m_lowerLimit = -100;
-    m_upperLimit = 100;
+    m_offset = attribs.m_offset;
+    m_lowerLimit = attribs.m_lowerLimit;
+    m_upperLimit = attribs.m_upperLimit;
     //Default joint type is revolute if not type is specified
-    m_jointType = afJointType::REVOLUTE;
-    m_jointDamping = 0.0; // Initialize damping to 0
+    m_jointType = attribs.m_jointType;
+    m_damping = attribs.m_damping; // Initialize damping to 0
 
-    m_mB = mB;
-
-    // First we should search in the local MultiBody space and if we don't find the body.
+    // First we should search in the local Model space and if we don't find the body.
     // On then we find the world space
 
-    string qualified_name_a = mB->getNamespace() + m_parentName;
-    string qualified_name_b = mB->getNamespace() + m_childName;
+    string body1Name = m_namespace + m_parentName;
+    string body2Name = m_namespace + m_childName;
 
-    m_afParentBody = mB->getAFRigidBodyLocal(qualified_name_a, true);
-    m_afChildBody = mB->getAFRigidBodyLocal(qualified_name_b, true);
+    m_afParentBody = m_modelPtr->getAFRigidBodyLocal(body1Name, true);
+    m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
 
-    if (m_afParentBody == nullptr){
-        m_afParentBody = m_afWorld->getAFRigidBody(qualified_name_a + name_remapping, true);
+    if (m_afParentBody == nullptr || m_afChildBody == nullptr){
+        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getJointMap());
+
+        if (m_afParentBody == nullptr){
+            m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
+        }
+        if (m_afChildBody == nullptr){
+            m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
+        }
     }
-    if (m_afChildBody == nullptr){
-        m_afChildBody = m_afWorld->getAFRigidBody(qualified_name_b + name_remapping, true);
-    }
+
 
     bool _ignore_inter_collision = true;
 
@@ -2544,20 +2413,20 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
     // Defined in another ambf file. Search without name_remapping string
     if(m_afParentBody == nullptr){
         m_afParentBody = m_afWorld->getAFRigidBody(m_parentName, true);
-        // If any body is still not found, print error and ignore joint
+        // If a body is still not found, print error and ignore joint
         if (m_afParentBody == nullptr){
             cerr <<"ERROR: JOINT: \"" << m_name <<
-                        "\'s\" PARENT BODY \"" << m_parentName <<
-                        "\" NOT FOUND" << endl;
+                   "\'s\" PARENT BODY \"" << m_parentName <<
+                   "\" NOT FOUND" << endl;
             return 0;
         }
         // If the body is not world, print what we just did
         if (!(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
-            //            cerr <<"INFO: JOINT: \"" << m_name <<
-            //                        "\'s\" PARENT BODY \"" << m_parentName <<
-            //                        "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
+//            cerr <<"INFO: JOINT: \"" << m_name <<
+//                   "\'s\" PARENT BODY \"" << m_parentName <<
+//                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
         }
     }
     if(m_afChildBody == nullptr){
@@ -2579,183 +2448,24 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
         }
     }
 
-    if (jointParentPivot.IsDefined() & jointParentAxis.IsDefined() & jointChildPivot.IsDefined() & jointChildAxis.IsDefined()){
-        m_pvtA = toXYZ<btVector3>( &jointParentPivot);
-        m_axisA = toXYZ<btVector3>( &jointParentAxis);
-        m_pvtB = toXYZ<btVector3>( &jointChildPivot);
-        m_axisB = toXYZ<btVector3>( &jointChildAxis);
+    m_controller.createFromAttribs(&attribs.m_controllerAttribs);
 
-        if (m_axisA.length() < 0.9 || m_axisA.length() > 1.1 ){
-            cerr << "WARNING: Joint " << m_name << "'s parent axis is not normalized\n";
-            // If length is > 1, we can normalize it, no big deal
-            if (m_axisA.length() > 1.1){
-                m_axisA.normalize();
-            }
-            // However if the length is <0, there is something wrong, just ignore
-            else{
-                cerr << "Ignoring \n";
-                return 0;
-            }
-        }
-        if (m_axisB.length() < 0.9 || m_axisB.length() > 1.1 ){
-            cerr << "WARNING: Joint " << m_name << "'s child axis is not normalized\n";
-            // If length is > 1, we can normalize it, no big deal
-            if (m_axisB.length() > 1.1){
-                m_axisB.normalize();
-            }
-            // However if the length is <0, there is something wrong, just ignore
-            else{
-                cerr << "Ignoring \n";
-                return 0;
-            }
-        }
+    m_pvtA = to_btVector(attribs.m_parentPivot);
+    m_axisA = to_btVector(attribs.m_parentAxis);
+    m_axisA.normalize();
+    m_pvtA *= m_afParentBody->m_scale;
+    m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
+    m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
 
-        // Scale the pivot before transforming as the default scale methods don't move this pivot
-        m_pvtA *= m_afParentBody->m_scale;
-        m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
-        m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
-        m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
-        m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
-    }
-    else if(jointOrigin.IsDefined()){
-        btQuaternion quat;
-        btVector3 pos;
-        YAML::Node jointXYZ = jointOrigin["position"];
-        YAML::Node jointRPY = jointOrigin["orientation"];
-        if (jointXYZ.IsDefined()){
-            pos = toXYZ<btVector3>(&jointXYZ);
-            T_j_p.setOrigin(pos);
-        }
-        if (jointRPY.IsDefined()){
-            quat.setEulerZYX(jointRPY['y'].as<double>(),
-                    jointRPY['p'].as<double>(),
-                    jointRPY['r'].as<double>());
-            T_j_p.setRotation(quat);
-        }
+    m_pvtB = to_btVector(attribs.m_childPivot);
+    m_axisB = to_btVector(attribs.m_childAxis);
+    m_axisB.normalize();
+    m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
+    m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
 
-        if (jointAxis.IsDefined()){
-            joint_axis = toXYZ<btVector3>(&jointAxis);
-        }
-    }
-    else{
-        cerr << "ERROR: JOINT CONFIGURATION FOR: " << node_name << " NOT DEFINED \n";
-        return false;
-    }
 
-    if(jointOffset.IsDefined()){
-        m_jointOffset = jointOffset.as<double>();
-    }
-
-    if (jointDamping.IsDefined()){
-        m_jointDamping = jointDamping.as<double>();
-    }
-
-    if(jointLimits.IsDefined()){
-        if (jointLimits["low"].IsDefined())
-            m_lowerLimit = jointLimits["low"].as<double>();
-        if (jointLimits["high"].IsDefined())
-            m_upperLimit = jointLimits["high"].as<double>();
-    }
-
-    if (jointController.IsDefined()){
-        if( (jointController["P"]).IsDefined())
-            m_controller.P = jointController["P"].as<double>();
-        if( (jointController["I"]).IsDefined())
-            m_controller.I = jointController["I"].as<double>();
-        if( (jointController["D"]).IsDefined())
-            m_controller.D = jointController["D"].as<double>();
-
-        // If the PID controller in defined, the gains will be used to command the joint force (effort)
-        m_controller.m_outputType = afControlType::FORCE;
-    }
-    else{
-        // If the controller gains are not defined, a velocity based control will be used.
-        // The tracking velocity can be controller by setting "max motor impulse" field
-        // for the joint data-block in the ADF file.
-        m_controller.P = 10;
-        m_controller.I = 0;
-        m_controller.D = 0;
-        m_controller.m_outputType = afControlType::VELOCITY;
-    }
-
-    // Bullet takes the x axis as the default for prismatic joints
-    btVector3 ax_cINp;
-
-    if (jointType.IsDefined()){
-        if ((strcmp(jointType.as<string>().c_str(), "hinge") == 0)
-                || (strcmp(jointType.as<string>().c_str(), "revolute") == 0)
-                || (strcmp(jointType.as<string>().c_str(), "continuous") == 0)){
-            m_jointType = afJointType::REVOLUTE;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "slider") == 0)
-                 || (strcmp(jointType.as<string>().c_str(), "prismatic") == 0)){
-            m_jointType = afJointType::PRISMATIC;
-            // For this case constraint axis is the world x axis
-            ax_cINp.setValue(1, 0, 0);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "fixed") == 0)){
-            m_jointType = afJointType::FIXED;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "spring") == 0)){
-            m_jointType = afJointType::LINEAR_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "linear spring") == 0)){
-            m_jointType = afJointType::LINEAR_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "torsion spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "torsional spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "angular spring") == 0)){
-            m_jointType = afJointType::TORSION_SPRING;
-            // For this case constraint axis is the world z axis
-            ax_cINp.setValue(0, 0, 1);
-        }
-        else if ((strcmp(jointType.as<string>().c_str(), "p2p") == 0)){
-            m_jointType = afJointType::P2P;
-            // For this case the constraint axis doesnt matter
-            ax_cINp.setValue(0, 0, 1);
-        }
-
-    }
-
-    double _jointERP, _jointCFM;
-
-    if(jointERP.IsDefined()){
-        _jointERP = jointERP.as<double>();
-    }
-    else{
-        _jointERP = mB->m_jointERP;
-    }
-
-    if(jointCFM.IsDefined()){
-        _jointCFM = jointCFM.as<double>();
-    }
-    else{
-        _jointCFM = mB->m_jointCFM;
-    }
-
-    if (jointIgnoreInterCollision.IsDefined()){
-        _ignore_inter_collision = jointIgnoreInterCollision.as<bool>();
-    }
-
-    if (jointPassive.IsDefined()){
-        m_passive = jointPassive.as<bool>();
-    }
+    m_passive = attribs.m_communicationAttribs.m_passive;
+    m_enableFeedback = attribs.m_enableFeedback;
 
     // Compute frameA and frameB from constraint axis data. This step is common
     // for all joints, the only thing that changes in the constraint axis which can be
@@ -2765,93 +2475,64 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
     frameA.setIdentity();
     frameB.setIdentity();
 
+    // Bullet takes the x axis as the default for prismatic joints
+    btVector3 ax_jINp = getDefaultJointAxisInParent(m_jointType);
     // Rotation of constraint in parent axis as quaternion
-    btQuaternion Q_conINp;
-    Q_conINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_cINp, m_axisA);
-    frameA.setRotation(Q_conINp);
+    btQuaternion quat_jINp;
+    quat_jINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_jINp, m_axisA);
+    frameA.setRotation(quat_jINp);
     frameA.setOrigin(m_pvtA);
 
     // Rotation of child axis in parent axis as Quaternion
-    btQuaternion Q_cINp;
-    Q_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
+    btQuaternion quat_cINp;
+    quat_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
 
     // Offset rotation along the parent axis
-    btQuaternion Q_offINp;
-    Q_offINp.setRotation(m_axisA, m_jointOffset);
+    btQuaternion quat_offINp;
+    quat_offINp.setRotation(m_axisA, m_offset);
     // We need to post-multiply frameA's rot to cancel out the shift in axis, then
     // the offset along joint axis and finally frameB's axis alignment in frameA.
-    frameB.setRotation( Q_cINp.inverse() * Q_offINp.inverse() * Q_conINp);
+    frameB.setRotation( quat_cINp.inverse() * quat_offINp.inverse() * quat_jINp);
     frameB.setOrigin(m_pvtB);
 
-    // If the joint is revolute, hinge or continous
-    if (m_jointType == afJointType::REVOLUTE){
-#ifdef USE_PIVOT_AXIS_METHOD
-        m_btConstraint = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
-#else
+    switch (m_jointType) {
+    case afJointType::REVOLUTE:{
         m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-        m_hinge->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_hinge->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-#endif
-        // Don't enable motor yet, only enable when set position is called
-        // this keeps the joint behave freely when it's launched
-        if(jointMaxMotorImpulse.IsDefined()){
-            double max_impulse = jointMaxMotorImpulse.as<double>();
-            m_hinge->enableAngularMotor(false, 0.0, max_impulse);
-        }
-        else{
-            m_hinge->enableAngularMotor(false, 0.0, 0.1);
-        }
+        m_hinge->setParam(BT_CONSTRAINT_ERP, attribs.m_erp);
+        m_hinge->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
+        m_hinge->enableAngularMotor(false, 0.0, attribs.m_maxMotorImpulse);
 
-        if(jointLimits.IsDefined()){
+        if(attribs.m_enableLimits){
             m_hinge->setLimit(m_lowerLimit, m_upperLimit);
         }
-
         m_btConstraint = m_hinge;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-    // If the joint is slider, prismatic or linear
-    else if (m_jointType == afJointType::PRISMATIC){
+        break;
+    case afJointType::PRISMATIC:{
         m_slider = new btSliderConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-        m_slider->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_slider->setParam(BT_CONSTRAINT_CFM, _jointCFM);
+        m_slider->setParam(BT_CONSTRAINT_ERP, attribs.m_erp);
+        m_slider->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
 
-        if (jointEnableMotor.IsDefined()){
-            m_enableActuator = jointEnableMotor.as<int>();
-            // Don't enable motor yet, only enable when set position is called
-            if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
-            }
-        }
-
-        if(jointLimits.IsDefined()){
+        if(attribs.m_enableLimits){
             m_slider->setLowerLinLimit(m_lowerLimit);
             m_slider->setUpperLinLimit(m_upperLimit);
         }
-
-        if(jointMaxMotorImpulse.IsDefined()){
-            m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
-            // Ugly hack, divide by (default) fixed timestep to max linear motor force
-            // since m_slider does have a max impulse setting method.
-            m_slider->setMaxLinMotorForce(m_controller.m_maxImpulse / 0.001);
-        }
-        else{
-            // Default to 1000.0
-            m_slider->setMaxLinMotorForce(1000);
-            m_slider->setPoweredLinMotor(false);
-        }
-
+        // Ugly hack, divide by (default) fixed timestep to max linear motor force
+        // since m_slider does have a max impulse setting method.
+        m_slider->setMaxLinMotorForce(attribs.m_maxMotorImpulse / 0.001);
+        m_slider->setPoweredLinMotor(false);
         m_btConstraint = m_slider;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-
-    // If the joint is a spring
-    else if (m_jointType == afJointType::LINEAR_SPRING || m_jointType == afJointType::TORSION_SPRING){
+        break;
+    case afJointType::FIXED:{
+        m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
+    }
+        break;
+    case afJointType::LINEAR_SPRING:
+    case afJointType::TORSION_SPRING:{
         m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
 
-        // Initialize all the 6 axes to 0 stiffness and damping
-        // and limits also set to 0-0
+        // Initialize all the 6 axes to 0 stiffness and damping and limits also set to 0-0
         for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
             m_spring->setLimit(axIdx, 0.0, 0.0);
             m_spring->setStiffness(axIdx, 0.0);
@@ -2859,111 +2540,84 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, string node_name, afMultiBodyPtr m
             m_spring->enableSpring(axIdx, false);
         }
 
-        // We treat springs along the z axes of constraint, thus chosed
-        // the appropriate axis number based on if the spring is linear
-        // or torsional [0-2] -> linear, [3-5] -> rotational
-        int _axisNumber = -1;
+        // We treat springs along the z axes of constraint, thus chosed the appropriate axis
+        // number based on if the spring is linear or torsional [0-2] -> linear, [3-5] -> rotational
+        int axisIdx = -1;
 
         if (m_jointType == afJointType::LINEAR_SPRING){
-            _axisNumber = 2;
+            axisIdx = 2;
         }
         else if (m_jointType == afJointType::TORSION_SPRING){
-            _axisNumber = 5;
+            axisIdx = 5;
         }
 
-        double _low, _high;
-        if (jointLimits.IsDefined()){
-
-            _high =  jointLimits["high"].as<double>();
-            _low = jointLimits["low"].as<double>();
-
+        if (attribs.m_enableLimits){
             // Somehow bullets springs limits for rotational joints are inverted.
             // So handle them internally rather than breaking AMBF description specificaiton
             if (m_jointType == afJointType::TORSION_SPRING){
-                double _temp = _low;
-                _low = - _high;
-                _high = - _temp;
-
+                m_spring->setLimit(axisIdx, -m_upperLimit, -m_lowerLimit);
+                m_spring->setEquilibriumPoint(-attribs.m_equilibriumPoint);
+            }
+            else{
+                m_spring->setLimit(axisIdx, m_lowerLimit, m_upperLimit);
+                m_spring->setEquilibriumPoint(attribs.m_equilibriumPoint);
             }
 
-            btVector3 _limLow, _limHigh;
-            _limLow.setValue(0, 0, 0);
-            _limHigh.setValue(0, 0, 0);
-            _limLow.setZ(_low);
-            _limHigh.setZ(_low);
-
-            m_spring->setLimit(_axisNumber, _low, _high);
-            m_spring->enableSpring(_axisNumber, true);
+            m_spring->enableSpring(axisIdx, true);
         }
 
-        if (jointNode["equiblirium point"].IsDefined()){
-            double _equiblirium = jointNode["equiblirium point"].as<double>();
-            // The equiblirium offset if also inverted for torsional springs
-            // Fix it internally rather than breaking AMBF description specificaiton
-            if (m_jointType == afJointType::TORSION_SPRING){
-                _equiblirium = - _equiblirium;
-            }
-            m_spring->setEquilibriumPoint(_axisNumber, _equiblirium);
-        }
-        else{
-            m_spring->setEquilibriumPoint(_axisNumber, _low + ((_high - _low) / 2));
-        }
-
-        // Calculcated a stiffness value based on the masses of connected bodies.
-        double _stiffness = 10 * m_afParentBody->getMass() + m_afChildBody->getMass();
-        // If stiffness defined, override the above value
-        if (jointStiffness.IsDefined()){
-            _stiffness = jointStiffness.as<double>();
-        }
-        m_spring->setStiffness(_axisNumber, _stiffness);
-
-        m_spring->setDamping(_axisNumber, m_jointDamping);
-
-        m_spring->setParam(BT_CONSTRAINT_STOP_ERP, _jointERP, _axisNumber);
-        m_spring->setParam(BT_CONSTRAINT_CFM, _jointCFM, _axisNumber);
-
+        m_spring->setStiffness(axisIdx, attribs.m_stiffness);
+        m_spring->setDamping(axisIdx, m_damping);
+        m_spring->setParam(BT_CONSTRAINT_STOP_ERP, attribs.m_erp, axisIdx);
+        m_spring->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm, axisIdx);
         m_btConstraint = m_spring;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
     }
-    else if (m_jointType == afJointType::P2P){
+        break;
+    case afJointType::P2P:{
         // p2p joint doesnt concern itself with rotations, its set using just the pivot information
         m_p2p = new btPoint2PointConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB);
-        m_p2p->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        m_p2p->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-
-        if (jointEnableMotor.IsDefined()){
-            m_enableActuator = jointEnableMotor.as<int>();
-            // Don't enable motor yet, only enable when set position is called
-            if(jointMaxMotorImpulse.IsDefined()){
-                m_controller.m_maxImpulse = jointMaxMotorImpulse.as<double>();
-            }
-        }
-
+        m_p2p->setParam(BT_CONSTRAINT_ERP, attribs.m_erp);
+        m_p2p->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
         m_btConstraint = m_p2p;
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
+
     }
-    else if (m_jointType == afJointType::FIXED){
-        m_btConstraint = new btFixedConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
-        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_ERP, _jointERP);
-        //        ((btFixedConstraint *) m_btConstraint)->setParam(BT_CONSTRAINT_CFM, _jointCFM);
-        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, _ignore_inter_collision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
+        break;
+    default:
+        break;
     }
 
-    if (jointEnableFeedback.IsDefined()){
-        if (m_btConstraint != nullptr){
-            m_feedbackEnabled = jointEnableFeedback.as<bool>();
-            if (m_feedbackEnabled){
-                m_btConstraint->enableFeedback(m_feedbackEnabled);
-                m_feedback = new btJointFeedback();
-                m_btConstraint->setJointFeedback(m_feedback);
-            }
+    if (m_btConstraint != nullptr){
+        m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, attribs.m_ignoreInterCollision);
+        m_afParentBody->addChildJointPair(m_afChildBody, this);
+
+        if (m_enableFeedback){
+            m_btConstraint->enableFeedback(m_enableFeedback);
+            m_feedback = new btJointFeedback();
+            m_btConstraint->setJointFeedback(m_feedback);
         }
     }
+
     return true;
+}
+
+btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
+{
+    btVector3 jINp;
+    switch (a_type) {
+    case afJointType::REVOLUTE:
+    case afJointType::FIXED:
+    case afJointType::LINEAR_SPRING:
+    case afJointType::TORSION_SPRING:
+    case afJointType::P2P:
+        jINp.setValue(0, 0, 1);
+        break;
+    case afJointType::PRISMATIC:
+        jINp.setValue(1, 0, 0);
+        break;
+    default:
+        break;
+    }
+    return jINp;
 }
 
 
@@ -2985,7 +2639,7 @@ void afJoint::applyDamping(const double &dt){
     }
     m_posArray[m_jpSize-1] = getPosition();
     m_dtArray[m_jpSize-1] = dt;
-    double effort = - m_jointDamping * getVelocity();
+    double effort = - m_damping * getVelocity();
     // Since we are applying damping internally, don't override the motor
     // enable/disable as an external controller may be using the motor.
     commandEffort(effort, true);
@@ -3163,34 +2817,12 @@ afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 
 ///
 /// \brief afProximitySensor::loadSensor
-/// \param sensor_config_file
-/// \param node_name
-/// \param name_remapping_idx
-/// \return
-///
-bool afRayTracerSensor::loadSensor(string sensor_config_file, string node_name, afMultiBodyPtr mB, string name_remapping){
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(sensor_config_file);
-    }catch (exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO SENSOR CONFIG: " << sensor_config_file << endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
-
-    YAML::Node baseSensorNode = baseNode[node_name];
-    return loadSensor(&baseSensorNode, node_name, mB, name_remapping);
-}
-
-///
-/// \brief afProximitySensor::loadSensor
 /// \param sensor_node
 /// \param node_name
 /// \param name_remapping_idx
 /// \return
 ///
-bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, afMultiBodyPtr mB, string name_remapping){
+bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, afModelPtr mB, string name_remapping){
     YAML::Node& sensorNode = *sensor_node;
     if (sensorNode.IsNull()){
         cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -3253,8 +2885,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, af
     }
 
     if (sensorPublishFrequency.IsDefined()){
-        m_min_publish_frequency = sensorPublishFrequency["low"].as<int>();
-        m_max_publish_frequency = sensorPublishFrequency["high"].as<int>();
+        m_minPubFreq = sensorPublishFrequency["low"].as<int>();
+        m_maxPubFreq = sensorPublishFrequency["high"].as<int>();
     }
 
     if (sensorVisible.IsDefined()){
@@ -3414,6 +3046,11 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, af
     return result;
 }
 
+bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs)
+{
+
+}
+
 
 ///
 /// \brief afRayTracerSensor::updatePositionFromDynamics
@@ -3426,20 +3063,20 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld = toBTvec(T_bInw *  m_raysAttribs[i].m_rayFromLocal);
-        rayToWorld = toBTvec(T_bInw *  m_raysAttribs[i].m_rayToLocal);
+        rayFromWorld = to_btVector(T_bInw *  m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld = to_btVector(T_bInw *  m_raysAttribs[i].m_rayToLocal);
 
         // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
-            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(toCvec(rayFromWorld) );
-            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(toCvec(rayToWorld) );
+            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld) );
+            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld) );
         }
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
         if (rayCallBack.hasHit()){
             if (m_showSensor){
-                m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(toCvec(rayCallBack.m_hitPointWorld));
+                m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(to_cVector3d(rayCallBack.m_hitPointWorld));
                 m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(true);
             }
             m_rayTracerResults[i].m_triggered = true;
@@ -3500,8 +3137,8 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                 }
             }
             m_rayTracerResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
-            m_rayTracerResults[i].m_contactNormal = toCvec(rayCallBack.m_hitNormalWorld);
-            m_rayTracerResults[i].m_sensedLocationWorld = toCvec(rayCallBack.m_hitPointWorld);
+            m_rayTracerResults[i].m_contactNormal = to_cVector3d(rayCallBack.m_hitNormalWorld);
+            m_rayTracerResults[i].m_sensedLocationWorld = to_cVector3d(rayCallBack.m_hitPointWorld);
         }
         else{
             if(m_showSensor){
@@ -3672,7 +3309,7 @@ afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_
 /// \param name_remapping_idx
 /// \return
 ///
-bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, string node_name, afMultiBodyPtr mB, string name_remapping_idx){
+bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, string node_name, afModelPtr mB, string name_remapping_idx){
     bool result = false;
     result = afRayTracerSensor::loadSensor(sensor_node, node_name, mB, name_remapping_idx);
 
@@ -3728,6 +3365,11 @@ bool afResistanceSensor::loadSensor(YAML::Node *sensor_node, string node_name, a
     return result;
 }
 
+bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attribs)
+{
+
+}
+
 
 ///
 /// \brief afResistanceSensor::updatePositionFromDynamics
@@ -3763,11 +3405,11 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 // Subscript (w) represents world
                 btTransform T_aINw = getParentBody()->m_bulletRigidBody->getWorldTransform();
                 btTransform T_wINa = T_aINw.inverse(); // Invert once to save computation later
-                btVector3 P_cINw = toBTvec(getSensedPoint(i));
+                btVector3 P_cINw = to_btVector(getSensedPoint(i));
                 btVector3 P_cINa = T_wINa * P_cINw;
                 btVector3 vel_aINw = getParentBody()->m_bulletRigidBody->getLinearVelocity();
                 btVector3 omega_aINw = getParentBody()->m_bulletRigidBody->getAngularVelocity();
-                btVector3 N_a = toBTvec(m_raysAttribs[i].m_direction);
+                btVector3 N_a = to_btVector(m_raysAttribs[i].m_direction);
                 btVector3 N_aINw = T_aINw.getBasis() * N_a;
 
                 btTransform T_bINw = getSensedBTRigidBody(i)->getWorldTransform();
@@ -3775,7 +3417,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 btVector3 P_cINb = T_wINb * P_cINw;
                 btVector3 vel_bINw = getSensedBTRigidBody(i)->getLinearVelocity();
                 btVector3 omega_bINw = getSensedBTRigidBody(i)->getAngularVelocity();
-                btVector3 N_bINw = toBTvec(m_rayTracerResults[i].m_contactNormal);
+                btVector3 N_bINw = to_btVector(m_rayTracerResults[i].m_contactNormal);
                 btVector3 N_b = T_wINb.getBasis() * N_bINw;
 
                 double depthFractionLast = m_rayTracerResults[i].m_depthFraction;
@@ -3784,7 +3426,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_rayTracerResults[i].m_depthFraction <<
                                  ". It should be between [0-1]" << endl;
                     cerr << "Ray Start: "<< m_raysAttribs[i].m_rayFromLocal <<"\nRay End: " << m_raysAttribs[i].m_rayToLocal <<
-                                 "\nSensed Point: " << toCvec(P_cINa) << endl;
+                                 "\nSensed Point: " << to_cVector3d(P_cINa) << endl;
                     cerr << "----------\n";
                     m_rayTracerResults[i].m_depthFraction = 0;
                 }
@@ -3800,8 +3442,8 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 }
 
                 if(m_rayContactResults[i].m_contactPointsValid){
-                    btVector3 P_aINw = T_aINw * toBTvec(m_rayContactResults[i].m_bodyAContactPointLocal);
-                    btVector3 P_bINw = T_bINw * toBTvec(m_rayContactResults[i].m_bodyBContactPointLocal);
+                    btVector3 P_aINw = T_aINw * to_btVector(m_rayContactResults[i].m_bodyAContactPointLocal);
+                    btVector3 P_bINw = T_bINw * to_btVector(m_rayContactResults[i].m_bodyBContactPointLocal);
                     btVector3 error;
                     error = P_aINw - P_bINw;
                     btVector3 orthogonalError = N_aINw.cross(error);
@@ -3815,9 +3457,9 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     }
 
                     btVector3 tangentialError = errorMag * errorDir;
-                    btVector3 tangentialErrorLast = toBTvec(m_rayContactResults[i].m_tangentialErrorLast);
+                    btVector3 tangentialErrorLast = to_btVector(m_rayContactResults[i].m_tangentialErrorLast);
                     m_rayContactResults[i].m_tangentialErrorLast = m_rayContactResults[i].m_tangentialError;
-                    m_rayContactResults[i].m_tangentialError = toCvec(tangentialError);
+                    m_rayContactResults[i].m_tangentialError = to_cVector3d(tangentialError);
 
                     if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
                         F_s_w = m_staticContactFriction * coeffScale * tangentialError +
@@ -3833,8 +3475,8 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     //                cerr << "------------\n";
                 }
                 else{
-                    m_rayContactResults[i].m_bodyAContactPointLocal = toCvec(T_wINa * toBTvec(getSensedPoint(i)));
-                    m_rayContactResults[i].m_bodyBContactPointLocal = toCvec(T_wINb * toBTvec(getSensedPoint(i)));
+                    m_rayContactResults[i].m_bodyAContactPointLocal = to_cVector3d(T_wINa * to_btVector(getSensedPoint(i)));
+                    m_rayContactResults[i].m_bodyBContactPointLocal = to_cVector3d(T_wINb * to_btVector(getSensedPoint(i)));
                     m_rayContactResults[i].m_contactPointsValid = true;
                 }
 
@@ -4145,7 +3787,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
         rB->clearForces();
         rB->setLinearVelocity(zero);
         rB->setAngularVelocity(zero);
-        btTransform bt_T = afUtils::convertDataType<btTransform, cTransform>(afRB->getInitialTransform());
+        btTransform bt_T = to_btTransform(afRB->getInitialTransform());
         rB->getMotionState()->setWorldTransform(bt_T);
         rB->setWorldTransform(bt_T);
     }
@@ -4645,7 +4287,7 @@ bool afWorld::loadWorld(string a_world_config, bool showGUI){
         if (p.is_relative()){
             p = m_world_config_path / p;
         }
-        env_defined = loadMultiBody(p.string(), false);
+        env_defined = loadModel(p.string(), false);
     }
 
     if (!env_defined){
@@ -4777,6 +4419,11 @@ bool afWorld::loadWorld(string a_world_config, bool showGUI){
     }
 
     return true;
+
+}
+
+bool afWorld::create(afWorldAttributes *a_attribs)
+{
 
 }
 
@@ -4992,7 +4639,7 @@ void afWorld::enableShaderProgram(){
 ///
 void afWorld::loadAllMultiBodies(bool enable_comm){
     for (uint i = 0 ; i < getNumMBFilepaths(); i++){
-        loadMultiBody(i, enable_comm);
+        loadModel(i, enable_comm);
     }
 }
 
@@ -5003,30 +4650,30 @@ void afWorld::loadAllMultiBodies(bool enable_comm){
 /// \param enable_comm
 /// \return
 ///
-bool afWorld::loadMultiBody(uint i, bool enable_comm){
+bool afWorld::loadModel(uint i, bool enable_comm){
     if (i >= getNumMBFilepaths()){
         cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
                      getNumMBFilepaths() - 1 << " INDEXED MULTI-BODIES DEFINED" << endl;
         return 0;
     }
 
-    string adf_filepath = getMultiBodyFilepath(i);
-    loadMultiBody(adf_filepath, enable_comm);
+    string adf_filepath = getModelFilepath(i);
+    loadModel(adf_filepath, enable_comm);
     return true;
 }
 
 
 ///
 /// \brief afWorld::loadADF
-/// \param a_multibody_config_file
+/// \param a_model_config_file
 /// \return
 ///
-bool afWorld::loadMultiBody(string a_adf_filepath, bool enable_comm){
-    afMultiBodyPtr mB(new afMultiBody(this));
-    bool success = mB->loadMultiBody(a_adf_filepath, enable_comm);
+bool afWorld::loadModel(string a_adf_filepath, bool enable_comm){
+    afModelPtr mB(new afModel(this));
+    bool success = mB->loadModel(a_adf_filepath, enable_comm);
     if (success){
         boost::filesystem::path p(a_adf_filepath);
-        addAFMultiBody(mB, p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), &m_afMultiBodyMap));
+        addAFModel(mB, p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), &m_afModelMap));
         buildCollisionGroups();
     }
     return success;
@@ -5104,13 +4751,13 @@ bool afWorld::addAFSensor(afSensorPtr a_sensor, string a_name){
 }
 
 ///
-/// \brief afWorld::addAFMultiBody
-/// \param a_multiBody
+/// \brief afWorld::addAFModel
+/// \param a_model
 /// \param a_name
 /// \return
 ///
-bool afWorld::addAFMultiBody(afMultiBodyPtr a_multiBody, string a_name){
-    return addObject<afMultiBodyPtr, afMultiBodyMap>(a_multiBody, a_name, &m_afMultiBodyMap);
+bool afWorld::addAFModel(afModelPtr a_model, string a_name){
+    return addObject<afModelPtr, afModelMap>(a_model, a_name, &m_afModelMap);
 }
 
 
@@ -5216,8 +4863,8 @@ afSensorVec afWorld::getAFSensors(){
 /// \brief afWorld::getAFMultiBodies
 /// \return
 ///
-afMultiBodyVec afWorld::getAFMultiBodies(){
-    return getObjects<afMultiBodyVec, afMultiBodyMap>(&m_afMultiBodyMap);
+afModelVec afWorld::getAFMultiBodies(){
+    return getObjects<afModelVec, afModelMap>(&m_afModelMap);
 }
 
 
@@ -5243,13 +4890,13 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
     if (m_dynamicsWorld == nullptr)
         return false;
 
-    btCollisionWorld::ClosestRayResultCallback rayCallback(toBTvec(rayFromWorld), toBTvec(rayToWorld));
+    btCollisionWorld::ClosestRayResultCallback rayCallback(to_btVector(rayFromWorld), to_btVector(rayToWorld));
 
     rayCallback.m_flags |= btTriangleRaycastCallback::kF_UseGjkConvexCastRaytest;
-    m_dynamicsWorld->rayTest(toBTvec(rayFromWorld), toBTvec(rayToWorld), rayCallback);
+    m_dynamicsWorld->rayTest(to_btVector(rayFromWorld), to_btVector(rayToWorld), rayCallback);
     if (rayCallback.hasHit())
     {
-        cVector3d pickPos = toCvec(rayCallback.m_hitPointWorld);
+        cVector3d pickPos = to_cVector3d(rayCallback.m_hitPointWorld);
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
         const btCollisionObject* colObject = rayCallback.m_collisionObject;
@@ -5270,7 +4917,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 if (!(body->isStaticObject() || body->isKinematicObject()))
                 {
                     //printf("pickPos=%f,%f,%f\n",pickPos.getX(),pickPos.getY(),pickPos.getZ());
-                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * toBTvec(pickPos);
+                    btVector3 localPivot = body->getCenterOfMassTransform().inverse() * to_btVector(pickPos);
                     btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body, localPivot);
                     m_dynamicsWorld->addConstraint(p2p, true);
                     m_pickedConstraint = p2p;
@@ -5280,7 +4927,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                     p2p->m_setting.m_tau = 1/body->getInvMass();
                 }
                 else{
-                    m_pickedOffset = toCvec(body->getCenterOfMassPosition()) - pickPos;
+                    m_pickedOffset = to_cVector3d(body->getCenterOfMassPosition()) - pickPos;
                 }
             }
         }
@@ -5309,7 +4956,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 m_pickedNode->m_v.setZero();
                 m_pickedSoftBody = sBody;
                 m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal = toCvec(_hitPoint);
+                m_pickedNodeGoal = to_cVector3d(_hitPoint);
             }
         }
 
@@ -5325,7 +4972,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
 // The following function has been copied from btRidigBodyBase by Erwin Coumans
 // with slight modification
 ///
-/// \brief afMultiBody::movePickedBody
+/// \brief afModel::movePickedBody
 /// \param rayFromWorld
 /// \param rayToWorld
 /// \return
@@ -5348,14 +4995,14 @@ bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &ray
             btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
             if (pickCon)
             {
-                pickCon->setPivotB(toBTvec(newLocation));
+                pickCon->setPivotB(to_btVector(newLocation));
                 return true;
             }
         }
         else{
             // In this case the rigidBody is a static or kinematic body
             btTransform curTrans = m_pickedBulletRigidBody->getWorldTransform();
-            curTrans.setOrigin(toBTvec(newLocation + m_pickedOffset));
+            curTrans.setOrigin(to_btVector(newLocation + m_pickedOffset));
             m_pickedBulletRigidBody->getMotionState()->setWorldTransform(curTrans);
             m_pickedBulletRigidBody->setWorldTransform(curTrans);
             return true;
@@ -5383,7 +5030,7 @@ bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &ray
 // The following function has been copied from btRidigBodyBase by Erwin Coumans
 // with slight modification
 ///
-/// \brief afMultiBody::removePickingConstraint
+/// \brief afModel::removePickingConstraint
 ///
 void afWorld::removePickingConstraint(){
     btDynamicsWorld* m_dynamicsWorld = m_bulletWorld;
@@ -6013,6 +5660,11 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWor
     }
 
     return is_valid;
+}
+
+bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
+{
+
 }
 
 
@@ -6730,6 +6382,11 @@ bool afLight::loadLight(YAML::Node* a_light_node, string a_light_name, afWorldPt
     return _is_valid;
 }
 
+bool afLight::createFromAttribs(afLightAttributes *a_attribs)
+{
+
+}
+
 
 
 ///
@@ -6894,7 +6551,7 @@ void afLight::updatePositionFromDynamics()
 }
 
 
-afMultiBody::afMultiBody(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+afModel::afModel(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_afWorld = a_afWorld;
 
     //    m_pickDragVector = new cMesh();
@@ -6911,11 +6568,11 @@ afMultiBody::afMultiBody(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
 /// and https://stackoverflow.com/questions/11151548/get-the-number-of-digits-in-an-int/11151594
 ///
 ///
-/// \brief afMultiBody::remapName
+/// \brief afmodel::remapName
 /// \param name
 /// \param remap_idx_str
 ///
-void afMultiBody::remapName(string &name, string remap_idx_str){
+void afModel::remapName(string &name, string remap_idx_str){
     if (remap_idx_str.length() == 0){
         return;
     }
@@ -6936,15 +6593,15 @@ void afMultiBody::remapName(string &name, string remap_idx_str){
 
 
 ///
-/// \brief afMultiBody::loadMultiBody
-/// \param a_multibody_config_file
+/// \brief afModel::loadModel
+/// \param a_model_config_file
 /// \param enable_comm
 /// \return
 ///
-bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
-    YAML::Node multiBodyNode;
+bool afModel::loadModel(string a_adf_filepath, bool enable_comm){
+    YAML::Node modelNode;
     try{
-        multiBodyNode = YAML::LoadFile(a_adf_filepath);
+        modelNode = YAML::LoadFile(a_adf_filepath);
     }catch (exception &e){
         cerr << "[Exception]: " << e.what() << endl;
         cerr << "ERROR! FAILED TO LOAD ADF FILE: " << a_adf_filepath << endl;
@@ -6952,29 +6609,29 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
     }
 
     // Declare all the yaml parameters that we want to look for
-    YAML::Node multiBodyMeshPathHR = multiBodyNode["high resolution path"];
-    YAML::Node multiBodyMeshPathLR = multiBodyNode["low resolution path"];
-    YAML::Node multiBodyNameSpace = multiBodyNode["namespace"];
-    YAML::Node multiBodyRidigBodies = multiBodyNode["bodies"];
-    YAML::Node multiBodySoftBodies = multiBodyNode["soft bodies"];
-    YAML::Node multiBodyVehicles = multiBodyNode["vehicles"];
-    YAML::Node multiBodyJoints = multiBodyNode["joints"];
-    YAML::Node multiBodySensors = multiBodyNode["sensors"];
-    YAML::Node multiBodyActuators = multiBodyNode["actuators"];
-    YAML::Node multiBodyJointERP = multiBodyNode["joint erp"];
-    YAML::Node multiBodyJointCFM = multiBodyNode["joint cfm"];
-    YAML::Node multiBodyIgnoreInterCollision = multiBodyNode["ignore inter-collision"];
+    YAML::Node modelMeshPathHR = modelNode["high resolution path"];
+    YAML::Node modelMeshPathLR = modelNode["low resolution path"];
+    YAML::Node modelNameSpace = modelNode["namespace"];
+    YAML::Node modelRidigBodies = modelNode["bodies"];
+    YAML::Node modelSoftBodies = modelNode["soft bodies"];
+    YAML::Node modelVehicles = modelNode["vehicles"];
+    YAML::Node modelJoints = modelNode["joints"];
+    YAML::Node modelSensors = modelNode["sensors"];
+    YAML::Node modelActuators = modelNode["actuators"];
+    YAML::Node modelJointERP = modelNode["joint erp"];
+    YAML::Node modelJointCFM = modelNode["joint cfm"];
+    YAML::Node modelIgnoreInterCollision = modelNode["ignore inter-collision"];
 
     boost::filesystem::path mb_cfg_dir = boost::filesystem::path(a_adf_filepath).parent_path();
-    m_multibody_path = mb_cfg_dir.c_str();
+    m_model_path = mb_cfg_dir.c_str();
 
     /// Loading Rigid Bodies
     afRigidBodyPtr rBodyPtr;
     boost::filesystem::path high_res_filepath;
     boost::filesystem::path low_res_filepath;
-    if(multiBodyMeshPathHR.IsDefined() && multiBodyMeshPathLR.IsDefined()){
-        high_res_filepath = multiBodyMeshPathHR.as<string>();
-        low_res_filepath = multiBodyMeshPathLR.as<string>();
+    if(modelMeshPathHR.IsDefined() && modelMeshPathLR.IsDefined()){
+        high_res_filepath = modelMeshPathHR.as<string>();
+        low_res_filepath = modelMeshPathLR.as<string>();
 
         if (high_res_filepath.is_relative()){
             high_res_filepath = mb_cfg_dir / high_res_filepath;
@@ -6982,23 +6639,23 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
         if (low_res_filepath.is_relative()){
             low_res_filepath = mb_cfg_dir / low_res_filepath;
         }
-        m_multibody_high_res_meshes_path = high_res_filepath.c_str();
-        m_multibody_low_res_meshes_path = low_res_filepath.c_str();
+        m_model_high_res_meshes_path = high_res_filepath.c_str();
+        m_model_low_res_meshes_path = low_res_filepath.c_str();
     }
     else{
-        m_multibody_high_res_meshes_path = "../resources/models/puzzle/high_res/";
-        m_multibody_low_res_meshes_path = "../resources/models/puzzle/low_res/";
+        m_model_high_res_meshes_path = "../resources/models/puzzle/high_res/";
+        m_model_low_res_meshes_path = "../resources/models/puzzle/low_res/";
     }
-    if (multiBodyNameSpace.IsDefined()){
-        m_namespace = afUtils::removeAdjacentBackSlashes(multiBodyNameSpace.as<string>());
+    if (modelNameSpace.IsDefined()){
+        m_namespace = afUtils::removeAdjacentBackSlashes(modelNameSpace.as<string>());
     }
     m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
 
-    size_t totalRigidBodies = multiBodyRidigBodies.size();
+    size_t totalRigidBodies = modelRidigBodies.size();
     for (size_t i = 0; i < totalRigidBodies; ++i) {
         rBodyPtr = new afRigidBody(m_afWorld);
-        string rb_name = multiBodyRidigBodies[i].as<string>();
-        YAML::Node rb_node = multiBodyNode[rb_name];
+        string rb_name = modelRidigBodies[i].as<string>();
+        YAML::Node rb_node = modelNode[rb_name];
         if (rBodyPtr->loadRigidBody(&rb_node, rb_name, this)){
             string remap_str = afUtils::getNonCollidingIdx(rBodyPtr->getNamespace() + rb_name, m_afWorld->getAFRigidBodyMap());
             m_afWorld->addAFRigidBody(rBodyPtr, rBodyPtr->getNamespace() + rb_name + remap_str);
@@ -7027,11 +6684,11 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
 
     /// Loading Soft Bodies
     afSoftBodyPtr sBodyPtr;
-    size_t totalSoftBodies = multiBodySoftBodies.size();
+    size_t totalSoftBodies = modelSoftBodies.size();
     for (size_t i = 0; i < totalSoftBodies; ++i) {
         sBodyPtr = new afSoftBody(m_afWorld);
-        string sb_name = multiBodySoftBodies[i].as<string>();
-        YAML::Node sb_node = multiBodyNode[sb_name];
+        string sb_name = modelSoftBodies[i].as<string>();
+        YAML::Node sb_node = modelNode[sb_name];
         if (sBodyPtr->loadSoftBody(&sb_node, sb_name, this)){
             string remap_str = afUtils::getNonCollidingIdx(sBodyPtr->getNamespace() + sb_name, m_afWorld->getAFSoftBodyMap());
             m_afWorld->addAFSoftBody(sBodyPtr, sBodyPtr->getNamespace() + sb_name + remap_str);
@@ -7041,11 +6698,11 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
 
     /// Loading Sensors
     afSensorPtr sensorPtr = nullptr;
-    size_t totalSensors = multiBodySensors.size();
+    size_t totalSensors = modelSensors.size();
     for (size_t i = 0; i < totalSensors; ++i) {
-        string sensor_name = multiBodySensors[i].as<string>();
+        string sensor_name = modelSensors[i].as<string>();
         string remap_str = afUtils::getNonCollidingIdx(m_namespace + sensor_name, m_afWorld->getAFSensorMap());
-        YAML::Node sensor_node = multiBodyNode[sensor_name];
+        YAML::Node sensor_node = modelNode[sensor_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (sensor_node["type"].IsDefined()){
             string sensor_type = sensor_node["type"].as<string>();
@@ -7084,11 +6741,11 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
 
     /// Loading Sensors
     afActuatorPtr actuatorPtr = nullptr;
-    size_t totalActuators = multiBodyActuators.size();
+    size_t totalActuators = modelActuators.size();
     for (size_t i = 0; i < totalActuators; ++i) {
-        string actuator_name = multiBodyActuators[i].as<string>();
+        string actuator_name = modelActuators[i].as<string>();
         string remap_str = afUtils::getNonCollidingIdx(m_namespace + actuator_name, m_afWorld->getAFActuatorMap());
-        YAML::Node actuator_node = multiBodyNode[actuator_name];
+        YAML::Node actuator_node = modelNode[actuator_name];
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (actuator_node["type"].IsDefined()){
             string actuator_type = actuator_node["type"].as<string>();
@@ -7122,20 +6779,20 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
         }
     }
 
-    if (multiBodyJointERP.IsDefined()){
-        m_jointERP = multiBodyJointERP.as<double>();
+    if (modelJointERP.IsDefined()){
+        m_jointERP = modelJointERP.as<double>();
     }
-    if (multiBodyJointCFM.IsDefined()){
-        m_jointCFM = multiBodyJointCFM.as<double>();
+    if (modelJointCFM.IsDefined()){
+        m_jointCFM = modelJointCFM.as<double>();
     }
 
     /// Loading Joints
     afJointPtr jntPtr;
-    size_t totalJoints = multiBodyJoints.size();
+    size_t totalJoints = modelJoints.size();
     for (size_t i = 0; i < totalJoints; ++i) {
         jntPtr = new afJoint(m_afWorld);
-        string jnt_name = multiBodyJoints[i].as<string>();
-        YAML::Node jnt_node = multiBodyNode[jnt_name];
+        string jnt_name = modelJoints[i].as<string>();
+        YAML::Node jnt_node = modelNode[jnt_name];
         string remap_str = afUtils::getNonCollidingIdx(m_namespace + jnt_name, m_afWorld->getAFJointMap());
         if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
             m_afWorld->addAFJoint(jntPtr, m_namespace + jnt_name + remap_str);
@@ -7144,12 +6801,12 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
     }
 
 
-    size_t totalVehicles = multiBodyVehicles.size();
+    size_t totalVehicles = modelVehicles.size();
     afVehiclePtr vehiclePtr;
     for (size_t i = 0; i < totalVehicles; ++i) {
         vehiclePtr = new afVehicle(m_afWorld);
-        string veh_name = multiBodyVehicles[i].as<string>();
-        YAML::Node veh_node = multiBodyNode[veh_name];
+        string veh_name = modelVehicles[i].as<string>();
+        YAML::Node veh_node = modelNode[veh_name];
         if (vehiclePtr->loadVehicle(&veh_node, veh_name, this)){
             string remap_str = afUtils::getNonCollidingIdx(vehiclePtr->getNamespace() + veh_name, m_afWorld->getAFVehicleMap());
             m_afWorld->addAFVehicle(vehiclePtr, vehiclePtr->getNamespace() + veh_name + remap_str);
@@ -7167,8 +6824,8 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
 
     // This flag would ignore collision for all the multibodies in the scene
     bool _ignoreInterCollision = false;
-    if (multiBodyIgnoreInterCollision.IsDefined()){
-        _ignoreInterCollision = multiBodyIgnoreInterCollision.as<bool>();
+    if (modelIgnoreInterCollision.IsDefined()){
+        _ignoreInterCollision = modelIgnoreInterCollision.as<bool>();
         if (_ignoreInterCollision){
             ignoreCollisionChecking();
         }
@@ -7179,14 +6836,19 @@ bool afMultiBody::loadMultiBody(string a_adf_filepath, bool enable_comm){
     return true;
 }
 
+bool afModel::createFromAttribs(afModelAttributes *a_attribs)
+{
+
+}
+
 
 ///
-/// \brief afMultiBody::getRigidBody
+/// \brief afModel::getRigidBody
 /// \param a_name
 /// \param suppress_warning
 /// \return
 ///
-afRigidBodyPtr afMultiBody::getAFRigidBodyLocal(string a_name, bool suppress_warning){
+afRigidBodyPtr afModel::getAFRigidBodyLocal(string a_name, bool suppress_warning){
     if (m_afRigidBodyMapLocal.find(a_name) != m_afRigidBodyMapLocal.end()){
         return m_afRigidBodyMapLocal[a_name];
     }
@@ -7205,12 +6867,12 @@ afRigidBodyPtr afMultiBody::getAFRigidBodyLocal(string a_name, bool suppress_war
 }
 
 ///
-/// \brief afMultiBody::removeCollisionChecking
+/// \brief afModel::removeCollisionChecking
 ///
-void afMultiBody::ignoreCollisionChecking(){
+void afModel::ignoreCollisionChecking(){
 
     /// Only ignore collision checking between the bodies
-    /// defined in the specific multibody config file
+    /// defined in the specific model config file
     /// and not all the bodies in the world
     afRigidBodyMap::iterator rBodyItA = m_afRigidBodyMapLocal.begin();
     vector<btRigidBody*> rBodiesVec;
@@ -7231,9 +6893,9 @@ void afMultiBody::ignoreCollisionChecking(){
 
 
 ///
-/// \brief afMultiBody::removeOverlappingCollisionChecking
+/// \brief afModel::removeOverlappingCollisionChecking
 ///
-void afMultiBody::removeOverlappingCollisionChecking(){
+void afModel::removeOverlappingCollisionChecking(){
     // This function checks all the constraints of each rigid body
     // if there are more than 1, it means that multiple bodies share each other
     // In this case, iteratively go over all the shared bodies and ignore their
@@ -7408,7 +7070,7 @@ afCameraPtr afWorld::getAFCamera(string a_name, bool suppress_warning){
 
 
 ///
-/// \brief afMultiBody::getRidigBody
+/// \brief afModel::getRidigBody
 /// \param a_name
 /// \return
 ///
@@ -7483,13 +7145,13 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
 
 
 ///
-/// \brief afWorld::getAFMultiBody
+/// \brief afWorld::getAFModel
 /// \param a_name
 /// \param suppress_warning
 /// \return
 ///
-afMultiBodyPtr afWorld::getAFMultiBody(string a_name, bool suppress_warning){
-    return getObject<afMultiBodyPtr, afMultiBodyMap>(a_name, &m_afMultiBodyMap, suppress_warning);
+afModelPtr afWorld::getAFModel(string a_name, bool suppress_warning){
+    return getObject<afModelPtr, afModelMap>(a_name, &m_afModelMap, suppress_warning);
 }
 
 
@@ -7505,7 +7167,7 @@ afVehiclePtr afWorld::getAFVehicle(string a_name, bool suppress_warning){
 
 
 ///
-/// \brief afMultiBody::getRootRigidBody
+/// \brief afModel::getRootRigidBody
 /// \param a_bodyPtr
 /// \return
 ///
@@ -7536,7 +7198,7 @@ afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
     }
 
     // In case no root parent is found, it is understood that
-    // the multibody chain is cyclical, perhaps return
+    // the model chain is cyclical, perhaps return
     // the body with least number of parents
     if (rootParents == 0){
         auto minLineage = min_element(bodyParentsCount.begin(), bodyParentsCount.end());
@@ -7554,11 +7216,11 @@ afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
 
 
 ///
-/// \brief afMultiBody::getRootAFRigidBody
+/// \brief afModel::getRootAFRigidBody
 /// \param a_bodyPtr
 /// \return
 ///
-afRigidBodyPtr afMultiBody::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
+afRigidBodyPtr afModel::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
     /// Find Root Body
     afRigidBodyPtr rootParentBody;
     vector<int> bodyParentsCount;
@@ -7601,9 +7263,9 @@ afRigidBodyPtr afMultiBody::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
 
 
 ///
-/// \brief afMultiBody::~afMultiBody
+/// \brief afModel::~afModel
 ///
-afMultiBody::~afMultiBody(){
+afModel::~afModel(){
     //    afJointMap::const_iterator jIt = m_afJointMap.begin();
     //    for (; jIt != m_afJointMap.end() ; ++jIt){
     //        delete jIt->second;
@@ -7635,22 +7297,7 @@ afVehicle::~afVehicle()
 
 }
 
-bool afVehicle::loadVehicle(string vehicle_config_file, string node_name, afMultiBodyPtr mB, string name_remapping_idx){
-    YAML::Node vehicleNode;
-    try{
-        vehicleNode = YAML::LoadFile(vehicle_config_file);
-    }catch (exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO VEHICLE CONFIG: " << vehicle_config_file << endl;
-        return 0;
-    }
-    if (vehicleNode.IsNull()) return false;
-
-    YAML::Node baseSensorNode = vehicleNode[node_name];
-    return loadVehicle(&baseSensorNode, node_name, mB, name_remapping_idx);
-}
-
-bool afVehicle::loadVehicle(YAML::Node *vehicle_node, string node_name, afMultiBodyPtr mB, string name_remapping_idx){
+bool afVehicle::loadVehicle(YAML::Node *vehicle_node, string node_name, afModelPtr mB, string name_remapping_idx){
     YAML::Node& vehicleNode = *vehicle_node;
     if (vehicleNode.IsNull()){
         cerr << "ERROR: VEHICLE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
@@ -7734,7 +7381,7 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, string node_name, afMultiB
             if (vehicleMeshPathHR.IsDefined()){
                 high_res_filepath = vehicleMeshPathHR.as<string>() + mesh_name;
                 if (high_res_filepath.is_relative()){
-                    high_res_filepath = mB->getMultiBodyPath() + '/' + high_res_filepath.c_str();
+                    high_res_filepath = mB->getModelPath() + '/' + high_res_filepath.c_str();
                 }
             }
             else{
@@ -7827,9 +7474,9 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, string node_name, afMultiB
     m_vehicle->setCoordinateSystem(1, 2, 0);
 
     for (uint i = 0 ; i < m_numWheels ; i++){
-        btVector3 off = toBTvec(m_wheelAttribs[i].m_offset);
-        btVector3 dir = toBTvec(m_wheelAttribs[i].m_downDirection);
-        btVector3 axel_dir = toBTvec(m_wheelAttribs[i].m_axelDirection);
+        btVector3 off = to_btVector(m_wheelAttribs[i].m_offset);
+        btVector3 dir = to_btVector(m_wheelAttribs[i].m_downDirection);
+        btVector3 axel_dir = to_btVector(m_wheelAttribs[i].m_axelDirection);
 
         off = T_oInc.inverse() * off;
         dir = T_oInc.getBasis().inverse() * dir;
@@ -7847,6 +7494,11 @@ bool afVehicle::loadVehicle(YAML::Node *vehicle_node, string node_name, afMultiB
     }
 
     return result;
+}
+
+bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
+{
+
 }
 
 
@@ -7924,7 +7576,7 @@ void afVehicle::updatePositionFromDynamics(){
     for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
-        cTransform cTrans = toCtransform(btTrans);
+        cTransform cTrans = to_cTransform(btTrans);
         if (m_wheels[i].m_wheelRepresentationType == afWheelRepresentationType::MESH){
             m_wheels[i].m_mesh->setLocalTransform(cTrans);
         }

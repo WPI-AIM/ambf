@@ -319,71 +319,71 @@ set (ADF_LOADER_LIBRARIES adf_loader)
 
 add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
-## static library
-#add_library (ambf_framework STATIC ${source_framework} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds}
-# ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_chai3d}
-# ${source_chai3d_bullet} ${source_chai3d_gel} ${source_bullet_collision} ${source_bullet_dynamics}
-# ${source_bullet_softbody} ${source_bullet_linearmath} )
+add_library(chai3d STATIC ${source_framework})
+
+# static library
+add_library (ambf_framework STATIC ${source_framework})
+
+target_link_libraries(ambf_framework ${chai3d})
+
+# To ensure the ambf_ros_modules are build before the ambf_framework,
+# add catkin's targets as build dependency
+ if (${catkin_FOUND})
+   add_dependencies(ambf_framework ${catkin_EXPORTED_TARGETS})
+ endif()
+
+# AMBF library exports
+set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
+  "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
+
+set (AMBF_LIBRARIES ambf_framework ${OPENGL_LIBRARIES} ${YAML_CPP_LIBRARIES})
+set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
+
+# ROS CATKIN INCLUDES AND LIBRARIES
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+    set (AMBF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${AMBF_ROS_INCLUDE_DIRS})
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} ${AMBF_ROS_LIBRARIES})
+endif()
+
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
+  if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
+  else ()
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+  endif ()
+  set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
+else ()
+  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} winmm)
+endif ()
+
+if (${OS} MATCHES lin)
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} usb-1.0 rt pthread dl)
+elseif (${OS} MATCHES mac)
+  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} "-framework CoreFoundation" "-framework IOKit" "-framework CoreServices" "-framework CoreAudio" "-framework AudioToolbox" "-framework AudioUnit")
+endif ()
+
+set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+#
+# executables
+#
+
+# AMBF Simulator
+add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
+
+# AMBF Controller
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+  if (${catkin_FOUND})
+    add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
+  endif()
+endif()
 
 
-## To ensure the ambf_ros_modules are build before the ambf_framework,
-## add catkin's targets as build dependency
-# if (${catkin_FOUND})
-#   add_dependencies(ambf_framework ${catkin_EXPORTED_TARGETS})
-# endif()
+#
+# export package
+#
 
-## AMBF library exports
-#set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
-#  "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
-
-#set (AMBF_LIBRARIES ambf_framework ${OPENGL_LIBRARIES} ${YAML_CPP_LIBRARIES})
-#set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
-
-## ROS CATKIN INCLUDES AND LIBRARIES
-#if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-#    set (AMBF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${AMBF_ROS_INCLUDE_DIRS})
-#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} ${AMBF_ROS_LIBRARIES})
-#endif()
-
-#if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
-#  if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
-#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
-#  else ()
-#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
-#  endif ()
-#  set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
-#else ()
-#  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} winmm)
-#endif ()
-
-#if (${OS} MATCHES lin)
-#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} usb-1.0 rt pthread dl)
-#elseif (${OS} MATCHES mac)
-#  set (AMBF_LIBRARIES ${AMBF_LIBRARIES} "-framework CoreFoundation" "-framework IOKit" "-framework CoreServices" "-framework CoreAudio" "-framework AudioToolbox" "-framework AudioUnit")
-#endif ()
-
-#set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
-##
-## executables
-##
-
-## AMBF Simulator
-#add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
-
-## AMBF Controller
-#if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-#  if (${catkin_FOUND})
-#    add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
-#  endif()
-#endif()
-
-
-##
-## export package
-##
-
-## export package for use from the build tree
-#export (TARGETS ambf_framework FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
+# export package for use from the build tree
+export (TARGETS ambf_framework FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
 export (PACKAGE AMBF)
 
 # configure package

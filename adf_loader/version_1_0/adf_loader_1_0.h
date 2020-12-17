@@ -156,7 +156,7 @@ public:
     virtual bool loadAllInputDeviceAttributes(YAML::Node* a_node, afAllInputDevicesAttributes *attribs);
 
     // Load multibody from ADF file
-    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afMultiBodyAttributes* attribs);
+    virtual bool loadMultiBodyAttribs(YAML::Node* a_node, afModelAttributes* attribs);
 
     // Load world from ADF file
     virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);

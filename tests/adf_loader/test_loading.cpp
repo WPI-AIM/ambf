@@ -13,7 +13,7 @@ int main(){
     loader.loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
 
     for (int i = 0 ; i < launchAttribs.m_multiBodyFilepaths.size() ; i++){
-        afMultiBodyAttributes mbAttribs;
+        afModelAttributes mbAttribs;
 
         loader.loadMultiBodyAttribs(launchAttribs.m_multiBodyFilepaths[i].c_str(), &mbAttribs);
 

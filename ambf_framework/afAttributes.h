@@ -326,18 +326,18 @@ public:
 struct afJointControllerAttributes{
 public:
     afJointControllerAttributes(){
-        P = 10;
-        I = 0;
-        D = 1;
+        m_P = 10;
+        m_I = 0;
+        m_D = 1;
         m_outputType = afControlType::VELOCITY;
         m_maxImpulse = 0.05;
     }
 
     afControlType m_outputType;
 
-    double P;
-    double I;
-    double D;
+    double m_P;
+    double m_I;
+    double m_D;
 
     double m_maxImpulse;
 };
@@ -536,9 +536,7 @@ public:
     afVector3d m_parentAxis;
     afVector3d m_childAxis;
     afTransform m_transformInParent;
-    bool m_enableMotor;
-    bool m_enableFeedback;
-    uint m_maxMotorImpulse;
+    double m_maxMotorImpulse;
     double m_lowerLimit;
     double m_upperLimit;
     double m_erp;
@@ -546,10 +544,13 @@ public:
     double m_offset;
     double m_damping;
     double m_stiffness;
+    double m_equilibriumPoint;
     afJointType m_jointType;
+
+    bool m_enableMotor;
+    bool m_enableFeedback;
     bool m_enableLimits;
     bool m_ignoreInterCollision;
-    double m_equilibriumPoint;
 
     afHierarchyAttributes m_hierarchyAttribs;
     afCommunicationAttributes m_communicationAttribs;
@@ -831,9 +832,9 @@ public:
 ///
 /// \brief The afMultiBodyAttributes struct
 ///
-struct afMultiBodyAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
+struct afModelAttributes: public afBaseObjectAttributes, public afFileObjectAttributes{
 public:
-    afMultiBodyAttributes(){
+    afModelAttributes(){
         m_ignoreInterCollision = false;
     }
 

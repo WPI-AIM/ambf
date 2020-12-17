@@ -110,7 +110,7 @@ protected:
 ///
 /// \brief The afSimulatedDevice class
 ///
-class afSimulatedDevice: public afSharedDataStructure, public afMultiBody{
+class afSimulatedDevice: public afSharedDataStructure, public afModel{
 public:
     afSimulatedDevice(afWorldPtr a_afWorld);
 
