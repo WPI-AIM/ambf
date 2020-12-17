@@ -2815,132 +2815,59 @@ afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
 
 }
 
-///
-/// \brief afProximitySensor::loadSensor
-/// \param sensor_node
-/// \param node_name
-/// \param name_remapping_idx
-/// \return
-///
-bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, afModelPtr mB, string name_remapping){
-    YAML::Node& sensorNode = *sensor_node;
-    if (sensorNode.IsNull()){
-        cerr << "ERROR: SENSOR'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
-        return 0;
-    }
+
+bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs)
+{
+
+    afRayTracerSensorAttributes &attribs = *a_attribs;
 
     bool result = true;
-    // Declare all the yaml parameters that we want to look for
-    YAML::Node sensorParentName = sensorNode["parent"];
-    YAML::Node sensorName = sensorNode["name"];
-    YAML::Node sensorNamespace = sensorNode["namespace"];
-    YAML::Node sensorPos = sensorNode["location"]["position"];
-    YAML::Node sensorRot = sensorNode["location"]["orientation"];
-    YAML::Node sensorRange = sensorNode["range"];
-    YAML::Node sensorPublishFrequency = sensorNode["publish frequency"];
-    YAML::Node sensorVisible = sensorNode["visible"];
-    YAML::Node sensorVisibleSize = sensorNode["visible size"];
-    YAML::Node sensorArray = sensorNode["array"];
-    YAML::Node sensorMesh = sensorNode["mesh"];
-    YAML::Node sensorParametric = sensorNode["parametric"];
 
-    if (sensorParentName.IsDefined()){
-        m_parentName = sensorParentName.as<string>();
-    }
-    else{
-        result = false;
-    }
+    m_namespace = attribs.m_identificationAttribs.m_namespace;
+    m_name = attribs.m_identificationAttribs.m_name;
 
-    m_name = sensorName.as<string>();
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+    m_localTransform = to_cTransform(attribs.m_kinematicAttribs.m_location);
 
-    if(sensorPos.IsDefined()){
-        cVector3d pos = toXYZ<cVector3d>(&sensorPos);
-        m_initialTransform.setLocalPos(pos);
-        setLocalPos(pos);
-    }
-
-    if(sensorRot.IsDefined()){
-        double r = sensorRot["r"].as<double>();
-        double p = sensorRot["p"].as<double>();
-        double y = sensorRot["y"].as<double>();
-        cMatrix3d rot;
-        rot.setExtrinsicEulerRotationRad(r,p,y,cEulerOrder::C_EULER_ORDER_XYZ);
-        m_initialTransform.setLocalRot(rot);
-        setLocalRot(rot);
-    }
-
-    if(sensorNamespace.IsDefined()){
-        m_namespace = sensorNamespace.as<string>();
-    }
-    m_namespace = afUtils::mergeNamespace(mB->getNamespace(), m_namespace);
-
-    m_range = 0.0;
-    if(sensorRange.IsDefined()){
-        m_range = sensorRange.as<double>();
-    }
+    m_range = attribs.m_range;
 
     if (m_range < 0.0){
         cerr << "ERROR! SENSOR RANGE CANNOT BE NEGATIVE" << endl;
         return 0;
     }
 
-    if (sensorPublishFrequency.IsDefined()){
-        m_minPubFreq = sensorPublishFrequency["low"].as<int>();
-        m_maxPubFreq = sensorPublishFrequency["high"].as<int>();
-    }
+    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
+    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
 
-    if (sensorVisible.IsDefined()){
-        m_showSensor = sensorVisible.as<bool>();
-    }
-    else{
-        m_showSensor = false;
-    }
-
-    // Chosed an random scale to divide the visual radius of the sensor markers
-    m_visibilitySphereRadius = m_range / 8;
-    if (sensorVisibleSize.IsDefined()){
-        m_visibilitySphereRadius = sensorVisibleSize.as<double>();
-    }
+    m_showSensor = attribs.m_visible;
+    m_visibilitySphereRadius = attribs.m_visibleSize;
 
     // First search in the local space.
-    m_parentBody = mB->getAFRigidBodyLocal(m_parentName);
+    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
 
-    if(!m_parentBody){
-        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + name_remapping);
-    }
-
-    if (m_parentBody == nullptr){
-        cerr << "ERROR: SENSOR'S "<< m_parentName + name_remapping << " NOT FOUND, IGNORING SENSOR\n";
-        return 0;
-    }
-    else{
-        m_parentBody->addAFSensor(this);
-    }
-
-    if (sensorArray.IsDefined()){
-        m_count = sensorArray.size();
-        m_raysAttribs.resize(m_count);
-        m_rayTracerResults.resize(m_count);
-        for (uint i = 0 ; i < m_count ; i++){
-            YAML::Node offsetNode = sensorArray[i]["offset"];
-            YAML::Node directionNode = sensorArray[i]["direction"];
-            cVector3d offset = toXYZ<cVector3d>(&offsetNode);
-            cVector3d dir = toXYZ<cVector3d>(&directionNode);
-            m_raysAttribs[i].m_range = m_range;
-            m_raysAttribs[i].m_rayFromLocal = getLocalTransform() * offset;
-            m_raysAttribs[i].m_direction = getLocalRot() * dir;
-            m_raysAttribs[i].m_direction.normalize();
-            m_raysAttribs[i].m_rayToLocal = m_raysAttribs[i].m_rayFromLocal + m_raysAttribs[i].m_direction * m_raysAttribs[i].m_range;
-
+    if(m_parentBody == nullptr){
+        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getSensorMap());
+        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
+        if (m_parentBody == nullptr){
+            cerr << "ERROR: SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
+            return 0;
         }
-        result = true;
     }
 
-    else if (sensorMesh.IsDefined()){
-        string mesh_name = sensorMesh.as<string>();
-        mesh_name = mB->getHighResMeshesPath() + mesh_name;
+
+    m_parentBody->addAFSensor(this);
+
+
+
+    switch (attribs.m_specificationType) {
+    case afSensactorSpecificationType::ARRAY:
+    case afSensactorSpecificationType::PARAMETRIC:{
+        m_raysAttribs = attribs.m_raysAttribs;
+        break;
+    }
+    case afSensactorSpecificationType::MESH:{
         cMultiMesh* multiMesh = new cMultiMesh();
-        if (multiMesh->loadFromFile(mesh_name)){
+        if (multiMesh->loadFromFile(attribs.m_contourMeshFilepath.c_str())){
             cMesh* sourceMesh = (*multiMesh->m_meshes)[0];
             if (sourceMesh){
                 m_count = sourceMesh->m_triangles->getNumElements();
@@ -2966,8 +2893,8 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, af
                     cVector3d dir = cCross(e1, e2);
 
                     dir.normalize();
-                    m_raysAttribs[i].m_rayFromLocal = getLocalTransform() * centroid ;
-                    m_raysAttribs[i].m_direction = getLocalRot() * dir;
+                    m_raysAttribs[i].m_rayFromLocal << getLocalTransform() * centroid ;
+                    m_raysAttribs[i].m_direction << getLocalRot() * dir;
                     m_raysAttribs[i].m_direction.normalize();
                     m_raysAttribs[i].m_rayToLocal = m_raysAttribs[i].m_rayFromLocal + m_raysAttribs[i].m_direction * m_raysAttribs[i].m_range;
                 }
@@ -2976,79 +2903,21 @@ bool afRayTracerSensor::loadSensor(YAML::Node *sensor_node, string node_name, af
             result = true;
         }
         else{
-            cerr << "ERROR! BODY \"" << m_name <<
-                         "\'s\" RESISTIVE MESH " <<
-                         mesh_name << " NOT FOUND. IGNORING\n";
+            cerr << "ERROR! BODY \"" << m_name << "\'s\" RESISTIVE MESH " <<
+                    attribs.m_contourMeshFilepath.c_str() << " NOT FOUND. IGNORING\n";
             result = false;
         }
+        break;
     }
-    else if (sensorParametric.IsDefined()){
-        YAML::Node resolutionNode = sensorParametric["resolution"];
-        YAML::Node horSpanNode = sensorParametric["horizontal angle"];
-        YAML::Node verSpanNode = sensorParametric["vertical angle"];
-        YAML::Node startOffsetNode = sensorParametric["start offset"];
-
-        uint resolution = resolutionNode.as<uint>();
-        double horizontal_span = horSpanNode.as<double>();
-        double vertical_span = verSpanNode.as<double>();
-        double start_offset = startOffsetNode.as<double>();
-
-        if (resolution < 2){
-            cerr << "ERROR! FOR SENSOR \"" << m_name << "\" RESOLUTION MUST BE GREATER THAN EQUAL TO 2. IGNORING! \n";
-            return false;
-        }
-
-        double h_start = -horizontal_span / 2.0;
-        double v_start = -vertical_span / 2.0;
-        double h_step = horizontal_span / (resolution - 1);
-        double v_step = vertical_span / (resolution - 1);
-        m_count = resolution * resolution;
-        m_raysAttribs.resize(m_count);
-        m_rayTracerResults.resize(m_count);
-
-        // Choose an initial point facing the +ve x direction
-        cVector3d point(1, 0, 0);
-        for (uint i = 0 ; i < resolution ; i++){
-            double h_angle = h_start + i * h_step;
-            for (uint j = 0 ; j < resolution ; j++){
-                double v_angle = v_start + j * v_step;
-
-                cMatrix3d mat;
-                mat.setExtrinsicEulerRotationRad(0, v_angle, h_angle, cEulerOrder::C_EULER_ORDER_XYZ);
-
-                cVector3d start_point = point * start_offset;
-                cVector3d ray_from = mat * start_point;
-                cVector3d dir = mat * point;
-                cVector3d ray_to = ray_from + dir * m_range;
-
-                dir.normalize();
-                uint sIdx = resolution * i + j;
-                m_raysAttribs[sIdx].m_range = m_range;
-                m_raysAttribs[sIdx].m_rayFromLocal = getLocalTransform() * ray_from ;
-                m_raysAttribs[sIdx].m_direction = getLocalRot() * dir;
-                m_raysAttribs[sIdx].m_direction.normalize();
-                m_raysAttribs[sIdx].m_rayToLocal = m_raysAttribs[sIdx].m_rayFromLocal + m_raysAttribs[sIdx].m_direction * m_raysAttribs[sIdx].m_range;
-            }
-
-        }
-
-    }
-    else{
-        m_count = 0;
-        result = false;
+    default:
+        break;
     }
 
     if (m_showSensor){
         enableVisualization();
     }
 
-
     return result;
-}
-
-bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs)
-{
-
 }
 
 
@@ -3063,8 +2932,8 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld = to_btVector(T_bInw *  m_raysAttribs[i].m_rayFromLocal);
-        rayToWorld = to_btVector(T_bInw *  m_raysAttribs[i].m_rayToLocal);
+        rayFromWorld = to_btVector(T_bInw * m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld = to_btVector(T_bInw * m_raysAttribs[i].m_rayToLocal);
 
         // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
@@ -3425,7 +3294,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 if (m_rayTracerResults[i].m_depthFraction < 0 || m_rayTracerResults[i].m_depthFraction > 1){
                     cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_rayTracerResults[i].m_depthFraction <<
                                  ". It should be between [0-1]" << endl;
-                    cerr << "Ray Start: "<< m_raysAttribs[i].m_rayFromLocal <<"\nRay End: " << m_raysAttribs[i].m_rayToLocal <<
+                    cerr << "Ray Start: "<< to_cVector3d(m_raysAttribs[i].m_rayFromLocal) <<"\nRay End: " << to_cVector3d(m_raysAttribs[i].m_rayToLocal) <<
                                  "\nSensed Point: " << to_cVector3d(P_cINa) << endl;
                     cerr << "----------\n";
                     m_rayTracerResults[i].m_depthFraction = 0;
@@ -5279,33 +5148,11 @@ bool afCamera::createDefaultCamera(){
     return true;
 }
 
-///
-/// \brief afCamera::loadCamera
-/// \param camera_node
-/// \param camera_name
-/// \return
-///
-bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWorldPtr a_world){
-    YAML::Node& cameraNode = *a_camera_node;
-    YAML::Node cameraName = cameraNode["name"];
-    YAML::Node cameraNamespace = cameraNode["namespace"];
-    YAML::Node cameraLocationData = cameraNode["location"];
-    YAML::Node cameraLookAtData = cameraNode["look at"];
-    YAML::Node cameraUpData = cameraNode["up"];
-    YAML::Node cameraClippingPlaneData = cameraNode["clipping plane"];
-    YAML::Node cameraFieldViewAngleData = cameraNode["field view angle"];
-    YAML::Node cameraOrthoWidthData = cameraNode["orthographic view width"];
-    YAML::Node cameraStereo = cameraNode["stereo"];
-    YAML::Node cameraControllingDevicesData = cameraNode["controlling devices"];
-    YAML::Node cameraParent = cameraNode["parent"];
-    YAML::Node cameraMonitor = cameraNode["monitor"];
-    YAML::Node cameraPublishImage = cameraNode["publish image"];
-    YAML::Node cameraPublishImageInterval = cameraNode["publish image interval"];
-    YAML::Node cameraPublishDepth = cameraNode["publish depth"];
-    YAML::Node cameraPublishDepthInterval = cameraNode["publish depth interval"];
-    YAML::Node cameraMultiPass = cameraNode["multipass"];
+bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
+{
+    afCameraAttributes & attribs = *a_attribs;
 
-    bool is_valid = true;
+    bool valid = true;
     double _clipping_plane_limits[2], _field_view_angle;
     double stereoEyeSeperation, stereoFocalLength, _orthoViewWidth;
     string stereoModeStr;
@@ -5334,21 +5181,21 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWor
     }
     else{
         cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << endl;
-        is_valid = false;
+        valid = false;
     }
     if (cameraLookAtData.IsDefined()){
         m_camLookAt = toXYZ<cVector3d>(&cameraLookAtData);
     }
     else{
         cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << endl;
-        is_valid = false;
+        valid = false;
     }
     if (cameraUpData.IsDefined()){
         m_camUp = toXYZ<cVector3d>(&cameraUpData);
     }
     else{
         cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << endl;
-        is_valid = false;
+        valid = false;
     }
     if (cameraClippingPlaneData.IsDefined()){
         _clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
@@ -5356,7 +5203,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWor
     }
     else{
         cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << endl;
-        is_valid = false;
+        valid = false;
     }
     if (cameraFieldViewAngleData.IsDefined()){
         _field_view_angle = cameraFieldViewAngleData.as<double>();
@@ -5416,7 +5263,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWor
         useMultiPassTransparency = cameraMultiPass.as<bool>();
     }
 
-    if(is_valid){
+    if(valid){
         m_camera = new cCamera(a_world);
         setLocalPos(0, 0, 0);
         cMatrix3d I3;
@@ -5659,12 +5506,7 @@ bool afCamera::loadCamera(YAML::Node* a_camera_node, string a_camera_name, afWor
         }
     }
 
-    return is_valid;
-}
-
-bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
-{
-
+    return valid;
 }
 
 
