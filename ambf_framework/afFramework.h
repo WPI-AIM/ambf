@@ -690,6 +690,8 @@ public:
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics(){}
 
+    static void copyMaterialToMesh(cMultiMesh* a_mesh, const afColorAttributes* a_color);
+
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -764,7 +766,7 @@ public:
     std::string m_parentName;
 
     // Filepath to the visual mesh
-    boost::filesystem::path m_visualMeshFilePath;
+    afPath m_visualMeshFilePath;
 
 protected:
     // Initial location of Rigid Body
@@ -776,8 +778,8 @@ protected:
     // Flag for the Shader Program
     bool m_shaderProgramDefined = false;
 
-    boost::filesystem::path m_vtxShaderFilePath;
-    boost::filesystem::path m_fragShaderFilePath;
+    afPath m_vtxShaderFilePath;
+    afPath m_fragShaderFilePath;
 
     cMultiMesh* m_visualMesh;
 
@@ -837,7 +839,7 @@ public:
     btRigidBody* m_bulletRigidBody;
 
     // Filepath to the collision mesh
-    boost::filesystem::path m_collisionMeshFilePath;
+    afPath m_collisionMeshFilePath;
 
     // cMultiMesh representation of collision mesh
     cMultiMesh* m_collisionMesh;
@@ -1942,7 +1944,7 @@ public:
 
     void resetDynamicBodies(bool reset_time=false);
 
-    void setGravity(double x, double y, double z);
+    void setGravity(afVector3d &vec);
 
     // This method assigns integration settings of simulator.
     void setIntegrationSettings(const double a_integrationTimeStep = 0.001, const int a_integrationMaxIterations = 1) { setIntegrationTimeStep(a_integrationTimeStep); setIntegrationMaxIterations(a_integrationMaxIterations); }
@@ -2147,10 +2149,10 @@ public:
     bool m_shaderProgramDefined = false;
 
     // Vertex Shader Filepath
-    boost::filesystem::path m_vsFilePath;
+    afPath m_vsFilePath;
 
     // Fragment Shader Filepath
-    boost::filesystem::path m_fsFilePath;
+    afPath m_fsFilePath;
     //    cMesh* m_pickDragVector;
 
     // Is skybox defined?
@@ -2160,25 +2162,25 @@ public:
     cMesh* m_skyBoxMesh = nullptr;
 
     // L, R, T, B, F and B images for the skybox
-    boost::filesystem::path m_skyBoxLeft;
+    afPath m_skyBoxLeft;
 
-    boost::filesystem::path m_skyBoxRight;
+    afPath m_skyBoxRight;
 
-    boost::filesystem::path m_skyBoxTop;
+    afPath m_skyBoxTop;
 
-    boost::filesystem::path m_skyBoxBottom;
+    afPath m_skyBoxBottom;
 
-    boost::filesystem::path m_skyBoxFront;
+    afPath m_skyBoxFront;
 
-    boost::filesystem::path m_skyBoxBack;
+    afPath m_skyBoxBack;
 
     bool m_skyBox_shaderProgramDefined = false;
 
-    boost::filesystem::path m_skyBox_vsFilePath;
+    afPath m_skyBox_vsFilePath;
 
-    boost::filesystem::path m_skyBox_fsFilePath;
+    afPath m_skyBox_fsFilePath;
 
-    boost::filesystem::path m_world_config_path;
+    afPath m_world_config_path;
 
     // a frequency counter to measure the simulation graphic rate
     cFrequencyCounter m_freqCounterGraphics;
@@ -2253,11 +2255,11 @@ protected:
 
 private:
 
-    static double m_encl_length;
+    static double m_enclosureL;
 
-    static double m_encl_width;
+    static double m_enclosureW;
 
-    static double m_encl_height;
+    static double m_enclosureH;
 
     static int m_maxIterations;
 

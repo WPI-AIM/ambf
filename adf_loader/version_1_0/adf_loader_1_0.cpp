@@ -101,9 +101,6 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
         colorAttribs.m_alpha = colorRGBANode["a"].as<double>();
     }
     else if(colorComponentsNode.IsDefined()){
-        if (colorComponentsNode["ambient"].IsDefined()){
-            colorAttribs.m_ambient = colorComponentsNode["ambient"]["level"].as<double>();
-        }
         if (colorComponentsNode["diffuse"].IsDefined()){
             colorAttribs.m_diffuse(0) = colorComponentsNode["diffuse"]["r"].as<double>();
             colorAttribs.m_diffuse(1) = colorComponentsNode["diffuse"]["g"].as<double>();
@@ -118,6 +115,10 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
             colorAttribs.m_emission(0) = colorComponentsNode["emission"]["r"].as<double>();
             colorAttribs.m_emission(1) = colorComponentsNode["emission"]["g"].as<double>();
             colorAttribs.m_emission(2) = colorComponentsNode["emission"]["b"].as<double>();
+        }
+        if (colorComponentsNode["ambient"].IsDefined()){
+            double level =  colorComponentsNode["ambient"]["level"].as<double>();
+            colorAttribs.m_ambient = colorAttribs.m_diffuse * level;
         }
         if (colorComponentsNode["shininess"].IsDefined()){
             colorAttribs.m_shininiess = colorComponentsNode["shininess"].as<uint>();
@@ -799,7 +800,7 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
     if (offsetNode.IsDefined()){
         if (offsetNode["position"].IsDefined()){
             YAML::Node _posNode = offsetNode["position"];
-            attribs->m_posOffset = ADFUtils::positionFromNode(&_posNode);
+            attribs->m_offset.setPosition(ADFUtils::positionFromNode(&_posNode));
         }
         else{
             attribs->m_posOffset.set(0, 0, 0);
@@ -807,7 +808,7 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
 
         if (offsetNode["orientation"].IsDefined()){
             YAML::Node _orientationNode = offsetNode["orientation"];
-            attribs->m_rotOffset = ADFUtils::rotationFromNode(&_orientationNode);
+            attribs->m_offset.setRotation(ADFUtils::rotationFromNode(&_orientationNode));
         }
         else{
             attribs->m_rotOffset.setRPY(0, 0, 0);

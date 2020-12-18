@@ -58,7 +58,7 @@ public:
 
     afPath(boost::filesystem::path a_path){m_path = a_path;}
 
-    std::string c_str(){
+    string c_str(){
         return m_path.c_str();
     }
 

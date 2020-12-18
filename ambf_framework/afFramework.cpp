@@ -54,9 +54,9 @@ using namespace std;
 //------------------------------------------------------------------------------
 /// Declare Static Variables
 
-double afWorld::m_encl_length;
-double afWorld::m_encl_width;
-double afWorld::m_encl_height;
+double afWorld::m_enclosureL;
+double afWorld::m_enclosureW;
+double afWorld::m_enclosureH;
 int afWorld::m_maxIterations;
 
 GLFWwindow* afCamera::s_mainWindow = nullptr;
@@ -1263,10 +1263,12 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
     m_visualGeometryType = attribs.m_visualAttribs.m_geometryType;
-    m_visualMeshFilePath = attribs.m_visualAttribs.m_path;
+    m_visualMeshFilePath = attribs.m_visualAttribs.m_meshFilepath;
     m_collisionGeometryType = attribs.m_collisionAttribs.m_geometryType;
-    m_collisionMeshFilePath = attribs.m_collisionAttribs.m_path;
-    setInertialOffsetTransform(attribs.m_inertialAttribs.m_inertialOffset);
+    m_collisionMeshFilePath = attribs.m_collisionAttribs.m_meshFilepath;
+
+    btTransform iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
+    setInertialOffsetTransform(iOff);
 
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
@@ -1282,26 +1284,26 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         else{
             cerr << "WARNING: Body "
                       << m_name
-                      << "'s mesh \"" << m_visualMeshFilePath << "\" not found\n";
+                      << "'s mesh \"" << m_visualMeshFilePath.c_str() << "\" not found\n";
             return 0;
         }
     }
     else if(m_visualGeometryType == afGeometryType::SINGLE_SHAPE ||
             m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
 
-        for(unsigned long sI = 0 ; sI < attribs.m_visualPrimitiveShapes.size() ; sI++){
-            afPrimitiveShapeAttributes pS = attribs.m_visualPrimitiveShapes[sI];
+        for(unsigned long sI = 0 ; sI < attribs.m_visualAttribs.m_primitiveShapes.size() ; sI++){
+            afPrimitiveShapeAttributes pS = attribs.m_visualAttribs.m_primitiveShapes[sI];
             cMesh* tempMesh = afPrimitiveShapeUtils::createVisualShape(&pS);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
 
-    m_visualMesh->setMaterial(attribs.m_material);
+    afBaseObject::copyMaterialToMesh(m_visualMesh, &attribs.m_visualAttribs.m_colorAttribs);
 
-    if (attribs.m_shaderDefined){
-        m_shaderProgramDefined = attribs.m_shaderDefined;
-        m_vtxShaderFilePath = attribs.m_vtxShaderFilePath;
-        m_fragShaderFilePath = attribs.m_fragShaderFilePath;
+    m_shaderProgramDefined = attribs.m_shaderAttribs.m_shaderDefined;
+    if (m_shaderProgramDefined){
+        m_vtxShaderFilePath = attribs.m_shaderAttribs.m_vtxFilepath;
+        m_fragShaderFilePath = attribs.m_shaderAttribs.m_fragFilepath;
         enableShaderProgram();
     }
 
@@ -1310,12 +1312,12 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             if(m_scale != 1.0){
                 m_collisionMesh->scale(m_scale);
             }
-            m_bulletCollisionShape = afUtils::createCollisionShapeFromMesh(m_collisionMesh, getInertialOffsetTransform(), attribs.m_collisionMargin);
+            m_bulletCollisionShape = afPrimitiveShapeUtils::createCollisionShapeFromMesh(m_collisionMesh, getInertialOffsetTransform(), attribs.m_collisionAttribs.m_margin);
         }
         else{
             cerr << "WARNING: Body "
                       << m_name
-                      << "'s mesh \"" << m_collisionMeshFilePath << "\" not found\n";
+                      << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
             return false;
         }
     }
@@ -1324,25 +1326,25 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
         // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
         // Thus instead of using a compound, use the single collision shape.
-        if (attribs.m_collisionPrimitiveShapes.size() == 0){
+        if (attribs.m_collisionAttribs.m_primitiveShapes.size() == 0){
             // ERROR! NO PRIMITIVE SHAPES HAVE BEEN DEFINED.
             return false;
         }
-        else if (attribs.m_collisionPrimitiveShapes.size() == 1 && attribs.m_collisionPrimitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
-            afPrimitiveShapeAttributes pS = attribs.m_collisionPrimitiveShapes[0];
-            m_bulletCollisionShape =  afUtils::createCollisionShape(pS);
+        else if (attribs.m_collisionAttribs.m_primitiveShapes.size() == 1 && attribs.m_collisionAttribs.m_primitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
+            afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[0];
+            m_bulletCollisionShape =  afPrimitiveShapeUtils::createCollisionShape(&pS);
         }
         else{
             btCompoundShape* compoundCollisionShape = new btCompoundShape();
-            for (unsigned long sI = 0 ; sI < attribs.m_collisionPrimitiveShapes.size() ; sI++){
-                afPrimitiveShapeAttributes pS = attribs.m_collisionPrimitiveShapes[sI];
-                btCollisionShape* collShape = afUtils::createCollisionShape(pS);
+            for (unsigned long sI = 0 ; sI < attribs.m_collisionAttribs.m_primitiveShapes.size() ; sI++){
+                afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[sI];
+                btCollisionShape* collShape = afPrimitiveShapeUtils::createCollisionShape(&pS);
 
                 // Here again, we consider both the inertial offset transform and the
                 // shape offset transfrom. This will change the legacy behavior but
                 // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
                 // shape. So they shall be updated.
-                btTransform shapeOffset = to_btTransform(cTransform(pS.getPosOffset(), pS.getRotOffset()));
+                btTransform shapeOffset = to_btTransform(pS.getOffset());
                 compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffset, collShape);
             }
             m_bulletCollisionShape = compoundCollisionShape;
@@ -1354,8 +1356,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
 
-    for (uint gI = 0 ; gI < attribs.m_collisionGroups.size() ; gI++){
-        uint group =  attribs.m_collisionGroups[gI];
+    for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
+        uint group =  attribs.m_collisionAttribs.m_groups[gI];
         // Sanity check for the group number
         if (group >= 0 && group <= 999){
             m_afWorld->m_collisionGroups[group].push_back(this);
@@ -1371,7 +1373,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     createInertialObject();
 
     // inertial origin in world
-    cTransform T_iINw = attribs.m_location;
+    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
     cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
     cTransform T_mINw = T_iINw * T_mINi;
 
@@ -1383,9 +1385,9 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_publish_children_names = attribs.m_publishChildrenNames;
     m_publish_joint_names = attribs.m_publishJointNames;
     m_publish_joint_positions = attribs.m_publishJointPositions;
-    m_minPubFreq = attribs.m_minPublishFreq;
-    m_maxPubFreq = attribs.m_maxPublishFreq;
-    m_passive = attribs.m_passive;
+    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
+    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
+    m_passive = attribs.m_communicationAttribs.m_passive;
 
     // Where to add the visual, collision and this object?
     return true;
@@ -1993,64 +1995,7 @@ afSoftBody::afSoftBody(afWorldPtr a_afWorld): afSoftMultiMesh(a_afWorld){
 /// \return
 ///
 bool afSoftBody::loadSoftBody(YAML::Node* sb_node, string node_name, afModelPtr mB) {
-    YAML::Node& softBodyNode = *sb_node;
-    if (softBodyNode.IsNull()){
-        cerr << "ERROR: SOFT BODY'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
-        return 0;
-    }
-    // Declare all the yaml parameters that we want to look for
-    YAML::Node softBodyName = softBodyNode["name"];
-    YAML::Node softBodyMesh = softBodyNode["mesh"];
-    YAML::Node softBodyCollisionMargin = softBodyNode["collision margin"];
-    YAML::Node softBodyScale = softBodyNode["scale"];
-    YAML::Node softBodyInertialOffsetPos = softBodyNode["inertial offset"]["position"];
-    YAML::Node softBodyInertialOffsetRot = softBodyNode["inertial offset"]["orientation"];
-    YAML::Node softBodyMeshPathHR = softBodyNode["high resolution path"];
-    YAML::Node softBodyMeshPathLR = softBodyNode["low resolution path"];
-    YAML::Node softBodyNameSpace = softBodyNode["namespace"];
-    YAML::Node softBodyMass = softBodyNode["mass"];
-    YAML::Node softBodyLinGain = softBodyNode["linear gain"];
-    YAML::Node softBodyAngGain = softBodyNode["angular gain"];
-    YAML::Node softBodyPos = softBodyNode["location"]["position"];
-    YAML::Node softBodyRot = softBodyNode["location"]["orientation"];
-    YAML::Node softBodyColor = softBodyNode["color"];
-    YAML::Node softBodyColorRGBA = softBodyNode["color rgba"];
-    YAML::Node softBodyColorComponents = softBodyNode["color components"];
-    YAML::Node softBodyConfigData = softBodyNode["config"];
-    YAML::Node softBodyRandomizeConstraints = softBodyNode["randomize constraints"];
 
-    YAML::Node cfg_kLST = softBodyConfigData["kLST"];
-    YAML::Node cfg_kAST = softBodyConfigData["kAST"];
-    YAML::Node cfg_kVST = softBodyConfigData["kVST"];
-    YAML::Node cfg_kVCF = softBodyConfigData["kVCF"];
-    YAML::Node cfg_kDP = softBodyConfigData["kDP"];
-    YAML::Node cfg_kDG = softBodyConfigData["kDG"];
-    YAML::Node cfg_kLF = softBodyConfigData["kLF"];
-    YAML::Node cfg_kPR = softBodyConfigData["kPR"];
-    YAML::Node cfg_kVC = softBodyConfigData["kVC"];
-    YAML::Node cfg_kDF = softBodyConfigData["kDF"];
-    YAML::Node cfg_kMT = softBodyConfigData["kMT"];
-    YAML::Node cfg_kCHR = softBodyConfigData["kCHR"];
-    YAML::Node cfg_kKHR = softBodyConfigData["kKHR"];
-    YAML::Node cfg_kSHR = softBodyConfigData["kSHR"];
-    YAML::Node cfg_kAHR = softBodyConfigData["kAHR"];
-    YAML::Node cfg_kSRHR_CL = softBodyConfigData["kSRHR_CL"];
-    YAML::Node cfg_kSKHR_CL = softBodyConfigData["kSKHR_CL"];
-    YAML::Node cfg_kSSHR_CL = softBodyConfigData["kSSHR_CL"];
-    YAML::Node cfg_kSR_SPLT_CL = softBodyConfigData["kSR_SPLT_CL"];
-    YAML::Node cfg_kSK_SPLT_CL = softBodyConfigData["kSK_SPLT_CL"];
-    YAML::Node cfg_kSS_SPLT_CL = softBodyConfigData["kSS_SPLT_CL"];
-    YAML::Node cfg_maxvolume = softBodyConfigData["maxvolume"];
-    YAML::Node cfg_timescale = softBodyConfigData["timescale"];
-    YAML::Node cfg_viterations = softBodyConfigData["viterations"];
-    YAML::Node cfg_piterations = softBodyConfigData["piterations"];
-    YAML::Node cfg_diterations = softBodyConfigData["diterations"];
-    YAML::Node cfg_citerations = softBodyConfigData["citerations"];
-    YAML::Node cfg_flags = softBodyConfigData["flags"];
-    YAML::Node cfg_bendingConstraint = softBodyConfigData["bending constraint"];
-    YAML::Node cfg_cutting = softBodyConfigData["cutting"];
-    YAML::Node cfg_clusters = softBodyConfigData["clusters"];
-    YAML::Node cfg_fixed_nodes = softBodyConfigData["fixed nodes"];
 
     if(softBodyName.IsDefined()){
         m_name = softBodyName.as<string>();
@@ -3522,9 +3467,9 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
 ///
 afWorld::afWorld(string a_global_namespace){
     m_maxIterations = 10;
-    m_encl_length = 4.0;
-    m_encl_width = 4.0;
-    m_encl_height = 3.0;
+    m_enclosureL = 4.0;
+    m_enclosureW = 4.0;
+    m_enclosureH = 3.0;
 
     m_pickSphere = new cMesh();
     cCreateSphere(m_pickSphere, 0.02);
@@ -3569,7 +3514,7 @@ afWorld::~afWorld()
 /// \return
 ///
 double afWorld::getEnclosureLength(){
-    return m_encl_length;
+    return m_enclosureL;
 }
 
 
@@ -3578,7 +3523,7 @@ double afWorld::getEnclosureLength(){
 /// \return
 ///
 double afWorld::getEnclosureWidth(){
-    return m_encl_width;
+    return m_enclosureW;
 }
 
 
@@ -3587,7 +3532,7 @@ double afWorld::getEnclosureWidth(){
 /// \return
 ///
 double afWorld::getEnclosureHeight(){
-    return m_encl_height;
+    return m_enclosureH;
 }
 
 
@@ -3598,9 +3543,9 @@ double afWorld::getEnclosureHeight(){
 /// \param height
 ///
 void afWorld::getEnclosureExtents(double &length, double &width, double &height){
-    length = m_encl_length;
-    width = m_encl_width;
-    height = m_encl_height;
+    length = m_enclosureL;
+    width = m_enclosureW;
+    height = m_enclosureH;
 }
 
 
@@ -3675,9 +3620,9 @@ void afWorld::resetDynamicBodies(bool reset_time){
 /// \param y
 /// \param z
 ///
-void afWorld::setGravity(double x, double y, double z)
+void afWorld::setGravity(afVector3d &vec)
 {
-    m_bulletWorld->setGravity(btVector3(x, y, z));
+    m_bulletWorld->setGravity(btVector3(vec(0), vec(1), vec(2)));
 }
 
 
@@ -3876,6 +3821,18 @@ void afWorld::estimateBodyWrenches(){
         }
     }
 
+}
+
+void afBaseObject::copyMaterialToMesh(cMultiMesh *a_mesh, const afColorAttributes *a_color)
+{
+    cMaterial mat;
+    mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2), a_color->m_alpha);
+    mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2), a_color->m_alpha);
+    mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2), a_color->m_alpha);
+    mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2), a_color->m_alpha);
+    mat.setTransparencyLevel(a_color->m_alpha);
+    mat.setShininess(a_color->m_shininiess);
+    a_mesh->setMaterial(mat);
 }
 
 
@@ -4078,34 +4035,12 @@ bool afWorld::createDefaultWorld(){
 /// \param a_world_config
 /// \return
 ///
-bool afWorld::loadWorld(string a_world_config, bool showGUI){
-    YAML::Node worldNode;
-    try{
-        worldNode = YAML::LoadFile(a_world_config);
-    }catch(exception &e){
-        cerr << "[Exception]: " << e.what() << endl;
-        cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_world_config << endl;
-        return 0;
-    }
+bool afWorld::loadWorld(afWorldAttributes* a_attribs){
 
-    m_world_config_path = boost::filesystem::path(a_world_config).parent_path();
-    printf("INFO! WORLD CONFIG PATH: %s \n", m_world_config_path.c_str());
+    const afWorldAttributes & attribs = *a_attribs;
 
-    m_name = "World";
-
-    YAML::Node worldEnclosureData = worldNode["enclosure"];
-    YAML::Node worldLightsData = worldNode["lights"];
-    YAML::Node worldCamerasData = worldNode["cameras"];
-    YAML::Node worldEnvironment = worldNode["environment"];
-    YAML::Node worldSkyBox = worldNode["skybox"];
-    YAML::Node worldNamespace = worldNode["namespace"];
-    YAML::Node worldMaxIterations = worldNode["max iterations"];
-    YAML::Node worldGravity = worldNode["gravity"];
-    YAML::Node worldShaders = worldNode["shaders"];
-
-    if (worldNamespace.IsDefined()){
-        m_namespace = afUtils::removeAdjacentBackSlashes(worldNamespace.as<string>());
-    }
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     afCreateCommInstance(afObjectType::WORLD,
                          m_name,
@@ -4114,34 +4049,11 @@ bool afWorld::loadWorld(string a_world_config, bool showGUI){
                          2000,
                          10.0);
 
-    if(worldMaxIterations.IsDefined()){
-        if (worldMaxIterations.as<int>() > 1){
-            m_maxIterations = worldMaxIterations.as<int>();
-            cerr << "INFO! SETTING SIMULATION MAX ITERATIONS TO : " << m_maxIterations << endl;
-        }
-        else{
-            cerr << "ERROR! USER SPECIFIED MAX ITERATIONS < 2 : " << worldMaxIterations.as<int>()<< endl;
-            cerr << "INFO! IGNORING AND USING MAX ITERATIONS : " << m_maxIterations << endl;
-        }
-    }
+    m_maxIterations = attribs.m_maxIterations;
 
-    double gx = 0.0;
-    double gy = 0.0;
-    double gz = -9.81;
+    setGravity(attribs.m_gravity);
 
-    if (worldGravity.IsDefined()){
-        gx = worldGravity["x"].as<double>();
-        gy = worldGravity["y"].as<double>();
-        gz = worldGravity["z"].as<double>();
-    }
 
-    setGravity(gx, gy, gz);
-
-    if (worldEnclosureData.IsDefined()){
-        m_encl_length = worldEnclosureData["length"].as<double>();
-        m_encl_width =  worldEnclosureData["width"].as<double>();
-        m_encl_height = worldEnclosureData["height"].as<double>();
-    }
 
     m_light = new cPositionalLight(this);
     m_light->setLocalPos(2, 2, 5);
@@ -4149,82 +4061,46 @@ bool afWorld::loadWorld(string a_world_config, bool showGUI){
     m_light->setEnabled(true);
     addChild(m_light);
 
-    bool env_defined = false;
-    if(worldEnvironment.IsDefined()){
-        string world_adf = worldEnvironment.as<string>();
-        boost::filesystem::path p(world_adf);
-        if (p.is_relative()){
-            p = m_world_config_path / p;
-        }
-        env_defined = loadModel(p.string(), false);
-    }
+    if (loadModel(attribs.m_environmentFilepath.c_str(), false) == false){
+        if (attribs.m_enclosure.m_use){
+            m_enclosureL = attribs.m_enclosure.m_length;
+            m_enclosureW =  attribs.m_enclosure.m_width;
+            m_enclosureH = attribs.m_enclosure.m_height;
 
-    if (!env_defined){
-        createDefaultWorld();
-    }
-
-    if (worldSkyBox.IsDefined()){
-        boost::filesystem::path skybox_path = worldSkyBox["path"].as<string>();
-
-        if (skybox_path.is_relative()){
-            skybox_path = m_world_config_path / skybox_path;
-        }
-
-        if (worldSkyBox["right"].IsDefined() &&
-                worldSkyBox["left"].IsDefined() &&
-                worldSkyBox["top"].IsDefined() &&
-                worldSkyBox["bottom"].IsDefined() &&
-                worldSkyBox["front"].IsDefined() &&
-                worldSkyBox["back"].IsDefined()
-                )
-        {
-            m_skyBoxDefined = true;
+            createDefaultWorld();
         }
         else{
-            m_skyBoxDefined = false;
-        }
-
-        if (m_skyBoxDefined){
-
-            m_skyBoxRight = skybox_path / worldSkyBox["right"].as<string>();
-            m_skyBoxLeft = skybox_path / worldSkyBox["left"].as<string>();
-            m_skyBoxTop = skybox_path / worldSkyBox["top"].as<string>();
-            m_skyBoxBottom = skybox_path / worldSkyBox["bottom"].as<string>();
-            m_skyBoxFront = skybox_path / worldSkyBox["front"].as<string>();
-            m_skyBoxBack = skybox_path / worldSkyBox["back"].as<string>();
-
-            if (worldSkyBox["shaders"].IsDefined()){
-                boost::filesystem::path shader_path = worldSkyBox["shaders"]["path"].as<string>();
-
-                if (shader_path.is_relative()){
-                    shader_path = m_world_config_path / shader_path;
-                }
-
-                m_skyBox_vsFilePath = shader_path / worldSkyBox["shaders"]["vertex"].as<string>();
-                m_skyBox_fsFilePath = shader_path / worldSkyBox["shaders"]["fragment"].as<string>();
-
-                m_skyBox_shaderProgramDefined = true;
-            }
-            else{
-                m_skyBox_shaderProgramDefined = false;
-            }
+            // THROW SOME ERROR THAT NEITHER A WORLD ENVIRONMENT IS DEFINED, NOT IS THE ENCLOSURE BOUNDS DEFINED
         }
     }
 
-    if (worldLightsData.IsDefined()){
-        size_t n_lights = worldLightsData.size();
-        for (size_t idx = 0 ; idx < n_lights; idx++){
-            string light_name = worldLightsData[idx].as<string>();
-            afLightPtr lightPtr = new afLight(this);
-            YAML::Node lightNode = worldNode[light_name];
-            if (lightPtr->loadLight(&lightNode, light_name, this)){
-                addAFLight(lightPtr, light_name);
-                lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                               lightPtr->m_name,
-                                               resolveGlobalNamespace(lightPtr->getNamespace()),
-                                               lightPtr->getMinPublishFrequency(),
-                                               lightPtr->getMaxPublishFrequency());
-            }
+    m_skyBoxDefined = attribs.m_skyBoxAttribs.m_use;
+
+    if (m_skyBoxDefined){
+        m_skyBoxRight = attribs.m_skyBoxAttribs.m_rightImageFilepath;
+        m_skyBoxLeft = attribs.m_skyBoxAttribs.m_leftImageFilepath;
+        m_skyBoxTop = attribs.m_skyBoxAttribs.m_topImageFilepath;
+        m_skyBoxBottom = attribs.m_skyBoxAttribs.m_bottomImageFilepath;
+        m_skyBoxFront = attribs.m_skyBoxAttribs.m_frontImageFilepath;
+        m_skyBoxBack = attribs.m_skyBoxAttribs.m_backImageFilepath;
+
+        m_skyBox_shaderProgramDefined = attribs.m_skyBoxAttribs.m_shaderAttribs.m_shaderDefined;
+        if (m_skyBox_shaderProgramDefined){
+            m_skyBox_vsFilePath = attribs.m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath;
+            m_skyBox_fsFilePath = attribs.m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath;
+        }
+    }
+
+
+    for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
+        afLightPtr lightPtr = new afLight(this);
+        if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
+            addAFLight(lightPtr, light_name);
+            lightPtr->afCreateCommInstance(afObjectType::LIGHT,
+                                           lightPtr->m_name,
+                                           resolveGlobalNamespace(lightPtr->getNamespace()),
+                                           lightPtr->getMinPublishFrequency(),
+                                           lightPtr->getMaxPublishFrequency());
         }
     }
 
@@ -5153,115 +5029,42 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     afCameraAttributes & attribs = *a_attribs;
 
     bool valid = true;
-    double _clipping_plane_limits[2], _field_view_angle;
     double stereoEyeSeperation, stereoFocalLength, _orthoViewWidth;
-    string stereoModeStr;
-    int monitorToLoad = -1;
-    bool useMultiPassTransparency = false;
+    int monitorToLoad = attribs.m_monitorNumber;
+    bool useMultiPassTransparency = attribs.m_multiPass;
 
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
-    stereoFocalLength = 2.0;
-    stereoEyeSeperation = 0.02;
+    stereoFocalLength = attribs.m_stereFocalLength;
+    stereoEyeSeperation = attribs.m_stereoEyeSeparation;
 
-    if (cameraName.IsDefined()){
-        m_name = cameraName.as<string>();
-    }
-    else{
-        m_name = "camera_" + to_string(a_world->getAFCameras().size() + 1);
-    }
+    m_name = attribs.m_identificationAttribs.m_name;
+    m_namespace = attribs.m_identificationAttribs.m_namespace;
 
-    if (cameraNamespace.IsDefined()){
-        m_namespace = afUtils::removeAdjacentBackSlashes(cameraNamespace.as<string>());
-    }
-    m_namespace = afUtils::mergeNamespace(m_afWorld->getNamespace(), m_namespace);
+    m_camPos << attribs.m_kinematicAttribs.m_location.getPosition();
+    m_camLookAt << attribs.m_lookAt;
 
-    if (cameraLocationData.IsDefined()){
-        m_camPos = toXYZ<cVector3d>(&cameraLocationData);
-    }
-    else{
-        cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOCATION NOT DEFINED, IGNORING " << endl;
-        valid = false;
-    }
-    if (cameraLookAtData.IsDefined()){
-        m_camLookAt = toXYZ<cVector3d>(&cameraLookAtData);
-    }
-    else{
-        cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA LOOK AT NOT DEFINED, IGNORING " << endl;
-        valid = false;
-    }
-    if (cameraUpData.IsDefined()){
-        m_camUp = toXYZ<cVector3d>(&cameraUpData);
-    }
-    else{
-        cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA UP NOT DEFINED, IGNORING " << endl;
-        valid = false;
-    }
-    if (cameraClippingPlaneData.IsDefined()){
-        _clipping_plane_limits[1] = cameraClippingPlaneData["far"].as<double>();
-        _clipping_plane_limits[0] = cameraClippingPlaneData["near"].as<double>();
-    }
-    else{
-        cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA CLIPPING PLANE NOT DEFINED, IGNORING " << endl;
-        valid = false;
-    }
-    if (cameraFieldViewAngleData.IsDefined()){
-        _field_view_angle = cameraFieldViewAngleData.as<double>();
-    }
-    else{
-        cerr << "INFO: CAMERA \"" << a_camera_name << "\" CAMERA FIELD VIEW DATA NOT DEFINED, IGNORING " << endl;
-        _field_view_angle = 0.8;
-    }
-    if (cameraOrthoWidthData.IsDefined()){
-         m_orthographic = true;
-        _orthoViewWidth = cameraOrthoWidthData.as<double>();
-    }
-    else{
-         m_orthographic = false;
-    }
-    if (cameraStereo.IsDefined()){
-        stereoModeStr = cameraStereo["mode"].as<string>();
-        if (stereoModeStr.compare("PASSIVE") || stereoModeStr.compare("passive") || stereoModeStr.compare("Passive")){
-            m_stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
-        }
-        stereoEyeSeperation = cameraStereo["eye separation"].as<double>();
-        stereoFocalLength = cameraStereo["focal length"].as<double>();
-    }
-    if (cameraMonitor.IsDefined()){
-        monitorToLoad = cameraMonitor.as<int>();
-        if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
-            cerr << "INFO: CAMERA \"" << a_camera_name << "\" MONITOR NUMBER \"" << monitorToLoad
-                      << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
-            monitorToLoad = -1;
-        }
+    m_camUp << attribs.m_up;
 
-    }
-    if (cameraControllingDevicesData.IsDefined()){
-        for(uint idx = 0 ; idx < cameraControllingDevicesData.size() ; idx++){
-            m_controllingDevNames.push_back( cameraControllingDevicesData[idx].as<string>());
-        }
+    m_orthographic = attribs.m_orthographic;
+
+    if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
+        cerr << "INFO: CAMERA \"" << a_camera_name << "\" MONITOR NUMBER \"" << monitorToLoad
+                  << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
+        monitorToLoad = -1;
     }
 
-    if (cameraPublishImage.IsDefined()){
-        m_publishImage = cameraPublishImage.as<bool>();
+    if (attribs.m_stereo){
+        m_stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
     }
 
-    if (cameraPublishImageInterval.IsDefined()){
-        uint minInterval = 1;
-        m_imagePublishInterval = cMax(cameraPublishImageInterval.as<uint>(), minInterval);
-    }
+    m_controllingDevNames = attribs.m_controllingDeviceNames;
 
-    if (cameraPublishDepth.IsDefined()){
-        m_publishDepth = cameraPublishDepth.as<bool>();
-    }
+    m_publishImage = attribs.m_publishImage;
+    m_imagePublishInterval = attribs.m_publishImageInterval;
+    m_publishDepth = attribs.m_publishDepth;
+    m_depthPublishInterval = attribs.m_publishDepthInterval;
 
-    if (cameraPublishDepthInterval.IsDefined()){
-        m_depthPublishInterval = cMax(cameraPublishDepthInterval.as<uint>(), (uint)1);
-    }
-
-    if (cameraMultiPass.IsDefined()){
-        useMultiPassTransparency = cameraMultiPass.as<bool>();
-    }
 
     if(valid){
         m_camera = new cCamera(a_world);
@@ -5284,7 +5087,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         setView(m_camPos, m_camLookAt, m_camUp);
         m_initialTransform = getLocalTransform();
         // set the near and far clipping planes of the camera
-        m_camera->setClippingPlanes(_clipping_plane_limits[0], _clipping_plane_limits[1]);
+        m_camera->setClippingPlanes(attribs.m_nearPlane, attribs.m_farPlane);
 
         // set stereo mode
         m_camera->setStereoMode(m_stereMode);
@@ -5297,10 +5100,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         m_camera->setMirrorVertical(false);
 
         if (m_orthographic){
-            m_camera->setOrthographicView(_orthoViewWidth);
+            m_camera->setOrthographicView(attribs.m_orthoViewWidth);
         }
         else{
-            m_camera->setFieldViewAngleRad(_field_view_angle);
+            m_camera->setFieldViewAngleRad(attribs.m_fieldViewAngle);
         }
 
         m_camera->setUseMultipassTransparency(useMultiPassTransparency);

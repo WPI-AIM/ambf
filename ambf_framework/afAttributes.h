@@ -75,8 +75,6 @@ struct afPrimitiveShapeAttributes{
 public:
 
     afPrimitiveShapeAttributes(){
-        m_posOffset.set(0, 0, 0);
-        m_rotOffset.setIdentity();
         m_shapeType = afPrimitiveShapeType::INVALID;
         m_axisType = afAxisType::Z;
     }
@@ -117,16 +115,6 @@ public:
         m_shapeType = afPrimitiveShapeType::CONE;
     }
 
-    // Pos Offset of the Shape
-    void setPosOffset(double px, double py, double pz){
-        m_posOffset.set(px, py, pz);
-    }
-
-    // Rot Offset of the Shape
-    void setRotOffset(double roll, double pitch, double yaw){
-        m_rotOffset.setRPY(roll, pitch, yaw);
-    }
-
     inline void setShapeType(afPrimitiveShapeType shapeType){m_shapeType = shapeType;}
 
     inline void setAxisType(afAxisType axisType){m_axisType = axisType;}
@@ -147,9 +135,7 @@ public:
 
     inline afAxisType getAxisType() const {return m_axisType;}
 
-    inline afVector3d getPosOffset() const {return m_posOffset;}
-
-    inline afMatrix3d getRotOffset() const {return m_rotOffset;}
+    inline afTransform getOffset() const{return m_offset;}
 
 public:
 
@@ -167,9 +153,7 @@ public:
 
     afAxisType m_axisType;
 
-    afVector3d m_posOffset;
-
-    afMatrix3d m_rotOffset;
+    afTransform m_offset;
 
 private:
     double m_shapeScale = 1.0;
@@ -348,8 +332,8 @@ struct afColorAttributes{
         m_specular.set(0.5, 0.5, 0.5);
         m_diffuse.set(0.5, 0.5, 0.5);
         m_emission.set(0.5, 0.5, 0.5);
+        m_ambient.set(0.5, 0.5, 0.5);
 
-        m_ambient = 1.0;
         m_alpha = 1.0;
         m_shininiess = 64;
     }
@@ -357,7 +341,7 @@ struct afColorAttributes{
     afVector3d m_specular;
     afVector3d m_diffuse;
     afVector3d m_emission;
-    double m_ambient;
+    afVector3d m_ambient;
     double m_alpha;
     unsigned int m_shininiess;
 
@@ -900,6 +884,8 @@ public:
     afWorldAttributes(){
         m_maxIterations = 10;
         m_gravity.set(0, 0, -9.8);
+        m_showGUI = true;
+        m_identificationAttribs.m_name = "World";
     }
 
     std::vector<afLightAttributes> m_lightAttribs;
@@ -910,6 +896,8 @@ public:
     afPath m_environmentFilepath;
     afShaderAttributes m_shaderAttribs;
     std::string m_namespace;
+
+    bool m_showGUI;
 
     struct afSkyBoxAttributes{
         afPath m_leftImageFilepath;
