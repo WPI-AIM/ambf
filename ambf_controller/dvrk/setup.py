@@ -3,9 +3,11 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
-    packages=['psmFK', 'psmIK', 'utilities', 'utilities_withoutpykdl'],
-    scripts=[''],
-    package_dir={'': 'scripts'}
+    name='dvrk_functions',
+    packages=['psmFK', 'psmIK', 'utilities', 'kinematics'],
+    package_dir={'': 'scripts'},
+    author='Dhruv Kool Rajamani',
+    author_email='dkoolrajamani@wpi.edu'
 )
 
 setup(**d)

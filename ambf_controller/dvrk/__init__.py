@@ -1,4 +1,3 @@
-from .psmFK import *
-from .psmIK import *
-from .utilities import *
-from .utilities_withoutpykdl import *
+from .scripts.psmFK import *
+from .scripts.psmIK import *
+from .scripts.utilities import *
