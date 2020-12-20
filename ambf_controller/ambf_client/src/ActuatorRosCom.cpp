@@ -54,6 +54,7 @@ void ActuatorRosCom::init(){
 
 ActuatorRosCom::~ActuatorRosCom(){
     ros::shutdown();
+    usleep(100000);
     std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
 }
 

@@ -308,8 +308,6 @@ bool Client::getPublishedTopics(){
        if(endsWith(topic_name, trim_topic)) {
            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-//           ROS_INFO("getPublishedTopics(): %s - %s", msg_type.c_str(), topic_name.c_str());
-//           std::cout << "getPublishedTopics - msg_type: " << msg_type << ", topic_name: " << topic_name << std::endl;
            objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
            objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
 
@@ -393,41 +391,41 @@ void Client::cleanUp() {
 
 
             if (msg_type == "ambf_msgs/ActuatorState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<ActuatorRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<ActuatorRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<ActuatorRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<ActuatorRosCom*>(handler))->getObjectName()<< std::endl;
 
                 (dynamic_cast<ActuatorRosCom*>(handler))->~ActuatorRosCom();
             } else if (msg_type == "ambf_msgs/CameraState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<CameraRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<CameraRosCom*>(handler))->getObjectName()<< std::endl;
-                (dynamic_cast<CameraRosCom*>(handler))->rosShutdown();
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<CameraRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<CameraRosCom*>(handler))->getObjectName()<< std::endl;
+//                (dynamic_cast<CameraRosCom*>(handler))->rosShutdown();
 
                 (dynamic_cast<CameraRosCom*>(handler))->~CameraRosCom();
             } else if (msg_type == "ambf_msgs/LightState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<LightRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<LightRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<LightRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<LightRosCom*>(handler))->getObjectName()<< std::endl;
 
-//                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
+                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
             } else if (msg_type == "ambf_msgs/ObjectState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<ObjectRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<ObjectRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<ObjectRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<ObjectRosCom*>(handler))->getObjectName()<< std::endl;
 
-//                (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
+                (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
             } else if (msg_type == "ambf_msgs/RigidBodyState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<RigidBodyRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<RigidBodyRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<RigidBodyRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<RigidBodyRosCom*>(handler))->getObjectName()<< std::endl;
 
-//                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
+                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
             } else if (msg_type == "ambf_msgs/SensorState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<SensorRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<SensorRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<SensorRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<SensorRosCom*>(handler))->getObjectName()<< std::endl;
 
-//                (dynamic_cast<SensorRosCom*>(handler))->~SensorRosCom();
+                (dynamic_cast<SensorRosCom*>(handler))->~SensorRosCom();
             } else if (msg_type == "ambf_msgs/VehicleState") {
-                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<VehicleRosCom*>(handler))->getObjectType() << ", " <<
-                (dynamic_cast<VehicleRosCom*>(handler))->getObjectName()<< std::endl;
+//                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<VehicleRosCom*>(handler))->getObjectType() << ", " <<
+//                (dynamic_cast<VehicleRosCom*>(handler))->getObjectName()<< std::endl;
 
-//                (dynamic_cast<VehicleRosCom*>(handler))->~VehicleRosCom();
+                (dynamic_cast<VehicleRosCom*>(handler))->~VehicleRosCom();
             } else if(msg_type == "ambf_msgs/WorldState") {
 //                std::cout << "msg_type: " << msg_type << ", " << (dynamic_cast<WorldRosCom*>(handler))->getObjectType() << ", " <<
 //                (dynamic_cast<WorldRosCom*>(handler))->getObjectName()<< std::endl;

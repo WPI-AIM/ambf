@@ -55,6 +55,7 @@ void LightRosCom::init(){
 
 LightRosCom::~LightRosCom(){
     ros::shutdown();
+    usleep(100000);
     std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
 }
 

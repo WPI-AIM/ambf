@@ -65,9 +65,9 @@ int main(int argc, char* argv[])
 //         std::cout << object_name << std::endl;
 //     }
 
-    std::string link_name = "baselink";
-    rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
-    usleep(250000);
+//    std::string link_name = "baselink";
+//    rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
+//    usleep(250000);
 
 
 //    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 
 //        std::cout << "link_handler->get_num_of_children(): " << link_handler->get_num_of_children() << std::endl;
 //    }
-    link_handler->set_joint_pos<int>(0, 100.0); // works now
+//    link_handler->set_joint_pos<int>(0, 100.0); // works now
 //    link_handler->set_joint_pos<std::string>("link1-link2", 100.0);
 
 //    link_handler->set_joint_vel<int>(1, 0.1);
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 //    tf::Vector3 joint_position = psm_baselink_handler->get_joint_position();
 //    printVector3("joint_position", joint_position);
 //    client.printSummary();
-//    client.cleanUp();
+    client.cleanUp();
 //    client.~Client();
 
 	return 0;
