@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
 
     link_handler->set_pos(0.5, 0.5, 0.5);
     tf::Quaternion rot_quat(0.5, 0.5, 0.5, 0.5);
-    link_handler->set_rot(rot_quat);
+//    link_handler->set_rot(rot_quat);
+    link_handler->set_rpy(0.6, 0.6, 0.6);
 
 //    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
 //    for(int i = 0; i < 5; i++) {

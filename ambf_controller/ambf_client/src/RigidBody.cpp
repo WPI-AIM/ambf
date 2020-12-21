@@ -152,6 +152,7 @@ void RigidBody::set_rpy(double roll, double pitch, double yaw) {
 
     pose.setOrigin(pos);
     pose.setRotation(rot_quat);
+    this->set_pose(pose);
 }
 
 ///
