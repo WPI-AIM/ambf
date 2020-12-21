@@ -148,6 +148,10 @@ private:
     void set_all_joint_control(std::vector<float> joints_command, int control_type);
     bool is_active();
     void set_active();
+
+    bool wrench_cmd_set_ = false; // Flag to check if a Wrench command has been set
+    bool pose_cmd_set_ = false;  // Flag to check if a Pose command has been set
+    bool twist_cmd_set_ = false;  // Flag to check if a Twist command has been set
 };
 
 

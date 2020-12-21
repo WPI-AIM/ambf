@@ -96,32 +96,44 @@ tf::Pose RigidBody::get_pose() {
 
 
 tf::Vector3 RigidBody::get_pos_command() {
-    double px = m_Cmd.pose.position.x;
-    double py = m_Cmd.pose.position.y;
-    double pz = m_Cmd.pose.position.z;
+    double px = 0.0;
+    double py = 0.0;
+    double pz = 0.0;
+
+    if(pose_cmd_set_) {
+        px = m_Cmd.pose.position.x;
+        py = m_Cmd.pose.position.y;
+        pz = m_Cmd.pose.position.z;
+    } else {
+        px = m_State.pose.position.x;
+        py = m_State.pose.position.y;
+        pz = m_State.pose.position.z;
+    }
+
     return tf::Vector3(px, py, pz);
 }
 
 tf::Quaternion RigidBody::get_rot_command() {
     tf::Quaternion rot_quat(0.0, 0.0, 0.0, 0.0);
-    tf::quaternionMsgToTF(m_Cmd.pose.orientation, rot_quat);
+
+    if(pose_cmd_set_) {
+        tf::quaternionMsgToTF(m_Cmd.pose.orientation, rot_quat);
+    } else {
+        tf::quaternionMsgToTF(m_State.pose.orientation, rot_quat);
+    }
 
     return rot_quat;
 }
 
 
 void RigidBody::set_pos(double px, double py, double pz) {
-
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
-    m_Cmd.pose.position.x = px;
-    m_Cmd.pose.position.y = py;
-    m_Cmd.pose.position.z = pz;
-
+    tf::Pose pose;
+    tf::Vector3 pos(px, py, pz);
     tf::Quaternion rot_quat = this->get_rot_command();
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 
-    this->apply_command();
+    pose.setOrigin(pos);
+    pose.setRotation(rot_quat);
+    this->set_pose(pose);
 }
 
 
@@ -132,12 +144,14 @@ void RigidBody::set_pos(double px, double py, double pz) {
 /// \param yaw
 ///
 void RigidBody::set_rpy(double roll, double pitch, double yaw) {
+    tf::Pose pose;
+    tf::Vector3 pos = this->get_pos_command();
+
     tf::Quaternion rot_quat;
     rot_quat.setRPY(roll, pitch, yaw);
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
 
-    this->apply_command();
+    pose.setOrigin(pos);
+    pose.setRotation(rot_quat);
 }
 
 ///
@@ -280,13 +294,21 @@ tf::Vector3 RigidBody::get_torque_command() {
 
 tf::Vector3 RigidBody::get_linear_velocity_command() {
     tf::Vector3 l(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.twist.linear, l);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.twist.linear, l);
+    } else {
+        tf::vector3MsgToTF(m_State.twist.linear, l);
+    }
     return l;
 }
 
 tf::Vector3 RigidBody::get_angular_velocity_command() {
     tf::Vector3 a(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.twist.angular, a);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.twist.angular, a);
+    } else {
+        tf::vector3MsgToTF(m_State.twist.angular, a);
+    }
     return a;
 }
 
@@ -349,8 +371,12 @@ void RigidBody::set_pose(const tf::Pose pose) {
     m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_POSITION;
 
     tf::poseTFToMsg(pose, m_Cmd.pose);
+    tf::Vector3 pos = pose.getOrigin();
+    tf::Quaternion rot_quat = pose.getRotation();
 
+    std::cout << "set_pose: " << pos[0] << ", " << pos[1] << ", " << pos[2] << ", " << rot_quat[0] << ", " << rot_quat[1] << ", " << rot_quat[2] << ", " << rot_quat[3] << std::endl;
     this->apply_command();
+    pose_cmd_set_ = true;
 }
 
 ///

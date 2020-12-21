@@ -38,8 +38,14 @@ time.sleep(0.2)
 # print(psm_handle.get_rot())
 # psm_handle.set_joint_pos(0, 0)
 
+
 # print(kuka_handle.get_rot())
 kuka_handle.set_joint_pos(0, 0)
+print('get_pos_command()', kuka_handle.get_pos_command())
+print('get_pos()', kuka_handle.get_pos())
+kuka_handle.set_pos(1, 1, 1)
+print('get_pos()', kuka_handle.get_pos())
+
 # # print(' ')
 # # print('MTM Wrist Fixed Rotation:')
 # # print(mtm_wrist_handle.get_rpy())

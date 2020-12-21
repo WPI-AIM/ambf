@@ -379,6 +379,7 @@ class RigidBody(BaseObject):
         _pose_cmd.position.z = pz
         _pose_cmd.orientation = self.get_rot_command()
 
+        print('_pose_cmd: ', _pose_cmd)
         self.set_pose(_pose_cmd)
 
     def set_rpy(self, roll, pitch, yaw):

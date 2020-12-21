@@ -65,10 +65,18 @@ int main(int argc, char* argv[])
 //         std::cout << object_name << std::endl;
 //     }
 
-//    std::string link_name = "baselink";
-//    rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
-//    usleep(250000);
+    std::string link_name = "base";
+    rigidBodyPtr link_handler = client.getARigidBody(link_name, true);
+    usleep(250000);
+    link_handler->set_joint_effort(0, 0.0);
 
+    tf::Vector3 pos = link_handler->get_pos();
+    std::cout << "pos: " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
+
+
+    link_handler->set_pos(0.5, 0.5, 0.5);
+    tf::Quaternion rot_quat(0.5, 0.5, 0.5, 0.5);
+    link_handler->set_rot(rot_quat);
 
 //    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
 //    for(int i = 0; i < 5; i++) {
