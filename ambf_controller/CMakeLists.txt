@@ -53,4 +53,6 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/src/ambf_defines.cpp
                                 raven2/src/main.cpp )
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk)
+
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})

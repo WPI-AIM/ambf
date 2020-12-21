@@ -1,0 +1,7 @@
+setuptools
+wheel
+catkin_tools
+numpy
+pylint
+yapf
+typing-extensions
