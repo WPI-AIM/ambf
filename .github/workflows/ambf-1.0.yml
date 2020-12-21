@@ -1,4 +1,4 @@
-name: CI
+name: ambf-1.0
 
 on: [push, pull_request]
 
@@ -6,7 +6,11 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
       - name: Build docker image
         run: |
           docker build --tag=ambf .
+        env:
+          DEFAULT_BRANCH: ambf-1.0
