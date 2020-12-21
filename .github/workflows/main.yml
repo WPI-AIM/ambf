@@ -1,10 +1,6 @@
-name: Release CI
+name: ambf-1.0
 
-on:
-  push:
-    branches: [ ambf-1.0-python3-fix ]
-  pull_request:
-    branches: [ ambf-1.0-python3-fix ]
+on: [push, pull_request]
 
 jobs:
   build:
