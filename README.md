@@ -3,7 +3,7 @@
 
 #### Build Status  
 
-![ambf-1.0](https://github.com/DhruvKoolRajamani/ambf/workflows/ambf-1.0/badge.svg?branch=ambf-1.0-python3-fix)
+![ambf-1.0](https://github.com/WPI-AIM/ambf/workflows/ambf-1.0/badge.svg?branch=ambf-1.0)
 
 #### Contributors:
 1. [Melody Su](https://github.com/melodysu83) (Email: --)
