@@ -1,16 +1,19 @@
-name: ambf-1.0
+name: Release CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ ambf-1.0-python3-fix ]
+  pull_request:
+    branches: [ ambf-1.0-python3-fix ]
 
 jobs:
-  build_and_test:
+  build:
+
     runs-on: ubuntu-latest
+  
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
       
       - name: Build docker image
         run: |
           docker build --tag=ambf .
-        env:
-          DEFAULT_BRANCH: ambf-1.0

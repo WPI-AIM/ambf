@@ -2,7 +2,7 @@
 ### 1. Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
 ### Build Status  
-![ambf-1.0](https://github.com/DhruvKoolRajamani/ambf/workflows/ambf/badge.svg)
+![Release](https://github.com/DhruvKoolRajamani/ambf/workflows/Release%CI/badge.svg)
 
 #### Contributors:
 1. [Melody Su](https://github.com/melodysu83) (Email: --)
