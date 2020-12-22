@@ -33,9 +33,9 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: Melody Su, Nathaniel Goldfarb $
+#  $Author: Adnan Munawar, Melody Su, Nathaniel Goldfarb, Shreyas Chandra Sekhar$$
 #  $Date:  April, 2019 $
-#  $Rev:  $
+#  $Rev: 1.0$
 
 # common settings required to build examples
 find_package (GLFW REQUIRED)

@@ -81,6 +81,7 @@ using namespace ambf_client;
 //------------------------------------------------------------------------------
 typedef IBaseObject* iBaseObjectPtr;
 typedef std::unordered_map<string, iBaseObjectPtr> iBaseObjectMap;
+
 typedef Actuator* actuatorPtr;
 typedef Camera* cameraPtr;
 typedef Light* lightPtr;

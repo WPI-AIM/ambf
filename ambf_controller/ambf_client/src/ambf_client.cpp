@@ -373,27 +373,9 @@ T Client::getObject(std::string a_name, TMap* a_map, bool suppress_warning){
 
 void Client::cleanUp() {
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
-        string msg_type = itr_->first;
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
-            IBaseObject * handler = ptr_->second;
-
-            if (msg_type == "ambf_msgs/ActuatorState") {
-                (dynamic_cast<ActuatorRosCom*>(handler))->~ActuatorRosCom();
-            } else if (msg_type == "ambf_msgs/CameraState") {
-                (dynamic_cast<CameraRosCom*>(handler))->~CameraRosCom();
-            } else if (msg_type == "ambf_msgs/LightState") {
-                (dynamic_cast<LightRosCom*>(handler))->~LightRosCom();
-            } else if (msg_type == "ambf_msgs/ObjectState") {
-                (dynamic_cast<ObjectRosCom*>(handler))->~ObjectRosCom();
-            } else if (msg_type == "ambf_msgs/RigidBodyState") {
-                (dynamic_cast<RigidBodyRosCom*>(handler))->~RigidBodyRosCom();
-            } else if (msg_type == "ambf_msgs/SensorState") {
-                (dynamic_cast<SensorRosCom*>(handler))->~SensorRosCom();
-            } else if (msg_type == "ambf_msgs/VehicleState") {
-                (dynamic_cast<VehicleRosCom*>(handler))->~VehicleRosCom();
-            } else if(msg_type == "ambf_msgs/WorldState") {
-                (dynamic_cast<WorldRosCom*>(handler))->~WorldRosCom();
-            }
+            iBaseObjectPtr handler = ptr_->second;
+            handler->~IBaseObject();
         }
     }
 
