@@ -29,6 +29,10 @@ freeglut3
 freeglut3-dev
 libboost-dev
 cmake
+python-psutil 
+python-future
+python3-psutil 
+python3-future
 python-nose
 python-setuptools
 ros-melodic-tf

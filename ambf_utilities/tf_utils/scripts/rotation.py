@@ -265,7 +265,7 @@ class Rotation(np.ndarray):
         if unit == 'deg':
             angle = float(angle) * (pi / 180)
         
-        self.data = Rotation.Rot(self.X_AX, angle)
+        self = Rotation.Rot(self.X_AX, angle)
 
     def DoRotY(self, angle, unit='rad'):
         """
@@ -279,7 +279,7 @@ class Rotation(np.ndarray):
         if unit == 'deg':
             angle = float(angle) * (pi / 180)
         
-        self.data = Rotation.Rot(self.Y_AX, angle)
+        self = Rotation.Rot(self.Y_AX, angle)
 
     def DoRotZ(self, angle, unit='rad'):
         """
@@ -293,7 +293,7 @@ class Rotation(np.ndarray):
         if unit == 'deg':
             angle = float(angle) * (pi / 180)
         
-        self.data = Rotation.Rot(self.Z_AX, angle)
+        self = Rotation.Rot(self.Z_AX, angle)
     
     def GetEulerZYX(self):
         """
@@ -504,7 +504,7 @@ class Rotation(np.ndarray):
         @return None
         """
 
-        self.data = self.Inverse()
+        self = self.Inverse()
 
         return
     

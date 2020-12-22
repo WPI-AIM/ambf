@@ -2,6 +2,7 @@
 
 import numpy as np
 from numpy import pi, sin, cos, tan, arctan2
+from numpy.core.numeric import identity
 from vector import Vector
 from twist import Twist
 from wrench import Wrench
@@ -11,9 +12,6 @@ import sys
 
 
 class Frame(object):
-
-  M = Rotation()
-  p = Vector()
 
   @staticmethod
   def make_Frame(HTM):
@@ -56,7 +54,7 @@ class Frame(object):
     return Frame()
 
   @staticmethod
-  def HD(a, alpha, d, theta):
+  def DH(a, alpha, d, theta):
     """
         Constructs a transformationmatrix T_link(i-1)_link(i) with the Denavit-Hartenberg 
         convention as described in the original publictation: Denavit, J. and Hartenberg, 
@@ -148,11 +146,18 @@ class Frame(object):
         """
     super(Frame, self).__init__()
 
+    self.M = None
+    self.p = None
+
     if rot is not None:
       self.M = Rotation(rot)
+    else:
+      self.M = Rotation()
 
     if pos is not None:
       self.p = Vector(pos)
+    else:
+      self.p = Vector()
 
     return
 
@@ -178,10 +183,10 @@ class Frame(object):
 
   def __mul__(self, f):
 
-    self.mat_44 = Frame.make_HTM(self)
-    f.mat_44 = Frame.make_HTM(f)
+    this_mat_44 = Frame.make_HTM(self)
+    f_mat_44 = Frame.make_HTM(f)
 
-    mul = np.matmul(self.mat_44, f.mat_44)
+    mul = np.matmul(this_mat_44, f_mat_44)
 
     frame = Frame.make_Frame(mul)
 

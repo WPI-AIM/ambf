@@ -153,8 +153,14 @@ class Vector(np.ndarray):
         return Vector(output)
 
     def __neg__(self):
+        """ 
+        Reverse the sign of the vector
         
-        return self.ReverseSign()
+        @return Vector
+        """
+
+        self.ReverseSign()
+        return self
         
     
     def dot(self, v2):
@@ -165,40 +171,44 @@ class Vector(np.ndarray):
 
         @return Vector
         """
-
+        
         return Vector._dot(self, v2)
     
     @staticmethod
     def cross(v1, v2):
-        v = Vector()
-
         v = np.cross(v1, v2)
 
         return Vector(v)
     
     @staticmethod
     def _dot(v1, v2):
-        v = Vector()
-
-        v = np.dot(v1, v2)
+        v = np.dot(v1[:], v2[:])
 
         return v
 
+def dot(v1, v2):
+    """
+    Return the static method dot of the Vector class
 
+    @param Vector
+    @param Vector
+
+    @return Vector
+    """
+    return Vector(v1).dot(Vector(v2))
 
 def test():
     Vec1 = Vector(1,2,-1)
     Vec2 = Vector(2,1,-2)
     Vec1.Normalize()
-    print (Vec1)
-    print (Vec2)
-    print (Vec1.dot(Vec2))
-    print (Vec1.dot(Vec2))
-    print (Vec1 * Vec2)
+    print ("Vector 1: ", Vec1)
+    print ("Vector 2: ", Vec2)
+    print ("V1.V2: ", Vec1.dot(Vec2))
+    print ("V1 * V2: ", Vec1 * Vec2)
     Vec1 = Vector(Vec2)
-    print (Vec1)
+    print ("Vector 1 = Vector 2: ", Vec1)
     Vec1 += Vec2
-    print (Vec1)
+    print ("Vector 2 + Vector 2: ", Vec1)
 
 if __name__ == '__main__':
     test()
