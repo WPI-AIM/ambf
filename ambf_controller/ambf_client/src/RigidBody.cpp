@@ -315,10 +315,7 @@ tf::Vector3 RigidBody::get_torque_command() {
 ///
 void RigidBody::set_force(double fx, double fy, double fz){
     tf::Vector3 n = this->get_torque_command();
-
     tf::Vector3 f(fx, fy, fz);
-//    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-//    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 
     this->set_wrench(f, n);
 }
@@ -332,10 +329,7 @@ void RigidBody::set_force(double fx, double fy, double fz){
 ///
 void RigidBody::set_torque(double nx, double ny, double nz){
     tf::Vector3 f = this->get_force_command();
-
     tf::Vector3 n(nx, ny, nz);
-//    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-//    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
 
     this->set_wrench(f, n);
 }

@@ -74,17 +74,17 @@ public:
     void set_rot(tf::Quaternion rot_quat); //TBT
     void set_pose(tf::Pose pose);
 
-    void set_linear_vel(double vx, double vy, double vz); //TBT
-    void set_angular_vel(double ax, double ay, double az); //TBT
-    void set_twist(tf::Vector3 v, tf::Vector3 a);  //TBT
-    void set_twist(geometry_msgs::Twist twist);  //TBT
+    void set_linear_vel(double vx, double vy, double vz);
+    void set_angular_vel(double ax, double ay, double az);
+    void set_twist(tf::Vector3 v, tf::Vector3 a);
+    void set_twist(geometry_msgs::Twist twist);
 
 
     tf::Vector3 get_force_command();
     tf::Vector3 get_torque_command();
-    void set_force(double fx, double fy, double fz);  //TBT
-    void set_torque(double nx, double ny, double nz);  //TBT
-    void set_wrench(tf::Vector3 f, tf::Vector3 n);  //TBT
+    void set_force(double fx, double fy, double fz);
+    void set_torque(double nx, double ny, double nz);
+    void set_wrench(tf::Vector3 f, tf::Vector3 n);
 
 
     // Getters w.r.t Rigid Body Class
