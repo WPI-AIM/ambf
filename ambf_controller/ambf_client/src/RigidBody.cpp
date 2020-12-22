@@ -133,6 +133,8 @@ void RigidBody::set_pos(double px, double py, double pz) {
 
     pose.setOrigin(pos);
     pose.setRotation(rot_quat);
+
+
     this->set_pose(pose);
 }
 
@@ -163,11 +165,196 @@ void RigidBody::set_rpy(double roll, double pitch, double yaw) {
 /// \param qw
 ///
 void RigidBody::set_rot(tf::Quaternion rot_quat) {
-    m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_Cmd.pose.orientation);
+    tf::Pose pose;
+    tf::Vector3 pos = this->get_pos_command();
+
+    pose.setOrigin(pos);
+    pose.setRotation(rot_quat);
+    this->set_pose(pose);
+}
+
+void RigidBody::set_pose(const tf::Pose pose) {
+    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_POSITION;
+
+    tf::poseTFToMsg(pose, m_Cmd.pose);
+
 
     this->apply_command();
+    wrench_cmd_set_ = false;
+    pose_cmd_set_ = true;
+    twist_cmd_set_ = false;
+
 }
+
+tf::Vector3 RigidBody::get_linear_velocity_command() {
+    tf::Vector3 l(0.0, 0.0, 0.0);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.twist.linear, l);
+    } else {
+        tf::vector3MsgToTF(m_State.twist.linear, l);
+    }
+    return l;
+}
+
+tf::Vector3 RigidBody::get_angular_velocity_command() {
+    tf::Vector3 a(0.0, 0.0, 0.0);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.twist.angular, a);
+    } else {
+        tf::vector3MsgToTF(m_State.twist.angular, a);
+    }
+    return a;
+}
+
+
+///
+/// \brief RigidBody::set_linear_vel
+/// \param vx
+/// \param vy
+/// \param vz
+///
+void RigidBody::set_linear_vel(double vx, double vy, double vz){
+    geometry_msgs::Twist twist;
+
+    tf::Vector3 v(vx, vy, vz);
+    tf::Vector3 a = this->get_angular_velocity_command();
+
+    twist.linear.x = v[0];
+    twist.linear.y = v[1];
+    twist.linear.z = v[2];
+
+
+    twist.angular.x = a[0];
+    twist.angular.y = a[1];
+    twist.angular.z = a[2];
+
+    this->set_twist(twist);
+}
+
+///
+/// \brief RigidBody::set_angular_vel
+/// \param ax
+/// \param ay
+/// \param az
+///
+void RigidBody::set_angular_vel(double ax, double ay, double az){
+    geometry_msgs::Twist twist;
+
+    tf::Vector3 v = this->get_linear_velocity_command();
+    tf::Vector3 a(ax, ay, az);
+
+    twist.linear.x = v[0];
+    twist.linear.y = v[1];
+    twist.linear.z = v[2];
+
+    twist.angular.x = a[0];
+    twist.angular.y = a[1];
+    twist.angular.z = a[2];
+
+    this->set_twist(twist);
+}
+
+void RigidBody::set_twist(tf::Vector3 v, tf::Vector3 a) {
+    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_VELOCITY;
+
+    m_Cmd.twist.linear.x = v[0];
+    m_Cmd.twist.linear.y = v[1];
+    m_Cmd.twist.linear.z = v[2];
+
+    m_Cmd.twist.angular.x = a[0];
+    m_Cmd.twist.angular.y = a[1];
+    m_Cmd.twist.angular.z = a[2];
+
+    this->apply_command();
+
+    wrench_cmd_set_ = false;
+    pose_cmd_set_ = false;
+    twist_cmd_set_ = true;
+}
+
+void RigidBody::set_twist(geometry_msgs::Twist twist) {
+    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_VELOCITY;
+
+    m_Cmd.twist = twist;
+
+    this->apply_command();
+
+    wrench_cmd_set_ = false;
+    pose_cmd_set_ = false;
+    twist_cmd_set_ = true;
+}
+
+
+tf::Vector3 RigidBody::get_force_command() {
+    tf::Vector3 f(0.0, 0.0, 0.0);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.wrench.force, f);
+    } else {
+        tf::vector3MsgToTF(m_State.wrench.force, f);
+    }
+    return f;
+}
+
+
+tf::Vector3 RigidBody::get_torque_command() {
+    tf::Vector3 t(0.0, 0.0, 0.0);
+    if(twist_cmd_set_) {
+        tf::vector3MsgToTF(m_Cmd.wrench.torque, t);
+    } else {
+        tf::vector3MsgToTF(m_State.wrench.torque, t);
+    }
+    return t;
+}
+
+
+///
+/// \brief RigidBody::set_force
+/// \param fx
+/// \param fy
+/// \param fz
+///
+void RigidBody::set_force(double fx, double fy, double fz){
+    tf::Vector3 n = this->get_torque_command();
+
+    tf::Vector3 f(fx, fy, fz);
+//    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
+//    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->set_wrench(f, n);
+}
+
+
+///
+/// \brief RigidBody::set_torque
+/// \param nx
+/// \param ny
+/// \param nz
+///
+void RigidBody::set_torque(double nx, double ny, double nz){
+    tf::Vector3 f = this->get_force_command();
+
+    tf::Vector3 n(nx, ny, nz);
+//    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
+//    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->set_wrench(f, n);
+}
+
+void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
+    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_FORCE;
+
+    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
+    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
+
+    this->apply_command();
+
+    wrench_cmd_set_ = true;
+    pose_cmd_set_ = false;
+    twist_cmd_set_ = false;
+
+}
+
+
 
 bool RigidBody::is_joint_idx_valid(int joint_idx) {
     int n_joints = m_State.joint_positions.size();
@@ -177,6 +364,9 @@ bool RigidBody::is_joint_idx_valid(int joint_idx) {
 
     return false;
 }
+
+
+
 
 
 tf::Vector3 RigidBody::get_linear_vel() {
@@ -280,80 +470,7 @@ tf::Vector3 RigidBody::get_inertia() {
 }
 
 
-tf::Vector3 RigidBody::get_force_command() {
-    tf::Vector3 f(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.wrench.torque, f);
-    return f;
-}
 
-
-tf::Vector3 RigidBody::get_torque_command() {
-    tf::Vector3 t(0.0, 0.0, 0.0);
-    tf::vector3MsgToTF(m_Cmd.wrench.torque, t);
-    return t;
-}
-
-tf::Vector3 RigidBody::get_linear_velocity_command() {
-    tf::Vector3 l(0.0, 0.0, 0.0);
-    if(twist_cmd_set_) {
-        tf::vector3MsgToTF(m_Cmd.twist.linear, l);
-    } else {
-        tf::vector3MsgToTF(m_State.twist.linear, l);
-    }
-    return l;
-}
-
-tf::Vector3 RigidBody::get_angular_velocity_command() {
-    tf::Vector3 a(0.0, 0.0, 0.0);
-    if(twist_cmd_set_) {
-        tf::vector3MsgToTF(m_Cmd.twist.angular, a);
-    } else {
-        tf::vector3MsgToTF(m_State.twist.angular, a);
-    }
-    return a;
-}
-
-///
-/// \brief RigidBody::set_force
-/// \param fx
-/// \param fy
-/// \param fz
-///
-void RigidBody::set_force(double fx, double fy, double fz){
-    tf::Vector3 n = this->get_torque_command();
-
-    tf::Vector3 f(fx, fy, fz);
-    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
-
-    this->apply_command();
-}
-
-
-///
-/// \brief RigidBody::set_torque
-/// \param nx
-/// \param ny
-/// \param nz
-///
-void RigidBody::set_torque(double nx, double ny, double nz){
-    tf::Vector3 f = this->get_force_command();
-
-    tf::Vector3 n(nx, ny, nz);
-    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
-
-    this->apply_command();
-}
-
-void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
-    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_FORCE;
-
-    tf::vector3TFToMsg(f, m_Cmd.wrench.force);
-    tf::vector3TFToMsg(n, m_Cmd.wrench.torque);
-
-    this->apply_command();
-}
 
 /////
 ///// \brief RigidBody::set_position
@@ -368,71 +485,6 @@ void RigidBody::set_wrench(tf::Vector3 f, tf::Vector3 n) {
 //    m_Cmd.pose.position.z = pz;
 //}
 
-void RigidBody::set_pose(const tf::Pose pose) {
-    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_POSITION;
-
-    tf::poseTFToMsg(pose, m_Cmd.pose);
-    tf::Vector3 pos = pose.getOrigin();
-    tf::Quaternion rot_quat = pose.getRotation();
-
-    std::cout << "set_pose: " << pos[0] << ", " << pos[1] << ", " << pos[2] << ", " << rot_quat[0] << ", " << rot_quat[1] << ", " << rot_quat[2] << ", " << rot_quat[3] << std::endl;
-    this->apply_command();
-    pose_cmd_set_ = true;
-}
-
-///
-/// \brief RigidBody::set_linear_vel
-/// \param vx
-/// \param vy
-/// \param vz
-///
-void RigidBody::set_linear_vel(double vx, double vy, double vz){
-    tf::Vector3 v(vx, vy, vz);
-    tf::Vector3 a = this->get_angular_velocity_command();
-
-    tf::vector3TFToMsg(v, m_Cmd.twist.linear);
-    tf::vector3TFToMsg(a, m_Cmd.twist.angular);
-
-    this->apply_command();
-}
-
-///
-/// \brief RigidBody::set_angular_vel
-/// \param ax
-/// \param ay
-/// \param az
-///
-void RigidBody::set_angular_vel(double ax, double ay, double az){
-    tf::Vector3 v = this->get_linear_velocity_command();
-    tf::Vector3 a(ax, ay, az);
-
-    tf::vector3TFToMsg(v, m_Cmd.twist.linear);
-    tf::vector3TFToMsg(a, m_Cmd.twist.angular);
-
-    this->apply_command();
-}
-
-void RigidBody::set_twist(tf::Vector3 v, tf::Vector3 a) {
-    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_VELOCITY;
-
-    tf::vector3TFToMsg(v, m_Cmd.twist.linear);
-    tf::vector3TFToMsg(a, m_Cmd.twist.angular);
-
-    this->apply_command();
-}
-
-void RigidBody::set_twist(geometry_msgs::Twist twist) {
-    m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_VELOCITY;
-    m_Cmd.twist.linear.x = twist.linear.x;
-    m_Cmd.twist.linear.y = twist.linear.y;
-    m_Cmd.twist.linear.z = twist.linear.z;
-
-    m_Cmd.twist.angular.x = twist.angular.x;
-    m_Cmd.twist.angular.y = twist.angular.y;
-    m_Cmd.twist.angular.z = twist.angular.z;
-
-    this->apply_command();
-}
 
 void RigidBody::wrench_command(double fx, double fy, double fz, double nx, double ny, double nz) {
     m_Cmd.cartesian_cmd_type = m_Cmd.TYPE_FORCE;

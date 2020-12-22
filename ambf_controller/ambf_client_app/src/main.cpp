@@ -70,14 +70,25 @@ int main(int argc, char* argv[])
     usleep(250000);
     link_handler->set_joint_effort(0, 0.0);
 
-    tf::Vector3 pos = link_handler->get_pos();
-    std::cout << "pos: " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
+//    tf::Vector3 pos = link_handler->get_pos();
+//    std::cout << "pos: " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
 
 
-    link_handler->set_pos(0.5, 0.5, 0.5);
-    tf::Quaternion rot_quat(0.5, 0.5, 0.5, 0.5);
+    link_handler->set_pos(0, 0, 0);
+//    tf::Quaternion rot_quat(0.8, 0.8, 0.8, 0.8);
+////    rot_quat = link_handler->get_rot();
 //    link_handler->set_rot(rot_quat);
-    link_handler->set_rpy(0.6, 0.6, 0.6);
+////    link_handler->set_rpy(0.8, 0.8, 0.8);
+//    rot_quat = link_handler->get_rot();
+//    std::cout << "rot_quat: " << rot_quat[0] << ", " << rot_quat[1] << ", " << rot_quat[2] << ", " << rot_quat[3] << std::endl;
+
+    rigidBodyPtr link1_handler = client.getARigidBody("link4", true);
+
+//    link1_handler->set_force(3000.0, 3000.0, 3000.0);
+    link1_handler->set_angular_vel(30.0, 30.0, 30.0);
+//    std::cout << "get_linear_vel: " << rpy[0] << ", " << rpy[1] << ", " << rpy[2] << std::endl;
+
+//    std::cout << "get_name: " << link_handler->get_name() << std::endl;
 
 //    std::vector<float> joints_command = {10.2, 50.2, 100.2, 130.2, 120.2, 120.2, 150.2};
 //    for(int i = 0; i < 5; i++) {
