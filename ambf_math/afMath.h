@@ -321,9 +321,18 @@ public:
         return m_R;
     }
 
+    void setPosition(const afVector3d& v){
+        m_P = v;
+    }
+
     void setPosition(afVector3d& v){
         m_P = v;
     }
+
+    void setRotation(const afMatrix3d& m){
+        m_R = m;
+    }
+
 
     void setRotation(afMatrix3d& m){
         m_R = m;

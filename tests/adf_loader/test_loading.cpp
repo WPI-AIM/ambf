@@ -12,10 +12,10 @@ int main(){
 
     loader.loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
 
-    for (int i = 0 ; i < launchAttribs.m_multiBodyFilepaths.size() ; i++){
+    for (int i = 0 ; i < launchAttribs.m_modelFilepaths.size() ; i++){
         afModelAttributes mbAttribs;
 
-        loader.loadMultiBodyAttribs(launchAttribs.m_multiBodyFilepaths[i].c_str(), &mbAttribs);
+        loader.loadModelAttribs(launchAttribs.m_modelFilepaths[i].c_str(), &mbAttribs);
 
         printf("Loaded Multbody File: %i \n", i);
     }

@@ -479,14 +479,13 @@ public:
     afLightAttributes(){
         m_spotExponent = 0.7;
         m_cuttoffAngle = 0.7;
-        m_shadowQuality = 5;
     }
 
     double m_spotExponent;
     double m_cuttoffAngle;
     afVector3d m_direction;
 
-    uint m_shadowQuality;
+    afShadowQualityType m_shadowQuality;
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
@@ -808,8 +807,7 @@ public:
 struct afFileObjectAttributes{
 public:
     afFileObjectAttributes(){}
-
-    afPath m_path;
+    afPath m_filePath;
 };
 
 
@@ -820,10 +818,13 @@ struct afModelAttributes: public afBaseObjectAttributes, public afFileObjectAttr
 public:
     afModelAttributes(){
         m_ignoreInterCollision = false;
+        m_enableComm = true;
     }
 
     afPath m_visualMeshesPath;
     afPath m_collisionMeshesPath;
+
+    bool m_enableComm;
 
     std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     std::vector <afSoftBodyAttributes> m_softBodyAttribs;
@@ -834,8 +835,9 @@ public:
 
     bool m_ignoreInterCollision;
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_path.resolvePath(a_parentPath);
+    virtual bool resolveRelativePathAttribs(){
+
+        afPath a_parentPath = m_filePath.parent_path();
 
         for (int i = 0 ; i < m_rigidBodyAttribs.size() ; i++){
             m_rigidBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
@@ -856,6 +858,8 @@ public:
         for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
             m_actuatorAttribs[i].resolveRelativePathAttribs(a_parentPath);
         }
+
+        return true;
     }
 };
 
@@ -866,11 +870,13 @@ public:
     afAllInputDevicesAttributes(){}
     std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_path.resolvePath(a_parentPath);
+    virtual bool resolveRelativePathAttribs(){
         for (int i = 0 ; i < m_inputDeviceAttribs.size() ; i++){
+            afPath a_parentPath = m_filePath.parent_path();
             m_inputDeviceAttribs[i].resolveRelativePathAttribs(a_parentPath);
         }
+
+        return true;
     }
 };
 
@@ -920,8 +926,10 @@ public:
     afEnclosure m_enclosure;
     afSkyBoxAttributes m_skyBoxAttribs;
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_path.resolvePath(a_parentPath);
+    virtual bool resolveRelativePathAttribs(){
+
+        afPath a_parentPath = m_filePath.parent_path();
+
         m_skyBoxAttribs.m_backImageFilepath.resolvePath(a_parentPath);
         m_skyBoxAttribs.m_bottomImageFilepath.resolvePath(a_parentPath);
         m_skyBoxAttribs.m_frontImageFilepath.resolvePath(a_parentPath);
@@ -941,6 +949,8 @@ public:
         for (uint i = 0 ; i < m_cameraAttribs.size() ; i++){
             m_cameraAttribs[i].resolveRelativePathAttribs(a_parentPath);
         }
+
+        return true;
     }
 };
 
@@ -949,17 +959,21 @@ struct afLaunchAttributes: public afFileObjectAttributes{
     afPath m_colorFilepath;
     afPath m_worldFilepath;
     afPath m_inputDevicesFilepath;
-    std::vector<afPath> m_multiBodyFilepaths;
+    std::vector<afPath> m_modelFilepaths;
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_path = a_parentPath;
+    virtual bool resolveRelativePathAttribs(){
+
+        afPath a_parentPath = m_filePath.parent_path();
+
         m_colorFilepath.resolvePath(a_parentPath);
         m_worldFilepath.resolvePath(a_parentPath);
         m_inputDevicesFilepath.resolvePath(a_parentPath);
 
-        for (uint i = 0 ; i < m_multiBodyFilepaths.size() ; i++){
-            m_multiBodyFilepaths[i].resolvePath(a_parentPath);
+        for (uint i = 0 ; i < m_modelFilepaths.size() ; i++){
+            m_modelFilepaths[i].resolvePath(a_parentPath);
         }
+
+        return true;
     }
 };
 

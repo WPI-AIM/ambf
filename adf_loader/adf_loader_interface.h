@@ -65,7 +65,7 @@ public:
     bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
 
     // Load Multibody Attribs
-    bool loadMultiBodyAttribs(std::string a_filepath, afModelAttributes* attribs);
+    bool loadModelAttribs(std::string a_filepath, afModelAttributes* attribs);
 
     // Load Multibody Attribs
     bool loadAllInputDevicesAttribs(std::string a_filepath, afAllInputDevicesAttributes* attribs);

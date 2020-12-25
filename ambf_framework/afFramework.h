@@ -88,6 +88,7 @@
 //------------------------------------------------------------------------------
 namespace ambf {
 using namespace chai3d;
+using namespace std;
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -115,43 +116,43 @@ typedef afConstraintActuator* afConstraintActuatorPtr;
 typedef afRayTracerSensor* afRayTracerSensorPtr;
 typedef afResistanceSensor* afResistanceSensorPtr;
 
-typedef std::map<std::string, afRigidBodyPtr> afRigidBodyMap;
-typedef std::map<std::string, afSoftBodyPtr> afSoftBodyMap;
-typedef std::map<std::string, afJointPtr> afJointMap;
-typedef std::vector<afRigidBodyPtr> afRigidBodyVec;
-typedef std::vector<afSoftBodyPtr> afSoftBodyVec;
-typedef std::vector<afJointPtr> afJointVec;
+typedef map<string, afRigidBodyPtr> afRigidBodyMap;
+typedef map<string, afSoftBodyPtr> afSoftBodyMap;
+typedef map<string, afJointPtr> afJointMap;
+typedef vector<afRigidBodyPtr> afRigidBodyVec;
+typedef vector<afSoftBodyPtr> afSoftBodyVec;
+typedef vector<afJointPtr> afJointVec;
 //------------------------------------------------------------------------------
 class afLight;
 class afCamera;
 typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
-typedef std::map<std::string, afLightPtr> afLightMap;
-typedef std::map<std::string, afCameraPtr> afCameraMap;
-typedef std::vector<afLightPtr> afLightVec;
-typedef std::vector<afCameraPtr> afCameraVec;
+typedef map<string, afLightPtr> afLightMap;
+typedef map<string, afCameraPtr> afCameraMap;
+typedef vector<afLightPtr> afLightVec;
+typedef vector<afCameraPtr> afCameraVec;
 //------------------------------------------------------------------------------
 class afSensor;
 class afResistanceSensor;
 typedef afSensor* afSensorPtr;
-typedef std::map<std::string, afSensorPtr> afSensorMap;
-typedef std::vector<afSensorPtr> afSensorVec;
+typedef map<string, afSensorPtr> afSensorMap;
+typedef vector<afSensorPtr> afSensorVec;
 //------------------------------------------------------------------------------
 class afActuator;
 class afConstraintActuator;
 typedef afActuator* afActuatorPtr;
-typedef std::map<std::string, afActuatorPtr> afActuatorMap;
-typedef std::vector<afActuatorPtr> afActuatorVec;
+typedef map<string, afActuatorPtr> afActuatorMap;
+typedef vector<afActuatorPtr> afActuatorVec;
 //------------------------------------------------------------------------------
 class afModel;
 typedef afModel* afModelPtr;
-typedef std::map<std::string, afModelPtr> afModelMap;
-typedef std::vector<afModelPtr> afModelVec;
+typedef map<string, afModelPtr> afModelMap;
+typedef vector<afModelPtr> afModelVec;
 //------------------------------------------------------------------------------
 class afVehicle;
 typedef afVehicle* afVehiclePtr;
-typedef std::map<std::string, afVehiclePtr> afVehicleMap;
-typedef std::vector<afVehiclePtr> afVehicleVec;
+typedef map<string, afVehiclePtr> afVehicleMap;
+typedef vector<afVehiclePtr> afVehicleVec;
 //------------------------------------------------------------------------------
 class afPointCloudsHandler;
 typedef cMultiPoint* cMultiPointPtr;
@@ -160,7 +161,7 @@ typedef cMultiPoint* cMultiPointPtr;
 typedef unsigned long ulong;
 
 
-static std::string AF_DEPTH_COMPUTE_VTX =
+static string AF_DEPTH_COMPUTE_VTX =
         " attribute vec3 aPosition;                                  \n"
         " attribute vec3 aNormal;                                    \n"
         " attribute vec3 aTexCoord;                                  \n"
@@ -178,7 +179,7 @@ static std::string AF_DEPTH_COMPUTE_VTX =
         "    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0); \n"
         " }                                                          \n";
 
-static std::string AF_DEPTH_COMPUTE_FRAG =
+static string AF_DEPTH_COMPUTE_FRAG =
         " uniform sampler2D diffuseMap;                                                       \n"
         " varying vec3 vTexCoord;                                                             \n"
         " uniform vec3 maxWorldDimensions;                                                    \n"
@@ -401,7 +402,7 @@ public:
     afComm(){}
     virtual ~afComm(){}
 
-    virtual void afCreateCommInstance(afObjectType type, std::string a_name, std::string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+    virtual void afCreateCommInstance(afObjectType type, string a_name, string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     // This method is to retrieve all the commands for appropriate af comm instances.
     virtual void afExecuteCommand(double dt=0.001);
@@ -413,10 +414,12 @@ public:
     inline bool isPassive(){return m_passive;}
 
     // Get Name of this object
-    inline std::string getName(){return m_name;}
+    inline string getName(){return m_name;}
 
     // Get Namespace for this object
-    inline std::string getNamespace(){return m_namespace; }
+    inline string getNamespace(){return m_namespace;}
+
+    inline string getQualifiedName(){return m_namespace + m_name;}
 
     // Get Min publishing frequency for this object
     inline int getMinPublishFrequency(){return m_minPubFreq;}
@@ -428,10 +431,10 @@ public:
     afObjectType getCommType(){return m_commType;}
 
     // Set Name of object
-    inline void setName(std::string a_name){m_name = a_name;}
+    inline void setName(string a_name){m_name = a_name;}
 
     // Set namespace for this object
-    inline void setNamespace(std::string a_namespace){m_namespace = a_namespace; }
+    inline void setNamespace(string a_namespace){m_namespace = a_namespace; }
 
     // Set as passive so it doesn't communication outside
     inline void setPassive(bool a_passive){m_passive = a_passive;}
@@ -458,7 +461,7 @@ public:
     // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
 
-    std::string m_name;
+    string m_name;
 
     //! AF CHAI Env
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -475,7 +478,7 @@ public:
 protected:
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
-    std::string m_namespace = "";
+    string m_namespace = "";
 
 
 private:
@@ -740,7 +743,7 @@ public:
     // This method toggles the viewing of frames of this rigid body.
     void toggleFrameVisibility();
 
-    bool loadFromFile(std::string a_filename);
+    bool loadFromFile(string a_filename);
 
     void addChild(cGenericObject* a_cObject);
 
@@ -755,7 +758,7 @@ public:
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
-    virtual bool resolveParenting(std::string){return true;}
+    virtual bool resolveParenting(string){return true;}
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -763,7 +766,7 @@ public:
     afModelPtr m_modelPtr;
 
     // Parent body name defined in the ADF
-    std::string m_parentName;
+    string m_parentName;
 
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;
@@ -797,7 +800,7 @@ protected:
 ///
 class afInertialObject: public afBaseObject{
 public:
-    afInertialObject(afWorldPtr a_afWorld);
+    afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     ~afInertialObject();
 
     // Apply force that is specified in the world frame at a point specified in world frame
@@ -874,7 +877,7 @@ class afRigidBody: public afInertialObject{
 
 public:
 
-    afRigidBody(afWorldPtr a_afWorld);
+    afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     virtual ~afRigidBody();
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
@@ -884,9 +887,6 @@ public:
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void updatePositionFromDynamics();
 
-    // Load rigid body named by from the rb_node specification
-    virtual bool loadRigidBody(afRigidBodyAttributes* attribs);
-
     virtual bool createFromAttribs(afRigidBodyAttributes* a_attribs);
 
     // Add a child to the afRidigBody tree, this method will internally populate the body graph
@@ -895,20 +895,20 @@ public:
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
     // children (children's children ... and so on also count as children)
-    std::vector<afChildJointPair> m_CJ_PairsAll;
+    vector<afChildJointPair> m_CJ_PairsAll;
 
     // This vector contains the list of only the bodies connected via active joints. A joint can
     // be set as passive in the ADF file.
-    std::vector<afChildJointPair> m_CJ_PairsActive;
+    vector<afChildJointPair> m_CJ_PairsActive;
 
     // A vector of all the parent bodies (not just the immediate parents but all the way up to the root parent)
-    std::vector<afRigidBodyPtr> m_parentBodies;
+    vector<afRigidBodyPtr> m_parentBodies;
 
     // Set the angle of all the child joints
     virtual void setAngle(double &angle);
 
     // Set the angles based on the num elements in the argument vector
-    virtual void setAngle(std::vector<double> &angle);
+    virtual void setAngle(vector<double> &angle);
 
     // Cleanup this rigid body
     void remove();
@@ -918,7 +918,7 @@ public:
     bool checkCollisionGroupIdx(uint a_idx);
     // function to check if this rigid body is part of the collision group
     // at a_idxs
-    bool isCommonCollisionGroupIdx(std::vector<uint> a_idx);
+    bool isCommonCollisionGroupIdx(vector<uint> a_idx);
 
     // Check if the btRigidbody is child of this afBody
     bool isChild(btRigidBody* a_body);
@@ -936,7 +936,7 @@ public:
     virtual void enableShaderProgram();
 
     // Get the sensors for this body
-    inline std::vector<afSensorPtr> getAFSensors(){return m_afSensors;}
+    inline vector<afSensorPtr> getAFSensors(){return m_afSensors;}
 
     // If the Position Controller is active, disable Position Controller from Haptic Device
     afControlType m_activeControllerType;
@@ -953,10 +953,10 @@ public:
 protected:
 
     // Name of visual and collision mesh
-    std::string m_mesh_name, m_collision_mesh_name;
+    string m_mesh_name, m_collision_mesh_name;
 
     // Iterator of connected rigid bodies
-    std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
+    vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -1007,10 +1007,10 @@ protected:
     virtual void afObjectSetJointEfforts();
 
     // Collision groups for this rigid body
-    std::vector<uint> m_collisionGroups;
+    vector<uint> m_collisionGroups;
 
     // pool of threads for solving the body's sensors in paralled
-    std::vector<std::thread*> m_sensorThreads;
+    vector<std::thread*> m_sensorThreads;
 
     // Block size. i.e. number of sensors per thread
     uint m_sensorThreadBlockSize = 10;
@@ -1023,7 +1023,7 @@ protected:
     bool updateBodySensors(uint threadIdx);
 
     // boolean flags for each thread to progress
-    std::vector<bool> m_threadUpdateFlags;
+    vector<bool> m_threadUpdateFlags;
 
     // Global flag for all sensor threads
     bool m_keepSensorThreadsAlive = true;
@@ -1031,13 +1031,13 @@ protected:
 private:
 
     // Positions of all child joints
-    std::vector<float> m_joint_positions;
+    vector<float> m_joint_positions;
 
     // Velocities of all child joints
-    std::vector<float> m_joint_velocities;
+    vector<float> m_joint_velocities;
 
     // Efforts of all child joints
-    std::vector<float> m_joint_efforts;
+    vector<float> m_joint_efforts;
 
     // Pointer to Multi body instance that constains this body
     afModelPtr m_mBPtr;
@@ -1053,48 +1053,43 @@ private:
 ///
 /// \brief The afSoftBody class
 ///
-class afSoftBody: public afSoftMultiMesh{
+class afSoftBody: public afInertialObject{
 
     friend class afModel;
 
 public:
 
-    afSoftBody(afWorldPtr a_afWorld);
+    afSoftBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     // Execute the commands incomming of afObjectCmd handle
     virtual void afObjectCommandExecute(double){}
 
-    // Load the softbody from YAML Node data
-    virtual bool loadSoftBody(YAML::Node* sb_node, std::string node_name, afModelPtr mB);
-
-    virtual bool create(afSoftBodyAttributes* a_attribs);
+    virtual bool createFromAttribs(afSoftBodyAttributes* a_attribs);
 
     // Add child a softbody
     virtual void addChildBody(afSoftBodyPtr, afJointPtr){}
 
-    // Get the namespace of this body
-    inline std::string getNamespace(){return m_namespace; }
+    vector<afJointPtr> m_joints;
 
-    std::vector<afJointPtr> m_joints;
+    vector<afSoftBodyPtr> m_childrenBodies;
 
-    std::vector<afSoftBodyPtr> m_childrenBodies;
-
-    std::vector<afSoftBodyPtr> m_parentBodies;
+    vector<afSoftBodyPtr> m_parentBodies;
 
     // Set angle of connected joint
     void setAngle(double &angle, double dt);
 
     // Set angles of connected joints
-    void setAngle(std::vector<double> &angle, double dt);
+    void setAngle(vector<double> &angle, double dt);
 
 public:
-    std::string m_namespace;
+
+    afSoftMultiMesh* m_softMultiMesh;
 
 protected:
 
     double m_scale;
 
-    std::string m_mesh_name;
+    string m_mesh_name;
 
     cMultiMesh m_lowResMesh;
 
@@ -1102,7 +1097,7 @@ protected:
 
     cMatrix3d rot;
 
-    std::vector<afSoftBodyPtr>::const_iterator m_bodyIt;
+    vector<afSoftBodyPtr>::const_iterator m_bodyIt;
 
     double K_lin, D_lin;
 
@@ -1111,8 +1106,6 @@ protected:
     bool _lin_gains_computed = false;
 
     bool _ang_gains_computed = false;
-
-    void computeGains();
 
 protected:
 
@@ -1123,8 +1116,6 @@ protected:
     void populateParentsTree(afSoftBodyPtr a_body, afJointPtr a_jnt);
 
     static afSoftBodyConfigProperties m_configProps;
-
-    afWorldPtr m_afWorld;
 };
 
 
@@ -1139,14 +1130,9 @@ class afJoint: public afBaseObject{
 
 public:
 
-    afJoint(afWorldPtr a_afWorld);
+    afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     virtual ~afJoint();
-
-    virtual bool loadJoint(std::string jnt_config_file, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "");
-
-    // Load joint from YAML Node data
-    virtual bool loadJoint(YAML::Node* jnt_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "");
 
     virtual bool createFromAttribs(afJointAttributes* a_attribs);
 
@@ -1194,8 +1180,8 @@ public:
 
 protected:
 
-    std::string m_childName;
-    std::string m_jointName;
+    string m_childName;
+    string m_jointName;
     btVector3 m_axisA, m_axisB;
     btVector3 m_pvtA, m_pvtB;
     double m_damping;
@@ -1233,8 +1219,8 @@ private:
 
     // Vector of joint positions containing the last n joint values.
     uint m_jpSize = 2;
-    std::vector<double> m_posArray;
-    std::vector<double> m_dtArray;
+    vector<double> m_posArray;
+    vector<double> m_dtArray;
 
 };
 
@@ -1244,10 +1230,7 @@ private:
 ///
 class afActuator: public afBaseObject{
 public:
-    afActuator(afWorldPtr a_afWorld);
-
-    // Load actuator form YAML node data
-    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "")=0;
+    afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     virtual void actuate(){}
 
@@ -1276,29 +1259,26 @@ class afConstraintActuator: public afActuator{
 public:
     afConstraintActuator(afWorldPtr a_afWorld);
 
-    // Load actuator form YAML node data
-    virtual bool loadActuator(YAML::Node* actuator_node, std::string node_name, afModelPtr mB, std::string name_remapping = "");
-
     virtual bool createFromAttribs(afConstraintActuatorAttributes* a_attribs);
 
     // The actuate methods will all result in the same thing. I.e. constraint a desired body or soft-body (face) to the parent body,
     // on which this actuator is mounted. The methods will use the current position of bodies or soft-bodyies to compute the parent
     // and child offsets for forming the constraint
-    virtual void actuate(std::string a_rigid_body_name);
+    virtual void actuate(string a_rigid_body_name);
 
     virtual void actuate(afRigidBodyPtr a_rigidBody);
 
-    virtual void actuate(std::string a_softbody_name, int a_face_index);
+    virtual void actuate(string a_softbody_name, int a_face_index);
 
     virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index);
 
     // In these actuate methods, explicit body offsets are provided.
 
-    virtual void actuate(std::string a_rigid_body_name, cVector3d a_bodyOffset);
+    virtual void actuate(string a_rigid_body_name, cVector3d a_bodyOffset);
 
     virtual void actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset);
 
-    virtual void actuate(std::string a_softbody_name, int a_face_index, cVector3d a_bodyOffset);
+    virtual void actuate(string a_softbody_name, int a_face_index, cVector3d a_bodyOffset);
 
     virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset);
 
@@ -1334,10 +1314,7 @@ private:
 class afSensor: public afBaseObject{
     friend class afRigidBody;
 public:
-    afSensor(afWorldPtr a_afWorld);
-
-    // Load sensor form YAML node data
-    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "")=0;
+    afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     // Toggle the debug display of the sensor
     inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
@@ -1375,9 +1352,6 @@ class afRayTracerSensor: public afSensor{
 public:
     // Constructor
     afRayTracerSensor(afWorldPtr a_afWorld);
-
-    // Load the sensor from ambf format
-    virtual bool loadSensor(YAML::Node* sensor_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "");
 
     virtual bool createFromAttribs(afRayTracerSensorAttributes* a_attribs);
 
@@ -1440,8 +1414,8 @@ protected:
     // The number of ray tracing elements belonging to this sensor
     uint m_count;
 
-    std::vector<afRayAttributes> m_raysAttribs;
-    std::vector<afRayTracerResult> m_rayTracerResults;
+    vector<afRayAttributes> m_raysAttribs;
+    vector<afRayTracerResult> m_rayTracerResults;
 
     // Size of spheres for the sensor visualization
     double m_visibilitySphereRadius;
@@ -1483,8 +1457,6 @@ struct afRayContactResult{
 class afResistanceSensor: public afRayTracerSensor{
 public:
     afResistanceSensor(afWorldPtr a_afWorld);
-
-    virtual bool loadSensor(YAML::Node *sensor_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx="");
 
     virtual bool createFromAttribs(afResistanceSensorAttributes* a_attribs);
 
@@ -1532,7 +1504,7 @@ private:
     // Use Variable Coeffecients based on the Depth Fraction
     bool m_useVariableCoeff = false;
 
-    std::vector<afRayContactResult> m_rayContactResults;
+    vector<afRayContactResult> m_rayContactResults;
 };
 
 
@@ -1585,16 +1557,13 @@ public:
 
     cCamera* getInternalCamera(){return m_camera;}
 
-    // Load camera from YAML Node data
-    bool loadCamera(YAML::Node* camera_node, std::string camera_name, afWorldPtr a_world);
-
     virtual bool createFromAttribs(afCameraAttributes* a_attribs);
 
     // Since we changed the order of ADF loading such that cameras are loaded before
     // bodies etc. we wouldn't be able to find a body defined as a parent in the
     // camera data-block in the ADF file. Thus after loading the bodies, this method
     // should be called to find the parent.
-    virtual bool resolveParenting(std::string a_parent_name = "");
+    virtual bool resolveParenting(string a_parent_name = "");
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -1692,7 +1661,7 @@ public:
     cLabel* m_devicesModesLabel;
     cLabel* m_deviceButtonLabel;
     cLabel* m_controllingDeviceLabel;
-    std::vector<cLabel*> m_devHapticFreqLabels;
+    vector<cLabel*> m_devHapticFreqLabels;
 
     // Position of mouse's x,y and scrolls cur and last coordinates for contextual window
     double mouse_x[2], mouse_y[2], mouse_scroll[2];
@@ -1706,7 +1675,7 @@ public:
     int m_width, m_height;
     int m_win_x, m_win_y;
 
-    std::vector<std::string> m_controllingDevNames;
+    vector<string> m_controllingDevNames;
 
     // Frame Buffer to write to OpenCV Transport stream
     cFrameBuffer* m_frameBuffer = nullptr;
@@ -1818,15 +1787,12 @@ class afLight: public afBaseObject{
 public:
     afLight(afWorld* a_afWorld);
 
-    // Load light from YAML Node data
-    bool loadLight(YAML::Node* light_node, std::string light_name, afWorldPtr a_world);
-
     virtual bool createFromAttribs(afLightAttributes* a_attribs);
 
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
 
-    virtual bool resolveParenting(std::string a_parent_name = "");
+    virtual bool resolveParenting(string a_parent_name = "");
 
     virtual void afExecuteCommand(double dt);
 
@@ -1850,7 +1816,7 @@ protected:
 struct afMultiPointUnit{
 
     // The parent name for this struct
-    std::string m_parentName;
+    string m_parentName;
 
     cMultiPointPtr m_mpPtr;
 
@@ -1872,7 +1838,7 @@ public:
 
     virtual void updatePositionFromDynamics();
 
-    std::map<std::string, afMultiPointUnit> m_pcMap;
+    map<string, afMultiPointUnit> m_pcMap;
 
 };
 
@@ -1881,8 +1847,8 @@ struct afRenderOptions{
     bool m_mirroredDisplay = false;
     bool m_updateLabels = true;
     bool m_windowClosed = false;
-    std::string m_IIDModeStr = "";
-    std::string m_IIDBtnActionStr = "";
+    string m_IIDModeStr = "";
+    string m_IIDBtnActionStr = "";
 };
 
 
@@ -1899,23 +1865,21 @@ public:
 
     // Template method to add various types of objects
     template<typename T, typename TMap>
-    bool addObject(T a_obj, std::string a_name, TMap* a_map);
+    bool addObject(T a_obj, string a_name, TMap* a_map);
 
      // Template method to get a specific type of object
     template <typename T, typename TMap>
-    T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
+    T getObject(string a_name, TMap* a_map, bool suppress_warning);
 
      // Template method to get all objects of specific type
     template <typename Tvec, typename TMap>
     Tvec getObjects(TMap* tMap);
 
-    afWorld(std::string a_global_namespace);
+    afWorld(string a_global_namespace);
 
     virtual ~afWorld();
 
-    virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
-
-    virtual bool create(afWorldAttributes* a_attribs);
+    virtual bool createFromAttribs(afWorldAttributes* a_attribs);
 
     virtual void render(afRenderOptions &options);
 
@@ -1986,50 +1950,50 @@ public:
 
     void removeChild(cGenericObject* a_cObject);
 
-    bool addAFLight(afLightPtr a_rb, std::string a_name);
+    string addAFLight(afLightPtr a_rb);
 
-    bool addAFCamera(afCameraPtr a_rb, std::string a_name);
+    string addAFCamera(afCameraPtr a_rb);
 
-    bool addAFRigidBody(afRigidBodyPtr a_rb, std::string a_name);
+    string addAFRigidBody(afRigidBodyPtr a_rb);
 
-    bool addAFSoftBody(afSoftBodyPtr a_sb, std::string a_name);
+    string addAFSoftBody(afSoftBodyPtr a_sb);
 
-    bool addAFJoint(afJointPtr a_jnt, std::string a_name);
+    string addAFJoint(afJointPtr a_jnt);
 
-    bool addAFActuator(afActuatorPtr a_actuator, std::string a_name);
+    string addAFActuator(afActuatorPtr a_actuator);
 
-    bool addAFSensor(afSensorPtr a_sensor, std::string a_name);
+    string addAFSensor(afSensorPtr a_sensor);
 
-    bool addAFModel(afModelPtr a_model, std::string a_name);
+    string addAFModel(afModelPtr a_model);
 
-    bool addAFVehicle(afVehiclePtr a_vehicle, std::string a_name);
+    string addAFVehicle(afVehiclePtr a_vehicle);
 
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
 
 
-    afLightPtr getAFLight(std::string a_name, bool suppress_warning=false);
+    afLightPtr getAFLight(string a_name, bool suppress_warning=false);
 
-    afCameraPtr getAFCamera(std::string a_name, bool suppress_warning=false);
+    afCameraPtr getAFCamera(string a_name, bool suppress_warning=false);
 
-    afRigidBodyPtr getAFRigidBody(std::string a_name, bool suppress_warning=false);
+    afRigidBodyPtr getAFRigidBody(string a_name, bool suppress_warning=false);
 
     afRigidBodyPtr getAFRigidBody(btRigidBody* a_body, bool suppress_warning=false);
 
-    afSoftBodyPtr getAFSoftBody(std::string a_name, bool suppress_warning=false);
+    afSoftBodyPtr getAFSoftBody(string a_name, bool suppress_warning=false);
 
     afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
 
-    afJointPtr getAFJoint(std::string a_name);
+    afJointPtr getAFJoint(string a_name);
 
-    afActuatorPtr getAFActuator(std::string a_name);
+    afActuatorPtr getAFActuator(string a_name);
 
-    afSensorPtr getAFSensor(std::string a_name);
+    afSensorPtr getAFSensor(string a_name);
 
-    afModelPtr getAFModel(std::string a_name, bool suppress_warning=false);
+    afModelPtr getAFModel(string a_name, bool suppress_warning=false);
 
-    afVehiclePtr getAFVehicle(std::string a_name, bool suppress_warning=false);
+    afVehiclePtr getAFVehicle(string a_name, bool suppress_warning=false);
 
 
     inline afLightMap* getAFLightMap(){return &m_afLightMap;}
@@ -2070,11 +2034,11 @@ public:
     afVehicleVec getAFVehicles();
 
 
-    std::string resolveGlobalNamespace(std::string a_name);
+    string resolveGlobalNamespace(string a_name);
 
-    std::string getGlobalNamespace(){return m_global_namespace;}
+    string getGlobalNamespace(){return m_global_namespace;}
 
-    void setGlobalNamespace(std::string a_namespace);
+    void setGlobalNamespace(string a_namespace);
 
     virtual void afExecuteCommand(double dt);
 
@@ -2083,7 +2047,7 @@ public:
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
 
     // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
-    bool loadModel(std::string a_adf_filepath, bool enable_comm);
+    bool loadModel(string a_adf_filepath, bool enable_comm);
 
     bool loadModel(uint i, bool enable_comm);
 
@@ -2103,7 +2067,7 @@ public:
     // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
     // the a body can be a part of multiple groups
-    std::map<uint, std::vector<afRigidBodyPtr> > m_collisionGroups;
+    map<uint, vector<afRigidBodyPtr> > m_collisionGroups;
 
 public:
 
@@ -2236,7 +2200,7 @@ protected:
 
     // If this string is set, it will force itself to preeced all nampespaces
     // regardless of whether any namespace starts with a '/' or not.
-    std::string m_global_namespace;
+    string m_global_namespace;
 
     // Current time of simulation.
     double m_simulationTime;
@@ -2263,7 +2227,6 @@ private:
 
     static int m_maxIterations;
 
-    cPositionalLight* m_light;
     // Global flag to pause simulation
     bool m_pausePhx = false;
 
@@ -2298,15 +2261,13 @@ public:
 
     virtual ~afModel();
 
-    virtual bool loadModel(std::string a_model_config, bool enable_comm);
-
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
-    inline std::string getHighResMeshesPath(){return m_model_high_res_meshes_path;}
+    inline string getHighResMeshesPath(){return m_model_high_res_meshes_path;}
 
-    inline std::string getLowResMeshesPath(){return m_model_low_res_meshes_path;}
+    inline string getLowResMeshesPath(){return m_model_low_res_meshes_path;}
 
-    inline std::string getModelPath(){return m_model_path;}
+    inline string getModelPath(){return m_model_path;}
 
     afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMapLocal;}
     afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMapLocal;}
@@ -2325,9 +2286,9 @@ public:
     void ignoreCollisionChecking();
 
     // Get Rigid Body or Soft Body belonging to this Specific Model
-    afRigidBodyPtr getAFRigidBodyLocal(std::string a_name, bool suppress_warning=false);
+    afRigidBodyPtr getAFRigidBodyLocal(string a_name, bool suppress_warning=false);
 
-    afSoftBodyPtr getAFSoftBodyLocal(std::string a_name);
+    afSoftBodyPtr getAFSoftBodyLocal(string a_name);
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children. This method is similar to the corresponding afWorld
@@ -2339,15 +2300,11 @@ public:
     double m_jointCFM = 0.1;
 
 protected:
-    std::string m_model_high_res_meshes_path, m_model_low_res_meshes_path;
-    std::string m_model_path;
-
-protected:
 
     cMaterial mat;
     template <typename T>
-    std::string getNonCollidingIdx(std::string a_body_name, const T* tMap);
-    void remapName(std::string &name, std::string remap_idx_str);
+    string getNonCollidingIdx(string a_body_name, const T* tMap);
+    void remapName(string &name, string remap_idx_str);
 
 private:
     // The world has a list of all the bodies and joints belonging to all multibodies
@@ -2379,9 +2336,6 @@ public:
 
     ~afVehicle();
 
-    // Load the vehicle from ambf format
-    virtual bool loadVehicle(YAML::Node* vehicle_node, std::string node_name, afModelPtr mB, std::string name_remapping_idx = "");
-
     virtual bool createFromAttribs(afVehicleAttributes* a_attribs);
 
     virtual void updatePositionFromDynamics();
@@ -2394,8 +2348,8 @@ protected:
     btRaycastVehicle::btVehicleTuning m_tuning;
     afRigidBodyPtr m_chassis;
     uint m_numWheels = 0;
-    std::vector<afWheel> m_wheels;
-    std::vector<afWheelAttributes> m_wheelAttribs;
+    vector<afWheel> m_wheels;
+    vector<afWheelAttributes> m_wheelAttribs;
 };
 
 

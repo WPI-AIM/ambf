@@ -979,7 +979,29 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     }
 
     if (shadowQualityNode.IsDefined()){
-        attribs->m_shadowQuality = shadowQualityNode.as<uint>();
+        uint quality = shadowQualityNode.as<uint>();
+        switch (quality) {
+        case 0:
+            attribs->m_shadowQuality = afShadowQualityType::NO_SHADOW;
+            break;
+        case 1:
+            attribs->m_shadowQuality = afShadowQualityType::VERY_LOW;
+            break;
+        case 2:
+            attribs->m_shadowQuality = afShadowQualityType::LOW;
+            break;
+        case 3:
+            attribs->m_shadowQuality = afShadowQualityType::MEDIUM;
+            break;
+        case 4:
+            attribs->m_shadowQuality = afShadowQualityType::HIGH;
+            break;
+        case 5:
+            attribs->m_shadowQuality = afShadowQualityType::VERY_HIGH;
+            break;
+        default:
+            break;
+        }
     }
 
     if (cuttOffAngleNode.IsDefined()){
@@ -1792,7 +1814,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     YAML::Node maxForceNode = node["max force"];
     YAML::Node maxJerkNode = node["max jerk"];
     YAML::Node workspaceScalingNode = node["workspace scaling"];
-    YAML::Node simulatedMultiBodyNode = node["simulated multibody"];
+    YAML::Node simulatedModelNode = node["simulated multibody"];
     YAML::Node rootLinkNode = node["root link"];
     YAML::Node locationNode = node["location"];
     YAML::Node orientationOffsetNode = node["orientation offset"];
@@ -1802,17 +1824,17 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     YAML::Node visibleColorNode = node["visible color"];
     YAML::Node pairCamerasNode = node["pair cameras"];
 
-    // For the simulated gripper, the user can specify a MultiBody config to load.
+    // For the simulated gripper, the user can specify a model config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
-    // We shall get the root link of this multibody (baselink) and set Cartesian Position
+    // We shall get the root link of this model (baselink) and set Cartesian Position
     // control on this body.
 
-    // Further, the user can sepcify a root link for the MultiBody config file. If this
+    // Further, the user can sepcify a root link for the model config file. If this
     // is defined we shall infact use the specific link which can be different from
     // the bodies base link.
 
     // A second use case arises, in which the user doesnt want to provide a config file
-    // but wants to bind the physical input device to an existing multibody in the simulation.
+    // but wants to bind the physical input device to an existing model in the simulation.
     // In this case, the user should specify just the root link and we shall try to find a
     // body in simulation matching that name. Once succesful we shall then be able to control
     // that link/body in Position control mode and control all the joints lower in heirarchy.
@@ -1837,8 +1859,8 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
         attribs->m_workspaceScale = workspaceScalingNode.as<double>();
     }
 
-    if (simulatedMultiBodyNode.IsDefined()){
-        attribs->m_sdeFilepath = simulatedMultiBodyNode.as<string>();
+    if (simulatedModelNode.IsDefined()){
+        attribs->m_sdeFilepath = simulatedModelNode.as<string>();
         attribs->m_sdeDefined = true;
     }
     else{
@@ -1939,11 +1961,11 @@ bool ADFLoader_1_0::loadAllInputDeviceAttributes(YAML::Node *a_node, afAllInputD
     return true;
 }
 
-bool ADFLoader_1_0::loadMultiBodyAttribs(YAML::Node *a_node, afModelAttributes *attribs)
+bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: MULTIBODY'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR: MODEL'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2181,7 +2203,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
     YAML::Node worldFilepathNode = node["world config"];
     YAML::Node colorFilepathNode = node["color config"];
     YAML::Node inputDevicesFilepathNode = node["input devices config"];
-    YAML::Node multiBodyFilepathsNode = node["multibody configs"];
+    YAML::Node modelFilepathsNode = node["multibody configs"];
 
 
     if(worldFilepathNode.IsDefined()){
@@ -2207,13 +2229,13 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
         return 0;
     }
 
-    if (multiBodyFilepathsNode.IsDefined()){
-        for (size_t i = 0 ; i < multiBodyFilepathsNode.size() ; i++){
-            attribs->m_multiBodyFilepaths.push_back(multiBodyFilepathsNode[i].as<string>());
+    if (modelFilepathsNode.IsDefined()){
+        for (size_t i = 0 ; i < modelFilepathsNode.size() ; i++){
+            attribs->m_modelFilepaths.push_back(modelFilepathsNode[i].as<string>());
         }
     }
     else{
-        cerr << "PATH AND MULTIBODY CONFIG NOT DEFINED \n";
+        cerr << "PATH AND MODEL CONFIG NOT DEFINED \n";
         return 0;
     }
 

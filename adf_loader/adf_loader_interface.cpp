@@ -176,28 +176,22 @@ bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *
         return false;
     }
     else{
+        attribs->m_filePath = afPath(a_filepath);
         YAML::Node node = YAML::LoadFile(a_filepath);
         bool result = m_loader->loadWorldAttribs(&node, attribs);
-        if (result){
-            afPath parentPath = afPath(a_filepath).parent_path();
-            attribs->resolveRelativePathAttribs(parentPath);
-        }
         return result;
     }
 }
 
-bool ADFLoaderInterface::loadMultiBodyAttribs(string a_filepath, afModelAttributes *attribs)
+bool ADFLoaderInterface::loadModelAttribs(string a_filepath, afModelAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
+        attribs->m_filePath = afPath(a_filepath);
         YAML::Node node = YAML::LoadFile(a_filepath);
-        bool result = m_loader->loadMultiBodyAttribs(&node, attribs);
-        if (result){
-            afPath parentPath = afPath(a_filepath).parent_path();
-            attribs->resolveRelativePathAttribs(parentPath);
-        }
+        bool result = m_loader->loadModelAttribs(&node, attribs);
         return result;
     }
 }
@@ -208,12 +202,9 @@ bool ADFLoaderInterface::loadAllInputDevicesAttribs(string a_filepath, afAllInpu
         return false;
     }
     else{
+        attribs->m_filePath = afPath(a_filepath);
         YAML::Node node = YAML::LoadFile(a_filepath);
         bool result = m_loader->loadAllInputDeviceAttributes(&node, attribs);
-        if (result){
-            afPath parentPath = afPath(a_filepath).parent_path();
-            attribs->resolveRelativePathAttribs(parentPath);
-        }
         return result;
     }
 
@@ -225,12 +216,8 @@ bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttrib
         return false;
     }
     else{
+        attribs->m_filePath = afPath(a_filepath);
         YAML::Node node = YAML::LoadFile(a_filepath);
-        bool result = m_loader->loadLaunchFileAttribs(&node, attribs);
-        if (result){
-            afPath parentPath = afPath(a_filepath).parent_path();
-            attribs->resolveRelativePathAttribs(parentPath);
-        }
         return result;
     }
 }
