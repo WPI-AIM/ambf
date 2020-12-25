@@ -54,10 +54,14 @@ camera1:
   location: {x: 4.0, y: 0.0, z: 2.0}
   look at: {x: 0.0, y: 0.0, z: -0.5}
   up: {x: 0.0, y: 0.0, z: 1.0}
-  clipping plane: {near: 0.01, far: 50.0}
+  clipping plane: {near: 0.1, far: 10.0}
   field view angle: 0.8
   monitor: 0
   # multipass: True
+  # publish image: True
+  # publish image interval: 1 # Publish every nth scene update
+  # publish depth: True
+  # publish depth interval: 10 # Publish every nth scene update
 
 # This example is to show how to parent w.r.t another body.
 # When a parent is defined, the location, look at and up

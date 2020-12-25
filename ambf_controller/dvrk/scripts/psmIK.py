@@ -48,14 +48,22 @@ import rospy
 #
 # is the direction between the difference of A and B expressed in C.
 
+T_PalmJoint_0 = None
+
+
+def get_T_PalmJoint_0():
+    global T_PalmJoint_0
+    return T_PalmJoint_0
+
 
 def compute_IK(T_7_0):
-    palm_length = 0.0091 # Fixed length from the palm joint to the pinch joint
-    pinch_length = 0.0102 # Fixed length from the pinch joint to the pinch tip
-    tool_rcm_offset = 0.0156 # Delta between tool tip and the Remote Center of Motion
+    global T_PalmJoint_0
+    L_pitch2yaw = 0.009 # Fixed length from the palm joint to the pinch joint
+    L_yaw2ctrlpnt = 0.0106 # Fixed length from the pinch joint to the pinch tip
+    L_tool2rcm_offset = 0.0229 # Delta between tool tip and the Remote Center of Motion
 
     # Pinch Joint
-    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), pinch_length * Vector(0.0, 0.0, -1.0))
+    T_PinchJoint_7 = Frame(Rotation.RPY(0, 0, 0), L_yaw2ctrlpnt * Vector(0.0, 0.0, -1.0))
     # Pinch Joint in Origin
     T_PinchJoint_0 = T_7_0 * T_PinchJoint_7
 
@@ -67,26 +75,27 @@ def compute_IK(T_7_0):
 
     # Convert the vector from base to pinch joint in the pinch joint frame
     # print("P_PinchJoint_0: ", round_vec(T_PinchJoint_0.p))
-    P_PinchJoint_local = T_PinchJoint_0.M.Inverse() * T_PinchJoint_0.p
-
+    R_0_PinchJoint = T_PinchJoint_0.M.Inverse()
+    P_PinchJoint_local = R_0_PinchJoint * T_PinchJoint_0.p
     # print("P_PinchJoint_local: ", round_vec(P_PinchJoint_local))
     # Now we can trim the value along the x axis to get a projection along the YZ plane as mentioned above
-    N_PalmJoint_PinchJoint = P_PinchJoint_local
+    N_PalmJoint_PinchJoint = -P_PinchJoint_local
     N_PalmJoint_PinchJoint[0] = 0
     N_PalmJoint_PinchJoint.Normalize()
+
     # We can check the angle to see if things make sense
-    angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
-    # angle = 3.141592653589793
+    # angle = get_angle(N_PalmJoint_PinchJoint, Vector(0, 0, -1))
     # print("Palm Link Angle in Pinch YZ Plane: ", angle)
 
-    # If the angle between the two vectors is > 90 Degree, we should move in the opposite direction
-    if angle > np.pi/2:
-        N_PalmJoint_PinchJoint = -N_PalmJoint_PinchJoint
+    # # If the angle between the two vectors is > 90 Degree, we should move in the opposite direction
+    # if angle > np.pi/2:
+    #     N_PalmJoint_PinchJoint = N_PalmJoint_PinchJoint
+    #
+    # print angle
 
     # Add another frame to account for Palm link length
     # print("N_PalmJoint_PinchJoint: ", round_vec(N_PalmJoint_PinchJoint))
-    T_PalmJoint_PinchJoint = Frame(Rotation.RPY(0, 0, 0), N_PalmJoint_PinchJoint * palm_length)
-
+    T_PalmJoint_PinchJoint = Frame(Rotation.RPY(0, 0, 0), N_PalmJoint_PinchJoint * L_pitch2yaw)
     # print("P_PalmJoint_PinchJoint: ", round_vec(T_PalmJoint_PinchJoint.p))
     # Get the shaft tip or the Palm's Joint position
     T_PalmJoint_0 = T_7_0 * T_PinchJoint_7 * T_PalmJoint_PinchJoint
@@ -99,26 +108,20 @@ def compute_IK(T_7_0):
     # Calculate insertion_depth to check if the tool is past the RCM
     insertion_depth = T_PalmJoint_0.p.Norm()
 
-    if insertion_depth <= tool_rcm_offset:
-        sign = 1
-    elif insertion_depth > tool_rcm_offset:
-        sign = -1
-
     # Now having the end point of the shaft or the PalmJoint, we can calculate some
     # angles as follows
-    # xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
+    xz_diagonal = math.sqrt(T_PalmJoint_0.p[0] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print ('XZ Diagonal: ', xz_diagonal)
-    # j1 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / xz_diagonal)
-    # print("\nT_PalmJoint_0.p: ")
-    # print(T_PalmJoint_0.p[0], T_PalmJoint_0.p[2])
-    j1 = math.atan2(T_PalmJoint_0.p[0], sign * T_PalmJoint_0.p[2])
 
-    # yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
+    yz_diagonal = math.sqrt(T_PalmJoint_0.p[1] ** 2 + T_PalmJoint_0.p[2] ** 2)
     # # print('YZ Diagonal: ', yz_diagonal)
-    # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
-    j2 = -math.atan2(T_PalmJoint_0.p[1], sign * T_PalmJoint_0.p[2])
 
-    j3 = insertion_depth + tool_rcm_offset
+    j1 = math.atan2(T_PalmJoint_0.p[0], -T_PalmJoint_0.p[2])
+
+    # j2 = np.sign(T_PalmJoint_0.p[0]) * math.acos(-T_PalmJoint_0.p[2] / yz_diagonal)
+    j2 = -math.atan2(T_PalmJoint_0.p[1], xz_diagonal)
+
+    j3 = insertion_depth + L_tool2rcm_offset
 
     # Calculate j4
     # This is an important case and has to be dealt carefully. Based on some inspection, we can find that
@@ -141,10 +144,10 @@ def compute_IK(T_7_0):
     str = '\n**********************************'*3
     # print(str)
 
-    T_7_0_req = convert_frame_to_mat(T_7_0)
-    T_7_0_req = round_transform(T_7_0_req, 3)
+    # T_7_0_req = convert_frame_to_mat(T_7_0)
+    # T_7_0_req = round_transform(T_7_0_req, 3)
     # print('Requested Pose: \n', T_7_0_req)
-    T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
-    round_transform(T_7_0_computed, 3)
+    # T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
+    # round_transform(T_7_0_computed, 3)
     # print('Computed Pose: \n', T_7_0_computed)
     return [j1, j2, j3, j4, j5, j6]
