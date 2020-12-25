@@ -218,6 +218,7 @@ bool ADFLoaderInterface::loadLaunchFileAttribs(string a_filepath, afLaunchAttrib
     else{
         attribs->m_filePath = afPath(a_filepath);
         YAML::Node node = YAML::LoadFile(a_filepath);
+        bool result = m_loader->loadLaunchFileAttribs(&node, attribs);
         return result;
     }
 }

@@ -1257,7 +1257,7 @@ protected:
 ///
 class afConstraintActuator: public afActuator{
 public:
-    afConstraintActuator(afWorldPtr a_afWorld);
+    afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     virtual bool createFromAttribs(afConstraintActuatorAttributes* a_attribs);
 
@@ -1351,7 +1351,7 @@ class afRayTracerSensor: public afSensor{
 
 public:
     // Constructor
-    afRayTracerSensor(afWorldPtr a_afWorld);
+    afRayTracerSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     virtual bool createFromAttribs(afRayTracerSensorAttributes* a_attribs);
 
@@ -1428,7 +1428,7 @@ protected:
 class afProximitySensor: public afRayTracerSensor{
 public:
     // Constructor
-    afProximitySensor(afWorldPtr a_afWorld);
+    afProximitySensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 };
 
 
@@ -1456,7 +1456,7 @@ struct afRayContactResult{
 
 class afResistanceSensor: public afRayTracerSensor{
 public:
-    afResistanceSensor(afWorldPtr a_afWorld);
+    afResistanceSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     virtual bool createFromAttribs(afResistanceSensorAttributes* a_attribs);
 
@@ -2263,12 +2263,6 @@ public:
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
-    inline string getHighResMeshesPath(){return m_model_high_res_meshes_path;}
-
-    inline string getLowResMeshesPath(){return m_model_low_res_meshes_path;}
-
-    inline string getModelPath(){return m_model_path;}
-
     afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMapLocal;}
     afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMapLocal;}
     afVehicleMap* getVehicleMap(){return &m_afVehicleMapLocal;}
@@ -2332,7 +2326,7 @@ struct afWheel{
 
 class afVehicle: public afInertialObject{
 public:
-    afVehicle(afWorldPtr a_afWorld);
+    afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     ~afVehicle();
 

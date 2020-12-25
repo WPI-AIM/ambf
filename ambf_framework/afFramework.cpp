@@ -633,7 +633,7 @@ afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObjec
 /// \brief afConstraintActuator::afConstraintActuator
 /// \param a_afWorld
 ///
-afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld): afActuator(a_afWorld){
+afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afActuator(a_afWorld, a_modelPtr){
 
 }
 
@@ -982,7 +982,7 @@ void afInertialObject::createInertialObject()
 /// \brief afBody::afBody
 /// \param a_world
 ///
-afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld){
+afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
     setFrameSize(0.5);
     m_mesh_name.clear();
     m_collision_mesh_name.clear();
@@ -2011,7 +2011,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
     if(m_lowResMesh.loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
-        buildContactTriangles(_collision_margin, &m_lowResMesh);
+        m_softMultiMesh->buildContactTriangles(attribs.m_collisionAttribs.m_margin, &m_lowResMesh);
         m_lowResMesh.scale(m_scale);
     }
     else{
@@ -2026,139 +2026,77 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     m_softMultiMesh->buildDynamicModel();
 
-    if(softBodyPos.IsDefined()){
-        pos = toXYZ<cVector3d>(&softBodyPos);
-        setLocalPos(pos);
+    cTransform pose = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    setLocalTransform(pose);
+
+    afBaseObject::copyMaterialToMesh(&m_softMultiMesh->m_gelMesh, &attribs.m_visualAttribs.m_colorAttribs);
+
+    btSoftBody* softBody = m_softMultiMesh->m_bulletSoftBody;
+
+    btSoftBody::Material *pm = softBody->appendMaterial();
+    pm->m_kLST = attribs.m_kLST;
+    pm->m_kAST = attribs.m_kAST;
+    pm->m_kVST = attribs.m_kVST;
+
+
+    if (cfg_kMT.IsDefined()){
+        softBody->m_cfg.kMT = cfg_kMT.as<double>();
+        softBody->setPose(false, true);
     }
 
-    if(softBodyRot.IsDefined()){
-        double r = softBodyRot["r"].as<double>();
-        double p = softBodyRot["p"].as<double>();
-        double y = softBodyRot["y"].as<double>();
-        rot.setExtrinsicEulerRotationRad(y,p,r,cEulerOrder::C_EULER_ORDER_XYZ);
-        setLocalRot(rot);
-    }
+    softBody->m_cfg.kVCF = attribs.m_kVCF;
 
-    cMaterial _mat;
-    float _r, _g, _b, _a;
-    if(softBodyColorRGBA.IsDefined()){
-        _r = softBodyColorRGBA["r"].as<float>();
-        _g = softBodyColorRGBA["g"].as<float>();
-        _b = softBodyColorRGBA["b"].as<float>();
-        _a = softBodyColorRGBA["a"].as<float>();
-        _mat.setColorf(_r, _g, _b, _a);
-        m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(softBodyColorRGBA["a"].as<float>());
-    }
-    else if(softBodyColorComponents.IsDefined()){
-        if (softBodyColorComponents["diffuse"].IsDefined()){
-            _r = softBodyColorComponents["diffuse"]["r"].as<float>();
-            _g = softBodyColorComponents["diffuse"]["g"].as<float>();
-            _b = softBodyColorComponents["diffuse"]["b"].as<float>();
-            _mat.m_diffuse.set(_r, _g, _b);
-        }
-        if (softBodyColorComponents["ambient"].IsDefined()){
-            float _level = softBodyColorComponents["ambient"]["level"].as<float>();
-            _r *= _level;
-            _g *= _level;
-            _b *= _level;
-            _mat.m_ambient.set(_r, _g, _b);
-        }
-        if (softBodyColorComponents["specular"].IsDefined()){
-            _r = softBodyColorComponents["specular"]["r"].as<float>();
-            _g = softBodyColorComponents["specular"]["g"].as<float>();
-            _b = softBodyColorComponents["specular"]["b"].as<float>();
-            _mat.m_specular.set(_r, _g, _b);
-        }
-        if (softBodyColorComponents["emission"].IsDefined()){
-            _r = softBodyColorComponents["emission"]["r"].as<float>();
-            _g = softBodyColorComponents["emission"]["g"].as<float>();
-            _b = softBodyColorComponents["emission"]["b"].as<float>();
-            _mat.m_emission.set(_r, _g, _b);
-        }
+    softBody->m_cfg.kDP = attribs.m_kDP;
+    softBody->m_cfg.kDG = attribs.m_kDG;
+    softBody->m_cfg.kLF = attribs.m_kLF;
+    softBody->m_cfg.kPR = attribs.m_kPR;
+    softBody->m_cfg.kVC = attribs.m_kVC;
+    softBody->m_cfg.kDF = attribs.m_kDF;
 
-        _a = softBodyColorComponents["transparency"].as<float>();
-        _mat.setTransparencyLevel(_a);
-        m_gelMesh.setMaterial(_mat);
-        //        m_gelMesh.setTransparencyLevel(_a);
-    }
-    else if(softBodyColor.IsDefined()){
-        vector<double> rgba = m_afWorld->getColorRGBA(softBodyColor.as<string>());
-        _mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
-        m_gelMesh.setMaterial(_mat);
-        m_gelMesh.setTransparencyLevel(rgba[3]);
-    }
+    softBody->m_cfg.kCHR = attribs.m_kCHR;
+    softBody->m_cfg.kKHR = attribs.m_kKHR;
+    softBody->m_cfg.kSHR = attribs.m_kSHR;
+    softBody->m_cfg.kAHR = attribs.m_kAHR;
 
-    if (softBodyConfigData.IsNull()){
-        printf("Warning, no soft body config properties defined");
+    softBody->m_cfg.kSRHR_CL = attribs.m_kSRHR_CL;
+    softBody->m_cfg.kSKHR_CL = attribs.m_kSKHR_CL;
+    softBody->m_cfg.kSSHR_CL = attribs.m_kSSHR_CL;
+
+    softBody->m_cfg.kSR_SPLT_CL = attribs.m_kSR_SPLT_CL;
+    softBody->m_cfg.kSK_SPLT_CL = attribs.m_kSK_SPLT_CL;
+    softBody->m_cfg.kSS_SPLT_CL = attribs.m_kSS_SPLT_CL;
+
+    softBody->m_cfg.maxvolume = attribs.m_maxVolume;
+    softBody->m_cfg.timescale= attribs.m_timeScale;
+
+    softBody->m_cfg.viterations = attribs.m_vIterations;
+    softBody->m_cfg.piterations = attribs.m_pIterations;
+    softBody->m_cfg.diterations = attribs.m_dIterations;
+    softBody->m_cfg.citerations = attribs.m_cIterations;
+
+
+    softBody->m_cfg.collisions = attribs.m_flags;
+
+    if (cfg_bendingConstraint.IsDefined()){
+        int _bending = cfg_bendingConstraint.as<int>();
+        softBody->generateBendingConstraints(_bending);
     }
-    else{
-        if (cfg_kLST.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kLST = cfg_kLST.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kLST = cfg_kLST.as<double>();
-        }
-        if (cfg_kAST.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kAST = cfg_kAST.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kAST = cfg_kAST.as<double>();
-        }
-        if (cfg_kVST.IsDefined()){
-            btSoftBody::Material *pm = m_bulletSoftBody->appendMaterial();
-            pm->m_kVST = cfg_kVST.as<double>();
-            m_bulletSoftBody->m_materials[0]->m_kVST = cfg_kVST.as<double>();
-        }
-        if (cfg_kVCF.IsDefined()) m_bulletSoftBody->m_cfg.kVCF = cfg_kVCF.as<double>();
-        if (cfg_kDP.IsDefined()) m_bulletSoftBody->m_cfg.kDP = cfg_kDP.as<double>();
-        if (cfg_kDG.IsDefined()) m_bulletSoftBody->m_cfg.kDG = cfg_kDG.as<double>();
-        if (cfg_kLF.IsDefined()) m_bulletSoftBody->m_cfg.kLF = cfg_kLF.as<double>();
-        if (cfg_kPR.IsDefined()) m_bulletSoftBody->m_cfg.kPR = cfg_kPR.as<double>();
-        if (cfg_kVC.IsDefined()) m_bulletSoftBody->m_cfg.kVC = cfg_kVC.as<double>();
-        if (cfg_kDF.IsDefined()) m_bulletSoftBody->m_cfg.kDF = cfg_kDF.as<double>();
-        if (cfg_kMT.IsDefined()){
-            m_bulletSoftBody->m_cfg.kMT = cfg_kMT.as<double>();
-            m_bulletSoftBody->setPose(false, true);
-        }
-        if (cfg_kCHR.IsDefined()) m_bulletSoftBody->m_cfg.kCHR = cfg_kCHR.as<double>();
-        if (cfg_kKHR.IsDefined()) m_bulletSoftBody->m_cfg.kKHR = cfg_kKHR.as<double>();
-        if (cfg_kSHR.IsDefined()) m_bulletSoftBody->m_cfg.kSHR = cfg_kSHR.as<double>();
-        if (cfg_kAHR.IsDefined()) m_bulletSoftBody->m_cfg.kAHR = cfg_kAHR.as<double>();
-        if (cfg_kSRHR_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSRHR_CL = cfg_kSRHR_CL.as<double>();
-        if (cfg_kSKHR_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSKHR_CL = cfg_kSKHR_CL.as<double>();
-        if (cfg_kSSHR_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSSHR_CL = cfg_kSSHR_CL.as<double>();
-        if (cfg_kSR_SPLT_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSR_SPLT_CL = cfg_kSR_SPLT_CL.as<double>();
-        if (cfg_kSK_SPLT_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSK_SPLT_CL = cfg_kSK_SPLT_CL.as<double>();
-        if (cfg_kSS_SPLT_CL.IsDefined()) m_bulletSoftBody->m_cfg.kSS_SPLT_CL = cfg_kSS_SPLT_CL.as<double>();
-        if (cfg_maxvolume.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_maxvolume.as<double>();
-        if (cfg_timescale.IsDefined()) m_bulletSoftBody->m_cfg.maxvolume = cfg_timescale.as<double>();
-        if (cfg_viterations.IsDefined()) m_bulletSoftBody->m_cfg.viterations = cfg_viterations.as<int>();
-        if (cfg_piterations.IsDefined()) m_bulletSoftBody->m_cfg.piterations = cfg_piterations.as<int>();
-        if (cfg_diterations.IsDefined()) m_bulletSoftBody->m_cfg.diterations = cfg_diterations.as<int>();
-        if (cfg_citerations.IsDefined()) m_bulletSoftBody->m_cfg.citerations = cfg_citerations.as<int>();
-        if (cfg_flags.IsDefined()){
-            m_bulletSoftBody->m_cfg.collisions = cfg_flags.as<int>();
-        }
-        if (cfg_bendingConstraint.IsDefined()){
-            int _bending = cfg_bendingConstraint.as<int>();
-            m_bulletSoftBody->generateBendingConstraints(_bending);
-        }
-        if (cfg_fixed_nodes.IsDefined()){
-            for (uint i = 0 ; i < cfg_fixed_nodes.size() ; i++){
-                int nodeIdx = cfg_fixed_nodes[i].as<int>();
-                if (nodeIdx < m_bulletSoftBody->m_nodes.size()){
-                    m_bulletSoftBody->setMass(nodeIdx, 0);
-                }
+    if (cfg_fixed_nodes.IsDefined()){
+        for (uint i = 0 ; i < cfg_fixed_nodes.size() ; i++){
+            int nodeIdx = cfg_fixed_nodes[i].as<int>();
+            if (nodeIdx < softBody->m_nodes.size()){
+                softBody->setMass(nodeIdx, 0);
             }
         }
-        if(cfg_clusters.IsDefined()){
-            int num_clusters = cfg_clusters.as<int>();
-            m_bulletSoftBody->generateClusters(num_clusters);
-        }
+    }
+    if(cfg_clusters.IsDefined()){
+        int num_clusters = cfg_clusters.as<int>();
+        softBody->generateClusters(num_clusters);
     }
 
     if (softBodyRandomizeConstraints.IsDefined())
         if (softBodyRandomizeConstraints.as<bool>() == true)
-            m_bulletSoftBody->randomizeConstraints();
+            softBody->randomizeConstraints();
 
     m_afWorld->addChild(this);
     return true;
@@ -2682,7 +2620,7 @@ void afSensor::updatePositionFromDynamics(){
 /// \brief afRayTracerSensor
 /// \param a_afWorld
 ///
-afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld): afSensor(a_afWorld){
+afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afSensor(a_afWorld, a_modelPtr){
 
 }
 
@@ -3015,7 +2953,7 @@ void afRayTracerSensor::afExecuteCommand(double dt){
 /// \brief afProximitySensor::afProximitySensor
 /// \param a_afWorld
 ///
-afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_afWorld){
+afProximitySensor::afProximitySensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afRayTracerSensor(a_afWorld, a_modelPtr){
     m_afWorld = a_afWorld;
     m_sensorType = afSensorType::RAYTRACER;
 }
@@ -3025,7 +2963,7 @@ afProximitySensor::afProximitySensor(afWorldPtr a_afWorld): afRayTracerSensor(a_
 /// \brief afResistanceSensor::afResistanceSensor
 /// \param a_afWorld
 ///
-afResistanceSensor::afResistanceSensor(afWorld* a_afWorld): afRayTracerSensor(a_afWorld){
+afResistanceSensor::afResistanceSensor(afWorld* a_afWorld, afModelPtr a_modelPtr): afRayTracerSensor(a_afWorld, a_modelPtr){
     m_lastContactPosInWorld.set(0,0,0);
     m_curContactPosInWorld.set(0,0,0);
     m_staticContactFriction = 0;
@@ -3269,7 +3207,7 @@ afJoint::~afJoint(){
 /// \brief afPointCloudsHandler::afPointCloudsHandler
 /// \param a_afWorld
 ///
-afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
+afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
 }
 
 
@@ -3818,7 +3756,11 @@ bool afWorld::createDefaultWorld(){
 
     bool usePlanes = true;
 
-    afRigidBody walls[5] = {afRigidBody(this), afRigidBody(this), afRigidBody(this), afRigidBody(this), afRigidBody(this)};
+    afRigidBody walls[5] = {afRigidBody(this, nullptr),
+                            afRigidBody(this, nullptr),
+                            afRigidBody(this, nullptr),
+                            afRigidBody(this, nullptr),
+                            afRigidBody(this, nullptr)};
 
     afRigidBodyAttributes rbAttribs[5];
     afPrimitiveShapeAttributes shapeAttribs[5];
@@ -3871,13 +3813,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     setGravity(attribs.m_gravity);
 
-    // ADD A DEFAULT LIGHT???
-    afLightAttributes lightAttribs;
-    lightAttribs.m_kinematicAttribs.m_location.setPosition(afVector3d(2, 2, 5));
-    afLight light(this);
-    light.createFromAttribs(&lightAttribs);
-    addChild(light);
-
     if (!attribs.m_environmentFilepath.c_str().empty()){
         if (loadModel(attribs.m_environmentFilepath.c_str(), false) == false){
             if (attribs.m_enclosure.m_use){
@@ -3915,7 +3850,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
-            addAFLight(lightPtr, light_name);
+            addAFLight(lightPtr);
             lightPtr->afCreateCommInstance(afObjectType::LIGHT,
                                            lightPtr->m_name,
                                            resolveGlobalNamespace(lightPtr->getNamespace()),
@@ -3925,32 +3860,30 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     }
 
     if (m_afLightMap.size() == 0){
-        // No Valid Lights defined, so use the default light
+        // ADD A DEFAULT LIGHT???
+        afLightAttributes lightAttribs;
+        lightAttribs.m_kinematicAttribs.m_location.setPosition(afVector3d(2, 2, 5));
+        lightAttribs.m_identificationAttribs.m_name = "default_light";
         afLightPtr lightPtr = new afLight(this);
-        if (lightPtr->createDefaultLight()){
-            addAFLight(lightPtr, "default_light");
-            lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                           lightPtr->m_name,
-                                           resolveGlobalNamespace(lightPtr->getNamespace()),
-                                           lightPtr->getMinPublishFrequency(),
-                                           lightPtr->getMaxPublishFrequency());
-        }
+        lightPtr->createFromAttribs(&lightAttribs);
+        addAFLight(lightPtr);
+        lightPtr->afCreateCommInstance(afObjectType::LIGHT,
+                                       lightPtr->getName(),
+                                       resolveGlobalNamespace(lightPtr->getNamespace()),
+                                       lightPtr->getMinPublishFrequency(),
+                                       lightPtr->getMaxPublishFrequency());
     }
 
-    if (showGUI){
-        if (worldCamerasData.IsDefined()){
-            for (size_t idx = 0 ; idx < worldCamerasData.size(); idx++){
-                string camera_name = worldCamerasData[idx].as<string>();
-                afCameraPtr cameraPtr = new afCamera(this);
-                YAML::Node cameraNode = worldNode[camera_name];
-                if (cameraPtr->loadCamera(&cameraNode, camera_name, this)){
-                    addAFCamera(cameraPtr, camera_name);
-                    cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
-                                                    cameraPtr->m_name,
-                                                    resolveGlobalNamespace(cameraPtr->getNamespace()),
-                                                    cameraPtr->getMinPublishFrequency(),
-                                                    cameraPtr->getMaxPublishFrequency());
-                }
+    if (attribs.m_showGUI){
+        for (size_t idx = 0 ; idx < attribs.m_cameraAttribs.size(); idx++){
+            afCameraPtr cameraPtr = new afCamera(this);
+            if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
+                addAFCamera(cameraPtr);
+                cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
+                                                cameraPtr->getName(),
+                                                resolveGlobalNamespace(cameraPtr->getNamespace()),
+                                                cameraPtr->getMinPublishFrequency(),
+                                                cameraPtr->getMaxPublishFrequency());
             }
         }
 
@@ -3958,8 +3891,11 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             // No valid cameras defined in the world config file
             // hence create a default camera
             afCameraPtr cameraPtr = new afCamera(this);
-            if (cameraPtr->createDefaultCamera()){
-                addAFCamera(cameraPtr, "default_camera");
+            afCameraAttributes camAttribs;
+            camAttribs.m_lookAt.set(-1, 0, 0);
+            camAttribs.m_identificationAttribs.m_name = "default_camera";
+            if (cameraPtr->createFromAttribs(&camAttribs)){
+                addAFCamera(cameraPtr);
                 cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
                                                 cameraPtr->m_name,
                                                 resolveGlobalNamespace(cameraPtr->getNamespace()),
@@ -3969,17 +3905,11 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
         }
 
-        if (worldShaders.IsDefined()){
-            boost::filesystem::path shader_path = worldShaders["path"].as<string>();
+        m_shaderProgramDefined = attribs.m_shaderAttribs.m_shaderDefined;
 
-            if (shader_path.is_relative()){
-                shader_path = m_world_config_path / shader_path;
-            }
-
-            m_vsFilePath = shader_path / worldShaders["vertex"].as<string>();
-            m_fsFilePath = shader_path / worldShaders["fragment"].as<string>();
-
-            m_shaderProgramDefined = true;
+        if (m_shaderProgramDefined){
+            m_vsFilePath = attribs.m_shaderAttribs.m_vtxFilepath;
+            m_fsFilePath = attribs.m_shaderAttribs.m_fragFilepath;
         }
     }
 
@@ -4232,8 +4162,7 @@ bool afWorld::loadModel(string a_adf_filepath, bool enable_comm){
     afModelPtr mB(new afModel(this));
     bool success = mB->loadModel(a_adf_filepath, enable_comm);
     if (success){
-        boost::filesystem::path p(a_adf_filepath);
-        addAFModel(mB, p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), &m_afModelMap));
+        addAFModel(mB);
         buildCollisionGroups();
     }
     return success;
@@ -4833,23 +4762,18 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     afCameraAttributes & attribs = *a_attribs;
 
     bool valid = true;
-    double stereoEyeSeperation, stereoFocalLength, _orthoViewWidth;
     int monitorToLoad = attribs.m_monitorNumber;
-    bool useMultiPassTransparency = attribs.m_multiPass;
 
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
-    stereoFocalLength = attribs.m_stereFocalLength;
-    stereoEyeSeperation = attribs.m_stereoEyeSeparation;
 
-    m_name = attribs.m_identificationAttribs.m_name;
-    m_namespace = attribs.m_identificationAttribs.m_namespace;
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
     m_camPos << attribs.m_kinematicAttribs.m_location.getPosition();
     m_camLookAt << attribs.m_lookAt;
-
     m_camUp << attribs.m_up;
 
     m_orthographic = attribs.m_orthographic;
@@ -4880,13 +4804,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         setLocalRot(I3);
         addChild(m_camera);
 
-        if (cameraParent.IsDefined()){
-            m_parentName = cameraParent.as<string>();
-        }
-        else{
-            m_parentName = "";
-            a_world->addChild(this->m_visualMesh);
-        }
+        m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
         //////////////////////////////////////////////////////////////////////////////////////
         // position and orient the camera
@@ -4899,8 +4817,8 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         m_camera->setStereoMode(m_stereMode);
 
         // set stereo eye separation and focal length (applies only if stereo is enabled)
-        m_camera->setStereoEyeSeparation(stereoEyeSeperation);
-        m_camera->setStereoFocalLength(stereoFocalLength);
+        m_camera->setStereoEyeSeparation(attribs.m_stereoEyeSeparation);
+        m_camera->setStereoFocalLength(attribs.m_stereFocalLength);
 
         // set vertical mirrored display mode
         m_camera->setMirrorVertical(false);
@@ -4912,7 +4830,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             m_camera->setFieldViewAngleRad(attribs.m_fieldViewAngle);
         }
 
-        m_camera->setUseMultipassTransparency(useMultiPassTransparency);
+        m_camera->setUseMultipassTransparency(attribs.m_multiPass);
 
         string window_name = "AMBF Simulator Window " + to_string(s_cameraIdx + 1);
         if (m_controllingDevNames.size() > 0){
@@ -6021,13 +5939,13 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         switch (attribs.m_sensorAttribs[i].m_sensorType) {
         case afSensorType::RAYTRACER:
         {
-            sensorPtr = new afProximitySensor(m_afWorld);
+            sensorPtr = new afProximitySensor(m_afWorld, this);
             type_str = "RESISTANCE";
             break;
         }
         case afSensorType::RESISTANCE:
         {
-            sensorPtr = new afResistanceSensor(m_afWorld);
+            sensorPtr = new afResistanceSensor(m_afWorld, this);
             type_str = "RESISTANCE";
             break;
         }
@@ -6060,34 +5978,31 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     // Loading Actuators
     for (size_t i = 0; i < attribs.m_actuatorAttribs.size(); ++i) {
         afActuatorPtr actuatorPtr = nullptr;
-        string actuator_name = modelActuators[i].as<string>();
-        string remap_str = afUtils::getNonCollidingIdx(m_namespace + actuator_name, m_afWorld->getAFActuatorMap());
-        YAML::Node actuator_node = modelNode[actuator_name];
-        // Check which type of sensor is this so we can cast appropriately beforehand
-        if (actuator_node["type"].IsDefined()){
-            string actuator_type = actuator_node["type"].as<string>();
-            // Check if this is a constraint sensor
-            // More actuators to follow
-            if (actuator_type.compare("Constraint") == 0 || actuator_type.compare("constraint") == 0 || actuator_type.compare("CONSTRAINT") == 0){
-                actuatorPtr = new afConstraintActuator(m_afWorld);
-            }
+        string type_str;
+        switch (attribs.m_actuatorAttribs[i].m_actuatorType) {
+        case afActuatorType::CONSTRAINT:{
+            actuatorPtr = new afConstraintActuator(m_afWorld, this);
+            type_str = "CONSTRAINT";
+            break;
+        }
+        default:
+            break;
+        }
 
-            // Finally load the sensor from ambf config data
-            if (actuatorPtr){
-                if (actuatorPtr->loadActuator(&actuator_node, actuator_name, this, remap_str)){
-                    cerr << "LOADING ACTUATOR NUMBER " << i << "\n";
-                    m_afWorld->addAFActuator(actuatorPtr, m_namespace + actuator_name + remap_str);
-//                    if (enable_comm){
-                        cerr << "LOADING ACTUATOR COMM \n";
-                        actuatorPtr->afCreateCommInstance(afObjectType::ACTUATOR,
-                                                        actuatorPtr->m_name + remap_str,
-                                                        m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
-                                                        actuatorPtr->getMinPublishFrequency(),
-                                                        actuatorPtr->getMaxPublishFrequency());
+        // Finally load the sensor from ambf config data
+        if (actuatorPtr){
+            if (actuatorPtr->createFromAttribs(&attribs.m_actuatorAttribs[i])){
+                string remaped_name = m_afWorld->addAFActuator(actuatorPtr);
+                if (enable_comm){
+                    cerr << "LOADING ACTUATOR COMM \n";
+                    actuatorPtr->afCreateCommInstance(afObjectType::ACTUATOR,
+                                                      remaped_name,
+                                                      m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
+                                                      actuatorPtr->getMinPublishFrequency(),
+                                                      actuatorPtr->getMaxPublishFrequency());
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-                        actuatorPtr->m_afActuatorCommPtr->set_type(actuator_type);
+                    actuatorPtr->m_afActuatorCommPtr->set_type(type_str);
 #endif
-//                    }
                 }
             }
         }
@@ -6096,42 +6011,25 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    if (modelJointERP.IsDefined()){
-        m_jointERP = modelJointERP.as<double>();
-    }
-    if (modelJointCFM.IsDefined()){
-        m_jointCFM = modelJointCFM.as<double>();
-    }
-
-    /// Loading Joints
-    afJointPtr jntPtr;
-    size_t totalJoints = modelJoints.size();
-    for (size_t i = 0; i < totalJoints; ++i) {
-        jntPtr = new afJoint(m_afWorld);
-        string jnt_name = modelJoints[i].as<string>();
-        YAML::Node jnt_node = modelNode[jnt_name];
-        string remap_str = afUtils::getNonCollidingIdx(m_namespace + jnt_name, m_afWorld->getAFJointMap());
-        if (jntPtr->loadJoint(&jnt_node, jnt_name, this, remap_str)){
-            m_afWorld->addAFJoint(jntPtr, m_namespace + jnt_name + remap_str);
-            m_afJointMapLocal[m_namespace + jnt_name] = jntPtr;
+    // Loading Joints
+    for (size_t i = 0; i < attribs.m_jointAttribs.size(); ++i) {
+        afJointPtr jntPtr = new afJoint(m_afWorld, this);
+        if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
+            string remaped_name = m_afWorld->addAFJoint(jntPtr);
+            m_afJointMapLocal[jntPtr->getQualifiedName()] = jntPtr;
         }
     }
 
 
-    size_t totalVehicles = modelVehicles.size();
     afVehiclePtr vehiclePtr;
-    for (size_t i = 0; i < totalVehicles; ++i) {
-        vehiclePtr = new afVehicle(m_afWorld);
-        string veh_name = modelVehicles[i].as<string>();
-        YAML::Node veh_node = modelNode[veh_name];
-        if (vehiclePtr->loadVehicle(&veh_node, veh_name, this)){
-            string remap_str = afUtils::getNonCollidingIdx(vehiclePtr->getNamespace() + veh_name, m_afWorld->getAFVehicleMap());
-            m_afWorld->addAFVehicle(vehiclePtr, vehiclePtr->getNamespace() + veh_name + remap_str);
-            m_afVehicleMapLocal[vehiclePtr->getNamespace() + veh_name] = vehiclePtr;
+    for (size_t i = 0; i < attribs.m_vehicleAttribs.size(); ++i) {
+        vehiclePtr = new afVehicle(m_afWorld, this);
+        if (vehiclePtr->createFromAttribs(&attribs.m_vehicleAttribs[i])){
+            string remap_name = m_afWorld->addAFVehicle(vehiclePtr);
+            m_afVehicleMapLocal[vehiclePtr->getQualifiedName()] = vehiclePtr;
             if (enable_comm){
-
                 vehiclePtr->afCreateCommInstance(afObjectType::VEHICLE,
-                                                 vehiclePtr->m_name + remap_str,
+                                                 remap_name,
                                                  m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
                                                  vehiclePtr->getMinPublishFrequency(),
                                                  vehiclePtr->getMaxPublishFrequency());
@@ -6140,15 +6038,10 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     }
 
     // This flag would ignore collision for all the multibodies in the scene
-    bool _ignoreInterCollision = false;
-    if (modelIgnoreInterCollision.IsDefined()){
-        _ignoreInterCollision = modelIgnoreInterCollision.as<bool>();
-        if (_ignoreInterCollision){
-            ignoreCollisionChecking();
-        }
-    }
 
-    //    removeOverlappingCollisionChecking();
+    if (attribs.m_ignoreInterCollision){
+        ignoreCollisionChecking();
+    }
 
     return true;
 }
@@ -6593,7 +6486,7 @@ afModel::~afModel(){
     //    }
 }
 
-afVehicle::afVehicle(afWorldPtr a_afWorld): afInertialObject(a_afWorld){
+afVehicle::afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
 
 }
 
@@ -6631,7 +6524,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     m_mass = m_chassis->getMass();
     m_inertia = m_chassis->getInertia();
 
-    boost::filesystem::path high_res_filepath;
+    afPath high_res_filepath;
 
     m_numWheels = attribs.m_wheelAttribs.size();
     m_wheels.resize(m_numWheels);

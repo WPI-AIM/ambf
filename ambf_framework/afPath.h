@@ -66,6 +66,10 @@ public:
         return afPath(m_path.parent_path());
     }
 
+    afPath filename(){
+        return afPath(m_path.filename());
+    }
+
     bool is_relative(){
         return m_path.is_relative();
     }

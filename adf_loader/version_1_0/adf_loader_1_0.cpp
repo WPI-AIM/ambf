@@ -1985,6 +1985,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
 
     bool valid = true;
 
+    attribs->m_identificationAttribs.m_name = attribs->m_filePath.filename().c_str();
+
     if(meshPathHRNode.IsDefined()){
         attribs->m_visualMeshesPath = meshPathHRNode.as<string>();
     }
