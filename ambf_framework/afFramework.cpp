@@ -2039,8 +2039,8 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     pm->m_kVST = attribs.m_kVST;
 
 
-    if (cfg_kMT.IsDefined()){
-        softBody->m_cfg.kMT = cfg_kMT.as<double>();
+    if (attribs.m_usePoseMatching){
+        softBody->m_cfg.kMT = attribs.m_kMT;
         softBody->setPose(false, true);
     }
 
@@ -2077,26 +2077,24 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     softBody->m_cfg.collisions = attribs.m_flags;
 
-    if (cfg_bendingConstraint.IsDefined()){
-        int _bending = cfg_bendingConstraint.as<int>();
-        softBody->generateBendingConstraints(_bending);
-    }
-    if (cfg_fixed_nodes.IsDefined()){
-        for (uint i = 0 ; i < cfg_fixed_nodes.size() ; i++){
-            int nodeIdx = cfg_fixed_nodes[i].as<int>();
-            if (nodeIdx < softBody->m_nodes.size()){
-                softBody->setMass(nodeIdx, 0);
-            }
-        }
-    }
-    if(cfg_clusters.IsDefined()){
-        int num_clusters = cfg_clusters.as<int>();
-        softBody->generateClusters(num_clusters);
+    if (attribs.m_useBendingConstraints){
+        softBody->generateBendingConstraints(attribs.m_bendingConstraint);
     }
 
-    if (softBodyRandomizeConstraints.IsDefined())
-        if (softBodyRandomizeConstraints.as<bool>() == true)
-            softBody->randomizeConstraints();
+    for (uint i = 0 ; i < attribs.m_fixedNodes.size() ; i++){
+        uint nodeIdx = attribs.m_fixedNodes[i];
+        if ( nodeIdx < softBody->m_nodes.size()){
+            softBody->setMass(nodeIdx, 0);
+        }
+    }
+
+    if(attribs.m_useClusters){
+        softBody->generateClusters(attribs.m_clusters);
+    }
+
+    if (attribs.m_useConstraintRandomization){
+        softBody->randomizeConstraints();
+    }
 
     m_afWorld->addChild(this);
     return true;

@@ -1275,12 +1275,15 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     else{
         if (cfg_kLSTNode.IsDefined()){
             attribs->m_kLST = cfg_kLSTNode.as<double>();
+            attribs->m_useMaterial = true;
         }
         if (cfg_kASTNode.IsDefined()){
             attribs->m_kAST = cfg_kASTNode.as<double>();
+            attribs->m_useMaterial = true;
         }
         if (cfg_kVSTNode.IsDefined()){
             attribs->m_kVST = cfg_kVSTNode.as<double>();
+            attribs->m_useMaterial = true;
         }
         if (cfg_kVCFNode.IsDefined()){
             attribs->m_kVCF = cfg_kVCFNode.as<double>();
@@ -1305,6 +1308,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         }
         if (cfg_kMTNode.IsDefined()){
            attribs->m_kMT = cfg_kMTNode.as<double>();
+           attribs->m_usePoseMatching = true;
         }
         if (cfg_kCHRNode.IsDefined()) {
             attribs->m_kCHR = cfg_kCHRNode.as<double>();
@@ -1359,6 +1363,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         }
         if (cfg_bendingConstraintNode.IsDefined()){
             attribs->m_bendingConstraint = cfg_bendingConstraintNode.as<int>();
+            attribs->m_useBendingConstraints = true;
         }
         if (cfg_fixed_nodesNode.IsDefined()){
             for (uint i = 0 ; i < cfg_fixed_nodesNode.size() ; i++){
@@ -1367,11 +1372,13 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         }
         if(cfg_clustersNode.IsDefined()){
             attribs->m_clusters = cfg_clustersNode.as<int>();
+            attribs->m_useClusters = true;
         }
     }
 
     if (randomizeConstraintsNode.IsDefined()){
-        attribs->m_randomizeConstraints = randomizeConstraintsNode.as<bool>();
+        attribs->m_useConstraintRandomization = randomizeConstraintsNode.as<bool>();
+        attribs->m_useConstraintRandomization = true;
     }
 
     return true;

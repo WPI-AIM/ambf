@@ -580,7 +580,12 @@ public:
 struct afSoftBodyAttributes: public afBaseObjectAttributes
 {
 public:
-    afSoftBodyAttributes(){}
+    afSoftBodyAttributes(){
+        m_useMaterial = false;
+        m_useBendingConstraints = false;
+        m_usePoseMatching = false;
+        m_useConstraintRandomization = false;
+    }
 
     double m_kLST;
     double m_kAST;
@@ -612,7 +617,11 @@ public:
     uint m_flags;
     uint m_bendingConstraint;
     uint m_clusters;
-    bool m_randomizeConstraints;
+    bool m_useMaterial;
+    bool m_useBendingConstraints;
+    bool m_usePoseMatching;
+    bool m_useClusters;
+    bool m_useConstraintRandomization;
     std::vector<uint> m_fixedNodes;
 
     afCommunicationAttributes m_communicationAttribs;
