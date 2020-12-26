@@ -1,5 +1,6 @@
 name: ambf-1.0
 
+
 on: [push, pull_request]
 
 jobs:
@@ -13,3 +14,4 @@ jobs:
       - name: Build docker image
         run: |
           docker build --tag=ambf .
+
