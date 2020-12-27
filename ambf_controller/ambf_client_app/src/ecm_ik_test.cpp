@@ -17,23 +17,15 @@ void EcmIkTest::test_IK() {
     std::cout << std::endl;
 
     rigidBodyPtr b = client.getARigidBody("ecm/baselink", true);
-//    rigidBodyPtr target_fk_handler = client.getARigidBody("ecm/target_fk", true);
-//    rigidBodyPtr target_ik_handler = client.getARigidBody("ecm/target_ik", true);
+    rigidBodyPtr target_fk_handler = client.getARigidBody("ecm/target_fk", true);
+    rigidBodyPtr target_ik_handler = client.getARigidBody("ecm/target_ik", true);
     usleep(1000000);
-
-    b->set_joint_pos<std::string>(              "baselink-yawlink", 0);
-//    b->set_joint_pos<int>(0, 0);
-    usleep(1000000);
-//    b->set_joint_effort<std::string>(              "baselink-yawlink", 0);
-
-/*
 
     ECM_FK ecm_fk;
     ECM_IK ecm_ik;
     Utilities utilities;
 
     std::vector<std::vector<float>> ECM_JOINT_LIMITS = ecm_fk.getJointsLmit();
-    std::vector<std::vector<float>> joint_angles_collection;
 
 
     Vector3f P_0_w;
@@ -42,9 +34,6 @@ void EcmIkTest::test_IK() {
     P_0_w[2]= b->get_pos()[2];
 
     Eigen::Matrix3f R_0_w = utilities.rotation_from_euler(b->get_rpy()[0], b->get_rpy()[1], b->get_rpy()[2]);
-//            std::cout << "P_0_w: " << P_0_w[0] << ", " << P_0_w[1] << ", " << P_0_w[2] << std::endl;
-//            std::cout << "R_0_w" << std::endl;
-//            std::cout << R_0_w << std::endl;
 
     Eigen::Matrix4f T_0_w = utilities.get_frame(R_0_w, P_0_w);
 
@@ -57,7 +46,6 @@ void EcmIkTest::test_IK() {
             float high = joint_limit[1];
             desired_q.emplace_back(utilities.get_random_between_range(low, high));
         }
-//        joint_angles_collection.emplace_back(joint_angles_desired);
 
         Matrix4f T_4_0 = ecm_fk.compute_FK(desired_q);
 
@@ -101,7 +89,7 @@ void EcmIkTest::test_IK() {
 
         usleep(1000000);
     }
-    */
+
     client.cleanUp();
 }
 
@@ -109,11 +97,8 @@ void EcmIkTest::test_IK() {
 
 int main(int argc, char* argv[])
 {
-//    const std::vector<float> joint_angles = { -0.3, 0.2, 0.1, -0.9 };
     EcmIkTest ecm_ik_test;
     ecm_ik_test.test_IK();
-//    const std::vector<float> computed_q = ecm_ik_test.test_IK(joint_angles);
-//    ik_test.test_ambf_psm(computed_q);
 
     return 0;
 }

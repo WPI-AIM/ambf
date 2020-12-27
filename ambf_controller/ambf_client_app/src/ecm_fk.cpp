@@ -29,25 +29,15 @@ Matrix4f ECM_FK::compute_FK(std::vector<float> joint_pos) {
     Matrix4f T_2_1 = DH_Vector_[1]->get_trans();
     Matrix4f T_3_2 = DH_Vector_[2]->get_trans();
     Matrix4f T_4_3 = DH_Vector_[3]->get_trans();
-//    Matrix4f T_5_4 = DH_Vector_[4]->get_trans();
-//    Matrix4f T_6_5 = DH_Vector_[5]->get_trans();
-//    Matrix4f T_7_6 = DH_Vector_[6]->get_trans();
 
     Matrix4f T_2_0 = T_1_0 * T_2_1;
     Matrix4f T_3_0 = T_2_0 * T_3_2;
     Matrix4f T_4_0 = T_3_0 * T_4_3;
-//    Matrix4f T_5_0 = T_4_0 * T_5_4;
-//    Matrix4f T_6_0 = T_5_0 * T_6_5;
-//    Matrix4f T_7_0 = T_6_0 * T_7_6;
-
 
     if(joint_pos_n == 1) return T_1_0;
     if(joint_pos_n == 2) return T_2_0;
     if(joint_pos_n == 3) return T_3_0;
     if(joint_pos_n == 4) return T_4_0;
-//    if(joint_pos_n == 5) return T_5_0;
-//    if(joint_pos_n == 6) return T_6_0;
-//    if(joint_pos_n == 7) return T_7_0;
 }
 
 void ECM_FK::cleanup() {

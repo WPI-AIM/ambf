@@ -35,9 +35,6 @@ std::vector<float> IK_test::test_IK(const std::vector<float> joint_angles) {
 }
 
 void IK_test::test_ambf_psm(const std::vector<float> computed_q) {
-//    const std::vector<float> joint_angles = { -0.3, 0.2, 0.1, -0.9, 0.0, 0.0, 0.0 };
-//    const std::vector<float> joint_angles = { -0.3, 0.2, 0.1, -0.9, 0.0, -1.2, 0.0 };
-//    test_IK(joint_angles);
     Client client;
     client.connect();
     usleep(20000);
@@ -63,9 +60,6 @@ void IK_test::test_ambf_psm(const std::vector<float> computed_q) {
     psm_baselink_handler->set_joint_pos<std::string>("toolpitchlink-toolgripper1link", computed_q[5]);
     psm_baselink_handler->set_joint_pos<std::string>("toolpitchlink-toolgripper2link", 0.0);
 
-//    std::cout << "psm_baselink_handler->get_joint_pos(0): " << psm_baselink_handler->get_joint_pos(0) << std::endl;
-
-//    void RigidBody::set_joint_pos(std::string joint_name, float pos);
 
     psm_baselink_handler->set_joint_pos<int>(0, 0.0);
 
