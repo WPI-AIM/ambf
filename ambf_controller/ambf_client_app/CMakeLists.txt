@@ -42,6 +42,19 @@ set(IK_SOURCE_FILES
     src/psm_ik.cpp
     src/utilities.cpp)
 
+set (ECM_IK_HDR_FILES
+    include/${PROJECT_NAME}/ecm_ik_test.h
+    include/${PROJECT_NAME}/ecm_fk.h
+    include/${PROJECT_NAME}/dh.h
+    include/${PROJECT_NAME}/ecm_ik.h
+    include/${PROJECT_NAME}/utilities.h)
+
+set(ECM_IK_SOURCE_FILES
+    src/ecm_ik_test.cpp
+    src/ecm_fk.cpp
+    src/dh.cpp
+    src/ecm_ik.cpp
+    src/utilities.cpp)
 
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
@@ -53,3 +66,5 @@ target_link_libraries (${PROJECT_NAME} ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boo
 add_executable (ik_test ${IK_HDR_FILES} ${IK_SOURCE_FILES})
 target_link_libraries (ik_test ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
 
+add_executable (ecm_ik_test ${ECM_IK_HDR_FILES} ${ECM_IK_SOURCE_FILES})
+target_link_libraries (ecm_ik_test ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
