@@ -148,6 +148,8 @@ void cBulletGenericObject::setInertia(const cVector3d& a_inertia)
 void cBulletGenericObject::setInertialOffsetTransform(btTransform & a_trans)
 {
     m_T_iINb = a_trans;
+    // Compute the inverse transform to save computation
+    m_T_bINi = m_T_iINb.inverse();
 }
 
 
@@ -161,6 +163,19 @@ void cBulletGenericObject::setInertialOffsetTransform(btTransform & a_trans)
 btTransform cBulletGenericObject::getInertialOffsetTransform()
 {
     return m_T_iINb;
+}
+
+
+//==============================================================================
+/*!
+    This method gives the Inverse Inertial Offset Transform.
+
+    \param  a_trans  Inverse Inertial Offset Transform.
+*/
+//==============================================================================
+btTransform cBulletGenericObject::getInverseInertialOffsetTransform()
+{
+    return m_T_bINi;
 }
 
 

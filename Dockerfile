@@ -1,8 +1,24 @@
 # Import base ros melodic image
 FROM ros:melodic-ros-base-bionic
 
-ENV HOME="/root" \
-  AMBF_WS="/root/ambf"
+
+ENV USERNAME="admin"
+RUN useradd -ms /bin/bash ${USERNAME}
+RUN usermod -aG sudo ${USERNAME}
+
+ENV HOME="/home/${USERNAME}" \
+  AMBF_WS="/home/${USERNAME}/ambf"
+
+# Add apt-utils
+RUN apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install apt-utils -q -y \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+  apt-get -y -qq install wget gdb
+
 
 # Install git
 RUN apt-get update && \
@@ -20,7 +36,6 @@ RUN cd ${AMBF_WS} && \
 
 # Install apt and pip packages listed in (*-requirements.txt)
 WORKDIR ${AMBF_WS}
-COPY install/*-requirements.txt install/
 RUN apt-get update && \
   apt-get -y -qq -o Dpkg::Use-Pty=0 install --no-install-recommends \
   --fix-missing $(cat install/apt-requirements.txt) && \
@@ -35,8 +50,10 @@ RUN . /opt/ros/melodic/setup.sh && \
   cmake ../ && \
   make -j$(nproc)
 
-RUN touch /root/.bashrc && \
-  echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc && \
-  echo "source /root/ambf/build/devel/setup.bash" >> /root/.bashrc
+RUN touch ${HOME}/.bashrc && \
+  echo "source /opt/ros/melodic/setup.bash" >> ${HOME}/.bashrc && \
+  echo "source $AMBF_WS/build/devel/setup.bash" >> ${HOME}/.bashrc
 
-WORKDIR ${HOME}
+RUN . ${HOME}/.bashrc
+  
+WORKDIR ${AMBF_WS}/training_scripts

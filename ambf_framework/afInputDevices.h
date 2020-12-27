@@ -159,7 +159,7 @@ public:
     std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
 
     // Root link for this simulated device hhhhhhh
-    afRigidBodyPtr m_rootLink;
+    afRigidBodyPtr m_rootLink = nullptr;
 
     //private:
     //    std::mutex m_mutex;
@@ -311,8 +311,7 @@ public:
     std::vector<std::string> m_pairedCameraNames;
 
 private:
-    afCollateralControlManager* m_iDPtr; // Ptr to the Device Handler class
-    afWorldPtr m_afWorld; // Ref to world ptr
+    afWorldPtr m_afWorld = nullptr; // Ref to world ptr
 };
 
 ///
@@ -334,8 +333,8 @@ enum MODES{ CAM_CLUTCH_CONTROL,
 /// controllable cameras by that SDE-IID
 ///
 struct afCollateralControlUnit{
-    afPhysicalDevice* m_physicalDevicePtr = NULL;
-    afSimulatedDevice* m_simulatedDevicePtr = NULL;
+    afPhysicalDevice* m_physicalDevicePtr = nullptr;
+    afSimulatedDevice* m_simulatedDevicePtr = nullptr;
     // The cameras that this particular device Gripper Pair control
     std::vector<afCameraPtr> m_cameras;
 
@@ -397,7 +396,7 @@ public:
     std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
     std::vector<afCollateralControlUnit> m_collateralControlUnits;
 
-    uint m_numDevices;
+    uint m_numDevices = 0;
 
     // bool to enable the rotation of simulated gripper be in camera frame. i.e. Orienting the camera
     // re-orients the simulate gripper.
@@ -424,9 +423,9 @@ public:
     int m_mode_idx;
 
 
-    std::string g_btn_action_str = "";
-    bool g_cam_btn_pressed = false;
-    bool g_clutch_btn_pressed = false;
+    std::string m_btn_action_str = "";
+    bool m_cam_btn_pressed = false;
+    bool m_clutch_btn_pressed = false;
 
     // Number of input devices loaded. To be used by the devices while launching
     // thier afCommunication
@@ -435,7 +434,7 @@ public:
 private:
     // Base of the config file location of this Input Device Handler
     boost::filesystem::path m_basePath;
-    afWorldPtr m_afWorld;
+    afWorldPtr m_afWorld = nullptr;
     // Integer index to keep track of device indexes that have already been
     // claimed so that we dont mistakenly claim and already claimed device
     std::vector<int> m_devicesClaimed;

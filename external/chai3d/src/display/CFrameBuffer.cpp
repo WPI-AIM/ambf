@@ -101,7 +101,9 @@ void cFrameBuffer::setup(cCamera* a_camera,
                          const unsigned int a_width,
                          const unsigned int a_height,
                          const bool a_useImageBuffer,
-                         const bool a_useDepthBuffer)
+                         const bool a_useDepthBuffer,
+                         GLenum a_imageBufferInternalFormat,
+                         GLenum a_depthBufferInternalFormat)
 {
     // store settings
     m_useImageBuffer = a_useImageBuffer;
@@ -117,6 +119,7 @@ void cFrameBuffer::setup(cCamera* a_camera,
         m_imageBuffer->setWrapModeT(GL_CLAMP_TO_EDGE);
         m_imageBuffer->setMagFunction(GL_LINEAR);
         m_imageBuffer->setMinFunction(GL_LINEAR);
+        m_imageInternalFormat = a_imageBufferInternalFormat;
     }
 
     // setup depth buffer
@@ -128,6 +131,7 @@ void cFrameBuffer::setup(cCamera* a_camera,
         m_depthBuffer->setWrapModeT(GL_CLAMP_TO_EDGE);
         m_depthBuffer->setMagFunction(GL_LINEAR);
         m_depthBuffer->setMinFunction(GL_LINEAR);
+        m_depthInternalFormat = a_depthBufferInternalFormat;
     }
 
     // setup resolution
@@ -171,7 +175,7 @@ void cFrameBuffer::setSize(const unsigned int a_width, const unsigned int a_heig
     \param  a_image           Destination image.
 */
 //==============================================================================
-void cFrameBuffer::copyImageBuffer(cImagePtr a_image)
+void cFrameBuffer::copyImageBuffer(cImagePtr a_image, int a_type)
 {
 #ifdef C_USE_OPENGL
 
@@ -196,7 +200,7 @@ void cFrameBuffer::copyImageBuffer(cImagePtr a_image)
     glGetTexImage(GL_TEXTURE_2D,
                   0,
                   GL_RGBA,
-                  GL_UNSIGNED_BYTE,
+                  a_type,
                   (GLvoid*)(a_image->getData())
                   );
 #endif
@@ -329,7 +333,7 @@ bool cFrameBuffer::renderInitialize()
         {
             glTexImage2D(GL_TEXTURE_2D,
                 0,
-                GL_RGBA,
+                m_imageInternalFormat,
                 m_imageBuffer->m_image->getWidth(),
                 m_imageBuffer->m_image->getHeight(),
                 0,
@@ -388,7 +392,7 @@ bool cFrameBuffer::renderInitialize()
         {
             glTexImage2D(GL_TEXTURE_2D,
                 0,
-                GL_DEPTH_COMPONENT,
+                m_depthInternalFormat,
                 m_depthBuffer->m_image->getWidth(),
                 m_depthBuffer->m_image->getHeight(),
                 0,

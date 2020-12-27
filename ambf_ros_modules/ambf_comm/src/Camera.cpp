@@ -150,6 +150,7 @@ void Camera::update_params_from_server(){
     }
 
     // Finally update the local copies of the params
+    m_near_plane = np;
     m_far_plane = fp;
     m_field_view_angle = fva;
     m_orthographic_view_width = ovw;

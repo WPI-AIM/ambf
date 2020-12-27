@@ -75,6 +75,12 @@
 #include "ambf_comm/Vehicle.h"
 #include "ambf_comm/World.h"
 #endif
+
+// Support for Depth Image to PointCloud2
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/point_cloud2_iterator.h"
+#endif
 //-----------------------------------------------------------------------------
 
 
@@ -91,6 +97,7 @@ class afJoint;
 class afWorld;
 struct afRigidBodySurfaceProperties;
 struct afSoftBodyConfigProperties;
+struct afRenderOptions;
 
 typedef afMultiBody* afMultiBodyPtr;
 typedef afRigidBody* afRigidBodyPtr;
@@ -197,6 +204,63 @@ public:
         std::cerr << "Line: "<< line << ", File: " << filename << std::endl;
     }
 };
+
+static std::string AF_DEPTH_COMPUTE_VTX =
+        " attribute vec3 aPosition;                                  \n"
+        " attribute vec3 aNormal;                                    \n"
+        " attribute vec3 aTexCoord;                                  \n"
+        " attribute vec4 aColor;                                     \n"
+        " attribute vec3 aTangent;                                   \n"
+        " attribute vec3 aBitangent;                                 \n"
+        "                                                            \n"
+        " varying vec4 vPosition;                                    \n"
+        " varying vec3 vNormal;                                      \n"
+        " varying vec3 vTexCoord;                                    \n"
+        "                                                            \n"
+        " void main(void)                                            \n"
+        " {                                                          \n"
+        "    vTexCoord = aTexCoord;                                  \n"
+        "    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0); \n"
+        " }                                                          \n";
+
+static std::string AF_DEPTH_COMPUTE_FRAG =
+        " uniform sampler2D diffuseMap;                                                       \n"
+        " varying vec3 vTexCoord;                                                             \n"
+        " uniform vec3 maxWorldDimensions;                                                    \n"
+        " uniform float nearPlane;                                                            \n"
+        " uniform float farPlane;                                                             \n"
+        "                                                                                     \n"
+        " uniform mat4 invProjection;                                                         \n"
+        "                                                                                     \n"
+        " void main(void)                                                                     \n"
+        " {                                                                                   \n"
+        "     vec4 texColor = texture2D(diffuseMap, vTexCoord.xy);                            \n"
+        "     float x = vTexCoord.x * 2.0 - 1.0;                                              \n"
+        "     float y = vTexCoord.y * 2.0 - 1.0;                                              \n"
+        "     uint b0 = texColor.x * 255.0;                                                   \n"
+        "     uint b1 = texColor.y * 255.0;                                                   \n"
+        "     uint b2 = texColor.z * 255.0;                                                   \n"
+        "     uint b3 = texColor.w * 255.0;                                                   \n"
+        "                                                                                     \n"
+        "     uint depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                         \n"
+        "     depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                              \n"
+        "     float d = float(depth) / float(pow(2.0, 4*8));                                  \n"
+        "                                                                                     \n"
+        "     float z = d * 2.0 - 1.0;                                                        \n"
+        "     vec4 P = vec4(x, y, z, 1.0);                                                    \n"
+        "                                                                                     \n"
+        "     P = invProjection * P;                                                          \n"
+        "     P /= P.w;                                                                       \n"
+        "                                                                                     \n"
+        "     float deltaZ = farPlane - nearPlane;                                            \n"
+        "     float normalized_z = (P.z - nearPlane)/deltaZ;                                  \n"
+        "                                                                                     \n"
+        "     // Assuming the frustrum is centered vertically and horizontally                \n"
+        "     float normalized_x = (P.x + maxWorldDimensions.x / 2.0)/maxWorldDimensions.x;   \n"
+        "     float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y;   \n"
+        "                                                                                     \n"
+        "     gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);             \n"
+        " }                                                                                   \n";
 
 
 ///
@@ -338,7 +402,7 @@ enum GeometryType{
 enum class afControlType{
   position=0,
   force=1,
-  velocity=02
+  velocity=2
 };
 
 
@@ -356,7 +420,6 @@ public:
     inline double getP_ang(){return P_ang;}
     inline double getD_ang(){return D_ang;}
 
-public:
     inline void enable(bool a_enable){m_enabled = a_enable;}
     inline bool isEnabled(){return m_enabled;}
 
@@ -369,7 +432,6 @@ public:
     inline void setP_ang(double a_P) {P_ang = a_P;}
     inline void setD_ang(double a_D) {D_ang = a_D;}
 
-public:
     template <typename T1, typename T2>
     // This function computes the output torque from Rotation Data
     // The last argument ts is the time_scale and is computed at dt_fixed / dt
@@ -380,13 +442,17 @@ public:
     // Yet to be implemented
     void boundEffort(double effort_cmd);
 
+    // The default output type is velocity
+    afControlType m_positionOutputType = afControlType::velocity;
+
+    // The default output type is velocity
+    afControlType m_orientationOutputType = afControlType::velocity;
+
 private:
     // PID Controller Gains for Linear and Angular Controller
     double P_lin, I_lin, D_lin;
     double P_ang, I_ang, D_ang;
 
-
-private:
     // Vector storing the current position error
     btVector3 m_dPos;
     cVector3d m_dPos_cvec;
@@ -637,11 +703,11 @@ protected:
     // Iterator of connected rigid bodies
     std::vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
-    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool m_lin_gains_computed = false;
+    // Check if the linear gains have been defined
+    bool m_lin_gains_defined = false;
 
-    // Check if the linear gains have been computed (If not specified, they are caluclated based on lumped massed)
-    bool m_ang_gains_computed = false;
+    // Check if the linear gains have been defined
+    bool m_ang_gains_defined = false;
 
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
@@ -703,9 +769,6 @@ protected:
     // Block size. i.e. number of sensors per thread
     int m_sensorThreadBlockSize = 10;
 
-    // If set, use the explicit PID controller. Otherwise, use the internal velocity based control
-    bool m_usePIDController = false;
-
     // This method uses the eq:
     // startIdx = threadIdx * m_sensorThreadBlockSize
     // endIdx = startIdx + m_sensorThreadBlockSize - 1
@@ -734,10 +797,6 @@ private:
 
     // Pointer to Multi body instance that constains this body
     afMultiBodyPtr m_mBPtr;
-
-    // Counter for the times we have written to ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
 
     // Last Position Error
     btVector3 m_dpos;
@@ -859,6 +918,9 @@ public:
     void boundImpulse(double& effort_cmd);
 
     void boundEffort(double& effort_cmd);
+
+    // The default output type is velocity
+    afControlType m_outputType = afControlType::velocity;
 };
 
 ///
@@ -962,9 +1024,6 @@ protected:
     void printVec(std::string name, btVector3* v);
     afWorldPtr m_afWorld;
 
-    // If set, use the explicit PID controller. Otherwise, use the internal Bullets impulse based control
-    bool m_usePIDController = false;
-
     // Is this a passive joint or not (REDUNDANT JOINT). If passive, this joint will not be reported
     // for communication purposess.
     bool m_passive = false;
@@ -973,11 +1032,11 @@ protected:
     bool m_feedbackEnabled = false;
 
     // Bullet Joint Feedback Ptr
-    btJointFeedback* m_feedback;
+    btJointFeedback  *m_feedback = nullptr;
 
 protected:
 
-    btTypedConstraint *m_btConstraint;
+    btTypedConstraint *m_btConstraint = nullptr;
 
     // The estimated Effort for this joint if its a single DOF joint.
     double m_estimatedEffort = 0.0;
@@ -1377,6 +1436,28 @@ private:
     std::vector<afResistanceContacts> m_resistanceContacts;
 };
 
+
+///
+/// \brief The afDepthPointCloud class
+///
+class afDepthPointCloud{
+    friend class afCamera;
+public:
+    int setup(int a_width, int a_height, int a_numFields);
+    ~afDepthPointCloud();
+
+    inline int getWidth(){return m_width;}
+    inline int getHeight(){return m_height;}
+    inline int getNumFields(){return m_numFields;}
+
+protected:
+    float *m_data = nullptr;
+    int m_width=0;
+    int m_height=0;
+    int m_numFields=0;
+};
+
+
 ///
 /// \brief The afCamera class
 ///
@@ -1386,6 +1467,8 @@ public:
     afCamera(afWorld* a_afWorld);
     ~afCamera();
 
+    virtual void render(afRenderOptions &options);
+
     // Define the virtual method for camera
     virtual void afExecuteCommand(double dt);
 
@@ -1394,6 +1477,8 @@ public:
 
     // Initialize
     bool init();
+
+    void updateLabels(afRenderOptions &options);
 
     // Create the default camera. Implemented in case not additional cameras
     // are define in the AMBF config file
@@ -1432,6 +1517,18 @@ public:
     // This method returns the field view angle in Radians.
     inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
 
+    // Get interval between the scene update and publishing of an image
+    inline uint getImagePublishInterval(){return m_imagePublishInterval;}
+
+    // Get interval between the scene update and publishing of the depth
+    inline uint getDepthPublishInterval(){return m_depthPublishInterval;}
+
+    // Set interval between the scene update and publishing of an image
+    void setImagePublishInterval(uint a_interval);
+
+    // Set interval between the scene update and publishing of the depth
+    void setDepthPublishInterval(uint a_interval);
+
     // This method enables or disables output image mirroring vertically.
     inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
 
@@ -1440,8 +1537,18 @@ public:
         m_camera->renderView(a_windowWidth, a_windowHeight);
     }
 
+    void renderFrameBuffer();
+
+    void computeDepthOnGPU();
+
     // Publish Image as a ROS Topic
     void publishImage();
+
+    // Publish Depth as a ROS Topic
+    void computeDepthOnCPU();
+
+    // Publish Depth as Point Cloud
+    void publishDepthPointCloud();
 
     // Front plane scene graph which can be used to attach widgets.
     inline cWorld* getFrontLayer(){
@@ -1503,6 +1610,29 @@ public:
 
     std::vector<std::string> m_controllingDevNames;
 
+    // Frame Buffer to write to OpenCV Transport stream
+    cFrameBuffer* m_frameBuffer = nullptr;
+
+    // Image to Convert the FrameBuffer into an image
+    cImagePtr m_bufferColorImage;
+
+    // Image to Convert the FrameBuffer into an depth image
+    cImagePtr m_bufferDepthImage;
+
+    /// IMPLEMENTATION FOR DEPTH IMAGE TO POINTCLOUD ///
+    // A separate buffer to render and convert depth image to Cam XYZ
+    cFrameBuffer* m_depthBuffer = nullptr;
+
+    // A separate world attached to the depht Buffer
+    cWorld* m_dephtWorld = nullptr;
+
+    // A separate quad added as the only child to the depth world
+    cMesh* m_depthMesh = nullptr;
+
+    cImagePtr m_depthBufferColorImage;
+
+    bool m_useGPUForDepthComputation = true;
+
 protected:
     std::mutex m_mutex;
     cVector3d m_pos, m_posClutched;
@@ -1518,18 +1648,6 @@ protected:
     static int s_windowIdx;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-
-public:
-
-    // Frame Buffer to write to OpenCV Transport stream
-    cFrameBuffer* m_frameBuffer;
-
-    // Image to Convert the FrameBuffer into an image
-    cImagePtr m_imageFromBuffer;
-
-    // Image to Convert the FrameBuffer into an depth image
-    cImagePtr m_depthFromBuffer;
-
 protected:
 
     // Open CV Image Matrix
@@ -1542,7 +1660,7 @@ protected:
     image_transport::Publisher m_imagePublisher;
 
     // Image Transport ROS Node
-    static ros::NodeHandle* s_imageTransportNode;
+    static ros::NodeHandle* s_rosNode;
 
     // Flag to check if to check if ROS Node and CV ROS Node is initialized
     static bool s_imageTransportInitialized;
@@ -1553,6 +1671,13 @@ protected:
     ambf_comm::ViewMode m_viewMode;
 #endif
 
+    // Depth to Point Cloud Impl
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
+    ros::Publisher m_depthPointCloudPub;
+#endif
+
 private:
     afWorldPtr m_afWorld;
 
@@ -1561,8 +1686,11 @@ private:
     // represent the kinematics instead
     cCamera* m_camera;
 
-    // Flag to enable disable publishing of image as a ROS topic
+    // Flag to enable disable publishing of color image as a ROS topic
     bool m_publishImage = false;
+
+    // Flag to enable disable publishing of depth image as a ROS topic
+    bool m_publishDepth = false;
 
     cVector3d m_camPos;
     cVector3d m_camLookAt;
@@ -1570,6 +1698,19 @@ private:
 
     // Is this camera orthographic or not.
     bool m_orthographic = false;
+
+    afDepthPointCloud m_depthPC;
+
+    // The interval used to publish the image. A val of 1 means that publish every scene update
+    // and a value of 10 means, publish every 10th scene udpate
+    uint m_imagePublishInterval = 1;
+
+    // The interval used to publish the depth. A val of 1 means that publish every scene update
+    // and a value of 10 means, publish every 10th scene udpate
+    uint m_depthPublishInterval = 10;
+
+    // Incremented every scene update (render method call)
+    uint m_sceneUpdateCounter = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -1654,6 +1795,15 @@ public:
 };
 
 
+struct afRenderOptions{
+    bool m_mirroredDisplay = false;
+    bool m_updateLabels = true;
+    bool m_windowClosed = false;
+    std::string m_IIDModeStr = "";
+    std::string m_IIDBtnActionStr = "";
+};
+
+
 //-----------------------------------------------------------------------------
 
 ///
@@ -1667,9 +1817,11 @@ public:
 
     afWorld(std::string a_global_namespace);
 
-    virtual ~afWorld(){}
+    virtual ~afWorld();
 
     virtual bool loadWorld(std::string a_world_config = "", bool showGUI=true);
+
+    virtual void render(afRenderOptions &options);
 
     // Template method to add various types of objects
     template<typename T, typename TMap>
@@ -1844,11 +1996,11 @@ public:
     GLFWwindow* m_mainWindow;
 
     //data for picking objects
-    class btRigidBody* m_pickedBody=0;
+    class btRigidBody* m_pickedBulletRigidBody=0;
 
-    afRigidBodyPtr m_lastPickedBody=0;
+    afRigidBodyPtr m_pickedAFRigidBody=0;
 
-    cMaterialPtr m_pickedBodyColor; // Original color of picked body for reseting later
+    cMaterialPtr m_pickedAFRigidBodyColor; // Original color of picked body for reseting later
 
     cMaterial m_pickColor; // The color to be applied to the picked body
 
@@ -1862,7 +2014,7 @@ public:
 
     cVector3d m_pickedNodeGoal;
 
-    class btTypedConstraint* m_pickedConstraint=0;
+    class btTypedConstraint* m_pickedConstraint = nullptr;
 
     int m_savedState;
 
@@ -1871,6 +2023,8 @@ public:
     cVector3d m_hitPos;
 
     double m_oldPickingDist;
+
+    cVector3d m_pickedOffset;
 
     cMesh* m_pickSphere;
 
@@ -1911,6 +2065,13 @@ public:
     boost::filesystem::path m_skyBox_fsFilePath;
 
     boost::filesystem::path m_world_config_path;
+
+    // a frequency counter to measure the simulation graphic rate
+    cFrequencyCounter m_freqCounterGraphics;
+
+    // a frequency counter to measure the simulation haptic rate
+    cFrequencyCounter m_freqCounterHaptics;
+
 
 protected:
 
@@ -2083,6 +2244,8 @@ class afVehicle: public afBaseObject{
 public:
     afVehicle(afWorldPtr a_afWorld);
 
+    ~afVehicle();
+
     // Load the vehicle from ambf format
     virtual bool loadVehicle(std::string vehicle_config_file, std::string node_name, afMultiBodyPtr mB, std::string name_remapping_idx = "");
 
@@ -2094,8 +2257,8 @@ public:
     virtual void afExecuteCommand(double dt);
 
 protected:
-    btDefaultVehicleRaycaster* m_vehicleRayCaster;
-    btRaycastVehicle* m_vehicle;
+    btDefaultVehicleRaycaster* m_vehicleRayCaster = nullptr;
+    btRaycastVehicle* m_vehicle = nullptr;
     btRaycastVehicle::btVehicleTuning m_tuning;
     afRigidBodyPtr m_chassis;
     int m_numWheels = 0;
