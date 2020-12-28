@@ -508,36 +508,6 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 
 
 ///
-/// \brief afBaseObject::getBoundaryMin
-/// \return
-///
-cVector3d afBaseObject::getBoundaryMin()
-{
-    return m_visualMesh->getBoundaryMin();
-}
-
-
-///
-/// \brief afBaseObject::getBoundaryMax
-/// \return
-///
-cVector3d afBaseObject::getBoundaryMax()
-{
-    return m_visualMesh->getBoundaryMax();
-}
-
-
-///
-/// \brief afBaseObject::setFrameSize
-/// \param a_size
-///
-void afBaseObject::setFrameSize(double a_size)
-{
-    m_visualMesh->setFrameSize(a_size);
-}
-
-
-///
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
@@ -618,6 +588,22 @@ void afBaseObject::updateWrappedObjectPose()
             m_wrappedObject->setLocalTransform(m_localTransform);
         }
     }
+}
+
+void afBaseObject::showVisualFrame()
+{
+    // Set the size of the frame.
+    cVector3d bounds = m_visualMesh->getBoundaryMax();
+    double frame_size;
+    if (bounds.length() > 0.001){
+        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
+        frame_size = max_axis * 1.2;
+    }
+    else{
+        frame_size = 0.5;
+    }
+    m_visualMesh->setFrameSize(frame_size);
+
 }
 
 
@@ -983,7 +969,7 @@ void afInertialObject::createInertialObject()
 /// \param a_world
 ///
 afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-    setFrameSize(0.5);
+    m_visualMesh->setFrameSize(0.5);
     m_mesh_name.clear();
     m_collision_mesh_name.clear();
     m_scale = 1.0;
@@ -1990,7 +1976,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 {
     afSoftBodyAttributes & attribs = *a_attribs;
 
-    m_softMultiMesh = new afSoftMultiMesh(m_afWorld);
+    m_softMultiMesh = new afSoftMultiMesh();
 
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
@@ -2031,7 +2017,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     afBaseObject::copyMaterialToMesh(&m_softMultiMesh->m_gelMesh, &attribs.m_visualAttribs.m_colorAttribs);
 
-    btSoftBody* softBody = m_softMultiMesh->m_bulletSoftBody;
+    btSoftBody* softBody = m_bulletSoftBody;
 
     btSoftBody::Material *pm = softBody->appendMaterial();
     pm->m_kLST = attribs.m_kLST;
@@ -2096,7 +2082,6 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->randomizeConstraints();
     }
 
-    m_afWorld->addChild(this);
     return true;
 }
 
@@ -3811,19 +3796,22 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     setGravity(attribs.m_gravity);
 
-    if (!attribs.m_environmentFilepath.c_str().empty()){
-        if (loadModel(attribs.m_environmentFilepath.c_str(), false) == false){
-            if (attribs.m_enclosure.m_use){
-                m_enclosureL = attribs.m_enclosure.m_length;
-                m_enclosureW = attribs.m_enclosure.m_width;
-                m_enclosureH = attribs.m_enclosure.m_height;
-
-                createDefaultWorld();
-            }
-            else{
-                // THROW SOME ERROR THAT NEITHER A WORLD ENVIRONMENT IS DEFINED, NOT IS THE ENCLOSURE BOUNDS DEFINED
-            }
+    if (attribs.m_environmentModel.m_use){
+        afModelPtr envModel = new afModel(this);
+        if (envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs)){
+            // ADD THE MODEL TO WORLD SOMEHOW
         }
+
+    }
+    else if (attribs.m_enclosure.m_use){
+        m_enclosureL = attribs.m_enclosure.m_length;
+        m_enclosureW = attribs.m_enclosure.m_width;
+        m_enclosureH = attribs.m_enclosure.m_height;
+
+        createDefaultWorld();
+    }
+    else{
+        // THROW SOME ERROR THAT NO MODEL FOR WORLD CAN BE LOADED
     }
 
 
@@ -4118,52 +4106,6 @@ void afWorld::enableShaderProgram(){
             m_shaderProgramDefined = false;
         }
     }
-}
-
-
-///
-/// \brief afWorld::loadAllADFs
-/// \param enable_comm
-///
-void afWorld::loadAllMultiBodies(bool enable_comm){
-    for (uint i = 0 ; i < getNumMBFilepaths(); i++){
-        loadModel(i, enable_comm);
-    }
-}
-
-
-///
-/// \brief afWorld::loadADF
-/// \param i
-/// \param enable_comm
-/// \return
-///
-bool afWorld::loadModel(uint i, bool enable_comm){
-    if (i >= getNumMBFilepaths()){
-        cerr << "ERROR, REQUESTED MULTI-BODY IDX " << i << " HOWEVER, " <<
-                     getNumMBFilepaths() - 1 << " INDEXED MULTI-BODIES DEFINED" << endl;
-        return 0;
-    }
-
-    string adf_filepath = getModelFilepath(i);
-    loadModel(adf_filepath, enable_comm);
-    return true;
-}
-
-
-///
-/// \brief afWorld::loadADF
-/// \param a_model_config_file
-/// \return
-///
-bool afWorld::loadModel(string a_adf_filepath, bool enable_comm){
-    afModelPtr mB(new afModel(this));
-    bool success = mB->loadModel(a_adf_filepath, enable_comm);
-    if (success){
-        addAFModel(mB);
-        buildCollisionGroups();
-    }
-    return success;
 }
 
 
@@ -4677,7 +4619,7 @@ cVector3d afCamera::getTargetPos(){
 bool afCamera::createDefaultCamera(){
     cerr << "INFO: USING DEFAULT CAMERA" << endl;
 
-    m_camera = new cCamera(m_afWorld);
+    m_camera = new cCamera(m_afWorld->m_chaiWorld);
     addChild(m_camera);
 
     m_namespace = m_afWorld->getNamespace();
@@ -4795,7 +4737,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
 
     if(valid){
-        m_camera = new cCamera(a_world);
+        m_camera = new cCamera(m_afWorld->m_chaiWorld);
         setLocalPos(0, 0, 0);
         cMatrix3d I3;
         I3.identity();
@@ -5155,7 +5097,7 @@ void afCamera::computeDepthOnGPU()
 
     m_depthBuffer->renderView();
 
-    m_camera->setParentWorld(m_afWorld);
+    m_camera->setParentWorld(m_afWorld->m_chaiWorld);
 
     m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_UNSIGNED_INT);
 
@@ -5608,7 +5550,7 @@ afLight::afLight(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
 ///
 bool afLight::createDefaultLight(){
     cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << endl;
-    m_spotLight = new cSpotLight(m_afWorld);
+    m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
     m_namespace = m_afWorld->getNamespace();
     m_name = "default_light";
     addChild(m_spotLight);
@@ -5640,13 +5582,13 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     cVector3d dir = to_cVector3d(attribs.m_direction);
     setDir(dir);
 
-    m_spotLight = new cSpotLight(a_world);
+    m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
 
     addChild(m_spotLight);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
-    a_world->addChild(m_visualMesh);
+    m_afWorld->addChild(m_visualMesh);
 
     m_initialTransform = getLocalTransform();
 
@@ -6041,6 +5983,8 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         ignoreCollisionChecking();
     }
 
+    m_afWorld->buildCollisionGroups();
+
     return true;
 }
 
@@ -6158,7 +6102,7 @@ template <typename T, typename TMap>
 bool afWorld::addObject(T a_obj, string a_name, TMap* a_map){
     (*a_map)[a_name] = a_obj;
     m_afChildrenObjects.push_back(a_obj);
-    showVisualFrame(a_obj);
+    a_obj->showVisualFrame();
     return true;
 }
 
@@ -6229,24 +6173,6 @@ TVec afWorld::getObjects(TMap* a_map){
     }
 
     return _objects;
-}
-
-
-///
-/// \brief afWorld::showVisualFrame
-///
-void afWorld::showVisualFrame(afBaseObject* a_obj){
-    // Set the size of the frame.
-    cVector3d bounds = a_obj->getBoundaryMax();
-    double frame_size;
-    if (bounds.length() > 0.001){
-        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
-        frame_size = max_axis * 1.2;
-    }
-    else{
-        frame_size = 0.5;
-    }
-    a_obj->setFrameSize(frame_size);
 }
 
 
@@ -6330,7 +6256,7 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
     afSoftBodyMap::iterator afIt;
     for (afIt = m_afSoftBodyMap.begin() ; afIt != m_afSoftBodyMap.end() ; ++ afIt){
         afSoftBodyPtr afBody = afIt->second;
-        if (a_body == afBody->m_softMultiMesh->m_bulletSoftBody){
+        if (a_body == afBody->m_bulletSoftBody){
             return afBody;
         }
     }

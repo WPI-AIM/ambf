@@ -701,10 +701,6 @@ public:
 
     cTransform getLocalTransform();
 
-    cVector3d getBoundaryMin();
-
-    cVector3d getBoundaryMax();
-
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
 
@@ -734,8 +730,6 @@ public:
 
     inline void setInitialTransform(cTransform a_trans){m_initialTransform = a_trans;}
 
-    void setFrameSize(double a_size);
-
     void setScale(double a_scale);
 
     void setWrappedObject(cGenericObject* object);
@@ -752,6 +746,8 @@ public:
     void updateVisualPose();
 
     void updateWrappedObjectPose();
+
+    void showVisualFrame();
 
     // Enable Shader Program Associate with this object
     virtual void enableShaderProgram(){}
@@ -771,6 +767,8 @@ public:
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;
 
+    cMultiMesh* m_visualMesh;
+
 protected:
     // Initial location of Rigid Body
     cTransform m_initialTransform;
@@ -783,8 +781,6 @@ protected:
 
     afPath m_vtxShaderFilePath;
     afPath m_fragShaderFilePath;
-
-    cMultiMesh* m_visualMesh;
 
     // This could be a cCamera, cLight etc.
     cGenericObject* m_wrappedObject;
@@ -840,6 +836,8 @@ public:
     void setSurfaceProperties(const afSurfaceAttributes& props);
 
     btRigidBody* m_bulletRigidBody;
+
+    btSoftBody* m_bulletSoftBody;
 
     // Filepath to the collision mesh
     afPath m_collisionMeshFilePath;
@@ -1893,8 +1891,6 @@ public:
 
     void getEnclosureExtents(double &length, double &width, double &height);
 
-    void showVisualFrame(afBaseObjectPtr a_obj);
-
     inline void pausePhysics(bool pause){m_pausePhx = pause;}
 
     bool isPhysicsPaused(){return m_pausePhx;}
@@ -2045,13 +2041,6 @@ public:
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
     afRigidBodyPtr getRootAFRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
-
-    // Load and ADF constraint rigid bodies, joints, sensors, soft-bodies
-    bool loadModel(string a_adf_filepath, bool enable_comm);
-
-    bool loadModel(uint i, bool enable_comm);
-
-    void loadAllMultiBodies(bool enable_com);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 

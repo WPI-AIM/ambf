@@ -111,7 +111,7 @@
 
 // EIGEN SUPPORT
 // Enable or disable external Eigen math library.
-#define C_USE_EIGEN
+//#define C_USE_EIGEN
 
 // 3DS FILE SUPPORT
 // Enable or disable external support for 3DS files.

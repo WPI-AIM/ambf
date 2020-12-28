@@ -319,7 +319,7 @@ set (ADF_LOADER_LIBRARIES adf_loader)
 
 add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
-add_library(chai3d STATIC ${source_framework})
+add_library(chai3d STATIC ${source_chai3d})
 
 # static library
 add_library (ambf_framework STATIC ${source_framework})

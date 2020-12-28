@@ -1867,8 +1867,17 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     }
 
     if (simulatedModelNode.IsDefined()){
-        attribs->m_sdeFilepath = simulatedModelNode.as<string>();
-        attribs->m_sdeDefined = true;
+        afPath sdeFilepath = simulatedModelNode.as<string>();
+        sdeFilepath.resolvePath(attribs->m_filepath.parent_path());
+
+        YAML::Node sdeModelNode = YAML::LoadFile(sdeFilepath.c_str());
+        if (loadModelAttribs(&sdeModelNode, &attribs->m_sdeModelAttribs)){
+            attribs->m_sdeDefined = true;
+        }
+        else{
+            attribs->m_sdeDefined = false;
+        }
+
     }
     else{
         attribs->m_sdeDefined = false;
@@ -1946,7 +1955,15 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     return true;
 }
 
-bool ADFLoader_1_0::loadAllInputDeviceAttributes(YAML::Node *a_node, afAllInputDevicesAttributes *attribs)
+
+bool ADFLoader_1_0::loadAllInputDeviceAttribs(string a_filepath, afAllInputDevicesAttributes *attribs){
+    attribs->m_filePath = afPath(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
+    return loadAllInputDeviceAttribs(&node, attribs);
+}
+
+
+bool ADFLoader_1_0::loadAllInputDeviceAttribs(YAML::Node *a_node, afAllInputDevicesAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1967,6 +1984,14 @@ bool ADFLoader_1_0::loadAllInputDeviceAttributes(YAML::Node *a_node, afAllInputD
 
     return true;
 }
+
+
+bool ADFLoader_1_0::loadModelAttribs(string a_filepath, afModelAttributes *attribs){
+    attribs->m_filePath = afPath(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
+    return loadModelAttribs(&node, attribs);
+}
+
 
 bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attribs)
 {
@@ -2107,6 +2132,14 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     return valid;
 }
 
+
+bool ADFLoader_1_0::loadWorldAttribs(string a_filepath, afWorldAttributes *attribs){
+    attribs->m_filePath = afPath(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
+    return loadWorldAttribs(&node, attribs);
+}
+
+
 bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attribs)
 {
     YAML::Node& node = *a_node;
@@ -2145,6 +2178,17 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
         attribs->m_enclosure.m_length = enclosureDataNode["length"].as<double>();
         attribs->m_enclosure.m_width =  enclosureDataNode["width"].as<double>();
         attribs->m_enclosure.m_height = enclosureDataNode["height"].as<double>();
+    }
+
+    if (environmentNode.IsDefined()){
+        afPath environmentFilepath = environmentNode.as<string>();
+        environmentFilepath.resolvePath(attribs->m_filePath.parent_path().c_str());
+        YAML::Node envNode = YAML::LoadFile(environmentFilepath.c_str());
+        if (loadModelAttribs(&envNode, &attribs->m_environmentModel)){
+            attribs->m_environmentModel.m_use = true;
+            attribs->m_enclosure.m_use = false;
+        }
+
     }
 
 
@@ -2199,6 +2243,14 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
 
     return true;
 }
+
+
+bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs){
+    attribs->m_filePath = afPath(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
+    return loadLaunchFileAttribs(&node, attribs);
+}
+
 
 bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes *attribs)
 {

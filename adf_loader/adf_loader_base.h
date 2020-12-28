@@ -125,16 +125,16 @@ public:
     virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs){}
 
     // Load all the input device attributes
-    virtual bool loadAllInputDeviceAttributes(YAML::Node* a_node, afAllInputDevicesAttributes *attribs){}
+    virtual bool loadAllInputDeviceAttribs(string a_filepath, afAllInputDevicesAttributes *attribs){}
 
     // Load model from ADF file
-    virtual bool loadModelAttribs(YAML::Node* a_node, afModelAttributes* attribs){}
+    virtual bool loadModelAttribs(string a_filepath, afModelAttributes* attribs){}
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs){}
+    virtual bool loadWorldAttribs(string a_filepath, afWorldAttributes* attribs){}
 
     // Load the launch file
-    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs){}
+    virtual bool loadLaunchFileAttribs(string a_filepath, afLaunchAttributes* attribs){}
 
     // Get the version of this loader
     virtual std::string getLoaderVersion();

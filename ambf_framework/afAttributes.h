@@ -766,53 +766,6 @@ public:
 };
 
 
-struct afInputDeviceAttributes: public afBaseObjectAttributes{
-public:
-    afInputDeviceAttributes(){
-        m_enableSDEJointControl = true;
-        m_workspaceScale = 1.0;
-        m_sdeDefined = false;
-        m_rootLinkDefined = false;
-        m_visible = false;
-        m_visibleSize = 1.0;
-    }
-
-    bool m_enableSDEJointControl;
-    double m_deadBand;
-    double m_maxForce;
-    double m_maxJerk;
-    double m_workspaceScale;
-    bool m_sdeDefined = false;
-    bool m_rootLinkDefined = false;
-    bool m_visible;
-    double m_visibleSize;
-
-    std::string m_hardwareName;
-    std::string m_rootLinkName;
-    afPath m_sdeFilepath;
-    std::vector<std::string> m_pairedCamerasNames;
-
-    afCartesianControllerAttributes m_IIDControllerAttribs;
-    afCartesianControllerAttributes m_SDEControllerAttribs;
-    afKinematicAttributes m_kinematicAttribs;
-    afTransform m_orientationOffset;
-
-    struct afButtons{
-        int A1; // Action 1 Button
-        int A2; // Action 2 Button
-        int G1; // Gripper 1 Button
-        int NEXT_MODE; // Next Mode Button
-        int PREV_MODE; // Prev Mode Button
-    };
-
-    afButtons m_buttons;
-
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_sdeFilepath.resolvePath(a_parentPath);
-    }
-};
-
-
 struct afFileObjectAttributes{
 public:
     afFileObjectAttributes(){}
@@ -873,6 +826,53 @@ public:
 };
 
 
+struct afInputDeviceAttributes: public afBaseObjectAttributes{
+public:
+    afInputDeviceAttributes(){
+        m_enableSDEJointControl = true;
+        m_workspaceScale = 1.0;
+        m_sdeDefined = false;
+        m_rootLinkDefined = false;
+        m_visible = false;
+        m_visibleSize = 1.0;
+    }
+
+    bool m_enableSDEJointControl;
+    double m_deadBand;
+    double m_maxForce;
+    double m_maxJerk;
+    double m_workspaceScale;
+    bool m_sdeDefined = false;
+    bool m_rootLinkDefined = false;
+    bool m_visible;
+    double m_visibleSize;
+
+    afModelAttributes m_sdeModelAttribs;
+
+    std::string m_hardwareName;
+    std::string m_rootLinkName;
+    std::vector<std::string> m_pairedCamerasNames;
+
+    afCartesianControllerAttributes m_IIDControllerAttribs;
+    afCartesianControllerAttributes m_SDEControllerAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afTransform m_orientationOffset;
+
+    struct afButtons{
+        int A1; // Action 1 Button
+        int A2; // Action 2 Button
+        int G1; // Gripper 1 Button
+        int NEXT_MODE; // Next Mode Button
+        int PREV_MODE; // Prev Mode Button
+    };
+
+    afButtons m_buttons;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+    }
+};
+
+
 // Struct for multiple input devices
 struct afAllInputDevicesAttributes: public afFileObjectAttributes{
 public:
@@ -908,7 +908,6 @@ public:
 
     afVector3d m_gravity;
     uint m_maxIterations;
-    afPath m_environmentFilepath;
     afShaderAttributes m_shaderAttribs;
     std::string m_namespace;
 
@@ -932,7 +931,13 @@ public:
         bool m_use = false;
     };
 
+    struct afEnvironmentModel{
+        afModelAttributes m_modelAttribs;
+        bool m_use = false;
+    };
+
     afEnclosure m_enclosure;
+    afEnvironmentModel m_environmentModel;
     afSkyBoxAttributes m_skyBoxAttribs;
 
     virtual bool resolveRelativePathAttribs(){
@@ -948,8 +953,6 @@ public:
 
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
         m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
-
-        m_environmentFilepath.resolvePath(a_parentPath);
 
         for (uint i = 0 ; i < m_lightAttribs.size() ; i++){
             m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);

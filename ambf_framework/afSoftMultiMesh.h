@@ -96,7 +96,7 @@ struct afSoftLink{
 ///
 /// \brief The afSoftMultiMesh class
 ///
-class afSoftMultiMesh : public cBulletMultiMesh
+class afSoftMultiMesh : public cMultiMesh
 {
     //--------------------------------------------------------------------------
     // CONSTRUCTOR & DESTRUCTOR:
@@ -105,7 +105,7 @@ class afSoftMultiMesh : public cBulletMultiMesh
 public:
 
     //! Constructor of afSoftMultiMesh.
-    afSoftMultiMesh(cBulletWorld* a_world) : cBulletMultiMesh(a_world) {
+    afSoftMultiMesh() {
     }
 
     //! Destructor of afSoftMultiMesh.
@@ -170,12 +170,6 @@ public:
 
     //! This method updates the skeletal model of GEL from Bullet's softBody.
     virtual void updateGELSkeletonFrombtSoftBody();
-
-    //! This method returns the Bullet Soft Body's Ptr
-    inline btSoftBody* getSoftBody(){return m_bulletSoftBody;}
-
-    //! This method set the Bullet SoftBody Ptr
-    inline void setSoftBody(btSoftBody* a_softBody){m_bulletSoftBody = a_softBody;}
 
     //! Override the setMaterial method
     virtual void setMaterial(cMaterial& a_material, const bool a_affectChildren = false){m_gelMesh.setMaterial(a_material);}

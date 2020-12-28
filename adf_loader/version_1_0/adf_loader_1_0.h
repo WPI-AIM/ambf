@@ -153,16 +153,28 @@ public:
     virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
 
     // Load all the input device attributes
-    virtual bool loadAllInputDeviceAttributes(YAML::Node* a_node, afAllInputDevicesAttributes *attribs);
+    virtual bool loadAllInputDeviceAttribs(string, afAllInputDevicesAttributes *attribs);
 
     // Load model from ADF file
-    virtual bool loadModelAttribs(YAML::Node* a_node, afModelAttributes* attribs);
+    virtual bool loadModelAttribs(string, afModelAttributes* attribs);
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
+    virtual bool loadWorldAttribs(string, afWorldAttributes* attribs);
 
     // Load Launch File Attribs
-    virtual bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs);
+    virtual bool loadLaunchFileAttribs(string, afLaunchAttributes* attribs);
+
+    // Load all the input device attributes
+    bool loadAllInputDeviceAttribs(YAML::Node* a_node, afAllInputDevicesAttributes *attribs);
+
+    // Load model from ADF file
+    bool loadModelAttribs(YAML::Node* a_node, afModelAttributes* attribs);
+
+    // Load world from ADF file
+    bool loadWorldAttribs(YAML::Node* a_node, afWorldAttributes* attribs);
+
+    // Load Launch File Attribs
+    bool loadLaunchFileAttribs(YAML::Node* a_node, afLaunchAttributes* attribs);
 };
 }
 #endif

@@ -245,40 +245,6 @@ public:
 
     void enableForceFeedback(bool enable){m_dev_force_enabled = enable;}
 
-public:
-    cGenericHapticDevicePtr m_hDevice;
-    cHapticDeviceInfo m_hInfo;
-    cVector3d m_pos, m_posClutched, m_posPreClutch;
-    cMatrix3d m_rot, m_rotClutched, m_rotPreClutch;
-    cVector3d m_posCamPreClutch;
-    cMatrix3d m_rotCamPreClutch;
-    cVector3d m_vel, m_avel;
-    double m_workspaceScale;
-    afRigidBody* m_afCursor = NULL;
-    bool m_btn_prev_state_rising[10] = {false};
-    bool m_btn_prev_state_falling[10] = {false};
-    cFrequencyCounter m_freq_ctr;
-
-public:
-    double K_lh;                    //Linear Haptic Stiffness Gain
-    double K_ah;                    //Angular Haptic Stiffness Gain
-
-    double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
-    double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
-
-    afButtons m_buttons;
-    double m_deadBand = 0.001;
-    double m_maxForce = 1;
-    double m_maxJerk = 1;
-    int m_gripper_pinch_btn = -1;
-    bool btn_cam_rising_edge;
-    bool btn_clutch_rising_edge;
-private:
-    std::mutex m_mutex;
-    void updateCursorPose();
-    bool m_dev_force_enabled = false;
-
-public:
     // Initial offset between the simulated end effector and the
     // physical device
     cMatrix3d m_simRotInitial;
@@ -310,7 +276,39 @@ public:
     // list the parent of this device for hand-eye coordination.
     std::vector<std::string> m_pairedCameraNames;
 
+public:
+    cGenericHapticDevicePtr m_hDevice;
+    cHapticDeviceInfo m_hInfo;
+    cVector3d m_pos, m_posClutched, m_posPreClutch;
+    cMatrix3d m_rot, m_rotClutched, m_rotPreClutch;
+    cVector3d m_posCamPreClutch;
+    cMatrix3d m_rotCamPreClutch;
+    cVector3d m_vel, m_avel;
+    double m_workspaceScale;
+    afRigidBody* m_afCursor = NULL;
+    bool m_btn_prev_state_rising[10] = {false};
+    bool m_btn_prev_state_falling[10] = {false};
+    cFrequencyCounter m_freq_ctr;
+
+    double K_lh;                    //Linear Haptic Stiffness Gain
+    double K_ah;                    //Angular Haptic Stiffness Gain
+
+    double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
+    double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
+
+    afButtons m_buttons;
+    double m_deadBand = 0.001;
+    double m_maxForce = 1;
+    double m_maxJerk = 1;
+    int m_gripper_pinch_btn = -1;
+    bool btn_cam_rising_edge;
+    bool btn_clutch_rising_edge;
+
 private:
+    std::mutex m_mutex;
+    void updateCursorPose();
+    bool m_dev_force_enabled = false;
+
     afWorldPtr m_afWorld = nullptr; // Ref to world ptr
 };
 
