@@ -825,37 +825,50 @@ public:
     }
 };
 
+struct afSimulatedDeviceAttribs: public afBaseObjectAttributes {
+    afSimulatedDeviceAttribs(){
+        m_enableJointControl = true;
+        m_sdeDefined = false;
+        m_rootLinkDefined = false;
+    }
+    bool m_enableJointControl;
+    bool m_sdeDefined = false;
+    bool m_rootLinkDefined = false;
+
+    std::string m_rootLinkName;
+
+
+    afCartesianControllerAttributes m_SDEControllerAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afModelAttributes m_modelAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_modelAttribs.m_filePath = a_parentPath;
+        m_modelAttribs.resolveRelativePathAttribs();
+    }
+};
+
 
 struct afInputDeviceAttributes: public afBaseObjectAttributes{
 public:
     afInputDeviceAttributes(){
-        m_enableSDEJointControl = true;
         m_workspaceScale = 1.0;
-        m_sdeDefined = false;
-        m_rootLinkDefined = false;
         m_visible = false;
         m_visibleSize = 1.0;
     }
 
-    bool m_enableSDEJointControl;
+
     double m_deadBand;
     double m_maxForce;
     double m_maxJerk;
     double m_workspaceScale;
-    bool m_sdeDefined = false;
-    bool m_rootLinkDefined = false;
-    bool m_visible;
     double m_visibleSize;
 
-    afModelAttributes m_sdeModelAttribs;
+
+    bool m_visible;
 
     std::string m_hardwareName;
-    std::string m_rootLinkName;
-    std::vector<std::string> m_pairedCamerasNames;
-
-    afCartesianControllerAttributes m_IIDControllerAttribs;
-    afCartesianControllerAttributes m_SDEControllerAttribs;
-    afKinematicAttributes m_kinematicAttribs;
+    afCartesianControllerAttributes m_controllerAttribs;
     afTransform m_orientationOffset;
 
     struct afButtons{
@@ -867,22 +880,27 @@ public:
     };
 
     afButtons m_buttons;
+};
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){
-    }
+
+struct afTeleRoboticUnitAttributes{
+public:
+    afSimulatedDeviceAttribs m_sdeAttribs;
+    afInputDeviceAttributes m_iidAttribs;
+    std::vector<string> m_pairedCamerasNames;
 };
 
 
 // Struct for multiple input devices
-struct afAllInputDevicesAttributes: public afFileObjectAttributes{
+struct afAllTeleRoboticUnitsAttributes: public afFileObjectAttributes{
 public:
-    afAllInputDevicesAttributes(){}
-    std::vector <afInputDeviceAttributes> m_inputDeviceAttribs;
+    afAllTeleRoboticUnitsAttributes(){}
+    std::vector <afTeleRoboticUnitAttributes> m_teleRoboticUnitsAttribs;
 
     virtual bool resolveRelativePathAttribs(){
-        for (int i = 0 ; i < m_inputDeviceAttribs.size() ; i++){
+        for (int i = 0 ; i < m_teleRoboticUnitsAttribs.size() ; i++){
             afPath a_parentPath = m_filePath.parent_path();
-            m_inputDeviceAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            m_teleRoboticUnitsAttribs[i].m_sdeAttribs.resolveRelativePathAttribs(a_parentPath);
         }
 
         return true;

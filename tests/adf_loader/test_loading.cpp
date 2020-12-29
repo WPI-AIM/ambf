@@ -20,9 +20,9 @@ int main(){
         printf("Loaded Multbody File: %i \n", i);
     }
 
-    afAllInputDevicesAttributes allInputDevsAttribs;
+    afAllTeleRoboticUnitsAttributes allInputDevsAttribs;
 
-    loader.loadAllInputDevicesAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allInputDevsAttribs);
+    loader.loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allInputDevsAttribs);
 
     printf("Loaded Launch File \n");
 

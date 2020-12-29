@@ -1816,20 +1816,15 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     YAML::Node hardwareNameNode = node["hardware name"];
     YAML::Node hapticGainNode = node["haptic gain"];
     YAML::Node controllerGainNode = node["controller gain"];
-    YAML::Node enableJointControlNode = node["enable joint control"];
     YAML::Node deadbandNode = node["deadband"];
     YAML::Node maxForceNode = node["max force"];
     YAML::Node maxJerkNode = node["max jerk"];
     YAML::Node workspaceScalingNode = node["workspace scaling"];
-    YAML::Node simulatedModelNode = node["simulated multibody"];
-    YAML::Node rootLinkNode = node["root link"];
-    YAML::Node locationNode = node["location"];
     YAML::Node orientationOffsetNode = node["orientation offset"];
     YAML::Node buttonMappingNode = node["button mapping"];
     YAML::Node visibleNode = node["visible"];
     YAML::Node visibleSizeNode = node["visible size"];
     YAML::Node visibleColorNode = node["visible color"];
-    YAML::Node pairCamerasNode = node["pair cameras"];
 
     // For the simulated gripper, the user can specify a model config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
@@ -1848,11 +1843,9 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     ADFUtils adfUtils;
 
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-
     // set the control gains fields as controller fields.
     node["controller"] = controllerGainNode;
-    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_SDEControllerAttribs);
+    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
 
     if (hardwareNameNode.IsDefined()){
         attribs->m_hardwareName = hardwareNameNode.as<string>();
@@ -1866,36 +1859,9 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
         attribs->m_workspaceScale = workspaceScalingNode.as<double>();
     }
 
-    if (simulatedModelNode.IsDefined()){
-        afPath sdeFilepath = simulatedModelNode.as<string>();
-        sdeFilepath.resolvePath(attribs->m_filepath.parent_path());
-
-        YAML::Node sdeModelNode = YAML::LoadFile(sdeFilepath.c_str());
-        if (loadModelAttribs(&sdeModelNode, &attribs->m_sdeModelAttribs)){
-            attribs->m_sdeDefined = true;
-        }
-        else{
-            attribs->m_sdeDefined = false;
-        }
-
-    }
-    else{
-        attribs->m_sdeDefined = false;
-    }
-
-
-    if (rootLinkNode.IsDefined()){
-        attribs->m_rootLinkName = rootLinkNode.as<string>();
-        attribs->m_rootLinkDefined = true;
-    }
-    else{
-        attribs->m_rootLinkDefined = false;
-    }
-
-
     if (hapticGainNode.IsDefined()){
-        attribs->m_IIDControllerAttribs.P_lin = hapticGainNode["linear"].as<double>();
-        attribs->m_IIDControllerAttribs.P_ang = hapticGainNode["angular"].as<double>();
+        attribs->m_controllerAttribs.P_lin = hapticGainNode["linear"].as<double>();
+        attribs->m_controllerAttribs.P_ang = hapticGainNode["angular"].as<double>();
     }
 
     if (deadbandNode.IsDefined()){
@@ -1908,10 +1874,6 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     if (maxJerkNode.IsDefined()){
         attribs->m_maxJerk = maxJerkNode.as<double>();
-    }
-
-    if (enableJointControlNode.IsDefined()){
-        attribs->m_enableSDEJointControl = enableJointControlNode.as<bool>();
     }
 
     if (orientationOffsetNode.IsDefined()){
@@ -1937,13 +1899,6 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
         }
     }
 
-    if(pairCamerasNode.IsDefined()){
-        for(int i = 0 ; i < pairCamerasNode.size() ; i++){
-            string camName = pairCamerasNode[i].as<string>();
-            attribs->m_pairedCamerasNames.push_back(camName);
-        }
-    }
-
     if (visibleNode.IsDefined()){
         attribs->m_visible = visibleNode.as<bool>();
     }
@@ -1955,15 +1910,80 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     return true;
 }
 
+bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulatedDeviceAttribs *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
 
-bool ADFLoader_1_0::loadAllInputDeviceAttribs(string a_filepath, afAllInputDevicesAttributes *attribs){
-    attribs->m_filePath = afPath(a_filepath);
-    YAML::Node node = YAML::LoadFile(a_filepath);
-    return loadAllInputDeviceAttribs(&node, attribs);
+    YAML::Node enableJointControlNode = node["enable joint control"];
+    YAML::Node simulatedModelNode = node["simulated multibody"];
+    YAML::Node rootLinkNode = node["root link"];
+    YAML::Node locationNode = node["location"];
+
+    // For the simulated gripper, the user can specify a model config to load.
+    // We shall load this file as a proxy for Physical Input device in the simulation.
+    // We shall get the root link of this model (baselink) and set Cartesian Position
+    // control on this body.
+
+    // Further, the user can sepcify a root link for the model config file. If this
+    // is defined we shall infact use the specific link which can be different from
+    // the bodies base link.
+
+    // A second use case arises, in which the user doesnt want to provide a config file
+    // but wants to bind the physical input device to an existing model in the simulation.
+    // In this case, the user should specify just the root link and we shall try to find a
+    // body in simulation matching that name. Once succesful we shall then be able to control
+    // that link/body in Position control mode and control all the joints lower in heirarchy.
+
+    ADFUtils adfUtils;
+
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+
+    if (simulatedModelNode.IsDefined()){
+        afPath sdeFilepath = simulatedModelNode.as<string>();
+        sdeFilepath.resolvePath(attribs->m_filepath.parent_path());
+
+        YAML::Node sdeModelNode = YAML::LoadFile(sdeFilepath.c_str());
+        if (loadModelAttribs(&sdeModelNode, &attribs->m_modelAttribs)){
+            attribs->m_sdeDefined = true;
+        }
+        else{
+            attribs->m_sdeDefined = false;
+        }
+
+    }
+    else{
+        attribs->m_sdeDefined = false;
+    }
+
+
+    if (rootLinkNode.IsDefined()){
+        attribs->m_rootLinkName = rootLinkNode.as<string>();
+        attribs->m_rootLinkDefined = true;
+    }
+    else{
+        attribs->m_rootLinkDefined = false;
+    }
+
+    if (enableJointControlNode.IsDefined()){
+        attribs->m_enableJointControl = enableJointControlNode.as<bool>();
+    }
+
+    return true;
 }
 
 
-bool ADFLoader_1_0::loadAllInputDeviceAttribs(YAML::Node *a_node, afAllInputDevicesAttributes *attribs)
+bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(string a_filepath, afAllTeleRoboticUnitsAttributes *attribs){
+    attribs->m_filePath = afPath(a_filepath);
+    YAML::Node node = YAML::LoadFile(a_filepath);
+    return loadAllTeleRoboticUnitsAttribs(&node, attribs);
+}
+
+
+bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTeleRoboticUnitsAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -1974,11 +1994,32 @@ bool ADFLoader_1_0::loadAllInputDeviceAttribs(YAML::Node *a_node, afAllInputDevi
     YAML::Node inputDevicesNode = node["input devices"];
 
     for (int i = 0 ; i < inputDevicesNode.size() ; i++){
-        afInputDeviceAttributes _idAttribs;
-        std::string _devName = inputDevicesNode[i].as<std::string>();
-        YAML::Node _idNode = node[_devName];
-        if (loadInputDeviceAttributes(&_idNode, &_idAttribs)){
-            attribs->m_inputDeviceAttribs.push_back(_idAttribs);
+        afTeleRoboticUnitAttributes tuAttribs;
+        std::string devName = inputDevicesNode[i].as<std::string>();
+        YAML::Node tuNode = node[devName];
+        bool results = {false, false, false};
+        if (loadInputDeviceAttributes(&tuNode, &tuAttribs.m_iidAttribs)){
+            results[0] = true;
+        }
+        if (loadSimulatedDeviceAttributes(&tuNode, &tuAttribs.m_sdeAttribs)){
+            results[1] = true;
+        }
+
+        YAML::Node pairCamerasNode = tuNode["pair cameras"];
+
+        if(pairCamerasNode.IsDefined() && results[0] == true && results[1] == true){
+            for(int i = 0 ; i < pairCamerasNode.size() ; i++){
+                string camName = pairCamerasNode[i].as<string>();
+                tuAttribs.m_pairedCamerasNames.push_back(camName);
+            }
+            results[2] = true;
+        }
+
+        if (results[0] == true && results[1] == true && results[2] == true){
+            attribs->m_teleRoboticUnitsAttribs.push_back(tuAttribs);
+        }
+        else{
+            // THROW SOME WARNING
         }
     }
 

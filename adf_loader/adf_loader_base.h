@@ -124,8 +124,11 @@ public:
     // Load Input Device Attributes
     virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs){}
 
-    // Load all the input device attributes
-    virtual bool loadAllInputDeviceAttribs(string a_filepath, afAllInputDevicesAttributes *attribs){}
+    // Load Simulated Device Attributes
+    virtual bool loadSimulatedDeviceAttributes(YAML::Node* a_node, afSimulatedDeviceAttribs *attribs){}
+
+    // Load all the TU device attributes
+    virtual bool loadAllTeleRoboticUnitsAttribs(string a_filepath, afAllTeleRoboticUnitsAttributes *attribs){}
 
     // Load model from ADF file
     virtual bool loadModelAttribs(string a_filepath, afModelAttributes* attribs){}

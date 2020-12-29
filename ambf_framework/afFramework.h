@@ -301,6 +301,16 @@ inline cVector3d& operator* (btTransform& lhs, cVector3d& rhs){
     return rhs;
 }
 
+inline cMatrix3d& operator<< (cMatrix3d& lhs, const afMatrix3d& rhs){
+    lhs = afUtils::convertDataType<cMatrix3d, afMatrix3d>(rhs);
+    return lhs;
+}
+
+inline cMatrix3d& operator<< (cMatrix3d& lhs, const btMatrix3x3& rhs){
+    lhs = afUtils::convertDataType<cMatrix3d, btMatrix3x3>(rhs);
+    return lhs;
+}
+
 inline cTransform& operator<< (cTransform& lhs, const afTransform& rhs){
     lhs = afUtils::convertDataType<cTransform, afTransform>(rhs);
     return lhs;
@@ -364,6 +374,26 @@ cVector3d to_cVector3d(const btVector3 &vec){
 ///
 cVector3d to_cVector3d(const afVector3d &vec){
     return afUtils::convertDataType<cVector3d, afVector3d>(vec);
+}
+
+
+///
+/// \brief to_cMatrix3d
+/// \param mat
+/// \return
+///
+cTransform to_cMatrix3d(const btMatrix3x3 &mat){
+    return afUtils::convertDataType<cMatrix3d, btMatrix3x3>(mat);
+}
+
+
+///
+/// \brief to_cMatrix3d
+/// \param mat
+/// \return
+///
+cMatrix3d to_cMatrix3d(const afMatrix3d &mat){
+    return afUtils::convertDataType<cMatrix3d, afMatrix3d>(mat);
 }
 
 

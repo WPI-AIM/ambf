@@ -64,11 +64,11 @@ public:
     // Load World Attribs
     bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);
 
-    // Load Multibody Attribs
+    // Load Model Attribs
     bool loadModelAttribs(std::string a_filepath, afModelAttributes* attribs);
 
-    // Load Multibody Attribs
-    bool loadAllInputDevicesAttribs(std::string a_filepath, afAllInputDevicesAttributes* attribs);
+    // Load TU Attribs
+    bool loadAllTeleRoboticUnitsAttribs(std::string a_filepath, afAllTeleRoboticUnitsAttributes* attribs);
 
     // Load the Launch file Attribs
     bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);

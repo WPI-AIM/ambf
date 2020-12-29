@@ -114,6 +114,8 @@ class afSimulatedDevice: public afSharedDataStructure, public afModel{
 public:
     afSimulatedDevice(afWorldPtr a_afWorld);
 
+    virtual bool createFromAttribs(afSimulatedDeviceAttribs *a_attribs);
+
     ~afSimulatedDevice(){}
 
     cVector3d getPos();
@@ -142,6 +144,10 @@ public:
 
     void setGripperAngle(double angle);
 
+    inline void enableJointControl(bool a_enable){m_jointControlEnable = a_enable;}
+
+    inline bool isJointControlEnabled(){return m_jointControlEnable;}
+
 public:
     cVector3d m_pos;
     cMatrix3d m_rot;
@@ -161,21 +167,14 @@ public:
     // Root link for this simulated device hhhhhhh
     afRigidBodyPtr m_rootLink = nullptr;
 
+    // Flag to enable and disable the joint control of simulated end effector
+    // for this physical device
+    bool m_jointControlEnable;
+
     //private:
     //    std::mutex m_mutex;
 };
 
-
-///
-/// \brief The afButtons struct
-///
-struct afButtons{
-    int A1; // Action 1 Button
-    int A2; // Action 2 Button
-    int G1; // Gripper 1 Button
-    int NEXT_MODE; // Next Mode Button
-    int PREV_MODE; // Prev Mode Button
-};
 
 ///
 /// \brief The afPhysicalDevice class: This class encapsulates each haptic device in isolation and provides methods to get/set device
@@ -183,17 +182,12 @@ struct afButtons{
 ///
 class afPhysicalDevice{
 public:
-    afPhysicalDevice(afWorldPtr a_afWorld){m_afWorld = a_afWorld;}
+    afPhysicalDevice(afCollateralControlManager* a_manager){m_CCU_Manager = a_manager;}
     ~afPhysicalDevice();
-    virtual bool loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
 
-    virtual bool loadPhysicalDevice(YAML::Node* pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD);
+    virtual bool createFromAttribs(afInputDeviceAttributes* a_attribs);
 
     void createAfCursor(afWorldPtr a_afWorld, std::string a_name, std::string name_space, int minPF, int maxPF);
-
-    inline void enableJointControl(bool a_enable){m_jointControlEnable = a_enable;}
-
-    inline bool isJointControlEnabled(){return m_jointControlEnable;}
 
     cVector3d getPos();
 
@@ -268,10 +262,6 @@ public:
     // Declare a controller for the physical device as well
     afCartesianController m_controller;
 
-    // Flag to enable and disable the joint control of simulated end effector
-    // for this physical device
-    bool m_jointControlEnable;
-
     // The names of camera that this device can control. The first camera in the
     // list the parent of this device for hand-eye coordination.
     std::vector<std::string> m_pairedCameraNames;
@@ -296,7 +286,7 @@ public:
     double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
     double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
 
-    afButtons m_buttons;
+    afInputDeviceAttributes::afButtons m_buttons;
     double m_deadBand = 0.001;
     double m_maxForce = 1;
     double m_maxJerk = 1;
@@ -309,7 +299,7 @@ private:
     void updateCursorPose();
     bool m_dev_force_enabled = false;
 
-    afWorldPtr m_afWorld = nullptr; // Ref to world ptr
+    afCollateralControlManager* m_CCU_Manager;
 };
 
 ///
@@ -337,7 +327,7 @@ struct afCollateralControlUnit{
     std::vector<afCameraPtr> m_cameras;
 
     // Label handed by the camera for updating info
-    cLabel* m_devFreqLabel = NULL;
+    cLabel* m_devFreqLabel = nullptr;
 
     std::string m_name;
 };

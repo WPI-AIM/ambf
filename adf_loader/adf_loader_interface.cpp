@@ -192,13 +192,13 @@ bool ADFLoaderInterface::loadModelAttribs(string a_filepath, afModelAttributes *
     }
 }
 
-bool ADFLoaderInterface::loadAllInputDevicesAttribs(string a_filepath, afAllInputDevicesAttributes *attribs)
+bool ADFLoaderInterface::loadAllTeleRoboticUnitsAttribs(string a_filepath, afAllTeleRoboticUnitsAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        bool result = m_loader->loadAllInputDeviceAttribs(a_filepath, attribs);
+        bool result = m_loader->loadAllTeleRoboticUnitsAttribs(a_filepath, attribs);
         return result;
     }
 

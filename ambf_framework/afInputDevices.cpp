@@ -159,75 +159,10 @@ cMatrix3d afSharedDataStructure::getRotRefOrigin(){
 afPhysicalDevice::~afPhysicalDevice(){
 }
 
-///
-/// \brief afPhysicalDevice::loadPhysicalDevice
-/// \param pd_config_file
-/// \param node_name
-/// \param hDevHandler
-/// \param simDevice
-/// \param a_iD
-/// \return
-///
-bool afPhysicalDevice::loadPhysicalDevice(std::string pd_config_file, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD){
-    YAML::Node baseNode;
-    try{
-        baseNode = YAML::LoadFile(pd_config_file);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO PHYSICAL DEVICE CONFIG: " << pd_config_file << std::endl;
-        return 0;
-    }
-    if (baseNode.IsNull()) return false;
+bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
+{
+    afInputDeviceAttributes& attribs = *a_attribs;
 
-    YAML::Node basePDNode = baseNode[node_name];
-    return loadPhysicalDevice(&basePDNode, node_name, hDevHandler, simDevice, a_iD);
-}
-
-///
-/// \brief afPhysicalDevice::loadPhysicalDevice
-/// \param pd_node
-/// \param node_name
-/// \param hDevHandler
-/// \param simDevice
-/// \param a_iD
-/// \return
-///
-bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_name, cHapticDeviceHandler* hDevHandler, afSimulatedDevice* simDevice, afCollateralControlManager* a_iD){
-    YAML::Node& physicaDeviceNode = *pd_node;
-    if (physicaDeviceNode.IsNull()){
-        std::cerr << "ERROR: PHYSICAL DEVICE'S "<< node_name << " YAML CONFIG DATA IS NULL\n";
-        return 0;
-    }
-
-    YAML::Node pDHardwareName = physicaDeviceNode["hardware name"];
-    YAML::Node pDHapticGain = physicaDeviceNode["haptic gain"];
-    YAML::Node pDControllerGain = physicaDeviceNode["controller gain"];
-    YAML::Node pDEnableJointControl = physicaDeviceNode["enable joint control"];
-    YAML::Node pDDeadband = physicaDeviceNode["deadband"];
-    YAML::Node pDMaxForce = physicaDeviceNode["max force"];
-    YAML::Node pDMaxJerk = physicaDeviceNode["max jerk"];
-    YAML::Node pDWorkspaceScaling = physicaDeviceNode["workspace scaling"];
-    YAML::Node pDSimulatedGripper = physicaDeviceNode["simulated multibody"];
-    YAML::Node pDRootLink = physicaDeviceNode["root link"];
-    YAML::Node pDLocation = physicaDeviceNode["location"];
-    YAML::Node pDOrientationOffset = physicaDeviceNode["orientation offset"];
-    YAML::Node pDButtonMapping = physicaDeviceNode["button mapping"];
-    YAML::Node pDVisible = physicaDeviceNode["visible"];
-    YAML::Node pDVisibleSize = physicaDeviceNode["visible size"];
-    YAML::Node pDVisibleColor = physicaDeviceNode["visible color"];
-    YAML::Node pDPairCameras = physicaDeviceNode["pair cameras"];
-
-    std::string _hardwareName = "";
-    K_lh = 0;
-    K_ah = 0;
-    // Initialize Default Buttons
-    m_buttons.A1 = 0;
-    m_buttons.A2 = 1;
-    m_buttons.G1 = -1;
-    m_buttons.NEXT_MODE = 2;
-    m_buttons.PREV_MODE = 3;
-
-    m_workspaceScale = 10;
     std::string _simulatedMBConfig = "";
     std::string _rootLinkName = "";
     cVector3d position(0, 0, 0);
@@ -249,77 +184,29 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     // body in simulation matching that name. Once succesful we shall then be able to control
     // that link/body in Position control mode and control all the joints lower in heirarchy.
 
-    bool _simulatedMBDefined = false;
-    bool _rootLinkDefined = false;
-    bool _enableJointControl = true; // Be default enable the joint control of simulated dynamic body
+    m_workspaceScale = attribs.m_workspaceScale;
 
-    if (pDHardwareName.IsDefined()){
-        _hardwareName = pDHardwareName.as<std::string>();
-    }
-    else{
-        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" HARDWARE NAME NOT DEFINED, IGNORING \n";
-        return 0;
-    }
-
-    if (pDWorkspaceScaling.IsDefined()){
-        m_workspaceScale = pDWorkspaceScaling.as<double>();
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" WORKSPACE SCALE NOT DEFINED \n";
-    }
-
-    if (pDSimulatedGripper.IsDefined()){
-        boost::filesystem::path _mb_filename = _simulatedMBConfig;
-        _mb_filename = pDSimulatedGripper.as<std::string>();
-
-        if (_mb_filename.is_relative()){
-            _mb_filename = a_iD->getBasePath() / _mb_filename;
-        }
-
-        _simulatedMBConfig = _mb_filename.c_str();
-
-        _simulatedMBDefined = true;
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
-    }
-
-    if (pDRootLink.IsDefined()){
-        _rootLinkName = pDRootLink.as<std::string>();
-        _rootLinkDefined = true;
-    }
-    else{
-//        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
-    }
-
-
-    if (!_rootLinkDefined && !_simulatedMBDefined){
-        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
-                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
-        return 0;
-    }
-
-    int nDevs = hDevHandler->getNumDevices();
-    bool _devFound = false;
+    int nDevs = m_CCU_Manager->m_deviceHandler->getNumDevices();
+    bool devFound = false;
 
     for (int dIdx = 0 ; dIdx < nDevs ; dIdx++){
         // First check if this index has already been claimed or not.
-        if (!a_iD->checkClaimedDeviceIdx(dIdx)){
-            hDevHandler->getDeviceSpecifications(m_hInfo, dIdx);
+        if (m_CCU_Manager->checkClaimedDeviceIdx(dIdx) == false){
+            m_CCU_Manager->m_deviceHandler->getDeviceSpecifications(m_hInfo, dIdx);
 
-            if (m_hInfo.m_modelName.compare(_hardwareName) == 0){
+            if (m_hInfo.m_modelName.compare(attribs.m_hardwareName) == 0){
                 // This is our device. Let's load it up
-                hDevHandler->getDevice(m_hDevice, dIdx);
+                 m_CCU_Manager->m_deviceHandler->getDevice(m_hDevice, dIdx);
                 m_hDevice->open();
                 // Now add the device index in a comman place
                 // to help devices that are loaded afterwards
-                a_iD->addClaimedDeviceIndex(dIdx);
-                _devFound = true;
+                m_CCU_Manager->addClaimedDeviceIndex(dIdx);
+                devFound = true;
                 break;
             }
             else{
                 std::shared_ptr<cGenericHapticDevice> gHD;
-                if (hDevHandler->getDevice(gHD, dIdx)){
+                if (m_CCU_Manager->m_deviceHandler->getDevice(gHD, dIdx)){
                     // Workaround for proper cleanup
                     gHD->open();
                     gHD->close();
@@ -328,57 +215,82 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
 
-    if(!_devFound){
+    if(!devFound){
         return 0;
     }
 
-    if (pDHapticGain.IsDefined()){
-        K_lh = pDHapticGain["linear"].as<double>();
-        K_ah = pDHapticGain["angular"].as<double>();
+    K_lh = attribs.m_controllerAttribs.P_lin;
+    K_ah = attribs.m_controllerAttribs.P_ang;
 
-        // clamp the force output gain to the max device stiffness
-        double _maxStiffness = m_hInfo.m_maxLinearStiffness / m_workspaceScale;
-        K_lh = cMin(K_lh, _maxStiffness);
+    // clamp the force output gain to the max device stiffness
+    K_lh = cMin(K_lh, m_hInfo.m_maxLinearStiffness / m_workspaceScale);
+
+    double _deadBand = attribs.m_deadBand;
+    if (_deadBand < 0){
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
     }
     else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" HAPTIC GAINES NOT DEFINED \n";
+        m_deadBand = _deadBand;
     }
 
-    if (pDDeadband.IsDefined()){
-        double _deadBand = pDDeadband.as<double>();
-        if (_deadBand < 0){
-            std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
-        }
-        else{
-            m_deadBand = _deadBand;
-        }
+
+    // If not specified, use the value specified in the devices source file
+    m_maxForce = m_hInfo.m_maxLinearForce;
+
+
+
+    m_maxJerk = attribs.m_maxJerk;
+
+    m_gripper_pinch_btn = 0;
+
+    m_simRotOffset << attribs.m_orientationOffset.getRotation();
+
+    m_simRotOffset.transr(m_simRotOffsetInverse);
+
+    m_buttons = attribs.m_buttons;
+
+    m_showMarker = attribs.m_visible;
+    m_markerSize = attribs.m_visibleSize;
+
+    if (m_showMarker)
+    {
+        cCreateSphere(m_refSphere, m_markerSize);
+        m_refSphere->m_material->setRed();
+        m_refSphere->setShowFrame(true);
+        m_refSphere->setFrameSize(m_markerSize * 5);
+        m_CCU_Manager->getAFWorld()->addChild(m_refSphere);
     }
 
-    if (pDMaxForce.IsDefined()){
-        double _maxForce = pDMaxForce.as<double>();
-        if (_maxForce < m_deadBand){
-            std::cerr << "WARNING: MAX FORCE : \"" << node_name << "\" MUST BE GREATER THAN MIN FORCE, IGNORING \n";
+    if (pDSimulatedGripper.IsDefined()){
+        boost::filesystem::path _mb_filename = _simulatedMBConfig;
+        _mb_filename = pDSimulatedGripper.as<std::string>();
+
+        if (_mb_filename.is_relative()){
+            _mb_filename = m_CCU_Manager->getBasePath() / _mb_filename;
         }
-        else{
-            m_maxForce = _maxForce;
-        }
+
+        _simulatedMBConfig = _mb_filename.c_str();
+
     }
     else{
-        // If not specified, use the value specified in the devices source file
-        m_maxForce = m_hInfo.m_maxLinearForce;
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
     }
 
-    if (pDMaxJerk.IsDefined()){
-        double _maxJerk = pDMaxJerk.as<double>();
-        if (_maxJerk < 0){
-            std::cerr << "WARNING: MAX JERK : \"" << node_name << "\" MUST BE POSITIVE, IGNORING \n";
-        }
-        else{
-            m_maxJerk = _maxJerk;
-        }
+    if (pDRootLink.IsDefined()){
+        _rootLinkName = attribs.m_rootLinkName;
+    }
+    else{
+        //        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
     }
 
-    if (_simulatedMBDefined){
+
+    if (!attribs.m_rootLinkDefined && !attribs.m_sdeDefined){
+        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
+                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
+        return 0;
+    }
+
+    if (attribs.m_sdeDefined){
         if (!simDevice->loadModel(_simulatedMBConfig, false)){
             m_hDevice->close();
             return 0;
@@ -388,17 +300,17 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                                   p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), m_afWorld->getAFModelMap()));
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
-        if (_rootLinkDefined){
-            simDevice->m_rootLink = simDevice->getAFRigidBodyLocal(_rootLinkName);
+        if (attribs.m_rootLinkDefined){
+            simDevice->m_rootLink = simDevice->getAFRigidBodyLocal(attribs.m_rootLinkName;
         }
         else{
             simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
         }
     }
     // If only the root link is defined, we are going to look for it in the global space
-    else if (_rootLinkDefined){
-        if (a_iD->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
-            simDevice->m_rootLink = a_iD->getAFWorld()->getAFRigidBody(_rootLinkName);
+    else if (attribs.m_rootLinkDefined){
+        if (m_CCU_Manager->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
+            simDevice->m_rootLink = m_CCU_Manager->getAFWorld()->getAFRigidBody(_rootLinkName);
         }
     }
 
@@ -450,15 +362,9 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
             m_controller.m_orientationOutputType = simDevice->m_rootLink->m_controller.m_orientationOutputType;
         }
 
-        // Read the flag to enable disable the joint control of SDE from this input device
-        // Defaults to enabled
-        if (pDEnableJointControl.IsDefined()){
-            _enableJointControl = pDEnableJointControl.as<bool>();
-        }
-
         simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
         simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
-        enableJointControl(_enableJointControl);
+        simDevice->enableJointControl(attribs.m_enableJointControl);
         // Initialize all the constraint to null ptr
         for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
             simDevice->m_rigidGrippingConstraints[sIdx] = 0;
@@ -468,8 +374,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         std::string _modelName = '/' + m_hInfo.m_modelName;
         std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
 
-        a_iD->s_inputDeviceCount++;
-        std::string _pDevName = "physical_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+        m_CCU_Manager->s_inputDeviceCount++;
+        std::string _pDevName = "physical_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
 //        createAfCursor(a_iD->getAFWorld(),
 //                       _pDevName,
 //                       simDevice->getNamespace(),
@@ -479,8 +385,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
         // Since an existing root body is bound to the physical device whose afComm should already be
         // running
-        if(_simulatedMBDefined){
-            std::string _sDevName = "simulated_device_" + std::to_string(a_iD->s_inputDeviceCount) + _modelName;
+        if(attribs.m_sdeDefined){
+            std::string _sDevName = "simulated_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
             simDevice->m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
                                                         _sDevName,
                                                         m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
@@ -489,7 +395,6 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         }
     }
     else{
-        m_hDevice->close();
         return 0;
     }
 
@@ -519,63 +424,6 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
     simDevice->setPosRefOrigin(position / m_workspaceScale);
     simDevice->setRotRef(rotation);
     simDevice->setRotRefOrigin(rotation);
-    m_gripper_pinch_btn = 0;
-
-    if (pDOrientationOffset.IsDefined()){
-            cVector3d rpy_offset;
-            rpy_offset = toRPY<cVector3d>(&pDOrientationOffset);
-            m_simRotOffset.setExtrinsicEulerRotationRad(rpy_offset.x(), rpy_offset.y(), rpy_offset.z(), C_EULER_ORDER_XYZ);
-    }
-    else{
-        m_simRotOffset.identity();
-    }
-
-    m_simRotOffset.transr(m_simRotOffsetInverse);
-
-    if (pDButtonMapping.IsDefined()){
-        if (pDButtonMapping["a1"].IsDefined()){
-            m_buttons.A1 = pDButtonMapping["a1"].as<int>();
-        }
-        if (pDButtonMapping["a2"].IsDefined()){
-            m_buttons.A2 = pDButtonMapping["a2"].as<int>();
-        }
-        if (pDButtonMapping["g1"].IsDefined()){
-            m_buttons.G1 = pDButtonMapping["g1"].as<int>();
-        }
-        if (pDButtonMapping["next mode"].IsDefined()){
-            m_buttons.NEXT_MODE = pDButtonMapping["next mode"].as<int>();
-        }
-        if (pDButtonMapping["prev mode"].IsDefined()){
-            m_buttons.PREV_MODE = pDButtonMapping["prev mode"].as<int>();
-        }
-    }
-
-    if(pDPairCameras.IsDefined()){
-        for(int i = 0 ; i < pDPairCameras.size() ; i++){
-            std::string camName = pDPairCameras[i].as<std::string>();
-            afCameraPtr cameraPtr = m_afWorld->getAFCamera(camName);
-            m_pairedCameraNames.push_back(camName);
-        }
-    }
-
-    m_showMarker = false;
-    m_markerSize = 0.05;
-    if (pDVisible.IsDefined()){
-        m_showMarker = pDVisible.as<bool>();
-    }
-
-    if (pDVisibleSize.IsDefined()){
-        m_markerSize = pDVisibleSize.as<double>();
-    }
-
-    if (m_showMarker)
-    {
-        cCreateSphere(m_refSphere, m_markerSize);
-        m_refSphere->m_material->setRed();
-        m_refSphere->setShowFrame(true);
-        m_refSphere->setFrameSize(m_markerSize * 5);
-        m_afWorld->addChild(m_refSphere);
-    }
 
     return true;
 }
@@ -912,6 +760,11 @@ afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afModel (a_afWorld){
     P_ac_ramp = 0;
 }
 
+bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
+{
+
+}
+
 
 ///
 /// \brief afSimulatedDevice::measuredPos
@@ -1154,6 +1007,7 @@ bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_co
                 }
                 else
                 {
+                    pD->m_hDevice->close();
                     std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devKey << "\"\n";
                     load_status = false;
                     delete pD;
