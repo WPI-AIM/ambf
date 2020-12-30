@@ -193,6 +193,22 @@ afCartesianController::afCartesianController(){
     m_enabled = false;
 }
 
+bool afCartesianController::createFromAttribs(afCartesianControllerAttributes *a_attribs)
+{
+    afCartesianControllerAttributes & attribs = *a_attribs;
+    P_lin = attribs.P_lin;
+    I_lin = attribs.I_lin;
+    D_lin = attribs.D_lin;
+    P_ang = attribs.P_ang;
+    I_ang = attribs.I_ang;
+    D_ang = attribs.D_ang;
+
+    m_positionOutputType = attribs.m_positionOutputType;
+    m_orientationOutputType = attribs.m_orientationOutputType;
+
+    return true;
+}
+
 
 ////
 /// \brief afCartesianController::setLinearGains
@@ -1243,7 +1259,7 @@ void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt
 
 bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 {
-    const afRigidBodyAttributes & attribs = *a_attribs;
+    afRigidBodyAttributes & attribs = *a_attribs;
 
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
@@ -1355,6 +1371,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
     }
 
+    m_controller.createFromAttribs(&attribs.m_controllerAttribs);
     createInertialObject();
 
     // inertial origin in world

@@ -1549,19 +1549,19 @@ void updatePhysics(){
                 cVector3d pCommand, rCommand;
                 // ts is to prevent the saturation of forces
                 double ts = dt_fixed / step_size;
-                pCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
+                pCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
                 pCommand = simDev->P_lc_ramp * pCommand;
 
-                rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+                rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
 
-                if (phyDev->m_controller.m_positionOutputType == afControlType::FORCE){
+                if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
                     simDev->applyForce(pCommand);
                 }
                 else{
                     simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
                 }
 
-                if (phyDev->m_controller.m_orientationOutputType == afControlType::FORCE){
+                if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
                     simDev->applyTorque(rCommand);
                 }
                 else{
@@ -1794,11 +1794,6 @@ void updateHapticDevice(void* a_arg){
             // update position of simulated gripper
             simDev->updatePose();
 
-            double P_lin = simDev->m_rootLink->m_controller.getP_lin();
-            double D_lin = simDev->m_rootLink->m_controller.getD_lin();
-            double P_ang = simDev->m_rootLink->m_controller.getP_ang();
-            double D_ang = simDev->m_rootLink->m_controller.getD_ang();
-
             dposLast = dpos;
             dpos = simDev->getPosRef() - simDev->getPos();
             ddpos = (dpos - dposLast) / dt;
@@ -1814,8 +1809,8 @@ void updateHapticDevice(void* a_arg){
 
             force_prev = force;
             torque_prev = torque_prev;
-            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (P_lin * dpos + D_lin * ddpos);
-            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (P_ang * angle * axis);
+            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
+            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
 
 //            if ((force - force_prev).length() > phyDev->m_maxJerk){
 //                cVector3d normalized_force = force;
@@ -1842,22 +1837,22 @@ void updateHapticDevice(void* a_arg){
 
             phyDev->applyWrench(force, torque);
 
-            if (phyDev->K_lh_ramp < phyDev->K_lh)
+            if (phyDev->K_lh_ramp < phyDev->m_controller.P_lin)
             {
-                phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->K_lh;
+                phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->m_controller.P_lin;
             }
             else
             {
-                phyDev->K_lh_ramp = phyDev->K_lh;
+                phyDev->K_lh_ramp = phyDev->m_controller.P_lin;
             }
 
-            if (phyDev->K_ah_ramp < phyDev->K_ah)
+            if (phyDev->K_ah_ramp < phyDev->m_controller.P_ang)
             {
-                phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->K_ah;
+                phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->m_controller.P_ang;
             }
             else
             {
-                phyDev->K_ah_ramp = phyDev->K_ah;
+                phyDev->K_ah_ramp = phyDev->m_controller.P_ang;
             }
 
         }

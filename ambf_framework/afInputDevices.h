@@ -259,9 +259,6 @@ public:
     // Visual Marker to show the target position of the device
     cMesh* m_refSphere = new cMesh();
 
-    // Declare a controller for the physical device as well
-    afCartesianController m_controller;
-
     // The names of camera that this device can control. The first camera in the
     // list the parent of this device for hand-eye coordination.
     std::vector<std::string> m_pairedCameraNames;
@@ -280,11 +277,10 @@ public:
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;
 
-    double K_lh;                    //Linear Haptic Stiffness Gain
-    double K_ah;                    //Angular Haptic Stiffness Gain
-
     double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
     double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
+
+    afCartesianController m_controller;
 
     afInputDeviceAttributes::afButtons m_buttons;
     double m_deadBand = 0.001;

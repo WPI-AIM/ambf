@@ -163,12 +163,6 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
 {
     afInputDeviceAttributes& attribs = *a_attribs;
 
-    std::string _simulatedMBConfig = "";
-    std::string _rootLinkName = "";
-    cVector3d position(0, 0, 0);
-    cMatrix3d rotation;
-    rotation.identity();
-
     // For the simulated gripper, the user can specify a MultiBody config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
     // We shall get the root link of this multibody (baselink) and set Cartesian Position
@@ -219,25 +213,21 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
         return 0;
     }
 
-    K_lh = attribs.m_controllerAttribs.P_lin;
-    K_ah = attribs.m_controllerAttribs.P_ang;
+    m_controller.createFromAttribs(&attribs.m_controllerAttribs);
 
     // clamp the force output gain to the max device stiffness
-    K_lh = cMin(K_lh, m_hInfo.m_maxLinearStiffness / m_workspaceScale);
+    m_controller.P_lin = cMin(m_controller.P_lin, m_hInfo.m_maxLinearStiffness / m_workspaceScale);
 
     double _deadBand = attribs.m_deadBand;
     if (_deadBand < 0){
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << attribs.m_hardwareName << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
     }
     else{
         m_deadBand = _deadBand;
     }
 
-
     // If not specified, use the value specified in the devices source file
     m_maxForce = m_hInfo.m_maxLinearForce;
-
-
 
     m_maxJerk = attribs.m_maxJerk;
 
@@ -261,169 +251,8 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
         m_CCU_Manager->getAFWorld()->addChild(m_refSphere);
     }
 
-    if (pDSimulatedGripper.IsDefined()){
-        boost::filesystem::path _mb_filename = _simulatedMBConfig;
-        _mb_filename = pDSimulatedGripper.as<std::string>();
 
-        if (_mb_filename.is_relative()){
-            _mb_filename = m_CCU_Manager->getBasePath() / _mb_filename;
-        }
-
-        _simulatedMBConfig = _mb_filename.c_str();
-
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
-    }
-
-    if (pDRootLink.IsDefined()){
-        _rootLinkName = attribs.m_rootLinkName;
-    }
-    else{
-        //        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
-    }
-
-
-    if (!attribs.m_rootLinkDefined && !attribs.m_sdeDefined){
-        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
-                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
-        return 0;
-    }
-
-    if (attribs.m_sdeDefined){
-        if (!simDevice->loadModel(_simulatedMBConfig, false)){
-            m_hDevice->close();
-            return 0;
-        }
-        boost::filesystem::path p(_simulatedMBConfig);
-        m_afWorld->addAFModel(simDevice,
-                                  p.stem().string() + afUtils::getNonCollidingIdx(p.stem().string(), m_afWorld->getAFModelMap()));
-
-        // If multibody is defined, then the root link has to be searched in the defined multibody
-        if (attribs.m_rootLinkDefined){
-            simDevice->m_rootLink = simDevice->getAFRigidBodyLocal(attribs.m_rootLinkName;
-        }
-        else{
-            simDevice->m_rootLink = simDevice->getRootAFRigidBodyLocal();
-        }
-    }
-    // If only the root link is defined, we are going to look for it in the global space
-    else if (attribs.m_rootLinkDefined){
-        if (m_CCU_Manager->getAFWorld()->getAFRigidBody(_rootLinkName, false)){
-            simDevice->m_rootLink = m_CCU_Manager->getAFWorld()->getAFRigidBody(_rootLinkName);
-        }
-    }
-
-    if (simDevice->m_rootLink){
-        // Now check if the controller gains have been defined. If so, override the controller gains
-        // defined for the rootlink of simulate end effector
-        bool linGainsDefined = false;
-        bool angGainsDefined = false;
-        if (pDControllerGain.IsDefined()){
-            // Should we consider disable the controller for the physical device if a controller has been
-            // defined using the Physical device??
-
-            // Check if the linear controller is defined
-            if (pDControllerGain["linear"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["linear"]["P"].as<double>();
-                _D = pDControllerGain["linear"]["D"].as<double>();
-                m_controller.setLinearGains(_P, 0, _D);
-                linGainsDefined = true;
-                m_controller.m_positionOutputType == afControlType::FORCE;
-            }
-
-            // Check if the angular controller is defined
-            if(pDControllerGain["angular"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["angular"]["P"].as<double>();
-                _D = pDControllerGain["angular"]["D"].as<double>();
-                m_controller.setAngularGains(_P, 0, _D);
-                angGainsDefined = true;
-                m_controller.m_orientationOutputType == afControlType::FORCE;
-            }
-        }
-        if(!linGainsDefined){
-            // If not controller gains defined for this physical device's simulated body,
-            // copy over the gains from the Physical device
-            m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
-                                        0,
-                                        simDevice->m_rootLink->m_controller.getD_lin());
-
-            m_controller.m_positionOutputType = simDevice->m_rootLink->m_controller.m_positionOutputType;
-        }
-        if (!angGainsDefined){
-            // If not controller gains defined for this physical device's simulated body,
-            // copy over the gains from the Physical device
-            m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
-                                         0,
-                                         simDevice->m_rootLink->m_controller.getD_ang());
-
-            m_controller.m_orientationOutputType = simDevice->m_rootLink->m_controller.m_orientationOutputType;
-        }
-
-        simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
-        simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
-        simDevice->enableJointControl(attribs.m_enableJointControl);
-        // Initialize all the constraint to null ptr
-        for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
-            simDevice->m_rigidGrippingConstraints[sIdx] = 0;
-            simDevice->m_softGrippingConstraints[sIdx] = 0;
-        }
-
-        std::string _modelName = '/' + m_hInfo.m_modelName;
-        std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
-
-        m_CCU_Manager->s_inputDeviceCount++;
-        std::string _pDevName = "physical_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
-//        createAfCursor(a_iD->getAFWorld(),
-//                       _pDevName,
-//                       simDevice->getNamespace(),
-//                       simDevice->m_rootLink->getMinPublishFrequency(),
-//                       simDevice->m_rootLink->getMaxPublishFrequency());
-
-        // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
-        // Since an existing root body is bound to the physical device whose afComm should already be
-        // running
-        if(attribs.m_sdeDefined){
-            std::string _sDevName = "simulated_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
-                                                        _sDevName,
-                                                        m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
-                                                        simDevice->m_rootLink->getMinPublishFrequency(),
-                                                        simDevice->m_rootLink->getMaxPublishFrequency());
-        }
-    }
-    else{
-        return 0;
-    }
-
-    if (pDLocation.IsDefined()){
-        YAML::Node posNode = pDLocation["position"];
-        YAML::Node rpyNode = pDLocation["orientation"];
-        position = toXYZ<cVector3d>(&posNode);
-        cVector3d _rpy;
-        _rpy = toRPY<cVector3d>(&rpyNode);
-        rotation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
-
-        simDevice->m_rootLink->setLocalPos(position);
-        simDevice->m_rootLink->setLocalRot(rotation);
-        simDevice->m_rootLink->setInitialTransform(cTransform(position, rotation));
-        m_simRotInitial = rotation;
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
-        // In this case, take the current position of the root link and set it as initial
-        // reference pose
-        position = simDevice->m_rootLink->getLocalPos();
-        rotation = simDevice->m_rootLink->getLocalRot();
-        m_simRotInitial.identity();
-    }
-
-    simDevice->setPosRef(position/ m_workspaceScale);
-    simDevice->setPosRefOrigin(position / m_workspaceScale);
-    simDevice->setRotRef(rotation);
-    simDevice->setRotRefOrigin(rotation);
+    m_CCU_Manager->s_inputDeviceCount++;
 
     return true;
 }
@@ -762,6 +591,165 @@ afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afModel (a_afWorld){
 
 bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 {
+    afSimulatedDeviceAttribs& attribs = *a_attribs;
+
+    if (attribs.m_sdeDefined){
+        boost::filesystem::path _mb_filename = _simulatedMBConfig;
+        _mb_filename = pDSimulatedGripper.as<std::string>();
+
+        if (_mb_filename.is_relative()){
+            _mb_filename = m_CCU_Manager->getBasePath() / _mb_filename;
+        }
+
+        _simulatedMBConfig = _mb_filename.c_str();
+
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
+    }
+
+    if (pDRootLink.IsDefined()){
+        _rootLinkName = attribs.m_rootLinkName;
+    }
+    else{
+        //        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
+    }
+
+
+    if (!attribs.m_rootLinkDefined && !attribs.m_sdeDefined){
+        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
+                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
+        return 0;
+    }
+
+    if (attribs.m_sdeDefined){
+        if (afModel::createFromAttribs(attribs.m_modelAttribs) == false){
+            return 0;
+        }
+        m_afWorld->addAFModel(this);
+
+        // If multibody is defined, then the root link has to be searched in the defined multibody
+        if (attribs.m_rootLinkDefined){
+            m_rootLink = getAFRigidBodyLocal(attribs.m_rootLinkName);
+        }
+        else{
+            m_rootLink = getRootAFRigidBodyLocal();
+        }
+    }
+    // If only the root link is defined, we are going to look for it in the global space
+    else if (attribs.m_rootLinkDefined){
+        m_rootLink = m_afWorld->getAFRigidBody(attribs.m_rootLinkName, false);
+    }
+
+    if (m_rootLink != nullptr){
+        // Now check if the controller gains have been defined. If so, override the controller gains
+        // defined for the rootlink of simulate end effector
+        bool linGainsDefined = false;
+        bool angGainsDefined = false;
+        if (pDControllerGain.IsDefined()){
+            // Should we consider disable the controller for the physical device if a controller has been
+            // defined using the Physical device??
+
+            // Check if the linear controller is defined
+            if (pDControllerGain["linear"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["linear"]["P"].as<double>();
+                _D = pDControllerGain["linear"]["D"].as<double>();
+                m_controller.setLinearGains(_P, 0, _D);
+                linGainsDefined = true;
+                m_controller.m_positionOutputType == afControlType::FORCE;
+            }
+
+            // Check if the angular controller is defined
+            if(pDControllerGain["angular"].IsDefined()){
+                double _P, _D;
+                _P = pDControllerGain["angular"]["P"].as<double>();
+                _D = pDControllerGain["angular"]["D"].as<double>();
+                m_controller.setAngularGains(_P, 0, _D);
+                angGainsDefined = true;
+                m_controller.m_orientationOutputType == afControlType::FORCE;
+            }
+        }
+        if(!linGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
+                                        0,
+                                        simDevice->m_rootLink->m_controller.getD_lin());
+
+            m_controller.m_positionOutputType = simDevice->m_rootLink->m_controller.m_positionOutputType;
+        }
+        if (!angGainsDefined){
+            // If not controller gains defined for this physical device's simulated body,
+            // copy over the gains from the Physical device
+            m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
+                                         0,
+                                         simDevice->m_rootLink->m_controller.getD_ang());
+
+            m_controller.m_orientationOutputType = simDevice->m_rootLink->m_controller.m_orientationOutputType;
+        }
+
+        simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
+        simDevice->enableJointControl(attribs.m_enableJointControl);
+        // Initialize all the constraint to null ptr
+        for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
+            simDevice->m_rigidGrippingConstraints[sIdx] = 0;
+            simDevice->m_softGrippingConstraints[sIdx] = 0;
+        }
+
+        std::string _modelName = '/' + m_hInfo.m_modelName;
+        std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
+
+//        std::string _pDevName = "physical_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
+//        createAfCursor(a_iD->getAFWorld(),
+//                       _pDevName,
+//                       simDevice->getNamespace(),
+//                       simDevice->m_rootLink->getMinPublishFrequency(),
+//                       simDevice->m_rootLink->getMaxPublishFrequency());
+
+        // Only a simulated body is defined for the Simulated Device would be create an afComm Instace.
+        // Since an existing root body is bound to the physical device whose afComm should already be
+        // running
+        if(attribs.m_sdeDefined){
+            std::string _sDevName = "simulated_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
+            simDevice->m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
+                                                        _sDevName,
+                                                        m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
+                                                        simDevice->m_rootLink->getMinPublishFrequency(),
+                                                        simDevice->m_rootLink->getMaxPublishFrequency());
+        }
+    }
+    else{
+        return 0;
+    }
+
+    if (pDLocation.IsDefined()){
+        YAML::Node posNode = pDLocation["position"];
+        YAML::Node rpyNode = pDLocation["orientation"];
+        position = toXYZ<cVector3d>(&posNode);
+        cVector3d _rpy;
+        _rpy = toRPY<cVector3d>(&rpyNode);
+        rotation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
+
+        simDevice->m_rootLink->setLocalPos(position);
+        simDevice->m_rootLink->setLocalRot(rotation);
+        simDevice->m_rootLink->setInitialTransform(cTransform(position, rotation));
+        m_simRotInitial = rotation;
+    }
+    else{
+        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
+        // In this case, take the current position of the root link and set it as initial
+        // reference pose
+        position = simDevice->m_rootLink->getLocalPos();
+        rotation = simDevice->m_rootLink->getLocalRot();
+        m_simRotInitial.identity();
+    }
+
+    simDevice->setPosRef(position/ m_workspaceScale);
+    simDevice->setPosRefOrigin(position / m_workspaceScale);
+    simDevice->setRotRef(rotation);
+    simDevice->setRotRefOrigin(rotation);
 
 }
 
@@ -1117,17 +1105,17 @@ void afCollateralControlManager::closeDevices(){
 ///
 double afCollateralControlManager::increment_K_lh(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh + a_offset <= 0)
+        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_lin + a_offset <= 0)
         {
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh = 0.0;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_lin = 0.0;
         }
         else{
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_lh += a_offset;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_lin += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_lh;
+        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->m_controller.P_lin;
         m_btn_action_str = "K_lh = " + cStr(a_offset, 4);
     }
     return a_offset;
@@ -1140,16 +1128,16 @@ double afCollateralControlManager::increment_K_lh(double a_offset){
 ///
 double afCollateralControlManager::increment_K_ah(double a_offset){
     for (int devIdx = 0 ; devIdx < m_numDevices ; devIdx++){
-        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah + a_offset <=0){
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah = 0.0;
+        if (m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_ang + a_offset <=0){
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_ang = 0.0;
         }
         else{
-            m_collateralControlUnits[devIdx].m_physicalDevicePtr->K_ah += a_offset;
+            m_collateralControlUnits[devIdx].m_physicalDevicePtr->m_controller.P_ang += a_offset;
         }
     }
     //Set the return value to the gain of the last device
     if(m_numDevices > 0){
-        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->K_ah;
+        a_offset = m_collateralControlUnits[m_numDevices-1].m_physicalDevicePtr->m_controller.P_ang;
         m_btn_action_str = "K_ah = " + cStr(a_offset, 4);
     }
     return a_offset;

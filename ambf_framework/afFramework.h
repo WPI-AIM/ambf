@@ -531,7 +531,9 @@ class afCartesianController: public afCartesianControllerAttributes{
 public:
     afCartesianController();
 
-public:
+
+    bool createFromAttribs(afCartesianControllerAttributes *a_attribs);
+
     // Get Controller Gains
     inline double getP_lin(){return P_lin;}
     inline double getD_lin(){return D_lin;}
@@ -563,9 +565,6 @@ public:
     void setOutputType(afControlType type);
 
 private:
-    // PID Controller Gains for Linear and Angular Controller
-    double P_lin, I_lin, D_lin;
-    double P_ang, I_ang, D_ang;
 
     // Vector storing the current position error
     btVector3 m_dPos;
