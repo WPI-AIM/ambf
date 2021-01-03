@@ -4028,6 +4028,16 @@ void afJoint::commandPosition(double &position_cmd){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
+
+            if (m_jointType == JointType::revolute){
+                if ((m_upperLimit - m_lowerLimit) >= 2*PI ){
+                    // The joint is continous. Need some optimization
+                    position_cmd = getShortestAngle(position_cur, position_cmd);
+                    position_cur = 0.0;
+                }
+
+            }
+
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
             if (m_controller.m_outputType == afControlType::force){
                 commandEffort(command);
@@ -4040,6 +4050,15 @@ void afJoint::commandPosition(double &position_cmd){
     else{
         std::cerr << "WARNING, MOTOR NOT ENABLED FOR JOINT: " << m_name << std::endl;
     }
+}
+
+double afJoint::getShortestAngle(double current, double target)
+{
+    if (current < 0.0){
+        current = 2 * PI + current;
+    }
+    double delta_angle = fmod( (target - current + 3 * PI), 2*PI) - PI;
+    return delta_angle;
 }
 
 ///
