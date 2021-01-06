@@ -57,10 +57,14 @@ public:
     ~PSM_IK(void);
 
 private:
-    const double palm_length_ = 0.0091; // Fixed length from the palm joint to the pinch joint
-    const double pinch_length_ = 0.0102; // Fixed length from the pinch joint to the pinch tip
-    const double tool_rcm_offset_ = 0.0156; // Delta between tool tip and the Remote Center of Motion
-
+//    const double palm_length_ = 0.0091; // Fixed length from the palm joint to the pinch joint
+//    const double pinch_length_ = 0.0102; // Fixed length from the pinch joint to the pinch tip
+//    const double tool_rcm_offset_ = 0.0156; // Delta between tool tip and the Remote Center of Motion
+    const float L_rcc_ = 0.4389;
+    const float L_tool_ = 0.416;
+    const float L_pitch2yaw_ = 0.009; //Fixed length from the palm joint to the pinch joint
+    const float L_yaw2ctrlpnt_ = 0.0106; //Fixed length from the pinch joint to the pinch tip
+    const float L_tool2rcm_offset_= 0.0229; //Delta between tool tip and the Remote Center of Motion
 
 };
 

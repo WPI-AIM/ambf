@@ -39,16 +39,20 @@ public:
     ~PSM_FK(void);
 private:
     std::vector<DH *> DH_Vector_;
+    const float L_rcc_ = 0.4389;
+    const float L_tool_ = 0.416;
+    const float L_pitch2yaw_ = 0.009;
+    const float L_yaw2ctrlpnt_ = 0.0106;
 
     float dh_params_[7][6] = {
-   //     alpha,      a,      theta,                d,                  offset,     joint_type
-        { M_PI_2,     0.0,    0.0,                  0.0,                M_PI_2,     0},
-        { -M_PI_2,    0.0,    0.0,                  0.0,                -M_PI_2,    0},
-        { M_PI_2,     0.0,    0.0,                  0.0,                -0.4318,    1},
-        { 0.0,        0.0,    0.0,                  0.4162,             0.0,        0},
-        { -M_PI_2,    0.0,    0.0,                  0.0,                -M_PI_2,    0},
-        { -M_PI_2,    0.0091, 0.0,                  0.0,                -M_PI_2,    0},
-        { -M_PI_2,    0.0,    0.0,                  0.0102,             M_PI_2,     0}
+   //     alpha,      a,             theta,  d,              offset,     joint_type
+        { M_PI_2,     0.0,           0.0,    0.0,             M_PI_2,     0},
+        { -M_PI_2,    0.0,           0.0,    0.0,            -M_PI_2,     0},
+        { M_PI_2,     0.0,           0.0,    0.0,            -L_rcc_,     1},
+        { 0.0,        0.0,           0.0,    L_tool_,            0.0,     0},
+        { -M_PI_2,    0.0,           0.0,    0.0,            -M_PI_2,     0},
+        { -M_PI_2,    L_pitch2yaw_,  0.0,    0.0,            -M_PI_2,     0},
+        { -M_PI_2,    0.0,           0.0,    L_yaw2ctrlpnt_,  M_PI_2,     0}
     };
 
 };
