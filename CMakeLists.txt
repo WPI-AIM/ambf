@@ -353,6 +353,9 @@ set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 # AMBF Simulator
 add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
 
+# Drilling Simulator
+add_subdirectory (${PROJECT_SOURCE_DIR}/drilling_simulator)
+
 # AMBF Controller
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
   if (${catkin_FOUND})
