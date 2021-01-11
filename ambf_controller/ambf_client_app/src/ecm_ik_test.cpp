@@ -25,7 +25,7 @@ void EcmIkTest::test_IK() {
     ECM_IK ecm_ik;
     Utilities utilities;
 
-    std::vector<std::vector<float>> ECM_JOINT_LIMITS = ecm_fk.getJointsLmit();
+    std::vector<std::vector<float>> ECM_JOINT_LIMITS = ecm_fk.getJointsLimit();
 
 
     Vector3f P_0_w;

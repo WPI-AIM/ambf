@@ -13,7 +13,7 @@ class PSM_IK_test
 public:
     PSM_IK_test();
     std::vector<float> test_IK_psm(const std::vector<float> joint_angles);
-    void test_ambf_psm(const std::vector<float> computed_q);
+    void test_ambf_psm();
 
 //    ~IK_test();
 private:
