@@ -35,6 +35,7 @@ public:
     PSM_FK();
     Matrix4f compute_FK(std::vector<float> joint_pos);
     void cleanup();
+    std::vector<std::vector<float>> getJointsLimit() { return PSM_JOINT_LIMITS_; }
 
     ~PSM_FK(void);
 private:
@@ -55,6 +56,15 @@ private:
         { -M_PI_2,    0.0,           0.0,    L_yaw2ctrlpnt_,  M_PI_2,     0}
     };
 
+    std::vector<std::vector<float>> PSM_JOINT_LIMITS_ = {
+        {  (float) (-91.96 * (M_PI / 180.0)),  (float) (91.96 * (M_PI / 180.0))},
+        {  (float) (-60.00 * (M_PI / 180.0)),  (float) (60.00 * (M_PI / 180.0))},
+        {                                0.0,                              0.24},
+        { (float) (-175.00 * (M_PI / 180.0)), (float) (175.00 * (M_PI / 180.0))},
+        { (float) ( -90.00 * (M_PI / 180.0)), (float) ( 90.00 * (M_PI / 180.0))},
+        { (float) ( -85.00 * (M_PI / 180.0)), (float) ( 85.00 * (M_PI / 180.0))},
+        {                                0.0,                               0.0}
+    };
 };
 
 

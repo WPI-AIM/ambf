@@ -18,7 +18,7 @@ public:
     ECM_FK();
     Matrix4f compute_FK(std::vector<float> joint_pos);
     void cleanup();
-    std::vector<std::vector<float>> getJointsLmit() { return ECM_JOINT_LIMITS_; }
+    std::vector<std::vector<float>> getJointsLimit() { return ECM_JOINT_LIMITS_; }
 
     ~ECM_FK(void);
 private:
