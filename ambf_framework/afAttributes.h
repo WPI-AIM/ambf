@@ -825,20 +825,24 @@ public:
     }
 };
 
-struct afSimulatedDeviceAttribs: public afBaseObjectAttributes {
+struct afSimulatedDeviceAttribs: public afBaseObjectAttributes, public afFileObjectAttributes{
     afSimulatedDeviceAttribs(){
         m_enableJointControl = true;
         m_sdeDefined = false;
         m_rootLinkDefined = false;
+        m_overrideLocation = false;
+        m_overrideController = false;
     }
     bool m_enableJointControl;
     bool m_sdeDefined = false;
     bool m_rootLinkDefined = false;
+    bool m_overrideLocation;
+    bool m_overrideController;
 
     std::string m_rootLinkName;
 
 
-    afCartesianControllerAttributes m_SDEControllerAttribs;
+    afCartesianControllerAttributes m_controllerAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afModelAttributes m_modelAttribs;
 
@@ -899,8 +903,7 @@ public:
 
     virtual bool resolveRelativePathAttribs(){
         for (int i = 0 ; i < m_teleRoboticUnitsAttribs.size() ; i++){
-            afPath a_parentPath = m_filePath.parent_path();
-            m_teleRoboticUnitsAttribs[i].m_sdeAttribs.resolveRelativePathAttribs(a_parentPath);
+            m_teleRoboticUnitsAttribs[i].m_sdeAttribs.m_filePath = m_filePath;
         }
 
         return true;

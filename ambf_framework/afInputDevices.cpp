@@ -280,14 +280,13 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     cMaterial mat;
     mat.setGreenLightSea();
     tempMesh->setMaterial(mat);
-    m_afCursor = new afRigidBody(a_afWorld);
+    m_afCursor = new afRigidBody(a_afWorld, nullptr);
     m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
     a_afWorld->addChild(m_afCursor->m_visualMesh);
     m_afCursor->afCreateCommInstance(afObjectType::OBJECT,
-                                     a_name, m_afWorld->resolveGlobalNamespace(a_namespace),
+                                     a_name, a_afWorld->resolveGlobalNamespace(a_namespace),
                                      minPF,
                                      maxPF);
-    m_afWorld = a_afWorld;
 }
 
 
@@ -434,15 +433,6 @@ void afPhysicalDevice::setRotCamPreClutch(cMatrix3d a_rot){
 
 
 ///
-/// \brief afPhysicalDevice::getSimRotInitial
-/// \return
-///
-cMatrix3d afPhysicalDevice::getSimRotInitial(){
-    return m_simRotInitial;
-}
-
-
-///
 /// \brief afPhysicalDevice::getSimRotOffset
 /// \return
 ///
@@ -583,50 +573,31 @@ void afPhysicalDevice::applyWrench(cVector3d force, cVector3d torque){
 /// \brief afSimulatedDevice::afSimulatedDevice
 /// \param a_afWorld
 ///
-afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld): afModel (a_afWorld){
+afSimulatedDevice::afSimulatedDevice(afWorldPtr a_afWorld, afPhysicalDevice* pD): afModel (a_afWorld){
     m_gripper_angle = 0.5;
     P_lc_ramp = 0;
     P_ac_ramp = 0;
+    m_phyDev = pD;
 }
 
 bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 {
     afSimulatedDeviceAttribs& attribs = *a_attribs;
 
-    if (attribs.m_sdeDefined){
-        boost::filesystem::path _mb_filename = _simulatedMBConfig;
-        _mb_filename = pDSimulatedGripper.as<std::string>();
 
-        if (_mb_filename.is_relative()){
-            _mb_filename = m_CCU_Manager->getBasePath() / _mb_filename;
-        }
-
-        _simulatedMBConfig = _mb_filename.c_str();
-
-    }
-    else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" SIMULATED GRIPPER FILENAME NOT DEFINED \n";
-    }
-
-    if (pDRootLink.IsDefined()){
-        _rootLinkName = attribs.m_rootLinkName;
-    }
-    else{
-        //        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" ROOT LINK NAME NOT DEFINED \n";
-    }
-
-
-    if (!attribs.m_rootLinkDefined && !attribs.m_sdeDefined){
-        std::cerr << "ERROR: PHYSICAL DEVICE : \"" << node_name << "\" REQUIRES EITHER A \"simulated multibody\""
-                                                                   "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
+    if (attribs.m_rootLinkDefined == false && attribs.m_sdeDefined == false){
+        std::cerr << "ERROR: PHYSICAL DEVICE BINDING REQUIRES EITHER A \"simulated multibody\""
+                     "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
         return 0;
     }
 
     if (attribs.m_sdeDefined){
-        if (afModel::createFromAttribs(attribs.m_modelAttribs) == false){
+        if (afModel::createFromAttribs(&attribs.m_modelAttribs) == false){
             return 0;
         }
-        m_afWorld->addAFModel(this);
+        else{
+            m_afWorld->addAFModel(this);
+        }
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (attribs.m_rootLinkDefined){
@@ -644,62 +615,23 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
     if (m_rootLink != nullptr){
         // Now check if the controller gains have been defined. If so, override the controller gains
         // defined for the rootlink of simulate end effector
-        bool linGainsDefined = false;
-        bool angGainsDefined = false;
-        if (pDControllerGain.IsDefined()){
+        if (attribs.m_overrideController){
             // Should we consider disable the controller for the physical device if a controller has been
             // defined using the Physical device??
-
-            // Check if the linear controller is defined
-            if (pDControllerGain["linear"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["linear"]["P"].as<double>();
-                _D = pDControllerGain["linear"]["D"].as<double>();
-                m_controller.setLinearGains(_P, 0, _D);
-                linGainsDefined = true;
-                m_controller.m_positionOutputType == afControlType::FORCE;
-            }
-
-            // Check if the angular controller is defined
-            if(pDControllerGain["angular"].IsDefined()){
-                double _P, _D;
-                _P = pDControllerGain["angular"]["P"].as<double>();
-                _D = pDControllerGain["angular"]["D"].as<double>();
-                m_controller.setAngularGains(_P, 0, _D);
-                angGainsDefined = true;
-                m_controller.m_orientationOutputType == afControlType::FORCE;
-            }
-        }
-        if(!linGainsDefined){
-            // If not controller gains defined for this physical device's simulated body,
-            // copy over the gains from the Physical device
-            m_controller.setLinearGains(simDevice->m_rootLink->m_controller.getP_lin(),
-                                        0,
-                                        simDevice->m_rootLink->m_controller.getD_lin());
-
-            m_controller.m_positionOutputType = simDevice->m_rootLink->m_controller.m_positionOutputType;
-        }
-        if (!angGainsDefined){
-            // If not controller gains defined for this physical device's simulated body,
-            // copy over the gains from the Physical device
-            m_controller.setAngularGains(simDevice->m_rootLink->m_controller.getP_ang(),
-                                         0,
-                                         simDevice->m_rootLink->m_controller.getD_ang());
-
-            m_controller.m_orientationOutputType = simDevice->m_rootLink->m_controller.m_orientationOutputType;
+            m_rootLink->m_controller.createFromAttribs(&attribs.m_controllerAttribs);
         }
 
-        simDevice->m_rigidGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
-        simDevice->m_softGrippingConstraints.resize(simDevice->m_rootLink->getAFSensors().size());
-        simDevice->enableJointControl(attribs.m_enableJointControl);
+        m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
+        m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
+        enableJointControl(attribs.m_enableJointControl);
         // Initialize all the constraint to null ptr
-        for (int sIdx = 0 ; sIdx < simDevice->m_rigidGrippingConstraints.size() ; sIdx++){
-            simDevice->m_rigidGrippingConstraints[sIdx] = 0;
-            simDevice->m_softGrippingConstraints[sIdx] = 0;
+        for (int sIdx = 0 ; sIdx < m_rigidGrippingConstraints.size() ; sIdx++){
+            m_rigidGrippingConstraints[sIdx] = 0;
+            m_softGrippingConstraints[sIdx] = 0;
         }
 
-        std::string _modelName = '/' + m_hInfo.m_modelName;
-        std::replace(_modelName.begin(), _modelName.end(), ' ', '_');
+        std::string modelName = '/' + m_phyDev->m_hInfo.m_modelName;
+        std::replace(modelName.begin(), modelName.end(), ' ', '_');
 
 //        std::string _pDevName = "physical_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
 //        createAfCursor(a_iD->getAFWorld(),
@@ -712,44 +644,33 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         // Since an existing root body is bound to the physical device whose afComm should already be
         // running
         if(attribs.m_sdeDefined){
-            std::string _sDevName = "simulated_device_" + std::to_string(m_CCU_Manager->s_inputDeviceCount) + _modelName;
-            simDevice->m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
-                                                        _sDevName,
-                                                        m_afWorld->resolveGlobalNamespace(simDevice->getNamespace()),
-                                                        simDevice->m_rootLink->getMinPublishFrequency(),
-                                                        simDevice->m_rootLink->getMaxPublishFrequency());
+            std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
+            m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
+                                                        simDevName,
+                                                        m_afWorld->resolveGlobalNamespace(getNamespace()),
+                                                        m_rootLink->getMinPublishFrequency(),
+                                                        m_rootLink->getMaxPublishFrequency());
         }
     }
     else{
         return 0;
     }
 
-    if (pDLocation.IsDefined()){
-        YAML::Node posNode = pDLocation["position"];
-        YAML::Node rpyNode = pDLocation["orientation"];
-        position = toXYZ<cVector3d>(&posNode);
-        cVector3d _rpy;
-        _rpy = toRPY<cVector3d>(&rpyNode);
-        rotation.setExtrinsicEulerRotationRad(_rpy.x(), _rpy.y(), _rpy.z(), C_EULER_ORDER_XYZ);
-
-        simDevice->m_rootLink->setLocalPos(position);
-        simDevice->m_rootLink->setLocalRot(rotation);
-        simDevice->m_rootLink->setInitialTransform(cTransform(position, rotation));
-        m_simRotInitial = rotation;
+    cTransform location;
+    if (attribs.m_overrideLocation){
+        m_rootLink->setLocalTransform(attribs.m_kinematicAttribs.m_location);
+        location << attribs.m_kinematicAttribs.m_location;
+        m_rootLink->setInitialTransform(location);
+        m_simRotInitial = location.getLocalRot();
     }
     else{
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << node_name << "\" LOCATION NOT DEFINED \n";
-        // In this case, take the current position of the root link and set it as initial
-        // reference pose
-        position = simDevice->m_rootLink->getLocalPos();
-        rotation = simDevice->m_rootLink->getLocalRot();
-        m_simRotInitial.identity();
+        location = m_rootLink->getLocalTransform();
     }
 
-    simDevice->setPosRef(position/ m_workspaceScale);
-    simDevice->setPosRefOrigin(position / m_workspaceScale);
-    simDevice->setRotRef(rotation);
-    simDevice->setRotRefOrigin(rotation);
+    setPosRef(location.getLocalPos() / m_phyDev->m_workspaceScale);
+    setPosRefOrigin(location.getLocalPos() / m_phyDev->m_workspaceScale);
+    setRotRef(location.getLocalRot());
+    setRotRefOrigin(location.getLocalRot());
 
 }
 
@@ -770,6 +691,14 @@ cVector3d afSimulatedDevice::getPos(){
 cMatrix3d afSimulatedDevice::getRot(){
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_rootLink->getLocalRot();
+}
+
+///
+/// \brief afSimulatedDevice::getSimRotInitial
+/// \return
+///
+cMatrix3d afSimulatedDevice::getSimRotInitial(){
+    return m_simRotInitial;
 }
 
 ///
@@ -877,139 +806,65 @@ bool afCollateralControlManager::checkClaimedDeviceIdx(int a_devIdx){
     return _claimed;
 }
 
-bool afCollateralControlManager::pairCamerasToCCU(afCollateralControlUnit& a_ccuPtr){
-    afPhysicalDevice* pD = a_ccuPtr.m_physicalDevicePtr;
 
-    for(int i = 0 ; i < pD->m_pairedCameraNames.size() ; i++){
-        std::string camName = pD->m_pairedCameraNames[i];
-        afCameraPtr camPtr = m_afWorld->getAFCamera(camName);
-        if(camPtr){
-            // Create labels for the contextual controlling devices for each Window-Camera Pair
-            cFontPtr font = NEW_CFONTCALIBRI20();
-            cLabel* devFreqLabel = new cLabel(font);
-            devFreqLabel->m_fontColor.setBlack();
-            devFreqLabel->setFontScale(0.8);
-            devFreqLabel->m_fontColor.setGreenLime();
-            a_ccuPtr.m_devFreqLabel = devFreqLabel;
-            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
-            camPtr->getFrontLayer()->addChild(devFreqLabel);
-
-            camPtr->m_controllingDevNames.push_back(
-                        a_ccuPtr.m_name);
-
-            a_ccuPtr.m_cameras.push_back(camPtr);
-        }
-    }
-
-    // If no cameras are specified, maybe pair all the cameras?
-    // Can be commented out.
-    if(pD->m_pairedCameraNames.size() == 0){
-        afCameraVec camVec = m_afWorld->getAFCameras();
-        for(int i = 0 ; i < camVec.size() ; i++){
-            afCameraPtr camPtr = camVec[i];
-            // Create labels for the contextual controlling devices for each Window-Camera Pair
-            cFontPtr font = NEW_CFONTCALIBRI20();
-            cLabel* devFreqLabel = new cLabel(font);
-            devFreqLabel->m_fontColor.setBlack();
-            devFreqLabel->setFontScale(0.8);
-            devFreqLabel->m_fontColor.setGreenLime();
-            a_ccuPtr.m_devFreqLabel = devFreqLabel;
-            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
-            camPtr->getFrontLayer()->addChild(devFreqLabel);
-
-            camPtr->m_controllingDevNames.push_back(
-                        a_ccuPtr.m_name);
-
-            a_ccuPtr.m_cameras.push_back(camPtr);
-        }
-    }
-    return true;
-}
-
-
-///
-/// \brief afInputDevices::loadInputDevices
-/// \param a_input_devices_config
-/// \param a_max_load_devs
-/// \return
-///
-bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_config, int a_max_load_devs){
+bool afCollateralControlManager::createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, int a_max_load_devs){
     std::vector<int> devIdxes;
     for (int i = 0 ; i < a_max_load_devs ; i++){
         devIdxes.push_back(i);
     }
-    return loadInputDevices(a_input_devices_config, devIdxes);
+    return createFromAttribs(a_attribs, devIdxes);
 }
 
 
 ///
-/// \brief afInputDevices::loadInputDevices
-/// \param a_inputdevice_config
-/// \param a_device_indices
+/// \brief afCollateralControlManager::createFromAttribs
+/// \param a_attribs
 /// \return
 ///
-bool afCollateralControlManager::loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices){
-    if (a_input_devices_config.empty()){
-        a_input_devices_config = m_afWorld->getInputDevicesFilepath();
-    }
-    YAML::Node inputDevicesNode;
-    try{
-        inputDevicesNode = YAML::LoadFile(a_input_devices_config);
-    }catch (std::exception &e){
-        std::cerr << "[Exception]: " << e.what() << std::endl;
-        std::cerr << "ERROR! FAILED TO LOAD CONFIG FILE: " << a_input_devices_config << std::endl;
-        return 0;
-    }
+bool afCollateralControlManager::createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, std::vector<int> a_device_indices){
 
-    YAML::Node inputDevices = inputDevicesNode["input devices"];
-
-    m_basePath = boost::filesystem::path(a_input_devices_config).parent_path();
-
-    if (!inputDevices.IsDefined()){
-        return 0;
-    }
+    afAllTeleRoboticUnitsAttributes& attribs = *a_attribs;
 
     bool load_status = false;
 
-    int valid_dev_idxs = cMin(a_device_indices.size(), inputDevices.size());
+    int valid_dev_idxs = cMin(a_device_indices.size(), attribs.m_teleRoboticUnitsAttribs.size());
     if (valid_dev_idxs > 0){
         m_deviceHandler.reset(new cHapticDeviceHandler());
         for (int i = 0; i < valid_dev_idxs; i++){
             int devIdx = a_device_indices[i];
-            if (devIdx >=0 && devIdx < inputDevices.size()){
-                afPhysicalDevice* pD = new afPhysicalDevice(m_afWorld);
-                afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld);
+            string devName = attribs.m_teleRoboticUnitsAttribs[devIdx].m_iidAttribs.m_hardwareName;
+            if (devIdx >=0 && devIdx < attribs.m_teleRoboticUnitsAttribs.size()){
+                afPhysicalDevice* pD = new afPhysicalDevice(this);
+                afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld, pD);
 
-                // Load the device specified in the afInputDevice yaml file
-                std::string devKey = inputDevices[devIdx].as<std::string>();
-                YAML::Node devNode = inputDevicesNode[devKey];
-
-                if (pD->loadPhysicalDevice(&devNode, devKey, m_deviceHandler.get(), sD, this)){
-                    afCollateralControlUnit ccu;
-                    ccu.m_physicalDevicePtr = pD;
-                    ccu.m_simulatedDevicePtr = sD;
-                    ccu.m_name = devKey;
-                    pairCamerasToCCU(ccu);
-                    m_collateralControlUnits.push_back(ccu);
-                    load_status = true;
+                if (pD->createFromAttribs(&attribs.m_teleRoboticUnitsAttribs[devIdx].m_iidAttribs)){
+                    if (sD->createFromAttribs(&attribs.m_teleRoboticUnitsAttribs[devIdx].m_sdeAttribs)){
+                        afCollateralControlUnit ccu;
+                        ccu.m_physicalDevicePtr = pD;
+                        ccu.m_simulatedDevicePtr = sD;
+                        ccu.m_name = devName;
+                        ccu.pairCameras(m_afWorld, attribs.m_teleRoboticUnitsAttribs[devIdx].m_pairedCamerasNames);
+                        m_collateralControlUnits.push_back(ccu);
+                        load_status = true;
+                    }
                 }
                 else
                 {
                     pD->m_hDevice->close();
-                    std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devKey << "\"\n";
+                    std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
                     load_status = false;
                     delete pD;
                     delete sD;
                 }
             }
             else{
-                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevices.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << attribs.m_teleRoboticUnitsAttribs.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << attribs.m_filePath.c_str() << "\"\n";
                 load_status = false;
             }
         }
     }
     else{
-        std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << a_input_devices_config << "\"\n";
+        std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << attribs.m_filePath.c_str() << "\"\n";
         load_status = false;
     }
 
@@ -1240,5 +1095,51 @@ double afCollateralControlManager::increment_D_ac(double a_offset){
     return _temp;
 }
 
+
+
+bool afCollateralControlUnit::pairCameras(afWorldPtr a_afWorld, std::vector<string> a_cameraNames)
+{
+    for(int i = 0 ; i < a_cameraNames.size() ; i++){
+        std::string camName = a_cameraNames[i];
+        afCameraPtr camPtr = a_afWorld->getAFCamera(camName);
+        if(camPtr){
+            // Create labels for the contextual controlling devices for each Window-Camera Pair
+            cFontPtr font = NEW_CFONTCALIBRI20();
+            cLabel* devFreqLabel = new cLabel(font);
+            devFreqLabel->m_fontColor.setBlack();
+            devFreqLabel->setFontScale(0.8);
+            devFreqLabel->m_fontColor.setGreenLime();
+            m_devFreqLabel = devFreqLabel;
+            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
+            camPtr->getFrontLayer()->addChild(devFreqLabel);
+
+            camPtr->m_controllingDevNames.push_back(m_name);
+
+            m_cameras.push_back(camPtr);
+        }
+    }
+
+    // If no cameras are specified, maybe pair all the cameras?
+    // Can be commented out.
+    if(a_cameraNames.size() == 0){
+        afCameraVec camVec = a_afWorld->getAFCameras();
+        for(int i = 0 ; i < camVec.size() ; i++){
+            afCameraPtr camPtr = camVec[i];
+            // Create labels for the contextual controlling devices for each Window-Camera Pair
+            cFontPtr font = NEW_CFONTCALIBRI20();
+            cLabel* devFreqLabel = new cLabel(font);
+            devFreqLabel->m_fontColor.setBlack();
+            devFreqLabel->setFontScale(0.8);
+            devFreqLabel->m_fontColor.setGreenLime();
+            m_devFreqLabel = devFreqLabel;
+            camPtr->m_devHapticFreqLabels.push_back(devFreqLabel);
+            camPtr->getFrontLayer()->addChild(devFreqLabel);
+            camPtr->m_controllingDevNames.push_back(m_name);
+
+            m_cameras.push_back(camPtr);
+        }
+    }
+    return true;
+}
 }
 //------------------------------------------------------------------------------

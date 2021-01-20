@@ -1783,7 +1783,7 @@ void updateHapticDevice(void* a_arg){
                         cTranspose(devCams[0]->getLocalRot()));
             }
             else{
-                simDev->setRotRef(phyDev->getSimRotInitial() * phyDev->getSimRotOffsetInverse() * phyDev->getRot() * phyDev->getSimRotOffset());
+                simDev->setRotRef(simDev->getSimRotInitial() * phyDev->getSimRotOffsetInverse() * phyDev->getRot() * phyDev->getSimRotOffset());
             }
 
             if (phyDev->m_showMarker){

@@ -737,13 +737,13 @@ public:
 
     inline cMultiMesh* getVisualMesh(){return m_visualMesh;}
 
-    void setLocalPos(const cVector3d &pos);
+    virtual void setLocalPos(const cVector3d &pos);
 
     void setLocalPos(const afVector3d &pos);
 
     void setLocalPos(double px, double py, double pz);
 
-    void setLocalRot(const cMatrix3d &mat);
+    virtual void setLocalRot(const cMatrix3d &mat);
 
     void setLocalRot(const afMatrix3d &mat);
 
@@ -751,7 +751,7 @@ public:
 
     void setLocalRot(double qx, double qy, double qz, double qw);
 
-    void setLocalTransform(const cTransform &trans);
+    virtual void setLocalTransform(const cTransform &trans);
 
     void setLocalTransform(const afTransform &trans);
 
@@ -1111,6 +1111,8 @@ public:
 public:
 
     afSoftMultiMesh* m_softMultiMesh;
+
+    btSoftBodyWorldInfo* m_bulletSoftBodyWorldInfo;
 
 protected:
 

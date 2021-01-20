@@ -96,7 +96,7 @@ public:
     cVector3d getPosRefOrigin();
     cMatrix3d getRotRefOrigin();
 
-private:
+protected:
     cVector3d m_posRef;
     cMatrix3d m_rotRef;
 
@@ -112,7 +112,7 @@ protected:
 ///
 class afSimulatedDevice: public afSharedDataStructure, public afModel{
 public:
-    afSimulatedDevice(afWorldPtr a_afWorld);
+    afSimulatedDevice(afWorldPtr a_afWorld, afPhysicalDevice* pD);
 
     virtual bool createFromAttribs(afSimulatedDeviceAttribs *a_attribs);
 
@@ -121,6 +121,8 @@ public:
     cVector3d getPos();
 
     cMatrix3d getRot();
+
+    cMatrix3d getSimRotInitial();
 
     void updatePose();
 
@@ -170,6 +172,12 @@ public:
     // Flag to enable and disable the joint control of simulated end effector
     // for this physical device
     bool m_jointControlEnable;
+
+    // Initial offset between the simulated end effector and the
+    // physical device
+    cMatrix3d m_simRotInitial;
+
+    afPhysicalDevice* m_phyDev;
 
     //private:
     //    std::mutex m_mutex;
@@ -239,10 +247,6 @@ public:
 
     void enableForceFeedback(bool enable){m_dev_force_enabled = enable;}
 
-    // Initial offset between the simulated end effector and the
-    // physical device
-    cMatrix3d m_simRotInitial;
-
     // A transform between simulated and pyhsical devices' frame
     // to store any intended offset
     cMatrix3d m_simRotOffset;
@@ -290,12 +294,12 @@ public:
     bool btn_cam_rising_edge;
     bool btn_clutch_rising_edge;
 
+    afCollateralControlManager* m_CCU_Manager;
+
 private:
     std::mutex m_mutex;
     void updateCursorPose();
     bool m_dev_force_enabled = false;
-
-    afCollateralControlManager* m_CCU_Manager;
 };
 
 ///
@@ -326,6 +330,8 @@ struct afCollateralControlUnit{
     cLabel* m_devFreqLabel = nullptr;
 
     std::string m_name;
+
+    bool pairCameras(afWorldPtr a_afWorld, std::vector<string> a_cameraNames);
 };
 
 ///
@@ -340,11 +346,9 @@ public:
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
 
-    virtual bool loadInputDevices(std::string a_input_devices_config, int a_max_load_devs = MAX_DEVICES);
+    bool createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, int a_num_devs_to_load=MAX_DEVICES);
 
-    virtual bool loadInputDevices(std::string a_input_devices_config, std::vector<int> a_device_indices);
-
-    bool pairCamerasToCCU(afCollateralControlUnit& a_ccu);
+    bool createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, std::vector<int> a_device_indices);
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 

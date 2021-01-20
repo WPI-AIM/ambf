@@ -803,7 +803,7 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
             attribs->m_offset.setPosition(ADFUtils::positionFromNode(&_posNode));
         }
         else{
-            attribs->m_posOffset.set(0, 0, 0);
+            attribs->m_offset.setPosition(afVector3d(0, 0, 0));
         }
 
         if (offsetNode["orientation"].IsDefined()){
@@ -811,7 +811,7 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
             attribs->m_offset.setRotation(ADFUtils::rotationFromNode(&_orientationNode));
         }
         else{
-            attribs->m_rotOffset.setRPY(0, 0, 0);
+            attribs->m_offset.setRotation(afMatrix3d(0, 0, 0));
         }
     }
     else{
@@ -1174,6 +1174,7 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
 
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
     adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
     adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
@@ -1815,7 +1816,6 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
 
     YAML::Node hardwareNameNode = node["hardware name"];
     YAML::Node hapticGainNode = node["haptic gain"];
-    YAML::Node controllerGainNode = node["controller gain"];
     YAML::Node deadbandNode = node["deadband"];
     YAML::Node maxForceNode = node["max force"];
     YAML::Node maxJerkNode = node["max jerk"];
@@ -1840,12 +1840,6 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     // In this case, the user should specify just the root link and we shall try to find a
     // body in simulation matching that name. Once succesful we shall then be able to control
     // that link/body in Position control mode and control all the joints lower in heirarchy.
-
-    ADFUtils adfUtils;
-
-    // set the control gains fields as controller fields.
-    node["controller"] = controllerGainNode;
-    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
 
     if (hardwareNameNode.IsDefined()){
         attribs->m_hardwareName = hardwareNameNode.as<string>();
@@ -1922,6 +1916,7 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulate
     YAML::Node simulatedModelNode = node["simulated multibody"];
     YAML::Node rootLinkNode = node["root link"];
     YAML::Node locationNode = node["location"];
+    YAML::Node controllerGainNode = node["controller gain"];
 
     // For the simulated gripper, the user can specify a model config to load.
     // We shall load this file as a proxy for Physical Input device in the simulation.
@@ -1940,11 +1935,21 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulate
 
     ADFUtils adfUtils;
 
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    if (locationNode.IsDefined()){
+        adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+        attribs->m_overrideLocation = true;
+    }
+
+    // set the control gains fields as controller fields.
+    if (controllerGainNode.IsDefined()){
+        node["controller"] = controllerGainNode;
+        adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+        attribs->m_overrideController = true;
+    }
 
     if (simulatedModelNode.IsDefined()){
         afPath sdeFilepath = simulatedModelNode.as<string>();
-        sdeFilepath.resolvePath(attribs->m_filepath.parent_path());
+        sdeFilepath.resolvePath(attribs->m_filePath.parent_path());
 
         YAML::Node sdeModelNode = YAML::LoadFile(sdeFilepath.c_str());
         if (loadModelAttribs(&sdeModelNode, &attribs->m_modelAttribs)){
@@ -1997,7 +2002,7 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
         afTeleRoboticUnitAttributes tuAttribs;
         std::string devName = inputDevicesNode[i].as<std::string>();
         YAML::Node tuNode = node[devName];
-        bool results = {false, false, false};
+        bool results[3] = {false, false, false};
         if (loadInputDeviceAttributes(&tuNode, &tuAttribs.m_iidAttribs)){
             results[0] = true;
         }
@@ -2225,7 +2230,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
         afPath environmentFilepath = environmentNode.as<string>();
         environmentFilepath.resolvePath(attribs->m_filePath.parent_path().c_str());
         YAML::Node envNode = YAML::LoadFile(environmentFilepath.c_str());
-        if (loadModelAttribs(&envNode, &attribs->m_environmentModel)){
+        if (loadModelAttribs(&envNode, &attribs->m_environmentModel.m_modelAttribs)){
             attribs->m_environmentModel.m_use = true;
             attribs->m_enclosure.m_use = false;
         }

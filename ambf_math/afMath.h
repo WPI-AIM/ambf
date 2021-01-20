@@ -197,6 +197,12 @@ public:
         roll = atan2(m_data[2][1], m_data[2][2]);
     }
 
+    void getRPY(double& roll, double& pitch, double& yaw) const{
+        yaw = atan2(m_data[1][0], m_data[0][0]);
+        pitch = atan2(-m_data[2][0], sqrt( m_data[2][1] * m_data[2][1] + m_data[2][2] * m_data[2][2] ));
+        roll = atan2(m_data[2][1], m_data[2][2]);
+    }
+
     void setIdentity(){
         for (int r = 0 ; r < 3 ; r++){
             for (int c = 0 ; c < 3 ; c++){
@@ -317,7 +323,15 @@ public:
         return m_P;
     }
 
+    afVector3d getPosition() const{
+        return m_P;
+    }
+
     afMatrix3d getRotation(){
+        return m_R;
+    }
+
+    afMatrix3d getRotation() const{
         return m_R;
     }
 

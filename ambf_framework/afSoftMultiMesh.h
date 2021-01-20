@@ -105,7 +105,11 @@ class afSoftMultiMesh : public cMultiMesh
 public:
 
     //! Constructor of afSoftMultiMesh.
-    afSoftMultiMesh() {
+    afSoftMultiMesh(btDiscreteDynamicsWorld* a_world, btSoftBodyWorldInfo* a_worldInfo, btSoftBody* a_softBody, btCollisionShape* a_collisionShape) {
+        m_bulletSoftBody = a_softBody;
+        m_bulletCollisionShape = a_collisionShape;
+        m_bulletSoftWorldInfo = a_worldInfo;
+        m_bulletWorld = a_world;
     }
 
     //! Destructor of afSoftMultiMesh.
@@ -116,12 +120,9 @@ public:
     // IMPORT:
     //--------------------------------------------------------------------------
 
-public:
-
     //! import base class overloaded virtual and non-virtual methods
     using cGenericObject::setLocalPos;
     using cGenericObject::setLocalRot;
-
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - TRANSLATION AND ORIENTATION:
@@ -198,6 +199,11 @@ private:
     unsigned int m_counter = 0;
 
 public:
+
+    btSoftBody* m_bulletSoftBody;
+    btCollisionShape* m_bulletCollisionShape;
+    btSoftBodyWorldInfo* m_bulletSoftWorldInfo;
+    btDiscreteDynamicsWorld* m_bulletWorld;
 
     cGELMesh m_gelMesh;
 

@@ -1993,8 +1993,6 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 {
     afSoftBodyAttributes & attribs = *a_attribs;
 
-    m_softMultiMesh = new afSoftMultiMesh();
-
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -2035,6 +2033,21 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     afBaseObject::copyMaterialToMesh(&m_softMultiMesh->m_gelMesh, &attribs.m_visualAttribs.m_colorAttribs);
 
     btSoftBody* softBody = m_bulletSoftBody;
+
+    // Set SoftBody World Info
+    m_bulletSoftBodyWorldInfo = new btSoftBodyWorldInfo();
+    m_bulletSoftBodyWorldInfo->m_broadphase = m_afWorld->m_bulletBroadphase;
+    m_bulletSoftBodyWorldInfo->m_dispatcher = m_afWorld->m_bulletCollisionDispatcher;
+    m_bulletSoftBodyWorldInfo->air_density		=	(btScalar)0.0;
+    m_bulletSoftBodyWorldInfo->water_density	=	0;
+    m_bulletSoftBodyWorldInfo->water_offset		=	0;
+    m_bulletSoftBodyWorldInfo->water_normal		=	btVector3(0,0,0);
+    m_bulletSoftBodyWorldInfo->m_gravity.setValue(0,0,-9.81);
+
+    //    m_bulletWorld->getDispatchInfo().m_enableSPU = true;
+    m_bulletSoftBodyWorldInfo->m_sparsesdf.Initialize();
+
+    m_softMultiMesh = new afSoftMultiMesh(m_afWorld->m_bulletWorld, m_bulletSoftBodyWorldInfo, m_bulletSoftBody, m_bulletCollisionShape);
 
     btSoftBody::Material *pm = softBody->appendMaterial();
     pm->m_kLST = attribs.m_kLST;

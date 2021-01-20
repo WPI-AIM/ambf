@@ -87,8 +87,6 @@ void afSoftMultiMesh::setLocalPos(const cVector3d& a_position)
     trans.setOrigin(pos);
     trans.setRotation(q);
 
-    if (m_bulletMotionState)
-        m_bulletMotionState->setWorldTransform(trans);
     if (m_bulletSoftBody)
         m_bulletSoftBody->translate(pos);
 }
@@ -125,8 +123,6 @@ void afSoftMultiMesh::setLocalRot(const cMatrix3d& a_rotation)
     trans.setOrigin(pos);
     trans.setRotation(q);
 
-    if (m_bulletMotionState)
-        m_bulletMotionState->setWorldTransform(trans);
     if (m_bulletSoftBody)
         m_bulletSoftBody->rotate(q);
 }
@@ -933,12 +929,12 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
 //        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines, true);
         computeUniqueVerticesandTrianglesSequential(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines, false);
         if (m_trianglesPtr.size() > 0){
-            m_bulletSoftBody = CreateFromMesh(*m_dynamicWorld->m_bulletSoftBodyWorldInfo,
-                                                                    m_verticesPtr.data(), m_verticesPtr.size() / 3, m_trianglesPtr.data(), numTriangles);
+            m_bulletSoftBody = CreateFromMesh(*m_bulletSoftWorldInfo,
+                                              m_verticesPtr.data(), m_verticesPtr.size() / 3, m_trianglesPtr.data(), numTriangles);
             createLinksFromLines(m_bulletSoftBody, &_lines, mesh);
         }
         else{
-            m_bulletSoftBody = new btSoftBody(m_dynamicWorld->m_bulletSoftBodyWorldInfo);
+            m_bulletSoftBody = new btSoftBody(m_bulletSoftWorldInfo);
             /* Default material	*/
             btSoftBody::Material* pm = m_bulletSoftBody->appendMaterial();
             pm->m_kLST = 1;
@@ -993,7 +989,7 @@ void afSoftMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* l
         localTrans.setRotation(q);
 
         // Apply the inertial transform offset
-        localTrans *= getInverseInertialOffsetTransform();
+//        localTrans *= getInverseInertialOffsetTransform();
     }
     if(lowResMesh){
         lowResMesh->m_meshes->clear();
@@ -1037,7 +1033,7 @@ void afSoftMultiMesh::buildContactHull(const double a_margin)
 
         }
 
-        m_bulletSoftBody = btSoftBodyHelpers::CreateFromConvexHull(*m_dynamicWorld->m_bulletSoftBodyWorldInfo, m_verticesVecPtr.data(), numVertices);
+        m_bulletSoftBody = btSoftBodyHelpers::CreateFromConvexHull(*m_bulletSoftWorldInfo, m_verticesVecPtr.data(), numVertices);
 
     }
 }
@@ -1047,11 +1043,11 @@ void afSoftMultiMesh::buildContactHull(const double a_margin)
 ///
 void afSoftMultiMesh::buildDynamicModel(){
     // add collision shape to compound
-    m_bulletSoftBody->setTotalMass(m_mass, false);
+    m_bulletSoftBody->setTotalMass(10.0, false);
     m_bulletSoftBody->getCollisionShape()->setUserPointer(m_bulletSoftBody);
-    btSoftRigidDynamicsWorld *softWorld = (btSoftRigidDynamicsWorld*) m_dynamicWorld->m_bulletWorld;
+    btSoftRigidDynamicsWorld *softWorld = (btSoftRigidDynamicsWorld*) m_bulletWorld;
     softWorld->addSoftBody(m_bulletSoftBody);
-    m_dynamicWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
+    m_bulletSoftWorldInfo->m_sparsesdf.Reset();
 }
 
 ///
