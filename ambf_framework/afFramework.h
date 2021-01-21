@@ -318,80 +318,6 @@ inline cTransform& operator<< (cTransform& lhs, const btTransform& rhs){
     return lhs;
 }
 
-///
-/// \brief to_btVector
-/// \param vec
-/// \return
-///
-btVector3 to_btVector(const cVector3d &vec);
-
-///
-/// \brief to_btVector
-/// \param vec
-/// \return
-///
-btVector3 to_btVector(const afVector3d &vec);
-
-///
-/// \brief to_btTransform
-/// \param trans
-/// \return
-///
-btTransform to_btTransform(const cTransform &trans);
-
-
-///
-/// \brief to_btTransform
-/// \param trans
-/// \return
-///
-btTransform to_btTransform(const afTransform &trans);
-
-///
-/// \brief to_cVector3d
-/// \param vec
-/// \return
-///
-cVector3d to_cVector3d(const btVector3 &vec);
-
-///
-/// \brief to_cVector3d
-/// \param vec
-/// \return
-///
-cVector3d to_cVector3d(const afVector3d &vec);
-
-
-///
-/// \brief to_cMatrix3d
-/// \param mat
-/// \return
-///
-cTransform to_cMatrix3d(const btMatrix3x3 &mat);
-
-
-///
-/// \brief to_cMatrix3d
-/// \param mat
-/// \return
-///
-cMatrix3d to_cMatrix3d(const afMatrix3d &mat);
-
-
-///
-/// \brief toCtransform
-/// \param btTrans
-/// \return
-///
-cTransform to_cTransform(const btTransform &trans);
-
-
-///
-/// \brief to_cTransform
-/// \param trans
-/// \return
-///
-cTransform to_cTransform(const afTransform &trans);
 
 
 class afPrimitiveShapeUtils{
@@ -714,13 +640,13 @@ public:
 
     inline cMultiMesh* getVisualMesh(){return m_visualMesh;}
 
-    virtual void setLocalPos(const cVector3d &pos);
+    void setLocalPos(const cVector3d &pos);
 
     void setLocalPos(const afVector3d &pos);
 
     void setLocalPos(double px, double py, double pz);
 
-    virtual void setLocalRot(const cMatrix3d &mat);
+    void setLocalRot(const cMatrix3d &mat);
 
     void setLocalRot(const afMatrix3d &mat);
 
@@ -728,7 +654,7 @@ public:
 
     void setLocalRot(double qx, double qy, double qz, double qw);
 
-    virtual void setLocalTransform(const cTransform &trans);
+    void setLocalTransform(const cTransform &trans);
 
     void setLocalTransform(const afTransform &trans);
 

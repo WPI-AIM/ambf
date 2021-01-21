@@ -43,6 +43,7 @@
 
 //------------------------------------------------------------------------------
 #include "afFramework.h"
+#include "afConversions.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -73,46 +74,6 @@ bool afCamera::s_imageTransportInitialized = false;
 #endif
 //------------------------------------------------------------------------------
 
-
-btVector3 to_btVector(const cVector3d &vec){
-    return afUtils::convertDataType<btVector3, cVector3d>(vec);
-}
-
-btVector3 to_btVector(const afVector3d &vec){
-    return afUtils::convertDataType<btVector3, afVector3d>(vec);
-}
-
-btTransform to_btTransform(const cTransform &trans){
-    return afUtils::convertDataType<btTransform, cTransform>(trans);
-}
-
-btTransform to_btTransform(const afTransform &trans){
-    return afUtils::convertDataType<btTransform, afTransform>(trans);
-}
-
-cVector3d to_cVector3d(const btVector3 &vec){
-    return afUtils::convertDataType<cVector3d, btVector3>(vec);
-}
-
-cVector3d to_cVector3d(const afVector3d &vec){
-    return afUtils::convertDataType<cVector3d, afVector3d>(vec);
-}
-
-cTransform to_cMatrix3d(const btMatrix3x3 &mat){
-    return afUtils::convertDataType<cMatrix3d, btMatrix3x3>(mat);
-}
-
-cMatrix3d to_cMatrix3d(const afMatrix3d &mat){
-    return afUtils::convertDataType<cMatrix3d, afMatrix3d>(mat);
-}
-
-cTransform to_cTransform(const btTransform &trans){
-    return afUtils::convertDataType<cTransform, btTransform>(trans);
-}
-
-cTransform to_cTransform(const afTransform &trans){
-    return afUtils::convertDataType<cTransform, afTransform>(trans);
-}
 
 /// End declare static variables
 
@@ -551,6 +512,15 @@ void afBaseObject::setLocalRot(double qx, double qy, double qz, double qw)
 void afBaseObject::setLocalTransform(const cTransform &trans)
 {
     m_localTransform = trans;
+}
+
+///
+/// \brief afBaseObject::setLocalTransform
+/// \param trans
+///
+void afBaseObject::setLocalTransform(const afTransform &trans)
+{
+    m_localTransform << trans;
 }
 
 
@@ -2693,7 +2663,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     m_name = attribs.m_identificationAttribs.m_name;
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
-    m_localTransform = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    m_localTransform << attribs.m_kinematicAttribs.m_location;
 
     m_range = attribs.m_range;
 
@@ -6602,9 +6572,12 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     m_vehicle->setCoordinateSystem(1, 2, 0);
 
     for (uint i = 0 ; i < m_numWheels ; i++){
-        btVector3 off = to_btVector(m_wheelAttribs[i].m_offset);
-        btVector3 dir = to_btVector(m_wheelAttribs[i].m_downDirection);
-        btVector3 axel_dir = to_btVector(m_wheelAttribs[i].m_axelDirection);
+        btVector3 off;
+        off << m_wheelAttribs[i].m_offset;
+        btVector3 dir;
+        dir << m_wheelAttribs[i].m_downDirection;
+        btVector3 axel_dir;
+        axel_dir << m_wheelAttribs[i].m_axelDirection;
 
         off = T_oInc.inverse() * off;
         dir = T_oInc.getBasis().inverse() * dir;

@@ -53,30 +53,6 @@
 using namespace ambf;
 using namespace chai3d;
 
-template<typename T>
-///
-/// \brief afUtils::getNonCollidingIdx
-/// \param a_body_name
-/// \param tMap
-/// \return
-///
-std::string afUtils::getNonCollidingIdx(std::string a_body_name, const T* tMap){
-    int occurances = 0;
-    std::string remap_string = "" ;
-    std::stringstream ss;
-    if (tMap->find(a_body_name) == tMap->end()){
-        return remap_string;
-    }
-    do{
-        ss.str(std::string());
-        occurances++;
-        ss << occurances;
-        remap_string = ss.str();
-    }
-    while(tMap->find(a_body_name + remap_string) != tMap->end() && occurances < 100);
-    return remap_string;
-}
-
 
 template<>
 ///

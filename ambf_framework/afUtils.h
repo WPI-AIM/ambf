@@ -47,6 +47,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -67,7 +68,22 @@ public:
     static T1 convertDataType(const T2 &r);
 
     template <typename T>
-    static string getNonCollidingIdx(string a_body_name, const T* a_tMap);
+    static string getNonCollidingIdx(string a_body_name, const T* tMap){
+        int occurances = 0;
+        std::string remap_string = "" ;
+        std::stringstream ss;
+        if (tMap->find(a_body_name) == tMap->end()){
+            return remap_string;
+        }
+        do{
+            ss.str(std::string());
+            occurances++;
+            ss << occurances;
+            remap_string = ss.str();
+        }
+        while(tMap->find(a_body_name + remap_string) != tMap->end() && occurances < 100);
+        return remap_string;
+    }
 
     static string removeAdjacentBackSlashes(string a_name){
         std::string cleaned_name;
