@@ -45,6 +45,8 @@
 //---------------------------------------------------------------------------
 #include "chai3d.h"
 #include "ambf.h"
+#include "adf_loader_interface.h"
+
 //---------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 #include <boost/program_options.hpp>
@@ -77,11 +79,7 @@ afRenderOptions g_afRenderOptions;
 bool fullscreen = false;
 
 
-
-//---------------------------------------------------------------------------
-// BULLET MODULE VARIABLES
-//---------------------------------------------------------------------------
-
+ADFLoaderInterface* g_adfLoader;
 afWorld *g_afWorld;
 
 struct CommandLineOptions{
@@ -379,24 +377,39 @@ int main(int argc, char* argv[])
     // 3D - SCENEGRAPH
     //-----------------------------------------------------------------------
 
+    g_adfLoader = new ADFLoaderInterface();
+
+    afLaunchAttributes launchAttribs;
+    afWorldAttributes worldAttribs;
+    afAllTeleRoboticUnitsAttributes allTUAttribs;
+    std::vector<afModelAttributes> modelsAttribs;
+    bool valid = g_adfLoader->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs);
+
+    if (valid == false){
+        // Safely Return the program
+        return -1;
+    }
+
+    g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
+    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
+
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
 
     // set the background color of the environment
-    g_afWorld->m_backgroundColor.setWhite();
+    g_afWorld->m_chaiWorld->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // BULLET WORLD
     //////////////////////////////////////////////////////////////////////////
 
 
+
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-    if (g_afWorld->loadLaunchFile(g_cmdOpts.launchFilePath)){
         // The world loads the lights and cameras + windows
-        std::string world_filename = g_afWorld->getWorldFilepath();
-        g_afWorld->loadWorld(world_filename, g_cmdOpts.showGUI);
+        g_afWorld->createFromAttribs(&worldAttribs);
 
         g_cameras = g_afWorld->getAFCameras();
 
@@ -404,7 +417,6 @@ int main(int argc, char* argv[])
         if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
             std::vector<std::string> mbFileNames;
             std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
-//            loadMBFilenames.erase(std::remove(loadMBFilenames.begin(), loadMBFilenames.end(), ' '), loadMBFilenames.end());
             std::stringstream ss(loadMBFilenames);
             while(ss.good() )
             {
@@ -413,7 +425,10 @@ int main(int argc, char* argv[])
                 mbFileNames.push_back(mbFilename);
             }
             for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
-                g_afWorld->loadModel(mbFileNames[idx], true);
+                afModelAttributes modelAttribs;
+                if (g_adfLoader->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
+                    modelsAttribs.push_back(modelAttribs);
+                }
             }
         }
 
@@ -430,16 +445,28 @@ int main(int argc, char* argv[])
                 mbIndexes.push_back(std::stoi(mbIdx));
             }
             for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
-                g_afWorld->loadModel(mbIndexes[idx], true);
+                uint fileIdx = mbIndexes[idx];
+                if (fileIdx >= launchAttribs.m_modelFilepaths.size()){
+                    cerr << "ERROR: -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
+                    continue;
+                }
+                else{
+                    afModelAttributes modelAttribs;
+                    if (g_adfLoader->loadModelAttribs(launchAttribs.m_modelFilepaths[fileIdx].c_str(), &modelAttribs)){
+                        modelsAttribs.push_back(modelAttribs);
+                    }
+                }
+            }
+        }
+
+        for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
+            afModel model(g_afWorld);
+            if (model.createFromAttribs(&modelsAttribs[idx])){
+                g_afWorld->addAFModel(&model);
             }
         }
 
         g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
-    }
-    else{
-        // Safely exit the program
-        return -1;
-    }
 
     //-----------------------------------------------------------------------------------------------------------
     // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
@@ -526,10 +553,10 @@ int main(int argc, char* argv[])
             getline( ss, devIndex, ',' );
             devIndices.push_back(std::stoi(devIndex));
         }
-        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesFilepath(), devIndices);
+        g_inputDevices->createFromAttribs(&allTUAttribs, devIndices);
     }
     else{
-        g_inputDevices->loadInputDevices(g_afWorld->getInputDevicesFilepath(), g_cmdOpts.numDevicesToLoad);
+        g_inputDevices->createFromAttribs(&allTUAttribs, g_cmdOpts.numDevicesToLoad);
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -657,7 +684,16 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
             if (! extension.compare(".yaml") || ! extension.compare(".YAML") || ! extension.compare(".ambf") || ! extension.compare(".AMBF") ){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
-                g_afWorld->loadModel(paths[i], true);
+                afModelAttributes modelAttribs;
+                if (g_adfLoader->loadModelAttribs(paths[i], &modelAttribs)){
+                    afModel* model = new afModel(g_afWorld);
+                    if (model->createFromAttribs(&modelAttribs)){
+                        g_afWorld->addAFModel(model);
+                    }
+                    else{
+                        delete model;
+                    }
+                }
             }
             else{
                 std::cerr << "INVALID EXTENSION: \"" << paths[i] << "\". ONLY \".AMBF\" OR \".YAML\" SUPPORTED \n";
@@ -794,7 +830,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             g_enableNormalMapping = ! g_enableNormalMapping;
             printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
             for (int i = 0 ; i < rbVec.size() ; i++){
-                if (rbVec[i]->m_shaderProgramDefined){
+                if (rbVec[i]->isShaderPgmDefined()){
                     if (rbVec[i]->m_visualMesh->getShaderProgram()){
                         rbVec[i]->m_visualMesh->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
                     }
@@ -958,7 +994,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             auto sbMap = g_afWorld->getAFSoftBodyMap();
             afSoftBodyMap::const_iterator sbIt;
             for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
-                sbIt->second->toggleSkeletalModelVisibility();
+                sbIt->second->m_softMultiMesh->toggleSkeletalModelVisibility();
             }
         }
 
@@ -971,7 +1007,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_1)
         {
             // enable gravity
-            g_afWorld->setGravity(cVector3d(0.0, 0.0, -9.8));
+            afVector3d g(0.0, 0.0, -9.8);
+            g_afWorld->setGravity(g);
             printf("gravity ON:\n");
         }
 
@@ -979,7 +1016,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_2)
         {
             // disable gravity
-            g_afWorld->setGravity(cVector3d(0.0, 0.0, 0.0));
+            afVector3d g(0.0, 0.0, 0.0);
+            g_afWorld->setGravity(g);
             printf("gravity OFF:\n");
         }
 
@@ -1311,7 +1349,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
     rayTo += btScalar(g_winWidthRatio*x) * dHor;
     rayTo -= btScalar(g_winHeightRatio*y) * dVert;
-    cVector3d cRay = to_cVector3d(rayTo);
+    cVector3d cRay;
+    cRay << rayTo;
     return cRay;
 }
 
@@ -1569,7 +1608,7 @@ void updatePhysics(){
                 }
 
                 // Control simulated body joints only if joint control of this physical device has been enabled
-                if (phyDev->isJointControlEnabled()){
+                if (simDev->isJointControlEnabled()){
                     simDev->setGripperAngle(simDev->m_gripper_angle);
                 }
 

@@ -989,6 +989,9 @@ public:
 
 
 struct afLaunchAttributes: public afFileObjectAttributes{
+public:
+    afLaunchAttributes(){
+    }
     afPath m_colorFilepath;
     afPath m_worldFilepath;
     afPath m_inputDevicesFilepath;

@@ -44,7 +44,7 @@
 #include "afUtils.h"
 
 #include <sstream>
-#include <math/CTransform.h>
+#include <math/CMaths.h>
 #include <math/CQuaternion.h>
 #include <LinearMath/btQuaternion.h>
 #include <LinearMath/btTransform.h>
@@ -212,6 +212,33 @@ btMatrix3x3 afUtils::convertDataType<btMatrix3x3, cMatrix3d>(const cMatrix3d &r)
 
 template<>
 ///
+/// \brief afUtils::convertDataTypes<cVector3d, afVector3d>
+/// \param p
+/// \return
+///
+cVector3d afUtils::convertDataType<cVector3d, afVector3d>(const afVector3d &p){
+    cVector3d cPos(p(0), p(1), p(2));
+    return cPos;
+}
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cMatrix3d, afMatrix3d>
+/// \param r
+/// \return
+///
+cMatrix3d afUtils::convertDataType<cMatrix3d, afMatrix3d>(const afMatrix3d &r){
+    cMatrix3d cMat;
+    cMat.set(r(0,0), r(0,1), r(0,2),
+             r(1,0), r(1,1), r(1,2),
+             r(2,0), r(2,1), r(2,2));
+    return cMat;
+}
+
+
+template<>
+///
 /// \brief afUtils::convertDataTypes<btTransform, cTransform>
 /// \param t
 /// \return
@@ -221,6 +248,58 @@ btTransform afUtils::convertDataType<btTransform, cTransform>(const cTransform &
     btVector3 btPos = afUtils::convertDataType<btVector3, cVector3d>(t.getLocalPos());
     btTransform btMat(btRot, btPos);
     return btMat;
+}
+
+
+
+
+
+template<>
+///
+/// \brief afUtils::convertDataTypes<cTransform, afTransform>
+/// \param t
+/// \return
+///
+cTransform afUtils::convertDataType<cTransform, afTransform>(const afTransform &t){
+    cMatrix3d cMat = afUtils::convertDataType<cMatrix3d, afMatrix3d>(t.getRotation());
+    cVector3d cPos = afUtils::convertDataType<cVector3d, afVector3d>(t.getPosition());
+    cTransform cTrans(cPos, cMat);
+    return cTrans;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
+/// \param v1
+/// \param v2
+/// \return
+///
+cQuaternion afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(const cVector3d &v1, const cVector3d &v2){
+    cQuaternion quat;
+    double rot_angle = cAngle(v1, v2);
+    if ( abs(rot_angle) < 0.1){
+        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
+    }
+    else if ( cAbs(rot_angle) > 3.13 ){
+        cVector3d nx(1, 0, 0);
+        double temp_ang = cAngle(v1, nx);
+        if ( abs(temp_ang) > 0.1 && abs(temp_ang) < 3.13 ){
+            cVector3d rot_axis = cCross(v1, nx);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+        else{
+            cVector3d ny(0, 1, 0);
+            cVector3d rot_axis = cCross(v2, ny);
+            quat.fromAxisAngle(rot_axis, rot_angle);
+        }
+    }
+    else{
+        cVector3d rot_axis = cCross(v1, v2);
+        quat.fromAxisAngle(rot_axis, rot_angle);
+    }
+
+    return quat;
 }
 
 
@@ -249,41 +328,6 @@ cVector3d afUtils::convertDataType<cVector3d, btVector3>(const btVector3 &p){
     cVector3d cPos(p.x(), p.y(), p.z());
     return cPos;
 }
-
-
-//template<>
-/////
-///// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
-///// \param v1
-///// \param v2
-///// \return
-/////
-//cQuaternion afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(const cVector3d &v1, const cVector3d &v2){
-//    cQuaternion quat;
-//    double rot_angle = cAngle(v1, v2);
-//    if ( cAbs(rot_angle) < 0.1){
-//        quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
-//    }
-//    else if ( cAbs(rot_angle) > 3.13 ){
-//        cVector3d nx(1, 0, 0);
-//        double temp_ang = cAngle(v1, nx);
-//        if ( cAbs(temp_ang) > 0.1 && cAbs(temp_ang) < 3.13 ){
-//            cVector3d rot_axis = cCross(v1, nx);
-//            quat.fromAxisAngle(rot_axis, rot_angle);
-//        }
-//        else{
-//            cVector3d ny(0, 1, 0);
-//            cVector3d rot_axis = cCross(v2, ny);
-//            quat.fromAxisAngle(rot_axis, rot_angle);
-//        }
-//    }
-//    else{
-//        cVector3d rot_axis = cCross(v1, v2);
-//        quat.fromAxisAngle(rot_axis, rot_angle);
-//    }
-
-//    return quat;
-//}
 
 
 template<>
@@ -332,5 +376,14 @@ cTransform afUtils::convertDataType<cTransform, btTransform>(const btTransform &
 }
 
 
-
+template<>
+///
+/// \brief afUtils::convertDataTypes<afVector3d, cVector3d>
+/// \param p
+/// \return
+///
+afVector3d afUtils::convertDataType<afVector3d, cVector3d>(const cVector3d &p){
+    afVector3d aPos(p.x(), p.y(), p.z());
+    return aPos;
+}
 

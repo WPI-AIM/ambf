@@ -50,10 +50,7 @@
 #include "afSoftMultiMesh.h"
 #include "afUtils.h"
 #include "afAttributes.h"
-#include "CBullet.h"
 #include "chai3d.h"
-#include <yaml-cpp/yaml.h>
-#include <boost/filesystem/path.hpp>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <thread>
 #include <fstream>
@@ -326,27 +323,21 @@ inline cTransform& operator<< (cTransform& lhs, const btTransform& rhs){
 /// \param vec
 /// \return
 ///
-btVector3 to_btVector(const cVector3d &vec){
-    return afUtils::convertDataType<btVector3, cVector3d>(vec);
-}
+btVector3 to_btVector(const cVector3d &vec);
 
 ///
 /// \brief to_btVector
 /// \param vec
 /// \return
 ///
-btVector3 to_btVector(const afVector3d &vec){
-    return afUtils::convertDataType<btVector3, afVector3d>(vec);
-}
+btVector3 to_btVector(const afVector3d &vec);
 
 ///
 /// \brief to_btTransform
 /// \param trans
 /// \return
 ///
-btTransform to_btTransform(const cTransform &trans){
-    return afUtils::convertDataType<btTransform, cTransform>(trans);
-}
+btTransform to_btTransform(const cTransform &trans);
 
 
 ///
@@ -354,27 +345,21 @@ btTransform to_btTransform(const cTransform &trans){
 /// \param trans
 /// \return
 ///
-btTransform to_btTransform(const afTransform &trans){
-    return afUtils::convertDataType<btTransform, afTransform>(trans);
-}
+btTransform to_btTransform(const afTransform &trans);
 
 ///
 /// \brief to_cVector3d
 /// \param vec
 /// \return
 ///
-cVector3d to_cVector3d(const btVector3 &vec){
-    return afUtils::convertDataType<cVector3d, btVector3>(vec);
-}
+cVector3d to_cVector3d(const btVector3 &vec);
 
 ///
 /// \brief to_cVector3d
 /// \param vec
 /// \return
 ///
-cVector3d to_cVector3d(const afVector3d &vec){
-    return afUtils::convertDataType<cVector3d, afVector3d>(vec);
-}
+cVector3d to_cVector3d(const afVector3d &vec);
 
 
 ///
@@ -382,9 +367,7 @@ cVector3d to_cVector3d(const afVector3d &vec){
 /// \param mat
 /// \return
 ///
-cTransform to_cMatrix3d(const btMatrix3x3 &mat){
-    return afUtils::convertDataType<cMatrix3d, btMatrix3x3>(mat);
-}
+cTransform to_cMatrix3d(const btMatrix3x3 &mat);
 
 
 ///
@@ -392,9 +375,7 @@ cTransform to_cMatrix3d(const btMatrix3x3 &mat){
 /// \param mat
 /// \return
 ///
-cMatrix3d to_cMatrix3d(const afMatrix3d &mat){
-    return afUtils::convertDataType<cMatrix3d, afMatrix3d>(mat);
-}
+cMatrix3d to_cMatrix3d(const afMatrix3d &mat);
 
 
 ///
@@ -402,9 +383,7 @@ cMatrix3d to_cMatrix3d(const afMatrix3d &mat){
 /// \param btTrans
 /// \return
 ///
-cTransform to_cTransform(const btTransform &trans){
-    return afUtils::convertDataType<cTransform, btTransform>(trans);
-}
+cTransform to_cTransform(const btTransform &trans);
 
 
 ///
@@ -412,9 +391,7 @@ cTransform to_cTransform(const btTransform &trans){
 /// \param trans
 /// \return
 ///
-cTransform to_cTransform(const afTransform &trans){
-    return afUtils::convertDataType<cTransform, afTransform>(trans);
-}
+cTransform to_cTransform(const afTransform &trans);
 
 
 class afPrimitiveShapeUtils{
@@ -777,6 +754,10 @@ public:
     void updateWrappedObjectPose();
 
     void showVisualFrame();
+
+    inline bool isShaderPgmDefined(){
+        return m_shaderProgramDefined;
+    }
 
     // Enable Shader Program Associate with this object
     virtual void enableShaderProgram(){}

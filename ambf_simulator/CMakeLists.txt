@@ -45,4 +45,5 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
 add_executable (ambf_simulator src/ambf_simulator.cpp)
+#message("AMBF LIBS ARE: " ${AMBF_LIBRARIES})
 target_link_libraries (ambf_simulator ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})

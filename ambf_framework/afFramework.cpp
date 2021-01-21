@@ -73,6 +73,47 @@ bool afCamera::s_imageTransportInitialized = false;
 #endif
 //------------------------------------------------------------------------------
 
+
+btVector3 to_btVector(const cVector3d &vec){
+    return afUtils::convertDataType<btVector3, cVector3d>(vec);
+}
+
+btVector3 to_btVector(const afVector3d &vec){
+    return afUtils::convertDataType<btVector3, afVector3d>(vec);
+}
+
+btTransform to_btTransform(const cTransform &trans){
+    return afUtils::convertDataType<btTransform, cTransform>(trans);
+}
+
+btTransform to_btTransform(const afTransform &trans){
+    return afUtils::convertDataType<btTransform, afTransform>(trans);
+}
+
+cVector3d to_cVector3d(const btVector3 &vec){
+    return afUtils::convertDataType<cVector3d, btVector3>(vec);
+}
+
+cVector3d to_cVector3d(const afVector3d &vec){
+    return afUtils::convertDataType<cVector3d, afVector3d>(vec);
+}
+
+cTransform to_cMatrix3d(const btMatrix3x3 &mat){
+    return afUtils::convertDataType<cMatrix3d, btMatrix3x3>(mat);
+}
+
+cMatrix3d to_cMatrix3d(const afMatrix3d &mat){
+    return afUtils::convertDataType<cMatrix3d, afMatrix3d>(mat);
+}
+
+cTransform to_cTransform(const btTransform &trans){
+    return afUtils::convertDataType<cTransform, btTransform>(trans);
+}
+
+cTransform to_cTransform(const afTransform &trans){
+    return afUtils::convertDataType<cTransform, afTransform>(trans);
+}
+
 /// End declare static variables
 
 cMesh *afPrimitiveShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primitiveShape)
@@ -698,7 +739,8 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody){
 
         btTransform T_aINc = T_wINc * T_aINw;
 
-        cVector3d P_aINc = to_cVector3d(T_aINc.getOrigin());
+        cVector3d P_aINc;
+        P_aINc << T_aINc.getOrigin();
 
         actuate(a_rigidBody, P_aINc);
     }
@@ -1375,8 +1417,10 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     createInertialObject();
 
     // inertial origin in world
-    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
-    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
+    cTransform T_iINw;
+    T_iINw << attribs.m_kinematicAttribs.m_location;
+    cTransform T_mINi;
+    T_mINi << getInertialOffsetTransform();
     cTransform T_mINw = T_iINw * T_mINi;
 
     setInitialTransform(T_mINw);
@@ -2754,20 +2798,25 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld = to_btVector(T_bInw * m_raysAttribs[i].m_rayFromLocal);
-        rayToWorld = to_btVector(T_bInw * m_raysAttribs[i].m_rayToLocal);
+        rayFromWorld << T_bInw * m_raysAttribs[i].m_rayFromLocal;
+        rayToWorld << T_bInw * m_raysAttribs[i].m_rayToLocal;
 
         // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
-            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld) );
-            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld) );
+            cVector3d rayF, rayT;
+            rayF << rayFromWorld;
+            rayT << rayToWorld;
+            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(rayF);
+            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(rayT);
         }
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
         if (rayCallBack.hasHit()){
             if (m_showSensor){
-                m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(to_cVector3d(rayCallBack.m_hitPointWorld));
+                cVector3d Ph;
+                Ph << rayCallBack.m_hitPointWorld;
+                m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(Ph);
                 m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(true);
             }
             m_rayTracerResults[i].m_triggered = true;
@@ -2828,8 +2877,8 @@ void afRayTracerSensor::updatePositionFromDynamics(){
                 }
             }
             m_rayTracerResults[i].m_depthFraction = (1.0 - rayCallBack.m_closestHitFraction);
-            m_rayTracerResults[i].m_contactNormal = to_cVector3d(rayCallBack.m_hitNormalWorld);
-            m_rayTracerResults[i].m_sensedLocationWorld = to_cVector3d(rayCallBack.m_hitPointWorld);
+            m_rayTracerResults[i].m_contactNormal << rayCallBack.m_hitNormalWorld;
+            m_rayTracerResults[i].m_sensedLocationWorld << rayCallBack.m_hitPointWorld;
         }
         else{
             if(m_showSensor){
@@ -3085,8 +3134,12 @@ void afResistanceSensor::updatePositionFromDynamics(){
                 if (m_rayTracerResults[i].m_depthFraction < 0 || m_rayTracerResults[i].m_depthFraction > 1){
                     cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_rayTracerResults[i].m_depthFraction <<
                                  ". It should be between [0-1]" << endl;
-                    cerr << "Ray Start: "<< to_cVector3d(m_raysAttribs[i].m_rayFromLocal) <<"\nRay End: " << to_cVector3d(m_raysAttribs[i].m_rayToLocal) <<
-                                 "\nSensed Point: " << to_cVector3d(P_cINa) << endl;
+                    cVector3d rayF, rayT, Pc_a;
+                    rayF << m_raysAttribs[i].m_rayFromLocal;
+                    rayT << m_raysAttribs[i].m_rayToLocal;
+                    Pc_a << P_cINa;
+                    cerr << "Ray Start: "<< rayF <<"\nRay End: " << rayT <<
+                                 "\nSensed Point: " << Pc_a << endl;
                     cerr << "----------\n";
                     m_rayTracerResults[i].m_depthFraction = 0;
                 }
@@ -3119,7 +3172,7 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     btVector3 tangentialError = errorMag * errorDir;
                     btVector3 tangentialErrorLast = to_btVector(m_rayContactResults[i].m_tangentialErrorLast);
                     m_rayContactResults[i].m_tangentialErrorLast = m_rayContactResults[i].m_tangentialError;
-                    m_rayContactResults[i].m_tangentialError = to_cVector3d(tangentialError);
+                    m_rayContactResults[i].m_tangentialError << tangentialError;
 
                     if (tangentialError.length() > 0.0 && tangentialError.length() <= m_contactArea){
                         F_s_w = m_staticContactFriction * coeffScale * tangentialError +
@@ -3135,8 +3188,11 @@ void afResistanceSensor::updatePositionFromDynamics(){
                     //                cerr << "------------\n";
                 }
                 else{
-                    m_rayContactResults[i].m_bodyAContactPointLocal = to_cVector3d(T_wINa * to_btVector(getSensedPoint(i)));
-                    m_rayContactResults[i].m_bodyBContactPointLocal = to_cVector3d(T_wINb * to_btVector(getSensedPoint(i)));
+                    cVector3d Pa, Pb;
+                    Pa << T_wINa * to_btVector(getSensedPoint(i));
+                    Pb << T_wINb * to_btVector(getSensedPoint(i));
+                    m_rayContactResults[i].m_bodyAContactPointLocal = Pa;
+                    m_rayContactResults[i].m_bodyBContactPointLocal = Pb;
                     m_rayContactResults[i].m_contactPointsValid = true;
                 }
 
@@ -4346,7 +4402,8 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
     m_dynamicsWorld->rayTest(to_btVector(rayFromWorld), to_btVector(rayToWorld), rayCallback);
     if (rayCallback.hasHit())
     {
-        cVector3d pickPos = to_cVector3d(rayCallback.m_hitPointWorld);
+        cVector3d pickPos;
+        pickPos << rayCallback.m_hitPointWorld;
         m_pickSphere->setLocalPos(pickPos);
         m_pickSphere->setShowEnabled(true);
         const btCollisionObject* colObject = rayCallback.m_collisionObject;
@@ -4377,7 +4434,9 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                     p2p->m_setting.m_tau = 1/body->getInvMass();
                 }
                 else{
-                    m_pickedOffset = to_cVector3d(body->getCenterOfMassPosition()) - pickPos;
+                    cVector3d com;
+                    com << body->getCenterOfMassPosition();
+                    m_pickedOffset = com - pickPos;
                 }
             }
         }
@@ -4406,7 +4465,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 m_pickedNode->m_v.setZero();
                 m_pickedSoftBody = sBody;
                 m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal = to_cVector3d(_hitPoint);
+                m_pickedNodeGoal << _hitPoint;
             }
         }
 
@@ -6640,7 +6699,8 @@ void afVehicle::updatePositionFromDynamics(){
     for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
-        cTransform cTrans = to_cTransform(btTrans);
+        cTransform cTrans;
+        cTrans << btTrans;
         if (m_wheels[i].m_wheelRepresentationType == afWheelRepresentationType::MESH){
             m_wheels[i].m_mesh->setLocalTransform(cTrans);
         }

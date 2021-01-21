@@ -277,9 +277,15 @@ public:
         return rot;
     }
 
-    double& operator () (const uint m_row, const uint m_col){
-        assert(m_row < 3);
-        assert(m_col < 3);
+    double& operator () (const int m_row, const int m_col){
+        assert(m_row < 0 || m_row < 3);
+        assert(m_col < 0 || m_col < 3);
+        return m_data[m_row][m_col];
+    }
+
+    double operator () (const int m_row, const int m_col) const{
+        assert(m_row < 0 || m_row < 3);
+        assert(m_col < 0 || m_col < 3);
         return m_data[m_row][m_col];
     }
 

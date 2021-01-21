@@ -248,15 +248,14 @@ include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/src/Theora)
 
 
 # static library source files
-file (GLOB_RECURSE source_adf_math RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_math/*.cpp ${PROJECT_SOURCE_DIR}/ambf_math/*.h)
+file (GLOB_RECURSE source_ambf_math RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_math/*.cpp ${PROJECT_SOURCE_DIR}/ambf_math/*.h)
 # static library source files
 file (GLOB_RECURSE source_adf_loader RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/adf_loader/*.cpp ${PROJECT_SOURCE_DIR}/adf_loader/*.h)
 # static library source files
-file (GLOB_RECURSE source_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
+file (GLOB_RECURSE source_ambf_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
 
 # static library external dependencies source files
 file (GLOB_RECURSE source_chai3d  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.h)
-file (GLOB_RECURSE source_chai3d_bullet  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d-bullet/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d-bullet/src/*.h)
 file (GLOB_RECURSE source_chai3d_gel  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d-gel/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d-gel/src/*.h)
 
 file (GLOB_RECURSE source_bullet_collision  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletCollision/*.cpp ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletCollision/*.h)
@@ -288,7 +287,7 @@ endif ()
 list (REMOVE_ITEM source_theora ${source_theora_exclude})
 
 # group source files (MSVC likes this)
-foreach (FILE ${source_framework} ${source_adf_loader} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
+foreach (FILE ${source_ambf_framework} ${source_ambf_math} ${source_adf_loader} ${source_chai3d} ${source_chai3d_gel} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
   get_filename_component (PARENT_DIR "${FILE}" PATH)
   string (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
   string (REPLACE "/" "\\" GROUP "${GROUP}")
@@ -319,12 +318,14 @@ set (ADF_LOADER_LIBRARIES adf_loader)
 
 add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
-add_library(chai3d STATIC ${source_chai3d})
+add_library(chai3d STATIC ${source_chai3d} ${source_chai3d_gel} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora})
+
+add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
 
 # static library
-add_library (ambf_framework STATIC ${source_framework})
+add_library (ambf_framework STATIC ${source_ambf_framework})
 
-target_link_libraries(ambf_framework ${chai3d})
+target_link_libraries(ambf_framework ${chai3d} ${bullet})
 
 # To ensure the ambf_ros_modules are build before the ambf_framework,
 # add catkin's targets as build dependency
@@ -336,7 +337,7 @@ target_link_libraries(ambf_framework ${chai3d})
 set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
   "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
 
-set (AMBF_LIBRARIES ambf_framework ${OPENGL_LIBRARIES} ${YAML_CPP_LIBRARIES})
+set (AMBF_LIBRARIES ambf_framework chai3d bullet ${ADF_LOADER_LIBRARIES} ${OPENGL_LIBRARIES})
 set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 # ROS CATKIN INCLUDES AND LIBRARIES
