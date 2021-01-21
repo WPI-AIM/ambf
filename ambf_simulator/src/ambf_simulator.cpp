@@ -1598,14 +1598,14 @@ void updatePhysics(){
                     simDev->applyForce(pCommand);
                 }
                 else{
-                    simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(afUtils::convertDataType<btVector3, cVector3d>(pCommand));
+                    simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(to_btVector(pCommand));
                 }
 
                 if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
                     simDev->applyTorque(rCommand);
                 }
                 else{
-                    simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(afUtils::convertDataType<btVector3, cVector3d>(rCommand));
+                    simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(to_btVector(rCommand));
                 }
 
                 // Control simulated body joints only if joint control of this physical device has been enabled

@@ -2756,6 +2756,11 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     return result;
 }
 
+inline afVector3d &operator*(cTransform &lhs, afVector3d &rhs){
+    cVector3d tV = afConversions::convertDataType<cVector3d, afVector3d>(rhs);
+    rhs << lhs * tV;
+    return rhs;
+}
 
 ///
 /// \brief afRayTracerSensor::updatePositionFromDynamics
@@ -2768,16 +2773,13 @@ void afRayTracerSensor::updatePositionFromDynamics(){
     cTransform T_bInw = m_parentBody->getLocalTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld << T_bInw * m_raysAttribs[i].m_rayFromLocal;
-        rayToWorld << T_bInw * m_raysAttribs[i].m_rayToLocal;
+        rayFromWorld << T_bInw * to_cVector3d(m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld << T_bInw * to_cVector3d(m_raysAttribs[i].m_rayToLocal);
 
         // Check for global flag for debug visibility of this sensor
         if (m_showSensor){
-            cVector3d rayF, rayT;
-            rayF << rayFromWorld;
-            rayT << rayToWorld;
-            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(rayF);
-            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(rayT);
+            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld));
+            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld));
         }
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);

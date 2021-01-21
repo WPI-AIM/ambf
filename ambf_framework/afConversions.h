@@ -47,14 +47,52 @@
 //------------------------------------------------------------------------------
 
 #include <LinearMath/btTransform.h>
-#include <math/CTransform.h>
-#include <math/CQuaternion.h>
+#include <chai3d.h>
 #include <afMath.h>
-#include <afUtils.h>
 
 using namespace ambf;
 using namespace chai3d;
 using namespace std;
+
+class afConversions{
+  public:
+    afConversions(){}
+
+    template<typename T1, typename T2>
+    static T1 convertDataType(const T2 &r);
+
+};
+
+////
+/// AF MATH
+
+afVector3d& operator<< (afVector3d& lhs, const btVector3& rhs);
+afVector3d& operator<< (afVector3d& lhs, const cVector3d& rhs);
+afVector3d& operator* (cTransform& lhs, afVector3d& rhs);
+afVector3d& operator* (btTransform& lhs, afVector3d& rhs);
+afTransform& operator<< (afTransform& lhs, const btTransform& rhs);
+afTransform& operator<< (afTransform& lhs, const cTransform& rhs);
+
+////
+/// BULLET MATH
+
+btVector3& operator<< (btVector3& lhs, const afVector3d& rhs);
+btVector3& operator<< (btVector3& lhs, const cVector3d& rhs);
+btVector3& operator* (cTransform& lhs, btVector3& rhs);
+btTransform& operator<< (btTransform& lhs, const afTransform& rhs);
+btTransform& operator<< (btTransform& lhs, const cTransform& rhs);
+
+////
+/// CHAI MATH
+
+cVector3d &operator<<(cVector3d &lhs, const afVector3d &rhs);
+cVector3d &operator<<(cVector3d &lhs, const btVector3 &rhs);
+cVector3d &operator*(btTransform &lhs, cVector3d &rhs);
+cMatrix3d &operator<<(cMatrix3d &lhs, const afMatrix3d &rhs);
+cMatrix3d &operator<<(cMatrix3d &lhs, const btMatrix3x3 &rhs);
+cTransform &operator<<(cTransform &lhs, const afTransform &rhs);
+cTransform &operator<<(cTransform &lhs, const btTransform &rhs);
+
 
 ///
 /// \brief to_btVector

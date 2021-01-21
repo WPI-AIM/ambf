@@ -64,9 +64,6 @@ public:
     template<typename T1, typename T2>
     static T1 getRotBetweenVectors(const T2 &v1, const T2 &v2);
 
-    template<typename T1, typename T2>
-    static T1 convertDataType(const T2 &r);
-
     template <typename T>
     static string getNonCollidingIdx(string a_body_name, const T* tMap){
         int occurances = 0;
