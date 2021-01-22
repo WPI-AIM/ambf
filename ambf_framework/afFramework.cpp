@@ -46,6 +46,8 @@
 #include "afConversions.h"
 #include "BulletCollision/Gimpact/btGImpactShape.h"
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
+#include "BulletSoftBody/btSoftRigidDynamicsWorld.h"
+#include "BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -123,7 +125,7 @@ cMesh *afShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primi
 }
 
 
-btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttributes *a_primitiveShape){
+btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttributes *a_primitiveShape, double a_margin){
     btCollisionShape* collisionShape;
 
     switch (a_primitiveShape->m_shapeType) {
@@ -222,7 +224,9 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     return collisionShape;
 }
 
-btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMesh *a_collisionMesh, afMeshShapeType a_meshType)
+btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMesh,
+                                                     double a_margin,
+                                                     afMeshShapeType a_meshType)
 {
     // create the collision shape
     btCollisionShape* collisionShape;
@@ -286,20 +290,27 @@ btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMesh *a_coll
     case afMeshShapeType::CONVEX_HULL:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
-        collisionShape = new btConvexHullShape((double*)(&a_collisionMesh->m_vertices->m_localPos[0]), a_collisionMesh->m_vertices->getNumElements(), sizeof(cVector3d));
+        collisionShape = new btConvexHullShape((double*)(&a_collisionMesh->m_vertices->m_localPos[0]),
+                a_collisionMesh->m_vertices->getNumElements(), sizeof(cVector3d));
         break;
     }
     default:
         break;
     }
+    collisionShape->setMargin(a_margin);
     return collisionShape;
 }
 
 
-btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a_collisionMultiMesh,
-                                                             afMeshShapeType a_meshType){
+btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisionMultiMesh,
+                                                    double a_margin,
+                                                    afTransform m_inertialOffset,
+                                                    afMeshShapeType a_meshType){
     // create the collision shape
     btCollisionShape* collisionShape;
+    btCompoundShape* compoundCollisionShape = new btCompoundShape();
+    btTransform inverseInertialOffsetTransform;
+    inverseInertialOffsetTransform << m_inertialOffset.getInverse();
 
     switch (a_meshType) {
     case afMeshShapeType::CONCAVE_MESH:{
@@ -333,6 +344,9 @@ btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a
 
             // create mesh collision model
             collisionShape = new btGImpactMeshShape(bulletMesh);
+            collisionShape->setMargin(a_margin);
+            ((btGImpactMeshShape*) collisionShape)->updateBound();
+            compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
         }
         break;
     }
@@ -367,6 +381,7 @@ btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a
 
             // create mesh collision model
             collisionShape = new btConvexTriangleMeshShape(bulletMesh);
+            compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
         }
         break;
     }
@@ -377,13 +392,14 @@ btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a
         {
             cMesh* mesh = (*it);
             collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
+            compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
         }
         break;
     }
     default:
         break;
     }
-    return collisionShape;
+    return compoundCollisionShape;
 }
 
 ///
@@ -1291,9 +1307,7 @@ void afInertialObject::createInertialObject()
 /// \param a_world
 ///
 afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-    m_visualMesh->setFrameSize(0.5);
     m_mesh_name.clear();
-    m_collision_mesh_name.clear();
     m_scale = 1.0;
 
     m_dpos.setValue(0, 0, 0);
@@ -1619,7 +1633,10 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             if(m_scale != 1.0){
                 m_collisionMesh->scale(m_scale);
             }
-            m_bulletCollisionShape = afShapeUtils::createCollisionShapeFromMesh(m_collisionMesh, afMeshShapeType::CONCAVE_MESH);
+            m_bulletCollisionShape = afShapeUtils::createCollisionShape(m_collisionMesh,
+                                                                        attribs.m_collisionAttribs.m_margin,
+                                                                        attribs.m_inertialAttribs.m_inertialOffset,
+                                                                        afMeshShapeType::CONCAVE_MESH);
         }
         else{
             cerr << "WARNING: Body "
@@ -1639,13 +1656,13 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
         else if (attribs.m_collisionAttribs.m_primitiveShapes.size() == 1 && attribs.m_collisionAttribs.m_primitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
             afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[0];
-            m_bulletCollisionShape =  afShapeUtils::createCollisionShape(&pS);
+            m_bulletCollisionShape =  afShapeUtils::createCollisionShape(&pS, attribs.m_collisionAttribs.m_margin);
         }
         else{
             btCompoundShape* compoundCollisionShape = new btCompoundShape();
             for (unsigned long sI = 0 ; sI < attribs.m_collisionAttribs.m_primitiveShapes.size() ; sI++){
                 afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[sI];
-                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS);
+                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS, attribs.m_collisionAttribs.m_margin);
 
                 // Here again, we consider both the inertial offset transform and the
                 // shape offset transfrom. This will change the legacy behavior but
@@ -1681,10 +1698,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     createInertialObject();
 
     // inertial origin in world
-    cTransform T_iINw;
-    T_iINw << attribs.m_kinematicAttribs.m_location;
-    cTransform T_mINi;
-    T_mINi << getInertialOffsetTransform();
+    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
     cTransform T_mINw = T_iINw * T_mINi;
 
     setInitialTransform(T_mINw);
@@ -3635,6 +3650,58 @@ void afPointCloudsHandler::updatePositionFromDynamics(){
 ///
 afWorld::afWorld(string a_global_namespace){
     m_maxIterations = 10;
+
+    // reset simulation time
+    m_simulationTime = 0.0;
+
+    // integration time step
+    m_integrationTimeStep = 0.001;
+
+    // maximum number of iterations
+    m_integrationMaxIterations = 5;
+
+    // Set the last simulation time to 0
+    m_lastSimulationTime = 0.0;
+
+    // setup broad phase collision detection
+    m_bulletBroadphase = new btDbvtBroadphase();
+
+    // setup the collision configuration
+    m_bulletCollisionConfiguration = new btSoftBodyRigidBodyCollisionConfiguration();
+
+    // setup the collision dispatcher
+    m_bulletCollisionDispatcher = new btCollisionDispatcher(m_bulletCollisionConfiguration);
+
+    // register GIMPACT collision detector for GIMPACT objects
+    btGImpactCollisionAlgorithm::registerAlgorithm(m_bulletCollisionDispatcher);
+
+    // setup the actual physics solver
+    m_bulletSolver = new btSequentialImpulseConstraintSolver;
+
+    // setup the dynamic world
+    m_bulletWorld = new btSoftRigidDynamicsWorld(m_bulletCollisionDispatcher, m_bulletBroadphase,
+                                                 m_bulletSolver, m_bulletCollisionConfiguration);
+
+    //    m_bulletWorld = new bt(m_bulletCollisionDispatcher, m_bulletBroadphase, m_bulletSolver, m_bulletCollisionConfiguration);
+
+    // assign gravity constant
+    m_bulletWorld->setGravity(btVector3( 0.0, 0.0,-9.81));
+
+    // Set SoftBody World Info
+    m_bulletSoftBodyWorldInfo = new btSoftBodyWorldInfo();
+    m_bulletSoftBodyWorldInfo->m_broadphase = m_bulletBroadphase;
+    m_bulletSoftBodyWorldInfo->m_dispatcher = m_bulletCollisionDispatcher;
+    m_bulletSoftBodyWorldInfo->air_density		=	(btScalar)0.0;
+    m_bulletSoftBodyWorldInfo->water_density	=	0;
+    m_bulletSoftBodyWorldInfo->water_offset		=	0;
+    m_bulletSoftBodyWorldInfo->water_normal		=	btVector3(0,0,0);
+    m_bulletSoftBodyWorldInfo->m_gravity.setValue(0,0,-9.81);
+
+    //    m_bulletWorld->getDispatchInfo().m_enableSPU = true;
+    m_bulletSoftBodyWorldInfo->m_sparsesdf.Initialize();
+
+    m_chaiWorld = new cWorld();
+
     m_enclosureL = 4.0;
     m_enclosureW = 4.0;
     m_enclosureH = 3.0;

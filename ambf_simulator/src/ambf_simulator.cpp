@@ -384,12 +384,12 @@ int main(int argc, char* argv[])
     afWorldAttributes worldAttribs;
     afAllTeleRoboticUnitsAttributes allTUAttribs;
     std::vector<afModelAttributes> modelsAttribs;
-    bool valid = g_adfLoader->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs);
-
-    if (valid == false){
+    if (g_adfLoader->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs) == false){
         // Safely Return the program
         return -1;
     }
+
+    launchAttribs.resolveRelativePathAttribs();
 
     g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
     g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);

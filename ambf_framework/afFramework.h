@@ -220,11 +220,11 @@ class afShapeUtils{
 public:
     static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
 
-    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
+    static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape, double a_margin);
 
-    static btCollisionShape* createCollisionShapeFromMesh(const cMesh* a_collisionMesh, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+    static btCollisionShape* createCollisionShape(const cMesh* a_collisionMesh, double a_margin, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
 
-    static btCollisionShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+    static btCompoundShape* createCollisionShape(const cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
 };
 
 

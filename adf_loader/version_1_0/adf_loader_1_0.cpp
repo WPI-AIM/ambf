@@ -2006,6 +2006,7 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
         if (loadInputDeviceAttributes(&tuNode, &tuAttribs.m_iidAttribs)){
             results[0] = true;
         }
+        tuAttribs.m_sdeAttribs.m_filePath = attribs->m_filePath;
         if (loadSimulatedDeviceAttributes(&tuNode, &tuAttribs.m_sdeAttribs)){
             results[1] = true;
         }
