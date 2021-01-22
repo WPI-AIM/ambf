@@ -44,6 +44,8 @@
 //------------------------------------------------------------------------------
 #include "afFramework.h"
 #include "afConversions.h"
+#include "BulletCollision/Gimpact/btGImpactShape.h"
+#include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -77,19 +79,311 @@ bool afCamera::s_imageTransportInitialized = false;
 
 /// End declare static variables
 
-cMesh *afPrimitiveShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primitiveShape)
-{
+cMesh *afShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primitiveShape){
+    cMesh* primMesh = new cMesh();
+    int dx = 32; // Default x resolution for shape
+    int dy = 32; // Default y resolution for shape
+    int dz = 5; // Default z resolution for shape
 
+    switch (a_primitiveShape->getShapeType()) {
+    case afPrimitiveShapeType::BOX:{
+        cCreateBox(primMesh, a_primitiveShape->getDimensions()(0), a_primitiveShape->getDimensions()(1), a_primitiveShape->getDimensions()(2));
+        break;
+    }
+    case afPrimitiveShapeType::SPHERE:{
+        cCreateSphere(primMesh, a_primitiveShape->getRadius(), dx, dy);
+        break;
+    }
+    case afPrimitiveShapeType::CYLINDER:{
+        cCreateCylinder(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * a_primitiveShape->getHeight()));
+        break;
+    }
+    case afPrimitiveShapeType::CAPSULE:{
+        cCreateEllipsoid(primMesh, a_primitiveShape->getRadius(), a_primitiveShape->getRadius(), a_primitiveShape->getHeight(), dx, dy);
+        break;
+    }
+    case afPrimitiveShapeType::CONE:{
+        cCreateCone(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * a_primitiveShape->getHeight()));
+        break;
+    }
+    case afPrimitiveShapeType::PLANE:{
+        cVector3d planeNormal = to_cVector3d(a_primitiveShape->getPlaneNormal());
+        cVector3d pos = a_primitiveShape->getPlaneConstant() * planeNormal;
+        cQuaternion rot_quat = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(cVector3d(0, 0, 1), planeNormal);
+        cMatrix3d rot;
+        rot_quat.toRotMat(rot);
+        cCreatePlane(primMesh, 100, 100, pos, rot);
+        break;
+    }
+    default:
+        cerr << "ERROR!, VISUAL SHAPE PRIMITIVE TYPE NOT UNDERSTOOD " << endl;
+        break;
+    }
+    return primMesh;
 }
 
-btCollisionShape *afPrimitiveShapeUtils::createCollisionShape(const afPrimitiveShapeAttributes *a_primitiveShape)
-{
 
+btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttributes *a_primitiveShape){
+    btCollisionShape* collisionShape;
+
+    switch (a_primitiveShape->m_shapeType) {
+    case afPrimitiveShapeType::BOX:{
+        btVector3 halfExtents(a_primitiveShape->getDimensions()(0)/2, a_primitiveShape->getDimensions()(1)/2, a_primitiveShape->getDimensions()(2)/2);
+        collisionShape = new btBoxShape(halfExtents);
+        break;
+    }
+    case afPrimitiveShapeType::SPHERE:{
+        collisionShape = new btSphereShape(a_primitiveShape->getRadius());
+        break;
+    }
+    case afPrimitiveShapeType::CYLINDER:{
+        double radius = a_primitiveShape->getRadius();
+        double height = a_primitiveShape->getRadius();
+        switch (a_primitiveShape->getAxisType()) {
+        case afAxisType::X:{
+            btVector3 halfExtents(height/2, radius, radius);
+            collisionShape = new btCylinderShapeX(halfExtents);
+            break;
+        }
+        case afAxisType::Y:{
+            btVector3 halfExtents(radius, height/2, radius);
+            collisionShape = new btCylinderShape(halfExtents);
+            break;
+        }
+        case afAxisType::Z:{
+            btVector3 halfExtents(radius, radius, height/2);
+            collisionShape = new btCylinderShapeZ(halfExtents);
+            break;
+        }
+        default:
+            cerr << "ERROR! AXIS TYPE FOR COLLISION SHAPE NOT UNDERSTOOD" << endl;
+            break;
+        }
+    }
+    case afPrimitiveShapeType::CAPSULE:{
+        double radius = a_primitiveShape->getRadius();
+        double height = a_primitiveShape->getRadius();
+        // Adjust for height as bullet treats the height as the distance
+        // between the two spheres forming the capsule's ends.
+        height = height - 2*radius;
+        switch (a_primitiveShape->getAxisType()) {
+        case afAxisType::X:{
+            collisionShape = new btCapsuleShapeX(radius, height);
+            break;
+        }
+        case afAxisType::Y:{
+            collisionShape = new btCapsuleShape(radius, height);
+            break;
+        }
+        case afAxisType::Z:{
+            collisionShape = new btCapsuleShapeZ(radius, height);
+            break;
+        }
+        default:
+            cerr << "ERROR! AXIS TYPE FOR COLLISION SHAPE NOT UNDERSTOOD" << endl;
+            break;
+        }
+        break;
+    }
+    case afPrimitiveShapeType::CONE:{
+        double radius = a_primitiveShape->getRadius();
+        double height = a_primitiveShape->getRadius();
+        // Adjust for height as bullet treats the height as the distance
+        // between the two spheres forming the capsule's ends.
+        height = height - 2*radius;
+        switch (a_primitiveShape->getAxisType()) {
+        case afAxisType::X:{
+            collisionShape = new btConeShapeX(radius, height);
+            break;
+        }
+        case afAxisType::Y:{
+            collisionShape = new btConeShape(radius, height);
+            break;
+        }
+        case afAxisType::Z:{
+            collisionShape = new btConeShapeZ(radius, height);
+            break;
+        }
+        default:
+            cerr << "ERROR! AXIS TYPE FOR COLLISION SHAPE NOT UNDERSTOOD" << endl;
+            break;
+        }
+        break;
+    }
+    case afPrimitiveShapeType::PLANE:{
+        btVector3 planeNormal = to_btVector(a_primitiveShape->getPlaneNormal());
+        collisionShape = new btStaticPlaneShape(planeNormal, a_primitiveShape->getPlaneConstant());
+        break;
+    }
+    default:
+        cerr << "ERROR! COLLISION SHAPE PRIMITIVE TYPE NOT UNDERSTOOD" << endl;
+        break;
+    };
+    return collisionShape;
 }
 
-btCompoundShape *afPrimitiveShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a_collisionMesh, btTransform T_offset, double a_margin)
+btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMesh *a_collisionMesh, afMeshShapeType a_meshType)
 {
+    // create the collision shape
+    btCollisionShape* collisionShape;
 
+    switch (a_meshType) {
+    case afMeshShapeType::CONCAVE_MESH:{
+        // bullet mesh
+        btTriangleMesh* bulletMesh = new btTriangleMesh();
+
+        // read number of triangles of the object
+        unsigned int numTriangles = a_collisionMesh->m_triangles->getNumElements();
+
+        // add all triangles to Bullet model
+        for (unsigned int i=0; i<numTriangles; i++)
+        {
+            unsigned int vertexIndex0 = a_collisionMesh->m_triangles->getVertexIndex0(i);
+            unsigned int vertexIndex1 = a_collisionMesh->m_triangles->getVertexIndex1(i);
+            unsigned int vertexIndex2 = a_collisionMesh->m_triangles->getVertexIndex2(i);
+
+            cVector3d vertex0 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex0);
+            cVector3d vertex1 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex1);
+            cVector3d vertex2 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex2);
+
+            bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                                    btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                                    btVector3(vertex2(0), vertex2(1), vertex2(2)));
+        }
+
+        // create mesh collision model
+        collisionShape = new btGImpactMeshShape(bulletMesh);
+        break;
+    }
+    case afMeshShapeType::CONVEX_MESH:{
+
+        // bullet mesh
+        btTriangleMesh* bulletMesh = new btTriangleMesh();
+
+        // read number of triangles of the object
+        unsigned int numTriangles = a_collisionMesh->m_triangles->getNumElements();
+
+        // add all triangles to Bullet model
+        for (unsigned int i=0; i<numTriangles; i++)
+        {
+            unsigned int vertexIndex0 = a_collisionMesh->m_triangles->getVertexIndex0(i);
+            unsigned int vertexIndex1 = a_collisionMesh->m_triangles->getVertexIndex1(i);
+            unsigned int vertexIndex2 = a_collisionMesh->m_triangles->getVertexIndex2(i);
+
+            cVector3d vertex0 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex0);
+            cVector3d vertex1 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex1);
+            cVector3d vertex2 = a_collisionMesh->m_vertices->getLocalPos(vertexIndex2);
+
+            bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                                    btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                                    btVector3(vertex2(0), vertex2(1), vertex2(2)));
+        }
+
+        // create mesh collision model
+        collisionShape = new btConvexTriangleMeshShape(bulletMesh);
+        break;
+    }
+    case afMeshShapeType::CONVEX_HULL:{
+        // create collision detector for each mesh
+        std::vector<cMesh*>::iterator it;
+        collisionShape = new btConvexHullShape((double*)(&a_collisionMesh->m_vertices->m_localPos[0]), a_collisionMesh->m_vertices->getNumElements(), sizeof(cVector3d));
+        break;
+    }
+    default:
+        break;
+    }
+    return collisionShape;
+}
+
+
+btCollisionShape *afShapeUtils::createCollisionShapeFromMesh(const cMultiMesh *a_collisionMultiMesh,
+                                                             afMeshShapeType a_meshType){
+    // create the collision shape
+    btCollisionShape* collisionShape;
+
+    switch (a_meshType) {
+    case afMeshShapeType::CONCAVE_MESH:{
+        // create collision detector for each mesh
+        std::vector<cMesh*>::iterator it;
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        {
+            cMesh* mesh = (*it);
+
+            // bullet mesh
+            btTriangleMesh* bulletMesh = new btTriangleMesh();
+
+            // read number of triangles of the object
+            unsigned int numTriangles = mesh->m_triangles->getNumElements();
+
+            // add all triangles to Bullet model
+            for (unsigned int i=0; i<numTriangles; i++)
+            {
+                unsigned int vertexIndex0 = mesh->m_triangles->getVertexIndex0(i);
+                unsigned int vertexIndex1 = mesh->m_triangles->getVertexIndex1(i);
+                unsigned int vertexIndex2 = mesh->m_triangles->getVertexIndex2(i);
+
+                cVector3d vertex0 = mesh->m_vertices->getLocalPos(vertexIndex0);
+                cVector3d vertex1 = mesh->m_vertices->getLocalPos(vertexIndex1);
+                cVector3d vertex2 = mesh->m_vertices->getLocalPos(vertexIndex2);
+
+                bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                                        btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                                        btVector3(vertex2(0), vertex2(1), vertex2(2)));
+            }
+
+            // create mesh collision model
+            collisionShape = new btGImpactMeshShape(bulletMesh);
+        }
+        break;
+    }
+    case afMeshShapeType::CONVEX_MESH:{
+        // create collision detector for each mesh
+        std::vector<cMesh*>::iterator it;
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        {
+            cMesh* mesh = (*it);
+
+            // bullet mesh
+            btTriangleMesh* bulletMesh = new btTriangleMesh();
+
+            // read number of triangles of the object
+            unsigned int numTriangles = mesh->m_triangles->getNumElements();
+
+            // add all triangles to Bullet model
+            for (unsigned int i=0; i<numTriangles; i++)
+            {
+                unsigned int vertexIndex0 = mesh->m_triangles->getVertexIndex0(i);
+                unsigned int vertexIndex1 = mesh->m_triangles->getVertexIndex1(i);
+                unsigned int vertexIndex2 = mesh->m_triangles->getVertexIndex2(i);
+
+                cVector3d vertex0 = mesh->m_vertices->getLocalPos(vertexIndex0);
+                cVector3d vertex1 = mesh->m_vertices->getLocalPos(vertexIndex1);
+                cVector3d vertex2 = mesh->m_vertices->getLocalPos(vertexIndex2);
+
+                bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                                        btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                                        btVector3(vertex2(0), vertex2(1), vertex2(2)));
+            }
+
+            // create mesh collision model
+            collisionShape = new btConvexTriangleMeshShape(bulletMesh);
+        }
+        break;
+    }
+    case afMeshShapeType::CONVEX_HULL:{
+        // create collision detector for each mesh
+        std::vector<cMesh*>::iterator it;
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        {
+            cMesh* mesh = (*it);
+            collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return collisionShape;
 }
 
 ///
@@ -1306,7 +1600,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
         for(unsigned long sI = 0 ; sI < attribs.m_visualAttribs.m_primitiveShapes.size() ; sI++){
             afPrimitiveShapeAttributes pS = attribs.m_visualAttribs.m_primitiveShapes[sI];
-            cMesh* tempMesh = afPrimitiveShapeUtils::createVisualShape(&pS);;
+            cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
             m_visualMesh->m_meshes->push_back(tempMesh);
         }
     }
@@ -1325,7 +1619,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             if(m_scale != 1.0){
                 m_collisionMesh->scale(m_scale);
             }
-            m_bulletCollisionShape = afPrimitiveShapeUtils::createCollisionShapeFromMesh(m_collisionMesh, getInertialOffsetTransform(), attribs.m_collisionAttribs.m_margin);
+            m_bulletCollisionShape = afShapeUtils::createCollisionShapeFromMesh(m_collisionMesh, afMeshShapeType::CONCAVE_MESH);
         }
         else{
             cerr << "WARNING: Body "
@@ -1345,13 +1639,13 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
         else if (attribs.m_collisionAttribs.m_primitiveShapes.size() == 1 && attribs.m_collisionAttribs.m_primitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
             afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[0];
-            m_bulletCollisionShape =  afPrimitiveShapeUtils::createCollisionShape(&pS);
+            m_bulletCollisionShape =  afShapeUtils::createCollisionShape(&pS);
         }
         else{
             btCompoundShape* compoundCollisionShape = new btCompoundShape();
             for (unsigned long sI = 0 ; sI < attribs.m_collisionAttribs.m_primitiveShapes.size() ; sI++){
                 afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[sI];
-                btCollisionShape* collShape = afPrimitiveShapeUtils::createCollisionShape(&pS);
+                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS);
 
                 // Here again, we consider both the inertial offset transform and the
                 // shape offset transfrom. This will change the legacy behavior but

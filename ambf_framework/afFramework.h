@@ -216,13 +216,15 @@ static string AF_DEPTH_COMPUTE_FRAG =
         " }                                                                                   \n";
 
 
-class afPrimitiveShapeUtils{
+class afShapeUtils{
 public:
     static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
 
     static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape);
 
-    static btCompoundShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, btTransform T_offset, double a_margin);
+    static btCollisionShape* createCollisionShapeFromMesh(const cMesh* a_collisionMesh, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+
+    static btCollisionShape* createCollisionShapeFromMesh(const cMultiMesh* a_collisionMesh, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
 };
 
 

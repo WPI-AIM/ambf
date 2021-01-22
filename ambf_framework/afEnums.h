@@ -145,6 +145,13 @@ enum class afPrimitiveShapeType{
 };
 
 
+enum class afMeshShapeType{
+    CONCAVE_MESH=0,
+    CONVEX_MESH=1,
+    CONVEX_HULL=2
+};
+
+
 ///
 /// \brief The afSensorType enum
 ///
