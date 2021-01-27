@@ -15,8 +15,8 @@ joints:
 - JOINT ExoRightKnee
 - JOINT ExoRightAnkle
 - JOINT ExoHipCrutches
-high resolution path: ../../../meshes/blender_afmb/exo/high_res/
-low resolution path: ../../../meshes/blender_afmb/exo/low_res/
+high resolution path: ../../../meshes/exo/high_res/
+low resolution path: ../../../meshes/exo/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/
 BODY ExoHip:
