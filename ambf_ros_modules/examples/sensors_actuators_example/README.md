@@ -1,6 +1,6 @@
 ### Usage
 
-This example demonstrated the process of defining sensors and constraint actuators and then attaching them to
+This example demonstrates the process of defining sensors and constraint actuators and then attaching them to
 rigid bodies. Please note that there is no direct relationship between a sensor and an actuator. However, in this example, we are using them for grasping purposes, and thus you may think of other use cases depending upon your application.
 
 ### Relevant Files
