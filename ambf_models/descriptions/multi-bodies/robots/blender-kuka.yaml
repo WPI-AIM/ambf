@@ -191,7 +191,6 @@ JOINT base-link1:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 2.0, I: 0, P: 1000.0}
   type: revolute
 JOINT link1-link2:
   name: link1-link2
@@ -202,7 +201,6 @@ JOINT link1-link2:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
 JOINT link2-link3:
   name: link2-link3
@@ -213,7 +211,6 @@ JOINT link2-link3:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
 JOINT link3-link4:
   name: link3-link4
@@ -224,7 +221,6 @@ JOINT link3-link4:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
 JOINT link4-link5:
   name: link4-link5
@@ -235,7 +231,6 @@ JOINT link4-link5:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
 JOINT link5-link6:
   name: link5-link6
@@ -246,7 +241,6 @@ JOINT link5-link6:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 2.094, low: -2.094}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
 JOINT link6-link7:
   name: link6-link7
@@ -257,5 +251,4 @@ JOINT link6-link7:
   child axis: {x: 0.0, y: 0.0, z: 1.0}
   child pivot: {x: 0.0, y: 0.0, z: 0.0}
   joint limits: {high: 3.054, low: -3.054}
-  controller: {D: 4.0, I: 0, P: 2000.0}
   type: revolute
