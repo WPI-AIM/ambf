@@ -6,62 +6,63 @@ high resolution path: ../
 low resolution path: ../
 ignore inter-collision: true
 namespace: /ambf/env/
-# publish children names: true
 
-parent: &default_parent link7
+# We can create an anchor in YAML that can be later used as an alias in the rest
+# of this file
+parent: &default_parent link7 # This is the name of the 7th link in the KUKA robot. (Only part of the name is sufficient)
 
 SENSOR Proximity0:
-  name: Proximity0
+  name: tip_sensor_array
   type: Proximity
   location:
     orientation: {p: 0.0, r: 0.0, y: 0.0}
-    position: {x: 0.0, y: 0.0, z: 0.233}
+    position: {x: 0.0, y: 0.0, z: 0.04}
   array:
     -
-      offset: {x: 0.0, y: 0.05, z: 0.0}
+      offset: {x: 0.0, y: 0.025, z: 0.0}
       direction: {x: 0.0, y: 0.0, z: 1.0}
     -
-      offset: {x: 0.0, y: -0.05, z: 0.0}
+      offset: {x: 0.0, y: -0.025, z: 0.0}
       direction: {x: 0.0, y: 0.0, z: 1.0}
     -
-      offset: {x: 0.05, y: 0.0, z: 0.0}
+      offset: {x: 0.025, y: 0.0, z: 0.0}
       direction: {x: 0.0, y: 0.0, z: 1.0}
     -
-      offset: {x: -0.05, y: 0.0, z: 0.0}
+      offset: {x: -0.025, y: 0.0, z: 0.0}
       direction: {x: 0.0, y: 0.0, z: 1.0}
-  range: 0.2
+  range: 0.1
   parent: *default_parent
   visible: True
   visible size: 0.01
 
 ACTUATOR Constraint0:
-  name: Constraint0
+  name: tip_actuator0
   type: Constraint
   location:
     orientation: {p: 0.0, r: 0.0, y: 0.0}
-    position: {x: 0.0, y: 0.05, z: 0.433}
+    position: {x: 0.0, y: 0.025, z: 0.04}
   parent: *default_parent
 
 ACTUATOR Constraint1:
-  name: Constraint1
+  name: tip_actuator1
   type: Constraint
   location:
     orientation: {p: 0.0, r: 0.0, y: 0.0}
-    position: {x: 0.0, y: -0.05, z: 0.433}
+    position: {x: 0.0, y: -0.025, z: 0.04}
   parent: *default_parent
 
 ACTUATOR Constraint2:
-  name: Constraint2
+  name: tip_actuator2
   type: Constraint
   location:
     orientation: {p: 0.0, r: 0.0, y: 0.0}
-    position: {x: 0.05, y: 0.0, z: 0.433}
+    position: {x: 0.025, y: 0.0, z: 0.04}
   parent: *default_parent
 
 ACTUATOR Constraint3:
-  name: Constraint3
+  name: tip_actuator3
   type: Constraint
   location:
     orientation: {p: 0.0, r: 0.0, y: 0.0}
-    position: {x: -0.05, y: 0.0, z: 0.433}
+    position: {x: -0.025, y: 0.0, z: 0.04}
   parent: *default_parent
