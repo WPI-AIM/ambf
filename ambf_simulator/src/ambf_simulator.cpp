@@ -1483,7 +1483,7 @@ void updatePhysics(){
                 afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
                 afPhysicalDevice * phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
                 afRigidBodyPtr rootLink = simDev->m_rootLink;
-                simDev->updatePose();
+                simDev->updateGlobalPose();
 
                 if (g_enableGrippingAssist){
                     for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
@@ -1832,7 +1832,7 @@ void updateHapticDevice(void* a_arg){
             }
 
             // update position of simulated gripper
-            simDev->updatePose();
+            simDev->updateGlobalPose();
 
             dposLast = dpos;
             dpos = simDev->getPosRef() - simDev->getPos();

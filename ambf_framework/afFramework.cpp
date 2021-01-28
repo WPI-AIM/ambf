@@ -489,7 +489,7 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
 /// \brief afComm::afObjectCommandExecute
 /// \param dt
 ///
-void afComm::afExecuteCommand(double dt){
+void afComm::fetchCommands(double dt){
 }
 
 
@@ -699,6 +699,8 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 afBaseObject::afBaseObject(afWorldPtr a_afWorld, afModelPtr a_afModel){
     m_afWorld = a_afWorld;
     m_modelPtr = a_afModel;
+    m_parentObject = nullptr;
+    m_visualMesh = nullptr;
 }
 
 
@@ -745,6 +747,16 @@ cTransform afBaseObject::getLocalTransform()
     return m_localTransform;
 }
 
+cTransform afBaseObject::getGlobalTransform()
+{
+    return m_globalTransform;
+}
+
+afBaseObjectPtr afBaseObject::getParentObject()
+{
+    return m_parentObject;
+}
+
 
 ///
 /// \brief afBaseObject::setLocalPos
@@ -786,6 +798,8 @@ void afBaseObject::setLocalRot(const cMatrix3d &a_mat)
 
 void afBaseObject::setLocalRot(const afMatrix3d &mat)
 {
+    cMatrix3d rot = to_cMatrix3d(mat);
+    m_localTransform.setLocalRot(rot);
 }
 
 
@@ -833,6 +847,11 @@ void afBaseObject::setLocalTransform(const afTransform &trans)
     m_localTransform << trans;
 }
 
+void afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
+{
+    a_afObject->setParentObject(this);
+}
+
 
 ///
 /// \brief afBaseObject::setParentObject
@@ -848,18 +867,27 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
-    m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+    if (m_visualMesh != nullptr){
+        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+    }
 }
 
 
 ///
-/// \brief afBaseObject::loadFromFile
-/// \param a_filename
+/// \brief afBaseObject::checkSceneObjectAlreadyAdded
+/// \param a_object
 /// \return
 ///
-bool afBaseObject::loadFromFile(string a_filename)
+bool afBaseObject::isSceneObjectAlreadyAdded(cGenericObject *a_object)
 {
-    return m_visualMesh->loadFromFile(a_filename);
+    vector<cGenericObject*>::iterator it;
+    for(it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; it++){
+        if ((*it) == a_object){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -870,27 +898,43 @@ bool afBaseObject::loadFromFile(string a_filename)
 void afBaseObject::setScale(double a_scale)
 {
     m_scale = a_scale;
-    m_visualMesh->scale(m_scale);
+    scaleSceneObjects(m_scale);
 }
 
 
-///
-/// \brief afBaseObject::setWrappedObject
-/// \param object
-///
-void afBaseObject::setWrappedObject(cGenericObject *object)
-{
-    m_wrappedObject = object;
-}
 
 
 ///
 /// \brief afBaseObject::addChild
 /// \param a_visualMesh
 ///
-void afBaseObject::addChild(cGenericObject *a_cObject)
+bool afBaseObject::addChildSceneObject(cGenericObject *a_object)
 {
-    m_wrappedObject->addChild(a_cObject);
+    // sanity check
+    if (a_object == NULL){
+        return false;
+    }
+
+    // Check if this object is already appended as a child, If so, return true;
+    if (isSceneObjectAlreadyAdded(a_object)){
+        return true;
+    }
+
+    // the object does not have any parent yet, so we can add it as a child
+    // to current object.
+
+    m_sceneObjects.push_back(a_object);
+    return true;
+}
+
+void afBaseObject::scaleSceneObjects(double a_scale)
+{
+    std::vector<cGenericObject*>::iterator it;
+    for (it = m_sceneObjects.begin(); it < m_sceneObjects.end(); it++)
+    {
+        (*it)->scale(a_scale);
+
+    }
 }
 
 
@@ -898,24 +942,64 @@ void afBaseObject::addChild(cGenericObject *a_cObject)
 /// \brief afBaseObject::removeChild
 /// \param a_cObject
 ///
-void afBaseObject::removeChild(cGenericObject *a_cObject)
+bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeFromGraph)
 {
-    m_wrappedObject->removeChild(a_cObject);
+    // sanity check
+    if (a_object == NULL) { return (false); }
+
+    vector<cGenericObject*>::iterator it;
+    for (it = m_sceneObjects.begin(); it < m_sceneObjects.end(); it++)
+    {
+        if ((*it) == a_object)
+        {
+            if (removeFromGraph){
+                (*it)->removeFromGraph();
+            }
+            // remove this object from my list of children
+            m_sceneObjects.erase(it);
+            // return success
+            return true;
+        }
+    }
+
+    // operation failed
+    return (false);
 }
 
-void afBaseObject::updateVisualPose()
+void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph)
 {
-    if (m_visualMesh != nullptr){
-        if (m_parentObject != nullptr){
-            m_visualMesh->setLocalTransform(m_parentObject->getLocalTransform() * m_localTransform);
-        }
-        else{
-            m_visualMesh->setLocalTransform(m_localTransform);
-        }
+    std::vector<cGenericObject*>::iterator it;
+
+    for (it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; ++it){
+        removeChildSceneObject((*it), removeFromGraph);
     }
 }
 
-void afBaseObject::updateWrappedObjectPose()
+void afBaseObject::updateSceneObjects()
+{
+    // Assuming that the global pose was computed prior to this call.
+    vector<cGenericObject*>::iterator it;
+    for (it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; it++){
+        (*it)->setLocalTransform(m_globalTransform);
+    }
+}
+
+void afBaseObject::updateGlobalPose()
+{
+    cTransform a_globalTransform = m_localTransform;
+
+    // Traverse up the parents to resolve the global pose
+    afBaseObjectPtr a_parentObject = getParentObject();
+    if (a_parentObject != nullptr){
+        do{
+            a_globalTransform = a_parentObject->getLocalTransform() * a_globalTransform;
+        }
+        while(a_parentObject != nullptr);
+    }
+    m_globalTransform = a_globalTransform;
+}
+
+void afBaseObject::updateChildrenSceneObjects()
 {
     if (m_wrappedObject != nullptr){
         if (m_parentObject != nullptr){
@@ -929,18 +1013,44 @@ void afBaseObject::updateWrappedObjectPose()
 
 void afBaseObject::showVisualFrame()
 {
-    // Set the size of the frame.
-    cVector3d bounds = m_visualMesh->getBoundaryMax();
-    double frame_size;
-    if (bounds.length() > 0.001){
-        double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
-        frame_size = max_axis * 1.2;
+    if (m_visualMesh != nullptr){
+
+        // Set the size of the frame.
+        cVector3d bounds = m_visualMesh->getBoundaryMax();
+        double frame_size;
+        if (bounds.length() > 0.001){
+            double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
+            frame_size = max_axis * 1.2;
+        }
+        else{
+            frame_size = 0.5;
+        }
+        m_visualMesh->setFrameSize(frame_size);
+    }
+}
+
+bool afBaseObject::resolveParenting(string a_parentName){
+    // If the parent name is not empty, override the objects parent name
+    if(a_parentName.empty() == false){
+        m_parentName = a_parentName;
+    }
+
+    // If the parent is empty, indiciate error and return
+    if (m_parentName.empty() == true){
+        return false;
+    }
+
+    // Should generalize this to not be just a rigid body that we may parent to.
+    afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
+    if (pBody){
+        setParentObject(pBody);
+        return true;
     }
     else{
-        frame_size = 0.5;
+        cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
+             << m_parentName << "\"" <<endl;
+        return false;
     }
-    m_visualMesh->setFrameSize(frame_size);
-
 }
 
 
@@ -1101,7 +1211,7 @@ void afConstraintActuator::deactuate(){
 /// \brief afCartesianController::afExecuteCommand
 /// \param dt
 ///
-void afConstraintActuator::afExecuteCommand(double dt){
+void afConstraintActuator::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
@@ -1133,7 +1243,7 @@ void afConstraintActuator::afExecuteCommand(double dt){
 ///
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
-void afConstraintActuator::updatePositionFromDynamics(){
+void afConstraintActuator::update(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         m_afActuatorCommPtr->set_name(m_name);
@@ -1411,7 +1521,8 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_afWorld->m_bulletWorld->removeRigidBody(m_bulletRigidBody);
     }
-    m_visualMesh->m_meshes->clear();
+
+    removeAllChildSceneObjects();
 }
 
 
@@ -1542,7 +1653,7 @@ void afRigidBody::updateDownwardHeirarchyForRemoval(){
 /// \param a_childBody
 /// \param a_jnt
 ///
-void afRigidBody::addChildJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
+void afRigidBody::addChildBodyJointPair(afRigidBodyPtr a_childBody, afJointPtr a_jnt){
     //TODO: TEST THIS LOGIC RIGOROUSLY
     if (this == a_childBody){
         cerr << "INFO, BODY \"" << m_name << "\": CANNOT HAVE ITSELF AS ITS CHILD" << endl;
@@ -1595,7 +1706,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_collisionMesh = new cMultiMesh();
 
     if (m_visualGeometryType == afGeometryType::MESH){
-        if (loadFromFile(m_visualMeshFilePath.c_str()) ){
+        if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
             if(m_scale != 1.0){
                 setScale(m_scale);
             }
@@ -1714,6 +1825,9 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
     m_passive = attribs.m_communicationAttribs.m_passive;
 
+    m_afWorld->m_chaiWorld->addChild(m_visualMesh);
+    m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
+
     // Where to add the visual, collision and this object?
     return true;
 }
@@ -1816,7 +1930,7 @@ void afRigidBody::estimateCartesianControllerGains(afCartesianController &contro
 ///
 /// \brief afRigidBody::updatePositionFromDynamics
 ///
-void afRigidBody::updatePositionFromDynamics()
+void afRigidBody::update()
 {
     if (m_bulletRigidBody)
     {
@@ -1835,18 +1949,6 @@ void afRigidBody::updatePositionFromDynamics()
         setLocalRot(q.getW(), q.getX(), q.getY(), q.getZ());
     }
 
-    // Update the data for sensors
-//#ifdef AMBF_ENABLE_PARALLEL_SENSOR_PROCESSING
-//    for (int thIdx = 0 ; thIdx < m_sensorThreads.size() ; thIdx++){
-//        m_threadUpdateFlags[thIdx] = true;
-//    }
-//#else
-//    for (int i = 0 ; i < m_afSensors.size() ; i++){
-//        m_afSensors[i]->updatePositionFromDynamics();
-//    }
-//#endif
-
-    // update Transform data for m_ObjectPtr
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if(m_afRigidBodyCommPtr.get() != nullptr){
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
@@ -1936,7 +2038,7 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
         if (m_threadUpdateFlags[threadIdx] == true){
 
             for (uint idx = startIdx ; idx < endIdx ; idx++){
-                m_afSensors[idx]->updatePositionFromDynamics();
+                m_afSensors[idx]->update();
             }
 
             m_threadUpdateFlags[threadIdx] = false;
@@ -1951,7 +2053,7 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
 /// \brief afRigidBody::afCommandExecute
 /// \param dt
 ///
-void afRigidBody::afExecuteCommand(double dt){
+void afRigidBody::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afRigidBodyCommPtr.get() != nullptr){
         btVector3 force, torque;
@@ -2324,7 +2426,10 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     btTransform iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
     setInertialOffsetTransform(iOff);
 
-    if (loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str())){
+    m_visualMesh = new cMultiMesh();
+    m_collisionMesh = new cMultiMesh();
+
+    if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str())){
        setScale(m_scale);
     }
     else{
@@ -2334,9 +2439,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
                   << "'s mesh " << attribs.m_visualAttribs.m_meshFilepath.c_str() << " not found\n";
     }
 
-    if(m_lowResMesh.loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
-        m_softMultiMesh->buildContactTriangles(attribs.m_collisionAttribs.m_margin, &m_lowResMesh);
-        m_lowResMesh.scale(m_scale);
+    if(m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
+        m_softMultiMesh->buildContactTriangles(attribs.m_collisionAttribs.m_margin, m_collisionMesh);
+        m_collisionMesh->scale(m_scale);
     }
     else{
         // If we can't find the collision mesh, then we have a problem,
@@ -2435,6 +2540,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->randomizeConstraints();
     }
 
+    m_afWorld->m_chaiWorld->addChild(m_visualMesh);
+    ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
+
     return true;
 }
 
@@ -2504,7 +2612,7 @@ void afJointController::boundImpulse(double &effort_cmd){
 ///
 /// \brief afJoint::afJoint
 ///
-afJoint::afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(m_afWorld, a_modelPtr){
+afJoint::afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
     m_posArray.resize(m_jpSize);
     m_dtArray.resize(m_jpSize);
 }
@@ -2733,7 +2841,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     if (m_btConstraint != nullptr){
         m_afWorld->m_bulletWorld->addConstraint(m_btConstraint, attribs.m_ignoreInterCollision);
-        m_afParentBody->addChildJointPair(m_afChildBody, this);
+        m_afParentBody->addChildBodyJointPair(m_afChildBody, this);
 
         if (m_enableFeedback){
             m_btConstraint->enableFeedback(m_enableFeedback);
@@ -2939,7 +3047,7 @@ afSensor::afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_
 /// \brief afSensor::afExecuteCommand
 /// \param dt
 ///
-void afSensor::afExecuteCommand(double dt){
+void afSensor::fetchCommands(double dt){
 
 }
 
@@ -2947,7 +3055,7 @@ void afSensor::afExecuteCommand(double dt){
 ///
 /// \brief afSensor::updatePositionFromDynamics
 ///
-void afSensor::updatePositionFromDynamics(){
+void afSensor::update(){
 
 }
 
@@ -3074,7 +3182,7 @@ inline afVector3d &operator*(cTransform &lhs, afVector3d &rhs){
 ///
 /// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
-void afRayTracerSensor::updatePositionFromDynamics(){
+void afRayTracerSensor::update(){
 
     if (m_parentBody == nullptr){
         return;
@@ -3235,7 +3343,7 @@ void afRayTracerSensor::enableVisualization(){
         if (m_rayTracerResults[i].m_hitSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setPinkHot();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
@@ -3246,7 +3354,7 @@ void afRayTracerSensor::enableVisualization(){
         if (m_rayTracerResults[i].m_fromSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setRed();
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
@@ -3257,7 +3365,7 @@ void afRayTracerSensor::enableVisualization(){
         if (m_rayTracerResults[i].m_toSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addChild(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setGreen();
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
@@ -3272,7 +3380,7 @@ void afRayTracerSensor::enableVisualization(){
                          m_visibilitySphereRadius*1,
                          m_visibilitySphereRadius*0.8,
                          false);
-            m_afWorld->addChild(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setGreenForest();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
@@ -3287,7 +3395,7 @@ void afRayTracerSensor::enableVisualization(){
 /// \brief afRayTracerSensor::afExecuteCommand
 /// \param dt
 ///
-void afRayTracerSensor::afExecuteCommand(double dt){
+void afRayTracerSensor::fetchCommands(double dt){
 
 }
 
@@ -3364,9 +3472,9 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 ///
 /// \brief afResistanceSensor::updatePositionFromDynamics
 ///
-void afResistanceSensor::updatePositionFromDynamics(){
+void afResistanceSensor::update(){
     // Let's update the RayTracer Sensor First
-    afRayTracerSensor::updatePositionFromDynamics();
+    afRayTracerSensor::update();
 
     if (m_parentBody == nullptr){
         return;
@@ -3554,100 +3662,21 @@ afJoint::~afJoint(){
 
 
 ///
-/// \brief afPointCloudsHandler::afPointCloudsHandler
-/// \param a_afWorld
-///
-afPointCloudsHandler::afPointCloudsHandler(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-}
-
-
-///
-/// \brief afPointCloudsHandler::updatePositionFromDynamics
-///
-void afPointCloudsHandler::updatePositionFromDynamics(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-
-    map<string, afMultiPointUnit>::iterator it;
-
-    for (it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
-        string pc_topic_name = it->first;
-        cMultiPointPtr mpPtr = it->second.m_mpPtr;
-        ambf_comm::PointCloudHandlerPtr pchPtr = it->second.m_pchPtr;
-
-        int mp_size = mpPtr->getNumPoints();
-        sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
-        if(pcPtr){
-            double radius = pchPtr->get_radius();
-            mpPtr->setPointSize(radius);
-            int pc_size = pcPtr->points.size();
-            int diff = pc_size - mp_size;
-            string frame_id = pcPtr->header.frame_id;
-
-            if (it->second.m_parentName.compare(frame_id) != 0 ){
-                // First remove any existing parent
-                if (mpPtr->getParent() != nullptr){
-                    mpPtr->getParent()->removeChild(mpPtr);
-                }
-
-                afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(frame_id);
-                if(pBody){
-                    pBody->addChild(mpPtr);
-                }
-                else{
-                    // Parent not found.
-                    cerr << "WARNING! FOR POINT CLOUD \""<< pc_topic_name <<
-                                 "\" PARENT BODY \"" << frame_id <<
-                                 "\" NOT FOUND, SETTING WORLD AS PARENT" <<
-                                 endl;
-                    addChild(mpPtr);
-                }
-            }
-
-            it->second.m_parentName = frame_id;
-
-            if (diff >= 0){
-                // PC array has either increased in size or the same size as MP array
-                for (int pIdx = 0 ; pIdx < mp_size ; pIdx++){
-                    cVector3d pcPos(pcPtr->points[pIdx].x,
-                                    pcPtr->points[pIdx].y,
-                                    pcPtr->points[pIdx].z);
-                    mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-                }
-
-                // Now add the new PC points to MP
-                for (int pIdx = mp_size ; pIdx < mp_size + pc_size ; pIdx++){
-                    cVector3d pcPos(pcPtr->points[pIdx].x,
-                                    pcPtr->points[pIdx].y,
-                                    pcPtr->points[pIdx].z);
-                    mpPtr->newPoint(pcPos);
-                }
-            }
-            else{
-                // PC array has decreased in size as compared to MP array
-                for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
-                    cVector3d pcPos(pcPtr->points[pIdx].x,
-                                    pcPtr->points[pIdx].y,
-                                    pcPtr->points[pIdx].z);
-                    mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-                }
-
-                for (int pIdx = mp_size ; pIdx > pc_size ; pIdx--){
-                    mpPtr->removePoint(pIdx-1);
-                }
-            }
-
-        }
-
-    }
-#endif
-
-}
-
-
-///
 /// \brief afWorld::afWorld
 /// \param a_global_namespace
 ///
+bool afWorld::checkIfExists(afBaseObject *a_obj)
+{
+    vector<afBaseObject*>::iterator it;
+    for (it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
+        if ((*it) == a_obj){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 afWorld::afWorld(string a_global_namespace){
     m_maxIterations = 10;
 
@@ -3713,14 +3742,12 @@ afWorld::afWorld(string a_global_namespace){
     m_pickSphere->markForUpdate(false);
     m_pickSphere->setLocalPos(0,0,0);
     m_pickSphere->setShowEnabled(false);
-    addChild(m_pickSphere);
+    addSceneObjectToWorld(m_pickSphere);
     m_pickColor.setOrangeTomato();
     m_pickColor.setTransparencyLevel(0.3);
     m_namespace = "";
     setGlobalNamespace(a_global_namespace);
 
-    m_pointCloudHandlerPtr = new afPointCloudsHandler(this);
-    addChild(m_pointCloudHandlerPtr->m_visualMesh);
 }
 
 afWorld::~afWorld()
@@ -3876,7 +3903,7 @@ double afWorld::getSimulationDeltaTime()
 /// \brief afWorld::afExecuteCommand
 /// \param dt
 ///
-void afWorld::afExecuteCommand(double dt){
+void afWorld::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
 
     // If throttling in enabled, wait here until the step clock is toggled before
@@ -3898,11 +3925,12 @@ void afWorld::afExecuteCommand(double dt){
 
             for (int i = 0 ; i < def_topics.size() ; i++){
                 string topic_name = def_topics[i];
-                if (m_pointCloudHandlerPtr->m_pcMap.find(topic_name) != m_pointCloudHandlerPtr->m_pcMap.end()){
+                if (m_pcMap.find(topic_name) != m_pcMap.end()){
                     // Cleanup
-                    cMultiPointPtr mpPtr = m_pointCloudHandlerPtr->m_pcMap.find(topic_name)->second.m_mpPtr;
+                    afPointCloudPtr afPC = m_pcMap.find(topic_name)->second;
+                    cMultiPointPtr mpPtr = afPC->m_mpPtr;
                     mpPtr->removeFromGraph();
-                    m_pointCloudHandlerPtr->m_pcMap.erase(topic_name);
+                    m_pcMap.erase(topic_name);
                     delete mpPtr;
                 }
             }
@@ -3912,15 +3940,13 @@ void afWorld::afExecuteCommand(double dt){
                 ambf_comm::PointCloudHandlerPtr pchPtr = m_afWorldCommPtr->get_point_clound_handler(topic_name);
                 if (pchPtr){
                     cMultiPointPtr mpPtr = new cMultiPoint();
-                    afMultiPointUnit mpUnit;
-                    mpUnit.m_mpPtr = mpPtr;
-                    mpUnit.m_pchPtr = pchPtr;
-                    m_pointCloudHandlerPtr->m_pcMap[topic_name] = mpUnit;
+                    afPointCloudPtr afPC = new afPointCloud(this);
+                    afPC->m_mpPtr = mpPtr;
+                    afPC->m_pcCommPtr = pchPtr;
+                    m_pcMap[topic_name] = afPC;
                     // Add as child, the header in PC message can override the parent later
-                    addChild(mpPtr);
+                    addSceneObjectToWorld(mpPtr);
                 }
-
-
 
             }
         }
@@ -3952,7 +3978,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         }
     }
 
-    afExecuteCommand(a_interval);
+    fetchCommands(a_interval);
 
     m_wallClock = a_wallClock;
 
@@ -3960,17 +3986,17 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // Read the AF_COMM commands and apply to all different types of objects
     afRigidBodyMap::iterator rbIt;
     for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
-        (rbIt->second)->afExecuteCommand(dt);
+        (rbIt->second)->fetchCommands(dt);
     }
 
     afCameraMap::iterator camIt;
     for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
-        (camIt->second)->afExecuteCommand(dt);
+        (camIt->second)->fetchCommands(dt);
     }
 
     afLightMap::iterator lightIt;
     for(lightIt = m_afLightMap.begin() ; lightIt != m_afLightMap.end() ; lightIt++){
-        (lightIt->second)->afExecuteCommand(dt);
+        (lightIt->second)->fetchCommands(dt);
     }
 
 //    afSensorMap::iterator senIt;
@@ -3980,12 +4006,12 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
     afActuatorMap::iterator actIt;
     for (actIt = m_afActuatorMap.begin() ; actIt != m_afActuatorMap.end() ; ++actIt){
-        (actIt->second)->afExecuteCommand(dt);
+        (actIt->second)->fetchCommands(dt);
     }
 
     afVehicleMap::iterator vIt;
     for (vIt = m_afVehicleMap.begin() ; vIt != m_afVehicleMap.end() ; ++vIt){
-        (vIt->second)->afExecuteCommand(dt);
+        (vIt->second)->fetchCommands(dt);
     }
 
     // integrate simulation during an certain interval
@@ -4004,7 +4030,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     }
 #endif
 
-    updatePositionFromDynamics();
+    updateChildren();
 }
 
 
@@ -4074,7 +4100,7 @@ void afBaseObject::copyMaterialToMesh(cMultiMesh *a_mesh, const afColorAttribute
 ///
 /// \brief afWorld::updatePositionFromDynamics
 ///
-void afWorld::updatePositionFromDynamics()
+void afWorld::updateChildren()
 {
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -4089,25 +4115,22 @@ void afWorld::updatePositionFromDynamics()
     estimateBodyWrenches();
 
     afUpdateTimes(getWallTime(), getSimulationTime());
-    list<afBaseObject*>::iterator i;
+    vector<afBaseObjectPtr>::iterator i;
 
-    for(i = m_afChildrenObjects.begin(); i != m_afChildrenObjects.end(); ++i)
+    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
     {
         afBaseObject* nextObj = *i;
-        nextObj->updatePositionFromDynamics();
+        nextObj->update();
+        nextObj->updateGlobalPose();
+        nextObj->updateSceneObjects();
     }
-
-//    afSensorMap::iterator senIt;
-//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
-//        (senIt->second)->updatePositionFromDynamics();
-    //    }
 }
 
 ///
-/// \brief afWorld::addVisualMesh
-/// \param a_visualMesh
+/// \brief afWorld::addSceneObject
+/// \param a_cObject
 ///
-void afWorld::addChild(cGenericObject *a_cObject)
+void afWorld::addSceneObjectToWorld(cGenericObject *a_cObject)
 {
     m_chaiWorld->addChild(a_cObject);
 }
@@ -4117,7 +4140,7 @@ void afWorld::addChild(cGenericObject *a_cObject)
 /// \brief afWorld::removeChild
 /// \param a_cObject
 ///
-void afWorld::removeChild(cGenericObject *a_cObject)
+void afWorld::removeSceneObjectFromWorld(cGenericObject *a_cObject)
 {
     m_chaiWorld->removeChild(a_cObject);
 }
@@ -4431,7 +4454,7 @@ void afWorld::loadSkyBox(){
             m_skyBoxMesh->setTexture(newTexture);
             m_skyBoxMesh->setUseTexture(true);
 
-            addChild(m_skyBoxMesh);
+            addSceneObjectToWorld(m_skyBoxMesh);
 
             if (m_skyBox_shaderProgramDefined){
                 ifstream vsFile;
@@ -4466,7 +4489,7 @@ void afWorld::loadSkyBox(){
                                  "\n \t FRAGMENT: " << m_skyBox_fsFilePath.c_str() << endl;
 
                     m_skyBox_shaderProgramDefined = false;
-                    removeChild(m_skyBoxMesh);
+                    removeSceneObjectFromWorld(m_skyBoxMesh);
                     delete m_skyBoxMesh;
                 }
             }
@@ -4533,7 +4556,7 @@ string afWorld::addAFLight(afLightPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afLightMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afLightPtr, afLightMap>(a_obj, remaped_name, &m_afLightMap);
+    addAFObject<afLightPtr, afLightMap>(a_obj, remaped_name, &m_afLightMap);
     return remaped_name;
 }
 
@@ -4542,7 +4565,7 @@ string afWorld::addAFCamera(afCameraPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afCameraMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afCameraPtr, afCameraMap>(a_obj, qualified_name + remap_str, &m_afCameraMap);
+    addAFObject<afCameraPtr, afCameraMap>(a_obj, qualified_name + remap_str, &m_afCameraMap);
     return remaped_name;
 }
 
@@ -4551,7 +4574,7 @@ string afWorld::addAFRigidBody(afRigidBodyPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afRigidBodyMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afRigidBodyPtr, afRigidBodyMap>(a_obj, qualified_name + remap_str, &m_afRigidBodyMap);
+    addAFObject<afRigidBodyPtr, afRigidBodyMap>(a_obj, qualified_name + remap_str, &m_afRigidBodyMap);
     return remaped_name;
 }
 
@@ -4560,7 +4583,7 @@ string afWorld::addAFSoftBody(afSoftBodyPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afSoftBodyMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afSoftBodyPtr, afSoftBodyMap>(a_obj, qualified_name + remap_str, &m_afSoftBodyMap);
+    addAFObject<afSoftBodyPtr, afSoftBodyMap>(a_obj, qualified_name + remap_str, &m_afSoftBodyMap);
     return remaped_name;
 }
 
@@ -4569,7 +4592,7 @@ string afWorld::addAFJoint(afJointPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afJointMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afJointPtr, afJointMap>(a_obj, qualified_name + remap_str, &m_afJointMap);
+    addAFObject<afJointPtr, afJointMap>(a_obj, qualified_name + remap_str, &m_afJointMap);
     return remaped_name;
 }
 
@@ -4578,7 +4601,7 @@ string afWorld::addAFActuator(afActuatorPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afActuatorMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afActuatorPtr, afActuatorMap>(a_obj, qualified_name + remap_str, &m_afActuatorMap);
+    addAFObject<afActuatorPtr, afActuatorMap>(a_obj, qualified_name + remap_str, &m_afActuatorMap);
     return remaped_name;
 }
 
@@ -4587,7 +4610,7 @@ string afWorld::addAFSensor(afSensorPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afSensorMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afSensorPtr, afSensorMap>(a_obj, qualified_name + remap_str, &m_afSensorMap);
+    addAFObject<afSensorPtr, afSensorMap>(a_obj, qualified_name + remap_str, &m_afSensorMap);
     return remaped_name;
 }
 
@@ -4596,7 +4619,7 @@ string afWorld::addAFModel(afModelPtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afModelMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afModelPtr, afModelMap>(a_obj, qualified_name + remap_str, &m_afModelMap);
+    addAFObject<afModelPtr, afModelMap>(a_obj, qualified_name + remap_str, &m_afModelMap);
     return remaped_name;
 }
 
@@ -4606,7 +4629,7 @@ string afWorld::addAFVehicle(afVehiclePtr a_obj){
     string qualified_name = a_obj->getQualifiedName();
     string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afVehicleMap);
     string remaped_name = qualified_name + remap_str;
-    addObject<afVehiclePtr, afVehicleMap>(a_obj, qualified_name + remap_str, &m_afVehicleMap);
+    addAFObject<afVehiclePtr, afVehicleMap>(a_obj, qualified_name + remap_str, &m_afVehicleMap);
     return remaped_name;
 }
 
@@ -4649,7 +4672,7 @@ void afWorld::buildCollisionGroups(){
 /// \return
 ///
 afLightVec  afWorld::getAFLighs(){
-    return getObjects<afLightVec, afLightMap>(&m_afLightMap);
+    return getAFObjects<afLightVec, afLightMap>(&m_afLightMap);
 }
 
 
@@ -4658,7 +4681,7 @@ afLightVec  afWorld::getAFLighs(){
 /// \return
 ///
 afCameraVec afWorld::getAFCameras(){
-    return getObjects<afCameraVec, afCameraMap>(&m_afCameraMap);
+    return getAFObjects<afCameraVec, afCameraMap>(&m_afCameraMap);
 }
 
 
@@ -4667,7 +4690,7 @@ afCameraVec afWorld::getAFCameras(){
 /// \return
 ///
 afRigidBodyVec afWorld::getAFRigidBodies(){
-    return getObjects<afRigidBodyVec, afRigidBodyMap>(&m_afRigidBodyMap);
+    return getAFObjects<afRigidBodyVec, afRigidBodyMap>(&m_afRigidBodyMap);
 }
 
 
@@ -4676,7 +4699,7 @@ afRigidBodyVec afWorld::getAFRigidBodies(){
 /// \return
 ///
 afSoftBodyVec afWorld::getAFSoftBodies(){
-    return getObjects<afSoftBodyVec, afSoftBodyMap>(&m_afSoftBodyMap);
+    return getAFObjects<afSoftBodyVec, afSoftBodyMap>(&m_afSoftBodyMap);
 }
 
 
@@ -4685,7 +4708,7 @@ afSoftBodyVec afWorld::getAFSoftBodies(){
 /// \return
 ///
 afJointVec afWorld::getAFJoints(){
-    return getObjects<afJointVec, afJointMap>(&m_afJointMap);
+    return getAFObjects<afJointVec, afJointMap>(&m_afJointMap);
 }
 
 
@@ -4694,7 +4717,7 @@ afJointVec afWorld::getAFJoints(){
 /// \return
 ///
 afSensorVec afWorld::getAFSensors(){
-    return getObjects<afSensorVec, afSensorMap>(&m_afSensorMap);
+    return getAFObjects<afSensorVec, afSensorMap>(&m_afSensorMap);
 }
 
 
@@ -4703,7 +4726,7 @@ afSensorVec afWorld::getAFSensors(){
 /// \return
 ///
 afModelVec afWorld::getAFMultiBodies(){
-    return getObjects<afModelVec, afModelMap>(&m_afModelMap);
+    return getAFObjects<afModelVec, afModelMap>(&m_afModelMap);
 }
 
 
@@ -4712,7 +4735,7 @@ afModelVec afWorld::getAFMultiBodies(){
 /// \return
 ///
 afVehicleVec afWorld::getAFVehicles(){
-    return getObjects<afVehicleVec, afVehicleMap>(&m_afVehicleMap);
+    return getAFObjects<afVehicleVec, afVehicleMap>(&m_afVehicleMap);
 }
 
 
@@ -4917,7 +4940,7 @@ afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_targetVisualMarker->setUseDisplayList(true);
     m_targetVisualMarker->markForUpdate(false);
     m_targetVisualMarker->setShowEnabled(false);
-    addChild(m_targetVisualMarker);
+    addChildSceneObject(m_targetVisualMarker);
 }
 
 
@@ -5042,7 +5065,7 @@ bool afCamera::createDefaultCamera(){
     cerr << "INFO: USING DEFAULT CAMERA" << endl;
 
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
-    addChild(m_camera);
+    addChildSceneObject(m_camera);
 
     m_namespace = m_afWorld->getNamespace();
 
@@ -5114,7 +5137,7 @@ bool afCamera::createDefaultCamera(){
     s_cameraIdx++;
 
     // Assign the Window Camera Handles
-    m_afWorld->addChild(this->m_visualMesh);
+    addChildSceneObject(m_camera);
 
     return true;
 }
@@ -5164,7 +5187,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         cMatrix3d I3;
         I3.identity();
         setLocalRot(I3);
-        addChild(m_camera);
+        addChildSceneObject(m_camera);
 
         m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
@@ -5627,44 +5650,11 @@ void afCamera::publishDepthPointCloud()
 #endif
 }
 
-
-///
-/// \brief afCamera::resolveParenting
-/// \return
-///
-bool afCamera::resolveParenting(string a_parent_name){
-    // If the parent name is not empty, override the objects parent name
-    if(!a_parent_name.empty()){
-        m_parentName = a_parent_name;
-    }
-
-    if (!m_parentName.empty()){
-        afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
-        if (pBody){
-            pBody->addChild(this->m_visualMesh);
-            // Now also update the postion and orientation, w.r.t the parent.
-            setView(m_camPos, m_camLookAt, m_camUp);
-            m_initialTransform = getLocalTransform();
-            return true;
-        }
-        else{
-            cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                      << m_parentName << "\"" <<endl;
-            return false;
-        }
-    }
-    else{
-        // No parent assigned, so report success as we have nothing to find
-        return true;
-    }
-}
-
-
 ///
 /// \brief afCamera::afObjectCommandExecute
 /// \param dt
 ///
-void afCamera::afExecuteCommand(double dt){
+void afCamera::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
         ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
@@ -5704,11 +5694,6 @@ void afCamera::afExecuteCommand(double dt){
                 m_camera->setClippingPlanes(near_plane, far_plane);
 
                 if (m_parentName.compare(parent_name) != 0){
-                    // Parent has changed. Find the appropriate parent
-                    if (m_visualMesh->getParent() != nullptr){
-                        m_visualMesh->getParent()->removeChild(this->m_visualMesh);
-                    }
-
                     resolveParenting(parent_name);
                 }
 
@@ -5757,7 +5742,7 @@ void afCamera::afExecuteCommand(double dt){
 ///
 /// \brief afCamera::updatePositionFromDynamics
 ///
-void afCamera::updatePositionFromDynamics()
+void afCamera::update()
 {
 
     // update Transform data for m_ObjectPtr
@@ -5975,7 +5960,7 @@ bool afLight::createDefaultLight(){
     m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
     m_namespace = m_afWorld->getNamespace();
     m_name = "default_light";
-    addChild(m_spotLight);
+    addChildSceneObject(m_spotLight);
     m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
     m_spotLight->setDir(0, 0, -1);
     m_spotLight->setSpotExponent(0.3);
@@ -5983,7 +5968,7 @@ bool afLight::createDefaultLight(){
     m_spotLight->setShadowMapEnabled(true);
     m_spotLight->m_shadowMap->setQualityVeryHigh();
     m_spotLight->setEnabled(true);
-    m_afWorld->addChild(m_spotLight);
+    m_afWorld->addSceneObjectToWorld(m_spotLight);
 
     return true;
 }
@@ -6006,11 +5991,11 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
     m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
 
-    addChild(m_spotLight);
+    addChildSceneObject(m_spotLight);
+
+    m_afWorld->addSceneObjectToWorld(m_spotLight);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
-
-    m_afWorld->addChild(m_visualMesh);
 
     m_initialTransform = getLocalTransform();
 
@@ -6086,40 +6071,7 @@ void afLight::setDir(const cVector3d &a_direction){
 }
 
 
-///
-/// \brief afLight::resolveParenting
-/// \return
-///
-bool afLight::resolveParenting(string a_parent_name){
-    // If the parent name is not empty, override the objects parent name
-    if(!a_parent_name.empty()){
-        m_parentName = a_parent_name;
-    }
-
-    if (!m_parentName.empty()){
-        afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
-        if (pBody){
-            pBody->addChild(m_visualMesh);
-            // Now also update the postion and orientation, w.r.t the parent.
-            setLocalTransform(m_initialTransform);
-            return true;
-        }
-        else{
-            cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-                      << m_parentName << "\"" <<endl;
-            return false;
-        }
-    }
-    else{
-        // No parent assigned, so report success as we have nothing to find
-        return true;
-    }
-
-}
-
-
-
-void afLight::afExecuteCommand(double dt){
+void afLight::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afLightCommPtr.get() != nullptr){
         ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
@@ -6153,11 +6105,6 @@ void afLight::afExecuteCommand(double dt){
                 m_spotLight->setCutOffAngleDeg(cRadToDeg(cutoff_angle));
 
                 if (m_parentName.compare(parent_name) != 0){
-                    // Parent has changed. Find the appropriate parent
-                    if (m_visualMesh->getParent() != nullptr){
-                        m_visualMesh->getParent()->removeChild(m_visualMesh);
-                    }
-
                     resolveParenting(parent_name);
                 }
             }
@@ -6173,7 +6120,7 @@ void afLight::afExecuteCommand(double dt){
 ///
 /// \brief afLight::updatePositionFromDynamics
 ///
-void afLight::updatePositionFromDynamics()
+void afLight::update()
 {
 
     // update Transform data for m_ObjectPtr
@@ -6208,8 +6155,6 @@ void afLight::updatePositionFromDynamics()
 
 
 afModel::afModel(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-    m_afWorld = a_afWorld;
-
     //    m_pickDragVector = new cMesh();
     //    cCreateArrow(m_pickDragVector);
     //    m_pickDragVector->m_material->setPurpleAmethyst();
@@ -6278,9 +6223,9 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                                                        rBodyPtr->getMinPublishFrequency(),
                                                        rBodyPtr->getMaxPublishFrequency());
                     }
-
                 }
             }
+            m_afWorld->addAFRigidBody(rBodyPtr);
         }
     }
 
@@ -6291,6 +6236,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             string remaped_name = m_afWorld->addAFSoftBody(sBodyPtr);
             m_afSoftBodyMapLocal[sBodyPtr->getQualifiedName()] = sBodyPtr;
         }
+        m_afWorld->addAFSoftBody(sBodyPtr);
     }
 
     /// Loading Sensors
@@ -6330,6 +6276,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     sensorPtr->m_afSensorCommPtr->set_type(type_str);
 #endif
                 }
+                m_afWorld->addAFSensor(sensorPtr);
             }
         }
         else{
@@ -6367,6 +6314,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 #endif
                 }
             }
+            m_afWorld->addAFActuator(actuatorPtr);
         }
         else{
             continue;
@@ -6379,6 +6327,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
             string remaped_name = m_afWorld->addAFJoint(jntPtr);
             m_afJointMapLocal[jntPtr->getQualifiedName()] = jntPtr;
+            m_afWorld->addAFJoint(jntPtr);
         }
     }
 
@@ -6396,6 +6345,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                                                  vehiclePtr->getMinPublishFrequency(),
                                                  vehiclePtr->getMaxPublishFrequency());
             }
+            m_afWorld->addAFVehicle(vehiclePtr);
         }
     }
 
@@ -6521,10 +6471,12 @@ template <typename T, typename TMap>
 /// \param a_map
 /// \return
 ///
-bool afWorld::addObject(T a_obj, string a_name, TMap* a_map){
+bool afWorld::addAFObject(T a_obj, string a_name, TMap* a_map){
     (*a_map)[a_name] = a_obj;
-    m_afChildrenObjects.push_back(a_obj);
-    a_obj->showVisualFrame();
+    if (checkIfExists(a_obj) == false){
+        m_childrenAFObjects.push_back(a_obj);
+        a_obj->showVisualFrame();
+    }
     return true;
 }
 
@@ -6537,7 +6489,7 @@ template <typename T, typename TMap>
 /// \param suppress_warning
 /// \return
 ///
-T afWorld::getObject(string a_name, TMap* a_map, bool suppress_warning){
+T afWorld::getAFObject(string a_name, TMap* a_map, bool suppress_warning){
     if (a_map->find(a_name) != a_map->end()){
         return ((*a_map)[a_name]);
     }
@@ -6586,7 +6538,7 @@ template <typename TVec, typename TMap>
 /// \param a_map
 /// \return
 ///
-TVec afWorld::getObjects(TMap* a_map){
+TVec afWorld::getAFObjects(TMap* a_map){
     TVec _objects;
     typename TMap::iterator _oIt;
 
@@ -6605,7 +6557,7 @@ TVec afWorld::getObjects(TMap* a_map){
 /// \return
 ///
 afLightPtr afWorld::getAFLight(string a_name, bool suppress_warning){
-    return getObject<afLightPtr, afLightMap>(a_name, &m_afLightMap, suppress_warning);
+    return getAFObject<afLightPtr, afLightMap>(a_name, &m_afLightMap, suppress_warning);
 }
 
 
@@ -6616,7 +6568,7 @@ afLightPtr afWorld::getAFLight(string a_name, bool suppress_warning){
 /// \return
 ///
 afCameraPtr afWorld::getAFCamera(string a_name, bool suppress_warning){
-    return getObject<afCameraPtr, afCameraMap>(a_name, &m_afCameraMap, suppress_warning);
+    return getAFObject<afCameraPtr, afCameraMap>(a_name, &m_afCameraMap, suppress_warning);
 }
 
 
@@ -6626,7 +6578,7 @@ afCameraPtr afWorld::getAFCamera(string a_name, bool suppress_warning){
 /// \return
 ///
 afRigidBodyPtr afWorld::getAFRigidBody(string a_name, bool suppress_warning){
-    return getObject<afRigidBodyPtr, afRigidBodyMap>(a_name, &m_afRigidBodyMap, suppress_warning);
+    return getAFObject<afRigidBodyPtr, afRigidBodyMap>(a_name, &m_afRigidBodyMap, suppress_warning);
 }
 
 
@@ -6664,7 +6616,7 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
 /// \return
 ///
 afSoftBodyPtr afWorld::getAFSoftBody(string a_name, bool suppress_warning){
-    return getObject<afSoftBodyPtr, afSoftBodyMap>(a_name, &m_afSoftBodyMap, suppress_warning);
+    return getAFObject<afSoftBodyPtr, afSoftBodyMap>(a_name, &m_afSoftBodyMap, suppress_warning);
 }
 
 
@@ -6702,7 +6654,7 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
 /// \return
 ///
 afModelPtr afWorld::getAFModel(string a_name, bool suppress_warning){
-    return getObject<afModelPtr, afModelMap>(a_name, &m_afModelMap, suppress_warning);
+    return getAFObject<afModelPtr, afModelMap>(a_name, &m_afModelMap, suppress_warning);
 }
 
 
@@ -6713,7 +6665,7 @@ afModelPtr afWorld::getAFModel(string a_name, bool suppress_warning){
 /// \return
 ///
 afVehiclePtr afWorld::getAFVehicle(string a_name, bool suppress_warning){
-    return getObject<afVehiclePtr, afVehicleMap>(a_name, &m_afVehicleMap, suppress_warning);
+    return getAFObject<afVehiclePtr, afVehicleMap>(a_name, &m_afVehicleMap, suppress_warning);
 }
 
 
@@ -6882,7 +6834,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
             m_wheels[i].m_mesh = new cMultiMesh();
             string meshFilepath = m_wheelAttribs[i].m_visualAttribs.m_meshFilepath.c_str();
             if (m_wheels[i].m_mesh->loadFromFile(meshFilepath)){
-                m_afWorld->addChild(m_wheels[i].m_mesh);
+                m_afWorld->addSceneObjectToWorld(m_wheels[i].m_mesh);
                 m_wheels[i].m_wheelRepresentationType = afWheelRepresentationType::MESH;
             }
             else{
@@ -6930,7 +6882,6 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 
     m_chassis->m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
     m_afWorld->m_bulletWorld->addVehicle(m_vehicle);
-    m_afWorld->addChild(m_visualMesh);
 
     m_vehicle->setCoordinateSystem(1, 2, 0);
 
@@ -6965,7 +6916,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 /// \brief afVehicle::afExecuteCommand
 /// \param dt
 ///
-void afVehicle::afExecuteCommand(double dt){
+void afVehicle::fetchCommands(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
 
@@ -7031,7 +6982,7 @@ void afVehicle::afExecuteCommand(double dt){
 ///
 /// \brief afVehicle::updatePositionFromDynamics
 ///
-void afVehicle::updatePositionFromDynamics(){
+void afVehicle::update(){
     for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
@@ -7101,3 +7052,79 @@ afDepthPointCloud::~afDepthPointCloud()
 }
 
 //------------------------------------------------------------------------------
+
+afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(a_afWorld)
+{
+
+}
+
+
+void afPointCloud::update()
+{
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    int mp_size = m_mpPtr->getNumPoints();
+    sensor_msgs::PointCloudPtr pcPtr = m_pcCommPtr->get_point_cloud();
+    if(pcPtr){
+        double radius = m_pcCommPtr->get_radius();
+        m_mpPtr->setPointSize(radius);
+        int pc_size = pcPtr->points.size();
+        int diff = pc_size - mp_size;
+        string frame_id = pcPtr->header.frame_id;
+
+        if (m_parentName.compare(frame_id) != 0 ){
+            // First remove any existing parent
+            if (m_mpPtr->getParent() != nullptr){
+                m_mpPtr->getParent()->removeChild(m_mpPtr);
+            }
+
+            afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(frame_id);
+            if(pBody){
+                pBody->addChildSceneObject(m_mpPtr);
+            }
+            else{
+                // Parent not found.
+                cerr << "WARNING! FOR POINT CLOUD \""<< m_topicName <<
+                        "\" PARENT BODY \"" << frame_id <<
+                        "\" NOT FOUND, SETTING WORLD AS PARENT" <<
+                        endl;
+                addChildSceneObject(m_mpPtr);
+            }
+        }
+
+        m_parentName = frame_id;
+
+        if (diff >= 0){
+            // PC array has either increased in size or the same size as MP array
+            for (int pIdx = 0 ; pIdx < mp_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            // Now add the new PC points to MP
+            for (int pIdx = mp_size ; pIdx < mp_size + pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                m_mpPtr->newPoint(pcPos);
+            }
+        }
+        else{
+            // PC array has decreased in size as compared to MP array
+            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            for (int pIdx = mp_size ; pIdx > pc_size ; pIdx--){
+                m_mpPtr->removePoint(pIdx-1);
+            }
+        }
+
+    }
+
+#endif
+}

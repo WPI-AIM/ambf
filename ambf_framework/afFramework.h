@@ -151,7 +151,8 @@ typedef afVehicle* afVehiclePtr;
 typedef map<string, afVehiclePtr> afVehicleMap;
 typedef vector<afVehiclePtr> afVehicleVec;
 //------------------------------------------------------------------------------
-class afPointCloudsHandler;
+class afPointCloud;
+typedef afPointCloud* afPointCloudPtr;
 typedef cMultiPoint* cMultiPointPtr;
 
 
@@ -236,7 +237,7 @@ public:
     virtual void afCreateCommInstance(afObjectType type, string a_name, string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     // This method is to retrieve all the commands for appropriate af comm instances.
-    virtual void afExecuteCommand(double dt=0.001);
+    virtual void fetchCommands(double dt=0.001);
 
     //! This method applies updates Wall and Sim Time for AF State Message.
     virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
@@ -518,10 +519,10 @@ public:
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
-    virtual void afExecuteCommand(double){}
+    virtual void fetchCommands(double){}
 
-    // This method updates the AMBF position representation from the Bullet dynamics engine.
-    virtual void updatePositionFromDynamics(){}
+    // The update method called at every simulation iteration.
+    virtual void update(){}
 
     static void copyMaterialToMesh(cMultiMesh* a_mesh, const afColorAttributes* a_color);
 
@@ -530,6 +531,8 @@ public:
     cMatrix3d getLocalRot();
 
     cTransform getLocalTransform();
+
+    cTransform getGlobalTransform();
 
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
@@ -558,24 +561,30 @@ public:
 
     void setParentObject(afBaseObjectPtr a_afObject);
 
+    void addChildObject(afBaseObjectPtr a_afObject);
+
     inline void setInitialTransform(cTransform a_trans){m_initialTransform = a_trans;}
 
     void setScale(double a_scale);
 
-    void setWrappedObject(cGenericObject* object);
-
     // This method toggles the viewing of frames of this rigid body.
     void toggleFrameVisibility();
 
-    bool loadFromFile(string a_filename);
+    bool isSceneObjectAlreadyAdded(cGenericObject* a_object);
 
-    void addChild(cGenericObject* a_cObject);
+    bool addChildSceneObject(cGenericObject* a_object);
 
-    void removeChild(cGenericObject* a_cObject);
+    void scaleSceneObjects(double a_scale);
 
-    void updateVisualPose();
+    bool removeChildSceneObject(cGenericObject* a_cObject, bool removeFromGraph);
 
-    void updateWrappedObjectPose();
+    void removeAllChildSceneObjects(bool removeFromGraphs=true);
+
+    virtual void updateSceneObjects();
+
+    virtual void updateGlobalPose();
+
+    void updateChildrenSceneObjects();
 
     void showVisualFrame();
 
@@ -588,7 +597,7 @@ public:
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
-    virtual bool resolveParenting(string){return true;}
+    virtual bool resolveParenting(string a_parentName="");
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -602,6 +611,10 @@ public:
     afPath m_visualMeshFilePath;
 
     cMultiMesh* m_visualMesh;
+
+    std::vector<cGenericObject*> m_sceneObjects;
+
+    vector<afBaseObjectPtr> m_afChildrenObjects;
 
 protected:
     // Initial location of Rigid Body
@@ -620,6 +633,8 @@ protected:
     cGenericObject* m_wrappedObject;
 
     cTransform m_localTransform;
+
+    cTransform m_globalTransform;
 
     afBaseObjectPtr m_parentObject;
 };
@@ -714,15 +729,15 @@ public:
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
     virtual bool createFromAttribs(afRigidBodyAttributes* a_attribs);
 
     // Add a child to the afRidigBody tree, this method will internally populate the body graph
-    virtual void addChildJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
+    virtual void addChildBodyJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
 
     // Vector of child joint pair. Includes joints of all the
     // connected children all the way down to the last child. Also a vector of all the
@@ -925,8 +940,6 @@ protected:
 
     string m_mesh_name;
 
-    cMultiMesh m_lowResMesh;
-
     cVector3d pos;
 
     cMatrix3d rot;
@@ -1075,9 +1088,9 @@ public:
 
     bool m_showActuator;
 
-    virtual void afExecuteCommand(double){}
+    virtual void fetchCommands(double){}
 
-    virtual void updatePositionFromDynamics(){}
+    virtual void update(){}
 
 protected:
     bool m_actuate = false;
@@ -1119,9 +1132,9 @@ public:
     // Remove the constraint
     virtual void deactuate();
 
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
 protected:
 
@@ -1165,10 +1178,10 @@ public:
     // Toggle visibility of this sensor
     bool m_showSensor = true;
 
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
     // Upate the sensor, usually called at each dynamic tick update of the physics engine
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
     // Go through all the parents to get the absolute world transform
     cTransform getWorldTransform(){}
@@ -1190,7 +1203,7 @@ public:
     virtual bool createFromAttribs(afRayTracerSensorAttributes* a_attribs);
 
     // Update sensor is called on each update of positions of RBs and SBs
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
     // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(uint idx){return m_rayTracerResults[idx].m_triggered;}
@@ -1239,7 +1252,7 @@ public:
 
     void enableVisualization();
 
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
 
     double m_range;
@@ -1294,7 +1307,7 @@ public:
 
     virtual bool createFromAttribs(afResistanceSensorAttributes* a_attribs);
 
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
 public:
     inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}
@@ -1375,10 +1388,10 @@ public:
     virtual void render(afRenderOptions &options);
 
     // Define the virtual method for camera
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
     // Define the virtual method for camera
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
     // Initialize
     bool init();
@@ -1397,7 +1410,6 @@ public:
     // bodies etc. we wouldn't be able to find a body defined as a parent in the
     // camera data-block in the ADF file. Thus after loading the bodies, this method
     // should be called to find the parent.
-    virtual bool resolveParenting(string a_parent_name = "");
 
     // Method similar to cCamera but providing a layer of abstraction
     // So that we can set camera transform internally and set the
@@ -1626,11 +1638,9 @@ public:
     // Default light incase no lights are defined in the AMBF Config file
     bool createDefaultLight();
 
-    virtual bool resolveParenting(string a_parent_name = "");
+    virtual void fetchCommands(double dt);
 
-    virtual void afExecuteCommand(double dt);
-
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
     // Set direction of this light
     void setDir(const cVector3d& a_direction);
@@ -1645,35 +1655,23 @@ protected:
 
 
 ///
-/// \brief The afMultiPointUnit struct
+/// \brief The afPointCloud class
 ///
-struct afMultiPointUnit{
-
-    // The parent name for this struct
-    string m_parentName;
+class afPointCloud: public afBaseObject{
+public:
+    afPointCloud(afWorldPtr a_afWorld);
 
     cMultiPointPtr m_mpPtr;
 
+    virtual void fetchCommands(double){}
+
+    virtual void update();
+
+    std::string m_topicName;
+
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    ambf_comm::PointCloudHandlerPtr m_pchPtr;
+    ambf_comm::PointCloudHandlerPtr m_pcCommPtr;
 #endif
-};
-
-
-///
-/// \brief The afPointCloud class
-///
-class afPointCloudsHandler: public afBaseObject{
-
-public:
-    afPointCloudsHandler(afWorldPtr a_afWorld);
-
-    virtual void afExecuteCommand(double){}
-
-    virtual void updatePositionFromDynamics();
-
-    map<string, afMultiPointUnit> m_pcMap;
-
 };
 
 
@@ -1699,15 +1697,17 @@ public:
 
     // Template method to add various types of objects
     template<typename T, typename TMap>
-    bool addObject(T a_obj, string a_name, TMap* a_map);
+    bool addAFObject(T a_obj, string a_name, TMap* a_map);
+
+    bool checkIfExists(afBaseObject* a_obj);
 
      // Template method to get a specific type of object
     template <typename T, typename TMap>
-    T getObject(string a_name, TMap* a_map, bool suppress_warning);
+    T getAFObject(string a_name, TMap* a_map, bool suppress_warning);
 
      // Template method to get all objects of specific type
     template <typename Tvec, typename TMap>
-    Tvec getObjects(TMap* tMap);
+    Tvec getAFObjects(TMap* tMap);
 
     afWorld(string a_global_namespace);
 
@@ -1776,11 +1776,11 @@ public:
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
-    virtual void updatePositionFromDynamics(void);
+    virtual void updateChildren();
 
-    void addChild(cGenericObject* a_cObject);
+    void addSceneObjectToWorld(cGenericObject* a_cObject);
 
-    void removeChild(cGenericObject* a_cObject);
+    void removeSceneObjectFromWorld(cGenericObject* a_cObject);
 
     string addAFLight(afLightPtr a_rb);
 
@@ -1872,7 +1872,7 @@ public:
 
     void setGlobalNamespace(string a_namespace);
 
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children
@@ -1896,7 +1896,7 @@ public:
 
 public:
 
-    std::list<afBaseObjectPtr> m_afChildrenObjects;
+    vector<afBaseObjectPtr> m_childrenAFObjects;
 
     GLFWwindow* m_mainWindow;
 
@@ -1976,6 +1976,8 @@ public:
 
     // a frequency counter to measure the simulation haptic rate
     cFrequencyCounter m_freqCounterHaptics;
+
+    map<string, afPointCloudPtr> m_pcMap;
 
 public:
 
@@ -2058,8 +2060,6 @@ private:
     // Step the simulation by this many steps
     // Used when the Physics is paused
     int m_manualStepPhx = 0;
-
-    afPointCloudsHandler* m_pointCloudHandlerPtr;
 };
 
 
@@ -2157,9 +2157,9 @@ public:
 
     virtual bool createFromAttribs(afVehicleAttributes* a_attribs);
 
-    virtual void updatePositionFromDynamics();
+    virtual void update();
 
-    virtual void afExecuteCommand(double dt);
+    virtual void fetchCommands(double dt);
 
 protected:
     btDefaultVehicleRaycaster* m_vehicleRayCaster = nullptr;

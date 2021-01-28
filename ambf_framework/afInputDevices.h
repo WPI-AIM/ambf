@@ -124,7 +124,7 @@ public:
 
     cMatrix3d getSimRotInitial();
 
-    void updatePose();
+    virtual void updateGlobalPose();
 
     inline void applyForce(cVector3d force){
         if (m_rootLink->m_activeControllerType == afControlType::FORCE){

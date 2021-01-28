@@ -17,7 +17,7 @@ import rospy
 # Basically, x_7 is along y_0, y_7 is along x_0 and z_7 is along -z_0.
 
 # Read the frames, positions and rotation as follows, T_A_B, means that this
-# is a Transfrom of frame A with respect to frame B. Similarly P_A_B is the
+# is a Transform of frame A with respect to frame B. Similarly P_A_B is the
 # Position Vector of frame A's origin with respect to frame B's origin. And finally
 # R_A_B is the rotation matrix representing the orientation of frame B with respect to
 # frame A.
@@ -29,14 +29,14 @@ import rospy
 # 2) R_A_C = inv(R_B_A * R_C_B)
 # 3) P_C_A = R_B_A * R_C_B * P_C
 
-# For Postions, the missing second underscore separated quantity means that it is expressed in local
-# coodinates. Rotations, and Transforms are always to defined a frame w.r.t to some
+# For Positions, the missing second underscore separated quantity means that it is expressed in local
+# coordinates. Rotations, and Transforms are always to defined a frame w.r.t to some
 # other frame so this is a special case for only positions. Consider the example
 
-# P_B indiciates a point expressed in B frame.
+# P_B indicates a point expressed in B frame.
 
-# Now there are two special cases that are identified by letter D and N. The first characeter D indiciates a
-# difference (vector) of between two points, specified by the first and second underscore separater (_) strings,
+# Now there are two special cases that are identified by letter D and N. The first character D indicates a
+# difference (vector) of between two points, specified by the first and second underscore separator (_) strings,
 # expressed in the third underscore separated reference. I.e.
 
 # D_A_B_C

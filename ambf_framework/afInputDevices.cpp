@@ -47,9 +47,6 @@
 #include <string.h>
 //------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-#define PI 3.14159
-//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 namespace ambf {
@@ -249,7 +246,7 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
         m_refSphere->m_material->setRed();
         m_refSphere->setShowFrame(true);
         m_refSphere->setFrameSize(m_markerSize * 5);
-        m_CCU_Manager->getAFWorld()->addChild(m_refSphere);
+        m_CCU_Manager->getAFWorld()->addSceneObjectToWorld(m_refSphere);
     }
 
 
@@ -282,8 +279,9 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     mat.setGreenLightSea();
     tempMesh->setMaterial(mat);
     m_afCursor = new afRigidBody(a_afWorld, nullptr);
+    m_afCursor->m_visualMesh = new cMultiMesh();
     m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
-    a_afWorld->addChild(m_afCursor->m_visualMesh);
+    a_afWorld->addSceneObjectToWorld(m_afCursor->m_visualMesh);
     m_afCursor->afCreateCommInstance(afObjectType::OBJECT,
                                      a_name, a_afWorld->resolveGlobalNamespace(a_namespace),
                                      minPF,
@@ -705,7 +703,7 @@ cMatrix3d afSimulatedDevice::getSimRotInitial(){
 ///
 /// \brief afSimulatedDevice::updateMeasuredPose
 ///
-void afSimulatedDevice::updatePose(){
+void afSimulatedDevice::updateGlobalPose(){
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pos  = m_rootLink->getLocalPos();
     m_rot = m_rootLink->getLocalRot();
