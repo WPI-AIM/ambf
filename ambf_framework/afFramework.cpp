@@ -881,7 +881,7 @@ void afBaseObject::toggleFrameVisibility(){
 bool afBaseObject::isSceneObjectAlreadyAdded(cGenericObject *a_object)
 {
     vector<cGenericObject*>::iterator it;
-    for(it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; it++){
+    for(it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; it++){
         if ((*it) == a_object){
             return true;
         }
@@ -923,14 +923,14 @@ bool afBaseObject::addChildSceneObject(cGenericObject *a_object)
     // the object does not have any parent yet, so we can add it as a child
     // to current object.
 
-    m_sceneObjects.push_back(a_object);
+    m_childrenSceneObjects.push_back(a_object);
     return true;
 }
 
 void afBaseObject::scaleSceneObjects(double a_scale)
 {
     std::vector<cGenericObject*>::iterator it;
-    for (it = m_sceneObjects.begin(); it < m_sceneObjects.end(); it++)
+    for (it = m_childrenSceneObjects.begin(); it < m_childrenSceneObjects.end(); it++)
     {
         (*it)->scale(a_scale);
 
@@ -948,7 +948,7 @@ bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeF
     if (a_object == NULL) { return (false); }
 
     vector<cGenericObject*>::iterator it;
-    for (it = m_sceneObjects.begin(); it < m_sceneObjects.end(); it++)
+    for (it = m_childrenSceneObjects.begin(); it < m_childrenSceneObjects.end(); it++)
     {
         if ((*it) == a_object)
         {
@@ -956,7 +956,7 @@ bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeF
                 (*it)->removeFromGraph();
             }
             // remove this object from my list of children
-            m_sceneObjects.erase(it);
+            m_childrenSceneObjects.erase(it);
             // return success
             return true;
         }
@@ -970,7 +970,7 @@ void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph)
 {
     std::vector<cGenericObject*>::iterator it;
 
-    for (it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; ++it){
+    for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
         removeChildSceneObject((*it), removeFromGraph);
     }
 }
@@ -979,7 +979,7 @@ void afBaseObject::updateSceneObjects()
 {
     // Assuming that the global pose was computed prior to this call.
     vector<cGenericObject*>::iterator it;
-    for (it = m_sceneObjects.begin() ; it != m_sceneObjects.end() ; it++){
+    for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; it++){
         (*it)->setLocalTransform(m_globalTransform);
     }
 }
@@ -997,18 +997,6 @@ void afBaseObject::updateGlobalPose()
         while(a_parentObject != nullptr);
     }
     m_globalTransform = a_globalTransform;
-}
-
-void afBaseObject::updateChildrenSceneObjects()
-{
-    if (m_wrappedObject != nullptr){
-        if (m_parentObject != nullptr){
-            m_wrappedObject->setLocalTransform(m_parentObject->getLocalTransform() * m_localTransform);
-        }
-        else{
-            m_wrappedObject->setLocalTransform(m_localTransform);
-        }
-    }
 }
 
 void afBaseObject::showVisualFrame()
@@ -1308,9 +1296,9 @@ afSurfaceAttributes afInertialObject::getSurfaceProperties()
 /// \param iy
 /// \param iz
 ///
-void afInertialObject::setInertia(double ix, double iy, double iz)
+void afInertialObject::setInertia(afVector3d& a_inertia)
 {
-    m_inertia = btVector3(ix, iy, iz);
+    m_inertia << a_inertia;
 }
 
 void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
@@ -1706,9 +1694,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     if (m_visualGeometryType == afGeometryType::MESH){
         if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
-            if(m_scale != 1.0){
-                setScale(m_scale);
-            }
+            setScale(m_scale);
             m_visualMesh->setUseDisplayList(true);
             m_visualMesh->markForUpdate(false);
         }
@@ -1805,6 +1791,15 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     }
 
     m_controller.createFromAttribs(&attribs.m_controllerAttribs);
+
+    setMass(attribs.m_inertialAttribs.m_mass);
+    if(attribs.m_inertialAttribs.m_estimateInertia){
+        estimateInertia();
+    }
+    else{
+        setInertia(attribs.m_inertialAttribs.m_inertia);
+    }
+
     createInertialObject();
 
     // inertial origin in world
@@ -1824,6 +1819,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
     m_passive = attribs.m_communicationAttribs.m_passive;
 
+    addChildSceneObject(m_visualMesh);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
@@ -4979,9 +4975,9 @@ bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_loca
     setLocalRot(localRot);
 
     // World in this body frame
-    cTransform _T_wINb = getLocalTransform();
-    _T_wINb.invert();
-    m_targetPos = _T_wINb * a_localLookAt;
+    cTransform T_wINb = getLocalTransform();
+    T_wINb.invert();
+    m_targetPos = T_wINb * a_localLookAt;
     m_targetVisualMarker->setLocalPos(m_targetPos);
 
     return true;
@@ -5027,11 +5023,6 @@ cVector3d afCamera::getGlobalPos(){
 /// \param a_pos
 ///
 void afCamera::setTargetPos(cVector3d a_pos){
-    if(m_camera->getParent()){
-        cTransform T_inv = m_camera->getParent()->getLocalTransform();
-        T_inv.invert();
-        //        a_pos = T_inv * a_pos;
-    }
     setView(getLocalPos(), a_pos, m_camera->getUpVector());
 }
 
@@ -5050,12 +5041,7 @@ void afCamera::showTargetPos(bool a_show){
 /// \return
 ///
 cVector3d afCamera::getTargetPos(){
-    cTransform _T_pInw;
-    _T_pInw.identity();
-    if (m_camera->getParent()){
-        //        _T_pInw = getParent()->getLocalTransform();
-    }
-    return _T_pInw * getLocalTransform() * m_targetPos;
+    return m_localTransform * m_targetPos;
 }
 
 ///
@@ -5147,7 +5133,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 {
     afCameraAttributes & attribs = *a_attribs;
 
-    bool valid = true;
     int monitorToLoad = attribs.m_monitorNumber;
 
     // Set some default values
@@ -5166,7 +5151,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
         cerr << "INFO: CAMERA \"" << attribs.m_identificationAttribs.m_name << "\" MONITOR NUMBER \"" << monitorToLoad
-                  << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
+             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
         monitorToLoad = -1;
     }
 
@@ -5182,223 +5167,219 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_depthPublishInterval = attribs.m_publishDepthInterval;
 
 
-    if(valid){
-        m_camera = new cCamera(m_afWorld->m_chaiWorld);
-        setLocalPos(0, 0, 0);
-        cMatrix3d I3;
-        I3.identity();
-        setLocalRot(I3);
-        addChildSceneObject(m_camera);
+    m_camera = new cCamera(m_afWorld->m_chaiWorld);
 
-        m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+    addChildSceneObject(m_camera);
 
-        //////////////////////////////////////////////////////////////////////////////////////
-        // position and orient the camera
-        setView(m_camPos, m_camLookAt, m_camUp);
-        m_initialTransform = getLocalTransform();
-        // set the near and far clipping planes of the camera
-        m_camera->setClippingPlanes(attribs.m_nearPlane, attribs.m_farPlane);
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
-        // set stereo mode
-        m_camera->setStereoMode(m_stereMode);
+    //////////////////////////////////////////////////////////////////////////////////////
+    // position and orient the camera
+    setView(m_camPos, m_camLookAt, m_camUp);
+    m_initialTransform = getLocalTransform();
+    // set the near and far clipping planes of the camera
+    m_camera->setClippingPlanes(attribs.m_nearPlane, attribs.m_farPlane);
 
-        // set stereo eye separation and focal length (applies only if stereo is enabled)
-        m_camera->setStereoEyeSeparation(attribs.m_stereoEyeSeparation);
-        m_camera->setStereoFocalLength(attribs.m_stereFocalLength);
+    // set stereo mode
+    m_camera->setStereoMode(m_stereMode);
 
-        // set vertical mirrored display mode
-        m_camera->setMirrorVertical(false);
+    // set stereo eye separation and focal length (applies only if stereo is enabled)
+    m_camera->setStereoEyeSeparation(attribs.m_stereoEyeSeparation);
+    m_camera->setStereoFocalLength(attribs.m_stereFocalLength);
 
-        if (m_orthographic){
-            m_camera->setOrthographicView(attribs.m_orthoViewWidth);
+    // set vertical mirrored display mode
+    m_camera->setMirrorVertical(false);
+
+    if (m_orthographic){
+        m_camera->setOrthographicView(attribs.m_orthoViewWidth);
+    }
+    else{
+        m_camera->setFieldViewAngleRad(attribs.m_fieldViewAngle);
+    }
+
+    m_camera->setUseMultipassTransparency(attribs.m_multiPass);
+
+    string window_name = "AMBF Simulator Window " + to_string(s_cameraIdx + 1);
+    if (m_controllingDevNames.size() > 0){
+        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
+            window_name += (" - " + m_controllingDevNames[i]);
+        }
+
+    }
+
+    // create display context
+    if (monitorToLoad == -1){
+        if (s_cameraIdx < s_numMonitors){
+            monitorToLoad = s_cameraIdx;
         }
         else{
-            m_camera->setFieldViewAngleRad(attribs.m_fieldViewAngle);
+            monitorToLoad = 0;
         }
+    }
+    m_monitor = s_monitors[monitorToLoad];
 
-        m_camera->setUseMultipassTransparency(attribs.m_multiPass);
+    // compute desired size of window
+    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
+    int w = 0.5 * _mode->width;
+    int h = 0.5 * _mode->height;
+    int x = 0.5 * (_mode->width - w);
+    int y = 0.5 * (_mode->height - h);
 
-        string window_name = "AMBF Simulator Window " + to_string(s_cameraIdx + 1);
-        if (m_controllingDevNames.size() > 0){
-            for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
-                window_name += (" - " + m_controllingDevNames[i]);
-            }
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
 
-        }
+    m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
+    if (s_windowIdx == 0){
+        s_mainWindow = m_window;
+    }
 
-        // create display context
-        if (monitorToLoad == -1){
-            if (s_cameraIdx < s_numMonitors){
-                monitorToLoad = s_cameraIdx;
-            }
-            else{
-                monitorToLoad = 0;
-            }
-        }
-        m_monitor = s_monitors[monitorToLoad];
+    if (!m_window)
+    {
+        cerr << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
+        cSleepMs(1000);
+        glfwTerminate();
+        return 1;
+    }
 
-        // compute desired size of window
-        const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
-        int w = 0.5 * _mode->width;
-        int h = 0.5 * _mode->height;
-        int x = 0.5 * (_mode->width - w);
-        int y = 0.5 * (_mode->height - h);
+    // get width and height of window
+    glfwGetWindowSize(m_window, &m_width, &m_height);
 
-        m_win_x = x;
-        m_win_y = y;
-        m_width = w;
-        m_height = h;
+    // set position of window
+    glfwSetWindowPos(m_window, m_win_x, m_win_y);
 
-        m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
-        if (s_windowIdx == 0){
-            s_mainWindow = m_window;
-        }
+    // set the current context
+    glfwMakeContextCurrent(m_window);
 
-        if (!m_window)
-        {
-            cerr << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
-            cSleepMs(1000);
-            glfwTerminate();
-            return 1;
-        }
+    glfwSwapInterval(0);
 
-        // get width and height of window
-        glfwGetWindowSize(m_window, &m_width, &m_height);
-
-        // set position of window
-        glfwSetWindowPos(m_window, m_win_x, m_win_y);
-
-        // set the current context
-        glfwMakeContextCurrent(m_window);
-
-        glfwSwapInterval(0);
-
-        // initialize GLEW library
+    // initialize GLEW library
 #ifdef GLEW_VERSION
-        if (glewInit() != GLEW_OK)
-        {
-            cerr << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
-            glfwTerminate();
-            return 1;
-        }
+    if (glewInit() != GLEW_OK)
+    {
+        cerr << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
+        glfwTerminate();
+        return 1;
+    }
 #endif
 
-        // create a font
-        cFontPtr font = NEW_CFONTCALIBRI20();
+    // create a font
+    cFontPtr font = NEW_CFONTCALIBRI20();
 
-        m_graphicsDynamicsFreqLabel = new cLabel(font);
-        m_wallSimTimeLabel = new cLabel(font);
-        m_devicesModesLabel = new cLabel(font);
-        m_deviceButtonLabel = new cLabel(font);
-        m_controllingDeviceLabel = new cLabel(font);
+    m_graphicsDynamicsFreqLabel = new cLabel(font);
+    m_wallSimTimeLabel = new cLabel(font);
+    m_devicesModesLabel = new cLabel(font);
+    m_deviceButtonLabel = new cLabel(font);
+    m_controllingDeviceLabel = new cLabel(font);
 
-        m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
-        m_wallSimTimeLabel->m_fontColor.setBlack();
-        m_devicesModesLabel->m_fontColor.setBlack();
-        m_deviceButtonLabel->m_fontColor.setBlack();
-        m_controllingDeviceLabel->m_fontColor.setBlack();
-        m_controllingDeviceLabel->setFontScale(0.8);
+    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
+    m_wallSimTimeLabel->m_fontColor.setBlack();
+    m_devicesModesLabel->m_fontColor.setBlack();
+    m_deviceButtonLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->m_fontColor.setBlack();
+    m_controllingDeviceLabel->setFontScale(0.8);
 
-        m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-        m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
-        m_camera->m_frontLayer->addChild(m_devicesModesLabel);
-        m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
-        m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
+    m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
+    m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
+    m_camera->m_frontLayer->addChild(m_devicesModesLabel);
+    m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
+    m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
 
-        s_windowIdx++;
-        s_cameraIdx++;
+    s_windowIdx++;
+    s_cameraIdx++;
 
 
-        if (m_publishImage || m_publishDepth){
-            m_frameBuffer = new cFrameBuffer();
-            m_bufferColorImage = cImage::create();
-            m_bufferDepthImage = cImage::create();
-            m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
+    if (m_publishImage || m_publishDepth){
+        m_frameBuffer = new cFrameBuffer();
+        m_bufferColorImage = cImage::create();
+        m_bufferDepthImage = cImage::create();
+        m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-            if (s_imageTransportInitialized == false){
-                s_imageTransportInitialized = true;
-                int argc = 0;
-                char **argv = 0;
-                ros::init(argc, argv, "ambf_image_transport_node");
-                s_rosNode = new ros::NodeHandle();
-                s_imageTransport = new image_transport::ImageTransport(*s_rosNode);
-            }
-            m_imagePublisher = s_imageTransport->advertise(m_namespace + m_name + "/ImageData", 1);
+        if (s_imageTransportInitialized == false){
+            s_imageTransportInitialized = true;
+            int argc = 0;
+            char **argv = 0;
+            ros::init(argc, argv, "ambf_image_transport_node");
+            s_rosNode = new ros::NodeHandle();
+            s_imageTransport = new image_transport::ImageTransport(*s_rosNode);
+        }
+        m_imagePublisher = s_imageTransport->advertise(m_namespace + m_name + "/ImageData", 1);
 #endif
 
-            if (m_publishDepth){
-                // Set up the world
-                m_dephtWorld = new cWorld();
+        if (m_publishDepth){
+            // Set up the world
+            m_dephtWorld = new cWorld();
 
-                // Set up the frame buffer
-                m_depthBuffer = new cFrameBuffer();
-                m_depthBuffer->setup(m_camera, m_width, m_height, true, false, GL_RGBA16);
+            // Set up the frame buffer
+            m_depthBuffer = new cFrameBuffer();
+            m_depthBuffer->setup(m_camera, m_width, m_height, true, false, GL_RGBA16);
 
-                m_depthPC.setup(m_width, m_height, 3);
+            m_depthPC.setup(m_width, m_height, 3);
 
-                // Set up the quad
-                m_depthMesh = new cMesh();
-                float quad[] = {
-                    // positions
-                    -1.0f,  1.0f, 0.0f,
-                    -1.0f, -1.0f, 0.0f,
-                    1.0f, -1.0f, 0.0f,
-                    -1.0f, 1.0f, 0.0f,
-                    1.0f,  -1.0f, 0.0f,
-                    1.0f,  1.0f, 0.0f,
-                };
-                for (int vI = 0 ; vI < 2 ; vI++){
-                    int off = vI * 9;
-                    m_depthMesh->newTriangle(
-                                cVector3d(quad[off + 0], quad[off + 1], quad[off + 2]),
-                                cVector3d(quad[off + 3], quad[off + 4], quad[off + 5]),
-                                cVector3d(quad[off + 6], quad[off + 7], quad[off + 8]));
-                }
-                m_depthMesh->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
-                m_depthMesh->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
-                m_depthMesh->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
-                m_depthMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
-                m_depthMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
-                m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
+            // Set up the quad
+            m_depthMesh = new cMesh();
+            float quad[] = {
+                // positions
+                -1.0f,  1.0f, 0.0f,
+                -1.0f, -1.0f, 0.0f,
+                1.0f, -1.0f, 0.0f,
+                -1.0f, 1.0f, 0.0f,
+                1.0f,  -1.0f, 0.0f,
+                1.0f,  1.0f, 0.0f,
+            };
+            for (int vI = 0 ; vI < 2 ; vI++){
+                int off = vI * 9;
+                m_depthMesh->newTriangle(
+                            cVector3d(quad[off + 0], quad[off + 1], quad[off + 2]),
+                        cVector3d(quad[off + 3], quad[off + 4], quad[off + 5]),
+                        cVector3d(quad[off + 6], quad[off + 7], quad[off + 8]));
+            }
+            m_depthMesh->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
+            m_depthMesh->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
+            m_depthMesh->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
+            m_depthMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
+            m_depthMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
+            m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
-                m_depthMesh->computeAllNormals();
-                m_depthMesh->m_texture = cTexture2d::create();
-                m_depthMesh->m_texture->m_image->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE);
-                m_depthMesh->setUseTexture(true);
+            m_depthMesh->computeAllNormals();
+            m_depthMesh->m_texture = cTexture2d::create();
+            m_depthMesh->m_texture->m_image->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE);
+            m_depthMesh->setUseTexture(true);
 
-                m_dephtWorld->addChild(m_depthMesh);
-                m_dephtWorld->addChild(m_camera);
+            m_dephtWorld->addChild(m_depthMesh);
+            m_dephtWorld->addChild(m_camera);
 
-                m_depthBufferColorImage = cImage::create();
-                m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_INT);
+            m_depthBufferColorImage = cImage::create();
+            m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_INT);
 
-//                // DEBUGGING USING EXTERNALLY DEFINED SHADERS
-//                ifstream vsFile;
-//                ifstream fsFile;
-//                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
-//                fsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.fs");
-//                // create a string stream
-//                stringstream vsBuffer, fsBuffer;
-//                // dump the contents of the file into it
-//                vsBuffer << vsFile.rdbuf();
-//                fsBuffer << fsFile.rdbuf();
-//                // close the files
-//                vsFile.close();
-//                fsFile.close();
-//                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+            //                // DEBUGGING USING EXTERNALLY DEFINED SHADERS
+            //                ifstream vsFile;
+            //                ifstream fsFile;
+            //                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
+            //                fsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.fs");
+            //                // create a string stream
+            //                stringstream vsBuffer, fsBuffer;
+            //                // dump the contents of the file into it
+            //                vsBuffer << vsFile.rdbuf();
+            //                fsBuffer << fsFile.rdbuf();
+            //                // close the files
+            //                vsFile.close();
+            //                fsFile.close();
+            //                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
 
-                cShaderProgramPtr shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
-                if (shaderPgm->linkProgram()){
-                    cGenericObject* go;
-                    cRenderOptions ro;
-                    shaderPgm->use(go, ro);
-                    m_depthMesh->setShaderProgram(shaderPgm);
-                    shaderPgm->disable();
-                }
-                else{
-                    cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO LOAD SHADER FILES: " << endl;
-                }
+            cShaderProgramPtr shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
+            if (shaderPgm->linkProgram()){
+                cGenericObject* go;
+                cRenderOptions ro;
+                shaderPgm->use(go, ro);
+                m_depthMesh->setShaderProgram(shaderPgm);
+                shaderPgm->disable();
+            }
+            else{
+                cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO LOAD SHADER FILES: " << endl;
+            }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
             m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
@@ -5415,11 +5396,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             m_depthPointCloudPub = s_rosNode->advertise<sensor_msgs::PointCloud2>(m_namespace + m_name + "/DepthData", 1);
 #endif
 
-            }
         }
     }
 
-    return valid;
+    return true;
 }
 
 
@@ -6226,7 +6206,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     }
                 }
             }
-            m_afWorld->addAFRigidBody(rBodyPtr);
         }
     }
 
@@ -6237,7 +6216,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             string remaped_name = m_afWorld->addAFSoftBody(sBodyPtr);
             m_afSoftBodyMapLocal[sBodyPtr->getQualifiedName()] = sBodyPtr;
         }
-        m_afWorld->addAFSoftBody(sBodyPtr);
     }
 
     /// Loading Sensors
@@ -6277,7 +6255,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     sensorPtr->m_afSensorCommPtr->set_type(type_str);
 #endif
                 }
-                m_afWorld->addAFSensor(sensorPtr);
             }
         }
         else{
@@ -6315,7 +6292,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 #endif
                 }
             }
-            m_afWorld->addAFActuator(actuatorPtr);
         }
         else{
             continue;
@@ -6328,7 +6304,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
             string remaped_name = m_afWorld->addAFJoint(jntPtr);
             m_afJointMapLocal[jntPtr->getQualifiedName()] = jntPtr;
-            m_afWorld->addAFJoint(jntPtr);
         }
     }
 
@@ -6346,7 +6321,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                                                  vehiclePtr->getMinPublishFrequency(),
                                                  vehiclePtr->getMaxPublishFrequency());
             }
-            m_afWorld->addAFVehicle(vehiclePtr);
         }
     }
 

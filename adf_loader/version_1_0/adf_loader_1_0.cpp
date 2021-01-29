@@ -486,6 +486,7 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
     YAML::Node collisionMarginNode = node["collision margin"];
     YAML::Node collisionGroupsNode = node["collision groups"];
 
+    YAML::Node meshNode = node["mesh"];
     YAML::Node collisionMeshNode = node["collision mesh"];
     YAML::Node collisionShapeNode = node["collision shape"];
     YAML::Node collisionOffsetNode = node["collision offset"];
@@ -550,6 +551,15 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
             ADFUtils::copyPrimitiveShapeData(&_collisionGeometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&_shapeOffsetNode, &shapeAttribs);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
+        }
+    }
+    else if (meshNode.IsDefined()){
+        attribs->m_meshFilepath = localPath / meshNode.as<string>();
+        if (!attribs->m_meshFilepath.c_str().empty()){
+            attribs->m_geometryType = afGeometryType::MESH;
+        }
+        else{
+            valid = false;
         }
     }
     else if (collisionMeshNode.IsDefined()){
@@ -1045,6 +1055,8 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     bool valid = true;
 
     ADFUtils adfUtils;
+
+    node["location"]["position"] = node["location"];
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);

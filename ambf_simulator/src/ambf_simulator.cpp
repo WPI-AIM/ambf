@@ -392,7 +392,7 @@ int main(int argc, char* argv[])
     launchAttribs.resolveRelativePathAttribs();
 
     g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
-    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
+//    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
 
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
@@ -463,7 +463,7 @@ int main(int argc, char* argv[])
     for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
         afModel model(g_afWorld);
         if (model.createFromAttribs(&modelsAttribs[idx])){
-            g_afWorld->addAFModel(&model);
+//            g_afWorld->addAFModel(&model);
         }
     }
 
@@ -1269,11 +1269,11 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
 
             double scale = 0.1;
             cVector3d camVelAlongLook(speed_scale * scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
-            cVector3d _targetPos = cameraPtr->getTargetPos();
-            cVector3d _newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
-            cVector3d dPos = _newPos - _targetPos;
+            cVector3d newTargetPos = cameraPtr->getTargetPos();
+            cVector3d newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
+            cVector3d dPos = newPos - newTargetPos;
             if(dPos.length() < 0.5){
-                _targetPos = _targetPos + cameraPtr->getLocalRot() * camVelAlongLook;
+                newTargetPos = newTargetPos + cameraPtr->getLocalRot() * camVelAlongLook;
             }
             if (cameraPtr->isOrthographic()){
                 cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
@@ -1282,7 +1282,7 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             else{
                 cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
             }
-            cameraPtr->setTargetPos(_targetPos);
+            cameraPtr->setTargetPos(newTargetPos);
         }
     }
 }
@@ -1307,11 +1307,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     btVector3 camPos, camTarget;
 
     camPos = to_btVector(a_cameraPtr->getGlobalPos());
-    cVector3d targetPosGlobal = a_cameraPtr->getTargetPos();
-    if (a_cameraPtr->m_visualMesh->getParent()){
-        targetPosGlobal = a_cameraPtr->m_visualMesh->getParent()->getLocalTransform() * targetPosGlobal;
-    }
-    camTarget = to_btVector(targetPosGlobal);
+    cVector3d targetPos = a_cameraPtr->getTargetPos();
+    camTarget = to_btVector(targetPos);
 
     btVector3 rayFrom = camPos;
     btVector3 rayForward = (camTarget - camPos);

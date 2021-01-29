@@ -584,8 +584,6 @@ public:
 
     virtual void updateGlobalPose();
 
-    void updateChildrenSceneObjects();
-
     void showVisualFrame();
 
     inline bool isShaderPgmDefined(){
@@ -612,7 +610,7 @@ public:
 
     cMultiMesh* m_visualMesh;
 
-    std::vector<cGenericObject*> m_sceneObjects;
+    std::vector<cGenericObject*> m_childrenSceneObjects;
 
     vector<afBaseObjectPtr> m_afChildrenObjects;
 
@@ -628,9 +626,6 @@ protected:
 
     afPath m_vtxShaderFilePath;
     afPath m_fragShaderFilePath;
-
-    // This could be a cCamera, cLight etc.
-    cGenericObject* m_wrappedObject;
 
     cTransform m_localTransform;
 
@@ -678,7 +673,7 @@ public:
 
     inline void setMass(double a_mass){m_mass = a_mass;}
 
-    void setInertia(double ix, double iy, double iz);
+    void setInertia(afVector3d& a_inertia);
 
     void setInertialOffsetTransform(btTransform & a_trans);
 
