@@ -204,8 +204,8 @@ void preTickCallBack(btDynamicsWorld* world, btScalar timeStep);
 
 // Exit Handler
 void exitHandler(int s){
-           std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
-           g_afRenderOptions.m_windowClosed = true;
+    std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
+    g_afRenderOptions.m_windowClosed = true;
 }
 
 ///
@@ -270,8 +270,8 @@ int main(int argc, char* argv[])
             ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
             ("load_multibody_files,a", p_opt::value<std::string>(), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
-                                                                      "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
-                                                                      " and test2.yaml if they are valid files")
+                                                                    "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
+                                                                    " and test2.yaml if they are valid files")
             ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
@@ -409,65 +409,65 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
-        // The world loads the lights and cameras + windows
-        g_afWorld->createFromAttribs(&worldAttribs);
+    // The world loads the lights and cameras + windows
+    g_afWorld->createFromAttribs(&worldAttribs);
 
-        g_cameras = g_afWorld->getAFCameras();
+    g_cameras = g_afWorld->getAFCameras();
 
-        // Process the loadMultiBodyFiles string
-        if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
-            std::vector<std::string> mbFileNames;
-            std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
-            std::stringstream ss(loadMBFilenames);
-            while(ss.good() )
-            {
-                string mbFilename;
-                getline( ss, mbFilename, ',' );
-                mbFileNames.push_back(mbFilename);
+    // Process the loadMultiBodyFiles string
+    if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
+        std::vector<std::string> mbFileNames;
+        std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
+        std::stringstream ss(loadMBFilenames);
+        while(ss.good() )
+        {
+            string mbFilename;
+            getline( ss, mbFilename, ',' );
+            mbFileNames.push_back(mbFilename);
+        }
+        for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
+            afModelAttributes modelAttribs;
+            if (g_adfLoader->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
+                modelsAttribs.push_back(modelAttribs);
             }
-            for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
+        }
+    }
+
+    // Process the Multi-body index files
+    if (!g_cmdOpts.multiBodiesToLoad.empty()){
+        std::vector<uint> mbIndexes;
+        std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
+        loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
+        std::stringstream ss(loadMBs);
+        while(ss.good() )
+        {
+            string mbIdx;
+            getline( ss, mbIdx, ',' );
+            mbIndexes.push_back(std::stoi(mbIdx));
+        }
+        for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
+            uint fileIdx = mbIndexes[idx];
+            if (fileIdx >= launchAttribs.m_modelFilepaths.size()){
+                cerr << "ERROR: -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
+                continue;
+            }
+            else{
                 afModelAttributes modelAttribs;
-                if (g_adfLoader->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
+                if (g_adfLoader->loadModelAttribs(launchAttribs.m_modelFilepaths[fileIdx].c_str(), &modelAttribs)){
                     modelsAttribs.push_back(modelAttribs);
                 }
             }
         }
+    }
 
-        // Process the Multi-body index files
-        if (!g_cmdOpts.multiBodiesToLoad.empty()){
-            std::vector<uint> mbIndexes;
-            std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
-            loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
-            std::stringstream ss(loadMBs);
-            while(ss.good() )
-            {
-                string mbIdx;
-                getline( ss, mbIdx, ',' );
-                mbIndexes.push_back(std::stoi(mbIdx));
-            }
-            for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
-                uint fileIdx = mbIndexes[idx];
-                if (fileIdx >= launchAttribs.m_modelFilepaths.size()){
-                    cerr << "ERROR: -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
-                    continue;
-                }
-                else{
-                    afModelAttributes modelAttribs;
-                    if (g_adfLoader->loadModelAttribs(launchAttribs.m_modelFilepaths[fileIdx].c_str(), &modelAttribs)){
-                        modelsAttribs.push_back(modelAttribs);
-                    }
-                }
-            }
+    for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
+        afModel model(g_afWorld);
+        if (model.createFromAttribs(&modelsAttribs[idx])){
+            g_afWorld->addAFModel(&model);
         }
+    }
 
-        for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
-            afModel model(g_afWorld);
-            if (model.createFromAttribs(&modelsAttribs[idx])){
-                g_afWorld->addAFModel(&model);
-            }
-        }
-
-        g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
+    g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
 
     //-----------------------------------------------------------------------------------------------------------
     // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
@@ -483,15 +483,15 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-//        // get width and height of window
-//        int _width, _height;
-//        glfwGetWindowSize(windowPtr, &_width, &_height);
+        //        // get width and height of window
+        //        int _width, _height;
+        //        glfwGetWindowSize(windowPtr, &_width, &_height);
 
-//        (*g_cameraIt)->m_width = _width;
-//        (*g_cameraIt)->m_height = _height;
+        //        (*g_cameraIt)->m_width = _width;
+        //        (*g_cameraIt)->m_height = _height;
 
-//        // set position of window
-//        glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
+        //        // set position of window
+        //        glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
 
         // set key callback
         glfwSetKeyCallback(windowPtr, keyCallback);
@@ -519,15 +519,15 @@ int main(int argc, char* argv[])
         // Finally address all the requested parenting if any in the ADF file
         (*g_cameraIt)->resolveParenting();
 
-//        // initialize GLEW library
-//#ifdef GLEW_VERSION
-//        if (glewInit() != GLEW_OK)
-//        {
-//            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
-//            glfwTerminate();
-//            return 1;
-//        }
-//#endif
+        //        // initialize GLEW library
+        //#ifdef GLEW_VERSION
+        //        if (glewInit() != GLEW_OK)
+        //        {
+        //            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
+        //            glfwTerminate();
+        //            return 1;
+        //        }
+        //#endif
     }
 
     afLightVec temp_lights = g_afWorld->getAFLighs();
@@ -598,7 +598,7 @@ int main(int argc, char* argv[])
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-//    signal (SIGINT, exitHandler);
+    //    signal (SIGINT, exitHandler);
 
     // Enable any shader programs defined via ADF
     g_afWorld->enableShaderProgram();
@@ -632,14 +632,14 @@ int main(int argc, char* argv[])
     while (!g_afRenderOptions.m_windowClosed)
     {
         if (g_cmdOpts.showGUI){
-        // Call the update graphics method
-        updateGraphics();
+            // Call the update graphics method
+            updateGraphics();
 
-        // process events
-        glfwPollEvents();
+            // process events
+            glfwPollEvents();
 
-        // signal frequency counter
-        g_afWorld->m_freqCounterGraphics.signal(1);
+            // signal frequency counter
+            g_afWorld->m_freqCounterGraphics.signal(1);
         }
 
         else{
@@ -1118,7 +1118,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
         if (a_window == (*g_cameraIt)->m_window){
             if (a_button == GLFW_MOUSE_BUTTON_1){
                 (*g_cameraIt)->mouse_l_clicked = a_action;
-//                (*g_cameraIt)->showTargetPos(true);
+                //                (*g_cameraIt)->showTargetPos(true);
                 if (a_action){
                     if (g_mousePickingEnabled){
                         cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
@@ -1213,7 +1213,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             }
 
             if( devCam->mouse_scroll_clicked){
-//                devCam->showTargetPos(true);
+                //                devCam->showTargetPos(true);
                 double scale = 0.03;
                 double horizontalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
                 double verticalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
@@ -1239,9 +1239,9 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * deltaVel;
                 devCam->setView(newPos, devCam->getTargetPos(), cVector3d(0,0,1));
             }
-//            else{
-//                devCam->showTargetPos(false);
-//            }
+            //            else{
+            //                devCam->showTargetPos(false);
+            //            }
 
         }
     }
@@ -1382,11 +1382,11 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         jnt->applyDamping(timeStep);
     }
 
-//    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
-//    // Update the data for sensors
-//    for (int i=0 ; i < afSensors.size() ; i++){
-//        afSensors[i]->updateSensor();
-//    }
+    //    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
+    //    // Update the data for sensors
+    //    for (int i=0 ; i < afSensors.size() ; i++){
+    //        afSensors[i]->updateSensor();
+    //    }
 }
 
 ///
@@ -1453,98 +1453,83 @@ void updatePhysics(){
     torque_prev.set(0, 0, 0);
     while(g_simulationRunning)
     {
-            g_afWorld->m_freqCounterHaptics.signal(1);
+        g_afWorld->m_freqCounterHaptics.signal(1);
 
-            // Take care of any picked body by mouse
-            if (g_pickBody){
-                if (bodyPicked == false){
-                    bodyPicked = true;
-                    g_afWorld->pickBody(g_pickFrom, g_pickTo);
-                }
-                else{
-                    g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
-                }
+        // Take care of any picked body by mouse
+        if (g_pickBody){
+            if (bodyPicked == false){
+                bodyPicked = true;
+                g_afWorld->pickBody(g_pickFrom, g_pickTo);
             }
             else{
-                bodyPicked = false;
-                g_afWorld->removePickingConstraint();
+                g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
             }
+        }
+        else{
+            bodyPicked = false;
+            g_afWorld->removePickingConstraint();
+        }
 
-            double step_size;
-            if (g_cmdOpts.useFixedPhxTimeStep){
-                step_size = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.phxFrequency);
-            }
-            else{
-                step_size = g_afWorld->computeStepSize(true);
-            }
+        double step_size;
+        if (g_cmdOpts.useFixedPhxTimeStep){
+            step_size = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.phxFrequency);
+        }
+        else{
+            step_size = g_afWorld->computeStepSize(true);
+        }
 
-            for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
-                // update position of simulate gripper
-                afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
-                afPhysicalDevice * phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
-                afRigidBodyPtr rootLink = simDev->m_rootLink;
-                simDev->updateGlobalPose();
+        for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
+            // update position of simulate gripper
+            afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
+            afPhysicalDevice * phyDev = g_inputDevices->m_collateralControlUnits[devIdx].m_physicalDevicePtr;
+            afRigidBodyPtr rootLink = simDev->m_rootLink;
+            simDev->updateGlobalPose();
 
-                if (g_enableGrippingAssist){
-                    for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
-                        afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
-                        if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
-                            afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
-                            for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
-                                if (proximitySensorPtr->isTriggered(i) && simDev->m_gripper_angle < 0.5){
-                                    if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
-                                        if (!simDev->m_rigidGrippingConstraints[sIdx]){
-                                            btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
-                                            btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBTRigidBody(i);
-                                            if (!rootLink->isChild(bodyBPtr)){
-                                                cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint(i);
-                                                btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
-                                                btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
-                                                simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
-                                                simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
-                                                simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
-                                                g_afWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
-                                            }
+            if (g_enableGrippingAssist){
+                for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
+                    afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
+                    if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
+                        afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
+                        for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
+                            if (proximitySensorPtr->isTriggered(i) && simDev->m_gripper_angle < 0.5){
+                                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
+                                    if (!simDev->m_rigidGrippingConstraints[sIdx]){
+                                        btRigidBody* bodyAPtr = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
+                                        btRigidBody* bodyBPtr = proximitySensorPtr->getSensedBTRigidBody(i);
+                                        if (!rootLink->isChild(bodyBPtr)){
+                                            cVector3d hitPointInWorld = proximitySensorPtr->getSensedPoint(i);
+                                            btVector3 pvtA = bodyAPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
+                                            btVector3 pvtB = bodyBPtr->getCenterOfMassTransform().inverse() * to_btVector(hitPointInWorld);
+                                            simDev->m_rigidGrippingConstraints[sIdx] = new btPoint2PointConstraint(*bodyAPtr, *bodyBPtr, pvtA, pvtB);
+                                            simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_impulseClamp = 3.0;
+                                            simDev->m_rigidGrippingConstraints[sIdx]->m_setting.m_tau = 0.001f;
+                                            g_afWorld->m_bulletWorld->addConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
                                         }
                                     }
+                                }
 
-                                    if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::SOFT_BODY){
-                                        if (!simDev->m_softGrippingConstraints[sIdx]){
-                                            // Here we implemented the softBody grad logic. We want to move the
-                                            // soft body as we move the simulated end effector
+                                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::SOFT_BODY){
+                                    if (!simDev->m_softGrippingConstraints[sIdx]){
+                                        // Here we implemented the softBody grad logic. We want to move the
+                                        // soft body as we move the simulated end effector
 
-                                            // Get the parent body that owns this sensor
-                                            btRigidBody* _rBody = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
-                                            // Get the sensed softbody
-                                            btSoftBody* _sBody = proximitySensorPtr->getSensedBTSoftBody(i);
+                                        // Get the parent body that owns this sensor
+                                        btRigidBody* _rBody = proximitySensorPtr->getParentBody()->m_bulletRigidBody;
+                                        // Get the sensed softbody
+                                        btSoftBody* _sBody = proximitySensorPtr->getSensedBTSoftBody(i);
 
-                                            simDev->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
-                                            simDev->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;
-                                            simDev->m_softGrippingConstraints[sIdx]->m_rBody = _rBody;
+                                        simDev->m_softGrippingConstraints[sIdx] = new SoftBodyGrippingConstraint();
+                                        simDev->m_softGrippingConstraints[sIdx]->m_sBody = _sBody;
+                                        simDev->m_softGrippingConstraints[sIdx]->m_rBody = _rBody;
 
-                                            // If we get a sensedSoftBody, we should check if it has a detected face. If a face
-                                            // is found, we can anchor all the connecting nodes.
-                                            if (proximitySensorPtr->getSensedSoftBodyFace(i)){
-                                                btSoftBody::Face* _sensedFace = proximitySensorPtr->getSensedSoftBodyFace(i);
-                                                for (int nIdx = 0; nIdx < 3 ; nIdx++){
-                                                    btSoftBody::Node* _node = _sensedFace->m_n[nIdx];
-                                                    btVector3 _localPivot = _rBody->getCenterOfMassTransform().inverse() * _node->m_x;
-
-                                                    btSoftBody::Anchor _anchor;
-                                                    _node->m_battach = 1;
-                                                    _anchor.m_body = _rBody;
-                                                    _anchor.m_node = _node;
-                                                    _anchor.m_influence = 1;
-                                                    _anchor.m_local = _localPivot;
-                                                    _sBody->m_anchors.push_back(_anchor);
-                                                    simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
-                                                }
-                                            }
-                                            // Otherwise we shall directly anchor to nodes. This case
-                                            // arises for ropes, suturing thread etc
-                                            else{
-                                                btSoftBody::Node* _node = proximitySensorPtr->getSensedSoftBodyNode(i);
+                                        // If we get a sensedSoftBody, we should check if it has a detected face. If a face
+                                        // is found, we can anchor all the connecting nodes.
+                                        if (proximitySensorPtr->getSensedSoftBodyFace(i)){
+                                            btSoftBody::Face* _sensedFace = proximitySensorPtr->getSensedSoftBodyFace(i);
+                                            for (int nIdx = 0; nIdx < 3 ; nIdx++){
+                                                btSoftBody::Node* _node = _sensedFace->m_n[nIdx];
                                                 btVector3 _localPivot = _rBody->getCenterOfMassTransform().inverse() * _node->m_x;
+
                                                 btSoftBody::Anchor _anchor;
                                                 _node->m_battach = 1;
                                                 _anchor.m_body = _rBody;
@@ -1553,86 +1538,101 @@ void updatePhysics(){
                                                 _anchor.m_local = _localPivot;
                                                 _sBody->m_anchors.push_back(_anchor);
                                                 simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
-
                                             }
+                                        }
+                                        // Otherwise we shall directly anchor to nodes. This case
+                                        // arises for ropes, suturing thread etc
+                                        else{
+                                            btSoftBody::Node* _node = proximitySensorPtr->getSensedSoftBodyNode(i);
+                                            btVector3 _localPivot = _rBody->getCenterOfMassTransform().inverse() * _node->m_x;
+                                            btSoftBody::Anchor _anchor;
+                                            _node->m_battach = 1;
+                                            _anchor.m_body = _rBody;
+                                            _anchor.m_node = _node;
+                                            _anchor.m_influence = 1;
+                                            _anchor.m_local = _localPivot;
+                                            _sBody->m_anchors.push_back(_anchor);
+                                            simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.push_back(_node);
+
                                         }
                                     }
                                 }
-                                else{
-                                    if(simDev->m_rigidGrippingConstraints[sIdx]){
-                                        g_afWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
-                                        simDev->m_rigidGrippingConstraints[sIdx] = 0;
-                                    }
-                                    if(simDev->m_softGrippingConstraints[sIdx]){
-                                        for (int nIdx = 0 ; nIdx < simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.size()  ; nIdx++){
-                                            btSoftBody::Node* _nodePtr = simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs[nIdx];
-                                            btSoftBody* _sBody = simDev->m_softGrippingConstraints[sIdx]->m_sBody;
-                                            btRigidBody* _rBody = simDev->m_softGrippingConstraints[sIdx]->m_rBody;
-                                            for (int aIdx = 0 ; aIdx < _sBody->m_anchors.size() ; aIdx++){
-                                                if (_sBody->m_anchors[aIdx].m_body == _rBody){
-                                                    btSoftBody::Anchor* _anchor = &_sBody->m_anchors[aIdx];
-                                                    if (_anchor->m_node == _nodePtr){
-                                                        _sBody->m_anchors.removeAtIndex(aIdx);
-                                                        break;
-                                                    }
+                            }
+                            else{
+                                if(simDev->m_rigidGrippingConstraints[sIdx]){
+                                    g_afWorld->m_bulletWorld->removeConstraint(simDev->m_rigidGrippingConstraints[sIdx]);
+                                    simDev->m_rigidGrippingConstraints[sIdx] = 0;
+                                }
+                                if(simDev->m_softGrippingConstraints[sIdx]){
+                                    for (int nIdx = 0 ; nIdx < simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs.size()  ; nIdx++){
+                                        btSoftBody::Node* _nodePtr = simDev->m_softGrippingConstraints[sIdx]->m_nodePtrs[nIdx];
+                                        btSoftBody* _sBody = simDev->m_softGrippingConstraints[sIdx]->m_sBody;
+                                        btRigidBody* _rBody = simDev->m_softGrippingConstraints[sIdx]->m_rBody;
+                                        for (int aIdx = 0 ; aIdx < _sBody->m_anchors.size() ; aIdx++){
+                                            if (_sBody->m_anchors[aIdx].m_body == _rBody){
+                                                btSoftBody::Anchor* _anchor = &_sBody->m_anchors[aIdx];
+                                                if (_anchor->m_node == _nodePtr){
+                                                    _sBody->m_anchors.removeAtIndex(aIdx);
+                                                    break;
                                                 }
                                             }
                                         }
-                                        simDev->m_softGrippingConstraints[sIdx] = 0;
                                     }
+                                    simDev->m_softGrippingConstraints[sIdx] = 0;
                                 }
                             }
                         }
                     }
                 }
-
-                cVector3d pCommand, rCommand;
-                // ts is to prevent the saturation of forces
-                double ts = dt_fixed / step_size;
-                pCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
-                pCommand = simDev->P_lc_ramp * pCommand;
-
-                rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
-
-                if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
-                    simDev->applyForce(pCommand);
-                }
-                else{
-                    simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(to_btVector(pCommand));
-                }
-
-                if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
-                    simDev->applyTorque(rCommand);
-                }
-                else{
-                    simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(to_btVector(rCommand));
-                }
-
-                // Control simulated body joints only if joint control of this physical device has been enabled
-                if (simDev->isJointControlEnabled()){
-                    simDev->setGripperAngle(simDev->m_gripper_angle);
-                }
-
-                if (simDev->P_lc_ramp < 1.0)
-                {
-                    simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * step_size;
-                }
-                else
-                {
-                    simDev->P_lc_ramp = 1.0;
-                }
-
-                if (simDev->P_ac_ramp < 1.0)
-                {
-                    simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * step_size;
-                }
-                else
-                {
-                    simDev->P_ac_ramp = 1.0;
-                }
             }
-            g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
-            phxSleep.sleep();
+
+            cVector3d pCommand, rCommand;
+            // ts is to prevent the saturation of forces
+            double ts = dt_fixed / step_size;
+            pCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
+            pCommand = simDev->P_lc_ramp * pCommand;
+
+            rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+
+            if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
+                simDev->applyForce(pCommand);
+            }
+            else{
+                simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(to_btVector(pCommand));
+            }
+
+            if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
+                simDev->applyTorque(rCommand);
+            }
+            else{
+                simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(to_btVector(rCommand));
+            }
+
+            // Control simulated body joints only if joint control of this physical device has been enabled
+            if (simDev->isJointControlEnabled()){
+                simDev->setGripperAngle(simDev->m_gripper_angle);
+            }
+
+            if (simDev->P_lc_ramp < 1.0)
+            {
+                simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * step_size;
+            }
+            else
+            {
+                simDev->P_lc_ramp = 1.0;
+            }
+
+            if (simDev->P_ac_ramp < 1.0)
+            {
+                simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * step_size;
+            }
+            else
+            {
+                simDev->P_ac_ramp = 1.0;
+            }
+        }
+        g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+        phxSleep.sleep();
     }
     g_simulationFinished = true;
 }
@@ -1852,15 +1852,15 @@ void updateHapticDevice(void* a_arg){
             force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
             torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
 
-//            if ((force - force_prev).length() > phyDev->m_maxJerk){
-//                cVector3d normalized_force = force;
-//                normalized_force.normalize();
-//                double _sign = 1.0;
-//                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
-//                    _sign = 1.0;
-//                }
-//                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
-//            }
+            //            if ((force - force_prev).length() > phyDev->m_maxJerk){
+            //                cVector3d normalized_force = force;
+            //                normalized_force.normalize();
+            //                double _sign = 1.0;
+            //                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
+            //                    _sign = 1.0;
+            //                }
+            //                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
+            //            }
 
             if (force.length() < phyDev->m_deadBand){
                 force.set(0,0,0);

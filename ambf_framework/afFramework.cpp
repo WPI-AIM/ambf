@@ -1691,7 +1691,6 @@ void afRigidBody::addChildBodyJointPair(afRigidBodyPtr a_childBody, afJointPtr a
 bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 {
     afRigidBodyAttributes & attribs = *a_attribs;
-
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
     m_visualGeometryType = attribs.m_visualAttribs.m_geometryType;
@@ -4224,6 +4223,8 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     afWorldAttributes & attribs = *a_attribs;
 
+    attribs.resolveRelativePathAttribs();
+
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -6196,7 +6197,7 @@ void afModel::remapName(string &name, string remap_idx_str){
 bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 {
     afModelAttributes& attribs = *a_attribs;
-    attribs.resolveRelativeNamespace(attribs.m_identificationAttribs.m_namespace);
+    attribs.resolveRelativeNamespace();
     attribs.resolveRelativePathAttribs();
 
     bool enable_comm = a_attribs->m_enableComm;

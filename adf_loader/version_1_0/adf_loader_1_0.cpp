@@ -1951,8 +1951,7 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulate
         afPath sdeFilepath = simulatedModelNode.as<string>();
         sdeFilepath.resolvePath(attribs->m_filePath.parent_path());
 
-        YAML::Node sdeModelNode = YAML::LoadFile(sdeFilepath.c_str());
-        if (loadModelAttribs(&sdeModelNode, &attribs->m_modelAttribs)){
+        if (loadModelAttribs(sdeFilepath.c_str(), &attribs->m_modelAttribs)){
             attribs->m_sdeDefined = true;
         }
         else{
@@ -2084,6 +2083,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         string identifier = rigidBodiesNode[i].as<string>();
         YAML::Node rbNode = node[identifier];
         if (loadRigidBodyAttribs(&rbNode, &rbAttribs)){
+            rbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
+            rbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
             attribs->m_rigidBodyAttribs.push_back(rbAttribs);
         }
     }
@@ -2094,6 +2095,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         string identifier = softBodiesNode[i].as<string>();
         YAML::Node sbNode = node[identifier];
         if (loadSoftBodyAttribs(&sbNode, &sbAttribs)){
+            sbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
+            sbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
             attribs->m_softBodyAttribs.push_back(sbAttribs);
         }
     }
@@ -2230,8 +2233,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
     if (environmentNode.IsDefined()){
         afPath environmentFilepath = environmentNode.as<string>();
         environmentFilepath.resolvePath(attribs->m_filePath.parent_path().c_str());
-        YAML::Node envNode = YAML::LoadFile(environmentFilepath.c_str());
-        if (loadModelAttribs(&envNode, &attribs->m_environmentModel.m_modelAttribs)){
+        if (loadModelAttribs(environmentFilepath.c_str(), &attribs->m_environmentModel.m_modelAttribs)){
             attribs->m_environmentModel.m_use = true;
             attribs->m_enclosure.m_use = false;
         }

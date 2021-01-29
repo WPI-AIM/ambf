@@ -377,14 +377,29 @@ public:
 
 
 struct afBaseObjectAttributes{
+public:
+    afBaseObjectAttributes(){
+        m_pathsResolved = false;
+    }
     // Base Struct that can be used to later cast specific Object Attributes
     afIdentificationAttributes m_identificationAttribs;
 
     virtual void resolveRelativeNamespace(string a_parentNamespace){
-        m_identificationAttribs.m_namespace = afUtils::mergeNamespace(a_parentNamespace, m_identificationAttribs.m_namespace);
+        if (m_namespaceResolved == false){
+            m_identificationAttribs.m_namespace = afUtils::mergeNamespace(a_parentNamespace, m_identificationAttribs.m_namespace);
+            m_namespaceResolved = true;
+        }
     }
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){}
+
+    inline bool areNamespaceAttribsResolved(){ return m_namespaceResolved;}
+
+    inline bool arePathAttribsResolved(){ return m_pathsResolved;}
+
+protected:
+    bool m_pathsResolved;
+    bool m_namespaceResolved;
 };
 
 
@@ -567,10 +582,13 @@ public:
     afSurfaceAttributes m_surfaceAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
-        m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        if (m_pathsResolved == false){
+            m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
     }
 };
 
@@ -633,10 +651,13 @@ public:
     afShaderAttributes m_shaderAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
-        m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        if (m_pathsResolved == false){
+            m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
     }
 };
 
@@ -694,7 +715,10 @@ public:
     std::vector<afWheelAttributes> m_wheelAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_wheelsVisualPath.resolvePath(a_parentPath);
+        if (m_pathsResolved == false){
+            m_wheelsVisualPath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
     }
 };
 
@@ -741,7 +765,10 @@ public:
     std::vector<afRayAttributes> m_raysAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_contourMeshFilepath.resolvePath(a_parentPath);
+        if (m_pathsResolved == false){
+            m_contourMeshFilepath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
     }
 };
 
@@ -797,30 +824,61 @@ public:
 
     bool m_ignoreInterCollision;
 
+    virtual bool resolveRelativeNamespace(){
+        if (m_namespaceResolved == false){
+            string a_parentNamespace = m_identificationAttribs.m_namespace;
+
+            for (int i = 0 ; i < m_rigidBodyAttribs.size() ; i++){
+                m_rigidBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
+                m_softBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
+                m_vehicleAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
+                m_sensorAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
+                m_actuatorAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            m_namespaceResolved = true;
+        }
+        return true;
+    }
+
     virtual bool resolveRelativePathAttribs(){
+        if (m_pathsResolved == false){
+            afPath a_parentPath = m_filePath.parent_path();
 
-        afPath a_parentPath = m_filePath.parent_path();
+            for (int i = 0 ; i < m_rigidBodyAttribs.size() ; i++){
+                m_rigidBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
 
-        for (int i = 0 ; i < m_rigidBodyAttribs.size() ; i++){
-            m_rigidBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
+                m_softBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
+                m_vehicleAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
+                m_sensorAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
+                m_actuatorAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            m_pathsResolved = true;
         }
-
-        for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
-            m_softBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
-        }
-
-        for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
-            m_vehicleAttribs[i].resolveRelativePathAttribs(a_parentPath);
-        }
-
-        for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
-            m_sensorAttribs[i].resolveRelativePathAttribs(a_parentPath);
-        }
-
-        for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
-            m_actuatorAttribs[i].resolveRelativePathAttribs(a_parentPath);
-        }
-
         return true;
     }
 };
@@ -847,8 +905,10 @@ struct afSimulatedDeviceAttribs: public afBaseObjectAttributes, public afFileObj
     afModelAttributes m_modelAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
-        m_modelAttribs.m_filePath = a_parentPath;
-        m_modelAttribs.resolveRelativePathAttribs();
+        if (m_pathsResolved == false){
+            m_modelAttribs.m_filePath = a_parentPath;
+            m_modelAttribs.resolveRelativePathAttribs();
+        }
     }
 };
 
@@ -962,27 +1022,29 @@ public:
     afSkyBoxAttributes m_skyBoxAttribs;
 
     virtual bool resolveRelativePathAttribs(){
+        if (m_pathsResolved == false){
+            afPath a_parentPath = m_filePath.parent_path();
 
-        afPath a_parentPath = m_filePath.parent_path();
+            m_skyBoxAttribs.m_backImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.m_bottomImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.m_frontImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.m_leftImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.m_rightImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.m_topImageFilepath.resolvePath(a_parentPath);
 
-        m_skyBoxAttribs.m_backImageFilepath.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_bottomImageFilepath.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_frontImageFilepath.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_leftImageFilepath.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_rightImageFilepath.resolvePath(a_parentPath);
-        m_skyBoxAttribs.m_topImageFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
 
-        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            for (uint i = 0 ; i < m_lightAttribs.size() ; i++){
+                m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
 
-        for (uint i = 0 ; i < m_lightAttribs.size() ; i++){
-            m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            for (uint i = 0 ; i < m_cameraAttribs.size() ; i++){
+                m_cameraAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            m_pathsResolved = true;
         }
-
-        for (uint i = 0 ; i < m_cameraAttribs.size() ; i++){
-            m_cameraAttribs[i].resolveRelativePathAttribs(a_parentPath);
-        }
-
         return true;
     }
 };
@@ -998,7 +1060,6 @@ public:
     std::vector<afPath> m_modelFilepaths;
 
     virtual bool resolveRelativePathAttribs(){
-
         afPath a_parentPath = m_filePath.parent_path();
 
         m_colorFilepath.resolvePath(a_parentPath);
