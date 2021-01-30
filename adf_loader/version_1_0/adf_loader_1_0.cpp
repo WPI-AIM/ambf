@@ -79,9 +79,9 @@ afMatrix3d ADFUtils::rotationFromNode(YAML::Node *node){
 
 
 ///
-/// \brief ADFUtils::getMatrialAttribsFromNode
+/// \brief ADFUtils::getColorAttribsFromNode
 /// \param a_node
-/// \param mat
+/// \param a_color
 /// \return
 ///
 bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_color)
@@ -170,6 +170,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     YAML::Node compoundShapeNode = node["compound shape"];
     YAML::Node geometryNode = node["geometry"];
     YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node colorNode = node["color"];
 
     bool valid = false;
 
@@ -219,6 +220,9 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     else{
         valid = false;
     }
+
+    ADFUtils utils;
+    utils.getColorAttribsFromNode(&node, &attribs->m_colorAttribs);
 
     return valid;
 }
@@ -1163,6 +1167,9 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
     YAML::Node compoundShapeNode = node["compound shape"];
     YAML::Node geometryNode = node["geometry"];
     YAML::Node shadersNode = node["shaders"];
+    YAML::Node colorNode = node["color"];
+    YAML::Node colorRGBANode = node["color rgba"];
+    YAML::Node colorComponentsNode = node["color components"];
     // COLLISION
     YAML::Node collisionMarginNode = node["collision margin"];
     YAML::Node collisionMeshNode = node["collision mesh"];
