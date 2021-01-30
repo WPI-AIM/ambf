@@ -316,7 +316,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     case afMeshShapeType::CONCAVE_MESH:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
-        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
 
@@ -353,7 +353,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     case afMeshShapeType::CONVEX_MESH:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
-        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
 
@@ -388,7 +388,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     case afMeshShapeType::CONVEX_HULL:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
-        for (it = a_collisionMultiMesh->m_meshes->begin(); it < a_collisionMultiMesh->m_meshes->end(); it++)
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
             collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
@@ -867,8 +867,9 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
-    if (m_visualMesh != nullptr){
-        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+    std::vector<cGenericObject*>::iterator it;
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
+        (*it)->setShowFrame(!(*it)->getShowFrame());
     }
 }
 
@@ -881,7 +882,7 @@ void afBaseObject::toggleFrameVisibility(){
 bool afBaseObject::isSceneObjectAlreadyAdded(cGenericObject *a_object)
 {
     vector<cGenericObject*>::iterator it;
-    for(it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; it++){
+    for(it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
         if ((*it) == a_object){
             return true;
         }
@@ -930,7 +931,7 @@ bool afBaseObject::addChildSceneObject(cGenericObject *a_object)
 void afBaseObject::scaleSceneObjects(double a_scale)
 {
     std::vector<cGenericObject*>::iterator it;
-    for (it = m_childrenSceneObjects.begin(); it < m_childrenSceneObjects.end(); it++)
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it)
     {
         (*it)->scale(a_scale);
 
@@ -948,7 +949,7 @@ bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeF
     if (a_object == NULL) { return (false); }
 
     vector<cGenericObject*>::iterator it;
-    for (it = m_childrenSceneObjects.begin(); it < m_childrenSceneObjects.end(); it++)
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it)
     {
         if ((*it) == a_object)
         {
@@ -979,7 +980,7 @@ void afBaseObject::updateSceneObjects()
 {
     // Assuming that the global pose was computed prior to this call.
     vector<cGenericObject*>::iterator it;
-    for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; it++){
+    for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
         (*it)->setLocalTransform(m_globalTransform);
     }
 }
@@ -1001,10 +1002,10 @@ void afBaseObject::updateGlobalPose()
 
 void afBaseObject::showVisualFrame()
 {
-    if (m_visualMesh != nullptr){
-
+    std::vector<cGenericObject*>::iterator it;
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
         // Set the size of the frame.
-        cVector3d bounds = m_visualMesh->getBoundaryMax();
+        cVector3d bounds = (*it)->getBoundaryMax();
         double frame_size;
         if (bounds.length() > 0.001){
             double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
@@ -1013,7 +1014,7 @@ void afBaseObject::showVisualFrame()
         else{
             frame_size = 0.5;
         }
-        m_visualMesh->setFrameSize(frame_size);
+        (*it)->setFrameSize(frame_size);
     }
 }
 
@@ -1686,6 +1687,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_collisionGeometryType = attribs.m_collisionAttribs.m_geometryType;
     m_collisionMeshFilePath = attribs.m_collisionAttribs.m_meshFilepath;
 
+    m_scale = attribs.m_kinematicAttribs.m_scale;
+
     btTransform iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
     setInertialOffsetTransform(iOff);
 
@@ -1694,7 +1697,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     if (m_visualGeometryType == afGeometryType::MESH){
         if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
-            setScale(m_scale);
+            m_visualMesh->scale(m_scale);
             m_visualMesh->setUseDisplayList(true);
             m_visualMesh->markForUpdate(false);
         }
@@ -1820,6 +1823,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_passive = attribs.m_communicationAttribs.m_passive;
 
     addChildSceneObject(m_visualMesh);
+    setScale(m_scale);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
@@ -2425,13 +2429,14 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     m_collisionMesh = new cMultiMesh();
 
     if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str())){
-       setScale(m_scale);
+        m_visualMesh->scale(m_scale);
     }
-    else{
+    else
+    {
         // If we can't find the visual mesh, we can proceed with
         // printing just a warning
         cerr << "WARNING: Soft Body " << m_name
-                  << "'s mesh " << attribs.m_visualAttribs.m_meshFilepath.c_str() << " not found\n";
+             << "'s mesh " << attribs.m_visualAttribs.m_meshFilepath.c_str() << " not found\n";
     }
 
     if(m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
@@ -2535,6 +2540,8 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->randomizeConstraints();
     }
 
+    addChildSceneObject(m_visualMesh);
+    setScale(m_scale);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
 
@@ -3835,7 +3842,7 @@ void afWorld::setGlobalNamespace(string a_global_namespace){
 ///
 void afWorld::resetCameras(){
     afCameraMap::iterator camIt;
-    for (camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
+    for (camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; ++camIt){
         afCameraPtr afCam = (camIt->second);
         afCam->setLocalTransform(afCam->getInitialTransform());
     }
@@ -3851,7 +3858,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
 
     afRigidBodyMap::iterator rbIt;
 
-    for (rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
+    for (rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
         afRigidBodyPtr afRB = (rbIt->second);
         btRigidBody* rB = afRB->m_bulletRigidBody;
         btVector3 zero(0, 0, 0);
@@ -3980,22 +3987,22 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     double dt = getSimulationDeltaTime();
     // Read the AF_COMM commands and apply to all different types of objects
     afRigidBodyMap::iterator rbIt;
-    for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; rbIt++){
+    for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
         (rbIt->second)->fetchCommands(dt);
     }
 
     afCameraMap::iterator camIt;
-    for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; camIt++){
+    for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; ++camIt){
         (camIt->second)->fetchCommands(dt);
     }
 
     afLightMap::iterator lightIt;
-    for(lightIt = m_afLightMap.begin() ; lightIt != m_afLightMap.end() ; lightIt++){
+    for(lightIt = m_afLightMap.begin() ; lightIt != m_afLightMap.end() ; ++lightIt){
         (lightIt->second)->fetchCommands(dt);
     }
 
 //    afSensorMap::iterator senIt;
-//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; senIt++){
+//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; ++senIt){
 //        (senIt->second)->afExecuteCommand(dt);
 //    }
 
@@ -6515,10 +6522,10 @@ template <typename TVec, typename TMap>
 ///
 TVec afWorld::getAFObjects(TMap* a_map){
     TVec _objects;
-    typename TMap::iterator _oIt;
+    typename TMap::iterator oIt;
 
-    for (_oIt = a_map->begin() ; _oIt != a_map->end() ; _oIt++){
-        _objects.push_back(_oIt->second);
+    for (oIt = a_map->begin() ; oIt != a_map->end() ; ++oIt){
+        _objects.push_back(oIt->second);
     }
 
     return _objects;
