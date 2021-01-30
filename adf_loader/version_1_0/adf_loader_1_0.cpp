@@ -880,6 +880,11 @@ bool ADFUtils::copyPrimitiveShapeData(YAML::Node *shape_node, afPrimitiveShapeAt
         attribs->m_height = shapeNode["height"].as<double>();
         break;
     }
+    case afPrimitiveShapeType::CYLINDER:{
+        attribs->m_radius = shapeNode["radius"].as<double>();
+        attribs->m_height = shapeNode["height"].as<double>();
+        break;
+    }
     case afPrimitiveShapeType::CONE:{
         attribs->m_radius = shapeNode["radius"].as<double>();
         attribs->m_height = shapeNode["height"].as<double>();
