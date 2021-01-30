@@ -30,9 +30,9 @@ template<>
 ///
 afMatrix3d afConversions::convertDataType<afMatrix3d, btMatrix3x3>(const btMatrix3x3 &r){
     afMatrix3d aMat;
-    double ro,pi,ya;
-    r.getEulerYPR(ya, pi, ro);
-    aMat.setRPY(ro, pi, ya);
+    aMat(0,0) = r.getRow(0).x(); aMat(0,1) = r.getRow(0).y(); aMat(0,2) = r.getRow(0).z();
+    aMat(1,0) = r.getRow(1).x(); aMat(1,1) = r.getRow(1).y(); aMat(0,2) = r.getRow(1).z();
+    aMat(2,0) = r.getRow(2).x(); aMat(2,1) = r.getRow(2).y(); aMat(0,2) = r.getRow(2).z();
     return aMat;
 }
 
