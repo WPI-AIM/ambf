@@ -60,7 +60,3 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk)
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)
-# Commented gtest implemenation as git validatation through error on commit.
-# Seems git servers doesnt have gtest implemented. Comment the below line for
-# working gtest sample.
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_test)
