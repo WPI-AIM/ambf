@@ -130,7 +130,8 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
 
     switch (a_primitiveShape->m_shapeType) {
     case afPrimitiveShapeType::BOX:{
-        btVector3 halfExtents(a_primitiveShape->getDimensions()(0)/2, a_primitiveShape->getDimensions()(1)/2, a_primitiveShape->getDimensions()(2)/2);
+        afVector3d dims = a_primitiveShape->getDimensions();
+        btVector3 halfExtents(dims(0)/2, dims(1)/2, dims(2)/2);
         collisionShape = new btBoxShape(halfExtents);
         break;
     }
@@ -140,7 +141,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     }
     case afPrimitiveShapeType::CYLINDER:{
         double radius = a_primitiveShape->getRadius();
-        double height = a_primitiveShape->getRadius();
+        double height = a_primitiveShape->getHeight();
         switch (a_primitiveShape->getAxisType()) {
         case afAxisType::X:{
             btVector3 halfExtents(height/2, radius, radius);
@@ -164,10 +165,10 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     }
     case afPrimitiveShapeType::CAPSULE:{
         double radius = a_primitiveShape->getRadius();
-        double height = a_primitiveShape->getRadius();
+        double height = a_primitiveShape->getHeight();
         // Adjust for height as bullet treats the height as the distance
         // between the two spheres forming the capsule's ends.
-        height = height - 2*radius;
+        height = height - 2 * radius;
         switch (a_primitiveShape->getAxisType()) {
         case afAxisType::X:{
             collisionShape = new btCapsuleShapeX(radius, height);
@@ -189,10 +190,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     }
     case afPrimitiveShapeType::CONE:{
         double radius = a_primitiveShape->getRadius();
-        double height = a_primitiveShape->getRadius();
-        // Adjust for height as bullet treats the height as the distance
-        // between the two spheres forming the capsule's ends.
-        height = height - 2*radius;
+        double height = a_primitiveShape->getHeight();
         switch (a_primitiveShape->getAxisType()) {
         case afAxisType::X:{
             collisionShape = new btConeShapeX(radius, height);
@@ -867,9 +865,12 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
-    std::vector<cGenericObject*>::iterator it;
-    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
-        (*it)->setShowFrame(!(*it)->getShowFrame());
+//    std::vector<cGenericObject*>::iterator it;
+//    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
+//        (*it)->setShowFrame(!(*it)->getShowFrame());
+//    }
+    if (m_visualMesh){
+        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
     }
 }
 
@@ -1249,6 +1250,8 @@ void afConstraintActuator::update(){
 ///
 afInertialObject::afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr)
 {
+    m_T_iINb.setIdentity();
+    m_T_bINi.setIdentity();
 }
 
 
@@ -1391,7 +1394,7 @@ void afInertialObject::applyTorque(const cVector3d &a_torque)
 void afInertialObject::createInertialObject()
 {
     // create rigid body
-    m_bulletMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
+    m_bulletMotionState = new btDefaultMotionState(to_btTransform(getLocalTransform()));
     btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
     m_bulletRigidBody = new btRigidBody(rigidBodyCI);
 
@@ -1692,6 +1695,14 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     btTransform iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
     setInertialOffsetTransform(iOff);
 
+    // inertial origin in world
+    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
+    cTransform T_mINw = T_iINw * T_mINi;
+
+    setInitialTransform(T_mINw);
+    setLocalTransform(T_mINw);
+
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
 
@@ -1804,14 +1815,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     }
 
     createInertialObject();
-
-    // inertial origin in world
-    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
-    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
-    cTransform T_mINw = T_iINw * T_mINi;
-
-    setInitialTransform(T_mINw);
-    setLocalTransform(T_mINw);
 
     setSurfaceProperties(attribs.m_surfaceAttribs);
 
@@ -1938,14 +1941,12 @@ void afRigidBody::update()
         m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
         T_mINw = T_iINw * getInverseInertialOffsetTransform();
 
+//        setLocalTransform(to_cTransform(T_mINw));
+
         btVector3 pos = T_mINw.getOrigin();
-        btQuaternion q = T_mINw.getRotation();
-
-        // set new position
-        setLocalPos(pos[0], pos[1], pos[2]);
-
-        // set new orientation
-        setLocalRot(q.getW(), q.getX(), q.getY(), q.getZ());
+        btQuaternion rot = T_mINw.getRotation();
+        setLocalPos(pos.x(), pos.y(), pos.z());
+        setLocalRot(rot.x(), rot.y(), rot.z(), rot.w());
     }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
