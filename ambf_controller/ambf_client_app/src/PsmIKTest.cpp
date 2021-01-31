@@ -1,4 +1,4 @@
-#include "ambf_client_app/psm_ik_test.h"
+#include "ambf_client_app/PsmIKTest.h"
 PSM_IK_test::PSM_IK_test() {}
 
 std::vector<float> PSM_IK_test::test_IK_psm(const std::vector<float> desired_q) {

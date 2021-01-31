@@ -1,4 +1,4 @@
-#include "ambf_client_app/ecm_ik_test.h"
+#include "ambf_client_app/EcmIKTest.h"
 
 EcmIkTest::EcmIkTest() { }
 

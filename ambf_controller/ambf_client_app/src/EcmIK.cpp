@@ -1,4 +1,4 @@
-#include "ambf_client_app/ecm_ik.h"
+#include "ambf_client_app/EcmIK.h"
 
 ECM_IK::ECM_IK() {}
 

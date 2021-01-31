@@ -5,8 +5,8 @@
 #include <ros/master.h>
 
 #include "ambf_client/ambf_client.h"
-#include "ambf_client_app/ecm_fk.h"
-#include "ambf_client_app/ecm_ik.h"
+#include "ambf_client_app/EcmFK.h"
+#include "ambf_client_app/EcmIK.h"
 
 class EcmIkTest
 {

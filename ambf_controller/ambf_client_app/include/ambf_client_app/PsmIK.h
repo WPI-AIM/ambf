@@ -1,8 +1,8 @@
 #ifndef PSM_IK_H
 #define PSM_IK_H
 
-#include<ambf_client_app/psm_fk.h>
-#include<ambf_client_app/utilities.h>
+#include<ambf_client_app/PsmFK.h>
+#include<ambf_client_app/Utilities.h>
 
 //THIS IS THE IK FOR THE PSM MOUNTED WITH THE LARGE NEEDLE DRIVER TOOL. THIS IS THE
 //SAME KINEMATIC CONFIGURATION FOUND IN THE DVRK MANUAL. NOTE, JUST LIKE A FAULT IN THE

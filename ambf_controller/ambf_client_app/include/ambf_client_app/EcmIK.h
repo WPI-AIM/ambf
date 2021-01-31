@@ -1,8 +1,8 @@
 #ifndef ECM_IK_H
 #define ECM_IK_H
 
-#include<ambf_client_app/ecm_fk.h>
-#include<ambf_client_app/utilities.h>
+#include<ambf_client_app/EcmFK.h>
+#include<ambf_client_app/Utilities.h>
 
 class ECM_IK
 {

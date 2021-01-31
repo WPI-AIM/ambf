@@ -5,8 +5,8 @@
 #include <ros/master.h>
 
 #include "ambf_client/ambf_client.h"
-#include "ambf_client_app/psm_fk.h"
-#include "ambf_client_app/psm_ik.h"
+#include "ambf_client_app/PsmFK.h"
+#include "ambf_client_app/PsmIK.h"
 
 class PSM_IK_test
 {

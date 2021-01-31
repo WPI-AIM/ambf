@@ -1,7 +1,7 @@
 #ifndef PSM_FK_H
 #define PSM_FK_H
 
-#include "ambf_client_app/dh.h"
+#include "ambf_client_app/DH.h"
 #include<vector>
 #include<cmath>
 #include<iostream>

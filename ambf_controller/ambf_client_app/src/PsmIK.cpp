@@ -1,4 +1,4 @@
-#include "ambf_client_app/psm_ik.h"
+#include "ambf_client_app/PsmIK.h"
 
 PSM_IK::PSM_IK() {}
 

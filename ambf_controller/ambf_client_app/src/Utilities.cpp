@@ -1,4 +1,4 @@
-#include "ambf_client_app/utilities.h"
+#include "ambf_client_app/Utilities.h"
 
 Utilities::Utilities() {}
 

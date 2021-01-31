@@ -29,32 +29,32 @@ set(SOURCE_FILES
     src/main.cpp)
 
 set (PSM_IK_HDR_FILES
-    include/${PROJECT_NAME}/psm_ik_test.h
-    include/${PROJECT_NAME}/psm_fk.h
-    include/${PROJECT_NAME}/dh.h
-    include/${PROJECT_NAME}/psm_ik.h
-    include/${PROJECT_NAME}/utilities.h)
+    include/${PROJECT_NAME}/PsmIKTest.h
+    include/${PROJECT_NAME}/PsmFK.h
+    include/${PROJECT_NAME}/DH.h
+    include/${PROJECT_NAME}/PsmIK.h
+    include/${PROJECT_NAME}/Utilities.h)
 
 set(PSM_IK_SOURCE_FILES
-    src/psm_ik_test.cpp
-    src/psm_fk.cpp
-    src/dh.cpp
-    src/psm_ik.cpp
-    src/utilities.cpp)
+    src/PsmIKTest.cpp
+    src/PsmFK.cpp
+    src/DH.cpp
+    src/PsmIK.cpp
+    src/Utilities.cpp)
 
 set (ECM_IK_HDR_FILES
-    include/${PROJECT_NAME}/ecm_ik_test.h
-    include/${PROJECT_NAME}/ecm_fk.h
-    include/${PROJECT_NAME}/dh.h
-    include/${PROJECT_NAME}/ecm_ik.h
-    include/${PROJECT_NAME}/utilities.h)
+    include/${PROJECT_NAME}/EcmIKTest.h
+    include/${PROJECT_NAME}/EcmFK.h
+    include/${PROJECT_NAME}/DH.h
+    include/${PROJECT_NAME}/EcmIK.h
+    include/${PROJECT_NAME}/Utilities.h)
 
 set(ECM_IK_SOURCE_FILES
-    src/ecm_ik_test.cpp
-    src/ecm_fk.cpp
-    src/dh.cpp
-    src/ecm_ik.cpp
-    src/utilities.cpp)
+    src/EcmIKTest.cpp
+    src/EcmFK.cpp
+    src/DH.cpp
+    src/EcmIK.cpp
+    src/Utilities.cpp)
 
 find_package (GLFW REQUIRED)
 find_package (Boost COMPONENTS program_options filesystem REQUIRED)
