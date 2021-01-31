@@ -565,19 +565,19 @@ template <>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btVector3>(const btVector3 &process_val, const btVector3 &set_point, const double &dt, const double &ts){
-    btVector3 _output(0, 0, 0); // Initialize the output to zero
+    btVector3 output(0, 0, 0); // Initialize the output to zero
     if (isEnabled()){
-        btVector3 _dPos_prev, _ddPos;
-        _dPos_prev = m_dPos;
+        btVector3 dPos_prev, ddPos;
+        dPos_prev = m_dPos;
         m_dPos = set_point - process_val;
-        _ddPos = (m_dPos - _dPos_prev) / dt;
+        ddPos = (m_dPos - dPos_prev) / dt;
 
-        _output = P_lin * (m_dPos) * ts + D_lin * (_ddPos);
+        output = P_lin * (m_dPos) * ts + D_lin * (ddPos);
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
     }
-    return _output;
+    return output;
 }
 
 
@@ -591,31 +591,31 @@ template<>
 /// \return
 ///
 btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btMatrix3x3 &process_val, const btMatrix3x3 &set_point, const double &dt, const double &ts){
-    btVector3 _output(0, 0, 0);
+    btVector3 output(0, 0, 0);
 
     if (isEnabled()){
-    btVector3 _error_cur, _error_prev;
-    btMatrix3x3 _dRot_prev;
-    btQuaternion _dRotQuat, _dRotQuat_prev;
-    _dRot_prev = m_dRot;
-    _dRot_prev.getRotation(_dRotQuat_prev);
-    _error_prev = _dRotQuat_prev.getAxis() * _dRotQuat_prev.getAngle();
+    btVector3 error_cur, error_prev;
+    btMatrix3x3 dRot_prev;
+    btQuaternion dRotQuat, dRotQuat_prev;
+    dRot_prev = m_dRot;
+    dRot_prev.getRotation(dRotQuat_prev);
+    error_prev = dRotQuat_prev.getAxis() * dRotQuat_prev.getAngle();
 
     m_dRot = process_val.transpose() * set_point;
-    m_dRot.getRotation(_dRotQuat);
-    _error_cur = _dRotQuat.getAxis() * _dRotQuat.getAngle();
+    m_dRot.getRotation(dRotQuat);
+    error_cur = dRotQuat.getAxis() * dRotQuat.getAngle();
 
-    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
+    output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
-    _output = process_val * _output;
+    output = process_val * output;
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
     }
 
-    return _output;
+    return output;
 }
 
 template<>
@@ -627,19 +627,19 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cVector3d>(const cVector3d &process_val, const cVector3d &set_point, const double &dt, const double &ts){
-    cVector3d _output(0, 0, 0);
+    cVector3d output(0, 0, 0);
     if (isEnabled()){
-        cVector3d _dPos_prev, _ddPos;
-        _dPos_prev = m_dPos_cvec;
+        cVector3d dPos_prev, ddPos;
+        dPos_prev = m_dPos_cvec;
         m_dPos_cvec = set_point - process_val;
-        _ddPos = (m_dPos_cvec - _dPos_prev) / dt;
+        ddPos = (m_dPos_cvec - dPos_prev) / dt;
 
-        _output = P_lin * (m_dPos_cvec) * ts + D_lin * (_ddPos);
+        output = P_lin * (m_dPos_cvec) * ts + D_lin * (ddPos);
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
     }
-    return _output;
+    return output;
 }
 
 template<>
@@ -651,30 +651,30 @@ template<>
 /// \return
 ///
 cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
-    cVector3d _output(0, 0, 0);
+    cVector3d output(0, 0, 0);
     if (isEnabled()){
-    cVector3d _error_cur, _error_prev;
-    cMatrix3d _dRot_prev;
-    cVector3d _e_axis, _e_axis_prev;
-    double _e_angle, _e_angle_prev;
-    _dRot_prev = m_dRot_cvec;
-    _dRot_prev.toAxisAngle(_e_axis_prev, _e_angle_prev);
-    _error_prev = _e_axis_prev * _e_angle_prev;
+    cVector3d error_cur, error_prev;
+    cMatrix3d dRot_prev;
+    cVector3d e_axis, e_axis_prev;
+    double e_angle, e_angle_prev;
+    dRot_prev = m_dRot_cvec;
+    dRot_prev.toAxisAngle(e_axis_prev, e_angle_prev);
+    error_prev = e_axis_prev * e_angle_prev;
 
     m_dRot_cvec = cTranspose(process_val) * set_point;
-    m_dRot_cvec.toAxisAngle(_e_axis, _e_angle);
-    _error_cur = _e_axis * _e_angle;
+    m_dRot_cvec.toAxisAngle(e_axis, e_angle);
+    error_cur = e_axis * e_angle;
 
-    _output = (P_ang * _error_cur * ts) + (D_ang * (_error_cur - _error_prev) / dt);
+    output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
 
     // Important to transform the torque in the world frame as its represented
     // in the body frame from the above computation
-    _output = process_val * _output;
+    output = process_val * output;
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
     }
-    return _output;
+    return output;
 }
 
 template<>
@@ -1452,15 +1452,15 @@ void afRigidBody::updateUpwardHeirarchyForAddition(afRigidBodyPtr a_childBody, a
 
     vector<afChildJointPair>::iterator cjIt;
     for (cjIt = cjPairs.begin() ; cjIt != cjPairs.end(); ++cjIt){
-        bool _cExists = false;
+        bool cExists = false;
         for (size_t cjIdx = 0; cjIdx < m_CJ_PairsAll.size() ; cjIdx++){
             if (cjIt->m_childBody == m_CJ_PairsAll[cjIdx].m_childBody){
-                _cExists = true;
+                cExists = true;
                 break;
             }
         }
 
-        if (!_cExists){
+        if (!cExists){
             m_CJ_PairsAll.push_back(*cjIt);
 
             // Also populate the activeChildJointPairs vector
@@ -1493,15 +1493,15 @@ void afRigidBody::updateDownwardHeirarchyForAddition(afRigidBodyPtr a_parentBody
 
     vector<afRigidBodyPtr>::iterator pBobyIt;
     for (pBobyIt = pBodies.begin() ; pBobyIt != pBodies.end(); ++pBobyIt){
-        bool _pExists = false;
+        bool pExists = false;
         for (size_t pIdx = 0; pIdx < m_parentBodies.size() ; pIdx++){
             if (*pBobyIt == m_parentBodies[pIdx]){
-                _pExists = true;
+                pExists = true;
                 break;
             }
         }
 
-        if (!_pExists){
+        if (!pExists){
             m_parentBodies.push_back(*pBobyIt);
         }
         else{
@@ -2655,12 +2655,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_childName = attribs.m_hierarchyAttribs.m_childName;
-    // Joint Transform in Parent
-    btTransform T_j_p;
-    // Joint Axis
-    btVector3 joint_axis(0,0,1);
     m_enableActuator = attribs.m_enableMotor;
-    m_controller.m_maxImpulse = 10; // max rate of change of effort on Position Controllers
+    m_controller.m_maxImpulse = attribs.m_maxMotorImpulse; // max rate of change of effort on Position Controllers
     m_offset = attribs.m_offset;
     m_lowerLimit = attribs.m_lowerLimit;
     m_upperLimit = attribs.m_upperLimit;
@@ -2713,7 +2709,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     }
 
 
-    bool _ignore_inter_collision = true;
+    bool ignoreInterCollision = true;
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
@@ -4855,28 +4851,28 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
             btSoftBody* sBody = (btSoftBody*)btSoftBody::upcast(colObject);
             // Now find the closest node in the soft body so we can do
             // something about it.
-            btVector3 _hitPoint = rayCallback.m_hitPointWorld;
+            btVector3 hitPoint = rayCallback.m_hitPointWorld;
 
             // Max distance between the hit point softbody nodes to be considered
-            double _maxDistance = 0.1;
+            double maxDistance = 0.1;
 
             // Index of closest Node. Initialize to -1 so it can be used
             // as boolean as well if a Node was Found
-            int _closestNodeIdx = -1;
+            int closestNodeIdx = -1;
 
             for (int nodeIdx = 0 ; nodeIdx < sBody->m_nodes.size() ; nodeIdx++){
-                if ( (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < _maxDistance ){
-                    _maxDistance = (_hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
-                    _closestNodeIdx = nodeIdx;
+                if ( (hitPoint - sBody->m_nodes[nodeIdx].m_x).length() < maxDistance ){
+                    maxDistance = (hitPoint - sBody->m_nodes[nodeIdx].m_x).length();
+                    closestNodeIdx = nodeIdx;
                 }
             }
 
-            if(_closestNodeIdx >=0 ){
-                m_pickedNode = &sBody->m_nodes[_closestNodeIdx];
+            if(closestNodeIdx >=0 ){
+                m_pickedNode = &sBody->m_nodes[closestNodeIdx];
                 m_pickedNode->m_v.setZero();
                 m_pickedSoftBody = sBody;
-                m_pickedNodeIdx = _closestNodeIdx;
-                m_pickedNodeGoal << _hitPoint;
+                m_pickedNodeIdx = closestNodeIdx;
+                m_pickedNodeGoal << hitPoint;
             }
         }
 
@@ -5143,11 +5139,11 @@ bool afCamera::createDefaultCamera(){
     // create display context
     // compute desired size of window
     m_monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * _mode->width;
-    int h = 0.5 * _mode->height;
-    int x = 0.5 * (_mode->width - w);
-    int y = 0.5 * (_mode->height - h);
+    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
+    int w = 0.5 * mode->width;
+    int h = 0.5 * mode->height;
+    int x = 0.5 * (mode->width - w);
+    int y = 0.5 * (mode->height - h);
     m_window = glfwCreateWindow(w, h, "AMBF Simulator", nullptr, nullptr);
     s_mainWindow = m_window;
 
@@ -5277,11 +5273,11 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_monitor = s_monitors[monitorToLoad];
 
     // compute desired size of window
-    const GLFWvidmode* _mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * _mode->width;
-    int h = 0.5 * _mode->height;
-    int x = 0.5 * (_mode->width - w);
-    int y = 0.5 * (_mode->height - h);
+    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
+    int w = 0.5 * mode->width;
+    int h = 0.5 * mode->height;
+    int x = 0.5 * (mode->width - w);
+    int y = 0.5 * (mode->height - h);
 
     m_win_x = x;
     m_win_y = y;
@@ -5950,7 +5946,7 @@ void afCamera::render(afRenderOptions &options)
     // swap buffers
     glfwSwapBuffers(m_window);
 
-    // Only set the _window_closed if the condition is met
+    // Only set the window_closed if the condition is met
     // otherwise a non-closed window will set the variable back
     // to false
     if (glfwWindowShouldClose(m_window)){
@@ -6452,12 +6448,12 @@ void afModel::removeOverlappingCollisionChecking(){
     // if there are more than 1, it means that multiple bodies share each other
     // In this case, iteratively go over all the shared bodies and ignore their
     // collision if their common body has the same pivot
-    afRigidBodyMap* _rbMap = m_afWorld->getAFRigidBodyMap();
-    afRigidBodyMap::iterator rBodyIt = _rbMap->begin();
+    afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+    afRigidBodyMap::iterator rBodyIt = rbMap->begin();
     vector<btRigidBody*> bodyFamily;
     pair<btVector3, btRigidBody*> pvtAandConnectedBody;
     vector< pair<btVector3, btRigidBody*> > pvtAandConnectedBodyVec;
-    for ( ; rBodyIt != _rbMap->end() ; ++rBodyIt){
+    for ( ; rBodyIt != rbMap->end() ; ++rBodyIt){
         afRigidBodyPtr afBody = rBodyIt->second;
         btRigidBody* rBody = afBody->m_bulletRigidBody;
         bodyFamily.clear();
@@ -6572,14 +6568,14 @@ template <typename TVec, typename TMap>
 /// \return
 ///
 TVec afWorld::getAFObjects(TMap* a_map){
-    TVec _objects;
+    TVec objects;
     typename TMap::iterator oIt;
 
     for (oIt = a_map->begin() ; oIt != a_map->end() ; ++oIt){
-        _objects.push_back(oIt->second);
+        objects.push_back(oIt->second);
     }
 
-    return _objects;
+    return objects;
 }
 
 
