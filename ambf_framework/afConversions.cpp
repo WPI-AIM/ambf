@@ -30,9 +30,13 @@ template<>
 ///
 afMatrix3d afConversions::convertDataType<afMatrix3d, btMatrix3x3>(const btMatrix3x3 &r){
     afMatrix3d aMat;
-    aMat(0,0) = r.getRow(0).x(); aMat(0,1) = r.getRow(0).y(); aMat(0,2) = r.getRow(0).z();
-    aMat(1,0) = r.getRow(1).x(); aMat(1,1) = r.getRow(1).y(); aMat(0,2) = r.getRow(1).z();
-    aMat(2,0) = r.getRow(2).x(); aMat(2,1) = r.getRow(2).y(); aMat(0,2) = r.getRow(2).z();
+    btVector3 r0, r1, r2;
+    r0 = r.getRow(0);
+    r1 = r.getRow(1);
+    r2 = r.getRow(2);
+    aMat(0,0) = r0.x(); aMat(0,1) = r0.y(); aMat(0,2) = r0.z();
+    aMat(1,0) = r1.x(); aMat(1,1) = r1.y(); aMat(0,2) = r1.z();
+    aMat(2,0) = r2.x(); aMat(2,1) = r2.y(); aMat(0,2) = r2.z();
     return aMat;
 }
 
@@ -118,11 +122,11 @@ template<>
 /// \param r
 /// \return
 ///
-btMatrix3x3 afConversions::convertDataType<btMatrix3x3, afMatrix3d>(const afMatrix3d &mat){
+btMatrix3x3 afConversions::convertDataType<btMatrix3x3, afMatrix3d>(const afMatrix3d &m){
     btMatrix3x3 btMat;
-    double r, p, y;
-    mat.getRPY(r, p, y);
-    btMat.setEulerYPR(y, p, r);
+    btMat.setValue(m(0, 0), m(0, 1), m(0, 2),
+                   m(1, 0), m(1, 1), m(1, 2),
+                   m(2, 0), m(2, 1), m(2, 2));
     return btMat;
 }
 

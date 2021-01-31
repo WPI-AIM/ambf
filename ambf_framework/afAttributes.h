@@ -294,7 +294,10 @@ public:
     afInertialAttributes(){
         m_mass = 1.0;
         m_estimateInertia = true;
+        m_estimateInertialOffset = true;
     }
+
+    bool m_estimateInertialOffset;
 
     double m_mass;
     afVector3d m_inertia;
@@ -329,21 +332,21 @@ public:
 
 struct afColorAttributes{
     afColorAttributes(){
-        m_specular.set(0.5, 0.5, 0.5);
-        m_diffuse.set(0.5, 0.5, 0.5);
-        m_emission.set(0.5, 0.5, 0.5);
-        m_ambient.set(0.5, 0.5, 0.5);
+        m_ambient.set(0.3, 0.3, 0.3);
+        m_diffuse.set(0.7, 0.7, 0.7);
+        m_emission.set(0.0, 0.0, 0.0);
+        m_specular.set(1.0, 1.0, 1.0);
 
         m_alpha = 1.0;
-        m_shininiess = 64;
+        m_shininess = 64;
     }
 
-    afVector3d m_specular;
-    afVector3d m_diffuse;
-    afVector3d m_emission;
     afVector3d m_ambient;
+    afVector3d m_diffuse;
+    afVector3d m_specular;
+    afVector3d m_emission;
     double m_alpha;
-    unsigned int m_shininiess;
+    unsigned int m_shininess;
 
 };
 

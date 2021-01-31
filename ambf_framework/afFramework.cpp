@@ -1337,7 +1337,26 @@ btVector3 afInertialObject::computeInertialOffset(cMesh* mesh){
             intertialOffset = ((( idx ) / ( idx + 1.0 )) * intertialOffset) + (( 1.0 / ( idx + 1.0 )) * vPos);
         }
     }
+    else{
+        cerr << "ERROR! CANNOT COMPUTE INERTIAL OFFSET FROM EMPTY MESH: " << m_name << endl;
+    }
     return btVector3(intertialOffset.x(), intertialOffset.y(), intertialOffset.z());
+}
+
+
+///
+/// \brief afInertialObject::computeInertialOffset
+/// \param mMesh
+/// \return
+///
+btVector3 afInertialObject::computeInertialOffset(cMultiMesh *mMesh)
+{
+    btVector3 inertialOffset(0, 0, 0);
+    for (int i = 0 ; i < mMesh->getNumMeshes() ; i++){
+        cMesh* mesh = mMesh->getMesh(0);
+        inertialOffset += computeInertialOffset(mesh);
+    }
+    return inertialOffset;
 }
 
 
@@ -1692,9 +1711,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     m_scale = attribs.m_kinematicAttribs.m_scale;
 
-    btTransform iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
-    setInertialOffsetTransform(iOff);
-
     // inertial origin in world
     cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
     cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
@@ -1785,6 +1801,17 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
     }
 
+
+    btTransform iOff;
+    if (attribs.m_inertialAttribs.m_estimateInertialOffset){
+        iOff.setOrigin(computeInertialOffset(m_collisionMesh));
+    }
+    else{
+        iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
+    }
+
+    setInertialOffsetTransform(iOff);
+
     // The collision groups are sorted by integer indices. A group is an array of
     // ridig bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
@@ -1826,7 +1853,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_passive = attribs.m_communicationAttribs.m_passive;
 
     addChildSceneObject(m_visualMesh);
-    setScale(m_scale);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
@@ -2652,13 +2678,37 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
 
     if (m_afParentBody == nullptr || m_afChildBody == nullptr){
-        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getJointMap());
 
-        if (m_afParentBody == nullptr){
-            m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
+        string prefix = "BODY ";
+        size_t pos = m_parentName.find(prefix);
+        if (pos != std::string::npos)
+        {
+            m_parentName.erase(pos, prefix.length());
         }
-        if (m_afChildBody == nullptr){
-            m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
+        // Search for the substring in string
+        pos = m_childName.find(prefix);
+        if (pos != std::string::npos)
+        {
+            m_childName.erase(pos, prefix.length());
+        }
+
+        string body1Name = m_namespace + m_parentName;
+        string body2Name = m_namespace + m_childName;
+
+        // If still not found
+        if (m_afParentBody == nullptr || m_afChildBody == nullptr){
+
+            m_afParentBody = m_modelPtr->getAFRigidBodyLocal(body1Name, true);
+            m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
+
+            string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getJointMap());
+
+            if (m_afParentBody == nullptr){
+                m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
+            }
+            if (m_afChildBody == nullptr){
+                m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
+            }
         }
     }
 
@@ -2706,10 +2756,9 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     m_controller.createFromAttribs(&attribs.m_controllerAttribs);
 
-    m_pvtA = to_btVector(attribs.m_parentPivot);
+    m_pvtA = to_btVector(attribs.m_parentPivot * m_afParentBody->m_scale);
     m_axisA = to_btVector(attribs.m_parentAxis);
     m_axisA.normalize();
-    m_pvtA *= m_afParentBody->m_scale;
     m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
     m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
 
@@ -2753,6 +2802,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     switch (m_jointType) {
     case afJointType::REVOLUTE:{
+//        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
         m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
         m_hinge->setParam(BT_CONSTRAINT_ERP, attribs.m_erp);
         m_hinge->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
@@ -4094,9 +4144,9 @@ void afBaseObject::copyMaterialToMesh(cMultiMesh *a_mesh, const afColorAttribute
     mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2), a_color->m_alpha);
     mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2), a_color->m_alpha);
     mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2), a_color->m_alpha);
-    mat.setTransparencyLevel(a_color->m_alpha);
-    mat.setShininess(a_color->m_shininiess);
+    mat.setShininess(a_color->m_shininess);
     a_mesh->setMaterial(mat);
+    a_mesh->setTransparencyLevel(a_color->m_alpha);
 }
 
 

@@ -659,6 +659,9 @@ public:
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
 
+    // Compute the COM of the body and the tranform from mesh origin to the COM
+    btVector3 computeInertialOffset(cMultiMesh* mesh);
+
     void estimateInertia();
 
     inline double getMass(){return m_mass;}

@@ -158,11 +158,27 @@ inline afVector3d operator *(const afVector3d& v1, const afVector3d& v2){
     return vOut;
 }
 
+inline afVector3d operator /(const afVector3d& v1, const afVector3d& v2){
+    afVector3d vOut;
+    vOut(0) = v1(0) / v2(0);
+    vOut(1) = v1(1) / v2(1);
+    vOut(2) = v1(2) / v2(2);
+    return vOut;
+}
+
 inline afVector3d operator *(const afVector3d& v1, const double a_scale){
     afVector3d vOut;
     vOut(0) = v1(0) * a_scale;
     vOut(1) = v1(1) * a_scale;
     vOut(2) = v1(2) * a_scale;
+    return vOut;
+}
+
+inline afVector3d operator /(const afVector3d& v1, const double a_scale){
+    afVector3d vOut;
+    vOut(0) = v1(0) / a_scale;
+    vOut(1) = v1(1) / a_scale;
+    vOut(2) = v1(2) / a_scale;
     return vOut;
 }
 

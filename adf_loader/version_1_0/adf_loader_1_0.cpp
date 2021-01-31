@@ -99,6 +99,8 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
         colorAttribs.m_diffuse(1) = colorRGBANode["g"].as<double>();
         colorAttribs.m_diffuse(2) = colorRGBANode["b"].as<double>();
         colorAttribs.m_alpha = colorRGBANode["a"].as<double>();
+        float level = 0.5;
+        colorAttribs.m_ambient = colorAttribs.m_diffuse * level;
     }
     else if(colorComponentsNode.IsDefined()){
         if (colorComponentsNode["diffuse"].IsDefined()){
@@ -121,7 +123,7 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
             colorAttribs.m_ambient = colorAttribs.m_diffuse * level;
         }
         if (colorComponentsNode["shininess"].IsDefined()){
-            colorAttribs.m_shininiess = colorComponentsNode["shininess"].as<uint>();
+            colorAttribs.m_shininess = colorComponentsNode["shininess"].as<uint>();
         }
         colorAttribs.m_alpha = colorComponentsNode["transparency"].as<double>();
     }
@@ -547,13 +549,13 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         attribs->m_geometryType = afGeometryType::COMPOUND_SHAPE;
         for (uint shapeIdx = 0 ; shapeIdx < compoundCollisionShapeNode.size() ; shapeIdx++){
             shape_str = compoundCollisionShapeNode[shapeIdx]["shape"].as<string>();
-            YAML::Node _collisionGeometryNode = compoundCollisionShapeNode[shapeIdx]["geometry"];
-            YAML::Node _shapeOffsetNode = compoundCollisionShapeNode[shapeIdx]["offset"];
+            YAML::Node collisionGeometryNode = compoundCollisionShapeNode[shapeIdx]["geometry"];
+            YAML::Node shapeOffsetNode = compoundCollisionShapeNode[shapeIdx]["offset"];
 
             afPrimitiveShapeAttributes shapeAttribs;
             shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
-            ADFUtils::copyPrimitiveShapeData(&_collisionGeometryNode, &shapeAttribs);
-            ADFUtils::copyShapeOffsetData(&_shapeOffsetNode, &shapeAttribs);
+            ADFUtils::copyPrimitiveShapeData(& collisionGeometryNode, &shapeAttribs);
+            ADFUtils::copyShapeOffsetData(&shapeOffsetNode, &shapeAttribs);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
         }
     }
@@ -685,18 +687,22 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
     }
 
     if(inertialOffset.IsDefined()){
-        YAML::Node _inertialOffsetPos = inertialOffset["position"];
-        YAML::Node _inertialOffsetRot = inertialOffset["orientation"];
+        YAML::Node inertialOffsetPos = inertialOffset["position"];
+        YAML::Node inertialOffsetRot = inertialOffset["orientation"];
+        attribs->m_estimateInertialOffset = false;
 
-        if (_inertialOffsetPos.IsDefined()){
-            afVector3d pos = ADFUtils::positionFromNode(&_inertialOffsetPos);
+        if (inertialOffsetPos.IsDefined()){
+            afVector3d pos = ADFUtils::positionFromNode(&inertialOffsetPos);
             attribs->m_inertialOffset.setPosition(pos);
         }
 
-        if (_inertialOffsetRot.IsDefined()){
-            afMatrix3d rot = ADFUtils::rotationFromNode(&_inertialOffsetRot);
+        if (inertialOffsetRot.IsDefined()){
+            afMatrix3d rot = ADFUtils::rotationFromNode(&inertialOffsetRot);
             attribs->m_inertialOffset.setRotation(rot);
         }
+    }
+    else{
+        attribs->m_estimateInertialOffset = true;
     }
 
     return valid;
@@ -813,16 +819,16 @@ bool ADFUtils::copyShapeOffsetData(YAML::Node *offset_node, afPrimitiveShapeAttr
 
     if (offsetNode.IsDefined()){
         if (offsetNode["position"].IsDefined()){
-            YAML::Node _posNode = offsetNode["position"];
-            attribs->m_offset.setPosition(ADFUtils::positionFromNode(&_posNode));
+            YAML::Node posNode = offsetNode["position"];
+            attribs->m_offset.setPosition(ADFUtils::positionFromNode(&posNode));
         }
         else{
             attribs->m_offset.setPosition(afVector3d(0, 0, 0));
         }
 
         if (offsetNode["orientation"].IsDefined()){
-            YAML::Node _orientationNode = offsetNode["orientation"];
-            attribs->m_offset.setRotation(ADFUtils::rotationFromNode(&_orientationNode));
+            YAML::Node orientationNode = offsetNode["orientation"];
+            attribs->m_offset.setRotation(ADFUtils::rotationFromNode(&orientationNode));
         }
         else{
             attribs->m_offset.setRotation(afMatrix3d(0, 0, 0));
@@ -1452,12 +1458,12 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     attribs->m_childPivot = ADFUtils::positionFromNode(&childPivotNode);
     attribs->m_parentAxis = ADFUtils::positionFromNode(&parentAxisNode);
     attribs->m_childAxis = ADFUtils::positionFromNode(&childAxisNode);
-    attribs->m_parentPivot = ADFUtils::positionFromNode(&parentPivotNode);
+
     attribs->m_jointType = ADFUtils::getJointTypeFromString(typeNode.as<string>());
 
 
     if(offsetNode.IsDefined()){
-        attribs->m_offset= offsetNode.as<double>();
+        attribs->m_offset = offsetNode.as<double>();
     }
 
     if (dampingNode.IsDefined()){
@@ -1819,10 +1825,10 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     }
 
     for (uint i = 0 ; i < wheelsNode.size() ; i++){
-        afWheelAttributes _wheelAttribs;
-        YAML::Node _wheelNode = wheelsNode[i];
-        if (adfUtils.getWheelAttribsFromNode(&_wheelNode, &_wheelAttribs)){
-            attribs->m_wheelAttribs.push_back(_wheelAttribs);
+        afWheelAttributes wheelAttribs;
+        YAML::Node wheelNode = wheelsNode[i];
+        if (adfUtils.getWheelAttribsFromNode(&wheelNode, & wheelAttribs)){
+            attribs->m_wheelAttribs.push_back( wheelAttribs);
         }
     }
 
