@@ -725,6 +725,8 @@ public:
     afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     virtual ~afRigidBody();
 
+    virtual void setLocalTransform(cTransform &trans);
+
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
     virtual void fetchCommands(double dt);

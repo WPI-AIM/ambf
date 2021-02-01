@@ -657,7 +657,8 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 
     cTransform location;
     if (attribs.m_overrideLocation){
-        m_rootLink->setLocalTransform(attribs.m_kinematicAttribs.m_location);
+        cTransform localTrans = to_cTransform(attribs.m_kinematicAttribs.m_location);
+        m_rootLink->setLocalTransform(localTrans);
         location << attribs.m_kinematicAttribs.m_location;
         m_rootLink->setInitialTransform(location);
         m_simRotInitial = location.getLocalRot();

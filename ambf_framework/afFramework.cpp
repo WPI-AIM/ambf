@@ -1415,7 +1415,6 @@ void afInertialObject::applyTorque(const cVector3d &a_torque)
 void afInertialObject::createInertialObject()
 {
     // create rigid body
-    m_bulletMotionState = new btDefaultMotionState(to_btTransform(getLocalTransform()));
     btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
     m_bulletRigidBody = new btRigidBody(rigidBodyCI);
 
@@ -1434,6 +1433,9 @@ afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertia
     m_scale = 1.0;
 
     m_dpos.setValue(0, 0, 0);
+    btTransform identity;
+    identity.setIdentity();
+    m_bulletMotionState = new btDefaultMotionState(identity);
 }
 
 
@@ -1713,14 +1715,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     m_scale = attribs.m_kinematicAttribs.m_scale;
 
-    // inertial origin in world
-    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
-    cTransform T_mINi = to_cTransform(getInertialOffsetTransform());
-    cTransform T_mINw = T_iINw * T_mINi;
-
-    setInitialTransform(T_mINw);
-    setLocalTransform(T_mINw);
-
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
 
@@ -1842,6 +1836,13 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     else{
         setInertia(attribs.m_inertialAttribs.m_inertia);
     }
+
+    // inertial origin in world
+    cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    cTransform T_mINw = T_iINw * to_cTransform(getInertialOffsetTransform());
+
+    setInitialTransform(T_mINw);
+    setLocalTransform(T_mINw);
 
     createInertialObject();
 
@@ -2432,6 +2433,12 @@ afRigidBody::~afRigidBody(){
         btTypedConstraint * tConstraint = m_bulletRigidBody->getConstraintRef(i);
         m_bulletRigidBody->removeConstraintRef(tConstraint);
     }
+}
+
+void afRigidBody::setLocalTransform(cTransform &trans)
+{
+    m_bulletMotionState->setWorldTransform(to_btTransform(trans));
+    afBaseObject::setLocalTransform(trans);
 }
 
 ///
@@ -4137,10 +4144,10 @@ void afWorld::estimateBodyWrenches(){
 void afBaseObject::copyMaterialToMesh(cMultiMesh *a_mesh, const afColorAttributes *a_color)
 {
     cMaterial mat;
-    mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2), a_color->m_alpha);
-    mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2), a_color->m_alpha);
-    mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2), a_color->m_alpha);
-    mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2), a_color->m_alpha);
+    mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2));
+    mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2));
+    mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2));
+    mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2));
     mat.setShininess(a_color->m_shininess);
     a_mesh->setMaterial(mat);
     a_mesh->setTransparencyLevel(a_color->m_alpha);
