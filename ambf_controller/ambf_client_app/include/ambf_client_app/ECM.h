@@ -1,10 +1,13 @@
-#ifndef ECM_FK_H
-#define ECM_FK_H
+#ifndef ECM_H
+#define ECM_H
 
-#include "ambf_client_app/DH.h"
 #include<vector>
 #include<cmath>
 #include<iostream>
+
+#include "ambf_client/ambf_client.h"
+#include "ambf_client_app/DH.h"
+#include "ambf_client_app/Utilities.h"
 
 enum class JointType{
     ROTATIONAL,
@@ -12,19 +15,22 @@ enum class JointType{
 };
 
 
-class ECM_FK
+class ECM
 {
 public:
-    ECM_FK();
-    Matrix4f compute_FK(std::vector<float> joint_pos);
-    void cleanup();
-    std::vector<std::vector<float>> getJointsLimit() { return ECM_JOINT_LIMITS_; }
+    ECM();
+    Matrix4f computeFK(std::vector<float> joint_pos);
+    std::vector<float> computeIK(Matrix4f T_4_0);
+    void testIK();
 
-    ~ECM_FK(void);
+    void cleanup();
+    ~ECM(void);
+
 private:
     std::vector<DH *> DH_Vector_;
     const float L_rcc_ = 0.3822;
     const float L_scopelen_ = 0.385495;
+
 
     float dh_params_[4][6] = {
    //     alpha,      a,      theta,                d,                  offset,     joint_type
@@ -43,4 +49,4 @@ private:
 
 };
 
-#endif // ECM_FK_H
+#endif // ECM_H

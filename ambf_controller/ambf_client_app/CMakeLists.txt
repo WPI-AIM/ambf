@@ -43,17 +43,13 @@ set(PSM_IK_SOURCE_FILES
     src/Utilities.cpp)
 
 set (ECM_IK_HDR_FILES
-    include/${PROJECT_NAME}/EcmIKTest.h
-    include/${PROJECT_NAME}/EcmFK.h
+    include/${PROJECT_NAME}/ECM.h
     include/${PROJECT_NAME}/DH.h
-    include/${PROJECT_NAME}/EcmIK.h
     include/${PROJECT_NAME}/Utilities.h)
 
 set(ECM_IK_SOURCE_FILES
-    src/EcmIKTest.cpp
-    src/EcmFK.cpp
+    src/ECM.cpp
     src/DH.cpp
-    src/EcmIK.cpp
     src/Utilities.cpp)
 
 find_package (GLFW REQUIRED)
