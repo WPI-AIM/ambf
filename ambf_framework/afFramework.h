@@ -1419,13 +1419,13 @@ public:
                      const cVector3d& a_localUp);
 
     // This method returns the camera "look at" position vector for this camera.
-    inline cVector3d getLookVector()  const { return -m_camera->getLookVector(); }
-
-    // This method returns the "up" vector for this camera.
-    inline cVector3d getUpVector()    const { return m_camera->getUpVector(); }
+    inline cVector3d getLookVector()  const { return -m_localTransform.getLocalRot().getCol0(); }
 
     // This method returns the "right direction" vector for this camera.
-    inline cVector3d getRightVector() const { return m_camera->getRightVector(); }
+    inline cVector3d getRightVector() const { return m_localTransform.getLocalRot().getCol1(); }
+
+    // This method returns the "up" vector for this camera.
+    inline cVector3d getUpVector()    const { return m_localTransform.getLocalRot().getCol2(); }
 
     // This method returns the field view angle in Radians.
     inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
