@@ -1308,6 +1308,8 @@ void afInertialObject::setInertia(afVector3d& a_inertia)
 void afInertialObject::setInertialOffsetTransform(btTransform &a_trans)
 {
     m_T_iINb = a_trans;
+    // Also compute the inverse here.
+    m_T_bINi = m_T_iINb.inverse();
 }
 
 void afInertialObject::setSurfaceProperties(const afSurfaceAttributes &a_props)
@@ -2755,15 +2757,14 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_pvtA = to_btVector(attribs.m_parentPivot * m_afParentBody->m_scale);
     m_axisA = to_btVector(attribs.m_parentAxis);
     m_axisA.normalize();
-    m_pvtA = m_afParentBody->getInertialOffsetTransform().inverse() * m_pvtA;
-    m_axisA = m_afParentBody->getInertialOffsetTransform().getBasis().inverse() * m_axisA;
+    m_pvtA = m_afParentBody->getInverseInertialOffsetTransform() * m_pvtA;
+    m_axisA = m_afParentBody->getInverseInertialOffsetTransform().getBasis() * m_axisA;
 
     m_pvtB = to_btVector(attribs.m_childPivot);
     m_axisB = to_btVector(attribs.m_childAxis);
     m_axisB.normalize();
-    m_pvtB = m_afChildBody->getInertialOffsetTransform().inverse() * m_pvtB;
-    m_axisB = m_afChildBody->getInertialOffsetTransform().getBasis().inverse() * m_axisB;
-
+    m_pvtB = m_afChildBody->getInverseInertialOffsetTransform() * m_pvtB;
+    m_axisB = m_afChildBody->getInverseInertialOffsetTransform().getBasis() * m_axisB;
 
     m_passive = attribs.m_communicationAttribs.m_passive;
     m_enableFeedback = attribs.m_enableFeedback;
