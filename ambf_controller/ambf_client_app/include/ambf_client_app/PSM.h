@@ -1,7 +1,10 @@
-#ifndef PSM_FK_H
-#define PSM_FK_H
+#ifndef PSM_H
+#define PSM_H
 
 #include "ambf_client_app/DH.h"
+#include<ambf_client_app/Utilities.h>
+#include "ambf_client/ambf_client.h"
+
 #include<vector>
 #include<cmath>
 #include<iostream>
@@ -29,21 +32,27 @@ enum class JointType{
 
 
 
-class PSM_FK
+class PSM
 {
 public:
-    PSM_FK();
-    Matrix4f compute_FK(std::vector<float> joint_pos);
-    void cleanup();
-    std::vector<std::vector<float>> getJointsLimit() { return PSM_JOINT_LIMITS_; }
+    PSM();
+    Matrix4f computeFK(std::vector<float> joint_pos);
+    std::vector<float> computeIK(Matrix4f T_7_0);
+    void testAmbfPsm();
+    std::vector<float> testIK(const std::vector<float> joint_angles);
 
-    ~PSM_FK(void);
+    void cleanup();
+//    std::vector<std::vector<float>> getJointsLimit() { return PSM_JOINT_LIMITS_; }
+
+    ~PSM(void);
 private:
     std::vector<DH *> DH_Vector_;
+
     const float L_rcc_ = 0.4389;
     const float L_tool_ = 0.416;
-    const float L_pitch2yaw_ = 0.009;
-    const float L_yaw2ctrlpnt_ = 0.0106;
+    const float L_pitch2yaw_ = 0.009; //Fixed length from the palm joint to the pinch joint
+    const float L_yaw2ctrlpnt_ = 0.0106; //Fixed length from the pinch joint to the pinch tip
+    const float L_tool2rcm_offset_= 0.0229; //Delta between tool tip and the Remote Center of Motion
 
     float dh_params_[7][6] = {
    //     alpha,      a,             theta,  d,              offset,     joint_type
@@ -68,4 +77,4 @@ private:
 };
 
 
-#endif // PSM_FK_H
+#endif // PSM_H

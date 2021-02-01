@@ -29,17 +29,13 @@ set(SOURCE_FILES
     src/main.cpp)
 
 set (PSM_IK_HDR_FILES
-    include/${PROJECT_NAME}/PsmIKTest.h
-    include/${PROJECT_NAME}/PsmFK.h
+    include/${PROJECT_NAME}/PSM.h
     include/${PROJECT_NAME}/DH.h
-    include/${PROJECT_NAME}/PsmIK.h
     include/${PROJECT_NAME}/Utilities.h)
 
 set(PSM_IK_SOURCE_FILES
-    src/PsmIKTest.cpp
-    src/PsmFK.cpp
+    src/PSM.cpp
     src/DH.cpp
-    src/PsmIK.cpp
     src/Utilities.cpp)
 
 set (ECM_IK_HDR_FILES
