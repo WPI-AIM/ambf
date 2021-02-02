@@ -1014,6 +1014,7 @@ void afBaseObject::updateGlobalPose()
     if (a_parentObject != nullptr){
         do{
             a_globalTransform = a_parentObject->getLocalTransform() * a_globalTransform;
+            a_parentObject = a_parentObject->getParentObject();
         }
         while(a_parentObject != nullptr);
     }
