@@ -2298,6 +2298,9 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
             attribs->m_skyBoxAttribs.m_use = true;
         }
     }
+    else{
+        attribs->m_skyBoxAttribs.m_use = false;
+    }
 
     if (lightsNode.IsDefined()){
         for (size_t idx = 0 ; idx < lightsNode.size(); idx++){

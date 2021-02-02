@@ -1005,6 +1005,19 @@ public:
         afPath m_topImageFilepath;
         afPath m_bottomImageFilepath;
         afShaderAttributes m_shaderAttribs;
+
+        bool resolveRelativePathAttribs(afPath a_parentPath){
+            m_backImageFilepath.resolvePath(a_parentPath);
+            m_bottomImageFilepath.resolvePath(a_parentPath);
+            m_frontImageFilepath.resolvePath(a_parentPath);
+            m_leftImageFilepath.resolvePath(a_parentPath);
+            m_rightImageFilepath.resolvePath(a_parentPath);
+            m_topImageFilepath.resolvePath(a_parentPath);
+
+            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        }
+
         bool m_use = false;
     };
 
@@ -1027,13 +1040,7 @@ public:
     virtual bool resolveRelativePathAttribs(){
         if (m_pathsResolved == false){
             afPath a_parentPath = m_filePath.parent_path();
-
-            m_skyBoxAttribs.m_backImageFilepath.resolvePath(a_parentPath);
-            m_skyBoxAttribs.m_bottomImageFilepath.resolvePath(a_parentPath);
-            m_skyBoxAttribs.m_frontImageFilepath.resolvePath(a_parentPath);
-            m_skyBoxAttribs.m_leftImageFilepath.resolvePath(a_parentPath);
-            m_skyBoxAttribs.m_rightImageFilepath.resolvePath(a_parentPath);
-            m_skyBoxAttribs.m_topImageFilepath.resolvePath(a_parentPath);
+            m_skyBoxAttribs.resolveRelativePathAttribs(a_parentPath);
 
             m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
             m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
