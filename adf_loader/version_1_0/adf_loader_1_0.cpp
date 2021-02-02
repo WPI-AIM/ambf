@@ -42,6 +42,7 @@
 //==============================================================================
 
 #include "adf_loader_1_0.h"
+#include <algorithm>
 //#include "afUtils.h"
 
 using namespace ambf;
@@ -614,7 +615,9 @@ bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttrib
     bool valid = true;
 
     if (childNameNode.IsDefined()){
-        attribs->m_childName = childNameNode.as<string>();
+        string name = childNameNode.as<string>();
+        name.erase(remove(name.begin(), name.end(), ' '), name.end());
+        attribs->m_childName = name;
         valid = true;
     }
     else{
@@ -622,7 +625,9 @@ bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttrib
     }
 
     if (parentNameNode.IsDefined()){
-        attribs->m_parentName = parentNameNode.as<string>();
+        string name = parentNameNode.as<string>();
+        name.erase(remove(name.begin(), name.end(), ' '), name.end());
+        attribs->m_parentName = name;
         valid = true;
     }
     else{
@@ -1870,7 +1875,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     // but wants to bind the physical input device to an existing model in the simulation.
     // In this case, the user should specify just the root link and we shall try to find a
     // body in simulation matching that name. Once succesful we shall then be able to control
-    // that link/body in Position control mode and control all the joints lower in heirarchy.
+    // that link/body in Position control mode and control all the joints lower in hierarchy.
 
     if (hardwareNameNode.IsDefined()){
         attribs->m_hardwareName = hardwareNameNode.as<string>();
@@ -1962,7 +1967,7 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulate
     // but wants to bind the physical input device to an existing model in the simulation.
     // In this case, the user should specify just the root link and we shall try to find a
     // body in simulation matching that name. Once succesful we shall then be able to control
-    // that link/body in Position control mode and control all the joints lower in heirarchy.
+    // that link/body in Position control mode and control all the joints lower in hierarchy.
 
     ADFUtils adfUtils;
 
