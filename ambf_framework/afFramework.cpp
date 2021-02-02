@@ -2689,8 +2689,9 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 {
     afJointAttributes &attribs = *a_attribs;
 
+    m_namespace = attribs.m_identificationAttribs.m_namespace;
     m_name = attribs.m_identificationAttribs.m_name;
-    m_name.erase(std::remove(m_name.begin(), m_name.end(), ' '), m_name.end());
+
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_childName = attribs.m_hierarchyAttribs.m_childName;
     m_enableActuator = attribs.m_enableMotor;
@@ -2713,7 +2714,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     if (m_afParentBody == nullptr || m_afChildBody == nullptr){
 
-        string prefix = "BODY ";
+        string prefix = "BODY";
         size_t pos = m_parentName.find(prefix);
         if (pos != std::string::npos)
         {
@@ -4297,6 +4298,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     afWorldAttributes & attribs = *a_attribs;
 
+    attribs.resolveRelativeNamespace();
     attribs.resolveRelativePathAttribs();
 
     setName(attribs.m_identificationAttribs.m_name);
@@ -4353,10 +4355,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
-            addAFLight(lightPtr);
+            string remaped_name = addAFLight(lightPtr);
             lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                           lightPtr->m_name,
-                                           resolveGlobalNamespace(lightPtr->getNamespace()),
+                                           remaped_name,
+                                           getGlobalNamespace(),
                                            lightPtr->getMinPublishFrequency(),
                                            lightPtr->getMaxPublishFrequency());
         }
@@ -4369,10 +4371,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         lightAttribs.m_identificationAttribs.m_name = "default_light";
         afLightPtr lightPtr = new afLight(this);
         lightPtr->createFromAttribs(&lightAttribs);
-        addAFLight(lightPtr);
+        string remaped_name = addAFLight(lightPtr);
         lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                       lightPtr->getName(),
-                                       resolveGlobalNamespace(lightPtr->getNamespace()),
+                                       remaped_name,
+                                       getGlobalNamespace(),
                                        lightPtr->getMinPublishFrequency(),
                                        lightPtr->getMaxPublishFrequency());
     }
@@ -4381,10 +4383,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         for (size_t idx = 0 ; idx < attribs.m_cameraAttribs.size(); idx++){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
-                addAFCamera(cameraPtr);
+                string remaped_name = addAFCamera(cameraPtr);
                 cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
-                                                cameraPtr->getName(),
-                                                resolveGlobalNamespace(cameraPtr->getNamespace()),
+                                                remaped_name,
+                                                getGlobalNamespace(),
                                                 cameraPtr->getMinPublishFrequency(),
                                                 cameraPtr->getMaxPublishFrequency());
             }
@@ -4398,10 +4400,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             camAttribs.m_lookAt.set(-1, 0, 0);
             camAttribs.m_identificationAttribs.m_name = "default_camera";
             if (cameraPtr->createFromAttribs(&camAttribs)){
-                addAFCamera(cameraPtr);
+                string remaped_name = addAFCamera(cameraPtr);
                 cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
-                                                cameraPtr->m_name,
-                                                resolveGlobalNamespace(cameraPtr->getNamespace()),
+                                                remaped_name,
+                                                getGlobalNamespace(),
                                                 cameraPtr->getMinPublishFrequency(),
                                                 cameraPtr->getMaxPublishFrequency());
             }
@@ -6244,7 +6246,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     if (rBodyPtr->isPassive() == false){
                         rBodyPtr->afCreateCommInstance(afObjectType::RIGID_BODY,
                                                        remaped_name,
-                                                       m_afWorld->resolveGlobalNamespace(rBodyPtr->getNamespace()),
+                                                       m_afWorld->getGlobalNamespace(),
                                                        rBodyPtr->getMinPublishFrequency(),
                                                        rBodyPtr->getMaxPublishFrequency());
                     }
@@ -6292,7 +6294,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     cerr << "LOADING SENSOR COMM \n";
                     sensorPtr->afCreateCommInstance(afObjectType::SENSOR,
                                                     remaped_name,
-                                                    m_afWorld->resolveGlobalNamespace(sensorPtr->getNamespace()),
+                                                    m_afWorld->getGlobalNamespace(),
                                                     sensorPtr->getMinPublishFrequency(),
                                                     sensorPtr->getMaxPublishFrequency());
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -6328,7 +6330,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
                     cerr << "LOADING ACTUATOR COMM \n";
                     actuatorPtr->afCreateCommInstance(afObjectType::ACTUATOR,
                                                       remaped_name,
-                                                      m_afWorld->resolveGlobalNamespace(actuatorPtr->getNamespace()),
+                                                      m_afWorld->getGlobalNamespace(),
                                                       actuatorPtr->getMinPublishFrequency(),
                                                       actuatorPtr->getMaxPublishFrequency());
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -6361,7 +6363,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             if (enable_comm){
                 vehiclePtr->afCreateCommInstance(afObjectType::VEHICLE,
                                                  remap_name,
-                                                 m_afWorld->resolveGlobalNamespace(vehiclePtr->getNamespace()),
+                                                 m_afWorld->getGlobalNamespace(),
                                                  vehiclePtr->getMinPublishFrequency(),
                                                  vehiclePtr->getMaxPublishFrequency());
             }
