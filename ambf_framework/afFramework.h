@@ -229,6 +229,12 @@ public:
 };
 
 
+class afMaterialUtils{
+public:
+    static cMaterial createMaterialFromColor(afColorAttributes* a_color);
+};
+
+
 class afComm{
 public:
     afComm(){}
@@ -523,8 +529,6 @@ public:
 
     // The update method called at every simulation iteration.
     virtual void update(){}
-
-    static void copyMaterialToMesh(cMultiMesh* a_mesh, const afColorAttributes* a_color);
 
     cVector3d getLocalPos();
 

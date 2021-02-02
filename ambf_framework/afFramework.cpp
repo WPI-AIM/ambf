@@ -400,6 +400,25 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     return compoundCollisionShape;
 }
 
+
+///
+/// \brief afMaterialUtils::createMaterialFromColor
+/// \param a_color
+/// \return
+///
+cMaterial afMaterialUtils::createMaterialFromColor(afColorAttributes *a_color)
+{
+    cMaterial mat;
+    mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2));
+    mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2));
+    mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2));
+    mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2));
+    mat.setShininess(a_color->m_shininess);
+    mat.setTransparencyLevel(a_color->m_alpha);
+
+    return mat;
+}
+
 ///
 /// \brief afComm::afCreateCommInstance
 /// \param type
@@ -865,13 +884,13 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
-//    std::vector<cGenericObject*>::iterator it;
-//    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
-//        (*it)->setShowFrame(!(*it)->getShowFrame());
-//    }
-    if (m_visualMesh){
-        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+    std::vector<cGenericObject*>::iterator it;
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
+        (*it)->setShowFrame(!(*it)->getShowFrame());
     }
+//    if (m_visualMesh){
+//        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+//    }
 }
 
 
@@ -1722,7 +1741,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
             m_visualMesh->scale(m_scale);
             m_visualMesh->setUseDisplayList(true);
-            m_visualMesh->markForUpdate(false);
+//            m_visualMesh->markForUpdate(false);
         }
         else{
             cerr << "WARNING: Body "
@@ -1741,7 +1760,11 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
     }
 
-    afBaseObject::copyMaterialToMesh(m_visualMesh, &attribs.m_visualAttribs.m_colorAttribs);
+    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
+    m_visualMesh->setMaterial(mat);
+    // Important to set the transparency after setting the material, otherwise the alpha
+    // channel ruins the Z-buffer depth testing in some way.
+    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
 
     m_shaderProgramDefined = attribs.m_shaderAttribs.m_shaderDefined;
     if (m_shaderProgramDefined){
@@ -2494,7 +2517,12 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     cTransform pose = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(pose);
 
-    afBaseObject::copyMaterialToMesh(&m_softMultiMesh->m_gelMesh, &attribs.m_visualAttribs.m_colorAttribs);
+    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
+    // Important to set the transparency after setting the material, otherwise the alpha
+    // channel ruins the Z-buffer depth testing in some way.
+    m_visualMesh->setMaterial(mat);
+
+    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
 
     btSoftBody* softBody = m_bulletSoftBody;
 
@@ -4141,19 +4169,6 @@ void afWorld::estimateBodyWrenches(){
 
 }
 
-void afBaseObject::copyMaterialToMesh(cMultiMesh *a_mesh, const afColorAttributes *a_color)
-{
-    cMaterial mat;
-    mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2));
-    mat.m_specular.set(a_color->m_specular(0), a_color->m_specular(1), a_color->m_specular(2));
-    mat.m_ambient.set(a_color->m_ambient(0), a_color->m_ambient(1), a_color->m_ambient(2));
-    mat.m_emission.set(a_color->m_emission(0), a_color->m_emission(1), a_color->m_emission(2));
-    mat.setShininess(a_color->m_shininess);
-    a_mesh->setMaterial(mat);
-    a_mesh->setTransparencyLevel(a_color->m_alpha);
-}
-
-
 ///
 /// \brief afWorld::updatePositionFromDynamics
 ///
@@ -4565,46 +4580,12 @@ void afWorld::loadSkyBox(){
 ///
 void afWorld::enableShaderProgram(){
     if (m_shaderProgramDefined){
-        ifstream vsFile;
-        ifstream fsFile;
-        vsFile.open(m_vsFilePath.c_str());
-        fsFile.open(m_fsFilePath.c_str());
-        // create a string stream
-        stringstream vsBuffer, fsBuffer;
-        // dump the contents of the file into it
-        vsBuffer << vsFile.rdbuf();
-        fsBuffer << fsFile.rdbuf();
-        // close the files
-        vsFile.close();
-        fsFile.close();
-
-        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-        if (shaderProgram->linkProgram()){
-            // Just empty Pts to let us use the shader
-            cGenericObject* go;
-            cRenderOptions ro;
-            shaderProgram->use(go, ro);
-            // Set the ID for shadow and normal maps.
-            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
-
-            cerr << "USING WORLD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << endl;
-
-            afRigidBodyVec rbVec = getAFRigidBodies();
-            for (int i = 0 ; i < rbVec.size() ; i++){
-                rbVec[i]->m_visualMesh->setShaderProgram(shaderProgram);
-            }
-
-        }
-        else{
-            cerr << "ERROR! FOR WORLD FAILED TO LOAD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << endl;
-
-            m_shaderProgramDefined = false;
+        afRigidBodyMap::iterator it;
+        for (it = m_afRigidBodyMap.begin() ; it != m_afRigidBodyMap.end() ; ++it){
+            afRigidBodyPtr rBody = it->second;
+            rBody->m_vtxShaderFilePath = m_vsFilePath;
+            rBody->m_fragShaderFilePath = m_fsFilePath;
+            rBody->m_shaderProgramDefined = true;
         }
     }
 }
@@ -5949,7 +5930,7 @@ void afCamera::render(afRenderOptions &options)
     }
 
     // render world
-   renderView(m_width,m_height);
+    renderView(m_width,m_height);
 
     // swap buffers
     glfwSwapBuffers(m_window);

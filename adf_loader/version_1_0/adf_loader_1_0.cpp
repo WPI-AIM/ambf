@@ -991,6 +991,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
 
     ADFUtils adfUtils;
 
+    node["location"]["position"] = node["location"];
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
