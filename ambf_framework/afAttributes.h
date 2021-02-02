@@ -835,6 +835,10 @@ public:
                 m_rigidBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
+            for (int i = 0 ; i < m_jointAttribs.size() ; i++){
+                m_jointAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
             for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
                 m_softBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
@@ -1036,6 +1040,22 @@ public:
     afEnclosure m_enclosure;
     afEnvironmentModel m_environmentModel;
     afSkyBoxAttributes m_skyBoxAttribs;
+
+    virtual bool resolveRelativeNamespace(){
+        if (m_namespaceResolved == false){
+            string a_parentNamespace = m_identificationAttribs.m_namespace;
+
+            for (int i = 0 ; i < m_lightAttribs.size() ; i++){
+                m_lightAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_cameraAttribs.size() ; i++){
+                m_cameraAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+            m_namespaceResolved = true;
+        }
+        return true;
+    }
 
     virtual bool resolveRelativePathAttribs(){
         if (m_pathsResolved == false){
