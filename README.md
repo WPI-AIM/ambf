@@ -5,9 +5,6 @@
 
 ![ambf-1.0](https://github.com/WPI-AIM/ambf/workflows/ambf-1.0/badge.svg?branch=ambf-1.0)
 
-#### Contributors:
-1. [Melody Su](https://github.com/melodysu83) (Email: --)
-
 
 ### 2. [Wiki](https://github.com/WPI-AIM/ambf/wiki):
 Please checkout the [Wiki](https://github.com/WPI-AIM/ambf/wiki) for indepth details about AMBF, it's components, examples and concepts. You can also checkout the video below for a brief run down of some of the features of AMBF
