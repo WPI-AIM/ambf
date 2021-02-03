@@ -186,6 +186,9 @@ void World::update_params_from_server(){
     }
 
 
+}
+
+
 ///
 /// \brief World::World
 /// \param a_name
