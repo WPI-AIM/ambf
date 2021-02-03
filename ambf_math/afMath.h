@@ -109,7 +109,7 @@ public:
 
     void normalize(){
         double magInv = 1.0 / getNorm();
-        (*this)(0) += magInv;
+        (*this)(0) *= magInv;
         (*this)(1) *= magInv;
         (*this)(2) *= magInv;
     }
@@ -233,9 +233,9 @@ public:
     afVector3d operator *(afVector3d vIn){
         afVector3d vOut;
 
-        vOut(0) = m_data[0][0] * vIn(0) + m_data[0][1] * vIn(0) + m_data[0][2] * vOut(0);
-        vOut(1) = m_data[1][0] * vIn(1) + m_data[1][1] * vIn(1) + m_data[1][2] * vOut(1);
-        vOut(2) = m_data[2][0] * vIn(2) + m_data[2][1] * vIn(2) + m_data[2][2] * vOut(2);
+        vOut(0) = m_data[0][0] * vIn(0) + m_data[0][1] * vIn(1) + m_data[0][2] * vIn(2);
+        vOut(1) = m_data[1][0] * vIn(0) + m_data[1][1] * vIn(1) + m_data[1][2] * vIn(2);
+        vOut(2) = m_data[2][0] * vIn(0) + m_data[2][1] * vIn(1) + m_data[2][2] * vIn(2);
 
         return vOut;
     }
