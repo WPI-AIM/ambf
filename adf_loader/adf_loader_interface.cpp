@@ -78,7 +78,7 @@ adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
         return getVersionFromString(versionStr);
     }
     else{
-        cerr << "Version not defined thus assuming VERSION_1_0" << endl;
+        cerr << "WARNING! ADF version not defined thus assuming VERSION_1_0" << endl;
         return adfVersion::VERSION_1_0;
     }
 }
