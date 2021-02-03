@@ -31,7 +31,6 @@ def compute_FK(joint_pos):
     T_3_0 = np.matmul(T_2_0, T_3_2)
     T_4_0 = np.matmul(T_3_0, T_4_3)
 
-    # print("RETURNING FK FOR LINK ", len(joint_pos))
 
     if len(joint_pos) == 1:
         return T_1_0
@@ -44,11 +43,4 @@ def compute_FK(joint_pos):
 
     elif len(joint_pos) == 4:
         return T_4_0
-
-
-# T_4_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
-#
-# print T_4_0
-# print "\n AFTER ROUNDING \n"
-# print(round_mat(T_4_0, 4, 4, 3))
 

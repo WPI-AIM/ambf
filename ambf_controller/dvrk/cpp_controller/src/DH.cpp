@@ -17,10 +17,6 @@ Matrix4f DH::mat_from_dh(double alpha, double a, double theta, double d, double 
     float ct = cos(theta);
     float st = sin(theta);
 
-//    std::cout << "mat_from_dh - DH: " << alpha << ", " << a << ", " << theta
-//              << ", " << d << ", " << offset << ", " << joint_type_.c_str() << std::endl;
-
-//    std::cout << "mat_from_dh - mat values: " << ca << ", " << sa << ", " << ct << ", " << st << std::endl;
 
     mat <<  ct     ,    -st    ,      0,          a,
             st * ca,    ct * ca,    -sa,    -d * sa,

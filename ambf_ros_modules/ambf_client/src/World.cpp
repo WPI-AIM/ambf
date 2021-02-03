@@ -185,14 +185,6 @@ void World::update_params_from_server(){
         rIdx++;
     }
 
-    // DEBUG
-//    std::cerr << "-----------------------\n";
-
-//    for (int i = 0 ; i < m_point_cloud_topics.size() ; i++){
-//        std::cerr << i << ")\t" << m_point_cloud_topics[i] << "\n";
-//    }
-}
-
 
 ///
 /// \brief World::World

@@ -615,10 +615,6 @@ void RigidBody::set_multiple_joint_control(std::map<int, float> &joints_idx_comm
     int min_joint_index = joints_idx_command_map.begin()->first;
     int max_joint_index = joints_idx_command_map.rbegin()->first;
 
-    // if(min_joint_index < 0 || max_joint_index >= n_jnts || joints_idx_command_map.size() != n_jnts) {
-    //     std::cerr << "Requested Joint index is out of range with joints" << std::endl;
-    //     return;
-    // }
 
     if(m_Cmd.joint_cmds.size() != n_jnts) {
         m_Cmd.joint_cmds.resize(n_jnts, 0.0);

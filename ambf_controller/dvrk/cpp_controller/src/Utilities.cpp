@@ -9,9 +9,6 @@ float Utilities::get_angle(Vector3f vec_a, Vector3f vec_b, Vector3f up_vector) {
 
     Vector3f cross_ab = vec_a.cross(vec_b);
     float vdot = vec_a.dot(vec_b);
-//    std::cout << "a, b: " << std::endl << vec_a << std::endl  << vec_b << std::endl;
-//    std::cout << "vdot : " << vdot << std::endl << std::endl;
-//    std::cout << "cross_ab : " << std::endl << cross_ab << std::endl;
 
 //    # Check if the vectors are in the same direction
     if(1.0 - vdot < 0.000001) angle = 0.0;

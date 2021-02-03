@@ -45,8 +45,7 @@ def compute_FK(joint_pos):
     T_6_5 = link6.get_trans()
     T_7_6 = link7.get_trans()
 
-    # print("\nT_4_3: ")
-    # print(T_4_3)
+
 
     T_2_0 = np.matmul(T_1_0, T_2_1)
     T_3_0 = np.matmul(T_2_0, T_3_2)
@@ -55,7 +54,7 @@ def compute_FK(joint_pos):
     T_6_0 = np.matmul(T_5_0, T_6_5)
     T_7_0 = np.matmul(T_6_0, T_7_6)
 
-    # print("RETURNING FK FOR LINK ", len(joint_pos))
+
 
     if len(joint_pos) == 1:
         return T_1_0
@@ -112,11 +111,4 @@ class DH:
 
     def get_trans(self):
         return self.mat_from_dh(self.alpha, self.a, self.theta, self.d, self.offset)
-
-
-# T_7_0 = compute_FK([-0.5, 0, 0.2, 0, 0, 0])
-#
-# print T_7_0
-# print "\n AFTER ROUNDING \n"
-# print(round_mat(T_7_0, 4, 4, 3))
 

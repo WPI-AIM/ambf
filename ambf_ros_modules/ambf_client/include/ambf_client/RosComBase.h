@@ -72,9 +72,6 @@ public:
         nodePtr->setCallbackQueue(&m_custom_queue);
 
 
-//        ros::spinOnce();
-//        aspinPtr->start();
-//        ros::waitForShutdown();
         m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
 
 

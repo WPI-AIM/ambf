@@ -125,13 +125,6 @@ public:
     inline void set_publish_joint_positions_flag(bool publish_joint_positions) { m_Cmd.publish_joint_positions= publish_joint_positions; }
 
 
-//    void set_position(double px, double py, double pz);
-//    void set_rpy(double roll, double pitch, double yaw);
-//    void set_rot(tf::Quaternion rot_quat);
-
-
-
-
     void wrench_command(double fx, double fy, double fz, double nx, double ny, double nz);  //TBT
     void pose_command(double px, double py, double pz, double qx, double qy, double qz, double qw);  //TBT
     void velocity_command(double vx, double vy, double vz, double ax, double ay, double az);  //TBT
