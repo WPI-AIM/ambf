@@ -119,14 +119,14 @@ public:
     vector<string> getVehicleNames();
     vector<string> getWorldNames();
 
-    actuatorPtr getAActuator(std::string a_name, bool suppress_warning);
-    cameraPtr getACamera(std::string a_name, bool suppress_warning);
-    lightPtr getALight(std::string a_name, bool suppress_warning);
-    objectPtr getAObject(std::string a_name, bool suppress_warning);
-    rigidBodyPtr getARigidBody(std::string a_name, bool suppress_warning);
-    sensorPtr getASensor(std::string a_name, bool suppress_warning);
-    vehiclePtr getAVehicle(std::string a_name, bool suppress_warning);
-    worldPtr getAWorld(std::string a_name, bool suppress_warning);
+    actuatorPtr getActuator(std::string a_name, bool suppress_warning);
+    cameraPtr getCamera(std::string a_name, bool suppress_warning);
+    lightPtr getLight(std::string a_name, bool suppress_warning);
+    objectPtr getObject(std::string a_name, bool suppress_warning);
+    rigidBodyPtr getRigidBody(std::string a_name, bool suppress_warning);
+    sensorPtr getSensor(std::string a_name, bool suppress_warning);
+    vehiclePtr getVehicle(std::string a_name, bool suppress_warning);
+    worldPtr getWorld(std::string a_name, bool suppress_warning);
 
 
     void cleanUp();

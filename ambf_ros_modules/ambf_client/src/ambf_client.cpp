@@ -179,12 +179,12 @@ void Client::getObjectNames(string msg_type, vector<string>& object_names) {
 }
 
 /////
-///// \brief Client::getAActuator
+///// \brief Client::getActuator
 ///// \param a_name
 ///// \param suppress_warning
 ///// \return
 /////
-actuatorPtr Client::getAActuator(std::string a_name, bool suppress_warning){
+actuatorPtr Client::getActuator(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/ActuatorState";
     if(!checkMessageType(msg_type)) return NULL;
 
@@ -192,12 +192,12 @@ actuatorPtr Client::getAActuator(std::string a_name, bool suppress_warning){
 }
 
 /////
-///// \brief Client::getACamera
+///// \brief Client::getCamera
 ///// \param a_name
 ///// \param suppress_warning
 ///// \return
 /////
-cameraPtr Client::getACamera(std::string a_name, bool suppress_warning){
+cameraPtr Client::getCamera(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/CameraState";
     if(!checkMessageType(msg_type)) return NULL;
 
@@ -205,24 +205,24 @@ cameraPtr Client::getACamera(std::string a_name, bool suppress_warning){
 }
 
 /////
-///// \brief Client::getAFLight
+///// \brief Client::getLight
 ///// \param a_name
 ///// \param suppress_warning
 ///// \return
 /////
-lightPtr Client::getALight(std::string a_name, bool suppress_warning){
+lightPtr Client::getLight(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/LightState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<lightPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
 /////
-///// \brief Client::getAObject
+///// \brief Client::getObject
 ///// \param a_name
 ///// \param suppress_warning
 ///// \return
 /////
-objectPtr Client::getAObject(std::string a_name, bool suppress_warning){
+objectPtr Client::getObject(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/ObjectState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<objectPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -234,7 +234,7 @@ objectPtr Client::getAObject(std::string a_name, bool suppress_warning){
 ///// \param suppress_warning
 ///// \return
 /////
-rigidBodyPtr Client::getARigidBody(std::string a_name, bool suppress_warning){
+rigidBodyPtr Client::getRigidBody(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/RigidBodyState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<rigidBodyPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -246,7 +246,7 @@ rigidBodyPtr Client::getARigidBody(std::string a_name, bool suppress_warning){
 ///// \param suppress_warning
 ///// \return
 /////
-sensorPtr Client::getASensor(std::string a_name, bool suppress_warning){
+sensorPtr Client::getSensor(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/SensorState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<sensorPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -258,19 +258,19 @@ sensorPtr Client::getASensor(std::string a_name, bool suppress_warning){
 ///// \param suppress_warning
 ///// \return
 /////
-vehiclePtr Client::getAVehicle(std::string a_name, bool suppress_warning){
+vehiclePtr Client::getVehicle(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/VehicleState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<vehiclePtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
 
 /////
-///// \brief Client::getAWorld
+///// \brief Client::getWorld
 ///// \param a_name
 ///// \param suppress_warning
 ///// \return
 /////
-worldPtr Client::getAWorld(std::string a_name, bool suppress_warning){
+worldPtr Client::getWorld(std::string a_name, bool suppress_warning){
     string msg_type = "ambf_msgs/WorldState";
     if(!checkMessageType(msg_type)) return NULL;
 

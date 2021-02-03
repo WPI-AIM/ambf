@@ -78,9 +78,9 @@ void ECM::testIK() {
         std::cout << object_name << ", ";
     std::cout << std::endl;
 
-    rigidBodyPtr b = client.getARigidBody("ecm/baselink", true);
-    rigidBodyPtr target_fk_handler = client.getARigidBody("ecm/target_fk", true);
-    rigidBodyPtr target_ik_handler = client.getARigidBody("ecm/target_ik", true);
+    rigidBodyPtr b = client.getRigidBody("ecm/baselink", true);
+    rigidBodyPtr target_fk_handler = client.getRigidBody("ecm/target_fk", true);
+    rigidBodyPtr target_ik_handler = client.getRigidBody("ecm/target_ik", true);
     usleep(1000000);
 
     Utilities utilities;

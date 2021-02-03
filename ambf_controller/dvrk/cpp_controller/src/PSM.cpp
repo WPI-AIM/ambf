@@ -159,9 +159,9 @@ void PSM::testAmbfPsm() {
     std::cout << std::endl;
 
 
-    rigidBodyPtr b = client.getARigidBody("psm/baselink", true);
-    rigidBodyPtr target_fk_handler = client.getARigidBody("psm/target_fk", true);
-    rigidBodyPtr target_ik_handler = client.getARigidBody("psm/target_ik", true);
+    rigidBodyPtr b = client.getRigidBody("psm/baselink", true);
+    rigidBodyPtr target_fk_handler = client.getRigidBody("psm/target_fk", true);
+    rigidBodyPtr target_ik_handler = client.getRigidBody("psm/target_ik", true);
     usleep(1000000);
 
     Utilities utilities;
