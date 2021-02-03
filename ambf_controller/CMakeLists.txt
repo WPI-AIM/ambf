@@ -43,8 +43,7 @@ find_package (Boost COMPONENTS program_options filesystem REQUIRED)
 
 include_directories (${GLFW_INCLUDE_DIRS}
                      raven2/include 
-		             ambf_client/include
-		             
+                     dvrk/cpp_controller/include
 )
 
 add_executable (ambf_controller raven2/include/ambf_defines.h
@@ -55,8 +54,36 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
                                 raven2/src/ambf_defines.cpp
                                 raven2/src/main.cpp )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk)
+
 
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ambf_client_app)
+
+set (PSM_IK_HDR_FILES
+    dvrk/cpp_controller/include/PSM.h
+    dvrk/cpp_controller/include/DH.h
+    dvrk/cpp_controller/include/Utilities.h)
+
+set(PSM_IK_SOURCE_FILES
+    dvrk/cpp_controller/src/PSM.cpp
+    dvrk/cpp_controller/src/DH.cpp
+    dvrk/cpp_controller/src/Utilities.cpp)
+
+add_executable (psm  ${PSM_IK_HDR_FILES} ${PSM_IK_SOURCE_FILES})
+target_link_libraries (psm ${AMBF_LIBRARIES} ${AMBF_CLIEMT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
+
+
+set (ECM_IK_HDR_FILES
+    dvrk/cpp_controller/include/ECM.h
+    dvrk/cpp_controller/include/DH.h
+    dvrk/cpp_controller/include/Utilities.h)
+
+set(ECM_IK_SOURCE_FILES
+    dvrk/cpp_controller/src/ECM.cpp
+    dvrk/cpp_controller/src/DH.cpp
+    dvrk/cpp_controller/src/Utilities.cpp)
+
+add_executable (ecm  ${ECM_IK_HDR_FILES} ${ECM_IK_SOURCE_FILES})
+target_link_libraries (ecm ${AMBF_LIBRARIES} ${AMBF_CLIEMT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client)
+
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dvrk)

@@ -6,8 +6,8 @@
 #include<iostream>
 
 #include "ambf_client/ambf_client.h"
-#include "ambf_client_app/DH.h"
-#include "ambf_client_app/Utilities.h"
+#include "DH.h"
+#include "Utilities.h"
 
 enum class JointType{
     ROTATIONAL,

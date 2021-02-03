@@ -57,16 +57,6 @@ message_generation)
 
 #catkin_python_setup()
 
-
-# add_service_files(
-#   FILES
-#   RBDLDynamics.srv
-# )
-
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
 catkin_package( INCLUDE_DIRS include
   LIBRARIES ambf_client
   CATKIN_DEPENDS ambf_msgs message_runtime
@@ -130,8 +120,6 @@ set (ENV_SRC_FILES
     src/WorldRosCom.cpp
     src/RosComBase.cpp
     )
-
-
 
 
 ## Declare a C++ library

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>ambf_client</name>
+  <version>0.0.0</version>
+  <description>The ambf_client package</description>
+
+  <maintainer email="schandrasekhar@todo.todo">Shreyas Chandra Sekhar</maintainer>
+  <license>TODO</license>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>ambf_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>ambf_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <export>
+
+  </export>
+</package>
