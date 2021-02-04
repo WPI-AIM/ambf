@@ -226,6 +226,8 @@ public:
     static btCollisionShape* createCollisionShape(const cMesh* a_collisionMesh, double a_margin, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
 
     static btCompoundShape* createCollisionShape(const cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+
+    static std::vector<afRayAttributes> createRayAttribs(cMultiMesh* a_contourMesh, double a_range);
 };
 
 
@@ -428,7 +430,7 @@ public:
 struct afRayTracerResult{
 
 public:
-    void initMeshes();
+    void enableVisualization(afRayTracerSensor* sensorPtr, const afRayAttributes* attribs, double sphereRadius=0.1);
 
     // The rigid body that this proximity sensor is sensing
     btRigidBody* m_sensedBTRigidBody = nullptr;
@@ -525,15 +527,15 @@ class afSceneObject{
     friend class afBaseObject;
 public:
     afSceneObject(){
-        m_offsetTransform.identity();
+        m_localOffset.identity();
     }
     afSceneObject(cTransform& a_trans){
-        m_offsetTransform = a_trans;
+        m_localOffset = a_trans;
     }
 
-    inline cTransform getOffsetTransform(){return m_offsetTransform;}
+    inline cTransform getOffsetTransform(){return m_localOffset;}
 
-    void setOffsetTransform(const cTransform &a_trans){m_offsetTransform = a_trans;}
+    void setLocalOffset(const cTransform &a_trans){m_localOffset = a_trans;}
 
     inline cGenericObject* getChaiObject(){return m_chaiObject;}
 
@@ -541,7 +543,7 @@ public:
 
 protected:
     cGenericObject* m_chaiObject;
-    cTransform m_offsetTransform;
+    cTransform m_localOffset;
 };
 
 
@@ -593,7 +595,9 @@ public:
 
     void setLocalTransform(const afTransform &trans);
 
-    void setParentObject(afBaseObjectPtr a_afObject);
+    bool setParentObject(afBaseObjectPtr a_afObject);
+
+    void clearParentObject();
 
     bool addChildObject(afBaseObjectPtr a_afObject);
 
@@ -606,7 +610,7 @@ public:
 
     bool isSceneObjectAlreadyAdded(afSceneObject* a_object);
 
-    bool addChildSceneObject(cGenericObject* a_object);
+    bool addChildSceneObject(cGenericObject* a_object, const cTransform& a_trans);
 
     bool addChildSceneObject(afSceneObject* a_object);
 

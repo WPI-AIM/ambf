@@ -1597,25 +1597,20 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
     if (arrayNode.IsDefined()){
         uint count = arrayNode.size();
         attribs->m_raysAttribs.resize(count);
-        afTransform T_sINp = attribs->m_kinematicAttribs.m_location;
-        afMatrix3d R_sINp = T_sINp.getRotation();
         for (uint i = 0 ; i < count ; i++){
             YAML::Node offsetNode = arrayNode[i]["offset"];
             YAML::Node directionNode = arrayNode[i]["direction"];
 
-            afVector3d offset, start, dir, end;
+            afVector3d localStart, localDir, localEnd;
 
-            offset = ADFUtils::positionFromNode(&offsetNode);
-            dir = ADFUtils::positionFromNode(&directionNode);
-            start = T_sINp * offset;
-            dir = R_sINp * dir;
-            dir.normalize();
-            end = start + dir * attribs->m_range;
+            localStart = ADFUtils::positionFromNode(&offsetNode);
+            localDir = ADFUtils::positionFromNode(&directionNode);
+            localEnd = localStart + localDir * attribs->m_range;
 
             attribs->m_raysAttribs[i].m_range = attribs->m_range;
-            attribs->m_raysAttribs[i].m_rayFromLocal = start;
-            attribs->m_raysAttribs[i].m_direction = dir;
-            attribs->m_raysAttribs[i].m_rayToLocal = end;
+            attribs->m_raysAttribs[i].m_rayFromLocal = localStart;
+            attribs->m_raysAttribs[i].m_direction = localDir;
+            attribs->m_raysAttribs[i].m_rayToLocal = localEnd;
         }
         attribs->m_specificationType = afSensactorSpecificationType::ARRAY;
         result = true;
@@ -1802,6 +1797,8 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
     if (tauNode.IsDefined()){
         attribs->m_tau = tauNode.as<double>();
     }
+
+    attribs->m_actuatorType = afActuatorType::CONSTRAINT;
 
     return result;
 }

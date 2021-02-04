@@ -401,6 +401,47 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
 }
 
 
+std::vector<afRayAttributes> afShapeUtils::createRayAttribs(cMultiMesh *a_contourMesh, double a_range){
+    std::vector<afRayAttributes> raysAttribs;
+    for (int n = 0 ; n < a_contourMesh->getNumMeshes() ; n++){
+        cMesh* sourceMesh = a_contourMesh->getMesh(n);
+        if (sourceMesh){
+            int count = sourceMesh->m_triangles->getNumElements();
+            afRayAttributes ray;
+            for (uint i = 0 ; i < count ; i++ ){
+
+                ray.m_range = a_range;
+
+                uint vIdx0 = sourceMesh->m_triangles->getVertexIndex0(i);
+                uint vIdx1 = sourceMesh->m_triangles->getVertexIndex1(i);
+                uint vIdx2 = sourceMesh->m_triangles->getVertexIndex2(i);
+
+                cVector3d v0 = sourceMesh->m_vertices->getLocalPos(vIdx0);
+                cVector3d v1 = sourceMesh->m_vertices->getLocalPos(vIdx1);
+                cVector3d v2 = sourceMesh->m_vertices->getLocalPos(vIdx2);
+
+                cVector3d e1 = v1 - v0;
+                cVector3d e2 = v2 - v1;
+
+                cVector3d localStart = ( v0 + v1 + v2 ) / 3;
+
+                cVector3d localDir = cCross(e1, e2);
+                localDir.normalize();
+
+                cVector3d localEnd = localStart + localDir * a_range;
+
+                localDir.normalize();
+                ray.m_rayFromLocal << localStart ;
+                ray.m_direction << localDir;
+                ray.m_rayToLocal << localEnd;
+                raysAttribs.push_back(ray);
+            }
+        }
+    }
+    return raysAttribs;
+}
+
+
 ///
 /// \brief afMaterialUtils::createMaterialFromColor
 /// \param a_color
@@ -864,23 +905,30 @@ void afBaseObject::setLocalTransform(const afTransform &trans)
     m_localTransform << trans;
 }
 
+void afBaseObject::clearParentObject()
+{
+    m_parentObject = nullptr;
+}
+
 bool afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
 {
     if (a_afObject == this){
         return false;
     }
+    // Remove any set parent of the child object first?
+//    a_afObject->clearParentObject();
     a_afObject->setParentObject(this);
     return true;
 }
-
 
 ///
 /// \brief afBaseObject::setParentObject
 /// \param a_afObject
 ///
-void afBaseObject::setParentObject(afBaseObject *a_afObject)
+bool afBaseObject::setParentObject(afBaseObject *a_afObject)
 {
     m_parentObject = a_afObject;
+    return true;
 }
 
 
@@ -929,7 +977,7 @@ void afBaseObject::setScale(double a_scale){
 /// \brief afBaseObject::addChild
 /// \param a_visualMesh
 ///
-bool afBaseObject::addChildSceneObject(cGenericObject *a_object){
+bool afBaseObject::addChildSceneObject(cGenericObject *a_object, const cTransform &a_trans){
 
     if (a_object == nullptr){
         return false;
@@ -937,7 +985,7 @@ bool afBaseObject::addChildSceneObject(cGenericObject *a_object){
 
     afSceneObject* sceneObject = new afSceneObject;
     sceneObject->setChaiObject(a_object);
-    sceneObject->setOffsetTransform(a_object->getLocalTransform());
+    sceneObject->setLocalOffset(a_trans);
     return addChildSceneObject(sceneObject);
 }
 
@@ -1083,7 +1131,7 @@ bool afBaseObject::resolveParenting(string a_parentName){
     // Should generalize this to not be just a rigid body that we may parent to.
     afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
     if (pBody){
-        setParentObject(pBody);
+        pBody->addChildObject(this);
         return true;
     }
     else{
@@ -1144,7 +1192,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     m_parentBody->addAFActuator(this);
 
-    setParentObject(m_parentBody);
+    m_parentBody->addChildObject(this);
 
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
@@ -1911,7 +1959,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
     m_passive = attribs.m_communicationAttribs.m_passive;
 
-    addChildSceneObject(m_visualMesh);
+    addChildSceneObject(m_visualMesh, cTransform());
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
@@ -2637,7 +2685,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->randomizeConstraints();
     }
 
-    addChildSceneObject(m_visualMesh);
+    addChildSceneObject(m_visualMesh, cTransform());
     setScale(m_scale);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
@@ -3188,12 +3236,60 @@ afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr
 }
 
 
-void afRayTracerResult::initMeshes()
-{
-    m_fromSphereMesh = new cMesh;
-    m_toSphereMesh = new cMesh;
-    m_hitNormalMesh = new cMesh;
-    m_hitSphereMesh = new cMesh;
+void afRayTracerResult::enableVisualization(afRayTracerSensor* sensorPtr, const afRayAttributes* attribs, double sphereRadius){
+    if (m_hitSphereMesh == nullptr){
+        cMesh* mesh = new cMesh();
+        cCreateSphere(mesh, sphereRadius);
+        mesh->m_material->setPinkHot();
+        mesh->setShowEnabled(false);
+        mesh->setUseDisplayList(true);
+        mesh->markForUpdate(false);
+        m_hitSphereMesh = mesh;
+        sensorPtr->m_afWorld->addSceneObjectToWorld(mesh);
+    }
+
+    if (m_fromSphereMesh == nullptr){
+        cMesh* mesh = new cMesh();
+        cCreateSphere(mesh, sphereRadius);
+        mesh->m_material->setRed();
+        mesh->setShowEnabled(true);
+        mesh->setUseDisplayList(true);
+        mesh->markForUpdate(false);
+        m_fromSphereMesh = mesh;
+        cTransform offsetTrans;
+        offsetTrans.setLocalPos(to_cVector3d(attribs->m_rayFromLocal));
+        sensorPtr->addChildSceneObject(mesh, offsetTrans);
+        sensorPtr->m_afWorld->addSceneObjectToWorld(mesh);
+    }
+
+    if (m_toSphereMesh == nullptr){
+        cMesh* mesh = new cMesh();
+        cCreateSphere(mesh, sphereRadius);
+        mesh->m_material->setGreen();
+        mesh->setShowEnabled(true);
+        mesh->setUseDisplayList(true);
+        mesh->markForUpdate(false);
+        m_toSphereMesh = mesh;
+        cTransform offsetTrans;
+        offsetTrans.setLocalPos(to_cVector3d(attribs->m_rayToLocal));
+        sensorPtr->addChildSceneObject(mesh, offsetTrans);
+        sensorPtr->m_afWorld->addSceneObjectToWorld(mesh);
+    }
+
+    if (m_hitNormalMesh == nullptr){
+        cMesh* mesh = new cMesh();
+        cCreateArrow(mesh, sphereRadius*10,
+                     sphereRadius*0.5,
+                     sphereRadius*1,
+                     sphereRadius*0.8,
+                     false);
+        mesh->m_material->setGreenForest();
+        mesh->setShowEnabled(false);
+        mesh->setUseDisplayList(true);
+        mesh->markForUpdate(false);
+        m_hitNormalMesh = mesh;
+        sensorPtr->m_afWorld->addSceneObjectToWorld(mesh);
+    }
 }
 
 
@@ -3246,40 +3342,10 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
     case afSensactorSpecificationType::MESH:{
-        cMultiMesh* multiMesh = new cMultiMesh();
-        if (multiMesh->loadFromFile(attribs.m_contourMeshFilepath.c_str())){
-            cMesh* sourceMesh = (*multiMesh->m_meshes)[0];
-            if (sourceMesh){
-                m_count = sourceMesh->m_triangles->getNumElements();
-                m_raysAttribs.resize(m_count);
-                m_rayTracerResults.resize(m_count);
-                for (uint i = 0 ; i < m_count ; i++ ){
-
-                    m_raysAttribs[i].m_range = m_range;
-
-                    uint vIdx0 = sourceMesh->m_triangles->getVertexIndex0(i);
-                    uint vIdx1 = sourceMesh->m_triangles->getVertexIndex1(i);
-                    uint vIdx2 = sourceMesh->m_triangles->getVertexIndex2(i);
-
-                    cVector3d v0 = sourceMesh->m_vertices->getLocalPos(vIdx0);
-                    cVector3d v1 = sourceMesh->m_vertices->getLocalPos(vIdx1);
-                    cVector3d v2 = sourceMesh->m_vertices->getLocalPos(vIdx2);
-
-                    cVector3d e1 = v1 - v0;
-                    cVector3d e2 = v2 - v1;
-
-                    cVector3d centroid = ( v0 + v1 + v2 ) / 3;
-
-                    cVector3d dir = cCross(e1, e2);
-
-                    dir.normalize();
-                    m_raysAttribs[i].m_rayFromLocal << getLocalTransform() * centroid ;
-                    m_raysAttribs[i].m_direction << getLocalRot() * dir;
-                    m_raysAttribs[i].m_direction.normalize();
-                    m_raysAttribs[i].m_rayToLocal = m_raysAttribs[i].m_rayFromLocal + m_raysAttribs[i].m_direction * m_raysAttribs[i].m_range;
-                }
-            }
-            delete multiMesh;
+        cMultiMesh* contourMesh = new cMultiMesh();
+        if (contourMesh->loadFromFile(attribs.m_contourMeshFilepath.c_str())){
+            m_raysAttribs = afShapeUtils::createRayAttribs(contourMesh, m_range);
+            delete contourMesh;
             result = true;
         }
         else{
@@ -3300,6 +3366,16 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     return result;
 }
 
+
+///
+/// \brief afRayTracerSensor::visualize
+///
+void afRayTracerSensor::enableVisualization(){
+    for (uint i = 0 ; i < m_count ; i++){
+        m_rayTracerResults[i].enableVisualization(this, &m_raysAttribs[i], m_visibilitySphereRadius);
+    }
+}
+
 inline afVector3d &operator*(cTransform &lhs, afVector3d &rhs){
     cVector3d tV = afConversions::convertDataType<cVector3d, afVector3d>(rhs);
     rhs << lhs * tV;
@@ -3314,17 +3390,11 @@ void afRayTracerSensor::update(){
     if (m_parentBody == nullptr){
         return;
     }
-    cTransform T_bInw = m_parentBody->getLocalTransform();
+    cTransform T_bINw = getGlobalTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld << T_bInw * to_cVector3d(m_raysAttribs[i].m_rayFromLocal);
-        rayToWorld << T_bInw * to_cVector3d(m_raysAttribs[i].m_rayToLocal);
-
-        // Check for global flag for debug visibility of this sensor
-//        if (m_showSensor){
-//            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld));
-//            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld));
-//        }
+        rayFromWorld << T_bINw * to_cVector3d(m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld << T_bINw * to_cVector3d(m_raysAttribs[i].m_rayToLocal);
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
@@ -3460,67 +3530,6 @@ void afRayTracerSensor::setRayToInLocal(const cVector3d &a_rayTo, uint idx){
 
 void afRayTracerSensor::setDirection(const cVector3d &a_direction, uint idx){
     m_raysAttribs[idx].m_direction.set(a_direction.x(), a_direction.y(), a_direction.z());
-}
-
-///
-/// \brief afRayTracerSensor::visualize
-///
-void afRayTracerSensor::enableVisualization(){
-    for (uint i = 0 ; i < m_count ; i++){
-        if (m_rayTracerResults[i].m_hitSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            mesh->m_material->setPinkHot();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_rayTracerResults[i].m_hitSphereMesh = mesh;
-            addChildSceneObject(mesh);
-            m_afWorld->addSceneObjectToWorld(mesh);
-        }
-
-        if (m_rayTracerResults[i].m_fromSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            mesh->m_material->setRed();
-            mesh->setShowEnabled(true);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_rayTracerResults[i].m_fromSphereMesh = mesh;
-            mesh->setLocalPos(to_cVector3d(m_raysAttribs[i].m_rayFromLocal));
-            addChildSceneObject(mesh);
-            m_afWorld->addSceneObjectToWorld(mesh);
-        }
-
-        if (m_rayTracerResults[i].m_toSphereMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, m_visibilitySphereRadius);
-            mesh->m_material->setGreen();
-            mesh->setShowEnabled(true);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_rayTracerResults[i].m_toSphereMesh = mesh;
-            mesh->setLocalPos(to_cVector3d(m_raysAttribs[i].m_rayToLocal));
-            addChildSceneObject(mesh);
-            m_afWorld->addSceneObjectToWorld(mesh);
-        }
-
-        if (m_rayTracerResults[i].m_hitNormalMesh == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateArrow(mesh, m_visibilitySphereRadius*10,
-                         m_visibilitySphereRadius*0.5,
-                         m_visibilitySphereRadius*1,
-                         m_visibilitySphereRadius*0.8,
-                         false);
-            mesh->m_material->setGreenForest();
-            mesh->setShowEnabled(false);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_rayTracerResults[i].m_hitNormalMesh = mesh;
-            addChildSceneObject(mesh);
-            m_afWorld->addSceneObjectToWorld(mesh);
-        }
-    }
 }
 
 
@@ -5029,7 +5038,7 @@ afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     m_targetVisualMarker->setUseDisplayList(true);
     m_targetVisualMarker->markForUpdate(false);
     m_targetVisualMarker->setShowEnabled(false);
-    addChildSceneObject(m_targetVisualMarker);
+    addChildSceneObject(m_targetVisualMarker, cTransform());
 }
 
 
@@ -5144,7 +5153,7 @@ bool afCamera::createDefaultCamera(){
     cerr << "INFO: USING DEFAULT CAMERA" << endl;
 
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
-    addChildSceneObject(m_camera);
+    addChildSceneObject(m_camera, cTransform());
 
     m_namespace = m_afWorld->getNamespace();
 
@@ -5216,7 +5225,7 @@ bool afCamera::createDefaultCamera(){
     s_cameraIdx++;
 
     // Assign the Window Camera Handles
-    addChildSceneObject(m_camera);
+    addChildSceneObject(m_camera, cTransform());
 
     return true;
 }
@@ -5261,7 +5270,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
 
-    addChildSceneObject(m_camera);
+    addChildSceneObject(m_camera, cTransform());
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
@@ -6033,7 +6042,7 @@ bool afLight::createDefaultLight(){
     m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
     m_namespace = m_afWorld->getNamespace();
     m_name = "default_light";
-    addChildSceneObject(m_spotLight);
+    addChildSceneObject(m_spotLight, cTransform());
     m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
     m_spotLight->setDir(0, 0, -1);
     m_spotLight->setSpotExponent(0.3);
@@ -6064,7 +6073,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
     m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
 
-    addChildSceneObject(m_spotLight);
+    addChildSceneObject(m_spotLight, cTransform());
 
     m_afWorld->addSceneObjectToWorld(m_spotLight);
 
@@ -7154,15 +7163,13 @@ void afPointCloud::update()
 
             afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(frame_id);
             if(pBody){
-                pBody->addChildSceneObject(m_mpPtr);
+                pBody->addChildObject(this);
             }
             else{
                 // Parent not found.
                 cerr << "WARNING! FOR POINT CLOUD \""<< m_topicName <<
                         "\" PARENT BODY \"" << frame_id <<
-                        "\" NOT FOUND, SETTING WORLD AS PARENT" <<
-                        endl;
-                addChildSceneObject(m_mpPtr);
+                        "\" NOT FOUND" << endl;
             }
         }
 
