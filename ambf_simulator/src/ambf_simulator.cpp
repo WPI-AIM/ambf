@@ -1113,13 +1113,13 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 /// \param a_button3
 /// \param a_button4
 ///
-void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_modes){
+void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_modes){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
             if (a_button == GLFW_MOUSE_BUTTON_1){
-                (*g_cameraIt)->mouse_l_clicked = a_action;
+                (*g_cameraIt)->mouse_l_clicked = a_clicked;
                 //                (*g_cameraIt)->showTargetPos(true);
-                if (a_action){
+                if (a_clicked){
                     if (g_mousePickingEnabled){
                         cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
                         double x_pos, y_pos;
@@ -1134,11 +1134,17 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
                     g_pickBody = false;
                 }
             }
-            if (a_button == GLFW_MOUSE_BUTTON_2){
-                (*g_cameraIt)->mouse_r_clicked = a_action;
+            else if (a_button == GLFW_MOUSE_BUTTON_2){
+                (*g_cameraIt)->mouse_r_clicked = a_clicked;
             }
-            if (a_button == GLFW_MOUSE_BUTTON_3){
-                (*g_cameraIt)->mouse_scroll_clicked = a_action;
+            else if (a_button == GLFW_MOUSE_BUTTON_3){
+                int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+                if (state == GLFW_PRESS){
+                    (*g_cameraIt)->mouse_l_clicked = a_clicked;
+                }
+                else{
+                    (*g_cameraIt)->mouse_scroll_clicked = a_clicked;
+                }
             }
         }
     }
@@ -1154,7 +1160,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_action, int a_m
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
         if (a_window == (*g_cameraIt)->m_window){
-            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_CONTROL);
             double speed_scale = 1.0;
             if (state == GLFW_PRESS)
             {
@@ -1372,18 +1378,18 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
         }
         g_afWorld->m_pickedNode->m_v += to_btVector(delta) / timeStep;
     }
-    std::vector<afJointPtr>::const_iterator jIt;
-    std::vector<afJointPtr> afJoints = g_afWorld->getAFJoints();
-    for (jIt = afJoints.begin() ; jIt != afJoints.end() ; ++jIt){
-        afJointPtr jnt = (*jIt);
-        jnt->applyDamping(timeStep);
-    }
 
-    //    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
-    //    // Update the data for sensors
-    //    for (int i=0 ; i < afSensors.size() ; i++){
-    //        afSensors[i]->updateSensor();
-    //    }
+//    afJointMap::const_iterator it;
+//    for (it = g_afWorld->getAFJointMap()->begin() ; it != g_afWorld->getAFJointMap()->end() ; ++it){
+//        afJointPtr jnt = (it->second);
+//        jnt->applyDamping(timeStep);
+//    }
+
+//    std::vector<afSensorPtr> afSensors = g_afWorld->getAFSensors();
+//    // Update the data for sensors
+//    for (int i=0 ; i < afSensors.size() ; i++){
+//        afSensors[i]->updateSensor();
+//    }
 }
 
 ///
