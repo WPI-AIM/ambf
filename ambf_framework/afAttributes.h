@@ -822,8 +822,8 @@ public:
     std::vector <afSoftBodyAttributes> m_softBodyAttribs;
     std::vector <afVehicleAttributes> m_vehicleAttribs;
     std::vector <afJointAttributes> m_jointAttribs;
-    std::vector <afSensorAttributes> m_sensorAttribs;
-    std::vector <afActuatorAttributes> m_actuatorAttribs;
+    std::vector <afSensorAttributes*> m_sensorAttribs;
+    std::vector <afActuatorAttributes*> m_actuatorAttribs;
 
     bool m_ignoreInterCollision;
 
@@ -848,11 +848,11 @@ public:
             }
 
             for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
-                m_sensorAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+                m_sensorAttribs[i]->resolveRelativeNamespace(a_parentNamespace);
             }
 
             for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
-                m_actuatorAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+                m_actuatorAttribs[i]->resolveRelativeNamespace(a_parentNamespace);
             }
 
             m_namespaceResolved = true;
@@ -877,11 +877,11 @@ public:
             }
 
             for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
-                m_sensorAttribs[i].resolveRelativePathAttribs(a_parentPath);
+                m_sensorAttribs[i]->resolveRelativePathAttribs(a_parentPath);
             }
 
             for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
-                m_actuatorAttribs[i].resolveRelativePathAttribs(a_parentPath);
+                m_actuatorAttribs[i]->resolveRelativePathAttribs(a_parentPath);
             }
 
             m_pathsResolved = true;

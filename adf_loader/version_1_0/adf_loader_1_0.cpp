@@ -1561,6 +1561,8 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
         return 0;
     }
 
+    attribs->m_sensorType = afSensorType::RAYTRACER;
+
     bool result = true;
     // Declare all the yaml parameters that we want to look for
     YAML::Node parentNameNode = node["parent"];
@@ -1694,6 +1696,8 @@ bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistance
 
     bool result = false;
         result = loadRayTracerSensorAttribs(a_node, attribs);
+
+        attribs->m_sensorType = afSensorType::RESISTANCE;
 
         if (result){
 
@@ -2146,14 +2150,14 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             afSensorType senType = ADFUtils::getSensorTypeFromString(senNode["type"].as<string>());
             switch (senType) {
             case afSensorType::RAYTRACER:{
-                afRayTracerSensorAttributes senAttribs;
-                loadRayTracerSensorAttribs(&senNode, &senAttribs);
+                afRayTracerSensorAttributes* senAttribs = new afRayTracerSensorAttributes();
+                loadRayTracerSensorAttribs(&senNode, senAttribs);
                 attribs->m_sensorAttribs.push_back(senAttribs);
                 break;
             }
             case afSensorType::RESISTANCE:{
-                afResistanceSensorAttributes senAttribs;
-                loadResistanceSensorAttribs(&senNode, &senAttribs);
+                afResistanceSensorAttributes* senAttribs = new afResistanceSensorAttributes();
+                loadResistanceSensorAttribs(&senNode, senAttribs);
                 attribs->m_sensorAttribs.push_back(senAttribs);
                 break;
             }
@@ -2174,8 +2178,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             // Check if this is a constraint sensor
             switch (actType) {
             case afActuatorType::CONSTRAINT:{
-                afConstraintActuatorAttributes acAttribs;
-                loadConstraintActuatorAttribs(&actNode, &acAttribs);
+                afConstraintActuatorAttributes* acAttribs = new afConstraintActuatorAttributes();
+                loadConstraintActuatorAttribs(&actNode, acAttribs);
                 attribs->m_actuatorAttribs.push_back(acAttribs);
                 break;
             }

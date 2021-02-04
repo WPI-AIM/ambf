@@ -427,14 +427,17 @@ public:
 ///
 struct afRayTracerResult{
 
+public:
+    void initMeshes();
+
     // The rigid body that this proximity sensor is sensing
-    btRigidBody* m_sensedBTRigidBody;
+    btRigidBody* m_sensedBTRigidBody = nullptr;
 
     // This is the AF Rigid body sensed by this sensor
     afRigidBodyPtr m_sensedAFRigidBody = nullptr;
 
     // The soft body that this proximity sensor is sensing
-    btSoftBody* m_sensedBTSoftBody;
+    btSoftBody* m_sensedBTSoftBody = nullptr;
 
     // This is the AF Soft body sensed by this sensor
     afSoftBodyPtr m_sensedAFSoftBody = nullptr;
@@ -446,10 +449,10 @@ struct afRayTracerResult{
     int m_sensedSoftBodyNodeIdx = -1;
 
     // The node ptr to the sensed soft body's face
-    btSoftBody::Face* m_sensedSoftBodyFace;
+    btSoftBody::Face* m_sensedSoftBodyFace = nullptr;
 
     // The node ptr to the sensed soft body's node
-    btSoftBody::Node* m_sensedSoftBodyNode;
+    btSoftBody::Node* m_sensedSoftBodyNode = nullptr;
 
     // Boolean for sensor sensing something
     bool m_triggered;
@@ -458,13 +461,17 @@ struct afRayTracerResult{
     cVector3d m_sensedLocationWorld;
 
     // Visual markers to show the hit point and the sensor start and end points
-    cMesh *m_hitSphereMesh, *m_fromSphereMesh, *m_toSphereMesh;
+    cMesh *m_hitSphereMesh = nullptr;
+
+    cMesh *m_fromSphereMesh = nullptr;
+
+    cMesh *m_toSphereMesh = nullptr;
 
     // Visual Mesh for Normal at Contact Point
     cMesh *m_hitNormalMesh;
 
     // Internal constraint for rigid body gripping
-    btPoint2PointConstraint* _p2p;
+    btPoint2PointConstraint *pointConstraint = nullptr;
 
     // Depth fraction is the normalized penetration depth of the sensor
     double m_depthFraction = 0;
@@ -513,6 +520,29 @@ struct afChildJointPair{
     bool m_directConnection = false;
 };
 
+
+class afSceneObject{
+    friend class afBaseObject;
+public:
+    afSceneObject(){
+        m_offsetTransform.identity();
+    }
+    afSceneObject(cTransform& a_trans){
+        m_offsetTransform = a_trans;
+    }
+
+    inline cTransform getOffsetTransform(){return m_offsetTransform;}
+
+    void setOffsetTransform(const cTransform &a_trans){m_offsetTransform = a_trans;}
+
+    inline cGenericObject* getChaiObject(){return m_chaiObject;}
+
+    void setChaiObject(cGenericObject* a_object){m_chaiObject = a_object;}
+
+protected:
+    cGenericObject* m_chaiObject;
+    cTransform m_offsetTransform;
+};
 
 
 class afBaseObject: public afComm{
@@ -565,7 +595,7 @@ public:
 
     void setParentObject(afBaseObjectPtr a_afObject);
 
-    void addChildObject(afBaseObjectPtr a_afObject);
+    bool addChildObject(afBaseObjectPtr a_afObject);
 
     inline void setInitialTransform(cTransform a_trans){m_initialTransform = a_trans;}
 
@@ -574,13 +604,17 @@ public:
     // This method toggles the viewing of frames of this rigid body.
     void toggleFrameVisibility();
 
-    bool isSceneObjectAlreadyAdded(cGenericObject* a_object);
+    bool isSceneObjectAlreadyAdded(afSceneObject* a_object);
 
     bool addChildSceneObject(cGenericObject* a_object);
 
+    bool addChildSceneObject(afSceneObject* a_object);
+
     void scaleSceneObjects(double a_scale);
 
-    bool removeChildSceneObject(cGenericObject* a_cObject, bool removeFromGraph);
+    bool removeChildSceneObject(cGenericObject* a_object, bool removeFromGraph);
+
+    bool removeChildSceneObject(afSceneObject* a_object, bool removeFromGraph);
 
     void removeAllChildSceneObjects(bool removeFromGraphs=true);
 
@@ -614,7 +648,7 @@ public:
 
     cMultiMesh* m_visualMesh;
 
-    std::vector<cGenericObject*> m_childrenSceneObjects;
+    std::vector<afSceneObject*> m_childrenSceneObjects;
 
     vector<afBaseObjectPtr> m_afChildrenObjects;
 
@@ -1083,6 +1117,8 @@ class afActuator: public afBaseObject{
 public:
     afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
+    virtual bool createFromAttribs(afActuatorAttributes *a_attribs){return false;}
+
     virtual void actuate(){}
 
     virtual void deactuate(){}
@@ -1166,6 +1202,8 @@ class afSensor: public afBaseObject{
     friend class afRigidBody;
 public:
     afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+
+    virtual bool createFromAttribs(afSensorAttributes* a_attribs){return false;}
 
     // Toggle the debug display of the sensor
     inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }

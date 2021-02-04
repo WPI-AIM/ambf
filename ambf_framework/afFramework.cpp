@@ -864,9 +864,13 @@ void afBaseObject::setLocalTransform(const afTransform &trans)
     m_localTransform << trans;
 }
 
-void afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
+bool afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
 {
+    if (a_afObject == this){
+        return false;
+    }
     a_afObject->setParentObject(this);
+    return true;
 }
 
 
@@ -884,9 +888,9 @@ void afBaseObject::setParentObject(afBaseObject *a_afObject)
 /// \brief afBaseObject::toggleFrameVisibility
 ///
 void afBaseObject::toggleFrameVisibility(){
-    std::vector<cGenericObject*>::iterator it;
+    std::vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
-        (*it)->setShowFrame(!(*it)->getShowFrame());
+        (*it)->getChaiObject()->setShowFrame(!(*it)->getChaiObject()->getShowFrame());
     }
 //    if (m_visualMesh){
 //        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
@@ -899,9 +903,8 @@ void afBaseObject::toggleFrameVisibility(){
 /// \param a_object
 /// \return
 ///
-bool afBaseObject::isSceneObjectAlreadyAdded(cGenericObject *a_object)
-{
-    vector<cGenericObject*>::iterator it;
+bool afBaseObject::isSceneObjectAlreadyAdded(afSceneObject *a_object){
+    vector<afSceneObject*>::iterator it;
     for(it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
         if ((*it) == a_object){
             return true;
@@ -916,23 +919,32 @@ bool afBaseObject::isSceneObjectAlreadyAdded(cGenericObject *a_object)
 /// \brief afBaseObject::setScale
 /// \param a_scale
 ///
-void afBaseObject::setScale(double a_scale)
-{
+void afBaseObject::setScale(double a_scale){
     m_scale = a_scale;
     scaleSceneObjects(m_scale);
 }
-
-
 
 
 ///
 /// \brief afBaseObject::addChild
 /// \param a_visualMesh
 ///
-bool afBaseObject::addChildSceneObject(cGenericObject *a_object)
+bool afBaseObject::addChildSceneObject(cGenericObject *a_object){
+
+    if (a_object == nullptr){
+        return false;
+    }
+
+    afSceneObject* sceneObject = new afSceneObject;
+    sceneObject->setChaiObject(a_object);
+    sceneObject->setOffsetTransform(a_object->getLocalTransform());
+    return addChildSceneObject(sceneObject);
+}
+
+bool afBaseObject::addChildSceneObject(afSceneObject *a_object)
 {
     // sanity check
-    if (a_object == NULL){
+    if (a_object == nullptr){
         return false;
     }
 
@@ -943,38 +955,30 @@ bool afBaseObject::addChildSceneObject(cGenericObject *a_object)
 
     // the object does not have any parent yet, so we can add it as a child
     // to current object.
-
     m_childrenSceneObjects.push_back(a_object);
     return true;
 }
 
-void afBaseObject::scaleSceneObjects(double a_scale)
-{
-    std::vector<cGenericObject*>::iterator it;
-    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it)
-    {
-        (*it)->scale(a_scale);
+void afBaseObject::scaleSceneObjects(double a_scale){
+    std::vector<afSceneObject*>::iterator it;
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it){
+        (*it)->getChaiObject()->scale(a_scale);
 
     }
 }
 
-
-///
-/// \brief afBaseObject::removeChild
-/// \param a_cObject
-///
 bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeFromGraph)
 {
     // sanity check
-    if (a_object == NULL) { return (false); }
+    if (a_object == nullptr) { return (false); }
 
-    vector<cGenericObject*>::iterator it;
+    vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it)
     {
-        if ((*it) == a_object)
+        if ((*it)->getChaiObject() == a_object)
         {
             if (removeFromGraph){
-                (*it)->removeFromGraph();
+                (*it)->getChaiObject()->removeFromGraph();
             }
             // remove this object from my list of children
             m_childrenSceneObjects.erase(it);
@@ -984,29 +988,55 @@ bool afBaseObject::removeChildSceneObject(cGenericObject *a_object, bool removeF
     }
 
     // operation failed
-    return (false);
+    return false;
 }
 
-void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph)
-{
-    std::vector<cGenericObject*>::iterator it;
+
+///
+/// \brief afBaseObject::removeChild
+/// \param a_cObject
+///
+bool afBaseObject::removeChildSceneObject(afSceneObject *a_object, bool removeFromGraph){
+    // sanity check
+    if (a_object == nullptr) { return (false); }
+
+    vector<afSceneObject*>::iterator it;
+    for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end(); ++it)
+    {
+        if ((*it) == a_object)
+        {
+            if (removeFromGraph){
+                (*it)->getChaiObject()->removeFromGraph();
+            }
+            // remove this object from my list of children
+            m_childrenSceneObjects.erase(it);
+            // return success
+            return true;
+        }
+    }
+
+    // operation failed
+    return false;
+}
+
+void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
+    std::vector<afSceneObject*>::iterator it;
 
     for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
         removeChildSceneObject((*it), removeFromGraph);
     }
 }
 
-void afBaseObject::updateSceneObjects()
-{
+void afBaseObject::updateSceneObjects(){
     // Assuming that the global pose was computed prior to this call.
-    vector<cGenericObject*>::iterator it;
+    vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
-        (*it)->setLocalTransform(m_globalTransform);
+        cTransform globalTrans = m_globalTransform * (*it)->getOffsetTransform();
+        (*it)->getChaiObject()->setLocalTransform(globalTrans);
     }
 }
 
-void afBaseObject::updateGlobalPose()
-{
+void afBaseObject::updateGlobalPose(){
     cTransform a_globalTransform = m_localTransform;
 
     // Traverse up the parents to resolve the global pose
@@ -1023,10 +1053,10 @@ void afBaseObject::updateGlobalPose()
 
 void afBaseObject::showVisualFrame()
 {
-    std::vector<cGenericObject*>::iterator it;
+    std::vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
         // Set the size of the frame.
-        cVector3d bounds = (*it)->getBoundaryMax();
+        cVector3d bounds = (*it)->getChaiObject()->getBoundaryMax();
         double frame_size;
         if (bounds.length() > 0.001){
             double max_axis = cMax3(bounds.x(), bounds.y(), bounds.z());
@@ -1035,7 +1065,7 @@ void afBaseObject::showVisualFrame()
         else{
             frame_size = 0.5;
         }
-        (*it)->setFrameSize(frame_size);
+        (*it)->getChaiObject()->setFrameSize(frame_size);
     }
 }
 
@@ -1113,6 +1143,8 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     }
 
     m_parentBody->addAFActuator(this);
+
+    setParentObject(m_parentBody);
 
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
@@ -3156,9 +3188,17 @@ afRayTracerSensor::afRayTracerSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr
 }
 
 
+void afRayTracerResult::initMeshes()
+{
+    m_fromSphereMesh = new cMesh;
+    m_toSphereMesh = new cMesh;
+    m_hitNormalMesh = new cMesh;
+    m_hitSphereMesh = new cMesh;
+}
+
+
 bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs)
 {
-
     afRayTracerSensorAttributes &attribs = *a_attribs;
 
     bool result = true;
@@ -3194,15 +3234,15 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         }
     }
 
-
     m_parentBody->addAFSensor(this);
-
-
+    m_parentBody->addChildObject(this);
 
     switch (attribs.m_specificationType) {
     case afSensactorSpecificationType::ARRAY:
     case afSensactorSpecificationType::PARAMETRIC:{
+        m_count = attribs.m_raysAttribs.size();
         m_raysAttribs = attribs.m_raysAttribs;
+        m_rayTracerResults.resize(m_count);
         break;
     }
     case afSensactorSpecificationType::MESH:{
@@ -3281,10 +3321,10 @@ void afRayTracerSensor::update(){
         rayToWorld << T_bInw * to_cVector3d(m_raysAttribs[i].m_rayToLocal);
 
         // Check for global flag for debug visibility of this sensor
-        if (m_showSensor){
-            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld));
-            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld));
-        }
+//        if (m_showSensor){
+//            m_rayTracerResults[i].m_fromSphereMesh->setLocalPos(to_cVector3d(rayFromWorld));
+//            m_rayTracerResults[i].m_toSphereMesh->setLocalPos(to_cVector3d(rayToWorld));
+//        }
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
@@ -3430,34 +3470,39 @@ void afRayTracerSensor::enableVisualization(){
         if (m_rayTracerResults[i].m_hitSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setPinkHot();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
             m_rayTracerResults[i].m_hitSphereMesh = mesh;
+            addChildSceneObject(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
         }
 
         if (m_rayTracerResults[i].m_fromSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setRed();
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
             m_rayTracerResults[i].m_fromSphereMesh = mesh;
+            mesh->setLocalPos(to_cVector3d(m_raysAttribs[i].m_rayFromLocal));
+            addChildSceneObject(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
         }
 
         if (m_rayTracerResults[i].m_toSphereMesh == nullptr){
             cMesh* mesh = new cMesh();
             cCreateSphere(mesh, m_visibilitySphereRadius);
-            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setGreen();
             mesh->setShowEnabled(true);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
             m_rayTracerResults[i].m_toSphereMesh = mesh;
+            mesh->setLocalPos(to_cVector3d(m_raysAttribs[i].m_rayToLocal));
+            addChildSceneObject(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
         }
 
         if (m_rayTracerResults[i].m_hitNormalMesh == nullptr){
@@ -3467,12 +3512,13 @@ void afRayTracerSensor::enableVisualization(){
                          m_visibilitySphereRadius*1,
                          m_visibilitySphereRadius*0.8,
                          false);
-            m_afWorld->addSceneObjectToWorld(mesh);
             mesh->m_material->setGreenForest();
             mesh->setShowEnabled(false);
             mesh->setUseDisplayList(true);
             mesh->markForUpdate(false);
             m_rayTracerResults[i].m_hitNormalMesh = mesh;
+            addChildSceneObject(mesh);
+            m_afWorld->addSceneObjectToWorld(mesh);
         }
     }
 }
@@ -6268,18 +6314,23 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_sensorAttribs.size(); ++i) {
         afSensorPtr sensorPtr = nullptr;
         string type_str;
+        bool valid = false;
         // Check which type of sensor is this so we can cast appropriately beforehand
-        switch (attribs.m_sensorAttribs[i].m_sensorType) {
+        switch (attribs.m_sensorAttribs[i]->m_sensorType) {
         case afSensorType::RAYTRACER:
         {
             sensorPtr = new afProximitySensor(m_afWorld, this);
-            type_str = "RESISTANCE";
+            type_str = "PROXIMITY";
+            afRayTracerSensorAttributes* senAttribs = (afRayTracerSensorAttributes*) attribs.m_sensorAttribs[i];
+            valid = ((afRayTracerSensor*)sensorPtr)->createFromAttribs(senAttribs);
             break;
         }
         case afSensorType::RESISTANCE:
         {
             sensorPtr = new afResistanceSensor(m_afWorld, this);
             type_str = "RESISTANCE";
+            afResistanceSensorAttributes* senAttribs = (afResistanceSensorAttributes*) attribs.m_sensorAttribs[i];
+            valid = ((afResistanceSensor*)sensorPtr)->createFromAttribs(senAttribs);
             break;
         }
         default:
@@ -6288,7 +6339,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 
         // Finally load the sensor's attribs
         if (sensorPtr){
-            if (sensorPtr->createFromAttribs(&attribs.m_sensorAttribs[i])){
+            if (valid){
                 string remaped_name = m_afWorld->addAFSensor(sensorPtr);
                 if (enable_comm){
                     cerr << "LOADING SENSOR COMM \n";
@@ -6312,10 +6363,13 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_actuatorAttribs.size(); ++i) {
         afActuatorPtr actuatorPtr = nullptr;
         string type_str;
-        switch (attribs.m_actuatorAttribs[i].m_actuatorType) {
+        bool valid = false;
+        switch (attribs.m_actuatorAttribs[i]->m_actuatorType) {
         case afActuatorType::CONSTRAINT:{
             actuatorPtr = new afConstraintActuator(m_afWorld, this);
             type_str = "CONSTRAINT";
+            afConstraintActuatorAttributes* actAttribs = (afConstraintActuatorAttributes*)attribs.m_actuatorAttribs[i];
+            valid = ((afConstraintActuator*)actuatorPtr)->createFromAttribs(actAttribs);
             break;
         }
         default:
@@ -6324,7 +6378,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 
         // Finally load the sensor from ambf config data
         if (actuatorPtr){
-            if (actuatorPtr->createFromAttribs(&attribs.m_actuatorAttribs[i])){
+            if (valid){
                 string remaped_name = m_afWorld->addAFActuator(actuatorPtr);
                 if (enable_comm){
                     cerr << "LOADING ACTUATOR COMM \n";
