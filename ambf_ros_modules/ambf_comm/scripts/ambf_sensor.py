@@ -96,6 +96,15 @@ class Sensor(BaseObject):
         if idx < len(self._state.measurement):
             return self._state.measurement[idx]
 
+    def get_all_measurements(self):
+        """
+        Get the measurement of a specific sensor element. The value is normalized.
+        :param idx:
+        :return:
+        """
+        
+        return self._state.measurement
+
     def get_sensed_object(self, idx):
         """
         Get the name of sensed object by a specific sensor element.
