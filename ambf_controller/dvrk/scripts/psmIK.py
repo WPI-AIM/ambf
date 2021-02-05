@@ -128,21 +128,29 @@ def compute_IK(T_7_0):
     # we need to construct a plane based on the vectors Rx_7_0 and D_PinchJoint_PalmJoint_0 since these are
     # the only two vectors that are orthogonal at all configurations of the EE.
     cross_palmlink_x7_0 = T_7_0.M.UnitX() * (T_PinchJoint_0.p - T_PalmJoint_0.p)
+
     # To get j4, compare the above vector with Y axes of T_3_0
     T_3_0 = convert_mat_to_frame(compute_FK([j1, j2, j3]))
     j4 = get_angle(cross_palmlink_x7_0, T_3_0.M.UnitY(), up_vector=-T_3_0.M.UnitZ())
-    # print("\nj4: ", j4)
 
     # Calculate j5
     # This should be simple, just compute the angle between Rz_4_0 and D_PinchJoint_PalmJoint_0
     T_4_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4]))
     j5 = get_angle(T_PinchJoint_0.p - T_PalmJoint_0.p, T_4_0.M.UnitZ(), up_vector=-T_4_0.M.UnitY())
+
     # Calculate j6
     # This too should be simple, compute the angle between the Rz_7_0 and Rx_5_0.
     T_5_0 = convert_mat_to_frame(compute_FK([j1, j2, j3, j4, j5]))
     j6 = get_angle(T_7_0.M.UnitZ(), T_5_0.M.UnitX(), up_vector=-T_5_0.M.UnitY())
+
     str = '\n**********************************'*3
     # print(str)
+    # print("Joint 1: ", round(j1, 3))
+    # print("Joint 2: ", round(j2, 3))
+    # print("Joint 3: ", round(j3, 3))
+    # print("Joint 4: ", round(j4, 3))
+    # print("Joint 5: ", round(j5, 3))
+    # print("Joint 6: ", round(j6, 3))
 
     # T_7_0_req = convert_frame_to_mat(T_7_0)
     # T_7_0_req = round_transform(T_7_0_req, 3)
@@ -150,4 +158,5 @@ def compute_IK(T_7_0):
     # T_7_0_computed = compute_FK([j1, j2, j3, j4, j5, j6, 0])
     # round_transform(T_7_0_computed, 3)
     # print('Computed Pose: \n', T_7_0_computed)
+
     return [j1, j2, j3, j4, j5, j6]
