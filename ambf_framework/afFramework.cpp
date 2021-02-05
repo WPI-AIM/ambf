@@ -90,7 +90,7 @@ bool afCamera::s_imageTransportInitialized = false;
 
 template <>
 ///
-/// \brief .<btVector3>
+/// \brief toXYZ<btVector3>
 /// \param node
 /// \return
 ///
@@ -2438,8 +2438,22 @@ void afRigidBody::enableShaderProgram(){
             shaderProgram->use(go, ro);
             // Set the ID for shadow and normal maps.
             shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
+            bool enable_normal_mapping = false;
+            for (int i = 0 ; i < m_meshes->size() ; i++){
+                cMesh* mesh = (*m_meshes)[i];
+                if (mesh->m_normalMap.get() != nullptr){
+                    if (mesh->m_normalMap->m_image.get() != nullptr){
+                        enable_normal_mapping = true;
+                    }
+                }
+            }
+            if (enable_normal_mapping){
+                shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+                shaderProgram->setUniformi("vEnableNormalMapping", 1);
+            }
+            else{
+                shaderProgram->setUniformi("vEnableNormalMapping", 0);
+            }
 
             std::cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
                          "\n \t VERTEX: " << m_vsFilePath.c_str() <<
@@ -4028,6 +4042,16 @@ void afJoint::commandPosition(double &position_cmd){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
+
+            if (m_jointType == JointType::revolute){
+                if ((m_upperLimit - m_lowerLimit) >= 2*PI ){
+                    // The joint is continous. Need some optimization
+                    position_cmd = getShortestAngle(position_cur, position_cmd);
+                    position_cur = 0.0;
+                }
+
+            }
+
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
             if (m_controller.m_outputType == afControlType::force){
                 commandEffort(command);
@@ -4040,6 +4064,15 @@ void afJoint::commandPosition(double &position_cmd){
     else{
         std::cerr << "WARNING, MOTOR NOT ENABLED FOR JOINT: " << m_name << std::endl;
     }
+}
+
+double afJoint::getShortestAngle(double current, double target)
+{
+    if (current < 0.0){
+        current = 2 * PI + current;
+    }
+    double delta_angle = fmod( (target - current + 3 * PI), 2*PI) - PI;
+    return delta_angle;
 }
 
 ///
@@ -5912,46 +5945,11 @@ void afWorld::loadSkyBox(){
 ///
 void afWorld::enableShaderProgram(){
     if (m_shaderProgramDefined){
-        std::ifstream vsFile;
-        std::ifstream fsFile;
-        vsFile.open(m_vsFilePath.c_str());
-        fsFile.open(m_fsFilePath.c_str());
-        // create a string stream
-        std::stringstream vsBuffer, fsBuffer;
-        // dump the contents of the file into it
-        vsBuffer << vsFile.rdbuf();
-        fsBuffer << fsFile.rdbuf();
-        // close the files
-        vsFile.close();
-        fsFile.close();
-
-        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-        if (shaderProgram->linkProgram()){
-            // Just empty Pts to let us use the shader
-            cGenericObject* go;
-            cRenderOptions ro;
-            shaderProgram->use(go, ro);
-            // Set the ID for shadow and normal maps.
-            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
-
-            std::cerr << "USING WORLD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
-
-            afRigidBodyVec rbVec = getAFRigidBodies();
-            for (int i = 0 ; i < rbVec.size() ; i++){
-                rbVec[i]->setShaderProgram(shaderProgram);
-            }
-
-        }
-        else{
-            std::cerr << "ERROR! FOR WORLD FAILED TO LOAD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vsFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fsFilePath.c_str() << std::endl;
-
-            m_shaderProgramDefined = false;
+        afRigidBodyVec rbVec = getAFRigidBodies();
+        for (int i = 0 ; i < rbVec.size() ; i++){
+            rbVec[i]->m_vsFilePath = m_vsFilePath;
+            rbVec[i]->m_fsFilePath = m_fsFilePath;
+            rbVec[i]->m_shaderProgramDefined = true;
         }
     }
 }
@@ -7003,8 +7001,6 @@ void afCamera::renderFrameBuffer()
     m_frameBuffer->renderView();
     m_frameBuffer->copyImageBuffer(m_bufferColorImage);
     m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
-    m_bufferColorImage->flipHorizontal();
-    m_bufferDepthImage->flipHorizontal();
 }
 
 
@@ -7183,10 +7179,14 @@ void afCamera::computeDepthOnGPU()
 ///
 void afCamera::publishImage(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
+    // WITH THE COLORED DETPH POINT CLOUD
+    m_bufferColorImage->flipHorizontal();
     m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
     cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
     sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
     m_imagePublisher.publish(rosMsg);
+    m_bufferColorImage->flipHorizontal();
 #endif
 }
 

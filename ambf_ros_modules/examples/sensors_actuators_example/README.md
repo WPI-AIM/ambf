@@ -1,56 +1,46 @@
 ### Usage
 
-This script is self explanatory. Run ROSCORE in a new terminal.
+This example demonstrates the process of defining sensors and constraint actuators and then attaching them to
+rigid bodies. Please note that there is no direct relationship between a sensor and an actuator. However, in this example, we are using them for grasping purposes, and thus you may think of other use cases depending upon your application.
+
+### Relevant Files
+The two important files in this folder are `sensor_actuators.yaml` and `sensing_and_grasping.py`. The first file is an ADF file and describes sensors and actuators. The second file is a Python script and relies on the AMBF Python client to detect when a sensor detects an object, and based on this we can actuate a relevant constraint actuator.
+
+### Usage:
+
+`<ambf>` refers to the location of your ambf repository.
+
+Run `roscore` in a new terminal.
+
 
 ``` bash
 roscore
 ```
 
-Then for this specific example, run AMBF simulator
-with the toy-car2 as follows
+Now we are going to use a custom launch file as we require three ADF files for this example. In this launch file, we have a Kuka robot's ADF file, a sensor_and_actuator's ADF file, and lastly an ADF file comprising of a fixed table and a box on top. Run the launch file and all its ADF files as follows:
 
 ``` bash
-cd <ambf_bin>/
-./ambf_simulator -l 1
+cd <ambf>/bin/lin-x86_64/
+./ambf_simulator --launch_file <ambf>/ambf_ros_modules/examples/sensors_actuators_example/launch.yaml -l 0,1,2
 ```
+You should see a simulation scene with a Table, a Box, and a Kuka. The KUKA should also have spherical markers on its tip indicating the sensors (start and endpoints in red and green).
 
-Then run this python script as
+Now, we are going to run the `obj_control` script that will allow us to jog the Kuka robot to our desired pose. In a new terminal:
 
 ``` bash
-cd <path_to_this_folder>
-python point_cloud_example.py
+cd <ambf>/ambf_ros_modules/examples/object_control_example/
+python control_object.py -o base
+```
+You should see a GUI with joint sliders and buttons that should allow you to control the robot. Click the **Position** buttons for each joint so that the sliders control the joint positions.
+
+Now, we are going to run the grasping script for this example. In a new terminal:
+
+```bash
+cd <ambf>/ambf_ros_modules/examples/sensors_actuators_example/
+python sensing_and_grasping.py
 ```
 
-### Notes
-1. When AMBF simulator launches it will listen on a specific topic for point cloud data. This topic is
-`/ambf/env/World/point_cloud`. You may add topics by calling the ROS Param server as such
+Now you should see another GUI with two buttons labeled **Grasp** and **Release**. You can use the robot control GUI so that the end-effector of the KUKA comes near the box on the table. When it does, and when you click the grasp button, the box shall be grasped by the actuators attached to the end-effector. Clicking **Release** will release the object.
 
-``` python
-pc_topics = rospy.get_param('/ambf/env/World/point_cloud_topics')
-print 'Existing Topics AMBF is listening to for Point Cloud'
-print pc_topics
-pc_topics.append('/ambf/env/World/another_point_cloud')
-rospy.set_param('/ambf/env/World/point_cloud_topics', pc_topics)
-```
-
-2. If you would like to increase the size of a point cloud topic, you can set its size via the ROS Param Server.
-The size is an integer value
-
-``` python
-pc_sizes = rospy.get_param('/ambf/env/World/point_cloud_radii')
-pc_sizes.append(10) # 10 pt size for first PC
-pc_sizes.append(20) # 20 pt size for second PC
-rospy.set_param('/ambf/env/World/point_cloud_radii', pc_sizes)
-```
-
-3. For any point cloud, you can set its parent by simply setting its header field. You can dynamically change this parent name as well.
-
-```python
-from sensor_msgs.msg import PointCloud
-msg = PointCloud()
-msg.header.frame_id = 'BODY NAME'
-```
-
-### TODO
-1. At the moment the point cloud is redner via OpenGL points. We may add spherical points in the future.
-2. The point clouds are rendered as black squares, Need to add support for colored points.
+### Note:
+If you accidentally drop or misplace the box, you can click the simulation window and hit `CRTL + R` to reset the object poses in the simulation.
