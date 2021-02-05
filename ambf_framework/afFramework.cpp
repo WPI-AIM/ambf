@@ -162,6 +162,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
             cerr << "ERROR! AXIS TYPE FOR COLLISION SHAPE NOT UNDERSTOOD" << endl;
             break;
         }
+        break;
     }
     case afPrimitiveShapeType::CAPSULE:{
         double radius = a_primitiveShape->getRadius();
@@ -1352,6 +1353,11 @@ afInertialObject::afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr):
 {
     m_T_iINb.setIdentity();
     m_T_bINi.setIdentity();
+
+    m_bulletRigidBody = nullptr;
+    m_bulletSoftBody = nullptr;
+    m_bulletCollisionShape = nullptr;
+    m_bulletMotionState = nullptr;
 }
 
 
@@ -1854,11 +1860,26 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         enableShaderProgram();
     }
 
+    btTransform iOff;
+    if (attribs.m_inertialAttribs.m_estimateInertialOffset){
+        iOff.setOrigin(computeInertialOffset(m_collisionMesh));
+    }
+
+    // Set this now, but if we require the inertial offset to be estimated AND a collision
+    // shape is a MESH, then estimate it to override this.
+    btTransform inertialOffset = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
+    setInertialOffsetTransform(inertialOffset);
+
     if (m_collisionGeometryType == afGeometryType::MESH){
         if (m_collisionMesh->loadFromFile(m_collisionMeshFilePath.c_str()) ){
-            if(m_scale != 1.0){
-                m_collisionMesh->scale(m_scale);
+            m_collisionMesh->scale(m_scale);
+            // Override the inertial offset if it is required by attribs
+            if (attribs.m_inertialAttribs.m_estimateInertialOffset){
+                btTransform inertialOffset;
+                inertialOffset.setOrigin(computeInertialOffset(m_collisionMesh));
+                setInertialOffsetTransform(inertialOffset);
             }
+
             m_bulletCollisionShape = afShapeUtils::createCollisionShape(m_collisionMesh,
                                                                         attribs.m_collisionAttribs.m_margin,
                                                                         attribs.m_inertialAttribs.m_inertialOffset,
@@ -1900,17 +1921,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             m_bulletCollisionShape = compoundCollisionShape;
         }
     }
-
-
-    btTransform iOff;
-    if (attribs.m_inertialAttribs.m_estimateInertialOffset){
-        iOff.setOrigin(computeInertialOffset(m_collisionMesh));
-    }
-    else{
-        iOff = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
-    }
-
-    setInertialOffsetTransform(iOff);
 
     // The collision groups are sorted by integer indices. A group is an array of
     // ridig bodies that collide with each other. The bodies in one group
@@ -2074,12 +2084,7 @@ void afRigidBody::update()
         m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
         T_mINw = T_iINw * getInverseInertialOffsetTransform();
 
-//        setLocalTransform(to_cTransform(T_mINw));
-
-        btVector3 pos = T_mINw.getOrigin();
-        btQuaternion rot = T_mINw.getRotation();
-        setLocalPos(pos.x(), pos.y(), pos.z());
-        setLocalRot(rot.x(), rot.y(), rot.z(), rot.w());
+        m_localTransform << T_mINw;
     }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -3374,12 +3379,6 @@ void afRayTracerSensor::enableVisualization(){
     for (uint i = 0 ; i < m_count ; i++){
         m_rayTracerResults[i].enableVisualization(this, &m_raysAttribs[i], m_visibilitySphereRadius);
     }
-}
-
-inline afVector3d &operator*(cTransform &lhs, afVector3d &rhs){
-    cVector3d tV = afConversions::convertDataType<cVector3d, afVector3d>(rhs);
-    rhs << lhs * tV;
-    return rhs;
 }
 
 ///

@@ -503,6 +503,13 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
     YAML::Node meshPathHRNode = node["high resolution path"];
     YAML::Node meshPathLRNode = node["low resolution path"];
 
+    // For backward compatibility in ADF 1.0, if the collision offset is not defined, we set the
+    // collision offset as the inertial offset for single mesh or single collision shape.
+    YAML::Node inertialOffsetNode = node["inertial offset"];
+
+    if (collisionOffsetNode.IsDefined() == false){
+        collisionOffsetNode = inertialOffsetNode;
+    }
 
     bool valid = true;
     string shape_str;
