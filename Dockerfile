@@ -1,7 +1,6 @@
 # Import base ros melodic image
 FROM ros:melodic-ros-base-bionic
 
-
 ENV USERNAME="admin"
 RUN useradd -ms /bin/bash ${USERNAME}
 RUN usermod -aG sudo ${USERNAME}
@@ -18,7 +17,6 @@ RUN apt clean && \
 
 RUN apt-get update && \
   apt-get -y -qq install wget gdb
-
 
 # Install git
 RUN apt-get update && \
