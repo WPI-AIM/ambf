@@ -1,0 +1,9 @@
+# This is the base file for Coordination Application
+world config: ../../../ambf_models/descriptions/world/world.yaml
+# world config: ./world/raven_world.yaml
+color config: ../../../ambf_models/descriptions/color/colors.yaml
+input devices config: ../../../ambf_models/descriptions/input_devices/input_devices.yaml
+multibody configs:
+  - "../../../ambf_models/descriptions/multi-bodies/robots/blender-kuka.yaml" #0
+  - "./sensors_actuators.yaml" #1
+  - "./box.yaml" #2
