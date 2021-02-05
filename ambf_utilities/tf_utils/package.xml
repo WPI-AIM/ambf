@@ -1,25 +1,25 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>tf_function</name>
-  <version>0.0.0</version>
-  <description>The tf_function package</description>
+  <name>tf_utils</name>
+  <version>0.0.1</version>
+  <description>The tf_utils package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="vignesh@todo.todo">vignesh</maintainer>
+  <maintainer email="dkoolrajamani@wpi.edu">Dhruv Kool Rajamani</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>BSD</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/tf_function</url> -->
+  <!-- <url type="website">http://wiki.ros.org/tf_utils</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
