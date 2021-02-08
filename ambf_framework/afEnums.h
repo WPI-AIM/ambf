@@ -92,6 +92,7 @@ enum class afObjectType{
     VEHICLE,
     MULTIBODY,
     WORLD,
+    JOINT,
     INVALID
 };
 

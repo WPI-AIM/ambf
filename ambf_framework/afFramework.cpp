@@ -498,6 +498,7 @@ void afComm::afCreateCommInstance(afObjectType type, string a_name, string a_nam
         m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
         break;
     default:
+        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << a_name << " NOT IMPLEMENTED YET" << endl;
         break;
     }
     m_commType = type;
@@ -1167,8 +1168,9 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
-    m_name = attribs.m_identificationAttribs.m_name;
-    m_namespace = attribs.m_identificationAttribs.m_namespace;
+    setIdentifier(attribs.m_identifier);
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     m_initialTransform = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(m_initialTransform);
@@ -1182,7 +1184,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
 
     if(!m_parentBody){
-        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getActuatorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getActuatorMap());
         m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
 
         if (m_parentBody == nullptr){
@@ -1197,6 +1199,20 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFActuatorMap());
+
+        afCreateCommInstance(afObjectType::ACTUATOR,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+        m_afActuatorCommPtr->set_type("CONSTRAINT");
+#endif
+    }
 
     return result;
 }
@@ -1812,6 +1828,7 @@ void afRigidBody::addChildBodyJointPair(afRigidBodyPtr a_childBody, afJointPtr a
 bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 {
     afRigidBodyAttributes & attribs = *a_attribs;
+    setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
     m_visualGeometryType = attribs.m_visualAttribs.m_geometryType;
@@ -1972,6 +1989,17 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     addChildSceneObject(m_visualMesh, cTransform());
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFRigidBodyMap());
+
+        afCreateCommInstance(afObjectType::RIGID_BODY,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+    }
 
     // Where to add the visual, collision and this object?
     return true;
@@ -2562,6 +2590,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 {
     afSoftBodyAttributes & attribs = *a_attribs;
 
+    setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -2695,6 +2724,19 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
 
+    m_passive = true;
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSoftBodyMap());
+
+        afCreateCommInstance(afObjectType::SOFT_BODY,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+    }
+
     return true;
 }
 
@@ -2774,8 +2816,9 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 {
     afJointAttributes &attribs = *a_attribs;
 
-    m_namespace = attribs.m_identificationAttribs.m_namespace;
-    m_name = attribs.m_identificationAttribs.m_name;
+    setIdentifier(attribs.m_identifier);
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_childName = attribs.m_hierarchyAttribs.m_childName;
@@ -2797,43 +2840,19 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_afParentBody = m_modelPtr->getAFRigidBodyLocal(body1Name, true);
     m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
 
+
+    // If either body not found
     if (m_afParentBody == nullptr || m_afChildBody == nullptr){
 
-        string prefix = "BODY";
-        size_t pos = m_parentName.find(prefix);
-        if (pos != std::string::npos)
-        {
-            m_parentName.erase(pos, prefix.length());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getJointMap());
+
+        if (m_afParentBody == nullptr){
+            m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
         }
-        // Search for the substring in string
-        pos = m_childName.find(prefix);
-        if (pos != std::string::npos)
-        {
-            m_childName.erase(pos, prefix.length());
-        }
-
-        string body1Name = m_namespace + m_parentName;
-        string body2Name = m_namespace + m_childName;
-
-        // If still not found
-        if (m_afParentBody == nullptr || m_afChildBody == nullptr){
-
-            m_afParentBody = m_modelPtr->getAFRigidBodyLocal(body1Name, true);
-            m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
-
-            string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getJointMap());
-
-            if (m_afParentBody == nullptr){
-                m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
-            }
-            if (m_afChildBody == nullptr){
-                m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
-            }
+        if (m_afChildBody == nullptr){
+            m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
         }
     }
-
-
-    bool ignoreInterCollision = true;
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
@@ -3020,6 +3039,19 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
             m_feedback = new btJointFeedback();
             m_btConstraint->setJointFeedback(m_feedback);
         }
+    }
+
+    // Forcefully set passive for now.
+    m_passive = true;
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFJointMap());
+
+        afCreateCommInstance(afObjectType::JOINT,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
     }
 
     return true;
@@ -3304,8 +3336,9 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
 
     bool result = true;
 
-    m_namespace = attribs.m_identificationAttribs.m_namespace;
-    m_name = attribs.m_identificationAttribs.m_name;
+    setIdentifier(attribs.m_identifier);
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_localTransform << attribs.m_kinematicAttribs.m_location;
@@ -3327,7 +3360,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
 
     if(m_parentBody == nullptr){
-        string remap_idx = afUtils::getNonCollidingIdx(m_namespace + m_name, m_modelPtr->getSensorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getSensorMap());
         m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
         if (m_parentBody == nullptr){
             cerr << "ERROR: SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
@@ -3366,6 +3399,20 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
 
     if (m_showSensor){
         enableVisualization();
+    }
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
+
+        afCreateCommInstance(afObjectType::SENSOR,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+        m_afSensorCommPtr->set_type("PROXIMITY");
+#endif
     }
 
     return result;
@@ -3605,7 +3652,22 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
             m_rayContactResults[i].m_contactPointsValid = false;
 
         }
+
+        if (m_passive == false){
+
+            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
+
+            afCreateCommInstance(afObjectType::SENSOR,
+                                 getQualifiedName() + remap_idx,
+                                 m_afWorld->getGlobalNamespace(),
+                                 getMinPublishFrequency(),
+                                 getMaxPublishFrequency());
+    #ifdef C_ENABLE_AMBF_COMM_SUPPORT
+            m_afSensorCommPtr->set_type("RESISTANCE");
+    #endif
+        }
     }
+
     return result;
 }
 
@@ -4234,7 +4296,7 @@ void afWorld::updateChildren()
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_paramsSet == false){
         // Create a default point cloud to listen to
-        m_afWorldCommPtr->append_point_cloud_topic(m_namespace + m_name + "/" + "point_cloud");
+        m_afWorldCommPtr->append_point_cloud_topic(getQualifiedName() + "/" + "point_cloud");
         m_afWorldCommPtr->set_params_on_server();
         m_paramsSet = true;
     }
@@ -4359,8 +4421,8 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
     afCreateCommInstance(afObjectType::WORLD,
-                         m_name,
-                         resolveGlobalNamespace(m_namespace),
+                         getQualifiedName(),
+                         getGlobalNamespace(),
                          50,
                          2000,
                          10.0);
@@ -4410,11 +4472,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
             string remaped_name = addAFLight(lightPtr);
-            lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                           remaped_name,
-                                           getGlobalNamespace(),
-                                           lightPtr->getMinPublishFrequency(),
-                                           lightPtr->getMaxPublishFrequency());
         }
     }
 
@@ -4426,11 +4483,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         afLightPtr lightPtr = new afLight(this);
         lightPtr->createFromAttribs(&lightAttribs);
         string remaped_name = addAFLight(lightPtr);
-        lightPtr->afCreateCommInstance(afObjectType::LIGHT,
-                                       remaped_name,
-                                       getGlobalNamespace(),
-                                       lightPtr->getMinPublishFrequency(),
-                                       lightPtr->getMaxPublishFrequency());
     }
 
     if (attribs.m_showGUI){
@@ -4438,11 +4490,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
                 string remaped_name = addAFCamera(cameraPtr);
-                cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
-                                                remaped_name,
-                                                getGlobalNamespace(),
-                                                cameraPtr->getMinPublishFrequency(),
-                                                cameraPtr->getMaxPublishFrequency());
             }
         }
 
@@ -4455,11 +4502,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             camAttribs.m_identificationAttribs.m_name = "default_camera";
             if (cameraPtr->createFromAttribs(&camAttribs)){
                 string remaped_name = addAFCamera(cameraPtr);
-                cameraPtr->afCreateCommInstance(afObjectType::CAMERA,
-                                                remaped_name,
-                                                getGlobalNamespace(),
-                                                cameraPtr->getMinPublishFrequency(),
-                                                cameraPtr->getMaxPublishFrequency());
             }
 
         }
@@ -4650,84 +4692,84 @@ void afWorld::enableShaderProgram(){
 
 
 string afWorld::addAFLight(afLightPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afLightMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afLightPtr, afLightMap>(a_obj, remaped_name, &m_afLightMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afLightMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afLightPtr, afLightMap>(a_obj, remaped_identifier, &m_afLightMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFCamera(afCameraPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afCameraMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afCameraPtr, afCameraMap>(a_obj, qualified_name + remap_str, &m_afCameraMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afCameraMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afCameraPtr, afCameraMap>(a_obj, qualified_identifier + remap_str, &m_afCameraMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFRigidBody(afRigidBodyPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afRigidBodyMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afRigidBodyPtr, afRigidBodyMap>(a_obj, qualified_name + remap_str, &m_afRigidBodyMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afRigidBodyMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afRigidBodyPtr, afRigidBodyMap>(a_obj, qualified_identifier + remap_str, &m_afRigidBodyMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFSoftBody(afSoftBodyPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afSoftBodyMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afSoftBodyPtr, afSoftBodyMap>(a_obj, qualified_name + remap_str, &m_afSoftBodyMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afSoftBodyMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afSoftBodyPtr, afSoftBodyMap>(a_obj, qualified_identifier + remap_str, &m_afSoftBodyMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFJoint(afJointPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afJointMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afJointPtr, afJointMap>(a_obj, qualified_name + remap_str, &m_afJointMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afJointMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afJointPtr, afJointMap>(a_obj, qualified_identifier + remap_str, &m_afJointMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFActuator(afActuatorPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afActuatorMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afActuatorPtr, afActuatorMap>(a_obj, qualified_name + remap_str, &m_afActuatorMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afActuatorMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afActuatorPtr, afActuatorMap>(a_obj, qualified_identifier + remap_str, &m_afActuatorMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFSensor(afSensorPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afSensorMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afSensorPtr, afSensorMap>(a_obj, qualified_name + remap_str, &m_afSensorMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afSensorMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afSensorPtr, afSensorMap>(a_obj, qualified_identifier + remap_str, &m_afSensorMap);
+    return remaped_identifier;
 }
 
 
 string afWorld::addAFModel(afModelPtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afModelMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afModelPtr, afModelMap>(a_obj, qualified_name + remap_str, &m_afModelMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afModelMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afModelPtr, afModelMap>(a_obj, qualified_identifier + remap_str, &m_afModelMap);
+    return remaped_identifier;
 }
 
 
 
 string afWorld::addAFVehicle(afVehiclePtr a_obj){
-    string qualified_name = a_obj->getQualifiedName();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_name, &m_afVehicleMap);
-    string remaped_name = qualified_name + remap_str;
-    addAFObject<afVehiclePtr, afVehicleMap>(a_obj, qualified_name + remap_str, &m_afVehicleMap);
-    return remaped_name;
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afVehicleMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afVehiclePtr, afVehicleMap>(a_obj, qualified_identifier + remap_str, &m_afVehicleMap);
+    return remaped_identifier;
 }
 
 
@@ -5238,6 +5280,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     // Set some default values
     m_stereMode = C_STEREO_DISABLED;
 
+    setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -5389,6 +5432,17 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     s_windowIdx++;
     s_cameraIdx++;
 
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFCameraMap());
+
+        afCreateCommInstance(afObjectType::CAMERA,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+    }
+
 
     if (m_publishImage || m_publishDepth){
         m_frameBuffer = new cFrameBuffer();
@@ -5405,7 +5459,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             s_rosNode = new ros::NodeHandle();
             s_imageTransport = new image_transport::ImageTransport(*s_rosNode);
         }
-        m_imagePublisher = s_imageTransport->advertise(m_namespace + m_name + "/ImageData", 1);
+        m_imagePublisher = s_imageTransport->advertise(getQualifiedName() + "/ImageData", 1);
 #endif
 
         if (m_publishDepth){
@@ -5493,7 +5547,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
                 ros::init(argc, argv, "ambf_image_transport_node");
                 s_rosNode = new ros::NodeHandle();
             }
-            m_depthPointCloudPub = s_rosNode->advertise<sensor_msgs::PointCloud2>(m_namespace + m_name + "/DepthData", 1);
+            m_depthPointCloudPub = s_rosNode->advertise<sensor_msgs::PointCloud2>(getQualifiedName() + "/DepthData", 1);
 #endif
 
         }
@@ -6059,6 +6113,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 {
     afLightAttributes &attribs = *a_attribs;
 
+    setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -6105,6 +6160,19 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
         break;
     }
     m_spotLight->setEnabled(true);
+
+    m_passive = false;
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFLightMap());
+
+        afCreateCommInstance(afObjectType::LIGHT,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
+    }
 
     return valid;
 }
@@ -6287,25 +6355,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         afRigidBodyPtr rBodyPtr = new afRigidBody(m_afWorld, this);
         if (rBodyPtr->createFromAttribs(&attribs.m_rigidBodyAttribs[i])){
             string remaped_name = m_afWorld->addAFRigidBody(rBodyPtr);
-            m_afRigidBodyMapLocal[rBodyPtr->getQualifiedName()] = rBodyPtr;
-            if (enable_comm){
-                string obj_name = rBodyPtr->getName();
-                if ((strcmp(obj_name.c_str(), "world") == 0) ||
-                        (strcmp(obj_name.c_str(), "World") == 0) ||
-                        (strcmp(obj_name.c_str(), "WORLD") == 0)){
-                    continue;
-                }
-                else{
-                    // Only create a comm instance if the body is not passive
-                    if (rBodyPtr->isPassive() == false){
-                        rBodyPtr->afCreateCommInstance(afObjectType::RIGID_BODY,
-                                                       remaped_name,
-                                                       m_afWorld->getGlobalNamespace(),
-                                                       rBodyPtr->getMinPublishFrequency(),
-                                                       rBodyPtr->getMaxPublishFrequency());
-                    }
-                }
-            }
+            m_afRigidBodyMapLocal[rBodyPtr->getQualifiedIdentifier()] = rBodyPtr;
         }
     }
 
@@ -6314,7 +6364,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         afSoftBodyPtr sBodyPtr = new afSoftBody(m_afWorld, this);
         if (sBodyPtr->createFromAttribs(&attribs.m_softBodyAttribs[i])){
             string remaped_name = m_afWorld->addAFSoftBody(sBodyPtr);
-            m_afSoftBodyMapLocal[sBodyPtr->getQualifiedName()] = sBodyPtr;
+            m_afSoftBodyMapLocal[sBodyPtr->getQualifiedIdentifier()] = sBodyPtr;
         }
     }
 
@@ -6342,28 +6392,11 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             break;
         }
         default:
-            break;
+            continue;
         }
 
-        // Finally load the sensor's attribs
-        if (sensorPtr){
-            if (valid){
-                string remaped_name = m_afWorld->addAFSensor(sensorPtr);
-                if (enable_comm){
-                    cerr << "LOADING SENSOR COMM \n";
-                    sensorPtr->afCreateCommInstance(afObjectType::SENSOR,
-                                                    remaped_name,
-                                                    m_afWorld->getGlobalNamespace(),
-                                                    sensorPtr->getMinPublishFrequency(),
-                                                    sensorPtr->getMaxPublishFrequency());
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-                    sensorPtr->m_afSensorCommPtr->set_type(type_str);
-#endif
-                }
-            }
-        }
-        else{
-            continue;
+        if (valid){
+            string remaped_name = m_afWorld->addAFSensor(sensorPtr);
         }
     }
 
@@ -6381,28 +6414,11 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             break;
         }
         default:
-            break;
+            continue;
         }
 
-        // Finally load the sensor from ambf config data
-        if (actuatorPtr){
-            if (valid){
-                string remaped_name = m_afWorld->addAFActuator(actuatorPtr);
-                if (enable_comm){
-                    cerr << "LOADING ACTUATOR COMM \n";
-                    actuatorPtr->afCreateCommInstance(afObjectType::ACTUATOR,
-                                                      remaped_name,
-                                                      m_afWorld->getGlobalNamespace(),
-                                                      actuatorPtr->getMinPublishFrequency(),
-                                                      actuatorPtr->getMaxPublishFrequency());
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-                    actuatorPtr->m_afActuatorCommPtr->set_type(type_str);
-#endif
-                }
-            }
-        }
-        else{
-            continue;
+        if (valid){
+            string remaped_name = m_afWorld->addAFActuator(actuatorPtr);
         }
     }
 
@@ -6411,7 +6427,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         afJointPtr jntPtr = new afJoint(m_afWorld, this);
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
             string remaped_name = m_afWorld->addAFJoint(jntPtr);
-            m_afJointMapLocal[jntPtr->getQualifiedName()] = jntPtr;
+            m_afJointMapLocal[jntPtr->getQualifiedIdentifier()] = jntPtr;
         }
     }
 
@@ -6421,14 +6437,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         vehiclePtr = new afVehicle(m_afWorld, this);
         if (vehiclePtr->createFromAttribs(&attribs.m_vehicleAttribs[i])){
             string remap_name = m_afWorld->addAFVehicle(vehiclePtr);
-            m_afVehicleMapLocal[vehiclePtr->getQualifiedName()] = vehiclePtr;
-            if (enable_comm){
-                vehiclePtr->afCreateCommInstance(afObjectType::VEHICLE,
-                                                 remap_name,
-                                                 m_afWorld->getGlobalNamespace(),
-                                                 vehiclePtr->getMinPublishFrequency(),
-                                                 vehiclePtr->getMaxPublishFrequency());
-            }
+            m_afVehicleMapLocal[vehiclePtr->getQualifiedIdentifier()] = vehiclePtr;
         }
     }
 
@@ -6890,6 +6899,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 
     bool result = true;
 
+    setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
@@ -6989,6 +6999,17 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
         wheelInfo.m_wheelsDampingCompression = m_wheelAttribs[i].m_suspensionAttribs.m_compression;
         wheelInfo.m_frictionSlip = m_wheelAttribs[i].m_friction;
         wheelInfo.m_rollInfluence = m_wheelAttribs[i].m_rollInfluence;
+    }
+
+    if (m_passive == false){
+
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFVehicleMap());
+
+        afCreateCommInstance(afObjectType::VEHICLE,
+                             getQualifiedName() + remap_idx,
+                             m_afWorld->getGlobalNamespace(),
+                             getMinPublishFrequency(),
+                             getMaxPublishFrequency());
     }
 
     return result;

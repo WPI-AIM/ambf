@@ -555,6 +555,10 @@ public:
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
+    inline string getQualifiedIdentifier(){return m_namespace + m_identifier;}
+
+    void setIdentifier(string a_name){m_identifier = a_name;}
+
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
     virtual void fetchCommands(double){}
@@ -646,6 +650,9 @@ public:
 
     // Parent body name defined in the ADF
     string m_parentName;
+
+    // Identifier name, which could be different from the name
+    string m_identifier;
 
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;

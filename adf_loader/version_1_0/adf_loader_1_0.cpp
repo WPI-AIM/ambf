@@ -622,20 +622,24 @@ bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttrib
     bool valid = true;
 
     if (childNameNode.IsDefined()){
-        string name = childNameNode.as<string>();
-        name.erase(remove(name.begin(), name.end(), ' '), name.end());
-        attribs->m_childName = name;
+//        string name = childNameNode.as<string>();
+//        name.erase(remove(name.begin(), name.end(), ' '), name.end());
+//        attribs->m_childName = name;
+
         valid = true;
+        attribs->m_childName = childNameNode.as<string>();
     }
     else{
         valid = false;
     }
 
     if (parentNameNode.IsDefined()){
-        string name = parentNameNode.as<string>();
-        name.erase(remove(name.begin(), name.end(), ' '), name.end());
-        attribs->m_parentName = name;
+//        string name = parentNameNode.as<string>();
+//        name.erase(remove(name.begin(), name.end(), ' '), name.end());
+//        attribs->m_parentName = name;
+
         valid = true;
+        attribs->m_parentName = parentNameNode.as<string>();
     }
     else{
         valid = false;
@@ -2127,6 +2131,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         string identifier = rigidBodiesNode[i].as<string>();
         YAML::Node rbNode = node[identifier];
         if (loadRigidBodyAttribs(&rbNode, &rbAttribs)){
+            rbAttribs.m_identifier = identifier;
             rbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             rbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
             attribs->m_rigidBodyAttribs.push_back(rbAttribs);
@@ -2139,6 +2144,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         string identifier = softBodiesNode[i].as<string>();
         YAML::Node sbNode = node[identifier];
         if (loadSoftBodyAttribs(&sbNode, &sbAttribs)){
+            sbAttribs.m_identifier = identifier;
             sbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             sbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
             attribs->m_softBodyAttribs.push_back(sbAttribs);
@@ -2155,14 +2161,18 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             switch (senType) {
             case afSensorType::RAYTRACER:{
                 afRayTracerSensorAttributes* senAttribs = new afRayTracerSensorAttributes();
-                loadRayTracerSensorAttribs(&senNode, senAttribs);
-                attribs->m_sensorAttribs.push_back(senAttribs);
+                if(loadRayTracerSensorAttribs(&senNode, senAttribs)){
+                    senAttribs->m_identifier = identifier;
+                    attribs->m_sensorAttribs.push_back(senAttribs);
+                }
                 break;
             }
             case afSensorType::RESISTANCE:{
                 afResistanceSensorAttributes* senAttribs = new afResistanceSensorAttributes();
-                loadResistanceSensorAttribs(&senNode, senAttribs);
-                attribs->m_sensorAttribs.push_back(senAttribs);
+                if (loadResistanceSensorAttribs(&senNode, senAttribs)){
+                    senAttribs->m_identifier = identifier;
+                    attribs->m_sensorAttribs.push_back(senAttribs);
+                }
                 break;
             }
             default:
@@ -2183,8 +2193,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             switch (actType) {
             case afActuatorType::CONSTRAINT:{
                 afConstraintActuatorAttributes* acAttribs = new afConstraintActuatorAttributes();
-                loadConstraintActuatorAttribs(&actNode, acAttribs);
-                attribs->m_actuatorAttribs.push_back(acAttribs);
+                if (loadConstraintActuatorAttribs(&actNode, acAttribs)){
+                    acAttribs->m_identifier = identifier;
+                    attribs->m_actuatorAttribs.push_back(acAttribs);
+                }
                 break;
             }
             default:
@@ -2205,8 +2217,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         afJointAttributes jntAttribs;
         string identifier = jointsNode[i].as<string>();
         YAML::Node jntNode = node[identifier];
-        loadJointAttribs(&jntNode, &jntAttribs);
-        attribs->m_jointAttribs.push_back(jntAttribs);
+        if (loadJointAttribs(&jntNode, &jntAttribs)){
+            jntAttribs.m_identifier = identifier;
+            attribs->m_jointAttribs.push_back(jntAttribs);
+        }
     }
 
 
@@ -2214,8 +2228,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         afVehicleAttributes vehAttribs;
         string identifier = vehiclesNode[i].as<string>();
         YAML::Node veh_node = node[identifier];
-        loadVehicleAttribs(&veh_node, &vehAttribs);
-        attribs->m_vehicleAttribs.push_back(vehAttribs);
+        if (loadVehicleAttribs(&veh_node, &vehAttribs)){
+            vehAttribs.m_identifier = identifier;
+            attribs->m_vehicleAttribs.push_back(vehAttribs);
+        }
     }
 
     // This flag would ignore collision for all the multibodies in the scene
@@ -2320,8 +2336,10 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
             string identifier = lightsNode[idx].as<string>();
             afLightAttributes lightAttribs;
             YAML::Node lightNode = node[identifier];
-            loadLightAttribs(&lightNode, &lightAttribs);
-            attribs->m_lightAttribs.push_back(lightAttribs);
+            if (loadLightAttribs(&lightNode, &lightAttribs)){
+                lightAttribs.m_identifier = identifier;
+                attribs->m_lightAttribs.push_back(lightAttribs);
+            }
         }
     }
 
@@ -2330,8 +2348,10 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
             string identifier = camerasNode[idx].as<string>();
             afCameraAttributes cameraAttribs;
             YAML::Node cameraNode = node[identifier];
-            loadCameraAttribs(&cameraNode, &cameraAttribs);
-            attribs->m_cameraAttribs.push_back(cameraAttribs);
+            if (loadCameraAttribs(&cameraNode, &cameraAttribs)){
+                cameraAttribs.m_identifier = identifier;
+                attribs->m_cameraAttribs.push_back(cameraAttribs);
+            }
         }
     }
 

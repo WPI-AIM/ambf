@@ -400,6 +400,8 @@ public:
 
     inline bool arePathAttribsResolved(){ return m_pathsResolved;}
 
+    string m_identifier;
+
 protected:
     bool m_pathsResolved;
     bool m_namespaceResolved;
@@ -522,7 +524,7 @@ public:
         m_enableMotor = true;
         m_enableFeedback = false;
         m_enableLimits = false;
-        m_maxMotorImpulse = 0.05;
+        m_maxMotorImpulse = 0.1;
         m_offset = 0.0;
         m_damping = 0.0;
         m_stiffness = 0.0;
