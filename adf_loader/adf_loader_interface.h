@@ -75,7 +75,7 @@ public:
 
     adfVersion getFileVersion(std::string a_filepath);
 
-    adfVersion getFileVersion(YAML::Node *a_node);
+    adfVersion getFileVersion(YAML::Node *a_node, string a_filepath);
 
     adfVersion getVersionFromString(std::string a_str);
 

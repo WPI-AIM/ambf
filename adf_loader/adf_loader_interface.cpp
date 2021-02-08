@@ -61,10 +61,10 @@ using namespace adf_loader_1_0;
 adfVersion ADFLoaderInterface::getFileVersion(string a_filepath)
 {
     YAML::Node node = YAML::LoadFile(a_filepath);
-    return getFileVersion(&node);
+    return getFileVersion(&node, a_filepath);
 }
 
-adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
+adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node, string a_filepath)
 {
     assert(a_node != nullptr);
 
@@ -78,7 +78,7 @@ adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node)
         return getVersionFromString(versionStr);
     }
     else{
-        cerr << "WARNING! ADF version not defined thus assuming VERSION_1_0" << endl;
+        cerr << "WARNING! For File \"" << a_filepath  << "\", ADF version not defined thus assuming VERSION_1_0" << endl;
         return adfVersion::VERSION_1_0;
     }
 }
