@@ -4186,35 +4186,14 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     m_wallClock = a_wallClock;
 
     double dt = getSimulationDeltaTime();
+
     // Read the AF_COMM commands and apply to all different types of objects
-    afRigidBodyMap::iterator rbIt;
-    for(rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
-        (rbIt->second)->fetchCommands(dt);
-    }
+    vector<afBaseObjectPtr>::iterator i;
 
-    afCameraMap::iterator camIt;
-    for(camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; ++camIt){
-        (camIt->second)->fetchCommands(dt);
-    }
-
-    afLightMap::iterator lightIt;
-    for(lightIt = m_afLightMap.begin() ; lightIt != m_afLightMap.end() ; ++lightIt){
-        (lightIt->second)->fetchCommands(dt);
-    }
-
-//    afSensorMap::iterator senIt;
-//    for(senIt = m_afSensorMap.begin() ; senIt != m_afSensorMap.end() ; ++senIt){
-//        (senIt->second)->afExecuteCommand(dt);
-//    }
-
-    afActuatorMap::iterator actIt;
-    for (actIt = m_afActuatorMap.begin() ; actIt != m_afActuatorMap.end() ; ++actIt){
-        (actIt->second)->fetchCommands(dt);
-    }
-
-    afVehicleMap::iterator vIt;
-    for (vIt = m_afVehicleMap.begin() ; vIt != m_afVehicleMap.end() ; ++vIt){
-        (vIt->second)->fetchCommands(dt);
+    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
+    {
+        afBaseObject* childObj = *i;
+        childObj->fetchCommands(dt);
     }
 
     // integrate simulation during an certain interval
@@ -4233,7 +4212,15 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     }
 #endif
 
-    updateChildren();
+    afUpdateTimes(getWallTime(), getSimulationTime());
+
+    estimateBodyWrenches();
+
+    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
+    {
+        afBaseObject* childObj = *i;
+        childObj->update();
+    }
 }
 
 
@@ -4290,7 +4277,7 @@ void afWorld::estimateBodyWrenches(){
 ///
 /// \brief afWorld::updatePositionFromDynamics
 ///
-void afWorld::updateChildren()
+void afWorld::updateSceneObjects()
 {
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -4302,17 +4289,13 @@ void afWorld::updateChildren()
     }
 #endif
 
-    estimateBodyWrenches();
-
-    afUpdateTimes(getWallTime(), getSimulationTime());
     vector<afBaseObjectPtr>::iterator i;
 
     for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
     {
-        afBaseObject* nextObj = *i;
-        nextObj->update();
-        nextObj->updateGlobalPose();
-        nextObj->updateSceneObjects();
+        afBaseObject* childObj = *i;
+        childObj->updateGlobalPose();
+        childObj->updateSceneObjects();
     }
 }
 
@@ -4527,6 +4510,8 @@ void afWorld::render(afRenderOptions &options)
 {
     // Update shadow maps once
     m_chaiWorld->updateShadowMaps(false, options.m_mirroredDisplay);
+
+    updateSceneObjects();
 
     afCameraMap::iterator camIt;
     for (camIt = m_afCameraMap.begin(); camIt != m_afCameraMap.end(); ++ camIt){

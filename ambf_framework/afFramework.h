@@ -1832,7 +1832,7 @@ public:
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
-    virtual void updateChildren();
+    virtual void updateSceneObjects();
 
     void addSceneObjectToWorld(cGenericObject* a_cObject);
 
