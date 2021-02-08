@@ -1533,7 +1533,10 @@ public:
     cVector3d getGlobalPos();
 
     // Get the Target or the lookAt point
-    cVector3d getTargetPos();
+    cVector3d getTargetPosLocal();
+
+    // Get the Target or the lookAt point
+    cVector3d getTargetPosGlobal();
 
     // Set the Camera Target or LookAt position
     void setTargetPos(cVector3d a_pos);

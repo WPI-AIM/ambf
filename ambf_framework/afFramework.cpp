@@ -5165,7 +5165,7 @@ cVector3d afCamera::getGlobalPos(){
 /// \param a_pos
 ///
 void afCamera::setTargetPos(cVector3d a_pos){
-    setView(getLocalPos(), a_pos, m_camera->getUpVector());
+    setView(getLocalPos(), a_pos, getUpVector());
 }
 
 ///
@@ -5182,8 +5182,16 @@ void afCamera::showTargetPos(bool a_show){
 /// \brief afCamera::getTargetPosGlobal
 /// \return
 ///
-cVector3d afCamera::getTargetPos(){
+cVector3d afCamera::getTargetPosLocal(){
     return m_localTransform * m_targetPos;
+}
+
+///
+/// \brief afCamera::getTargetPosGlobal
+/// \return
+///
+cVector3d afCamera::getTargetPosGlobal(){
+    return m_globalTransform * m_targetPos;
 }
 
 ///
@@ -5308,7 +5316,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_imagePublishInterval = attribs.m_publishImageInterval;
     m_publishDepth = attribs.m_publishDepth;
     m_depthPublishInterval = attribs.m_publishDepthInterval;
-
 
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
 

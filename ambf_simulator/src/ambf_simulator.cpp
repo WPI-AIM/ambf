@@ -1243,7 +1243,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 cVector3d deltaVel(0, -horizontalVel, verticalVel);
 
                 cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * deltaVel;
-                devCam->setView(newPos, devCam->getTargetPos(), cVector3d(0,0,1));
+                devCam->setView(newPos, devCam->getTargetPosLocal(), cVector3d(0,0,1));
             }
             //            else{
             //                devCam->showTargetPos(false);
@@ -1275,18 +1275,19 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
 
             double scale = 0.1;
             cVector3d camVelAlongLook(speed_scale * scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
-            cVector3d newTargetPos = cameraPtr->getTargetPos();
-            cVector3d newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook;
+            cVector3d newTargetPos = cameraPtr->getTargetPosLocal();
+            cVector3d newPos = cameraPtr->getLocalTransform() * camVelAlongLook;
             cVector3d dPos = newPos - newTargetPos;
             if(dPos.length() < 0.5){
                 newTargetPos = newTargetPos + cameraPtr->getLocalRot() * camVelAlongLook;
             }
+
             if (cameraPtr->isOrthographic()){
                 cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
-                cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+                cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
             }
             else{
-                cameraPtr->setLocalPos( cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVelAlongLook );
+                cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
             }
             cameraPtr->setTargetPos(newTargetPos);
         }
@@ -1312,12 +1313,12 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     btVector3 camPos, camTarget;
 
-    camPos = to_btVector(a_cameraPtr->getGlobalPos());
-    cVector3d targetPos = a_cameraPtr->getTargetPos();
-    camTarget = to_btVector(targetPos);
+    camPos << a_cameraPtr->getGlobalPos();
+    cVector3d targetPos = a_cameraPtr->getTargetPosGlobal();
+    camTarget << targetPos;
 
     btVector3 rayFrom = camPos;
-    btVector3 rayForward = (camTarget - camPos);
+    btVector3 rayForward = (camTarget - rayFrom);
     rayForward.normalize();
     float farPlane = 10000.f;
     rayForward *= farPlane;
