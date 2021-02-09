@@ -8903,6 +8903,7 @@ void afVehicle::afExecuteCommand(double dt){
 }
 
 
+
 ///
 /// \brief afVehicle::updatePositionFromDynamics
 ///
