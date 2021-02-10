@@ -1,0 +1,898 @@
+bodies:
+- BODY ExoHip
+- BODY Crutches
+- BODY ExoLeftThigh
+- BODY ExoLeftShank
+- BODY ExoLeftFoot
+- BODY ExoRightThigh
+- BODY ExoRightShank
+- BODY ExoRightFoot
+joints:
+- JOINT ExoLeftHip
+- JOINT ExoLeftKnee
+- JOINT ExoLeftAnkle
+- JOINT ExoRightHip
+- JOINT ExoRightKnee
+- JOINT ExoRightAnkle
+- JOINT ExoHipCrutches
+high resolution path: ../../../meshes/exo/high_res/
+low resolution path: ../../../meshes/exo/low_res/
+ignore inter-collision: true
+namespace: /ambf/env/
+BODY ExoHip:
+  name: ExoHip
+  mesh: ExoHip.STL
+  mass: 2.33
+  inertia:
+    ix: 0.4004
+    iy: 0.4587
+    iz: 0.1307
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: -0.0001
+      y: 0.0
+      z: 0.2001
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: 0.0001
+      y: -0.0232
+      z: 0.1836
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: false
+  publish children names: true
+  publish joint names: true
+  publish joint positions: true
+  friction:
+    rolling: 0.01
+    static: 0.5
+  restitution: 0.0
+  damping:
+    angular: 0.5
+    linear: 0.5
+  collision groups:
+  - 8
+  collision shape: BOX
+  collision geometry:
+    x: 0.4763
+    y: 0.2835
+    z: 0.6854
+  collision offset:
+    position:
+      x: 0.0001
+      y: -0.0232
+      z: 0.1836
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 1.0
+      r: 0.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+BODY Crutches:
+  name: Crutches
+  mesh: Crutches.STL
+  mass: 1.0
+  inertia:
+    ix: 0.4163
+    iy: 0.6188
+    iz: 0.2043
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: 0.0001
+      y: -0.7588
+      z: -0.2181
+    orientation:
+      r: -0.5236
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: -0.0
+      y: 0.0
+      z: -0.1164
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  color: random
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.1
+    static: 0.5
+  restitution: 0.1
+  damping:
+    angular: 0.1
+    linear: 0.5
+  collision groups:
+  - 18
+  compound collision shape:
+  - name: '1'
+    shape: CYLINDER
+    geometry:
+      axis: Z
+      height: 1.066
+      radius: 0.042
+    offset:
+      position:
+        x: 0.4499993324279785
+        y: 0.0
+        z: -0.06539099663496017
+      orientation:
+        r: 0.0
+        p: 0.0
+        y: 0.0
+  - name: '2'
+    shape: CYLINDER
+    geometry:
+      axis: Z
+      height: 1.066
+      radius: 0.042
+    offset:
+      position:
+        x: -0.44999998807907104
+        y: 0.0
+        z: -0.06539099663496017
+      orientation:
+        r: 0.0
+        p: 0.0
+        y: 0.0
+  - name: '3'
+    shape: SPHERE
+    geometry:
+      radius: 0.061
+    offset:
+      position:
+        x: 0.44999998807907104
+        y: 0.0
+        z: -0.6420000195503235
+      orientation:
+        r: 0.0
+        p: 0.0
+        y: 0.0
+  - name: '4'
+    shape: SPHERE
+    geometry:
+      radius: 0.061
+    offset:
+      position:
+        x: -0.44999998807907104
+        y: 0.0
+        z: -0.6420000195503235
+      orientation:
+        r: 0.0
+        p: 0.0
+        y: 0.0
+BODY ExoLeftThigh:
+  name: ExoLeftThigh
+  mesh: ExoLeftThigh.STL
+  mass: 2.11
+  inertia:
+    ix: 0.0873
+    iy: 0.0883
+    iz: 0.0045
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: 0.24
+      y: -0.1249
+      z: -0.0766
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: 0.0223
+      y: 0.0006
+      z: -0.0857
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.01
+    static: 0.5
+  restitution: 0.0
+  damping:
+    angular: 0.1
+    linear: 0.5
+  collision groups:
+  - 5
+  collision shape: CAPSULE
+  collision geometry:
+    axis: Z
+    height: 0.5553
+    radius: 0.0558
+  collision offset:
+    position:
+      x: 0.0223
+      y: 0.0006
+      z: -0.0857
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 1.0
+      g: 0.0
+      r: 0.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+BODY ExoLeftShank:
+  name: ExoLeftShank
+  mesh: ExoLeftShank.STL
+  mass: 1.28
+  inertia:
+    ix: 0.0345
+    iy: 0.0352
+    iz: 0.0027
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: 0.264
+      y: -0.1223
+      z: -0.6356
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: -0.0238
+      y: -0.0001
+      z: 0.058
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.01
+    static: 0.5
+  restitution: 0.0
+  damping:
+    angular: 0.1
+    linear: 0.5
+  collision groups:
+  - 6
+  collision shape: CAPSULE
+  collision geometry:
+    axis: Z
+    height: 0.4529
+    radius: 0.0534
+  collision offset:
+    position:
+      x: -0.0238
+      y: -0.0001
+      z: 0.058
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 1.0
+      g: 0.0
+      r: 0.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+BODY ExoLeftFoot:
+  name: ExoLeftFoot
+  mesh: ExoLeftFoot.STL
+  mass: 0.866
+  inertia:
+    ix: 0.0142
+    iy: 0.0126
+    iz: 0.0185
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: 0.2425
+      y: -0.1249
+      z: -0.8331
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: -0.0733
+      y: -0.0583
+      z: 0.0458
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.1
+    static: 0.5
+  restitution: 0.1
+  damping:
+    angular: 0.1
+    linear: 0.5
+  collision groups:
+  - 7
+  collision shape: BOX
+  collision geometry:
+    x: 0.2283
+    y: 0.3141
+    z: 0.1809
+  collision offset:
+    position:
+      x: -0.0733
+      y: -0.0583
+      z: 0.0458
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 1.0
+      g: 0.0
+      r: 0.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.0
+    transparency: 1.0
+BODY ExoRightThigh:
+  name: ExoRightThigh
+  mesh: ExoRightThigh.STL
+  mass: 2.11
+  inertia:
+    ix: 0.0873
+    iy: 0.0884
+    iz: 0.0045
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: -0.24
+      y: -0.1249
+      z: -0.0766
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: -0.0223
+      y: 0.0009
+      z: -0.0859
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.5
+    static: 0.5
+  restitution: 0.0
+  damping:
+    angular: 0.1
+    linear: 0.1
+  collision groups:
+  - 15
+  collision shape: CAPSULE
+  collision geometry:
+    axis: Z
+    height: 0.5553
+    radius: 0.0558
+  collision offset:
+    position:
+      x: -0.0223
+      y: 0.0009
+      z: -0.0859
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 1.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.5
+    transparency: 1.0
+BODY ExoRightShank:
+  name: ExoRightShank
+  mesh: ExoRightShank.STL
+  mass: 1.28
+  inertia:
+    ix: 0.0345
+    iy: 0.0352
+    iz: 0.0027
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: -0.268
+      y: -0.1223
+      z: -0.6356
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: 0.0237
+      y: -0.0001
+      z: 0.058
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.01
+    static: 0.5
+  restitution: 0.0
+  damping:
+    angular: 0.5
+    linear: 0.5
+  collision groups:
+  - 16
+  collision shape: CAPSULE
+  collision geometry:
+    axis: Z
+    height: 0.4529
+    radius: 0.0534
+  collision offset:
+    position:
+      x: 0.0237
+      y: -0.0001
+      z: 0.058
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 1.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.5
+    transparency: 1.0
+BODY ExoRightFoot:
+  name: ExoRightFoot
+  mesh: ExoRightFoot.STL
+  mass: 1.0
+  inertia:
+    ix: 0.0164
+    iy: 0.0145
+    iz: 0.0213
+  collision margin: 0.001
+  scale: 1.0
+  location:
+    position:
+      x: -0.2425
+      y: -0.1249
+      z: -0.8331
+    orientation:
+      r: 0.0
+      p: -0.0
+      y: 0.0
+  inertial offset:
+    position:
+      x: 0.0734
+      y: -0.0582
+      z: 0.0457
+    orientation:
+      r: 0
+      p: 0
+      y: 0
+  passive: true
+  publish children names: false
+  publish joint names: false
+  publish joint positions: false
+  friction:
+    rolling: 0.1
+    static: 0.5
+  restitution: 0.1
+  damping:
+    angular: 0.1
+    linear: 0.5
+  collision groups:
+  - 17
+  collision shape: BOX
+  collision geometry:
+    x: 0.2283
+    y: 0.3141
+    z: 0.1809
+  collision offset:
+    position:
+      x: 0.0734
+      y: -0.0582
+      z: 0.0457
+    orientation:
+      r: 0.0
+      p: 0.0
+      y: 0.0
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.0
+      r: 1.0
+    specular:
+      b: 0.0
+      g: 0.0
+      r: 0.5
+    transparency: 1.0
+  controller:
+    linear:
+      P: 500.0
+      I: 5.0
+      D: 5.0
+    angular:
+      P: 50.0
+      I: 0.5
+      D: 0.5
+JOINT ExoHipCrutches:
+  name: ExoHipCrutches
+  parent: BODY ExoHip
+  child: BODY Crutches
+  parent axis:
+    x: 0.0
+    y: 0.0
+    z: 1.0
+  parent pivot:
+    x: -0.1227
+    y: -0.1536
+    z: -0.1441
+  child axis:
+    x: 0.0
+    y: -0.5
+    z: 0.866
+  child pivot:
+    x: -0.1229
+    y: 0.387
+    z: 0.54
+  joint limits:
+    high: 0.5
+    low:  0
+  enable feedback: false
+  passive: true
+  controller:
+    P: 500.0
+    I: 5.0
+    D: 5.0
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 0.866
+    yz: 0.5
+    zx: 0.0
+    zy: -0.5
+    zz: 0.866
+  detached: true
+  type: prismatic
+  damping: 0.0
+JOINT ExoLeftHip:
+  name: ExoLeftHip
+  parent: BODY ExoHip
+  child: BODY ExoLeftThigh
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: 0.2371
+    y: -0.124
+    z: -0.1441
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: -0.003
+    y: 0.0009
+    z: 0.1326
+  joint limits:
+    high: 0.524
+    low: -1.92
+  enable feedback: true
+  passive: false
+  controller:
+    P: 546.7349
+    I: 5.4673
+    D: 5.4673
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
+JOINT ExoLeftKnee:
+  name: ExoLeftKnee
+  parent: BODY ExoLeftThigh
+  child: BODY ExoLeftShank
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: -0.003
+    y: 0.0012
+    z: -0.3038
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: -0.027
+    y: -0.0014
+    z: 0.2552
+  joint limits:
+    high: 1.92
+    low: 0.0
+  enable feedback: true
+  passive: false
+  controller:
+    P: 74.1391
+    I: 0.7414
+    D: 0.7414
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
+JOINT ExoLeftAnkle:
+  name: ExoLeftAnkle
+  parent: BODY ExoLeftShank
+  child: BODY ExoLeftFoot
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: 0.0002
+    y: 0.0005
+    z: -0.1401
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: 0.0217
+    y: 0.0031
+    z: 0.0574
+  joint limits:
+    high: 0.5236
+    low: -0.7854
+  enable feedback: true
+  passive: false
+  controller:
+    P: 21.2776
+    I: 0.2128
+    D: 0.2128
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
+JOINT ExoRightHip:
+  name: ExoRightHip
+  parent: BODY ExoHip
+  child: BODY ExoRightThigh
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: -0.2369
+    y: -0.124
+    z: -0.1441
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: 0.003
+    y: 0.0009
+    z: 0.1326
+  joint limits:
+    high: 0.524
+    low: -1.92
+  enable feedback: true
+  passive: false
+  controller:
+    P: 546.7644
+    I: 5.4676
+    D: 5.4676
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
+JOINT ExoRightKnee:
+  name: ExoRightKnee
+  parent: BODY ExoRightThigh
+  child: BODY ExoRightShank
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: -0.001
+    y: 0.0012
+    z: -0.3038
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: 0.027
+    y: -0.0014
+    z: 0.2552
+  joint limits:
+    high: 1.92
+    low: 0.0
+  enable feedback: true
+  passive: false
+  controller:
+    P: 74.1107
+    I: 0.7411
+    D: 0.7411
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
+JOINT ExoRightAnkle:
+  name: ExoRightAnkle
+  parent: BODY ExoRightShank
+  child: BODY ExoRightFoot
+  parent axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  parent pivot:
+    x: 0.0038
+    y: 0.0005
+    z: -0.1401
+  child axis:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+  child pivot:
+    x: -0.0217
+    y: 0.0031
+    z: 0.0574
+  joint limits:
+    high: 0.5236
+    low: -0.7854
+  enable feedback: true
+  passive: false
+  controller:
+    P: 22.1662
+    I: 0.2217
+    D: 0.2217
+  body rotation:
+    xx: 1.0
+    xy: 0.0
+    xz: 0.0
+    yx: 0.0
+    yy: 1.0
+    yz: 0.0
+    zx: 0.0
+    zy: 0.0
+    zz: 1.0
+  detached: true
+  type: revolute
+  max motor impulse: 0.05000000074505806
+  damping: 0.5
