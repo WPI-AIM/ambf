@@ -608,15 +608,57 @@ public:
         m_useBendingConstraints = false;
         m_usePoseMatching = false;
         m_useConstraintRandomization = false;
+
+        // Initialize Defaults here
+        m_kVCF = 1;
+        m_kDG = 0;
+        m_kLF = 0;
+        m_kDP = 0;
+        m_kPR = 0;
+        m_kVC = 0;
+        m_kDF = 0.2;
+        m_kMT = 0;
+        m_kCHR = 1.0;
+        m_kKHR = 0.1;
+        m_kSHR = 1.0;
+        m_kAHR = 0.7;
+        m_kSRHR_CL = 0.1;
+        m_kSKHR_CL = 1;
+        m_kSSHR_CL = 0.5;
+        m_kSR_SPLT_CL = 0.5;
+        m_kSK_SPLT_CL = 0.5;
+        m_kSS_SPLT_CL = 0.5;
+        m_maxVolume = 1;
+        m_timeScale = 1;
+
+        m_vIterations = 0;
+        m_pIterations = 1;
+        m_dIterations = 0;
+        m_cIterations = 4;
+
+        m_useMaterial = false;
+        m_kLST = 1;
+        m_kAST = 1;
+        m_kVST = 1;
+
+        m_flags = 0x0001;
+        m_collisions = 0x0001;
+
+        m_useBendingConstraints = false;
+        m_bendingConstraint = 0;
+
+        m_useClusters = false;
+        m_clusters = 0;
+
+        m_usePoseMatching = false;
+
+        m_useConstraintRandomization = false;
     }
 
-    double m_kLST;
-    double m_kAST;
-    double m_kVST;
     double m_kVCF;
-    double m_kDP;
     double m_kDG;
     double m_kLF;
+    double m_kDP;
     double m_kPR;
     double m_kVC;
     double m_kDF;
@@ -633,17 +675,28 @@ public:
     double m_kSS_SPLT_CL;
     double m_maxVolume;
     double m_timeScale;
+
     uint m_vIterations;
     uint m_pIterations;
     uint m_dIterations;
     uint m_cIterations;
-    uint m_flags;
-    uint m_bendingConstraint;
-    uint m_clusters;
+
     bool m_useMaterial;
+    double m_kLST;
+    double m_kAST;
+    double m_kVST;
+
+    int m_flags;
+    int m_collisions;
+
     bool m_useBendingConstraints;
-    bool m_usePoseMatching;
+    uint m_bendingConstraint;
+
     bool m_useClusters;
+    uint m_clusters;
+
+    bool m_usePoseMatching;
+
     bool m_useConstraintRandomization;
     std::vector<uint> m_fixedNodes;
 

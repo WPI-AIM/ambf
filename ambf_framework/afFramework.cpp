@@ -1072,7 +1072,7 @@ bool afBaseObject::removeChildSceneObject(afSceneObject *a_object, bool removeFr
 void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
     std::vector<afSceneObject*>::iterator it;
 
-    for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
+    for (it = m_childrenSceneObjects.begin() ; it < m_childrenSceneObjects.end() ; ++it){
         removeChildSceneObject((*it), removeFromGraph);
     }
 }
@@ -1529,22 +1529,6 @@ void afInertialObject::applyTorque(const cVector3d &a_torque)
     btVector3 torque = to_btVector(a_torque);
     m_bulletRigidBody->applyTorque(torque);
 }
-
-
-///
-/// \brief afInertialObject::createInertialObject
-///
-void afInertialObject::createInertialObject()
-{
-    // create rigid body
-    btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
-    m_bulletRigidBody = new btRigidBody(rigidBodyCI);
-
-    // by default deactivate sleeping mode
-    m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
-    m_bulletRigidBody->setSleepingThresholds(0, 0);
-}
-
 
 ///
 /// \brief afBody::afBody
@@ -2003,6 +1987,17 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     // Where to add the visual, collision and this object?
     return true;
+}
+
+void afRigidBody::createInertialObject()
+{
+    // create rigid body
+    btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
+    m_bulletRigidBody = new btRigidBody(rigidBodyCI);
+
+    // by default deactivate sleeping mode
+    m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
+    m_bulletRigidBody->setSleepingThresholds(0, 0);
 }
 
 
@@ -2608,59 +2603,51 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     else
     {
         // If we can't find the visual mesh, we can proceed with
-        // printing just a warning
-        cerr << "WARNING: Soft Body " << m_name
+        // printing just an error and returning
+        cerr << "ERROR! Soft Body " << m_name
              << "'s mesh " << attribs.m_visualAttribs.m_meshFilepath.c_str() << " not found\n";
+        return 0;
     }
 
-    if(m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
-        m_softMultiMesh->buildContactTriangles(attribs.m_collisionAttribs.m_margin, m_collisionMesh);
+    if (m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str())){
         m_collisionMesh->scale(m_scale);
+        // Use the visual mesh for generating the softbody
+        generateFromMesh(m_collisionMesh, attribs.m_collisionAttribs.m_margin);
     }
-    else{
-        // If we can't find the collision mesh, then we have a problem,
-        // stop loading this softbody and return with 0
-        cerr << "WARNING: Soft Body " << m_name
-                  << "'s mesh " << attribs.m_collisionAttribs.m_meshFilepath.c_str() << " not found\n";
+    else
+    {
+        cerr << "ERROR! Soft Body " << m_name
+             << "'s mesh " << attribs.m_collisionAttribs.m_meshFilepath.c_str() << " not found\n";
         return 0;
     }
 
     setMass(attribs.m_inertialAttribs.m_mass);
+    m_bulletSoftBody->setTotalMass(m_mass, false);
+    m_bulletSoftBody->getCollisionShape()->setUserPointer(m_bulletSoftBody);
 
-    m_softMultiMesh->buildDynamicModel();
+    createInertialObject();
 
     cTransform pose = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(pose);
 
     cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
+    m_visualMesh->setMaterial(mat);
     // Important to set the transparency after setting the material, otherwise the alpha
     // channel ruins the Z-buffer depth testing in some way.
-    m_visualMesh->setMaterial(mat);
-
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
 
     btSoftBody* softBody = m_bulletSoftBody;
 
-    // Set SoftBody World Info
-    m_bulletSoftBodyWorldInfo = new btSoftBodyWorldInfo();
-    m_bulletSoftBodyWorldInfo->m_broadphase = m_afWorld->m_bulletBroadphase;
-    m_bulletSoftBodyWorldInfo->m_dispatcher = m_afWorld->m_bulletCollisionDispatcher;
-    m_bulletSoftBodyWorldInfo->air_density		=	(btScalar)0.0;
-    m_bulletSoftBodyWorldInfo->water_density	=	0;
-    m_bulletSoftBodyWorldInfo->water_offset		=	0;
-    m_bulletSoftBodyWorldInfo->water_normal		=	btVector3(0,0,0);
-    m_bulletSoftBodyWorldInfo->m_gravity.setValue(0,0,-9.81);
+    if (attribs.m_useMaterial){
+        btSoftBody::Material *pm = softBody->appendMaterial();
+//        pm->m_kLST = attribs.m_kLST;
+//        pm->m_kAST = attribs.m_kAST;
+//        pm->m_kVST = attribs.m_kVST;
 
-    //    m_bulletWorld->getDispatchInfo().m_enableSPU = true;
-    m_bulletSoftBodyWorldInfo->m_sparsesdf.Initialize();
-
-    m_softMultiMesh = new afSoftMultiMesh(m_afWorld->m_bulletWorld, m_bulletSoftBodyWorldInfo, m_bulletSoftBody, m_bulletCollisionShape);
-
-    btSoftBody::Material *pm = softBody->appendMaterial();
-    pm->m_kLST = attribs.m_kLST;
-    pm->m_kAST = attribs.m_kAST;
-    pm->m_kVST = attribs.m_kVST;
-
+        softBody->m_materials[0]->m_kLST = attribs.m_kLST;
+        softBody->m_materials[0]->m_kAST = attribs.m_kAST;
+        softBody->m_materials[0]->m_kVST = attribs.m_kVST;
+    }
 
     if (attribs.m_usePoseMatching){
         softBody->m_cfg.kMT = attribs.m_kMT;
@@ -2690,13 +2677,12 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     softBody->m_cfg.kSS_SPLT_CL = attribs.m_kSS_SPLT_CL;
 
     softBody->m_cfg.maxvolume = attribs.m_maxVolume;
-    softBody->m_cfg.timescale= attribs.m_timeScale;
+    softBody->m_cfg.timescale = attribs.m_timeScale;
 
     softBody->m_cfg.viterations = attribs.m_vIterations;
     softBody->m_cfg.piterations = attribs.m_pIterations;
     softBody->m_cfg.diterations = attribs.m_dIterations;
     softBody->m_cfg.citerations = attribs.m_cIterations;
-
 
     softBody->m_cfg.collisions = attribs.m_flags;
 
@@ -2720,9 +2706,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
     addChildSceneObject(m_visualMesh, cTransform());
-    setScale(m_scale);
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
+    m_afWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 
     m_passive = true;
 
@@ -2738,6 +2724,318 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
     return true;
+}
+
+void afSoftBody::createInertialObject()
+{
+}
+
+void afSoftBody::setLocalTransform(cTransform &trans)
+{
+    m_bulletSoftBody->setWorldTransform(to_btTransform(trans));
+    afBaseObject::setLocalTransform(trans);
+}
+
+void afSoftBody::updateSceneObjects(){
+    cMesh * mesh = m_visualMesh->getMesh(0);
+
+    for (int i = 0 ; i < m_vertexTree.size() ; i++){
+        btVector3 nodePos = m_bulletSoftBody->m_nodes[i].m_x;
+        for (int j = 0 ; j < m_vertexTree[i].vertexIdx.size() ; j++){
+            int idx = m_vertexTree[i].vertexIdx[j];
+            mesh->m_vertices->setLocalPos(idx, nodePos[0], nodePos[1], nodePos[2]);
+        }
+        mesh->markForUpdate(true);
+    }
+    afBaseObject::updateSceneObjects();
+}
+
+bool afSoftBody::generateFromMesh(cMultiMesh *multiMesh, const double a_margin)
+{
+    // create compound shape
+    m_bulletCollisionShape = new btCompoundShape();;
+
+    std::vector<cMesh*> *v_meshes;
+    v_meshes = multiMesh->m_meshes;
+
+    // create collision detector for each mesh
+    std::vector<cMesh*>::iterator it;
+    for (it = v_meshes->begin(); it < v_meshes->end(); it++)
+    {
+        cMesh* mesh = (*it);
+        // read number of triangles of the object
+        int numTriangles = mesh->m_triangles->getNumElements();
+        std::vector<std::vector <int> > polyLines = mesh->m_lines;
+//        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &_lines, true);
+        computeUniqueVerticesandTrianglesSequential(mesh, &m_verticesPtr, &m_trianglesPtr, &polyLines, false);
+        if (m_trianglesPtr.size() > 0){
+            m_bulletSoftBody = createFromMesh(*m_afWorld->m_bulletSoftBodyWorldInfo,
+                                              m_verticesPtr.data(), m_verticesPtr.size() / 3, m_trianglesPtr.data(), numTriangles);
+            createLinksFromLines(m_bulletSoftBody, &polyLines, mesh);
+        }
+        else{
+            m_bulletSoftBody = new btSoftBody(m_afWorld->m_bulletSoftBodyWorldInfo);
+            /* Default material	*/
+            btSoftBody::Material* pm = m_bulletSoftBody->appendMaterial();
+            pm->m_kLST = 1;
+            pm->m_kAST = 1;
+            pm->m_kVST = 1;
+            pm->m_flags = btSoftBody::fMaterial::Default;
+            if (m_bulletSoftBody){
+                m_bulletSoftBody->m_nodes.resize(mesh->m_vertices->getNumElements());
+                for(int nIdx = 0 ; nIdx < m_bulletSoftBody->m_nodes.size() ; nIdx++){
+                    btVector3 vPos = to_btVector(mesh->m_vertices->getLocalPos(nIdx));
+                    btSoftBody::Node& n = m_bulletSoftBody->m_nodes[nIdx];
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                }
+            }
+            createLinksFromLines(m_bulletSoftBody, &mesh->m_lines, mesh);
+        }
+        m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
+    }
+}
+
+void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<btScalar> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
+{
+    // read number of triangles of the object
+    int numTriangles = mesh->m_triangles->getNumElements();
+    int numVertices = mesh->m_vertices->getNumElements();
+
+    // Place holder for count of repeat and duplicate vertices
+    int uniqueVtxCount = 0;
+    int duplicateVtxCount = 0;
+
+    if (print_debug_info){
+        printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
+    }
+
+    int orderedVtxList[numVertices][3];
+
+    orderedVtxList[0][0] = 0;
+    orderedVtxList[0][1] = 0;
+    orderedVtxList[0][2] = -1;
+
+    cVector3d v1Pos, v2Pos;
+    for (int i = 0 ; i < numVertices ; i++){
+        orderedVtxList[i][0] = i;
+        orderedVtxList[i][1] = -1;
+        orderedVtxList[i][2] = -1;
+    }
+
+    for (int aIdx = 0 ; aIdx < numVertices - 1 ; aIdx++){
+        if (orderedVtxList[aIdx][1] == -1){
+            orderedVtxList[aIdx][1] = aIdx;
+            uniqueVtxCount++;
+        }
+        else{
+            duplicateVtxCount++;
+        }
+        for (int bIdx = aIdx + 1 ; bIdx < numVertices ; bIdx++){
+            v1Pos = mesh->m_vertices->getLocalPos(aIdx);
+            v2Pos = mesh->m_vertices->getLocalPos(bIdx);
+
+            if (orderedVtxList[bIdx][1] == -1){
+                if ( (v1Pos - v2Pos).length() == 0 ){
+                    orderedVtxList[bIdx][1] = aIdx;
+                }
+            }
+        }
+    }
+
+    // Check if the last vtx index was assigned
+    if (orderedVtxList[numVertices-1][1] == -1){
+        orderedVtxList[numVertices-1][1] = orderedVtxList[numVertices-1][0];
+        uniqueVtxCount++;
+    }
+
+    outputVertices->resize(uniqueVtxCount*3);
+    outputTriangles->resize(numTriangles*3);
+    m_vertexTree.resize(uniqueVtxCount);
+
+    // In this loop we append the index of the newly resized array containing
+    // the unique vertices to the index of the original array of duplicated vertices.
+    // This is an example of the orderedVtxList might look like for usual run
+    // After above steps
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+    // And we want:
+    // orderedVtxList[:][0] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  4,  2,  1,  7,  4,  7, 10,  4}
+    // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  1,  4,  3,  4,  5,  3}
+    int vtxCounted = 0;
+    cVector3d vPos;
+    for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
+        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
+            vPos = mesh->m_vertices->getLocalPos(aIdx);
+            (*outputVertices)[3*vtxCounted + 0] = vPos.x();
+            (*outputVertices)[3*vtxCounted + 1] = vPos.y();
+            (*outputVertices)[3*vtxCounted + 2] = vPos.z();
+
+            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
+            vtxCounted++; // Increase the queue idx by 1
+        }
+        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
+            int bIdx = orderedVtxList[aIdx][1];
+            int cIdx = orderedVtxList[bIdx][2];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
+                // This shouldn't happend. This means that we haven't assigned the third row
+                // and row 1 is greater than row 2
+                throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : and c[b[i]] != -1";
+            }
+            orderedVtxList[aIdx][2] = cIdx;
+            m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
+        }
+        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
+            int bIdx = orderedVtxList[aIdx][1];
+            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
+                throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
+            }
+            if (orderedVtxList[bIdx][2] == -1){
+                vPos = mesh->m_vertices->getLocalPos(bIdx);
+                vtxCounted++;
+                (*outputVertices)[3*vtxCounted + 0] = vPos.x();
+                (*outputVertices)[3*vtxCounted + 1] = vPos.y();
+                (*outputVertices)[3*vtxCounted + 2] = vPos.z();
+                orderedVtxList[bIdx][2] = vtxCounted;
+            }
+            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
+        }
+    }
+
+    // This last loop iterates over the triangle idxes and assigns the re-idxd vertices from the
+    // third row of orderedVtxList
+    for (int i = 0 ; i < mesh->m_triangles->m_indices.size() ; i++){
+        int triIdx = mesh->m_triangles->m_indices[i];        if ( triIdx >= numVertices){
+            std::cerr << "ERROR ! Triangle Vtx Index " << triIdx << " >= # Vertices " << numVertices << std::endl;
+        }
+        else{
+            (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+        }
+    }
+
+    // This last loop iterates over the lines and assigns the re-idxd vertices to the
+    // lines
+    if (outputLines){
+        for (int i = 0 ; i < outputLines->size() ; i++){
+            std::vector<int> originalLine = (*outputLines)[i];
+            std::vector<int> reIndexedLine = originalLine;
+            for (int vtx = 0 ; vtx < originalLine.size() ; vtx++){
+                reIndexedLine[vtx] = orderedVtxList[ originalLine[vtx] ][2];
+            }
+            (*outputLines)[i].clear();
+            (*outputLines)[i] = reIndexedLine;
+        }
+    }
+
+    if(print_debug_info){
+        printf("*** SEQUENTIAL COMPUTE UNIQUE VERTICES AND TRIANGLE INDICES ***\n");
+
+        printf("# Unique Vertices = %d, # Duplicate Vertices = %d\n", uniqueVtxCount, duplicateVtxCount);
+
+        for (int i = 0 ; i < numVertices ; i++){
+            std::cerr << i << ")\t" << orderedVtxList[i][0] << " ,\t" << orderedVtxList[i][1] << " ,\t" << orderedVtxList[i][2] << std::endl;
+        }
+    }
+}
+
+
+bool afSoftBody::createLinksFromLines(btSoftBody *a_softBody, std::vector< std::vector<int> > *a_lines, cMesh* a_mesh){
+    if (a_softBody && a_lines){
+        for(int lIdx = 0 ; lIdx < a_lines->size() ; lIdx++){
+            std::vector<int> line = (*a_lines)[lIdx];
+
+            for(int vIdx = 0 ; vIdx < line.size() - 1 ; vIdx++){
+                int node0Idx = line[vIdx];
+                int node1Idx = line[vIdx+1];
+                int nodesSize = a_softBody->m_nodes.size();
+
+                if (node0Idx >= nodesSize){
+                    int originalVtxIdx = a_mesh->m_lines[lIdx][vIdx];
+                    btVector3 vPos = to_btVector(a_mesh->m_vertices->getLocalPos(originalVtxIdx));
+                    btSoftBody::Node n;
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                    a_softBody->m_nodes.push_back(n);
+                    node0Idx = a_softBody->m_nodes.size() - 1;
+                }
+
+                if (node1Idx >= nodesSize){
+                    int originalVtxIdx = a_mesh->m_lines[lIdx][vIdx];
+                    btVector3 vPos = to_btVector(a_mesh->m_vertices->getLocalPos(originalVtxIdx));
+                    btSoftBody::Node n;
+                    n.m_im = 1;
+                    n.m_im = 1 / n.m_im;
+                    n.m_x = vPos;
+                    n.m_q = n.m_x;
+                    n.m_n = btVector3(0, 0, 1);
+                    n.m_leaf = m_bulletSoftBody->m_ndbvt.insert(btDbvtVolume::FromCR(n.m_x, 0.1), &n);
+                    n.m_material = m_bulletSoftBody->m_materials[0];
+                    a_softBody->m_nodes.push_back(n);
+                    node1Idx = a_softBody->m_nodes.size() - 1;
+                }
+                a_softBody->appendLink(node0Idx, node1Idx);
+            }
+        }
+    }
+}
+
+
+btSoftBody* afSoftBody::createFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes,
+                                                 const unsigned int* triangles, int ntriangles, bool randomizeConstraints)
+{
+    unsigned int maxidx = 0;
+    int i, j, ni;
+
+    for (i = 0, ni = ntriangles * 3; i < ni; ++i)
+    {
+        maxidx = btMax(triangles[i], maxidx);
+    }
+    ++maxidx;
+    btAlignedObjectArray<bool> chks;
+    btAlignedObjectArray<btVector3> vtx;
+    chks.resize(maxidx * maxidx, false);
+    vtx.resize(nNodes);
+    for (i = 0, j = 0; i < nNodes * 3; ++j, i += 3)
+    {
+        vtx[j] = btVector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+    }
+    btSoftBody* psb = new btSoftBody(&worldInfo, vtx.size(), &vtx[0], 0);
+    for (i = 0, ni = ntriangles * 3; i < ni; i += 3)
+    {
+        const unsigned int idx[] = {triangles[i], triangles[i + 1], triangles[i + 2]};
+#define IDX(_x_, _y_) ((_y_)*maxidx + (_x_))
+        for (int j = 2, k = 0; k < 3; j = k++)
+        {
+            if (!chks[IDX(idx[j], idx[k])])
+            {
+                chks[IDX(idx[j], idx[k])] = true;
+                chks[IDX(idx[k], idx[j])] = true;
+                psb->appendLink(idx[j], idx[k]);
+            }
+        }
+#undef IDX
+        psb->appendFace(idx[0], idx[1], idx[2]);
+    }
+
+    if (randomizeConstraints)
+    {
+        psb->randomizeConstraints();
+    }
+
+    return (psb);
 }
 
 

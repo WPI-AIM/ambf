@@ -58,8 +58,6 @@ using namespace ambf;
 using namespace chai3d;
 using namespace std;
 //---------------------------------------------------------------------------
-#include "CBullet.h"
-//---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
 // GENERAL SETTINGS
@@ -995,7 +993,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             auto sbMap = g_afWorld->getAFSoftBodyMap();
             afSoftBodyMap::const_iterator sbIt;
             for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
-                sbIt->second->m_softMultiMesh->toggleSkeletalModelVisibility();
+                sbIt->second->toggleSkeletalModelVisibility();
             }
         }
 

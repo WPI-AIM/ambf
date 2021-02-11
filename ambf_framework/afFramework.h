@@ -47,10 +47,11 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-#include "afSoftMultiMesh.h"
 #include "afUtils.h"
 #include "afAttributes.h"
 #include "chai3d.h"
+#include "btBulletDynamicsCommon.h"
+#include "BulletSoftBody/btSoftBody.h"
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <thread>
 #include <fstream>
@@ -504,7 +505,7 @@ struct afResistiveSurface{
     double useVariableCoeff = 0.1; // Normalize Coefficients based on depthFraction
     int sourceMesh = 0; // collision mesh
 
-    bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cBulletMultiMesh* a_multiMesh);
+    bool generateResistiveSensors(afWorldPtr a_afWorld, afRigidBodyPtr a_afRigidBodyPtr, cMultiMesh* a_multiMesh);
 };
 
 ///
@@ -703,7 +704,7 @@ public:
 
     void applyTorque(const cVector3d &a_torque);
 
-    void createInertialObject();
+    virtual void createInertialObject(){}
 
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMesh* mesh);
@@ -784,6 +785,8 @@ public:
     virtual void update();
 
     virtual bool createFromAttribs(afRigidBodyAttributes* a_attribs);
+
+    virtual void createInertialObject();
 
     // Add a child to the afRidigBody tree, this method will internally populate the body graph
     virtual void addChildBodyJointPair(afRigidBodyPtr childBody, afJointPtr jnt);
@@ -953,6 +956,11 @@ class afSoftBody: public afInertialObject{
 
     friend class afModel;
 
+    struct VertexTree{
+        std::vector<int> triangleIdx;
+        std::vector<int> vertexIdx;
+    };
+
 public:
 
     afSoftBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
@@ -965,53 +973,38 @@ public:
     // Add child a softbody
     virtual void addChildBody(afSoftBodyPtr, afJointPtr){}
 
-    vector<afJointPtr> m_joints;
+    virtual void createInertialObject();
 
-    vector<afSoftBodyPtr> m_childrenBodies;
+    virtual void setLocalTransform(cTransform &trans);
 
-    vector<afSoftBodyPtr> m_parentBodies;
+    virtual void updateSceneObjects();
 
-    // Set angle of connected joint
-    void setAngle(double &angle, double dt);
+    bool generateFromMesh(cMultiMesh* mesh, const double margin);
 
-    // Set angles of connected joints
-    void setAngle(vector<double> &angle, double dt);
+    // Function to detect, index and store repeat vertices
+    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
-public:
+    // Function to detect, index and store repeat vertices
+    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<unsigned int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
-    afSoftMultiMesh* m_softMultiMesh;
+    // Helper Function to Create Links from Lines
+    bool createLinksFromLines(btSoftBody* a_sb, std::vector< std::vector<int>>* a_lines, cMesh* a_mesh);
 
-    btSoftBodyWorldInfo* m_bulletSoftBodyWorldInfo;
+    // Copied from btSoftBodyHelpers with few modifications
+    btSoftBody* createFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes, const unsigned int* triangles, int ntriangles, bool randomizeConstraints=true);
 
-protected:
+    //! This method toggles the drawing of skeletal model.
+    inline void toggleSkeletalModelVisibility(){m_visualMesh->setShowEdges(true);}
 
-    double m_scale;
+private:
+    // Ptr to scalar vertex arrays of the sofy body
+    std::vector<btScalar> m_verticesPtr;
 
-    string m_mesh_name;
+    // Ptr to Triangles arrays referring to vertices by indices
+    std::vector<unsigned int> m_trianglesPtr;
 
-    cVector3d pos;
-
-    cMatrix3d rot;
-
-    vector<afSoftBodyPtr>::const_iterator m_bodyIt;
-
-    double K_lin, D_lin;
-
-    double K_ang, D_ang;
-
-    bool _lin_gains_computed = false;
-
-    bool _ang_gains_computed = false;
-
-protected:
-
-    // Add a parent body
-    void addParentBody(afSoftBodyPtr a_body);
-
-    // Populate the parent tree
-    void populateParentsTree(afSoftBodyPtr a_body, afJointPtr a_jnt);
-
-    static afSoftBodyConfigProperties m_configProps;
+    // Vertex Tree containing vtx idx's that are repeated for a given vtx
+    std::vector<VertexTree> m_vertexTree;
 };
 
 
