@@ -17,8 +17,8 @@ raw_input("We can see what objects the client has found. Press Enter to continue
 print(_client.get_obj_names())
 
 #Let's label the baselinks for the left and right arm of Raven2
-l_handle =  _client.get_obj_handle('/ambf/env/raven_2/base_link_L')
-r_handle = _client.get_obj_handle('/ambf/env/raven_2/base_link_R')
+l_handle =  _client.get_obj_handle('raven_2/base_link_L')
+r_handle = _client.get_obj_handle('raven_2/base_link_R')
 
 '''
 #Next, let's label the wrists for the left and right arm of the Raven2
@@ -185,13 +185,13 @@ print(r_handle.get_joint_pos(0))
 #updates joint position
 for i in range(1000):
 	if not i:
-		go_home(True, True, i)
-		go_home(True, False, i)
+		homed_l = go_home(True, True, i)
+		homed_r = go_home(True, False, i)
 	else:
-		go_home(False, True, i)
-		go_home(False, False, i)
+		homed_l = go_home(False, True, i)
+		homed_r =go_home(False, False, i)
 	time.sleep(0.01)
-
+print(homed_l, homed_r)
 
 #clean up
 
