@@ -487,6 +487,7 @@ public:
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
+    afCommunicationAttributes m_communicationAttribs;
 };
 
 
@@ -509,6 +510,7 @@ public:
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
+    afCommunicationAttributes m_communicationAttribs;
 };
 
 
@@ -771,6 +773,7 @@ public:
     std::string m_chassisBodyName;
     afPath m_wheelsVisualPath;
     std::vector<afWheelAttributes> m_wheelAttribs;
+    afCommunicationAttributes m_communicationAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){

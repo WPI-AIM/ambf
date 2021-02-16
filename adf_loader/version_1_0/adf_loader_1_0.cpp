@@ -1011,6 +1011,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (directionNode.IsDefined()){
         attribs->m_direction = ADFUtils::positionFromNode(&directionNode);
@@ -1092,6 +1093,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (lookAtNode.IsDefined()){
         attribs->m_lookAt = ADFUtils::positionFromNode(&lookAtNode);
@@ -1834,6 +1836,7 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     ADFUtils adfUtils;
 
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (chassisNode.IsDefined()){
         attribs->m_chassisBodyName = chassisNode.as<string>();
