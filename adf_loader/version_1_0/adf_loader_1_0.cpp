@@ -1312,6 +1312,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
     adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
     adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
     adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
