@@ -806,7 +806,7 @@ struct afRayTracerSensorAttributes: public afSensorAttributes{
 public:
     afRayTracerSensorAttributes(){
         m_visible = false;
-        m_visibleSize = 1.0;
+        m_visibleSize = 0.001;
         m_maxImpulse = 0.5;
         m_tau = 0.5;
         m_range = 0.5;
