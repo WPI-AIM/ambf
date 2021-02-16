@@ -13,4 +13,3 @@ jobs:
       - name: Build docker image
         run: |
           docker build --tag=ambf .
-
