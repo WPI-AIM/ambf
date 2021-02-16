@@ -2599,6 +2599,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str())){
         m_visualMesh->scale(m_scale);
+        m_meshReductionSuccessful = false;
     }
     else
     {
@@ -2613,6 +2614,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         m_collisionMesh->scale(m_scale);
         // Use the visual mesh for generating the softbody
         generateFromMesh(m_collisionMesh, attribs.m_collisionAttribs.m_margin);
+//        cleanupMesh(m_visualMesh, m_vertexTree, m_trianglesPtr);
     }
     else
     {
@@ -2732,22 +2734,82 @@ void afSoftBody::createInertialObject()
 
 void afSoftBody::setLocalTransform(cTransform &trans)
 {
-    m_bulletSoftBody->setWorldTransform(to_btTransform(trans));
-    afBaseObject::setLocalTransform(trans);
+    m_bulletSoftBody->transform(to_btTransform(trans));
+}
+
+void afSoftBody::toggleSkeletalModelVisibility(){
+    if (m_visualMesh->getNumMeshes() > 0){
+        m_visualMesh->setShowEdges(!m_visualMesh->getMesh(0)->getShowEdges());
+    }
 }
 
 void afSoftBody::updateSceneObjects(){
     cMesh * mesh = m_visualMesh->getMesh(0);
 
-    for (int i = 0 ; i < m_vertexTree.size() ; i++){
-        btVector3 nodePos = m_bulletSoftBody->m_nodes[i].m_x;
-        for (int j = 0 ; j < m_vertexTree[i].vertexIdx.size() ; j++){
-            int idx = m_vertexTree[i].vertexIdx[j];
-            mesh->m_vertices->setLocalPos(idx, nodePos[0], nodePos[1], nodePos[2]);
+    if (m_meshReductionSuccessful){
+        for (int i = 0 ; i < m_bulletSoftBody->m_nodes.size() ; i++){
+            btVector3 nodePos = m_bulletSoftBody->m_nodes[i].m_x;
+            mesh->m_vertices->setLocalPos(i, nodePos[0], nodePos[1], nodePos[2]);
         }
-        mesh->markForUpdate(true);
+    }
+    else{
+        for (int i = 0 ; i < m_vertexTree.size() ; i++){
+            btVector3 nodePos = m_bulletSoftBody->m_nodes[i].m_x;
+            for (int j = 0 ; j < m_vertexTree[i].vertexIdx.size() ; j++){
+                int idx = m_vertexTree[i].vertexIdx[j];
+                mesh->m_vertices->setLocalPos(idx, nodePos[0], nodePos[1], nodePos[2]);
+            }
+        }
     }
     afBaseObject::updateSceneObjects();
+}
+
+bool afSoftBody::cleanupMesh(cMultiMesh *multiMesh, std::vector<afSoftBody::VertexTree> &a_vertexTree, std::vector<unsigned int> &a_triangles)
+{
+
+    bool valid = true;
+    //Store the elements of the mesh first.
+    cMesh* reducedMesh = new cMesh();
+    cMesh* tempMesh;
+    reducedMesh->m_vertices->allocateData(a_vertexTree.size(), true, true, true, true, true, false);
+    for (int i=0; i<a_vertexTree.size();i++){
+        unsigned int resolved_idx;
+        if (multiMesh->getVertex(a_vertexTree[i].vertexIdx[0], tempMesh, resolved_idx)){
+            cVector3d position = tempMesh->m_vertices->getLocalPos(resolved_idx);
+            cVector3d normal = tempMesh->m_vertices->getNormal(resolved_idx);
+            cVector3d tex_coord = tempMesh->m_vertices->getTexCoord(resolved_idx);
+            cVector3d tangent = tempMesh->m_vertices->getTangent(resolved_idx);
+            cVector3d bit_tangent = tempMesh->m_vertices->getBitangent(resolved_idx);
+
+            reducedMesh->m_vertices->setLocalPos(i, position);
+            reducedMesh->m_vertices->setNormal(i, normal);
+            reducedMesh->m_vertices->setTexCoord(i, tex_coord);
+            reducedMesh->m_vertices->setTangent(i, tangent);
+            reducedMesh->m_vertices->setBitangent(i, bit_tangent);
+        }
+        else{
+            // THROW SOME ERROR
+            cerr << "ERROR! EXPERIMENTAL! CANNOT CLEAN UP MESH FOR SOFT-BDOY, PLEASE CHECK LOGIC" << endl;
+            delete reducedMesh;
+            valid = false;
+            break;
+        }
+    }
+
+    if (valid){
+        for (int i=0 ;  i < a_triangles.size()/3 ; i++){
+            reducedMesh->newTriangle(a_triangles[3*i], a_triangles[3*i+1], a_triangles[3*i+2]);
+        }
+        reducedMesh->computeAllEdges();
+//        reducedMesh->computeAllNormals();
+        reducedMesh->setMaterial(multiMesh->m_material);
+        reducedMesh->setShowEdges(false);
+        multiMesh->m_meshes->clear();
+        multiMesh->addMesh(reducedMesh);
+        m_meshReductionSuccessful = true;
+    }
+
+    return valid;
 }
 
 bool afSoftBody::generateFromMesh(cMultiMesh *multiMesh, const double a_margin)
