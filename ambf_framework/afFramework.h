@@ -351,7 +351,7 @@ public:
     inline double getP_ang(){return P_ang;}
     inline double getD_ang(){return D_ang;}
 
-    inline void enable(bool a_enable){m_enabled = a_enable;}
+    inline void setEnabled(bool a_enable){m_enabled = a_enable;}
     inline bool isEnabled(){return m_enabled;}
 
     void setLinearGains(double a_P, double a_I, double a_D);
@@ -979,6 +979,8 @@ public:
 
     virtual void updateSceneObjects();
 
+    bool cleanupMesh(cMultiMesh* multiMesh, std::vector<VertexTree>& a_vertexTree, std::vector<unsigned int>& a_triangles);
+
     bool generateFromMesh(cMultiMesh* mesh, const double margin);
 
     // Function to detect, index and store repeat vertices
@@ -994,7 +996,7 @@ public:
     btSoftBody* createFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes, const unsigned int* triangles, int ntriangles, bool randomizeConstraints=true);
 
     //! This method toggles the drawing of skeletal model.
-    inline void toggleSkeletalModelVisibility(){m_visualMesh->setShowEdges(true);}
+    void toggleSkeletalModelVisibility();
 
 private:
     // Ptr to scalar vertex arrays of the sofy body
@@ -1005,6 +1007,10 @@ private:
 
     // Vertex Tree containing vtx idx's that are repeated for a given vtx
     std::vector<VertexTree> m_vertexTree;
+
+    // Boolean flag to indicate if we have been successful in reducing the mesh.
+    // A reduced mesh should speed up rendering.
+    bool m_meshReductionSuccessful;
 };
 
 

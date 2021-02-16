@@ -577,7 +577,7 @@ bool afCartesianController::createFromAttribs(afCartesianControllerAttributes *a
 
     m_positionOutputType = attribs.m_positionOutputType;
     m_orientationOutputType = attribs.m_orientationOutputType;
-
+    setEnabled(true);
     return true;
 }
 
@@ -593,7 +593,7 @@ void afCartesianController::setLinearGains(double a_P, double a_I, double a_D){
     I_lin = a_I;
     D_lin = a_D;
     // If someone sets the gains, enable the controller
-    enable(true);
+    setEnabled(true);
 }
 
 
@@ -608,7 +608,7 @@ void afCartesianController::setAngularGains(double a_P, double a_I, double a_D){
     I_ang = a_I;
     D_ang = a_D;
 
-    enable(true);
+    setEnabled(true);
 }
 
 void afCartesianController::setOutputType(afControlType type)
