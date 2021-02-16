@@ -842,6 +842,12 @@ struct afResistanceSensorAttributes: public afRayTracerSensorAttributes{
 public:
     afResistanceSensorAttributes(){
         m_useVariableCoeff = false;
+        m_staticContactFriction = 0;
+        m_dynamicFriction = 0;
+        m_contactArea = 0.1;
+        m_staticContactDamping = 0.1;
+        m_contactNormalStiffness = 0;
+        m_contactNormalDamping = 0;
     }
 
     double m_contactNormalStiffness;
