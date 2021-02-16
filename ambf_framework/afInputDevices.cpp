@@ -188,7 +188,7 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
 
             if (m_hInfo.m_modelName.compare(attribs.m_hardwareName) == 0){
                 // This is our device. Let's load it up
-                 m_CCU_Manager->m_deviceHandler->getDevice(m_hDevice, dIdx);
+                m_CCU_Manager->m_deviceHandler->getDevice(m_hDevice, dIdx);
                 m_hDevice->open();
                 // Now add the device index in a comman place
                 // to help devices that are loaded afterwards
@@ -595,7 +595,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
             return 0;
         }
         else{
-            m_afWorld->addAFModel(this);
+//            m_afWorld->addAFModel(this);
         }
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
@@ -672,6 +672,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
     setRotRef(location.getLocalRot());
     setRotRefOrigin(location.getLocalRot());
 
+    return true;
 }
 
 
@@ -850,7 +851,6 @@ bool afCollateralControlManager::createFromAttribs(afAllTeleRoboticUnitsAttribut
                 }
                 else
                 {
-                    pD->m_hDevice->close();
                     std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
                     load_status = false;
                     delete pD;

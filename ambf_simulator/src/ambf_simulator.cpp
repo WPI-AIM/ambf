@@ -390,19 +390,13 @@ int main(int argc, char* argv[])
     launchAttribs.resolveRelativePathAttribs();
 
     g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
-//    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
+    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
 
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
 
     // set the background color of the environment
     g_afWorld->m_chaiWorld->m_backgroundColor.setWhite();
-
-    //////////////////////////////////////////////////////////////////////////
-    // BULLET WORLD
-    //////////////////////////////////////////////////////////////////////////
-
-
 
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER

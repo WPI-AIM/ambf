@@ -1175,8 +1175,9 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_initialTransform = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(m_initialTransform);
 
-    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
-    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
 
     m_showActuator = attribs.m_visible;
 
@@ -1200,7 +1201,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFActuatorMap());
 
@@ -1966,15 +1967,16 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_publish_children_names = attribs.m_publishChildrenNames;
     m_publish_joint_names = attribs.m_publishJointNames;
     m_publish_joint_positions = attribs.m_publishJointPositions;
-    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
-    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
-    m_passive = attribs.m_communicationAttribs.m_passive;
+
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
 
     addChildSceneObject(m_visualMesh, cTransform());
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFRigidBodyMap());
 
@@ -2712,9 +2714,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
     m_afWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 
-    m_passive = true;
+    setPassive(true);
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSoftBodyMap());
 
@@ -3267,7 +3269,10 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_pvtB = m_afChildBody->getInverseInertialOffsetTransform() * m_pvtB;
     m_axisB = m_afChildBody->getInverseInertialOffsetTransform().getBasis() * m_axisB;
 
-    m_passive = attribs.m_communicationAttribs.m_passive;
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
+
     m_enableFeedback = attribs.m_enableFeedback;
 
     // Compute frameA and frameB from constraint axis data. This step is common
@@ -3402,8 +3407,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     }
 
     // Forcefully set passive for now.
-    m_passive = true;
-    if (m_passive == false){
+    setPassive(true);
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFJointMap());
 
@@ -3710,8 +3715,9 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         return 0;
     }
 
-    m_minPubFreq = attribs.m_communicationAttribs.m_minPublishFreq;
-    m_maxPubFreq = attribs.m_communicationAttribs.m_maxPublishFreq;
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
 
     m_showSensor = attribs.m_visible;
     m_visibilitySphereRadius = attribs.m_visibleSize;
@@ -3761,7 +3767,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         enableVisualization();
     }
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
 
@@ -3983,9 +3989,18 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
     afResistanceSensorAttributes &attribs = *a_attribs;
 
     bool result = false;
+    // Stop the communication instance from loading.
+    bool temp_passive_store = attribs.m_communicationAttribs.m_passive;
+    attribs.m_communicationAttribs.m_passive = true;
     result = afRayTracerSensor::createFromAttribs(&attribs);
 
     if (result){
+
+        attribs.m_communicationAttribs.m_passive = temp_passive_store;
+
+        setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+        setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+        setPassive(attribs.m_communicationAttribs.m_passive);
 
         m_staticContactFriction = attribs.m_staticContactFriction;
 
@@ -4013,7 +4028,7 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 
         }
 
-        if (m_passive == false){
+        if (isPassive() == false){
 
             string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
 
@@ -5662,6 +5677,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_publishDepth = attribs.m_publishDepth;
     m_depthPublishInterval = attribs.m_publishDepthInterval;
 
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
+
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
 
     addChildSceneObject(m_camera, cTransform());
@@ -5784,7 +5803,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     s_windowIdx++;
     s_cameraIdx++;
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFCameraMap());
 
@@ -6469,6 +6488,10 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
+
     bool valid = true;
 
     cTransform trans = to_cTransform(attribs.m_kinematicAttribs.m_location);
@@ -6513,9 +6536,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     }
     m_spotLight->setEnabled(true);
 
-    m_passive = false;
-
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFLightMap());
 
@@ -7255,6 +7276,10 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
+    setMinPublishFrequency(attribs.m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
+    setPassive(attribs.m_communicationAttribs.m_passive);
+
     m_chassis = m_afWorld->getAFRigidBody(attribs.m_chassisBodyName);
 
     if (m_chassis == nullptr){
@@ -7353,7 +7378,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
         wheelInfo.m_rollInfluence = m_wheelAttribs[i].m_rollInfluence;
     }
 
-    if (m_passive == false){
+    if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFVehicleMap());
 

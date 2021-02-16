@@ -254,6 +254,9 @@ public:
     // Check if object is active or passive for communication
     inline bool isPassive(){return m_passive;}
 
+    // Set as passive so it doesn't communication outside
+    inline void setPassive(bool a_passive){m_passive = a_passive;}
+
     // Get Name of this object
     inline string getName(){return m_name;}
 
@@ -268,6 +271,12 @@ public:
     // Get Max publishing frequency for this object
     inline int getMaxPublishFrequency(){return m_maxPubFreq;}
 
+    // Set Min publishing frequency for this object
+    inline void setMinPublishFrequency(int freq){m_minPubFreq = freq;}
+
+    // Set Max publishing frequency for this object
+    inline void setMaxPublishFrequency(int freq){m_maxPubFreq = freq;}
+
     // Get the type of communication instance
     afObjectType getCommType(){return m_commType;}
 
@@ -276,9 +285,6 @@ public:
 
     // Set namespace for this object
     inline void setNamespace(string a_namespace){m_namespace = a_namespace; }
-
-    // Set as passive so it doesn't communication outside
-    inline void setPassive(bool a_passive){m_passive = a_passive;}
 
 public:
 
@@ -292,15 +298,6 @@ public:
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
-
-    // Min publishing frequency
-    uint m_minPubFreq=50;
-
-    // Max publishing frequency
-    uint m_maxPubFreq=1000;
-
-    // If passive, this instance will not be reported for communication purposess.
-    bool m_passive = false;
 
     string m_name;
 
@@ -324,6 +321,16 @@ protected:
 
 private:
     afObjectType m_commType;
+
+
+    // Min publishing frequency
+    uint m_minPubFreq=50;
+
+    // Max publishing frequency
+    uint m_maxPubFreq=1000;
+
+    // If passive, this instance will not be reported for communication purposess.
+    bool m_passive = false;
 };
 
 
@@ -1068,8 +1075,6 @@ public:
 
     // Method to remove the afJoint
     void remove();
-
-    bool isPassive(){return m_passive;}
 
     bool isFeedBackEnabled(){return m_enableFeedback;}
 
