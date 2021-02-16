@@ -2053,7 +2053,7 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
         afTeleRoboticUnitAttributes tuAttribs;
         std::string devName = inputDevicesNode[i].as<std::string>();
         YAML::Node tuNode = node[devName];
-        bool results[3] = {false, false, false};
+        bool results[2] = {false, false};
         if (loadInputDeviceAttributes(&tuNode, &tuAttribs.m_iidAttribs)){
             results[0] = true;
         }
@@ -2069,10 +2069,9 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
                 string camName = pairCamerasNode[i].as<string>();
                 tuAttribs.m_pairedCamerasNames.push_back(camName);
             }
-            results[2] = true;
         }
 
-        if (results[0] == true && results[1] == true && results[2] == true){
+        if (results[0] == true && results[1] == true){
             attribs->m_teleRoboticUnitsAttribs.push_back(tuAttribs);
         }
         else{
