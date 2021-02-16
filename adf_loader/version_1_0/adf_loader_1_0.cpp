@@ -1904,6 +1904,10 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     if (hapticGainNode.IsDefined()){
         attribs->m_controllerAttribs.P_lin = hapticGainNode["linear"].as<double>();
         attribs->m_controllerAttribs.P_ang = hapticGainNode["angular"].as<double>();
+        attribs->m_controllerAttribs.I_lin = 0;
+        attribs->m_controllerAttribs.I_ang = 0;
+        attribs->m_controllerAttribs.D_lin = 0;
+        attribs->m_controllerAttribs.D_ang = 0;
     }
 
     if (deadbandNode.IsDefined()){
