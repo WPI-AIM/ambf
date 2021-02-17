@@ -102,7 +102,7 @@ public:
 
 class Client{
 public:
-    Client();
+    Client(std::string a_name="");
     ~Client(void);
 
     void connect();

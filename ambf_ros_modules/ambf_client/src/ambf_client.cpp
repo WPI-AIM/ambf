@@ -37,10 +37,13 @@
 #include "ambf_client/ambf_client.h"
 #include <string>
 
-Client::Client(){
+Client::Client(std::string a_name){
     int argc = 0;
     char **argv = 0;
-    ros::init(argc, argv, "ambf_client");
+    if (a_name.empty()){
+        a_name = "ambf_client_cpp";
+    }
+    ros::init(argc, argv, a_name);
     ros::shutdown();
     usleep(1000000);
 }
