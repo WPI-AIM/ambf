@@ -1,7 +1,4 @@
 cmake_minimum_required(VERSION 2.8.3)
-if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-endif (POLICY CMP0048)
 project(dvrk_ambf_extensions)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -36,4 +33,3 @@ catkin_package(
  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
-

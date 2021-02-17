@@ -38,9 +38,6 @@
 #  $Rev: 1.0$
 
 cmake_minimum_required(VERSION 2.8.3)
-if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-endif (POLICY CMP0048)
 project(ambf_client)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -58,7 +55,7 @@ message_generation)
 #catkin_python_setup()
 
 catkin_package( INCLUDE_DIRS include
-  LIBRARIES ambf_client
+  LIBRARIES ambf_client_cpp
   CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
@@ -123,13 +120,13 @@ set (ENV_SRC_FILES
 
 
 ## Declare a C++ library
-add_library(ambf_client ${ENV_HDR_FILES} ${ENV_SRC_FILES})
+add_library(ambf_client_cpp ${ENV_HDR_FILES} ${ENV_SRC_FILES})
 
-add_dependencies(ambf_client ${catkin_EXPORTED_TARGETS})
+add_dependencies(ambf_client_cpp ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ambf_client ${catkin_LIBRARIES})
+target_link_libraries(ambf_client_cpp ${catkin_LIBRARIES})
 
 set (AMBF_CLIENT_INCLUDE_DIRS include)
-set (AMBF_CLIENT_LIBRARIES ambf_client)
+set (AMBF_CLIENT_LIBRARIES ambf_client_cpp)
