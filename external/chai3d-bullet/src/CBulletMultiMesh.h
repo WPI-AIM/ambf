@@ -127,13 +127,13 @@ public:
 public:
 
     //! This method creates a Bullet collision model for this object.
-    virtual void buildContactConvexTriangles(const double a_margin = 0.01);
+    virtual void buildContactConvexTriangles(const double a_margin = 0.01, cMultiMesh *lowResMesh = NULL);
 
     //! This method creates a Bullet collision model for this object.
     virtual void buildContactTriangles(const double a_margin = 0.01, cMultiMesh *lowResMesh = NULL) ;
 
     //! This method creates a Bullet collision model for this object.
-    virtual void buildContactHull(const double a_margin = 0.01);
+    virtual void buildContactHull(const double a_margin = 0.01, cMultiMesh *lowResMesh = NULL);
 };
 
 //------------------------------------------------------------------------------

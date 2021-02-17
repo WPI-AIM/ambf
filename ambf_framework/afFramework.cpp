@@ -1510,6 +1510,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyCompoundShape = bodyNode["compound shape"];
     YAML::Node bodyGeometry = bodyNode["geometry"];
     YAML::Node bodyCollisionMesh = bodyNode["collision mesh"];
+    YAML::Node bodyCollisionMeshType = bodyNode["collision mesh type"];
     YAML::Node bodyCollisionShape = bodyNode["collision shape"];
     YAML::Node bodyCompoundCollisionShape = bodyNode["compound collision shape"];
     YAML::Node bodyCollisionOffset = bodyNode["collision offset"];
@@ -1968,8 +1969,31 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                 }
             }
 
-            // Use the mesh data to build the collision shape
-            buildContactTriangles(collision_margin, &m_lowResMesh);
+            if (bodyCollisionMeshType.IsDefined()){
+                std::cerr << "INFO! LOADING LOW RES MESH NAMES " << low_res_filepath.c_str() << std::endl;
+                std::string mesh_type = bodyCollisionMeshType.as<std::string>();
+                if (mesh_type.compare("CONVEX_HULL") == 0){
+                    buildContactHull(collision_margin, &m_lowResMesh);
+                    std::cerr << "INFO! FOR " << m_name << " CREATING CONVEX HULL FROM COLLISION MESH (CASE 1)" << std::endl;
+                }
+                else if(mesh_type.compare("CONVEX_TRIANGLES") == 0){
+                    buildContactConvexTriangles(collision_margin, &m_lowResMesh);
+                    std::cerr << "INFO! FOR " << m_name << " CREATING CONVEX TRIANGLES FROM COLLISION MESH (CASE 2)" << std::endl;
+                }
+                else if(mesh_type.compare("TRIMESH") == 0){
+                    buildContactTriangles(collision_margin, &m_lowResMesh);
+                    std::cerr << "INFO! FOR " << m_name << " CREATING TRIANGLE MESH FROM COLLISION MESH (CASE 3)" << std::endl;
+                }
+                else{
+                     std::cerr << "ERROR! FOR " << m_name << " COLLISION MESH TYPE NOT UNDERSTOOD" << std::endl;
+                     // Use the mesh data to build the collision shape
+                     buildContactTriangles(collision_margin, &m_lowResMesh);
+                }
+            }
+            else{
+                // Use the mesh data to build the collision shape
+                buildContactTriangles(collision_margin, &m_lowResMesh);
+            }
         }
         else{
             std::cerr << "WARNING: Body "

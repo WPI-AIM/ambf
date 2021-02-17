@@ -262,16 +262,27 @@ void cBulletMultiMesh::buildContactTriangles(const double a_margin, cMultiMesh* 
     This method creates a Bullet collision model for this object.
 */
 //==============================================================================
-void cBulletMultiMesh::buildContactConvexTriangles(const double a_margin)
+void cBulletMultiMesh::buildContactConvexTriangles(const double a_margin, cMultiMesh* lowResMesh)
 {
     // create compound shape
     btCompoundShape* compound = new btCompoundShape();
     m_bulletCollisionShape = compound;
 
+    std::vector<cMesh*> *v_meshes;
+    if (lowResMesh ){
+        v_meshes = lowResMesh->m_meshes;
+    }
+    else{
+        v_meshes = m_meshes;
+    }
+
+    int nMesh = 0;
     // create collision detector for each mesh
     std::vector<cMesh*>::iterator it;
-    for (it = m_meshes->begin(); it < m_meshes->end(); it++)
+    for (it = v_meshes->begin(); it < v_meshes->end(); it++)
     {
+        std::cerr << "CREATING CONVEX TRIANGLE MESH FROM MESH NUMBER " << nMesh << std::endl;
+        nMesh++;
         cMesh* mesh = (*it);
 
         // bullet mesh
@@ -341,16 +352,29 @@ void cBulletMultiMesh::buildContactConvexTriangles(const double a_margin)
     This method creates a Bullet collision model for this object.
 */
 //==============================================================================
-void cBulletMultiMesh::buildContactHull(const double a_margin)
+void cBulletMultiMesh::buildContactHull(const double a_margin, cMultiMesh* lowResMesh)
 {
     // create compound shape
     btCompoundShape* compound = new btCompoundShape();
     m_bulletCollisionShape = compound;
 
+    std::vector<cMesh*> *v_meshes;
+    if (lowResMesh ){
+        v_meshes = lowResMesh->m_meshes;
+    }
+    else{
+        v_meshes = m_meshes;
+    }
+
+    std::cerr << "INFO! NUMBER OF MESHES FOR CONVEX HULL " << lowResMesh->getNumMeshes() << std::endl;
+
+    int nMesh = 0;
     // create collision detector for each mesh
     std::vector<cMesh*>::iterator it;
-    for (it = m_meshes->begin(); it < m_meshes->end(); it++)
+    for (it = v_meshes->begin(); it < v_meshes->end(); it++)
     {
+        std::cerr << "CREATING CONVEX HULL FROM MESH NUMBER " << nMesh << std::endl;
+        nMesh++;
         cMesh* mesh = (*it);
 
         // create convex hull
