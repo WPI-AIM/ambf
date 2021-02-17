@@ -3288,7 +3288,7 @@ bool afSoftBody::loadSoftBody(YAML::Node* sb_node, std::string node_name, afMult
         double r = softBodyRot["r"].as<double>();
         double p = softBodyRot["p"].as<double>();
         double y = softBodyRot["y"].as<double>();
-        rot.setExtrinsicEulerRotationRad(y,p,r,cEulerOrder::C_EULER_ORDER_XYZ);
+        rot.setExtrinsicEulerRotationRad(r, p, y,cEulerOrder::C_EULER_ORDER_XYZ);
         setLocalRot(rot);
     }
 
