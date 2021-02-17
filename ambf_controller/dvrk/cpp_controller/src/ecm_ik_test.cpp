@@ -1,4 +1,4 @@
-#include "ECM.h"
+#include "ecm_ik_test.h"
 
 ECM::ECM(){}
 
@@ -66,7 +66,7 @@ std::vector<float> ECM::computeIK(Matrix4f T_4_0) {
 
 
 void ECM::testIK() {
-    Client client;
+    Client client("ecm_ik_test");
     client.connect();
     usleep(20000);
 
@@ -95,7 +95,7 @@ void ECM::testIK() {
 
     Eigen::Matrix4f T_0_w = utilities.get_frame(R_0_w, P_0_w);
 
-    int n_poses = 5;
+    int n_poses = 20;
     for(int i = 0; i < n_poses; i++) {
         std::vector<float> desired_q;
 
@@ -143,7 +143,7 @@ void ECM::testIK() {
                   << std::roundf(desired_q[3] - computed_q[3]) << ", "
                   << std::endl;
 
-        usleep(1000000);
+        usleep(250000);
     }
 }
 

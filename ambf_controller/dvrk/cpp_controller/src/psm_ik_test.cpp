@@ -1,4 +1,4 @@
-#include "PSM.h"
+#include "psm_ik_test.h"
 
 PSM::PSM() {}
 
@@ -147,7 +147,7 @@ std::vector<float> PSM::testIK(const std::vector<float> desired_q) {
 
 //This have some bugs, needs further refining.
 void PSM::testAmbfPsm() {
-    Client client;
+    Client client("psm_ik_test");
     client.connect();
     usleep(20000);
 
@@ -226,7 +226,7 @@ void PSM::testAmbfPsm() {
                   << std::roundf(desired_q[6] - computed_q[6]) << ", "
                   << std::roundf(desired_q[7] - computed_q[7]) << ", "
                   << std::endl;
-        usleep(1000000);
+        usleep(500000);
     }
 
     client.cleanUp();

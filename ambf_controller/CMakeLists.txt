@@ -59,12 +59,12 @@ add_executable (ambf_controller raven2/include/ambf_defines.h
 target_link_libraries (ambf_controller ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
 
 set (PSM_IK_HDR_FILES
-    dvrk/cpp_controller/include/PSM.h
+    dvrk/cpp_controller/include/psm_ik_test.h
     dvrk/cpp_controller/include/DH.h
     dvrk/cpp_controller/include/Utilities.h)
 
 set(PSM_IK_SOURCE_FILES
-    dvrk/cpp_controller/src/PSM.cpp
+    dvrk/cpp_controller/src/psm_ik_test.cpp
     dvrk/cpp_controller/src/DH.cpp
     dvrk/cpp_controller/src/Utilities.cpp)
 
@@ -73,12 +73,12 @@ target_link_libraries (psm_ik_test ${AMBF_LIBRARIES} ${AMBF_CLIEMT_LIBRARIES} ${
 
 
 set (ECM_IK_HDR_FILES
-    dvrk/cpp_controller/include/ECM.h
+    dvrk/cpp_controller/include/ecm_ik_test.h
     dvrk/cpp_controller/include/DH.h
     dvrk/cpp_controller/include/Utilities.h)
 
 set(ECM_IK_SOURCE_FILES
-    dvrk/cpp_controller/src/ECM.cpp
+    dvrk/cpp_controller/src/ecm_ik_test.cpp
     dvrk/cpp_controller/src/DH.cpp
     dvrk/cpp_controller/src/Utilities.cpp)
 
