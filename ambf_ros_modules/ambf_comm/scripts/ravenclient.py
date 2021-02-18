@@ -10,6 +10,7 @@ _client = Client()
 # Connect the client which in turn creates callable objects from ROS topics
 # and initiates a shared pool of threads for bi-directional communication
 _client.connect()
+homed = [False, False]
 
 print('\n\n----')
 raw_input("We can see what objects the client has found. Press Enter to continue...")
@@ -146,7 +147,10 @@ start_jp = np.zeros((2,7)) #indexed at 0
 delta_jp = np.zeros((2,7)) 
 
 #starting positions --> need to be finalized
-home_joints = [math.pi*(3/4), math.pi*(3/5), -0.09, math.pi*(3/4), 0, math.pi*(1/6), math.pi*(1/6)]
+home_joints = [math.pi/3, math.pi*3/5, -0.09, math.pi*3/4, 0, math.pi/6, math.pi/6]
+dance_scale_joints = [0.3, 0.3, 0.06, 0.3, 1.2, math.pi*(3/4), math.pi*(3/4)]
+loop_rate = 1000
+raven_joints = 7
 def go_home(first_entry, arm, count):
 	'''
 	first entry --> bool
@@ -163,35 +167,88 @@ def go_home(first_entry, arm, count):
 			start_jp[arm][i] = state.get_joint_pos(i)
 			delta_jp[arm][i] = home_joints[i] - state.get_joint_pos(i)
 	#gradualizes movement from a to b
-	scale = min(float(1.0*count/1000), float(1.0))
+	scale = min(1.0*count/loop_rate, 1.0)
 	#array containing distance to go to start point
-	diff_jp = np.zeros((1,7))
+	diff_jp = [0,0,0,0,0,0,0]
 
 	#sets position for each joint
 	for i in range(state.get_num_joints()):
 		state.set_joint_pos(i, scale * delta_jp[arm][i] + start_jp[arm][i])
-		diff_jp[0][i] = abs(home_joints[i] - state.get_joint_pos(i))
+		diff_jp[i] = abs(home_joints[i] - state.get_joint_pos(i))
 	#in progress, indicates when arm is honed
-	max_value = max(diff_jp[0])
-	if(max_value < 0.1): homed = True 
-	else: homed = False 
-	
-	return homed
 
+	
+	max_value = np.max(diff_jp)
+
+	if(max_value < 0.1):
+		#for i in range(7):
+			#print("joint num " + str(i) + "joint position " + str(state.get_joint_pos(i)))
+		return True 
+
+	else: 
+		return False 
+
+
+
+
+
+
+def sine_dance(first_entry, arm, count): #first entry --> bool, arm --> int, 0 or 1
+    rampup_count = np.zeros((2,1))
+    speed = 1.00/loop_rate
+    #rampup_speed = 0.05/loop_rate
+    if(arm):
+    	state = l_handle
+    else:
+    	state = r_handle
+    if(first_entry or not homed[arm]):
+       	i = 0
+       	while not homed[arm]:
+       		i += 1
+       		homed[arm] = go_home(first_entry, arm, i)
+       		time.sleep(0.01)
+    else:
+        #starts sine dance
+        for i in range(raven_joints):
+            offset = (i+arm)*(math.pi/2)
+            #rampup = min(rampup_speed*rampup_count[arm][0], 1.0)
+            state.set_joint_pos(i, dance_scale_joints[i]*math.sin(speed*count+offset)+home_joints[i])
+            #print("joint number" + str(i) + " joint angle" + str(dance_scale_joints[i]*math.sin(speed*count+offset)+home_joints[i]))
+            #rampup_count[arm] += 1
+	        
 #displays start position for first joint
-print(l_handle.get_joint_pos(0))
-print(r_handle.get_joint_pos(0))
+#rint(l_handle.get_joint_pos(0))
+#print(ndle.get_joint_pos(0))
 
 #updates joint position
+
+i = 0
+for i in range(loop_rate):
+	if not i:
+		homed[0] = go_home(1, 1, i)
+		homed[1] = go_home(1, 0, i)
+	else:
+		homed[0] = go_home(0, 1, i)
+		homed[1] = go_home(0, 0, i)
+	time.sleep(0.01)
+	i += 1
+print(homed)
+print(i)
+
+
+
+
+
+'''
 for i in range(1000):
 	if not i:
-		homed_l = go_home(True, True, i)
-		homed_r = go_home(True, False, i)
+		sine_dance(1, 1, i)
+		sine_dance(1, 0, i)
 	else:
-		homed_l = go_home(False, True, i)
-		homed_r =go_home(False, False, i)
+		sine_dance(0, 1, i)
+		sine_dance(0, 0, i)
 	time.sleep(0.01)
-print(homed_l, homed_r)
+'''
 
 #clean up
 
