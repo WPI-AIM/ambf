@@ -148,16 +148,16 @@ delta_jp = np.zeros((2,7))
 
 #starting positions --> need to be finalized
 home_joints = [math.pi/3, math.pi*3/5, -0.09, math.pi*3/4, 0, math.pi/6, math.pi/6]
-dance_scale_joints = [0.3, 0.3, 0.06, 0.3, 1.2, math.pi*(3/4), math.pi*(3/4)]
+dance_scale_joints = [0.3, 0.3, 0.06, 0.3, 1.2, math.pi/6, math.pi/6]
 loop_rate = 1000
 raven_joints = 7
 def go_home(first_entry, arm, count):
 	'''
 	first entry --> bool
-	arm --> bool (true for left, false for right)
+	arm --> bool (0 for left, 1 for right)
 	count --> int
 	'''
-	if(arm): #decides which arm...
+	if not arm: #decides which arm...
 			state = l_handle
 	else:
 			state = r_handle
@@ -183,45 +183,42 @@ def go_home(first_entry, arm, count):
 	if(max_value < 0.1):
 		#for i in range(7):
 			#print("joint num " + str(i) + "joint position " + str(state.get_joint_pos(i)))
-		return True 
+		homed[arm] = True 
 
 	else: 
-		return False 
+		homed[arm] = False 
+	return homed[arm]
+
+
+test_neg_pos = np.array([0,0])
+
+def sine_dance(first_entry, arm, count, rampup_count):
+	speed = 1.00/loop_rate
+	rampup_speed = 0.05/loop_rate
+	if not arm:
+		state = l_handle
+	else:
+		state = r_handle
+
+	if (not homed[arm]):
+		go_home(first_entry, arm, count)
+		
+	else:
+		for i in range(raven_joints):
+			offset = (i+arm)*math.pi/2
+			#print("offset = " + str(offset))
+			rampup = min(rampup_speed*rampup_count[arm], 1.0)
+			#print("rampup = " + str(rampup))
+			state.set_joint_pos(i, rampup*dance_scale_joints[i]*math.sin(speed*count+offset)+home_joints[i])
+			#print("movement for joint " + str(i) + " = " + str(rampup*dance_scale_joints[i]*math.sin(speed*count+offset)))
+			rampup_count[arm] += 1
 
 
 
 
-
-
-def sine_dance(first_entry, arm, count): #first entry --> bool, arm --> int, 0 or 1
-    rampup_count = np.zeros((2,1))
-    speed = 1.00/loop_rate
-    #rampup_speed = 0.05/loop_rate
-    if(arm):
-    	state = l_handle
-    else:
-    	state = r_handle
-    if(first_entry or not homed[arm]):
-       	i = 0
-       	while not homed[arm]:
-       		i += 1
-       		homed[arm] = go_home(first_entry, arm, i)
-       		time.sleep(0.01)
-    else:
-        #starts sine dance
-        for i in range(raven_joints):
-            offset = (i+arm)*(math.pi/2)
-            #rampup = min(rampup_speed*rampup_count[arm][0], 1.0)
-            state.set_joint_pos(i, dance_scale_joints[i]*math.sin(speed*count+offset)+home_joints[i])
-            #print("joint number" + str(i) + " joint angle" + str(dance_scale_joints[i]*math.sin(speed*count+offset)+home_joints[i]))
-            #rampup_count[arm] += 1
-	        
-#displays start position for first joint
-#rint(l_handle.get_joint_pos(0))
-#print(ndle.get_joint_pos(0))
 
 #updates joint position
-
+'''
 i = 0
 for i in range(loop_rate):
 	if not i:
@@ -235,20 +232,28 @@ for i in range(loop_rate):
 print(homed)
 print(i)
 
-
-
-
-
 '''
-for i in range(1000):
+
+print('\n\n----')
+raw_input("Sine dance?")
+rc = [0,0]
+rampup_count = np.array(rc)
+i = 0
+k = 0
+while i <= loop_rate:
 	if not i:
-		sine_dance(1, 1, i)
-		sine_dance(1, 0, i)
+		sine_dance(1, 1, k, rampup_count)
+		sine_dance(1, 0, k, rampup_count)
+		k += 1
+		if homed:
+			i += 1
 	else:
-		sine_dance(0, 1, i)
-		sine_dance(0, 0, i)
+		sine_dance(0, 1, i, rampup_count)
+		sine_dance(0, 0, i, rampup_count)
+		i += 1
 	time.sleep(0.01)
-'''
+	#print("left joint pos = " + str(l_handle.get_all_joint_pos()))
+	#print("right joint pos = " + str(r_handle.get_all_joint_pos()))
 
 #clean up
 
