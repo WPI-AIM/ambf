@@ -417,8 +417,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 _P = pDControllerGain["linear"]["P"].as<double>();
                 _D = pDControllerGain["linear"]["D"].as<double>();
                 m_controller.setLinearGains(_P, 0, _D);
+                m_controller.m_positionOutputType = afControlType::force;
                 linGainsDefined = true;
-                m_controller.m_positionOutputType == afControlType::force;
             }
 
             // Check if the angular controller is defined
@@ -427,8 +427,8 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
                 _P = pDControllerGain["angular"]["P"].as<double>();
                 _D = pDControllerGain["angular"]["D"].as<double>();
                 m_controller.setAngularGains(_P, 0, _D);
+                m_controller.m_orientationOutputType = afControlType::force;
                 angGainsDefined = true;
-                m_controller.m_orientationOutputType == afControlType::force;
             }
         }
         if(!linGainsDefined){
