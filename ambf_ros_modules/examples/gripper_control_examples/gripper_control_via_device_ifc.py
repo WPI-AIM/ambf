@@ -42,7 +42,7 @@
 # */
 # //==============================================================================
 
-from mimic import ProxyMTM
+from proxy_device import ProxyMTM
 import rospy
 import time
 import postion_control_util as PU
