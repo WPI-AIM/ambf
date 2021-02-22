@@ -1553,6 +1553,7 @@ void updatePhysics(){
                 pCommand = simDev->P_lc_ramp * pCommand;
 
                 rCommand = phyDev->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+                rCommand = simDev->P_ac_ramp * rCommand;
 
                 if (phyDev->m_controller.m_positionOutputType == afControlType::force){
                     simDev->applyForce(pCommand);
@@ -1753,7 +1754,7 @@ void updateHapticDevice(void* a_arg){
             if(g_inputDevices->m_cam_btn_pressed){
                 if(phyDev->btn_cam_rising_edge){
                     phyDev->btn_cam_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef()/ phyDev->m_workspaceScale);
+                    simDev->setPosRefOrigin(simDev->getPosRef());
                     simDev->setRotRefOrigin(simDev->getRotRef());
                 }
                 phyDev->setPosClutched(phyDev->getPos());
@@ -1765,7 +1766,7 @@ void updateHapticDevice(void* a_arg){
             if(g_inputDevices->m_clutch_btn_pressed){
                 if(phyDev->btn_clutch_rising_edge){
                     phyDev->btn_clutch_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef() / phyDev->m_workspaceScale);
+                    simDev->setPosRefOrigin(simDev->getPosRef());
                     simDev->setRotRefOrigin(simDev->getRotRef());
                 }
                 phyDev->setPosClutched(phyDev->getPos());
@@ -1775,8 +1776,7 @@ void updateHapticDevice(void* a_arg){
                 phyDev->btn_clutch_rising_edge = true;
             }
 
-            simDev->setPosRef(phyDev->m_workspaceScale * (simDev->getPosRefOrigin() +
-                                                          (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) );
+            simDev->setPosRef(simDev->getPosRefOrigin() + phyDev->m_workspaceScale * ((devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) );
             if (!g_inputDevices->m_use_cam_frame_rot){
                 simDev->setRotRef(simDev->getRotRefOrigin() * devCams[0]->getLocalRot() *
                         cTranspose(phyDev->getRotClutched()) * phyDev->getRot() *
