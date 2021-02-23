@@ -1589,6 +1589,7 @@ void updatePhysics(){
             pCommand = simDev->P_lc_ramp * pCommand;
 
             rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+            rCommand = simDev->P_ac_ramp * rCommand;
 
             if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
                 simDev->applyForce(pCommand);
@@ -1819,7 +1820,7 @@ void updateHapticDevice(void* a_arg){
                         cTranspose(devCams[0]->getLocalRot()));
             }
             else{
-                simDev->setRotRef(simDev->getSimRotInitial() * phyDev->getSimRotOffsetInverse() * phyDev->getRot() * phyDev->getSimRotOffset());
+                simDev->setRotRef(simDev->getSimRotInitial() * phyDev->getSimRotOffset() * phyDev->getRot() * phyDev->getSimRotOffsetInverse());
             }
 
             if (phyDev->m_showMarker){
