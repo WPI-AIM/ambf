@@ -1957,10 +1957,10 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
     cTransform T_mINw = T_iINw * to_cTransform(getInertialOffsetTransform());
 
+    createInertialObject();
+
     setInitialTransform(T_mINw);
     setLocalTransform(T_mINw);
-
-    createInertialObject();
 
     setSurfaceProperties(attribs.m_surfaceAttribs);
 
