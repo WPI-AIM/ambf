@@ -403,6 +403,8 @@ private:
 class afJointController: public afJointControllerAttributes{
 public:
 
+    afJointController();
+
     bool createFromAttribs(afJointControllerAttributes *a_attribs);
 
     // Set some default values of PID
@@ -418,6 +420,9 @@ public:
     double output;
     double m_maxImpulse;
     double max_effort;
+
+    // The min dt allowed.
+    double m_min_dt = 0.00001;
 
     // Store the last effort command to compute and bound max impulse
     double m_last_cmd = 0;

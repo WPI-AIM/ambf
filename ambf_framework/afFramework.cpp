@@ -2572,6 +2572,7 @@ afRigidBody::~afRigidBody(){
 void afRigidBody::setLocalTransform(cTransform &trans)
 {
     m_bulletMotionState->setWorldTransform(to_btTransform(trans));
+    m_bulletRigidBody->setCenterOfMassTransform(to_btTransform(trans));
     afBaseObject::setLocalTransform(trans);
 }
 
@@ -3110,6 +3111,9 @@ btSoftBody* afSoftBody::createFromMesh(btSoftBodyWorldInfo& worldInfo, const btS
 /// \param current_time
 /// \return
 ///
+afJointController::afJointController(){
+}
+
 bool afJointController::createFromAttribs(afJointControllerAttributes *a_attribs)
 {
     afJointControllerAttributes& attribs = *a_attribs;
@@ -3133,9 +3137,11 @@ double afJointController::computeOutput(double process_val, double set_point, do
     }
     t[n] = current_time;
     e[n] = set_point - process_val;
+    // Clamp freq to 10 KHZ
     double dt = t[n] - t[n-1];
-    if (dt <= 0.0){
-        dt = 0.0000001;
+    if (dt <= m_min_dt){
+        cerr << "WARNING! JOINT CONTROLLER dt = " << dt << " Sec. Clamping to " << m_min_dt << " Sec." << endl;
+        dt = m_min_dt;
     }
     de[n] = (e[n] - e[n-1]) / dt;
     ie[n] = Ie_sum + ((e[n] + e[n-1]) / 2 * dt);
