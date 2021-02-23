@@ -3428,6 +3428,13 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     return true;
 }
 
+void afJoint::fetchCommands(double dt){
+    cacheState(dt);
+}
+
+void afJoint::update(){
+}
+
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
 {
     btVector3 jINp;
@@ -3448,6 +3455,15 @@ btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
     return jINp;
 }
 
+void afJoint::cacheState(const double &dt){
+    for (uint i = 0 ; i < m_jpSize-1 ; i++){
+        m_posArray[i] = m_posArray[i+1];
+        m_dtArray[i] = m_dtArray[i+1];
+    }
+    m_posArray[m_jpSize-1] = getPosition();
+    m_dtArray[m_jpSize-1] = dt;
+}
+
 
 void afJoint::remove(){
     if (m_btConstraint){
@@ -3460,13 +3476,6 @@ void afJoint::remove(){
 /// \brief afJoint::applyDamping
 ///
 void afJoint::applyDamping(const double &dt){
-    // First lets configure what type of joint is this.
-    for (uint i = 0 ; i < m_jpSize-1 ; i++){
-        m_posArray[i] = m_posArray[i+1];
-        m_dtArray[i] = m_dtArray[i+1];
-    }
-    m_posArray[m_jpSize-1] = getPosition();
-    m_dtArray[m_jpSize-1] = dt;
     double effort = - m_damping * getVelocity();
     // Since we are applying damping internally, don't override the motor
     // enable/disable as an external controller may be using the motor.

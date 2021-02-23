@@ -1043,7 +1043,13 @@ public:
 
     virtual bool createFromAttribs(afJointAttributes* a_attribs);
 
+    virtual void fetchCommands(double);
+
+    virtual void update();
+
     btVector3 getDefaultJointAxisInParent(afJointType a_type);
+
+    void cacheState(const double &dt);
 
     // Apply damping to this joint
     void applyDamping(const double &dt=0.001);
