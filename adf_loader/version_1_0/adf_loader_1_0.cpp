@@ -2089,8 +2089,14 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
 
 bool ADFLoader_1_0::loadModelAttribs(string a_filepath, afModelAttributes *attribs){
     attribs->m_filePath = afPath(a_filepath);
-    YAML::Node node = YAML::LoadFile(a_filepath);
-    return loadModelAttribs(&node, attribs);
+    try{
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        return loadModelAttribs(&node, attribs);
+    }
+    catch(exception e){
+        std::cerr << e.what();
+        return false;
+    }
 }
 
 
@@ -2252,8 +2258,14 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
 
 bool ADFLoader_1_0::loadWorldAttribs(string a_filepath, afWorldAttributes *attribs){
     attribs->m_filePath = afPath(a_filepath);
+    try{
     YAML::Node node = YAML::LoadFile(a_filepath);
     return loadWorldAttribs(&node, attribs);
+    }
+    catch(exception e){
+        cerr << e.what() ;
+        return false;
+    }
 }
 
 
@@ -2370,10 +2382,15 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
 
 bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes *attribs){
     attribs->m_filePath = afPath(a_filepath);
-    YAML::Node node = YAML::LoadFile(a_filepath);
-    return loadLaunchFileAttribs(&node, attribs);
+    try{
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        return loadLaunchFileAttribs(&node, attribs);
+    }
+    catch(exception e){
+        cerr << e.what();
+        return false;
+    }
 }
-
 
 bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes *attribs)
 {

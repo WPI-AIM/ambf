@@ -60,8 +60,14 @@ using namespace adf_loader_1_0;
 ///
 adfVersion ADFLoaderInterface::getFileVersion(string a_filepath)
 {
-    YAML::Node node = YAML::LoadFile(a_filepath);
-    return getFileVersion(&node, a_filepath);
+    try{
+        YAML::Node node = YAML::LoadFile(a_filepath);
+        return getFileVersion(&node, a_filepath);
+    }
+    catch(exception e){
+        cerr << e.what();
+        return adfVersion::INVALID;
+    }
 }
 
 adfVersion ADFLoaderInterface::getFileVersion(YAML::Node *a_node, string a_filepath)
@@ -158,10 +164,15 @@ bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, 
         return false;
     }
     else{
-        YAML::Node node = YAML::LoadFile(a_filepath);
-        return m_loader->loadObjectAttribs(&node, a_objName, a_type, attribs);
+        try{
+            YAML::Node node = YAML::LoadFile(a_filepath);
+            return m_loader->loadObjectAttribs(&node, a_objName, a_type, attribs);
+        }
+        catch (exception e){
+            cerr << e.what();
+            return false;
+        }
     }
-
 }
 
 
