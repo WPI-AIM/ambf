@@ -590,6 +590,10 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         return 0;
     }
 
+    for (int i = 0 ; i < attribs.m_modelAttribs.m_rigidBodyAttribs.size() ; i++){
+        attribs.m_modelAttribs.m_rigidBodyAttribs[i].m_communicationAttribs.m_passive = true;
+    }
+
     if (attribs.m_sdeDefined){
         if (afModel::createFromAttribs(&attribs.m_modelAttribs) == false){
             return 0;
@@ -657,9 +661,8 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 
     cTransform location;
     if (attribs.m_overrideLocation){
-        cTransform localTrans = to_cTransform(attribs.m_kinematicAttribs.m_location);
-        m_rootLink->setLocalTransform(localTrans);
         location << attribs.m_kinematicAttribs.m_location;
+        m_rootLink->setLocalTransform(location);
         m_rootLink->setInitialTransform(location);
         m_simRotInitial = location.getLocalRot();
     }
@@ -667,7 +670,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         location = m_rootLink->getLocalTransform();
     }
 
-    setPosRef(location.getLocalPos() / m_phyDev->m_workspaceScale);
+    setPosRef(location.getLocalPos());
     setPosRefOrigin(location.getLocalPos() / m_phyDev->m_workspaceScale);
     setRotRef(location.getLocalRot());
     setRotRefOrigin(location.getLocalRot());
