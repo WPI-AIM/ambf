@@ -3446,8 +3446,9 @@ double afJointController::computeOutput(double process_val, double set_point, do
     t[n] = current_time;
     e[n] = set_point - process_val;
     double dt = t[n] - t[n-1];
-    if (dt <= 0.0){
-        dt = 0.0000001;
+    // Clamp freq to 10 KHZ
+    if (dt <= 0.00001){
+        dt = 0.00001;
     }
     de[n] = (e[n] - e[n-1]) / dt;
     ie[n] = Ie_sum + ((e[n] + e[n-1]) / 2 * dt);
