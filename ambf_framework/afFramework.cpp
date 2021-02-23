@@ -3728,7 +3728,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_controller.D = jointController["D"].as<double>();
 
         // If the PID controller in defined, the gains will be used to command the joint force (effort)
-        m_controller.m_outputType == afControlType::force;
+        m_controller.m_outputType = afControlType::force;
     }
     else{
         // If the controller gains are not defined, a velocity based control will be used.
@@ -3737,7 +3737,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_controller.P = 10;
         m_controller.I = 0;
         m_controller.D = 0;
-        m_controller.m_outputType == afControlType::velocity;
+        m_controller.m_outputType = afControlType::velocity;
     }
 
     // Bullet takes the x axis as the default for prismatic joints
