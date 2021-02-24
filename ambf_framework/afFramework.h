@@ -1063,6 +1063,8 @@ public:
     // Set position target for this joint that is handeled by it's joint controller
     void commandPosition(double &position_cmd);
 
+    double getShortestAngle(double current, double target);
+
     // Get the internal bullet constraint
     inline btTypedConstraint* getConstraint(){return m_btConstraint;}
 

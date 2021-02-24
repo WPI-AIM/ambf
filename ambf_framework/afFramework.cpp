@@ -3510,6 +3510,16 @@ void afJoint::commandPosition(double &position_cmd){
             // Sanity check
             btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
+
+            if (m_jointType == afJointType::REVOLUTE){
+                if ((m_upperLimit - m_lowerLimit) >= 2*PI ){
+                    // The joint is continous. Need some optimization
+                    position_cmd = getShortestAngle(position_cur, position_cmd);
+                    position_cur = 0.0;
+                }
+
+            }
+
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());
             if (m_controller.m_outputType == afControlType::FORCE){
                 commandEffort(command);
@@ -3522,6 +3532,15 @@ void afJoint::commandPosition(double &position_cmd){
     else{
         cerr << "WARNING, MOTOR NOT ENABLED FOR JOINT: " << m_name << endl;
     }
+}
+
+
+double ambf::afJoint::afJoint::getShortestAngle(double current, double target){
+    if (current < 0.0){
+        current = 2 * PI + current;
+    }
+    double delta_angle = fmod( (target - current + 3 * PI), 2*PI) - PI;
+    return delta_angle;
 }
 
 ///
@@ -5966,8 +5985,6 @@ void afCamera::renderFrameBuffer()
     m_frameBuffer->renderView();
     m_frameBuffer->copyImageBuffer(m_bufferColorImage);
     m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
-    m_bufferColorImage->flipHorizontal();
-    m_bufferDepthImage->flipHorizontal();
 }
 
 
@@ -6146,10 +6163,14 @@ void afCamera::computeDepthOnGPU()
 ///
 void afCamera::publishImage(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
+    // WITH THE COLORED DETPH POINT CLOUD
+    m_bufferColorImage->flipHorizontal();
     m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
     cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
     sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
     m_imagePublisher.publish(rosMsg);
+    m_bufferColorImage->flipHorizontal();
 #endif
 }
 
