@@ -2032,8 +2032,22 @@ void afRigidBody::enableShaderProgram(){
             shaderProgram->use(go, ro);
             // Set the ID for shadow and normal maps.
             shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
+            bool enable_normal_mapping = false;
+            for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
+                cMesh* mesh = m_visualMesh->getMesh(i);
+                if (mesh->m_normalMap.get() != nullptr){
+                    if (mesh->m_normalMap->m_image.get() != nullptr){
+                        enable_normal_mapping = true;
+                    }
+                }
+            }
+            if (enable_normal_mapping){
+                shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+                shaderProgram->setUniformi("vEnableNormalMapping", 1);
+            }
+            else{
+                shaderProgram->setUniformi("vEnableNormalMapping", 0);
+            }
 
             cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
                          "\n \t VERTEX: " << m_vtxShaderFilePath.c_str() <<
