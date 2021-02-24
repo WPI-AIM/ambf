@@ -87,7 +87,9 @@ public:
 
     static afSensorType getSensorTypeFromString(const string & a_str);
 
-    static afPrimitiveShapeType getShapeTypeFromString(const string & a_shape_str);
+    static afPrimitiveShapeType getPrimitiveShapeTypeFromString(const string & a_shape_str);
+
+    static afCollisionMeshShapeType getCollisionMeshShapeTypeFromString(const string & a_shape_str);
 
     // Copy data specified via ADF node
     static bool copyShapeOffsetData(YAML::Node* offsetNode, afPrimitiveShapeAttributes* attribs);

@@ -225,13 +225,13 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
 
 btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMesh,
                                                      double a_margin,
-                                                     afMeshShapeType a_meshType)
+                                                     afCollisionMeshShapeType a_meshType)
 {
     // create the collision shape
     btCollisionShape* collisionShape;
 
     switch (a_meshType) {
-    case afMeshShapeType::CONCAVE_MESH:{
+    case afCollisionMeshShapeType::CONCAVE_MESH:{
         // bullet mesh
         btTriangleMesh* bulletMesh = new btTriangleMesh();
 
@@ -258,7 +258,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMes
         collisionShape = new btGImpactMeshShape(bulletMesh);
         break;
     }
-    case afMeshShapeType::CONVEX_MESH:{
+    case afCollisionMeshShapeType::CONVEX_MESH:{
 
         // bullet mesh
         btTriangleMesh* bulletMesh = new btTriangleMesh();
@@ -286,9 +286,8 @@ btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMes
         collisionShape = new btConvexTriangleMeshShape(bulletMesh);
         break;
     }
-    case afMeshShapeType::CONVEX_HULL:{
+    case afCollisionMeshShapeType::CONVEX_HULL:{
         // create collision detector for each mesh
-        std::vector<cMesh*>::iterator it;
         collisionShape = new btConvexHullShape((double*)(&a_collisionMesh->m_vertices->m_localPos[0]),
                 a_collisionMesh->m_vertices->getNumElements(), sizeof(cVector3d));
         break;
@@ -304,7 +303,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMes
 btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisionMultiMesh,
                                                     double a_margin,
                                                     afTransform m_inertialOffset,
-                                                    afMeshShapeType a_meshType){
+                                                    afCollisionMeshShapeType a_meshType){
     // create the collision shape
     btCollisionShape* collisionShape;
     btCompoundShape* compoundCollisionShape = new btCompoundShape();
@@ -312,7 +311,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     inverseInertialOffsetTransform << m_inertialOffset.getInverse();
 
     switch (a_meshType) {
-    case afMeshShapeType::CONCAVE_MESH:{
+    case afCollisionMeshShapeType::CONCAVE_MESH:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
@@ -349,7 +348,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
         }
         break;
     }
-    case afMeshShapeType::CONVEX_MESH:{
+    case afCollisionMeshShapeType::CONVEX_MESH:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
@@ -380,17 +379,19 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
 
             // create mesh collision model
             collisionShape = new btConvexTriangleMeshShape(bulletMesh);
+            collisionShape->setMargin(a_margin);
             compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
         }
         break;
     }
-    case afMeshShapeType::CONVEX_HULL:{
+    case afCollisionMeshShapeType::CONVEX_HULL:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
             collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
+            collisionShape->setMargin(a_margin);
             compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
         }
         break;
@@ -1885,7 +1886,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             m_bulletCollisionShape = afShapeUtils::createCollisionShape(m_collisionMesh,
                                                                         attribs.m_collisionAttribs.m_margin,
                                                                         attribs.m_inertialAttribs.m_inertialOffset,
-                                                                        afMeshShapeType::CONCAVE_MESH);
+                                                                        attribs.m_collisionAttribs.m_meshShapeType);
         }
         else{
             cerr << "WARNING: Body "

@@ -199,10 +199,12 @@ struct afCollisionAttributes{
 public:
     afCollisionAttributes(){
         m_margin = 0.001;
+        m_meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
     }
 
-    afPath m_meshFilepath;
     double m_margin;
+    afPath m_meshFilepath;
+    afCollisionMeshShapeType m_meshShapeType;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     std::vector<uint> m_groups;

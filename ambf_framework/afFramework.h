@@ -224,9 +224,9 @@ public:
 
     static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape, double a_margin);
 
-    static btCollisionShape* createCollisionShape(const cMesh* a_collisionMesh, double a_margin, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+    static btCollisionShape* createCollisionShape(const cMesh* a_collisionMesh, double a_margin, afCollisionMeshShapeType a_meshType);
 
-    static btCompoundShape* createCollisionShape(const cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afMeshShapeType a_meshType=afMeshShapeType::CONCAVE_MESH);
+    static btCompoundShape* createCollisionShape(const cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afCollisionMeshShapeType a_meshType);
 
     static std::vector<afRayAttributes> createRayAttribs(cMultiMesh* a_contourMesh, double a_range);
 };

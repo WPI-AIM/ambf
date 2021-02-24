@@ -146,7 +146,7 @@ enum class afPrimitiveShapeType{
 };
 
 
-enum class afMeshShapeType{
+enum class afCollisionMeshShapeType{
     CONCAVE_MESH=0,
     CONVEX_MESH=1,
     CONVEX_HULL=2

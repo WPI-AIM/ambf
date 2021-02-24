@@ -193,7 +193,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
         attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
         shape_str = shapeNode.as<string>();
         afPrimitiveShapeAttributes shapeAttribs;
-        shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+        shapeAttribs.setShapeType(ADFUtils::getPrimitiveShapeTypeFromString(shape_str));
         ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
         attribs->m_primitiveShapes.push_back(shapeAttribs);
     }
@@ -205,7 +205,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
             YAML::Node shapeOffset = compoundShapeNode[shapeIdx]["offset"];
 
             afPrimitiveShapeAttributes shapeAttribs;
-            shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+            shapeAttribs.setShapeType(ADFUtils::getPrimitiveShapeTypeFromString(shape_str));
             ADFUtils::copyPrimitiveShapeData(&geometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&shapeOffset, &shapeAttribs);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
@@ -495,6 +495,7 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
 
     YAML::Node meshNode = node["mesh"];
     YAML::Node collisionMeshNode = node["collision mesh"];
+    YAML::Node collisionMeshTypeNode = node["collision mesh type"];
     YAML::Node collisionShapeNode = node["collision shape"];
     YAML::Node collisionOffsetNode = node["collision offset"];
     YAML::Node collisionGeometryNode = node["collision geometry"];
@@ -509,6 +510,12 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
 
     if (collisionOffsetNode.IsDefined() == false){
         collisionOffsetNode = inertialOffsetNode;
+    }
+
+    if (!collisionMeshNode.IsDefined()){
+        if (meshNode.IsDefined()){
+            collisionMeshNode = meshNode;
+        }
     }
 
     bool valid = true;
@@ -548,7 +555,7 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         attribs->m_geometryType = afGeometryType::SINGLE_SHAPE;
         shape_str = collisionShapeNode.as<string>();
         afPrimitiveShapeAttributes shapeAttribs;
-        shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+        shapeAttribs.setShapeType(ADFUtils::getPrimitiveShapeTypeFromString(shape_str));
         ADFUtils::copyPrimitiveShapeData(&collisionGeometryNode, &shapeAttribs);
         ADFUtils::copyShapeOffsetData(&collisionOffsetNode, &shapeAttribs);
         attribs->m_primitiveShapes.push_back(shapeAttribs);
@@ -561,23 +568,18 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
             YAML::Node shapeOffsetNode = compoundCollisionShapeNode[shapeIdx]["offset"];
 
             afPrimitiveShapeAttributes shapeAttribs;
-            shapeAttribs.setShapeType(ADFUtils::getShapeTypeFromString(shape_str));
+            shapeAttribs.setShapeType(ADFUtils::getPrimitiveShapeTypeFromString(shape_str));
             ADFUtils::copyPrimitiveShapeData(& collisionGeometryNode, &shapeAttribs);
             ADFUtils::copyShapeOffsetData(&shapeOffsetNode, &shapeAttribs);
             attribs->m_primitiveShapes.push_back(shapeAttribs);
         }
     }
-    else if (meshNode.IsDefined()){
-        attribs->m_meshFilepath = localPath / meshNode.as<string>();
-        if (!attribs->m_meshFilepath.c_str().empty()){
-            attribs->m_geometryType = afGeometryType::MESH;
-        }
-        else{
-            valid = false;
-        }
-    }
     else if (collisionMeshNode.IsDefined()){
         attribs->m_meshFilepath = localPath / collisionMeshNode.as<string>();
+        if (collisionMeshTypeNode.IsDefined()){
+            string mesh_type_str = collisionMeshTypeNode.as<string>();
+            attribs->m_meshShapeType = ADFUtils::getCollisionMeshShapeTypeFromString(mesh_type_str);
+        }
         if (!attribs->m_meshFilepath.c_str().empty()){
             attribs->m_geometryType = afGeometryType::MESH;
         }
@@ -792,7 +794,7 @@ bool ADFUtils::getKinematicAttribsFromNode(YAML::Node *a_node, afKinematicAttrib
 /// \param a_shape_str
 /// \return
 ///
-afPrimitiveShapeType ADFUtils::getShapeTypeFromString(const string &a_shape_str){
+afPrimitiveShapeType ADFUtils::getPrimitiveShapeTypeFromString(const string &a_shape_str){
     afPrimitiveShapeType shapeType;
     if (a_shape_str.compare("Box") == 0 || a_shape_str.compare("box") == 0 || a_shape_str.compare("BOX") == 0){
         shapeType = afPrimitiveShapeType::BOX;
@@ -818,6 +820,24 @@ afPrimitiveShapeType ADFUtils::getShapeTypeFromString(const string &a_shape_str)
     }
 
     return shapeType;
+}
+
+afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const string &a_shape_str)
+{
+    afCollisionMeshShapeType meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
+    if (a_shape_str.compare("CONVEX_HULL") == 0 || a_shape_str.compare("convex_hull") == 0 || a_shape_str.compare("hull") == 0){
+        meshShapeType = afCollisionMeshShapeType::CONVEX_HULL;
+    }
+    else if (a_shape_str.compare("CONVEX_MESH") == 0 || a_shape_str.compare("convex_mesh") == 0){
+        meshShapeType = afCollisionMeshShapeType::CONVEX_MESH;
+    }
+    else if (a_shape_str.compare("TRIMESH") == 0 || a_shape_str.compare("CONCAVE_MESH") == 0 || a_shape_str.compare("trimesh") == 0){
+        meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
+    }
+    else{
+        cerr << "ERROR! FOR COLLISION MESH " << a_shape_str << " NOT UNDERSTOOD";
+    }
+    return meshShapeType;
 }
 
 
