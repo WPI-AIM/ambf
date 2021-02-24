@@ -3817,11 +3817,11 @@ void afRayTracerSensor::update(){
     if (m_parentBody == nullptr){
         return;
     }
-    cTransform T_bINw = getGlobalTransform();
+    btTransform T_bINw = m_parentBody->m_bulletRigidBody->getWorldTransform();
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
-        rayFromWorld << T_bINw * to_cVector3d(m_raysAttribs[i].m_rayFromLocal);
-        rayToWorld << T_bINw * to_cVector3d(m_raysAttribs[i].m_rayToLocal);
+        rayFromWorld = T_bINw * to_btVector(m_raysAttribs[i].m_rayFromLocal);
+        rayToWorld = T_bINw * to_btVector(m_raysAttribs[i].m_rayToLocal);
 
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
