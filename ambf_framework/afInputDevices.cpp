@@ -650,7 +650,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
             std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
             m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
                                                         simDevName,
-                                                        m_afWorld->resolveGlobalNamespace(getNamespace()),
+                                                        m_afWorld->resolveGlobalNamespace(m_rootLink->getNamespace()),
                                                         m_rootLink->getMinPublishFrequency(),
                                                         m_rootLink->getMaxPublishFrequency());
         }
