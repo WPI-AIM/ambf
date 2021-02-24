@@ -995,11 +995,17 @@ public:
 
     bool generateFromMesh(cMultiMesh* mesh, const double margin);
 
-    // Function to detect, index and store repeat vertices
-    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    void updateMins(cVector3d &vMin, cVector3d &v);
+
+    void updateMaxs(cVector3d &vMax, cVector3d &v);
+
+    void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize);
 
     // Function to detect, index and store repeat vertices
-    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<unsigned int>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<uint>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+
+    // Function to detect, index and store repeat vertices
+    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<uint>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
     // Helper Function to Create Links from Lines
     bool createLinksFromLines(btSoftBody* a_sb, std::vector< std::vector<int>>* a_lines, cMesh* a_mesh);
