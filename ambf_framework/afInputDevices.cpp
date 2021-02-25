@@ -513,11 +513,11 @@ bool afPhysicalDevice::loadPhysicalDevice(YAML::Node *pd_node, std::string node_
         // reference pose
         position = simDevice->m_rootLink->getLocalPos();
         rotation = simDevice->m_rootLink->getLocalRot();
-        m_simRotInitial.identity();
+        m_simRotInitial = rotation;
     }
 
-    simDevice->setPosRef(position/ m_workspaceScale);
-    simDevice->setPosRefOrigin(position / m_workspaceScale);
+    simDevice->setPosRef(position);
+    simDevice->setPosRefOrigin(position);
     simDevice->setRotRef(rotation);
     simDevice->setRotRefOrigin(rotation);
     m_gripper_pinch_btn = 0;

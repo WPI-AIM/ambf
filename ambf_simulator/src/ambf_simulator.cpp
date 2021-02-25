@@ -1741,11 +1741,6 @@ void updateHapticDevice(void* a_arg){
                 }
 
             }
-            if (!devCams[0]->m_cam_pressed){
-                phyDev->setRotCamPreClutch( devCams[0]->getLocalRot() );
-                phyDev->setRotPreClutch( phyDev->getRot() );
-            }
-
 
             if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->setPosClutched(phyDev->getPos());
@@ -1775,6 +1770,13 @@ void updateHapticDevice(void* a_arg){
             else{
                 phyDev->btn_clutch_rising_edge = true;
             }
+
+
+            if (!devCams[0]->m_cam_pressed && !g_inputDevices->m_clutch_btn_pressed){
+                phyDev->setRotCamPreClutch( devCams[0]->getLocalRot() );
+                phyDev->setRotPreClutch( phyDev->getRot() );
+            }
+
 
             simDev->setPosRef(simDev->getPosRefOrigin() + phyDev->m_workspaceScale * ((devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) );
             if (!g_inputDevices->m_use_cam_frame_rot){
