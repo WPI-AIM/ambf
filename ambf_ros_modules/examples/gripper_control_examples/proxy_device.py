@@ -101,12 +101,12 @@ class ProxyMTM:
 
         if arm_name == 'MTMR':
             self._mtm_arm_type = 0
-            self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-            self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+            self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+            self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
         elif arm_name == 'MTML':
             self._mtm_arm_type = 1
-            self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-            self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+            self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+            self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
         else:
             print('SPECIFIED ARM: ', arm_name)
             print('WARNING, MTM ARM TYPE NOT UNDERSTOOD, SHOULD BE MTMR or MTML')
