@@ -32,6 +32,11 @@ A GUI with sliders will popup. You can use the sliders and the `Effort(F) / Posi
  each slider to scale the command of the slider's value as each slider is bound
  to the range [-1, 1].
 
+ This is an example for what you should see.
+
+<div style="text-align:center"><img src="Images/psm_control.png" title="PSM CONTROL VIA GUI" width="60%" ></div>
+
+
  You can simply replace step 1 with the robot of you choice and then proceed to
  step 2 altering the argument for `-o` flag to reflect the name of link (body) from where you
  intend to control the joints.  You are not limited to having ONLY the robot you intend

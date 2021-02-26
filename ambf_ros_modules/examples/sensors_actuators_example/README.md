@@ -42,5 +42,13 @@ python sensing_and_grasping.py
 
 Now you should see another GUI with two buttons labeled **Grasp** and **Release**. You can use the robot control GUI so that the end-effector of the KUKA comes near the box on the table. When it does, and when you click the grasp button, the box shall be grasped by the actuators attached to the end-effector. Clicking **Release** will release the object.
 
+This is an example of what you should see:
+
+<img src="Images/grasp1.png" title="Pre Grasp" width="30%" >
+
+<img src="Images/grasp2.png" title="Grasp" width="30%">
+
+<img src="Images/grasp3.png" title="Grasp and lift" width="30%">
+
 ### Note:
 If you accidentally drop or misplace the box, you can click the simulation window and hit `CRTL + R` to reset the object poses in the simulation.

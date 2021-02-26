@@ -56,11 +56,11 @@ Check out the wiki for more details on command-line arguments.
 
 You should see something along these lines:
 
-![Teleop Example](Images/teleop_example1.png)
+<div style="text-align:center"><img src="Images/teleop_example1.png" title="Teleop Example 1" width="60%" ></div>
 
 and moving the slides on the Python GUI should move the `root link`.
 
-![Teleop Example](Images/teleop_example2.png)
+<div style="text-align:center"><img src="Images/teleop_example2.png" title="Teleop Example 2" width="60%" ></div>
 
 
 ## 2. Understanding the input_devices.yaml File:
@@ -129,4 +129,4 @@ The world in AMBF is aligned as follows: X towards you, Y towards your right, an
 
 Otherwise, the orientation offset is the rotation in terms of RPY that defines the angular offset between the aligned `root link` and the World frame. See the example below:
 
-![Orientation Offset](Images/example_ori_offset.png)
+<div style="text-align:center"><img src="Images/example_ori_offset.png" title="The Orientation Offset" width="60%" ></div>

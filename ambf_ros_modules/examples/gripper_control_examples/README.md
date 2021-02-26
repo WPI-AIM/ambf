@@ -18,32 +18,25 @@ ambf/external/chai3d/src/devices/CdVRKDevices.h
 ambf/external/chai3d/src/devices/CdVRKDevices.cpp
 ```
 
-This control uses a combination of the Base and Tip Transforms as
-defined in the `CdVRKDevices.cpp` and well as the Base Frame of the dVRK MTM
-that are set in the sawIntuitiveResearchKit MTM code.
-Therefore you would not expect it to follow the coordinate system of AMBF but it
-matches the AMBF coordinate system when using the actual dVRK MTMs. That being
-said, you can tweak the Base and Tip frames in either the `CdVRKDevices.cpp`
-file or handle them in the python file in the folder called `proxy_device.py`
+The file `<ambf>/external/chai3d/src/devices/CdVRKDevices.cpp` sets base and tip transforms for
+the dVRK device to match the AMBF frame convention. Since we are not using the real dVRK hardware in this example,
+we invert those set base and tip transforms in the `proxy_device.py` in this example.
+The end results is that the control frame matches the AMBF convention, so X is towards you, Y is right and Z in upwards.
 
-See the following lines
+If you are interested, these are the relevant lines in the `proxy_device.py` file.
 
 ```python
 if arm_name == 'MTMR':
         self._mtm_arm_type = 0
-        self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-        self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+        self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+        self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
     elif arm_name == 'MTML':
         self._mtm_arm_type = 1
-        self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-        self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+        self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+        self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
 ```
 
-Note: You shall have to account for all the transformation already applied via
-the dVRK MTMs sawIntuitiveResearchKit code and the CdVRKDevices.cpp to cancel
-the effect. However, this is not the topic of discussion for this section.
-
-You can test this example as follows
+Now, you can test this example as follows
 
 1. First, run the python file
 
@@ -55,11 +48,11 @@ python gripper_control_via_device_ifc.py
 You shall see a GUI popup with sliders to control x, y, z, roll, pitch, yaw and
 gripper open and close slider.
 
-2. Then run the AMBF Simulator with the ADF file of your choice. We are going to
+2. Then run the AMBF simulator with the ADF file of your choice. We are going to
 use a surgical training puzzle scene in this example.
 ``` bash
 cd ambf/bin/<os>
-./ambf_simulator -l16
+./ambf_simulator -l16 -i0
 ```
 
 3. Since we are tricking the device driver to think that an MTM is connected to
@@ -95,6 +88,12 @@ MTMR:
 
 4. This gripper can now be controlled via the GUI
 that spawned from step 1.
+
+This is an example of what you should see:
+
+<img src="Images/device_example1.png" title="Device Example 1" width="45%" >
+<img src="Images/device_example2.png" title="Device Example 1" width="45%" >
+
 
 # 2. Gripper Control Via Client Interface
 This is the probably the better and more programmatic way to control a gripper
