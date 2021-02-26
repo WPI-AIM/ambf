@@ -1,0 +1,7 @@
+# This is the base file for Coordination Application
+world config: ./world/world.yaml
+# world config: ./world/raven_world.yaml
+color config: ./color/colors.yaml
+input devices config: ./input_devices/input_devices.yaml
+multibody configs:
+  - "./blender-kuka-tip-sphere.yaml" #0

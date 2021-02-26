@@ -1,0 +1,165 @@
+input devices: [
+  MTMR,
+  MTML,
+  Geomagic Touch,
+  Razer Hydra0,
+  Razer Hydra1,
+  Novint Falcon1,
+  Novint Falcon2]
+
+MTMR:
+  hardware name: MTMR
+  haptic gain: {linear: 0.03, angular: 1}
+  workspace scaling: 1
+  simulated multibody: "../blender-kuka-tip-sphere.yaml"
+  root link: "/ambf/env/BODY kuka_tip"
+  # location: {
+  #   position: {x: 0.2839, y: 0.3299, z: 1.4126},
+  #   orientation: {r: 1.57079, p: -1.57079, y: 0}} # Comment out location if you want the simulated body to be loaded at the location specified in its ADF file. Otherwise, you can override it
+  orientation offset: {r: -1.57079, p: 0.0, y: -1.57079}
+  # controller gain: {
+  #   linear: {
+  #     P: 20,
+  #     I: 0.0,
+  #     D: 0.0
+  #     },
+  #   angular: {
+  #     P: 30,
+  #     I: 0.0,
+  #     D: 0.0
+  #     }
+  #   } # Comment the controller out to use the internal velocity based controller
+  button mapping: {
+    a1: 1,
+    a2: 2,
+    next mode: 3,
+    prev mode: 4}
+  pair cameras: [camera1, camera2] # The motion of the IID-SDE is w.r.t the first camera in the list
+
+MTML:
+    hardware name: MTML
+    haptic gain: {linear: 0.03, angular: 0.0}
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    location: {
+      position: {x: -0.5, y: 0.0, z: 0},
+      orientation: {r: 0, p: 0.0, y: 0}}
+    button mapping: {
+      a1: 1,
+      a2: 6,
+      next mode: 3,
+      prev mode: 4}
+    pair cameras: [camera2] # The cameras paired with this IID-SDE pair
+    # visible: True
+    # visible size: 0.005
+
+Geomagic Touch:
+    hardware name: PHANTOM Omni
+    haptic gain: {linear: 0.000, angular: 0.0}
+    deadband: 0.01
+    max force: 2
+    max jerk: 0.2
+    workspace scaling: 2
+    # simulated multibody: "../multi-bodies/grippers/resistive/sensorized_box/gripper.yaml"
+    root link: "kuka_tip"
+    # location: {
+    #   position: {x: 0.2839, y: 0.3299, z: 1.4126},
+    #   orientation: {r: 1.57079, p: -1.57079, y: 0}} # Comment out location if you want the simulated body to be loaded at the location specified in its ADF file. Otherwise, you can override it
+    orientation offset: {r: -1.57079, p: 0.0, y: -1.57079}
+    # controller gain: {
+    #   linear: {
+    #     P: 20,
+    #     I: 0.0,
+    #     D: 0.0
+    #     },
+    #   angular: {
+    #     P: 30,
+    #     I: 0.0,
+    #     D: 0.0
+    #     }
+    #   } # Comment the controller out to use the internal velocity based controller
+    button mapping: {
+      a1: 0,
+      a2: -1,
+      g1: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Razer Hydra0:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    # controller gain: {
+    #   linear: {P: 0.0, D: 0.0},
+    #   angular: {P: 0.0, D: 0.0}}
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    # root link: "/ambf/env/BODY l_wrist_roll_link"
+    location: {
+      position: {x: 0.0, y: -1.0, z: 0},
+      orientation: {r: 0.0, p: 0.0, y: 0.0}}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Razer Hydra1:
+    hardware name: Razer Hydra
+    haptic gain: {linear: 10.0, angular: 0.0}
+    workspace scaling: 5
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    # root link: "/ambf/env/BODY r_wrist_roll_link"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0},
+      orientation: {r: 0, p: 0, y: 0}}
+    # orientation offset: {r: 0.0, p: 0.0, y: 0}
+    button mapping: {
+      a1: 0,
+      a2: 1,
+      next mode: 2,
+      prev mode: 3}
+    # visible: True
+    # visible size: 0.005
+
+Novint Falcon1:
+    hardware name: Falcon
+    haptic gain: {linear: 0.5, angular: 0.0}
+    deadband: 0.01
+    max force: 10
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    location: {
+      position: {x: 0.0, y: 0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}
+    # visible: True
+    # visible size: 0.005
+
+Novint Falcon2:
+    hardware name: Falcon
+    haptic gain: {linear: 0.5, angular: 0.0}
+    deadband: 0.01
+    max force: 10
+    workspace scaling: 10
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    location: {
+      position: {x: 0.0, y: -0.5, z: 0.0},
+      orientation: {r: 0, p: 0, y: 0}}
+
+    button mapping: {
+      a1: 0,
+      a2: 2,
+      next mode: 3,
+      prev mode: 1}
+    # visible: True
+    # visible size: 0.005
