@@ -91,6 +91,8 @@ public:
 
     static afCollisionMeshShapeType getCollisionMeshShapeTypeFromString(const string & a_shape_str);
 
+    static afControlType getControlTypeFromString(const string & a_control_str);
+
     // Copy data specified via ADF node
     static bool copyShapeOffsetData(YAML::Node* offsetNode, afPrimitiveShapeAttributes* attribs);
 

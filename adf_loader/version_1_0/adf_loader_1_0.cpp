@@ -426,6 +426,7 @@ bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianC
     YAML::Node& node = *a_node;
 
     YAML::Node controllerNode = node["controller"];
+    YAML::Node controllerOutputTypeNode = node["controller output type"];
 
     if(controllerNode.IsDefined()){
         double P, I, D;
@@ -481,6 +482,12 @@ bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianC
     }
     else{
         return false;
+    }
+
+    if (controllerOutputTypeNode.IsDefined()){
+        string controller_output_type = controllerOutputTypeNode.as<string>();
+        attribs->m_positionOutputType = ADFUtils::getControlTypeFromString(controller_output_type);
+        attribs->m_orientationOutputType = ADFUtils::getControlTypeFromString(controller_output_type);
     }
 
     return true;
@@ -838,6 +845,24 @@ afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const str
         cerr << "ERROR! FOR COLLISION MESH " << a_shape_str << " NOT UNDERSTOOD";
     }
     return meshShapeType;
+}
+
+afControlType ADFUtils::getControlTypeFromString(const string &a_control_str)
+{
+    afControlType controlType = afControlType::FORCE;
+    if (a_control_str.compare("FORCE") == 0 || a_control_str.compare("force") == 0){
+        controlType = afControlType::FORCE;
+    }
+    else if (a_control_str.compare("VELOCITY") == 0 || a_control_str.compare("velocity") == 0){
+        controlType = afControlType::VELOCITY;
+    }
+    else if (a_control_str.compare("POSITION") == 0 || a_control_str.compare("position") == 0){
+        controlType = afControlType::POSITION;;
+    }
+    else{
+        cerr << "ERROR! FOR CONTROL TYPE " << a_control_str << " NOT UNDERSTOOD";
+    }
+    return controlType;
 }
 
 
