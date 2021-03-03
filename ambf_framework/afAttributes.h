@@ -433,7 +433,7 @@ struct afConstraintActuatorAttributes: public afActuatorAttributes{
 public:
     afConstraintActuatorAttributes(){
         m_visible = false;
-        m_visibleSize = 5.0;
+        m_visibleSize = 0.02;
         m_maxImpulse = 10.0;
         m_tau = 1.0;
     }
@@ -811,7 +811,7 @@ struct afRayTracerSensorAttributes: public afSensorAttributes{
 public:
     afRayTracerSensorAttributes(){
         m_visible = false;
-        m_visibleSize = 0.01;
+        m_visibleSize = 0.02;
         m_maxImpulse = 0.5;
         m_tau = 0.5;
         m_range = 0.5;
