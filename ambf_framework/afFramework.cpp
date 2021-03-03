@@ -1183,7 +1183,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_showActuator = attribs.m_visible;
 
     // First search in the local space.
-    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
+    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName, true);
 
     if(!m_parentBody){
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getActuatorMap());
@@ -3925,7 +3925,13 @@ double afJoint::getVelocity(){
     double p_a = m_posArray[m_jpSize - 1];
     double p_b = m_posArray[m_jpSize - 2];
     double dt_n = m_dtArray[m_jpSize - 1];
-    double vel = (p_a - p_b) / dt_n;
+    double vel ;
+    if (dt_n < m_controller.m_min_dt){
+        vel = 0.0;
+    }
+    else{
+        vel = (p_a - p_b) / dt_n;
+    }
     return vel;
 }
 
@@ -4060,7 +4066,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     m_visibilitySphereRadius = attribs.m_visibleSize;
 
     // First search in the local space.
-    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName);
+    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName, true);
 
     if(m_parentBody == nullptr){
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getSensorMap());
@@ -4139,7 +4145,8 @@ void afRayTracerSensor::update(){
     if (m_parentBody == nullptr){
         return;
     }
-    btTransform T_bINw = m_parentBody->m_bulletRigidBody->getWorldTransform();
+//    btTransform T_bINw = m_parentBody->m_bulletRigidBody->getWorldTransform();
+    btTransform T_bINw = to_btTransform(getGlobalTransform());
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
         rayFromWorld = T_bINw * to_btVector(m_raysAttribs[i].m_rayFromLocal);
