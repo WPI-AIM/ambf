@@ -829,6 +829,6 @@ JOINT link7-tip:
   enable feedback: false
   passive: false
   detached: true
-  type: revolute
+  type: fixed
   max motor impulse: 0.05000000074505806
   damping: 0.0
