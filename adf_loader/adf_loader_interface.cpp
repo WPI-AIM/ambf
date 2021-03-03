@@ -64,8 +64,9 @@ adfVersion ADFLoaderInterface::getFileVersion(string a_filepath)
         YAML::Node node = YAML::LoadFile(a_filepath);
         return getFileVersion(&node, a_filepath);
     }
-    catch(exception e){
-        cerr << e.what();
+    catch(YAML::Exception& e){
+        cerr << e.what() << endl;
+        cerr << "Failed to Load " << a_filepath << endl;
         return adfVersion::INVALID;
     }
 }
@@ -168,8 +169,9 @@ bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, 
             YAML::Node node = YAML::LoadFile(a_filepath);
             return m_loader->loadObjectAttribs(&node, a_objName, a_type, attribs);
         }
-        catch (exception e){
-            cerr << e.what();
+        catch(YAML::Exception& e){
+            cerr << e.what() << endl;
+            cerr << "Failed to Load " << a_filepath << endl;
             return false;
         }
     }

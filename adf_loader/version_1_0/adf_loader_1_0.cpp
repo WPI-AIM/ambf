@@ -2113,8 +2113,9 @@ bool ADFLoader_1_0::loadModelAttribs(string a_filepath, afModelAttributes *attri
         YAML::Node node = YAML::LoadFile(a_filepath);
         return loadModelAttribs(&node, attribs);
     }
-    catch(exception e){
-        std::cerr << e.what();
+    catch(YAML::Exception& e){
+        cerr << e.what() << endl;
+        cerr << "Failed to Load " << a_filepath << endl;
         return false;
     }
 }
@@ -2282,8 +2283,9 @@ bool ADFLoader_1_0::loadWorldAttribs(string a_filepath, afWorldAttributes *attri
     YAML::Node node = YAML::LoadFile(a_filepath);
     return loadWorldAttribs(&node, attribs);
     }
-    catch(exception e){
-        cerr << e.what() ;
+    catch(YAML::Exception& e){
+        cerr << e.what() << endl;
+        cerr << "Failed to Load " << a_filepath << endl;
         return false;
     }
 }
@@ -2406,8 +2408,9 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(string a_filepath, afLaunchAttributes 
         YAML::Node node = YAML::LoadFile(a_filepath);
         return loadLaunchFileAttribs(&node, attribs);
     }
-    catch(exception e){
-        cerr << e.what();
+    catch(YAML::Exception& e){
+        cerr << e.what() << endl;
+        cerr << "Failed to Load " << a_filepath << endl;
         return false;
     }
 }
