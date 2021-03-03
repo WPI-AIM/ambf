@@ -1,4 +1,4 @@
-﻿//==============================================================================
+//==============================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2020, AMBF
@@ -1802,7 +1802,7 @@ void updateHapticDevice(void* a_arg){
             if(g_inputDevices->m_clutch_btn_pressed){
                 if(phyDev->btn_clutch_rising_edge){
                     phyDev->btn_clutch_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef() / phyDev->m_workspaceScale);
+                    simDev->setPosRefOrigin(simDev->getPosRef());
                     simDev->setRotRefOrigin(simDev->getRotRef());
                 }
                 phyDev->setPosClutched(phyDev->getPos());
@@ -1812,8 +1812,7 @@ void updateHapticDevice(void* a_arg){
                 phyDev->btn_clutch_rising_edge = true;
             }
 
-            simDev->setPosRef(phyDev->m_workspaceScale * (simDev->getPosRefOrigin() +
-                                                          (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) );
+            simDev->setPosRef(simDev->getPosRefOrigin() + phyDev->m_workspaceScale * (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) ;
             if (!g_inputDevices->m_use_cam_frame_rot){
                 simDev->setRotRef(simDev->getRotRefOrigin() * devCams[0]->getLocalRot() *
                         cTranspose(phyDev->getRotClutched()) * phyDev->getRot() *

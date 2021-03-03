@@ -671,9 +671,10 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
     }
 
     setPosRef(location.getLocalPos());
-    setPosRefOrigin(location.getLocalPos() / m_phyDev->m_workspaceScale);
+    setPosRefOrigin(location.getLocalPos());
     setRotRef(location.getLocalRot());
     setRotRefOrigin(location.getLocalRot());
+    m_simRotInitial = location.getLocalRot();
 
     return true;
 }
