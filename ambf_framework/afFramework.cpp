@@ -2632,7 +2632,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         m_collisionMesh->scale(m_scale);
         // Use the visual mesh for generating the softbody
         generateFromMesh(m_collisionMesh, attribs.m_collisionAttribs.m_margin);
-//        cleanupMesh(m_visualMesh, m_vertexTree, m_trianglesPtr);
+        cleanupMesh(m_visualMesh, m_vertexTree, m_trianglesPtr);
     }
     else
     {
@@ -2779,6 +2779,8 @@ void afSoftBody::updateSceneObjects(){
             }
         }
     }
+
+    mesh->computeAllNormals();
     afBaseObject::updateSceneObjects();
 }
 
@@ -2846,7 +2848,7 @@ bool afSoftBody::generateFromMesh(cMultiMesh *multiMesh, const double a_margin)
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
         std::vector<std::vector <int> > polyLines = mesh->m_lines;
-//        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &polyLines, true);
+//        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &polyLines, false);
         computeUniqueVerticesandTrianglesSequential(mesh, &m_verticesPtr, &m_trianglesPtr, &polyLines, false);
         if (m_trianglesPtr.size() > 0){
             m_bulletSoftBody = createFromMesh(*m_afWorld->m_bulletSoftBodyWorldInfo,
@@ -2910,7 +2912,7 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
     }
 
     // The max number of vertices to check per block
-    int vtxBlockSize = 60;
+    int vtxBlockSize = 1000;
     // Number of default blocks
     int numBlocks = 1;
     //Define bound for lowest value of vertices
@@ -2955,17 +2957,23 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
     // the unique vertices have been placed in the outputVertices array
     // . E.g. if a vertex at idx 5 was a repeat of vtx at idx 3, orderedVtxList[5][0] = 5 ; orderedVtxList[5][1] = 3;
     // and if the vertex was added to the array of unique vertices at Idx 2 then orderedVtxList[5][2] = 2;
-    int orderedVtxList[numVertices][3];
+    int* orderedVtxList = new int [numVertices*3];
     memset(orderedVtxList, -1, numVertices*3*sizeof(int));
+
+#define ordVtxIdx(a, b) (numVertices * b + a)
 
     // This forms a 3D block with all value initiazlied to false
     // If we visit a specific 3D idx, it's set to true to know that we have been there
-    bool vtxChkBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
+    bool* vtxChkBlock = new bool[vtxBlockSize*vtxBlockSize*vtxBlockSize];
+
+    int vtxBlockSizeSquare = vtxBlockSize * vtxBlockSize;
+
+#define vtxChkIdx(a, b, c) (vtxBlockSizeSquare * c + vtxBlockSize * b + a)
     // This forms a 3D block with all values init to -1
     // What ever 3D idx we visited we set the corresponding corrected idx value in this 3D block
-    int vtxIdxBlock[vtxBlockSize][vtxBlockSize][vtxBlockSize];
+    int* vtxIdxBlock = new int[vtxBlockSize*vtxBlockSize*vtxBlockSize];
     // To reduce computational cost, if we have already checked a vertex, we can mark it
-    bool vtxAlreadyChkd[numVertices];
+    bool* vtxAlreadyChkd = new bool[numVertices];
     // Initialize all the vertex check index to false
     memset(vtxAlreadyChkd, false, numVertices*sizeof(bool));
     // Upper a lower bound for block in x direction
@@ -3008,19 +3016,28 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
         zRes = (double) (numVertices - 1) / vBounds.z();
     }
 
+    bool first_print = false;
+
     // Begin the loop to create a hash grid and check for unique vertices
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
         xblockLowerBound = xblockNum * vtxBlockSize;
         xblockUpperBound = xblockLowerBound + vtxBlockSize;
+//        first_print = true;
         for (int yblockNum = 0 ; yblockNum < numBlocks ; yblockNum ++){
             yblockLowerBound = yblockNum * vtxBlockSize;
             yblockUpperBound = yblockLowerBound + vtxBlockSize;
+            first_print = true;
             for (int zblockNum = 0 ; zblockNum < numBlocks ; zblockNum ++){
                 zblockLowerBound = zblockNum * vtxBlockSize;
                 zblockUpperBound = zblockLowerBound + vtxBlockSize;
-                if (print_debug_info) {printf("Block Num [%d, %d, %d] \n", xblockNum, yblockNum, zblockNum);}
+                if (print_debug_info) {
+                    if (first_print){
+                        printf("Block Num [%d, %d, %d] \n", xblockNum, yblockNum, zblockNum);
+                        first_print = false;
+                    }
+                }
                 // Clear the 3D idx and chk arrays to be reused for the new block
-                clearArrays(&vtxChkBlock[0][0][0], &vtxIdxBlock[0][0][0], vtxBlockSize);
+                clearArrays(&vtxChkBlock[vtxChkIdx(0,0,0)], &vtxIdxBlock[vtxChkIdx(0,0,0)], vtxBlockSize);
                 for(int idx = 0; idx < numVertices ; idx++){
                     if (!vtxAlreadyChkd[idx]){
                         vPos = vtxArrCopy->getLocalPos(idx);
@@ -3029,28 +3046,36 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
                         vyKey = yRes * (vPos.y() - vMin.y());
                         vzKey = zRes * (vPos.z() - vMin.z());
                         // Check if the generated keys are in the bounds of the current block
-                        if (vxKey >= xblockLowerBound && vyKey >= yblockLowerBound && vzKey >= zblockLowerBound){
-                            if (vxKey <= xblockUpperBound && vyKey <= yblockUpperBound && vzKey <= zblockUpperBound){
-                                // If the key lies inside the block, offset the value to the block bounds
-                                vxKey -= xblockLowerBound; vyKey -= yblockLowerBound; vzKey -= zblockLowerBound;
-                                // Mark that we already checked this vertex, so we don't have to check it again
-                                vtxAlreadyChkd[idx] = true;
-                                // Set the vertexIdx Pair value
-                                orderedVtxList[idx][0] = idx;
-                                // Check if the key is already set in the chk block
-                                if (vtxChkBlock[vxKey][vyKey][vzKey] == false){
-                                    // Unique vertex, so mark it as such in the corresponding blocks
-                                    vtxChkBlock[vxKey][vyKey][vzKey] = true;
-                                    // Set the idx block to the original idx
-                                    vtxIdxBlock[vxKey][vyKey][vzKey] = idx;
-                                    orderedVtxList[idx][1] = idx;
-                                    uniqueVtxCount ++;
-                                }
-                                else{
-                                    // This is not a unique vertex, so get the original idx
-                                    // and set it in the corresponding blocks
-                                    orderedVtxList[idx][1] = vtxIdxBlock[vxKey][vyKey][vzKey];
-                                    duplicateVtxCount++;
+                        if (vxKey >= xblockLowerBound){
+                            if (vyKey >= yblockLowerBound){
+                                if (vzKey >= zblockLowerBound){
+                                    if (vxKey <= xblockUpperBound){
+                                        if (vyKey <= yblockUpperBound){
+                                            if (vzKey <= zblockUpperBound){
+                                                // If the key lies inside the block, offset the value to the block bounds
+                                                vxKey -= xblockLowerBound; vyKey -= yblockLowerBound; vzKey -= zblockLowerBound;
+                                                // Mark that we already checked this vertex, so we don't have to check it again
+                                                vtxAlreadyChkd[idx] = true;
+                                                // Set the vertexIdx Pair value
+                                                orderedVtxList[ordVtxIdx(idx, 0)] = idx;
+                                                // Check if the key is already set in the chk block
+                                                if (vtxChkBlock[vtxChkIdx(vxKey,vyKey,vzKey)] == false){
+                                                    // Unique vertex, so mark it as such in the corresponding blocks
+                                                    vtxChkBlock[vtxChkIdx(vxKey,vyKey,vzKey)] = true;
+                                                    // Set the idx block to the original idx
+                                                    vtxIdxBlock[vtxChkIdx(vxKey,vyKey,vzKey)] = idx;
+                                                    orderedVtxList[ordVtxIdx(idx, 1)] = idx;
+                                                    uniqueVtxCount ++;
+                                                }
+                                                else{
+                                                    // This is not a unique vertex, so get the original idx
+                                                    // and set it in the corresponding blocks
+                                                    orderedVtxList[ordVtxIdx(idx, 1)] = vtxIdxBlock[vtxChkIdx(vxKey,vyKey,vzKey)];
+                                                    duplicateVtxCount++;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -3078,41 +3103,41 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
     // orderedVtxList[:][1] = { 0,  1,  2,  1,  3,  2,  1,  4,  3,  4,  5,  3}
     int vtxCounted = 0;
     for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
-        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
+        if (orderedVtxList[ordVtxIdx(aIdx,1)] == orderedVtxList[ordVtxIdx(aIdx,0)] && orderedVtxList[ordVtxIdx(aIdx,2)] == -1){ // A unique vertex
             vPos = mesh->m_vertices->getLocalPos(aIdx);
             (*outputVertices)[3*vtxCounted + 0] = vPos.x();
             (*outputVertices)[3*vtxCounted + 1] = vPos.y();
             (*outputVertices)[3*vtxCounted + 2] = vPos.z();
 
-            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            orderedVtxList[ordVtxIdx(aIdx,2)] = vtxCounted; // Record the index in queue where the unique vertex is added
             m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
             vtxCounted++; // Increase the queue idx by 1
         }
-        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
-            int bIdx = orderedVtxList[aIdx][1];
-            int cIdx = orderedVtxList[bIdx][2];
-            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
+        else if(orderedVtxList[ordVtxIdx(aIdx,1)] < orderedVtxList[ordVtxIdx(aIdx,0)]){ // Not a unique vertex
+            int bIdx = orderedVtxList[ordVtxIdx(aIdx,1)];
+            int cIdx = orderedVtxList[ordVtxIdx(bIdx,2)];
+            if (orderedVtxList[ordVtxIdx(bIdx,1)] != orderedVtxList[ordVtxIdx(bIdx,0)] || cIdx == -1){
                 // This shouldn't happend. This means that we haven't assigned the third row
                 // and row 1 is greater than row 2
                 throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : %d and c[b[i]] != -1";
             }
-            orderedVtxList[aIdx][2] = cIdx;
+            orderedVtxList[ordVtxIdx(aIdx,2)] = cIdx;
             m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
         }
-        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
-            int bIdx = orderedVtxList[aIdx][1];
-            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
+        else if(orderedVtxList[ordVtxIdx(aIdx,1)] > orderedVtxList[ordVtxIdx(aIdx,0)]){
+            int bIdx = orderedVtxList[ordVtxIdx(aIdx,1)];
+            if (orderedVtxList[ordVtxIdx(bIdx,1)] != orderedVtxList[ordVtxIdx(bIdx,0)]){
                 throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
             }
-            if (orderedVtxList[bIdx][2] == -1){
+            if (orderedVtxList[ordVtxIdx(bIdx,2)] == -1){
                 vPos = mesh->m_vertices->getLocalPos(bIdx);
                 vtxCounted++;
                 (*outputVertices)[3*vtxCounted + 0] = vPos.x();
                 (*outputVertices)[3*vtxCounted + 1] = vPos.y();
                 (*outputVertices)[3*vtxCounted + 2] = vPos.z();
-                orderedVtxList[bIdx][2] = vtxCounted;
+                orderedVtxList[ordVtxIdx(bIdx,2)] = vtxCounted;
             }
-            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
+            orderedVtxList[ordVtxIdx(aIdx,2)] = orderedVtxList[ordVtxIdx(bIdx,2)];
         }
     }
 
@@ -3124,7 +3149,7 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
             std::cerr << "ERROR ! Triangle Vtx Index " << triIdx << " >= # Vertices " << numVertices << std::endl;
         }
         else{
-            (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+            (*outputTriangles)[i] = orderedVtxList[ordVtxIdx(triIdx,2)];
         }
     }
 
@@ -3135,7 +3160,8 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
             std::vector<int> originalLine = (*outputLines)[i];
             std::vector<int> reIndexedLine = originalLine;
             for (int vtx = 0 ; vtx < originalLine.size() ; vtx++){
-                reIndexedLine[vtx] = orderedVtxList[ originalLine[vtx] ][2];
+                int original_idx = originalLine[vtx];
+                reIndexedLine[vtx] = orderedVtxList[ordVtxIdx(original_idx,2)];
             }
             (*outputLines)[i].clear();
             (*outputLines)[i] = reIndexedLine;
@@ -3162,11 +3188,14 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
         }
 
         for (int i = 0 ; i < numVertices ; i++){
-            printf("%d) v[0] = %d \t v[1] = %d \t v[2] = %d \n", i, orderedVtxList[i][0], orderedVtxList[i][1], orderedVtxList[i][2]);
+            printf("%d) v[0] = %d \t v[1] = %d \t v[2] = %d \n", i, orderedVtxList[ordVtxIdx(i,0)], orderedVtxList[ordVtxIdx(i,1)], orderedVtxList[ordVtxIdx(i,2)]);
         }
     }
 
     printf("Unique Vertices Found = %d, Duplicate Vertices Found = %d\n", uniqueVtxCount, duplicateVtxCount);
+    delete orderedVtxList;
+    delete vtxIdxBlock;
+    delete vtxChkBlock;
 }
 
 void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<btScalar> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
@@ -3183,22 +3212,24 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
         printf("# Triangles %d, # Vertices %d \n", numTriangles, numVertices);
     }
 
-    int orderedVtxList[numVertices][3];
+    int* orderedVtxList = new int[numVertices*3];
 
-    orderedVtxList[0][0] = 0;
-    orderedVtxList[0][1] = 0;
-    orderedVtxList[0][2] = -1;
+    #define ordVtxIdx(a, b) (numVertices * b + a)
+
+    orderedVtxList[ordVtxIdx(0,0)] = 0;
+    orderedVtxList[ordVtxIdx(0,1)] = 0;
+    orderedVtxList[ordVtxIdx(0,2)] = -1;
 
     cVector3d v1Pos, v2Pos;
     for (int i = 0 ; i < numVertices ; i++){
-        orderedVtxList[i][0] = i;
-        orderedVtxList[i][1] = -1;
-        orderedVtxList[i][2] = -1;
+        orderedVtxList[ordVtxIdx(i,0)] = i;
+        orderedVtxList[ordVtxIdx(i,1)] = -1;
+        orderedVtxList[ordVtxIdx(i,2)] = -1;
     }
 
     for (int aIdx = 0 ; aIdx < numVertices - 1 ; aIdx++){
-        if (orderedVtxList[aIdx][1] == -1){
-            orderedVtxList[aIdx][1] = aIdx;
+        if (orderedVtxList[ordVtxIdx(aIdx,1)] == -1){
+            orderedVtxList[ordVtxIdx(aIdx,1)] = aIdx;
             uniqueVtxCount++;
         }
         else{
@@ -3208,17 +3239,17 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
             v1Pos = mesh->m_vertices->getLocalPos(aIdx);
             v2Pos = mesh->m_vertices->getLocalPos(bIdx);
 
-            if (orderedVtxList[bIdx][1] == -1){
+            if (orderedVtxList[ordVtxIdx(bIdx,1)] == -1){
                 if ( (v1Pos - v2Pos).length() == 0 ){
-                    orderedVtxList[bIdx][1] = aIdx;
+                    orderedVtxList[ordVtxIdx(bIdx,1)] = aIdx;
                 }
             }
         }
     }
 
     // Check if the last vtx index was assigned
-    if (orderedVtxList[numVertices-1][1] == -1){
-        orderedVtxList[numVertices-1][1] = orderedVtxList[numVertices-1][0];
+    if (orderedVtxList[ordVtxIdx(numVertices-1,1)] == -1){
+        orderedVtxList[ordVtxIdx(numVertices-1,1)] = orderedVtxList[ordVtxIdx(numVertices-1,0)];
         uniqueVtxCount++;
     }
 
@@ -3240,41 +3271,41 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
     int vtxCounted = 0;
     cVector3d vPos;
     for (int aIdx = 0 ; aIdx < numVertices ; aIdx++){
-        if (orderedVtxList[aIdx][1] == orderedVtxList[aIdx][0] && orderedVtxList[aIdx][2] == -1){ // A unique vertex
+        if (orderedVtxList[ordVtxIdx(aIdx,1)] == orderedVtxList[ordVtxIdx(aIdx,0)] && orderedVtxList[ordVtxIdx(aIdx,2)] == -1){ // A unique vertex
             vPos = mesh->m_vertices->getLocalPos(aIdx);
             (*outputVertices)[3*vtxCounted + 0] = vPos.x();
             (*outputVertices)[3*vtxCounted + 1] = vPos.y();
             (*outputVertices)[3*vtxCounted + 2] = vPos.z();
 
-            orderedVtxList[aIdx][2] = vtxCounted; // Record the index in queue where the unique vertex is added
+            orderedVtxList[ordVtxIdx(aIdx,2)] = vtxCounted; // Record the index in queue where the unique vertex is added
             m_vertexTree[vtxCounted].vertexIdx.push_back(aIdx);
             vtxCounted++; // Increase the queue idx by 1
         }
-        else if(orderedVtxList[aIdx][1] < orderedVtxList[aIdx][0]){ // Not a unique vertex
-            int bIdx = orderedVtxList[aIdx][1];
-            int cIdx = orderedVtxList[bIdx][2];
-            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0] || cIdx == -1){
+        else if(orderedVtxList[ordVtxIdx(aIdx,1)] < orderedVtxList[ordVtxIdx(aIdx,0)]){ // Not a unique vertex
+            int bIdx = orderedVtxList[ordVtxIdx(aIdx,1)];
+            int cIdx = orderedVtxList[ordVtxIdx(bIdx,2)];
+            if (orderedVtxList[ordVtxIdx(bIdx,1)] != orderedVtxList[ordVtxIdx(bIdx,0)] || cIdx == -1){
                 // This shouldn't happend. This means that we haven't assigned the third row
                 // and row 1 is greater than row 2
                 throw "Algorithm Failed for (b[i] < a[i]), a[b[i]] != b[b[i]] : and c[b[i]] != -1";
             }
-            orderedVtxList[aIdx][2] = cIdx;
+            orderedVtxList[ordVtxIdx(aIdx,2)] = cIdx;
             m_vertexTree[cIdx].vertexIdx.push_back(aIdx);
         }
-        else if(orderedVtxList[aIdx][1] > orderedVtxList[aIdx][0]){
-            int bIdx = orderedVtxList[aIdx][1];
-            if (orderedVtxList[bIdx][1] != orderedVtxList[bIdx][0]){
+        else if(orderedVtxList[ordVtxIdx(aIdx,1)] > orderedVtxList[ordVtxIdx(aIdx,0)]){
+            int bIdx = orderedVtxList[ordVtxIdx(aIdx,1)];
+            if (orderedVtxList[ordVtxIdx(bIdx,1)] != orderedVtxList[ordVtxIdx(bIdx,0)]){
                 throw "Algorithm Failed for (b[i] > a[i]), a[b[i]] != b[b[i]] : %d";
             }
-            if (orderedVtxList[bIdx][2] == -1){
+            if (orderedVtxList[ordVtxIdx(bIdx,2)] == -1){
                 vPos = mesh->m_vertices->getLocalPos(bIdx);
                 vtxCounted++;
                 (*outputVertices)[3*vtxCounted + 0] = vPos.x();
                 (*outputVertices)[3*vtxCounted + 1] = vPos.y();
                 (*outputVertices)[3*vtxCounted + 2] = vPos.z();
-                orderedVtxList[bIdx][2] = vtxCounted;
+                orderedVtxList[ordVtxIdx(bIdx,2)] = vtxCounted;
             }
-            orderedVtxList[aIdx][2] = orderedVtxList[bIdx][2];
+            orderedVtxList[ordVtxIdx(aIdx,2)] = orderedVtxList[ordVtxIdx(bIdx,2)];
         }
     }
 
@@ -3285,7 +3316,7 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
             std::cerr << "ERROR ! Triangle Vtx Index " << triIdx << " >= # Vertices " << numVertices << std::endl;
         }
         else{
-            (*outputTriangles)[i] = orderedVtxList[triIdx][2];
+            (*outputTriangles)[i] = orderedVtxList[ordVtxIdx(triIdx,2)];
         }
     }
 
@@ -3296,7 +3327,7 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
             std::vector<int> originalLine = (*outputLines)[i];
             std::vector<int> reIndexedLine = originalLine;
             for (int vtx = 0 ; vtx < originalLine.size() ; vtx++){
-                reIndexedLine[vtx] = orderedVtxList[ originalLine[vtx] ][2];
+                reIndexedLine[vtx] = orderedVtxList[ordVtxIdx(originalLine[vtx],2)];
             }
             (*outputLines)[i].clear();
             (*outputLines)[i] = reIndexedLine;
@@ -3309,9 +3340,11 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
         printf("# Unique Vertices = %d, # Duplicate Vertices = %d\n", uniqueVtxCount, duplicateVtxCount);
 
         for (int i = 0 ; i < numVertices ; i++){
-            std::cerr << i << ")\t" << orderedVtxList[i][0] << " ,\t" << orderedVtxList[i][1] << " ,\t" << orderedVtxList[i][2] << std::endl;
+            std::cerr << i << ")\t" << orderedVtxList[ordVtxIdx(i,0)] << " ,\t" << orderedVtxList[ordVtxIdx(i,1)] << " ,\t" << orderedVtxList[ordVtxIdx(i,2)] << std::endl;
         }
     }
+
+    delete orderedVtxList;
 }
 
 
