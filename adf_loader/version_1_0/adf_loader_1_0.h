@@ -154,13 +154,13 @@ public:
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
     // Load Input Device Attributes
-    virtual bool loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs);
+    virtual bool loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs);
 
     // Load Simulated Device Attributes
-    virtual bool loadSimulatedDeviceAttributes(YAML::Node* a_node, afSimulatedDeviceAttribs *attribs);
+    virtual bool loadSimulatedDeviceAttribs(YAML::Node* a_node, afSimulatedDeviceAttribs *attribs);
 
     // Load all the input device attributes
-    virtual bool loadAllTeleRoboticUnitsAttribs(string, afAllTeleRoboticUnitsAttributes *attribs);
+    virtual bool loadTeleRoboticUnitsAttribs(string, vector<afTeleRoboticUnitAttributes> *attribs, vector<int> dev_indexes);
 
     // Load model from ADF file
     virtual bool loadModelAttribs(string, afModelAttributes* attribs);
@@ -172,7 +172,7 @@ public:
     virtual bool loadLaunchFileAttribs(string, afLaunchAttributes* attribs);
 
     // Load all the input device attributes
-    bool loadAllTeleRoboticUnitsAttribs(YAML::Node* a_node, afAllTeleRoboticUnitsAttributes *attribs);
+    bool loadTeleRoboticUnitsAttribs(YAML::Node* a_node, string a_filepath, vector<afTeleRoboticUnitAttributes>* attribs, vector<int> dev_indexes);
 
     // Load model from ADF file
     bool loadModelAttribs(YAML::Node* a_node, afModelAttributes* attribs);

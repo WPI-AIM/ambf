@@ -68,7 +68,7 @@ public:
     bool loadModelAttribs(std::string a_filepath, afModelAttributes* attribs);
 
     // Load TU Attribs
-    bool loadAllTeleRoboticUnitsAttribs(std::string a_filepath, afAllTeleRoboticUnitsAttributes* attribs);
+    bool loadTeleRoboticUnitsAttribs(std::string a_filepath, vector<afTeleRoboticUnitAttributes> *attribs, vector<int> dev_indexes);
 
     // Load the Launch file Attribs
     bool loadLaunchFileAttribs(std::string a_filepath, afLaunchAttributes* attribs);

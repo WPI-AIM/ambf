@@ -1028,23 +1028,6 @@ public:
 };
 
 
-// Struct for multiple input devices
-struct afAllTeleRoboticUnitsAttributes: public afFileObjectAttributes{
-public:
-    afAllTeleRoboticUnitsAttributes(){}
-    std::vector <afTeleRoboticUnitAttributes> m_teleRoboticUnitsAttribs;
-
-    virtual bool resolveRelativePathAttribs(){
-        for (int i = 0 ; i < m_teleRoboticUnitsAttribs.size() ; i++){
-            m_teleRoboticUnitsAttribs[i].m_sdeAttribs.m_filePath = m_filePath;
-        }
-
-        return true;
-    }
-};
-
-
-
 ///
 /// \brief The afWorldAttributes struct
 ///

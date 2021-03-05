@@ -812,64 +812,43 @@ bool afCollateralControlManager::checkClaimedDeviceIdx(int a_devIdx){
 }
 
 
-bool afCollateralControlManager::createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, int a_max_load_devs){
-    std::vector<int> devIdxes;
-    for (int i = 0 ; i < a_max_load_devs ; i++){
-        devIdxes.push_back(i);
-    }
-    return createFromAttribs(a_attribs, devIdxes);
-}
-
-
 ///
 /// \brief afCollateralControlManager::createFromAttribs
 /// \param a_attribs
 /// \return
 ///
-bool afCollateralControlManager::createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, std::vector<int> a_device_indices){
-
-    afAllTeleRoboticUnitsAttributes& attribs = *a_attribs;
+bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttributes> *a_attribsVec){
 
     bool load_status = false;
 
-    int valid_dev_idxs = cMin(a_device_indices.size(), attribs.m_teleRoboticUnitsAttribs.size());
-    if (valid_dev_idxs > 0){
+    if (a_attribsVec->size() > 0){
         m_deviceHandler.reset(new cHapticDeviceHandler());
-        for (int i = 0; i < valid_dev_idxs; i++){
-            int devIdx = a_device_indices[i];
-            string devName = attribs.m_teleRoboticUnitsAttribs[devIdx].m_iidAttribs.m_hardwareName;
-            if (devIdx >=0 && devIdx < attribs.m_teleRoboticUnitsAttribs.size()){
-                afPhysicalDevice* pD = new afPhysicalDevice(this);
-                afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld, pD);
+    }
 
-                if (pD->createFromAttribs(&attribs.m_teleRoboticUnitsAttribs[devIdx].m_iidAttribs)){
-                    if (sD->createFromAttribs(&attribs.m_teleRoboticUnitsAttribs[devIdx].m_sdeAttribs)){
-                        afCollateralControlUnit ccu;
-                        ccu.m_physicalDevicePtr = pD;
-                        ccu.m_simulatedDevicePtr = sD;
-                        ccu.m_name = devName;
-                        ccu.pairCameras(m_afWorld, attribs.m_teleRoboticUnitsAttribs[devIdx].m_pairedCamerasNames);
-                        m_collateralControlUnits.push_back(ccu);
-                        load_status = true;
-                    }
-                }
-                else
-                {
-                    std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
-                    load_status = false;
-                    delete pD;
-                    delete sD;
-                }
-            }
-            else{
-                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << attribs.m_teleRoboticUnitsAttribs.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << attribs.m_filePath.c_str() << "\"\n";
-                load_status = false;
+    for (int i = 0; i < a_attribsVec->size(); i++){
+        afTeleRoboticUnitAttributes tuAttrib = (*a_attribsVec)[i];
+        string devName = tuAttrib.m_iidAttribs.m_hardwareName;
+        afPhysicalDevice* pD = new afPhysicalDevice(this);
+        afSimulatedDevice* sD = new afSimulatedDevice(m_afWorld, pD);
+
+        if (pD->createFromAttribs(&tuAttrib.m_iidAttribs)){
+            if (sD->createFromAttribs(&tuAttrib.m_sdeAttribs)){
+                afCollateralControlUnit ccu;
+                ccu.m_physicalDevicePtr = pD;
+                ccu.m_simulatedDevicePtr = sD;
+                ccu.m_name = devName;
+                ccu.pairCameras(m_afWorld, tuAttrib.m_pairedCamerasNames);
+                m_collateralControlUnits.push_back(ccu);
+                load_status = true;
             }
         }
-    }
-    else{
-        std::cerr << "ERROR: SIZE OF DEVICE INDEXES : \"" << a_device_indices.size() << "\" > NO. OF DEVICE SPECIFIED IN \"" << attribs.m_filePath.c_str() << "\"\n";
-        load_status = false;
+        else
+        {
+            std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
+            load_status = false;
+            delete pD;
+            delete sD;
+        }
     }
 
     m_numDevices = m_collateralControlUnits.size();

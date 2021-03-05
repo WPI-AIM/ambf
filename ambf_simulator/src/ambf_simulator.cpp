@@ -93,7 +93,7 @@ struct CommandLineOptions{
     // Enable Force Feedback
     bool enableForceFeedback = true;
     // Number of Devices to Load
-    int numDevicesToLoad;
+    int numDevicesToLoad = MAX_DEVICES;
     // A string of device indexes to load
     std::string devicesToLoad = "";
     // A string list of multibody indexes to load
@@ -281,7 +281,6 @@ int main(int argc, char* argv[])
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
     p_opt::notify(var_map);
 
-    g_cmdOpts.numDevicesToLoad = MAX_DEVICES;
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
 
     if(var_map.count("ndevs")){ g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();}
@@ -380,7 +379,7 @@ int main(int argc, char* argv[])
 
     afLaunchAttributes launchAttribs;
     afWorldAttributes worldAttribs;
-    afAllTeleRoboticUnitsAttributes allTUAttribs;
+    std::vector<afTeleRoboticUnitAttributes> tuAttribs;
     std::vector<afModelAttributes> modelsAttribs;
     if (g_adfLoader->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs) == false){
         // Safely Return the program
@@ -390,7 +389,26 @@ int main(int argc, char* argv[])
     launchAttribs.resolveRelativePathAttribs();
 
     g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
-    g_adfLoader->loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allTUAttribs);
+
+    std::vector<int> devIndexes;
+    if (!g_cmdOpts.devicesToLoad.empty()){
+        std::string loadDevIndices = g_cmdOpts.devicesToLoad;
+        loadDevIndices.erase(std::remove(loadDevIndices.begin(), loadDevIndices.end(), ' '), loadDevIndices.end());
+        std::stringstream ss(loadDevIndices);
+        while(ss.good() )
+        {
+            string devIndex;
+            getline( ss, devIndex, ',' );
+            devIndexes.push_back(std::stoi(devIndex));
+        }
+    }
+    else{
+        for (int i = 0 ; i < g_cmdOpts.numDevicesToLoad ; i++){
+            devIndexes.push_back(i);
+        }
+    }
+
+    g_adfLoader->loadTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &tuAttribs, devIndexes);
 
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
@@ -535,22 +553,7 @@ int main(int argc, char* argv[])
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
     g_inputDevices = std::make_shared<afCollateralControlManager>(g_afWorld);
-    if (!g_cmdOpts.devicesToLoad.empty()){
-        std::vector<int> devIndices;
-        std::string loadDevIndices = g_cmdOpts.devicesToLoad;
-        loadDevIndices.erase(std::remove(loadDevIndices.begin(), loadDevIndices.end(), ' '), loadDevIndices.end());
-        std::stringstream ss(loadDevIndices);
-        while(ss.good() )
-        {
-            string devIndex;
-            getline( ss, devIndex, ',' );
-            devIndices.push_back(std::stoi(devIndex));
-        }
-        g_inputDevices->createFromAttribs(&allTUAttribs, devIndices);
-    }
-    else{
-        g_inputDevices->createFromAttribs(&allTUAttribs, g_cmdOpts.numDevicesToLoad);
-    }
+    g_inputDevices->createFromAttribs(&tuAttribs);
 
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR

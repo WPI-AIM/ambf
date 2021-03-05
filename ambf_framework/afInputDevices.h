@@ -346,9 +346,7 @@ public:
     // Get an instance of AFWorld from Input Deivces class
     const afWorldPtr getAFWorld(){return m_afWorld;}
 
-    bool createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, int a_num_devs_to_load=MAX_DEVICES);
-
-    bool createFromAttribs(afAllTeleRoboticUnitsAttributes* a_attribs, std::vector<int> a_device_indices);
+    bool createFromAttribs(vector<afTeleRoboticUnitAttributes> *a_attribs);
 
     boost::filesystem::path getBasePath(){return m_basePath;}
 

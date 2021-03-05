@@ -20,9 +20,12 @@ int main(){
         printf("Loaded Multbody File: %i \n", i);
     }
 
-    afAllTeleRoboticUnitsAttributes allInputDevsAttribs;
+    vector<afTeleRoboticUnitAttributes> tuAttribs;
 
-    loader.loadAllTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &allInputDevsAttribs);
+    // Device indices defined in the input_device.yaml file to load.
+    vector<int> dev_indexes = {0,1,2,3,4,5,6,7};
+
+    loader.loadTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &tuAttribs, dev_indexes);
 
     printf("Loaded Launch File \n");
 

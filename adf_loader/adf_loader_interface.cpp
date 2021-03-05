@@ -205,13 +205,13 @@ bool ADFLoaderInterface::loadModelAttribs(string a_filepath, afModelAttributes *
     }
 }
 
-bool ADFLoaderInterface::loadAllTeleRoboticUnitsAttribs(string a_filepath, afAllTeleRoboticUnitsAttributes *attribs)
+bool ADFLoaderInterface::loadTeleRoboticUnitsAttribs(std::string a_filepath, vector<afTeleRoboticUnitAttributes> *attribs, vector<int> dev_indexes)
 {
     if (!setLoaderVersionForFile(a_filepath)){
         return false;
     }
     else{
-        bool result = m_loader->loadAllTeleRoboticUnitsAttribs(a_filepath, attribs);
+        bool result = m_loader->loadTeleRoboticUnitsAttribs(a_filepath, attribs, dev_indexes);
         return result;
     }
 

@@ -1016,7 +1016,7 @@ bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afOb
     case afObjectType::CAMERA:
         return loadCameraAttribs(&node, (afCameraAttributes*)attribs);
     case afObjectType::INPUT_DEVICE:
-        return loadInputDeviceAttributes(&node, (afInputDeviceAttributes*)attribs);
+        return loadInputDeviceAttribs(&node, (afInputDeviceAttributes*)attribs);
     default:
         return false;
     }
@@ -1903,7 +1903,7 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
 }
 
 
-bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceAttributes *attribs)
+bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -2005,7 +2005,7 @@ bool ADFLoader_1_0::loadInputDeviceAttributes(YAML::Node* a_node, afInputDeviceA
     return true;
 }
 
-bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulatedDeviceAttribs *attribs)
+bool ADFLoader_1_0::loadSimulatedDeviceAttribs(YAML::Node *a_node, afSimulatedDeviceAttribs *attribs)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -2081,14 +2081,13 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttributes(YAML::Node *a_node, afSimulate
 }
 
 
-bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(string a_filepath, afAllTeleRoboticUnitsAttributes *attribs){
-    attribs->m_filePath = afPath(a_filepath);
+bool ADFLoader_1_0::loadTeleRoboticUnitsAttribs(string a_filepath, vector<afTeleRoboticUnitAttributes>* attribs, vector<int> dev_indexes){
     YAML::Node node = YAML::LoadFile(a_filepath);
-    return loadAllTeleRoboticUnitsAttribs(&node, attribs);
+    return loadTeleRoboticUnitsAttribs(&node, a_filepath, attribs, dev_indexes);
 }
 
 
-bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTeleRoboticUnitsAttributes *attribs)
+bool ADFLoader_1_0::loadTeleRoboticUnitsAttribs(YAML::Node *a_node, string a_filepath, vector<afTeleRoboticUnitAttributes>* attribs, vector<int> dev_indexes)
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
@@ -2096,39 +2095,54 @@ bool ADFLoader_1_0::loadAllTeleRoboticUnitsAttribs(YAML::Node *a_node, afAllTele
         return 0;
     }
 
+    afPath filePath(a_filepath);
+
     YAML::Node inputDevicesNode = node["input devices"];
 
-    for (int i = 0 ; i < inputDevicesNode.size() ; i++){
-        afTeleRoboticUnitAttributes tuAttribs;
-        std::string devName = inputDevicesNode[i].as<std::string>();
-        YAML::Node tuNode = node[devName];
-        bool results[2] = {false, false};
-        if (loadInputDeviceAttributes(&tuNode, &tuAttribs.m_iidAttribs)){
-            results[0] = true;
-        }
-        tuAttribs.m_sdeAttribs.m_filePath = attribs->m_filePath;
-        if (loadSimulatedDeviceAttributes(&tuNode, &tuAttribs.m_sdeAttribs)){
-            results[1] = true;
-        }
+    int valid_dev_idxs = min(dev_indexes.size(), inputDevicesNode.size());
 
-        YAML::Node pairCamerasNode = tuNode["pair cameras"];
+    bool load_status = true;
 
-        if(pairCamerasNode.IsDefined() && results[0] == true && results[1] == true){
-            for(int i = 0 ; i < pairCamerasNode.size() ; i++){
-                string camName = pairCamerasNode[i].as<string>();
-                tuAttribs.m_pairedCamerasNames.push_back(camName);
+    if (valid_dev_idxs > 0){
+        for (int i = 0 ; i < valid_dev_idxs ; i++){
+            int devIdx = dev_indexes[i];
+            if (devIdx >=0 && devIdx < inputDevicesNode.size()){
+                afTeleRoboticUnitAttributes tuAttribs;
+                std::string devName = inputDevicesNode[devIdx].as<std::string>();
+                YAML::Node tuNode = node[devName];
+                bool results[2] = {false, false};
+                if (loadInputDeviceAttribs(&tuNode, &tuAttribs.m_iidAttribs)){
+                    results[0] = true;
+                }
+                tuAttribs.m_sdeAttribs.m_filePath = filePath;
+                if (loadSimulatedDeviceAttribs(&tuNode, &tuAttribs.m_sdeAttribs)){
+                    results[1] = true;
+                }
+
+                YAML::Node pairCamerasNode = tuNode["pair cameras"];
+
+                if(pairCamerasNode.IsDefined() && results[0] == true && results[1] == true){
+                    for(int j = 0 ; j < pairCamerasNode.size() ; j++){
+                        string camName = pairCamerasNode[j].as<string>();
+                        tuAttribs.m_pairedCamerasNames.push_back(camName);
+                    }
+                }
+
+                if (results[0] == true && results[1] == true){
+                    attribs->push_back(tuAttribs);
+                }
+                else{
+                    // THROW SOME WARNING
+                }
             }
-        }
-
-        if (results[0] == true && results[1] == true){
-            attribs->m_teleRoboticUnitsAttribs.push_back(tuAttribs);
-        }
-        else{
-            // THROW SOME WARNING
+            else{
+                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevicesNode.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << filePath.c_str() << "\"\n";
+                load_status = false;
+            }
         }
     }
 
-    return true;
+    return load_status;
 }
 
 
