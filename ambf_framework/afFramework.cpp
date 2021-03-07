@@ -2881,6 +2881,8 @@ bool afSoftBody::generateFromMesh(cMultiMesh *multiMesh, const double a_margin)
         }
         m_bulletSoftBody->getCollisionShape()->setMargin(a_margin);
     }
+
+    return true;
 }
 
 void afSoftBody::updateMins(cVector3d &vMin, cVector3d &v){
@@ -3193,9 +3195,9 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
     }
 
     printf("Unique Vertices Found = %d, Duplicate Vertices Found = %d\n", uniqueVtxCount, duplicateVtxCount);
-    delete orderedVtxList;
-    delete vtxIdxBlock;
-    delete vtxChkBlock;
+    delete[] orderedVtxList;
+    delete[] vtxIdxBlock;
+    delete[] vtxChkBlock;
 }
 
 void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<btScalar> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
@@ -3344,7 +3346,7 @@ void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::v
         }
     }
 
-    delete orderedVtxList;
+    delete[] orderedVtxList;
 }
 
 
@@ -3391,6 +3393,8 @@ bool afSoftBody::createLinksFromLines(btSoftBody *a_softBody, std::vector< std::
             }
         }
     }
+
+    return true;
 }
 
 
@@ -5141,6 +5145,7 @@ bool afWorld::createDefaultWorld(){
 
     // add plane to world as we will want to make it visibe
 //    addChild(walls);
+    return true;
 }
 
 
