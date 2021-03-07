@@ -46,7 +46,7 @@
 # COURTESY:
 # Starting point from CMakeLists of CHAI3D by SEB
 
-cmake_minimum_required (VERSION 3.0.0)
+cmake_minimum_required (VERSION 3.1)
 project (AMBF)
 
 # set version info
@@ -89,13 +89,18 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${PROJECT_SOURCE_DIR}/bin/${O
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
 
 # find dependencies
-find_package(yaml-cpp REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
-include_directories(${YAML_CPP_INCLUDE_DIR})
 include_directories (${OPENGL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
+
+find_package(yaml-cpp QUIET)
+if (NOT ${yaml-cpp_FOUND})
+    message("-- *** YAML-CPP NOT FOUND, ADDING IT AS AN EXTERNAL PROJECT")
+    include(cmake/ExternalYamlCpp.cmake)
+endif()
+include_directories(${YAML_CPP_INCLUDE_DIR})
 
 set(AMBF_ROS_INCLUDE_DIRS "")
 set(AMBF_ROS_LIBRARIES "")
@@ -111,7 +116,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         # Call find catkin again, with REQUIRED this time, it's okay to write over previously
         # imported catkin variables
         find_package(catkin QUIET COMPONENTS ambf_comm ambf_msgs dvrk_arm razer_hydra cv_bridge image_transport)
-	find_package(tf_function REQUIRED)
+	      find_package(tf_function REQUIRED)
 
         if(${ambf_comm_FOUND} AND ${ambf_msgs_FOUND} AND ${dvrk_arm_FOUND})
             message("-- *** FOUND AMBF_COMM, AMBF_MSGS and DVRK_ARM, ENABLING DVRK DEVICE SUPPORT")
@@ -311,7 +316,11 @@ add_definitions (${PROJECT_DEFINITIONS} -DGLEW_STATIC -DAL_ALEXT_PROTOTYPES -DAL
 # static library
 add_library (adf_loader ${source_adf_loader})
 
-target_link_libraries(adf_loader ${YAML_CPP_LIBRARIES} ${Boost_LIBRARIES})
+if(NOT ${yaml-cpp_FOUND})
+  add_dependencies(adf_loader YAML_CPP_EXTERNAL_PROJECT)
+endif()
+
+target_link_libraries(adf_loader ${YAML_CPP_LIBRAIRES} ${Boost_LIBRARIES})
 
 set (ADF_LOADER_LIBRARIES adf_loader)
 
