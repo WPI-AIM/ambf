@@ -320,7 +320,7 @@ if(NOT ${yaml-cpp_FOUND})
   add_dependencies(adf_loader YAML_CPP_EXTERNAL_PROJECT)
 endif()
 
-target_link_libraries(adf_loader ${YAML_CPP_LIBRAIRES} ${Boost_LIBRARIES})
+target_link_libraries(adf_loader ${YAML_CPP_LIBRARIES} ${Boost_LIBRARIES})
 
 set (ADF_LOADER_LIBRARIES adf_loader)
 
