@@ -385,6 +385,7 @@ struct afBaseObjectAttributes{
 public:
     afBaseObjectAttributes(){
         m_pathsResolved = false;
+        m_namespaceResolved = false;
     }
     // Base Struct that can be used to later cast specific Object Attributes
     afIdentificationAttributes m_identificationAttribs;
