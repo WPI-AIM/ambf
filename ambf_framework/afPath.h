@@ -47,6 +47,7 @@
 #include <string>
 
 using namespace std;
+using namespace boost::filesystem;
 
 class afPath{
 public:
@@ -56,7 +57,7 @@ public:
 
     afPath(string a_path){m_path = a_path;}
 
-    afPath(boost::filesystem::path a_path){m_path = a_path;}
+    afPath(path a_path){m_path = a_path;}
 
     string c_str(){
         return m_path.c_str();
@@ -93,11 +94,11 @@ public:
         }
     }
 
-    boost::filesystem::path& getWrappedObject(){
+    path& getWrappedObject(){
         return m_path;
     }
 
-    boost::filesystem::path getWrappedObject() const{
+    path getWrappedObject() const{
         return m_path;
     }
 
@@ -107,7 +108,7 @@ public:
     }
 
     afPath operator/= (std::string a_path){
-        m_path = m_path / boost::filesystem::path(a_path);
+        m_path = m_path / path(a_path);
     }
 
     void operator= ( string a_path){
@@ -115,7 +116,7 @@ public:
     }
 
 private:
-    boost::filesystem::path m_path;
+    path m_path;
 };
 
 inline afPath operator/ (const afPath& a_path1, const afPath& a_path2){
