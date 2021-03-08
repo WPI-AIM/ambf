@@ -93,7 +93,7 @@ struct CommandLineOptions{
     // Enable Force Feedback
     bool enableForceFeedback = true;
     // Number of Devices to Load
-    int numDevicesToLoad = MAX_DEVICES;
+    int numDevicesToLoad = 0;
     // A string of device indexes to load
     std::string devicesToLoad = "";
     // A string list of multibody indexes to load
