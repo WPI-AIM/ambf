@@ -142,7 +142,6 @@ typedef afActuator* afActuatorPtr;
 typedef map<string, afActuatorPtr> afActuatorMap;
 typedef vector<afActuatorPtr> afActuatorVec;
 //------------------------------------------------------------------------------
-class afModel;
 typedef afModel* afModelPtr;
 typedef map<string, afModelPtr> afModelMap;
 typedef vector<afModelPtr> afModelVec;
@@ -2166,6 +2165,8 @@ public:
     virtual ~afModel();
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
+
+    virtual void fetchCommands(double dt){}
 
     afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMapLocal;}
     afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMapLocal;}

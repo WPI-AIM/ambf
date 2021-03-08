@@ -5174,7 +5174,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     if (attribs.m_environmentModel.m_use){
         afModelPtr envModel = new afModel(this);
         if (envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs)){
-            // ADD THE MODEL TO WORLD SOMEHOW
+            addAFModel(envModel);
         }
 
     }
@@ -7104,6 +7104,10 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     afModelAttributes& attribs = *a_attribs;
     attribs.resolveRelativeNamespace();
     attribs.resolveRelativePathAttribs();
+
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
+    setName(attribs.m_identificationAttribs.m_name);
+    setIdentifier(attribs.m_identifier);
 
     bool enable_comm = a_attribs->m_enableComm;
 

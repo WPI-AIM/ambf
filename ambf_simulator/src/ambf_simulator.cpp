@@ -471,9 +471,9 @@ int main(int argc, char* argv[])
     }
 
     for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
-        afModel model(g_afWorld);
-        if (model.createFromAttribs(&modelsAttribs[idx])){
-//            g_afWorld->addAFModel(&model);
+        afModelPtr model = new afModel(g_afWorld);
+        if (model->createFromAttribs(&modelsAttribs[idx])){
+            g_afWorld->addAFModel(model);
         }
     }
 
@@ -682,7 +682,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
                 g_afWorld->pausePhysics(true);
                 afModelAttributes modelAttribs;
                 if (g_adfLoader->loadModelAttribs(paths[i], &modelAttribs)){
-                    afModel* model = new afModel(g_afWorld);
+                    afModelPtr model = new afModel(g_afWorld);
                     if (model->createFromAttribs(&modelAttribs)){
                         g_afWorld->addAFModel(model);
                     }
