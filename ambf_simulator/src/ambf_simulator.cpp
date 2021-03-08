@@ -1793,7 +1793,7 @@ void updateHapticDevice(void* a_arg){
             if(g_inputDevices->m_cam_btn_pressed){
                 if(phyDev->btn_cam_rising_edge){
                     phyDev->btn_cam_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef()/ phyDev->m_workspaceScale);
+                    simDev->setPosRefOrigin(simDev->getPosRef());
                     simDev->setRotRefOrigin(simDev->getRotRef());
                 }
                 phyDev->setPosClutched(phyDev->getPos());
