@@ -1365,14 +1365,19 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
     // Check if a softbody has been picked
     if (g_afWorld->m_pickedSoftBody){
-        cVector3d delta = g_afWorld->m_pickedNodeGoal - to_cVector3d(g_afWorld->m_pickedNode->m_x);
-        static const double maxdrag = 10;
-        if (delta.length() > (maxdrag * maxdrag))
-        {
-            delta.normalize();
-            delta = delta * maxdrag;
+        if (g_afWorld->m_pickedNode->m_im == 0.0){
+            g_afWorld->m_pickedNode->m_x << g_afWorld->m_pickedNodeGoal;
         }
-        g_afWorld->m_pickedNode->m_v += to_btVector(delta) / timeStep;
+        else{
+            btVector3 delta = to_btVector(g_afWorld->m_pickedNodeGoal) - g_afWorld->m_pickedNode->m_x;
+            static const double maxdrag = 10;
+            if (delta.length() > (maxdrag * maxdrag))
+            {
+                delta.normalize();
+                delta = delta * maxdrag;
+            }
+            g_afWorld->m_pickedNode->m_v += delta / timeStep;
+        }
     }
 
 //    afJointMap::const_iterator it;
