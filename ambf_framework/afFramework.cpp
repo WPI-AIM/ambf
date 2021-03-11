@@ -3752,17 +3752,16 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    // Forcefully set passive for now.
-    setPassive(true);
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFJointMap());
+        // Joint Comm not implemented yet.
+//        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFJointMap());
 
-        afCreateCommInstance(afObjectType::JOINT,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
+//        afCreateCommInstance(afObjectType::JOINT,
+//                             getQualifiedName() + remap_idx,
+//                             m_afWorld->getGlobalNamespace(),
+//                             getMinPublishFrequency(),
+//                             getMaxPublishFrequency());
     }
 
     return true;
