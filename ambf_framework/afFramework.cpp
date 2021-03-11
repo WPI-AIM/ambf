@@ -1401,6 +1401,14 @@ void afInertialObject::estimateInertia()
     }
 }
 
+btTransform afInertialObject::getCOMTransform()
+{
+    // Inertial Transform
+    btTransform T_iINw;
+    m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
+    return (T_iINw * getInverseInertialOffsetTransform());
+}
+
 
 ///
 /// \brief afInertialObject::getSurfaceProperties
@@ -2119,12 +2127,7 @@ void afRigidBody::update()
 {
     if (m_bulletRigidBody)
     {
-        // Inertial and Mesh Transform
-        btTransform T_iINw, T_mINw;
-        m_bulletRigidBody->getMotionState()->getWorldTransform(T_iINw);
-        T_mINw = T_iINw * getInverseInertialOffsetTransform();
-
-        m_localTransform << T_mINw;
+        m_localTransform << getCOMTransform();
     }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -4181,8 +4184,8 @@ void afRayTracerSensor::update(){
     if (m_parentBody == nullptr){
         return;
     }
-//    btTransform T_bINw = m_parentBody->m_bulletRigidBody->getWorldTransform();
-    btTransform T_bINw = to_btTransform(getGlobalTransform());
+
+    btTransform T_bINw = m_parentBody->getCOMTransform() * to_btTransform(m_localTransform);
     for (uint i = 0 ; i < m_count ; i++){
         btVector3 rayFromWorld, rayToWorld;
         rayFromWorld = T_bINw * to_btVector(m_raysAttribs[i].m_rayFromLocal);

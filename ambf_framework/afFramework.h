@@ -733,6 +733,9 @@ public:
 
     inline btTransform getInverseInertialOffsetTransform(){return m_T_bINi;}
 
+    // Get Center of Mass Transform
+    btTransform getCOMTransform();
+
     afSurfaceAttributes getSurfaceProperties();
 
     inline void setMass(double a_mass){m_mass = a_mass;}
