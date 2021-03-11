@@ -60,7 +60,7 @@ void LightRosCom::init(){
 
 LightRosCom::~LightRosCom(){
     ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 void LightRosCom::reset_cmd(){

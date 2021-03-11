@@ -60,7 +60,7 @@ void SensorRosCom::init(){
 
 SensorRosCom::~SensorRosCom(){
     ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 void SensorRosCom::reset_cmd(){

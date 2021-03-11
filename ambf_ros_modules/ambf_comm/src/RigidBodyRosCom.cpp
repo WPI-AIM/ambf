@@ -60,7 +60,7 @@ void RigidBodyRosCom::init(){
 
 RigidBodyRosCom::~RigidBodyRosCom(){
     ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 void RigidBodyRosCom::reset_cmd(){

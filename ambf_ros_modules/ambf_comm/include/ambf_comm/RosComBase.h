@@ -52,25 +52,39 @@
 #include <ros/duration.h>
 #include "ambf_comm/CmdWatchDog.h"
 
+class Node{
+  public:
+    Node(){}
+    ~Node(){
+        if (s_initialized){
+            s_initialized = false;
+            std::cerr << "INFO! DESTROYING ROS NODE HANDLE\n";
+            ros::shutdown();
+        }
+        // Any cleanup needed?
+    }
+    static boost::shared_ptr<ros::NodeHandle> getNodePtr(){
+        if (s_initialized == false){
+            int argc = 0;
+            char **argv = 0;
+            ros::init(argc, argv, "ambf_comm_node");
+            s_nodePtr.reset(new ros::NodeHandle);
+            s_initialized = true;
+            std::cerr << "INFO! INITIALIZING ROS NODE HANDLE\n";
+        }
+
+        return s_nodePtr;
+    }
+
+private:
+    static bool s_initialized;
+    static boost::shared_ptr<ros::NodeHandle> s_nodePtr;
+};
+
 template <class T_state, class T_cmd>
 class RosComBase{
 public:
-    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
-    {
-        m_name = a_name;
-        m_namespace = a_namespace;
-
-        m_freq_min = a_freq_min;
-        m_freq_max = a_freq_max;
-
-        int argc = 0;
-        char **argv = 0;
-        ros::init(argc, argv, "ambf_comm_node");
-        nodePtr.reset(new ros::NodeHandle);
-        aspinPtr.reset(new ros::AsyncSpinner(1));
-        nodePtr->setCallbackQueue(&m_custom_queue);
-        m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
-    }
+    RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();

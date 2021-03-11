@@ -60,7 +60,7 @@ void ObjectRosCom::init(){
 
 ObjectRosCom::~ObjectRosCom(){
     ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 void ObjectRosCom::reset_cmd(){

@@ -60,7 +60,7 @@ void VehicleRosCom::init(){
 
 VehicleRosCom::~VehicleRosCom(){
     ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_State.name.data << std::endl;
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 void VehicleRosCom::reset_cmd(){

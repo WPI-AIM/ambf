@@ -60,76 +60,46 @@
 #include "ambf_msgs/WorldCmd.h"
 #include "ambf_msgs/WorldState.h"
 
+bool Node::s_initialized;
+boost::shared_ptr<ros::NodeHandle> Node::s_nodePtr;
 
-template<>
+template<class T_state, class T_cmd>
 ///
 /// \brief RosComBase::cleanUp
 ///
-void RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp(){
+void RosComBase<T_state, T_cmd>::cleanUp(){
     m_pub.shutdown();
     m_sub.shutdown();
 }
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
+template<class T_state, class T_cmd>
+RosComBase<T_state, T_cmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out)
+{
+    m_name = a_name;
+    m_namespace = a_namespace;
+
+    m_freq_min = a_freq_min;
+    m_freq_max = a_freq_max;
+    nodePtr = Node::getNodePtr();
+    aspinPtr.reset(new ros::AsyncSpinner(1));
+    nodePtr->setCallbackQueue(&m_custom_queue);
+    m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));
 }
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
+template void RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::cleanUp();
+template void RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::cleanUp();
+template void RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::cleanUp();
+template void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp();
+template void RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp();
+template void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp();
+template void RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp();
+template void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp();
 
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
-
-template<>
-///
-/// \brief RosComBase::cleanUp
-///
-void RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::cleanUp(){
-    m_pub.shutdown();
-    m_sub.shutdown();
-}
+template RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::ObjectState, ambf_msgs::ObjectCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
