@@ -42,7 +42,7 @@
 # */
 # //==============================================================================
 
-from mimic import ProxyMTM
+from proxy_device import ProxyMTM
 import rospy
 import time
 import postion_control_util as PU
@@ -60,6 +60,7 @@ App = PU.get_app_handle()
 
 while not rospy.is_shutdown():
     App.update()
+    mtmr.publish_status()
     mtmr.set_pos(PU.x, PU.y, PU.z)
     mtmr.set_angle(PU.roll, PU.pitch, PU.yaw)
     mtmr.set_gripper_angle(PU.gripper)

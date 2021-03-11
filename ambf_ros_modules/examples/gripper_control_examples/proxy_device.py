@@ -43,7 +43,7 @@
 # //==============================================================================
 
 import rospy
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String, Bool
 from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3
 from sensor_msgs.msg import Joy, JointState
 # rom geomagic_control.msg import DeviceFeedback, DeviceButtonEvent
@@ -93,6 +93,9 @@ class ProxyMTM:
         wrench_str = '/dvrk/' + arm_name + '/set_wrench_body'
         gripper_str = '/dvrk/' + arm_name + '/state_gripper_current'
         status_str = '/dvrk/' + arm_name + '/status'
+        # Init some other pubs that allow the force to sent by dvrk_arm library
+        gripper_closer_str = '/dvrk/' + arm_name + '/gripper_closed_event'
+        state_str = '/dvrk/' + arm_name + '/robot_state'
 
         self.base_frame = Frame(Rotation().RPY(0, 0, 0), Vector(0, 0, 0))
         self.tip_frame = Frame(Rotation().RPY(0, 0, 0), Vector(0, 0, 0))
@@ -101,12 +104,12 @@ class ProxyMTM:
 
         if arm_name == 'MTMR':
             self._mtm_arm_type = 0
-            self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-            self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+            self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+            self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
         elif arm_name == 'MTML':
             self._mtm_arm_type = 1
-            self.base_frame.M = Rotation.RPY((-1.57079 - 0.6), 3.14, 0)
-            self.tip_frame.M = Rotation.RPY(-3.14, 0, 1.57079)
+            self.base_frame.M = Rotation.RPY(0.0, 0, 1.57079)
+            self.tip_frame.M = Rotation.RPY(0, -1.57079, 0)
         else:
             print('SPECIFIED ARM: ', arm_name)
             print('WARNING, MTM ARM TYPE NOT UNDERSTOOD, SHOULD BE MTMR or MTML')
@@ -129,8 +132,11 @@ class ProxyMTM:
         self._pose_pub = rospy.Publisher(pose_str, PoseStamped, queue_size=1)
         self._gripper_pub = rospy.Publisher(gripper_str, JointState, queue_size=1)
         self._status_pub = rospy.Publisher(status_str, Empty, queue_size=1)
+        self._state_pub = rospy.Publisher(state_str, String, queue_size=1)
+        self._gripper_closed_pub = rospy.Publisher(gripper_closer_str, Bool, queue_size=1)
 
         self._force_sub = rospy.Subscriber(wrench_str, Wrench, self.force_cb, queue_size=10)
+
         pass
 
     def force_cb(self, msg):
@@ -174,6 +180,8 @@ class ProxyMTM:
 
     def publish_status(self):
         self._status_pub.publish(Empty())
+        self._state_pub.publish('DVRK_EFFORT_CARTESIAN')
+        self._gripper_closed_pub.publish(True)
 
     def test_angle(self):
         min_a = -1.57
