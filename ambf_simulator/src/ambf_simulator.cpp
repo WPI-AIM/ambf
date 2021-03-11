@@ -1853,8 +1853,8 @@ void updateHapticDevice(void* a_arg){
 
             force_prev = force;
             torque_prev = torque_prev;
-            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
-            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->K_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
+            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
+            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
 
             //            if ((force - force_prev).length() > phyDev->m_maxJerk){
             //                cVector3d normalized_force = force;
@@ -1881,22 +1881,22 @@ void updateHapticDevice(void* a_arg){
 
             phyDev->applyWrench(force, torque);
 
-            if (phyDev->K_lh_ramp < phyDev->m_controller.P_lin)
+            if (phyDev->P_lh_ramp < 1.0)
             {
-                phyDev->K_lh_ramp = phyDev->K_lh_ramp + 0.1 * dt * phyDev->m_controller.P_lin;
+                phyDev->P_lh_ramp = phyDev->P_lh_ramp + 0.1 * dt * phyDev->m_controller.P_lin;
             }
             else
             {
-                phyDev->K_lh_ramp = phyDev->m_controller.P_lin;
+                phyDev->P_lh_ramp = 1.0;
             }
 
-            if (phyDev->K_ah_ramp < phyDev->m_controller.P_ang)
+            if (phyDev->P_ah_ramp < 1.0)
             {
-                phyDev->K_ah_ramp = phyDev->K_ah_ramp + 0.1 * dt * phyDev->m_controller.P_ang;
+                phyDev->P_ah_ramp = phyDev->P_ah_ramp + 0.1 * dt * phyDev->m_controller.P_ang;
             }
             else
             {
-                phyDev->K_ah_ramp = phyDev->m_controller.P_ang;
+                phyDev->P_ah_ramp = 1.0;
             }
 
         }

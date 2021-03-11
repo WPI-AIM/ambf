@@ -281,8 +281,8 @@ public:
     bool m_btn_prev_state_falling[10] = {false};
     cFrequencyCounter m_freq_ctr;
 
-    double K_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
-    double K_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
+    double P_lh_ramp = 0;           //Linear Haptic Stiffness Gain Ramp
+    double P_ah_ramp = 0;           //Angular Haptic Stiffness Gain Ramp
 
     afCartesianController m_controller;
 
