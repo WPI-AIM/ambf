@@ -1524,6 +1524,7 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
     YAML::Node bodyNamespace = bodyNode["namespace"];
     YAML::Node bodyMass = bodyNode["mass"];
     YAML::Node bodyController = bodyNode["controller"];
+    YAML::Node bodyControllerOutputType = bodyNode["controller output type"];
     YAML::Node bodyInertia = bodyNode["inertia"];
     YAML::Node bodyPos = bodyNode["location"]["position"];
     YAML::Node bodyRot = bodyNode["location"]["orientation"];
@@ -2326,6 +2327,18 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
         // internal velocity controller
         m_controller.setAngularGains(10, 0, 0);
         m_controller.m_orientationOutputType = afControlType::velocity;
+    }
+
+    if (bodyControllerOutputType.IsDefined()){
+        std::string outputType = bodyControllerOutputType.as<std::string>();
+        if ( (outputType.compare("FORCE") == 0) || (outputType.compare("force") == 0)){
+            m_controller.m_positionOutputType = afControlType::force;
+            m_controller.m_orientationOutputType = afControlType::force;
+        }
+        else if ( (outputType.compare("VELOCITY") == 0) || (outputType.compare("velocity") == 0) ){
+            m_controller.m_positionOutputType= afControlType::velocity;
+            m_controller.m_orientationOutputType= afControlType::velocity;
+        }
     }
 
     if(m_mass == 0.0){
@@ -3559,6 +3572,7 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
     YAML::Node jointStiffness = jointNode["stiffness"];
     YAML::Node jointType = jointNode["type"];
     YAML::Node jointController = jointNode["controller"];
+    YAML::Node jointControllerOutputType = jointNode["controller output type"];
     YAML::Node jointIgnoreInterCollision = jointNode["ignore inter-collision"];
     YAML::Node jointPassive = jointNode["passive"];
 
@@ -3739,6 +3753,16 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
         m_controller.I = 0;
         m_controller.D = 0;
         m_controller.m_outputType = afControlType::velocity;
+    }
+
+    if (jointControllerOutputType.IsDefined()){
+        std::string outputType = jointControllerOutputType.as<std::string>();
+        if ( (outputType.compare("FORCE") == 0) || (outputType.compare("force") == 0)){
+            m_controller.m_outputType= afControlType::force;
+        }
+        else if ( (outputType.compare("VELOCITY") == 0) || (outputType.compare("velocity") == 0) ){
+            m_controller.m_outputType= afControlType::velocity;
+        }
     }
 
     // Bullet takes the x axis as the default for prismatic joints
