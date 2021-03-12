@@ -3535,7 +3535,6 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_childName = attribs.m_hierarchyAttribs.m_childName;
     m_enableActuator = attribs.m_enableMotor;
-    m_controller.m_maxImpulse = attribs.m_maxMotorImpulse; // max rate of change of effort on Position Controllers
     m_offset = attribs.m_offset;
     m_enableLimits = attribs.m_enableLimits;
     m_lowerLimit = attribs.m_lowerLimit;

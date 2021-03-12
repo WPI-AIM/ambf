@@ -737,6 +737,7 @@ bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointCont
 {
     YAML::Node & node = *a_node;
     YAML::Node controllerNode = node["controller"];
+    YAML::Node controllerOutputTypeNode = node["controller output type"];
 
     if (controllerNode.IsDefined()){
         if( (controllerNode["P"]).IsDefined())
@@ -757,6 +758,11 @@ bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointCont
         attribs->m_I = 0;
         attribs->m_D = 0;
         attribs->m_outputType = afControlType::VELOCITY;
+    }
+
+    if (controllerOutputTypeNode.IsDefined()){
+        string controller_output_type = controllerOutputTypeNode.as<string>();
+        attribs->m_outputType = ADFUtils::getControlTypeFromString(controller_output_type);
     }
 
     return true;
@@ -832,13 +838,13 @@ afPrimitiveShapeType ADFUtils::getPrimitiveShapeTypeFromString(const string &a_s
 afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const string &a_shape_str)
 {
     afCollisionMeshShapeType meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
-    if (a_shape_str.compare("CONVEX_HULL") == 0 || a_shape_str.compare("convex_hull") == 0 || a_shape_str.compare("hull") == 0){
+    if ( (a_shape_str.compare("CONVEX_HULL") == 0) || (a_shape_str.compare("convex_hull") == 0) || (a_shape_str.compare("hull") == 0) ){
         meshShapeType = afCollisionMeshShapeType::CONVEX_HULL;
     }
-    else if (a_shape_str.compare("CONVEX_MESH") == 0 || a_shape_str.compare("convex_mesh") == 0){
+    else if (( a_shape_str.compare("CONVEX_MESH") == 0) || (a_shape_str.compare("convex_mesh") == 0) ){
         meshShapeType = afCollisionMeshShapeType::CONVEX_MESH;
     }
-    else if (a_shape_str.compare("TRIMESH") == 0 || a_shape_str.compare("CONCAVE_MESH") == 0 || a_shape_str.compare("trimesh") == 0){
+    else if ( (a_shape_str.compare("TRIMESH") == 0) || (a_shape_str.compare("CONCAVE_MESH") == 0) || (a_shape_str.compare("trimesh") == 0) ){
         meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
     }
     else{
@@ -850,13 +856,13 @@ afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const str
 afControlType ADFUtils::getControlTypeFromString(const string &a_control_str)
 {
     afControlType controlType = afControlType::FORCE;
-    if (a_control_str.compare("FORCE") == 0 || a_control_str.compare("force") == 0){
+    if ( (a_control_str.compare("FORCE") == 0) || (a_control_str.compare("EFFORT") == 0) || (a_control_str.compare("force") == 0) || (a_control_str.compare("effort") == 0) ){
         controlType = afControlType::FORCE;
     }
-    else if (a_control_str.compare("VELOCITY") == 0 || a_control_str.compare("velocity") == 0){
+    else if (( a_control_str.compare("VELOCITY") == 0) || (a_control_str.compare("velocity")== 0) ){
         controlType = afControlType::VELOCITY;
     }
-    else if (a_control_str.compare("POSITION") == 0 || a_control_str.compare("position") == 0){
+    else if ( (a_control_str.compare("POSITION") == 0) || (a_control_str.compare("position") == 0) ){
         controlType = afControlType::POSITION;;
     }
     else{
