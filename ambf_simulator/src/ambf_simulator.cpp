@@ -1670,17 +1670,12 @@ void updateHapticDevice(void* a_arg){
     phyDev->setRotClutched(cMatrix3d(0, 0, 0));
     simDev->setRotRefOrigin(phyDev->getRot());
 
-    cVector3d dpos, ddpos, dposLast;
-    cMatrix3d drot, ddrot, drotLast;
-    dpos.set(0,0,0); ddpos.set(0,0,0); dposLast.set(0,0,0);
-    drot.identity(); ddrot.identity(); drotLast.identity();
-
     double P_lc_offset = 10;
     double P_ac_offset = 1;
     double D_lc_offset = 1;
     double D_ac_offset = 1;
-    double K_lh_offset = 5;
-    double K_ah_offset = 1;
+    double P_lh_offset = 5;
+    double P_ah_offset = 1;
 
     double wait_time = 3.0;
     if (std::strcmp(phyDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
@@ -1688,11 +1683,8 @@ void updateHapticDevice(void* a_arg){
     }
 
     cVector3d force, torque;
-    cVector3d force_prev, torque_prev;
     force.set(0,0,0);
     torque.set(0,0,0);
-    force_prev.set(0,0,0);
-    torque_prev.set(0,0,0);
 
     // main haptic simulation loop
     while(g_simulationRunning)
@@ -1767,12 +1759,12 @@ void updateHapticDevice(void* a_arg){
                 if(btn_2_rising_edge) g_inputDevices->increment_D_ac(-D_ac_offset);
                 break;
             case MODES::CHANGE_DEV_LIN_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_K_lh(K_lh_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_K_lh(-K_lh_offset);
+                if(btn_1_rising_edge) g_inputDevices->increment_K_lh(P_lh_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_K_lh(-P_lh_offset);
                 break;
             case MODES::CHANGE_DEV_ANG_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_K_ah(K_ah_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_K_ah(-K_ah_offset);
+                if(btn_1_rising_edge) g_inputDevices->increment_K_ah(P_ah_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_K_ah(-P_ah_offset);
                 break;
             }
 
@@ -1838,37 +1830,12 @@ void updateHapticDevice(void* a_arg){
             // update position of simulated gripper
             simDev->updateGlobalPose();
 
-            dposLast = dpos;
-            dpos = simDev->getPosRef() - simDev->getPos();
-            ddpos = (dpos - dposLast) / dt;
-
-            drotLast = drot;
-            drot = cTranspose(simDev->getRot()) * simDev->getRotRef();
-            ddrot = (cTranspose(drot) * drotLast);
-
-            double angle, dangle;
-            cVector3d axis, daxis;
-            drot.toAxisAngle(axis, angle);
-            ddrot.toAxisAngle(daxis, dangle);
-
-            force_prev = force;
-            torque_prev = torque_prev;
-            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
-            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
+            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.computeOutput<cVector3d, cVector3d>(simDev->getPos(), simDev->getPosRef(), dt));
+            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.computeOutput<cVector3d, cMatrix3d>(simDev->getRot(), simDev->getRotRef(), dt));
 
             // Orient the wrench along the camera view
             force = cTranspose(devCams[0]->getLocalRot()) * force;
             torque = cTranspose(devCams[0]->getLocalRot()) * torque;
-
-            //            if ((force - force_prev).length() > phyDev->m_maxJerk){
-            //                cVector3d normalized_force = force;
-            //                normalized_force.normalize();
-            //                double _sign = 1.0;
-            //                if (force.x() < 0 || force.y() < 0 || force.z() < 0){
-            //                    _sign = 1.0;
-            //                }
-            //                force = force_prev + (normalized_force * phyDev->m_maxJerk * _sign);
-            //            }
 
             if (force.length() < phyDev->m_deadBand){
                 force.set(0,0,0);
