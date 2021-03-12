@@ -1856,6 +1856,10 @@ void updateHapticDevice(void* a_arg){
             force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.P_lin * dpos + phyDev->m_controller.D_lin * ddpos);
             torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.P_ang * angle * axis);
 
+            // Orient the wrench along the camera view
+            force = cTranspose(devCams[0]->getLocalRot()) * force;
+            torque = cTranspose(devCams[0]->getLocalRot()) * torque;
+
             //            if ((force - force_prev).length() > phyDev->m_maxJerk){
             //                cVector3d normalized_force = force;
             //                normalized_force.normalize();
