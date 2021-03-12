@@ -1976,11 +1976,11 @@ bool afRigidBody::loadRigidBody(YAML::Node* rb_node, std::string node_name, afMu
                     buildContactHull(collision_margin, &m_lowResMesh);
                     std::cerr << "INFO! FOR " << m_name << " CREATING CONVEX HULL FROM COLLISION MESH (CASE 1)" << std::endl;
                 }
-                else if(mesh_type.compare("CONVEX_TRIANGLES") == 0){
+                else if( (mesh_type.compare("CONVEX_TRIANGLES") == 0) || (mesh_type.compare("CONVEX_MESH") == 0) ){
                     buildContactConvexTriangles(collision_margin, &m_lowResMesh);
                     std::cerr << "INFO! FOR " << m_name << " CREATING CONVEX TRIANGLES FROM COLLISION MESH (CASE 2)" << std::endl;
                 }
-                else if(mesh_type.compare("TRIMESH") == 0){
+                else if( (mesh_type.compare("TRIMESH") == 0) || (mesh_type.compare("CONCAVE_MESH") == 0) ){
                     buildContactTriangles(collision_margin, &m_lowResMesh);
                     std::cerr << "INFO! FOR " << m_name << " CREATING TRIANGLE MESH FROM COLLISION MESH (CASE 3)" << std::endl;
                 }
