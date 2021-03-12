@@ -3520,6 +3520,7 @@ void afJointController::boundImpulse(double &effort_cmd){
 afJoint::afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
     m_posArray.resize(m_jpSize);
     m_dtArray.resize(m_jpSize);
+    m_enableLimits = false;
 }
 
 
@@ -3536,6 +3537,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_enableActuator = attribs.m_enableMotor;
     m_controller.m_maxImpulse = attribs.m_maxMotorImpulse; // max rate of change of effort on Position Controllers
     m_offset = attribs.m_offset;
+    m_enableLimits = attribs.m_enableLimits;
     m_lowerLimit = attribs.m_lowerLimit;
     m_upperLimit = attribs.m_upperLimit;
     //Default joint type is revolute if not type is specified
@@ -3835,16 +3837,16 @@ void afJoint::commandPosition(double &position_cmd){
     if (m_enableActuator){
         if (m_jointType == afJointType::REVOLUTE || m_jointType == afJointType::PRISMATIC){
             // Sanity check
-            btClamp(position_cmd, m_lowerLimit, m_upperLimit);
             double position_cur = getPosition();
-
-            if (m_jointType == afJointType::REVOLUTE){
-                if ((m_upperLimit - m_lowerLimit) >= 2*PI ){
+            if (m_enableLimits){
+                btClamp(position_cmd, m_lowerLimit, m_upperLimit);
+            }
+            else{
+                if (m_jointType == afJointType::REVOLUTE){
                     // The joint is continous. Need some optimization
                     position_cmd = getShortestAngle(position_cur, position_cmd);
                     position_cur = 0.0;
                 }
-
             }
 
             double command = m_controller.computeOutput(position_cur, position_cmd, m_afWorld->getSimulationTime());

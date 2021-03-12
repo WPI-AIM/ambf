@@ -1108,6 +1108,7 @@ protected:
     double m_damping;
     double m_maxEffort;
     bool m_enableActuator;
+    bool m_enableLimits;
     double m_lowerLimit, m_upperLimit;
     double m_offset;
 
