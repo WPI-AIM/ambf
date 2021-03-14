@@ -3922,12 +3922,13 @@ void afJoint::commandVelocity(double &velocity_cmd){
 /// \return
 ///
 double afJoint::getPosition(){
+    double jntPos = 0.0;
     if (m_jointType == afJointType::REVOLUTE)
-        return m_hinge->getHingeAngle();
+        jntPos = m_hinge->getHingeAngle();
     else if (m_jointType == afJointType::PRISMATIC)
-        return m_slider->getLinearPos();
+        jntPos = m_slider->getLinearPos();
     else if (m_jointType == afJointType::FIXED)
-        return 0;
+        jntPos = 0;
     else if (m_jointType == afJointType::LINEAR_SPRING){
         // Adapted form btSlider Constraint
         btGeneric6DofSpringConstraint* springConstraint = (btGeneric6DofSpringConstraint*) m_btConstraint;
@@ -3938,7 +3939,7 @@ double afJoint::getPosition(){
         const btTransform tBINW = transB * springConstraint->getFrameOffsetB();
         const btVector3 deltaPivot = tBINW.getOrigin() - tAINW.getOrigin();
         btScalar angle = deltaPivot.dot(tAINW.getBasis().getColumn(2));
-        return 1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
+        jntPos = 1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
     }
     else if (m_jointType == afJointType::TORSION_SPRING){
         // Adapted from btHingeConstraint with slight modifications for spring constraint
@@ -3951,8 +3952,9 @@ double afJoint::getPosition(){
         const btVector3 swingAxis = transB.getBasis() * springConstraint->getFrameOffsetB().getBasis().getColumn(1);
         //	btScalar angle = btAtan2Fast(swingAxis.dot(refAxis0), swingAxis.dot(refAxis1));
         btScalar angle = btAtan2(swingAxis.dot(refAxis0), swingAxis.dot(refAxis1));
-        return -1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
+        jntPos = -1.0 * angle; // Using the -1.0 since we always use bodyA as reference frame
     }
+    return jntPos;
 }
 
 

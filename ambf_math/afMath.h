@@ -193,7 +193,7 @@ public:
         setRPY(roll, pitch, yaw);
     }
 
-    double setRPY(double roll, double pitch, double yaw){
+    void setRPY(double roll, double pitch, double yaw){
         double cR = cos(roll);
         double cP = cos(pitch);
         double cY = cos(yaw);

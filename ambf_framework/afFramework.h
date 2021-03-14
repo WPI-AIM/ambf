@@ -1262,8 +1262,6 @@ public:
     // Upate the sensor, usually called at each dynamic tick update of the physics engine
     virtual void update();
 
-    // Go through all the parents to get the absolute world transform
-    cTransform getWorldTransform(){}
 };
 
 

@@ -254,6 +254,12 @@ bool ADFLoaderInterface::cleanUp()
 bool ADFLoaderInterface::isLoaderValid()
 {
     assert(m_loader != nullptr);
+    if (m_loader == nullptr){
+        return false;
+    }
+    else{
+        return true;
+    }
 }
 
 

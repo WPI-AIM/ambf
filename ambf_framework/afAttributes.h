@@ -183,7 +183,7 @@ struct afRayAttributes{
 struct afIdentificationAttributes{
 public:
     afIdentificationAttributes(){
-        m_objectType == afObjectType::INVALID;
+        m_objectType = afObjectType::INVALID;
     }
 
     std::string m_name;
@@ -1070,6 +1070,8 @@ public:
 
             m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
             m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+
+            return true;
         }
 
         bool m_use = false;
