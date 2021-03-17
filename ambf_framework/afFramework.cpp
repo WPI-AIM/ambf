@@ -3983,8 +3983,8 @@ bool afJoint::loadJoint(YAML::Node* jnt_node, std::string node_name, afMultiBody
             m_spring->enableSpring(_axisNumber, true);
         }
 
-        if (jointNode["equiblirium point"].IsDefined()){
-            double _equiblirium = jointNode["equiblirium point"].as<double>();
+        if (jointNode["equilibrium point"].IsDefined()){
+            double _equiblirium = jointNode["equilibrium point"].as<double>();
             // The equiblirium offset if also inverted for torsional springs
             // Fix it internally rather than breaking AMBF description specificaiton
             if (m_jointType == JointType::torsion_spring){
