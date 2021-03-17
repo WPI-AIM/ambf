@@ -3689,7 +3689,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         break;
     case afJointType::LINEAR_SPRING:
     case afJointType::TORSION_SPRING:{
-        m_spring = new btGeneric6DofSpringConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
+        m_spring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
 
         // Initialize all the 6 axes to 0 stiffness and damping and limits also set to 0-0
         for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
@@ -3715,11 +3715,11 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
             // So handle them internally rather than breaking AMBF description specificaiton
             if (m_jointType == afJointType::TORSION_SPRING){
                 m_spring->setLimit(axisIdx, -m_upperLimit, -m_lowerLimit);
-                m_spring->setEquilibriumPoint(-attribs.m_equilibriumPoint);
+                m_spring->setEquilibriumPoint(axisIdx, -attribs.m_equilibriumPoint);
             }
             else{
                 m_spring->setLimit(axisIdx, m_lowerLimit, m_upperLimit);
-                m_spring->setEquilibriumPoint(attribs.m_equilibriumPoint);
+                m_spring->setEquilibriumPoint(axisIdx, attribs.m_equilibriumPoint);
             }
 
             m_spring->enableSpring(axisIdx, true);

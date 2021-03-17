@@ -1135,8 +1135,9 @@ private:
     // control loops
     btHingeConstraint* m_hinge;
     btSliderConstraint* m_slider;
-    btGeneric6DofSpringConstraint* m_spring;
+    btGeneric6DofSpring2Constraint* m_spring;
     btPoint2PointConstraint* m_p2p;
+    btConeTwistConstraint* m_coneTwist;
     afJointController m_controller;
 
     // Vector of joint positions containing the last n joint values.
