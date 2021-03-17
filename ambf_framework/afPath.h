@@ -105,10 +105,12 @@ public:
 
     afPath operator/= (afPath a_path){
         m_path = m_path / a_path.getWrappedObject();
+        return m_path;
     }
 
     afPath operator/= (std::string a_path){
         m_path = m_path / path(a_path);
+        return m_path;
     }
 
     void operator= ( string a_path){
