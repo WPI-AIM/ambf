@@ -6203,10 +6203,11 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
 
     if (m_publishImage || m_publishDepth){
+        m_publishImageResolution = attribs.m_publishImageResolution;
         m_frameBuffer = new cFrameBuffer();
         m_bufferColorImage = cImage::create();
         m_bufferDepthImage = cImage::create();
-        m_frameBuffer->setup(m_camera, m_width, m_height, true, true);
+        m_frameBuffer->setup(m_camera, m_publishImageResolution.m_width, m_publishImageResolution.m_height, true, true);
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
         if (s_imageTransportInitialized == false){
@@ -6226,9 +6227,9 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
             // Set up the frame buffer
             m_depthBuffer = new cFrameBuffer();
-            m_depthBuffer->setup(m_camera, m_width, m_height, true, false, GL_RGBA16);
+            m_depthBuffer->setup(m_camera, m_publishImageResolution.m_width, m_publishImageResolution.m_height, true, false, GL_RGBA16);
 
-            m_depthPC.setup(m_width, m_height, 3);
+            m_depthPC.setup(m_publishImageResolution.m_width, m_publishImageResolution.m_height, 3);
 
             // Set up the quad
             m_depthMesh = new cMesh();
@@ -6257,14 +6258,14 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
             m_depthMesh->computeAllNormals();
             m_depthMesh->m_texture = cTexture2d::create();
-            m_depthMesh->m_texture->m_image->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE);
+            m_depthMesh->m_texture->m_image->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_BYTE);
             m_depthMesh->setUseTexture(true);
 
             m_dephtWorld->addChild(m_depthMesh);
             m_dephtWorld->addChild(m_camera);
 
             m_depthBufferColorImage = cImage::create();
-            m_depthBufferColorImage->allocate(m_width, m_height, GL_RGBA, GL_UNSIGNED_INT);
+            m_depthBufferColorImage->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_INT);
 
             //                // DEBUGGING USING EXTERNALLY DEFINED SHADERS
             //                ifstream vsFile;
@@ -6297,7 +6298,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
             m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
             m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
-            m_depthPointCloudModifier->resize(m_width*m_height);
+            m_depthPointCloudModifier->resize(m_publishImageResolution.m_width*m_publishImageResolution.m_height);
             if (s_imageTransportInitialized == false){
                 s_imageTransportInitialized = true;
                 int argc = 0;
@@ -6345,7 +6346,8 @@ void afCamera::computeDepthOnCPU()
     float n = -m_camera->getNearClippingPlane();
     float f = -m_camera->getFarClippingPlane();
     double fva = m_camera->getFieldViewAngleRad();
-    double ar = m_camera->getAspectRatio();
+//    double ar = m_camera->getAspectRatio();
+    double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
 
     double delta_x;
     if (isOrthographic()){
@@ -6400,14 +6402,15 @@ void afCamera::computeDepthOnGPU()
     m_bufferDepthImage->copyTo(m_depthMesh->m_texture->m_image);
     m_depthMesh->m_texture->markForUpdate();
 
-    // Change the parent world for the camera so it only render's the depht quad (Mesh)
+    // Change the parent world for the camera so it only render's the depth quad (Mesh)
     m_camera->setParentWorld(m_dephtWorld);
 
     // Update the dimensions scale information.
     float n = -m_camera->getNearClippingPlane();
     float f = -m_camera->getFarClippingPlane();
     double fva = m_camera->getFieldViewAngleRad();
-    double ar = m_camera->getAspectRatio();
+//    double ar = m_camera->getAspectRatio();
+    double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
 
     double maxX;
     if (isOrthographic()){
@@ -6801,7 +6804,7 @@ void afCamera::render(afRenderOptions &options)
     }
 
     // render world
-    renderView(m_width,m_height);
+    m_camera->renderView(m_width,m_height);
 
     // swap buffers
     glfwSwapBuffers(m_window);

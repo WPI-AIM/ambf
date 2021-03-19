@@ -1523,11 +1523,6 @@ public:
     // This method enables or disables output image mirroring vertically.
     inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
 
-    // This method renders the the camera view in OpenGL
-    inline void renderView(const int a_windowWidth, const int a_windowHeight){
-        m_camera->renderView(a_windowWidth, a_windowHeight);
-    }
-
     void renderFrameBuffer();
 
     void computeDepthOnGPU();
@@ -1620,6 +1615,9 @@ public:
     // A separate world attached to the depht Buffer
     cWorld* m_dephtWorld = nullptr;
 
+    // A separate depth camera to render the depth buffer
+    cCamera* m_depthCamera = nullptr;
+
     // A separate quad added as the only child to the depth world
     cMesh* m_depthMesh = nullptr;
 
@@ -1698,9 +1696,15 @@ private:
     // and a value of 10 means, publish every 10th scene udpate
     uint m_imagePublishInterval = 1;
 
+    // Resolution of image
+    afImageResolutionAttribs m_publishImageResolution;
+
     // The interval used to publish the depth. A val of 1 means that publish every scene update
     // and a value of 10 means, publish every 10th scene udpate
     uint m_depthPublishInterval = 10;
+
+//    // Resolution of image
+//    afImageResolutionAttribs m_publishDepthResolution;
 
     // Incremented every scene update (render method call)
     uint m_sceneUpdateCounter = 0;

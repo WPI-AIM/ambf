@@ -445,7 +445,17 @@ public:
     double m_tau;
 };
 
-
+///
+/// \brief The afImageResolution struct
+///
+struct afImageResolutionAttribs{
+    afImageResolutionAttribs(){
+        m_width = 640;
+        m_height = 480;
+    }
+    double m_width;
+    double m_height;
+};
 
 ///
 /// \brief The afCameraAttributes struct
@@ -487,6 +497,9 @@ public:
     uint m_publishImageInterval;
     uint m_publishDepthInterval;
     bool m_multiPass;
+
+    afImageResolutionAttribs m_publishImageResolution;
+    afImageResolutionAttribs m_publishDephtResolution;
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;

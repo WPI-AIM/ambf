@@ -1132,8 +1132,10 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node monitorNode = node["monitor"];
     YAML::Node publishImageNode = node["publish image"];
     YAML::Node publishImageIntervalNode = node["publish image interval"];
+    YAML::Node publishImageResolutionNode = node["publish image resolution"];
     YAML::Node publishDepthNode = node["publish depth"];
     YAML::Node publishDepthIntervalNode = node["publish depth interval"];
+    YAML::Node publishDepthResolutionNode = node["publish depth resolution"];
     YAML::Node multiPassNode = node["multipass"];
 
     bool valid = true;
@@ -1195,12 +1197,22 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
         attribs->m_publishImageInterval = publishImageIntervalNode.as<uint>();
     }
 
+    if (publishImageResolutionNode.IsDefined()){
+        attribs->m_publishImageResolution.m_width = publishImageResolutionNode["width"].as<double>();
+        attribs->m_publishImageResolution.m_height = publishImageResolutionNode["height"].as<double>();
+    }
+
     if (publishDepthNode.IsDefined()){
         attribs->m_publishDepth = publishDepthNode.as<bool>();
     }
 
     if (publishDepthIntervalNode.IsDefined()){
         attribs->m_publishDepthInterval = publishDepthIntervalNode.as<uint>();
+    }
+
+    if (publishDepthResolutionNode.IsDefined()){
+        attribs->m_publishDephtResolution.m_width = publishDepthResolutionNode["width"].as<double>();
+        attribs->m_publishDephtResolution.m_height = publishDepthResolutionNode["height"].as<double>();
     }
 
     if (multiPassNode.IsDefined()){
