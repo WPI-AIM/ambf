@@ -2154,7 +2154,7 @@ void afRigidBody::update()
 
         // Since the mass and inertia aren't going to change that often, write them
         // out intermittently
-        if (m_write_count % 2000 == 0){
+        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
             m_afRigidBodyCommPtr->set_mass(getMass());
             m_afRigidBodyCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
         }
@@ -2169,7 +2169,7 @@ void afRigidBody::update()
             }
             // Since joint names aren't going to change that often
             // change the field less so often
-            if (m_write_count % 2000 == 0){
+            if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
                 afObjectStateSetJointNames();
             }
         }
@@ -2191,7 +2191,7 @@ void afRigidBody::update()
             }
             // Since children names aren't going to change that often
             // change the field less so often
-            if (m_write_count % 2000 == 0){
+            if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
 
                 afObjectStateSetChildrenNames();
                 m_write_count = 0;
@@ -4711,7 +4711,6 @@ afWorld::afWorld(string a_global_namespace){
     m_pickColor.setTransparencyLevel(0.3);
     m_namespace = "";
     setGlobalNamespace(a_global_namespace);
-
 }
 
 afWorld::~afWorld()
@@ -4879,7 +4878,7 @@ void afWorld::fetchCommands(double dt){
     }
 
     m_read_count++;
-    if(m_read_count % 2000 == 0){
+    if(m_read_count % m_updateCounterLimit == 0){
         m_afWorldCommPtr->update_params_from_server();
         if (m_afWorldCommPtr->m_paramsChanged){
             // Do the stuff
@@ -6573,7 +6572,7 @@ void afCamera::fetchCommands(double dt){
             setLocalRot(rot_mat);
         }
         m_read_count++;
-        if(m_read_count % 2000 == 0){
+        if(m_read_count % (m_afWorld->m_physicsFrequency * 2) == 0){
             // We may update the params intermittently
             m_afCameraCommPtr->update_params_from_server();
             if (m_afCameraCommPtr->m_paramsChanged){
@@ -6683,7 +6682,7 @@ void afCamera::update()
 
         m_write_count++;
 
-        if (m_write_count % 2000 == 0){
+        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
             m_afCameraCommPtr->set_parent_name(m_parentName);
             m_write_count = 0;
         }
@@ -7006,7 +7005,7 @@ void afLight::fetchCommands(double dt){
             setLocalRot(rot_mat);
         }
         m_read_count++;
-        if(m_read_count % 2000 == 0){
+        if(m_read_count % m_afWorld->m_updateCounterLimit == 0){
             // We may update the params intermittently
             m_afLightCommPtr->update_params_from_server();
             if (m_afLightCommPtr->m_paramsChanged){
@@ -7059,7 +7058,7 @@ void afLight::update()
 
         m_write_count++;
 
-        if (m_write_count % 2000 == 0){
+        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
             m_afLightCommPtr->set_parent_name(m_parentName);
             m_write_count = 0;
         }
@@ -7890,7 +7889,7 @@ void afVehicle::update(){
 
         // Since the mass and inertia aren't going to change that often, write them
         // out intermittently
-        if (m_write_count % 2000 == 0){
+        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
             m_afVehicleCommPtr->set_wheel_count(m_numWheels);
             m_afVehicleCommPtr->set_mass(m_mass);
             m_afVehicleCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());

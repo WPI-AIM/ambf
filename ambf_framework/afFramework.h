@@ -2064,8 +2064,6 @@ public:
 
     map<string, afPointCloudPtr> m_pcMap;
 
-public:
-
     cWorld* m_chaiWorld;
 
     // Bullet dynamics world.
@@ -2089,6 +2087,13 @@ public:
     // Bullet Soft Body Solver
     btSoftBodySolver* m_bulletSoftBodySolver;
 
+    // The desired freq of physics loop
+    uint m_physicsFrequency = 1000;
+
+    // The desired freq of haptics loop
+    uint m_hapticsFrequency = 1000;
+
+    uint m_updateCounterLimit = 2000;
 
 protected:
 

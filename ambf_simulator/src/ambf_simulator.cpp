@@ -412,6 +412,9 @@ int main(int argc, char* argv[])
 
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
+    g_afWorld->m_physicsFrequency = g_cmdOpts.phxFrequency;
+    g_afWorld->m_hapticsFrequency = g_cmdOpts.htxFrequency;
+    g_afWorld->m_updateCounterLimit = g_cmdOpts.phxFrequency * 2;
 
     // set the background color of the environment
     g_afWorld->m_chaiWorld->m_backgroundColor.setWhite();
