@@ -44,7 +44,7 @@
 
 import rospy
 from std_msgs.msg import Empty, String, Bool
-from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3
+from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3, TwistStamped
 from sensor_msgs.msg import Joy, JointState
 # rom geomagic_control.msg import DeviceFeedback, DeviceButtonEvent
 # from phantom_omni.msg import DeviceFeedback, DeviceButtonEvent
@@ -72,6 +72,21 @@ def kdl_frame_to_msg_pose(kdl_pose):
     return ps
 
 
+def kdl_vecs_to_twist_msg(lin, ang):
+    ts = TwistStamped()
+    p = ts.twist.linear
+    p.x = lin[0]
+    p.y = lin[1]
+    p.z = lin[2]
+
+    r = ts.twist.angular
+    r.x = ang[0]
+    r.y = ang[1]
+    r.z = ang[2]
+
+    return ts
+
+
 def msg_pose_to_kdl_frame(msg_pose):
     pose = msg_pose.pose
     f = Frame()
@@ -90,6 +105,7 @@ def msg_pose_to_kdl_frame(msg_pose):
 class ProxyMTM:
     def __init__(self, arm_name):
         pose_str = '/dvrk/' + arm_name + '/position_cartesian_current'
+        twist_str = '/dvrk/' + arm_name + '/twist_body_current'
         wrench_str = '/dvrk/' + arm_name + '/set_wrench_body'
         gripper_str = '/dvrk/' + arm_name + '/state_gripper_current'
         status_str = '/dvrk/' + arm_name + '/status'
@@ -130,6 +146,7 @@ class ProxyMTM:
         self._gripper_angle.position.append(0)
 
         self._pose_pub = rospy.Publisher(pose_str, PoseStamped, queue_size=1)
+        self._twist_pub = rospy.Publisher(twist_str, TwistStamped, queue_size=1)
         self._gripper_pub = rospy.Publisher(gripper_str, JointState, queue_size=1)
         self._status_pub = rospy.Publisher(status_str, Empty, queue_size=1)
         self._state_pub = rospy.Publisher(state_str, String, queue_size=1)
@@ -168,8 +185,15 @@ class ProxyMTM:
         msg = kdl_frame_to_msg_pose(pose)
         self._pose_pub.publish(msg)
 
-# used for rotate the gripper
-    def set_angle(self, a, b, c):
+    def set_twist(self, v_x, v_y, v_z, w_x, w_y, w_z):
+        lin_vel = Vector(v_x, v_y, v_z)
+        ang_vel = Vector(w_x, w_y, w_z)
+        lin_vel_base = self.base_frame.Inverse() * lin_vel
+        ang_vel_base = self.base_frame.Inverse() * ang_vel
+        msg = kdl_vecs_to_twist_msg(lin_vel_base, ang_vel_base)
+        self._twist_pub.publish(msg)
+
+    def set_orientation(self, a, b, c):
         self.cur_frame.M = Rotation.RPY(a, b, c)
         pose = self.base_frame.Inverse() * self.cur_frame * self.tip_frame
         msg = kdl_frame_to_msg_pose(pose)
@@ -193,20 +217,20 @@ class ProxyMTM:
         print 'Testing Roll'
         for i in range(steps):
             val = min_a + span * i / steps
-            self.set_angle(val, 0, 0)
+            self.set_orientation(val, 0, 0)
             print('Angle', val)
             time.sleep(sleep_s)
 
         print 'Testing Pitch'
         for i in range(steps):
             val = min_a + span * i / steps
-            self.set_angle(0, val, 0)
+            self.set_orientation(0, val, 0)
             print('Angle', val)
             time.sleep(sleep_s)
 
         print 'Testing Yaw'
         for i in range(steps):
             val = min_a + span * i / steps
-            self.set_angle(0, 0, val)
+            self.set_orientation(0, 0, val)
             print('Angle', val)
             time.sleep(sleep_s)
