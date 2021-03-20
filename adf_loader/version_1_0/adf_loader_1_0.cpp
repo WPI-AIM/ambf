@@ -1136,6 +1136,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node publishDepthNode = node["publish depth"];
     YAML::Node publishDepthIntervalNode = node["publish depth interval"];
     YAML::Node publishDepthResolutionNode = node["publish depth resolution"];
+    YAML::Node depthShaderNode = node["depth shaders"];
     YAML::Node multiPassNode = node["multipass"];
 
     bool valid = true;
@@ -1213,6 +1214,11 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     if (publishDepthResolutionNode.IsDefined()){
         attribs->m_publishDephtResolution.m_width = publishDepthResolutionNode["width"].as<double>();
         attribs->m_publishDephtResolution.m_height = publishDepthResolutionNode["height"].as<double>();
+    }
+
+    if (depthShaderNode.IsDefined()){
+        node["shaders"] = depthShaderNode;
+        adfUtils.getShaderAttribsFromNode(&node, &attribs->m_depthShaderAttribs);
     }
 
     if (multiPassNode.IsDefined()){

@@ -62,6 +62,10 @@ camera1:
   # publish image interval: 1 # Publish every nth scene update
   # publish depth: True
   # publish depth interval: 10 # Publish every nth scene update
+  # depth shaders:
+  #   path: ../../../ambf_shaders/depth
+  #   vertex: "shader.vs"
+  #   fragment: "shader.fs"
 
 # This example is to show how to parent w.r.t another body.
 # When a parent is defined, the location, look at and up
