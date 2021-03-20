@@ -1183,6 +1183,7 @@ protected:
 class afConstraintActuator: public afActuator{
 public:
     afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+    ~afConstraintActuator();
 
     virtual bool createFromAttribs(afConstraintActuatorAttributes* a_attribs);
 
@@ -2016,7 +2017,7 @@ public:
 
     cVector3d m_pickedOffset;
 
-    cMesh* m_pickSphere;
+    cMesh* m_pickSphere = nullptr;
 
     cPrecisionClock g_wallClock;
 
@@ -2064,28 +2065,28 @@ public:
 
     map<string, afPointCloudPtr> m_pcMap;
 
-    cWorld* m_chaiWorld;
+    cWorld* m_chaiWorld = nullptr;
 
     // Bullet dynamics world.
-    btDiscreteDynamicsWorld* m_bulletWorld;
+    btDiscreteDynamicsWorld* m_bulletWorld = nullptr;
 
     // Bullet broad phase collision detection algorithm.
-    btBroadphaseInterface* m_bulletBroadphase;
+    btBroadphaseInterface* m_bulletBroadphase = nullptr;
 
     // Bullet collision configuration.
-    btCollisionConfiguration* m_bulletCollisionConfiguration;
+    btCollisionConfiguration* m_bulletCollisionConfiguration = nullptr;
 
     // Bullet collision dispatcher.
-    btCollisionDispatcher* m_bulletCollisionDispatcher;
+    btCollisionDispatcher* m_bulletCollisionDispatcher = nullptr;
 
     // Bullet physics solver.
-    btConstraintSolver* m_bulletSolver;
+    btConstraintSolver* m_bulletSolver = nullptr;
 
     // Bullet Softbody World Info
-    btSoftBodyWorldInfo* m_bulletSoftBodyWorldInfo;
+    btSoftBodyWorldInfo* m_bulletSoftBodyWorldInfo = nullptr;
 
     // Bullet Soft Body Solver
-    btSoftBodySolver* m_bulletSoftBodySolver;
+    btSoftBodySolver* m_bulletSoftBodySolver = nullptr;
 
     // The desired freq of physics loop
     uint m_physicsFrequency = 1000;

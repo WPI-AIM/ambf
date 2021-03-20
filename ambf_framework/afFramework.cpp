@@ -770,7 +770,9 @@ afBaseObject::afBaseObject(afWorldPtr a_afWorld, afModelPtr a_afModel){
 /// \brief afObject::~afObject
 ///
 afBaseObject::~afBaseObject(){
-
+    for (int i=0; i<m_childrenSceneObjects.size(); i++){
+        delete m_childrenSceneObjects[i];
+    }
 }
 
 bool afBaseObject::createFromAttribs(afBaseObjectAttributes *a_attribs)
@@ -1161,6 +1163,12 @@ afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_mo
 
 }
 
+afConstraintActuator::~afConstraintActuator(){
+    if(m_constraint){
+        delete m_constraint;
+    }
+}
+
 bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_attribs)
 {
     afConstraintActuatorAttributes& attribs = *a_attribs;
@@ -1384,7 +1392,14 @@ afInertialObject::afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr):
 ///
 afInertialObject::~afInertialObject()
 {
-
+    if (m_bulletRigidBody)
+        delete m_bulletRigidBody;
+    if (m_bulletSoftBody)
+        delete m_bulletSoftBody;
+    if (m_bulletCollisionShape)
+        delete m_bulletCollisionShape;
+    if (m_bulletMotionState)
+        delete m_bulletMotionState;
 }
 
 
@@ -3201,6 +3216,7 @@ void afSoftBody::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<btSc
     delete[] orderedVtxList;
     delete[] vtxIdxBlock;
     delete[] vtxChkBlock;
+    delete[] vtxAlreadyChkd;
 }
 
 void afSoftBody::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<btScalar> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
@@ -4719,16 +4735,44 @@ afWorld::~afWorld()
         delete m_pickedConstraint;
     }
 
-    for (afSensorMap::iterator sIt = m_afSensorMap.begin() ; sIt != m_afSensorMap.end() ; ++sIt){
-        delete sIt->second;
+    for(vector<afBaseObjectPtr>::iterator it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
+        delete *it;
     }
 
-    for (afActuatorMap::iterator aIt = m_afActuatorMap.begin() ; aIt != m_afActuatorMap.end() ; ++aIt){
-        delete aIt->second;
+    for (map<string, afPointCloudPtr>::iterator it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
+        delete it->second;
     }
 
-    for (afJointMap::iterator jIt = m_afJointMap.begin() ; jIt != m_afJointMap.end() ; ++jIt){
-        delete jIt->second;
+    if(m_bulletWorld){
+        delete m_bulletWorld;
+    }
+
+    if(m_bulletCollisionDispatcher){
+        delete m_bulletCollisionDispatcher;
+    }
+
+    if(m_bulletCollisionConfiguration){
+        delete m_bulletCollisionConfiguration;
+    }
+
+    if(m_bulletSoftBodyWorldInfo){
+        delete m_bulletSoftBodyWorldInfo;
+    }
+
+    if(m_bulletSoftBodySolver){
+        delete m_bulletSoftBodySolver;
+    }
+
+    if(m_bulletSolver){
+        delete m_bulletSolver;
+    }
+
+    if(m_bulletBroadphase){
+        delete m_bulletBroadphase;
+    }
+
+    if(m_chaiWorld){
+        delete m_chaiWorld;
     }
 
 }
