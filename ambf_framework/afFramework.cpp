@@ -6325,7 +6325,30 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             //                fsFile.close();
             //                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
 
-            cShaderProgramPtr shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
+            cShaderProgramPtr shaderPgm;
+            if (attribs.m_depthShaderAttribs.m_shaderDefined){
+                ifstream vsFile;
+                ifstream fsFile;
+                vsFile.open(attribs.m_depthShaderAttribs.m_vtxFilepath.c_str());
+                fsFile.open(attribs.m_depthShaderAttribs.m_fragFilepath.c_str());
+                // create a string stream
+                stringstream vsBuffer, fsBuffer;
+                // dump the contents of the file into it
+                vsBuffer << vsFile.rdbuf();
+                fsBuffer << fsFile.rdbuf();
+                // close the files
+                vsFile.close();
+                fsFile.close();
+                shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+
+                cerr << "INFO! USING EXTERNALLY DEFINED DEPTH VTX SHADER " << attribs.m_depthShaderAttribs.m_vtxFilepath.c_str() << endl;
+                cerr << "INFO! USING EXTERNALLY DEFINED DEPTH FRAG SHADER " << attribs.m_depthShaderAttribs.m_fragFilepath.c_str() << endl;
+            }
+            else{
+                cerr << "INFO! USING INTERNALLY DEFINED DEPTH COMPUTE SHADERS" << endl;
+                shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
+            }
+
             if (shaderPgm->linkProgram()){
                 cGenericObject* go;
                 cRenderOptions ro;
@@ -6334,7 +6357,8 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
                 shaderPgm->disable();
             }
             else{
-                cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO LOAD SHADER FILES: " << endl;
+                cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO COMPILE/LINK SHADER FILES: " << endl;
+                m_publishDepth = false;
             }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
