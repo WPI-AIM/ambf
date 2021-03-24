@@ -576,6 +576,36 @@ public:
         m_cfm = 0.1;
     }
 
+    struct afConeTwistLimits{
+        double m_swing1 = 0.7;
+        double m_swing2 = 0.7;
+        double m_twist = 0.7;
+    };
+
+    struct afSixDofLimits{
+        afSixDofLimits(){
+            for (int i = 0 ; i < 6 ; i++){
+                m_lowerLimit[i] = -1.2;
+                m_upperLimit[i] = 1.2;
+            }
+        }
+        double m_lowerLimit[6];
+        double m_upperLimit[6];
+    };
+
+    struct afSixDofSpringAttribs{
+        afSixDofSpringAttribs(){
+            for (int i = 0 ; i < 6 ; i++){
+                m_stiffness[i] = 1.0;
+                m_equilibriumPoint[i] = 0.0;
+                m_damping[i] = 0.7;
+            }
+        }
+        double m_stiffness[6];
+        double m_equilibriumPoint[6];
+        double m_damping[6];
+    };
+
     afVector3d m_parentPivot;
     afVector3d m_childPivot;
     afVector3d m_parentAxis;
@@ -584,6 +614,9 @@ public:
     double m_maxMotorImpulse;
     double m_lowerLimit;
     double m_upperLimit;
+    afConeTwistLimits m_coneTwistLimits;
+    afSixDofLimits m_sixDofLimits;
+    afSixDofSpringAttribs m_sixDofSpringAttribs;
     double m_erp;
     double m_cfm;
     double m_offset;

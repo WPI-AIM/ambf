@@ -1137,11 +1137,14 @@ private:
     // Add these two pointers for faster access to constraint internals
     // rather than having to cast the m_btConstraint ptr in high speed
     // control loops
-    btHingeConstraint* m_hinge;
-    btSliderConstraint* m_slider;
-    btGeneric6DofSpring2Constraint* m_spring;
-    btPoint2PointConstraint* m_p2p;
-    btConeTwistConstraint* m_coneTwist;
+    btHingeConstraint* m_hinge = nullptr;
+    btSliderConstraint* m_slider = nullptr;
+    btGeneric6DofSpring2Constraint* m_spring = nullptr;
+    btPoint2PointConstraint* m_p2p = nullptr;
+    btConeTwistConstraint* m_coneTwist = nullptr;
+    btGeneric6DofConstraint* m_sixDof = nullptr;
+    btGeneric6DofSpring2Constraint* m_sixDofSpring = nullptr;
+
     afJointController m_controller;
 
     // Vector of joint positions containing the last n joint values.

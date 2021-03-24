@@ -128,7 +128,10 @@ enum class afJointType{
     TORSION_SPRING = 3,
     P2P = 4,
     FIXED = 5,
-    INVALID = 6
+    CONE_TWIST = 6,
+    SIX_DOF = 7,
+    SIX_DOF_SPRING = 8,
+    INVALID = 9
 };
 
 

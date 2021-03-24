@@ -48,6 +48,7 @@
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 #include "BulletSoftBody/btSoftRigidDynamicsWorld.h"
 #include "BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h"
+#include "BulletSoftBody/btSoftBodySolvers.h"
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -3755,6 +3756,37 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         m_p2p->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
         m_btConstraint = m_p2p;
 
+    }
+        break;
+    case afJointType::CONE_TWIST:{
+        m_coneTwist = new btConeTwistConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
+        m_coneTwist->setLimit(attribs.m_coneTwistLimits.m_swing1, attribs.m_coneTwistLimits.m_swing2, attribs.m_coneTwistLimits.m_twist);
+        m_coneTwist->setDamping(attribs.m_damping);
+        m_btConstraint = m_coneTwist;
+
+    }
+        break;
+    case afJointType::SIX_DOF:{
+        m_sixDof = new btGeneric6DofConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
+        for (int id = 0 ; id < 6 ; id++){
+            m_sixDof->setLimit(id, attribs.m_sixDofLimits.m_lowerLimit[id], attribs.m_sixDofLimits.m_upperLimit[id]);
+        }
+
+        m_btConstraint = m_sixDof;
+
+    }
+        break;
+    case afJointType::SIX_DOF_SPRING:{
+        m_sixDofSpring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
+        for (int id = 0 ; id < 6 ; id++){
+            m_sixDofSpring->setLimit(id, attribs.m_sixDofLimits.m_lowerLimit[id], attribs.m_sixDofLimits.m_upperLimit[id]);
+            m_sixDofSpring->setDamping(id, attribs.m_sixDofSpringAttribs.m_damping[id]);
+            m_sixDofSpring->setEquilibriumPoint(id, attribs.m_sixDofSpringAttribs.m_equilibriumPoint[id]);
+            m_sixDofSpring->setStiffness(id, attribs.m_sixDofSpringAttribs.m_stiffness[id]);
+            m_sixDofSpring->enableSpring(id, true);
+        }
+
+        m_btConstraint = m_sixDofSpring;
     }
         break;
     default:

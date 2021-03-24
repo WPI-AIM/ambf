@@ -394,6 +394,15 @@ afJointType ADFUtils::getJointTypeFromString(const string &a_joint_str)
     else if ((strcmp(a_joint_str.c_str(), "p2p") == 0)){
         jointType = afJointType::P2P;
     }
+    else if ((strcmp(a_joint_str.c_str(), "cone twist") == 0)){
+        jointType = afJointType::CONE_TWIST;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "six dof") == 0)){
+        jointType = afJointType::SIX_DOF;
+    }
+    else if ((strcmp(a_joint_str.c_str(), "six dof spring") == 0)){
+        jointType = afJointType::SIX_DOF_SPRING;
+    }
     else{
         cerr << "ERROR! JOINT TYPE NOT UNDERSTOOD \n";
         jointType = afJointType::INVALID;
@@ -1542,6 +1551,11 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     YAML::Node enableFeedbackNode = node["enable feedback"];
     YAML::Node maxMotorImpulseNode = node["max motor impulse"];
     YAML::Node limitsNode = node["joint limits"];
+    YAML::Node coneTwistLimitsNode = node["cone twist limits"];
+    YAML::Node sixDofLimitsNode = node["six dof limits"];
+    YAML::Node sixDofStiffnessNode = node["six dof stiffness"];
+    YAML::Node sixDofEquilibriumNode = node["six dof equilibrium"];
+    YAML::Node sixDofDampingNode = node["six dof damping"];
     YAML::Node erpNode = node["joint erp"];
     YAML::Node cfmNode = node["joint cfm"];
     YAML::Node offsetNode = node["offset"];
@@ -1585,6 +1599,94 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
         }
         if (limitsNode["low"].IsDefined() && limitsNode["high"].IsDefined()){
             attribs->m_enableLimits = true;
+        }
+    }
+
+    if (attribs->m_jointType == afJointType::CONE_TWIST){
+        if (coneTwistLimitsNode.IsDefined()){
+            attribs->m_coneTwistLimits.m_swing1 = coneTwistLimitsNode["swing1"].as<double>();
+            attribs->m_coneTwistLimits.m_swing2 = coneTwistLimitsNode["swing2"].as<double>();
+            attribs->m_coneTwistLimits.m_twist = coneTwistLimitsNode["twist"].as<double>();
+        }
+    }
+
+    if (attribs->m_jointType == afJointType::SIX_DOF || attribs->m_jointType == afJointType::SIX_DOF_SPRING){
+        if (sixDofLimitsNode.IsDefined()){
+            try{
+                for (int i = 0 ; i < 3 ; i++){
+                    attribs->m_sixDofLimits.m_lowerLimit[i] = sixDofLimitsNode["linear"]["low"][i].as<double>();
+                    attribs->m_sixDofLimits.m_upperLimit[i] = sixDofLimitsNode["linear"]["high"][i].as<double>();
+                }
+                for (int i = 0 ; i < 3 ; i++){
+                    attribs->m_sixDofLimits.m_lowerLimit[i+3] = sixDofLimitsNode["angular"]["low"][i].as<double>();
+                    attribs->m_sixDofLimits.m_upperLimit[i+3] = sixDofLimitsNode["angular"]["high"][i].as<double>();
+                }
+            }
+            catch(YAML::Exception e){
+                cerr << e.what() << endl;
+                cerr << "ERROR! FOR JOINT " << attribs->m_identificationAttribs.m_name << " UNABLE TO PARSE LIMITS " << endl;
+            }
+        }
+
+
+        if (attribs->m_jointType == afJointType::SIX_DOF_SPRING){
+
+            // COPY STIFFNESS VALUES
+            if (sixDofStiffnessNode.IsDefined()){
+                try{
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_stiffness[i] = sixDofStiffnessNode["linear"][i].as<double>();
+                    }
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_stiffness[i+3] = sixDofStiffnessNode["angular"][i].as<double>();
+                    }
+                }
+                catch(YAML::Exception e){
+                    cerr << e.what() << endl;
+                    cerr << "ERROR! FOR JOINT " << attribs->m_identificationAttribs.m_name << " UNABLE TO PARSE STIFFNESS " << endl;
+                }
+            }
+            else{
+                cerr << "WARNING! FOR JOINT " << attribs->m_identificationAttribs.m_name << " OF TYPE `6 DOF SPRING` STIFFNESS NOT DEFINED " << endl;
+            }
+
+            // COPY EQUILIBRIUM POINT VALUES
+            if (sixDofEquilibriumNode.IsDefined()){
+                try{
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_equilibriumPoint[i] = sixDofEquilibriumNode["linear"][i].as<double>();
+                    }
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_equilibriumPoint[i+3] = sixDofEquilibriumNode["angular"][i].as<double>();
+                    }
+                }
+                catch(YAML::Exception e){
+                    cerr << e.what() << endl;
+                    cerr << "ERROR! FOR JOINT " << attribs->m_identificationAttribs.m_name << " UNABLE TO PARSE EQUILIBRIUM POINT " << endl;
+                }
+            }
+            else{
+                cerr << "WARNING! FOR JOINT " << attribs->m_identificationAttribs.m_name << " OF TYPE `6 DOF SPRING` EQUILIBRIUM POINT NOT DEFINED " << endl;
+            }
+
+            // COPY DAMPING VALUES
+            if (sixDofDampingNode.IsDefined()){
+                try{
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_damping[i] = sixDofDampingNode["linear"][i].as<double>();
+                    }
+                    for (int i = 0 ; i < 3 ; i++){
+                        attribs->m_sixDofSpringAttribs.m_damping[i+3] = sixDofDampingNode["angular"][i].as<double>();
+                    }
+                }
+                catch(YAML::Exception e){
+                    cerr << e.what() << endl;
+                    cerr << "ERROR! FOR JOINT " << attribs->m_identificationAttribs.m_name << " UNABLE TO PARSE DAMPING " << endl;
+                }
+            }
+            else{
+                cerr << "WARNING! FOR JOINT " << attribs->m_identificationAttribs.m_name << " OF TYPE `6 DOF SPRING` DAMPING NOT DEFINED " << endl;
+            }
         }
     }
 
