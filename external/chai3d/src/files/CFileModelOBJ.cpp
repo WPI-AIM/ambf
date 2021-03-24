@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Tim Schroeder
     \author    Francois Conti
+    \author    Adnan Munawar
     \version   3.2.0 $Rev: 2187 $
 */
 //==============================================================================
@@ -92,6 +93,33 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
 
         // get information about file
         int numMaterials = fileObj.m_OBJInfo.m_materialCount;
+
+        if (fileObj.m_OBJInfo.m_objectCount > numMaterials){
+            cMaterialInfo* matInfoCopy = new cMaterialInfo[fileObj.m_OBJInfo.m_objectCount];
+            std::copy(fileObj.m_pMaterials, fileObj.m_pMaterials + fileObj.m_OBJInfo.m_materialCount, matInfoCopy);
+
+            delete [] fileObj.m_pMaterials;
+
+            fileObj.m_pMaterials = new cMaterialInfo[fileObj.m_OBJInfo.m_objectCount];
+
+            for (int i = 0 ; i < numMaterials ; i++){
+                fileObj.m_pMaterials[i] = matInfoCopy[i];
+            }
+            // now just copy the last material to the rest of the materials
+            for (int i = numMaterials ; i < fileObj.m_OBJInfo.m_objectCount ; i++){
+                fileObj.m_pMaterials[i] = fileObj.m_pMaterials[numMaterials - 1];
+            }
+
+//            for (int i = 0 ; i < fileObj.m_OBJInfo.m_faceCount ; i++){
+//                if (fileObj.m_pFaces[i].m_materialIndex == -1){
+//                    fileObj.m_pFaces[i].m_materialIndex = fileObj.m_pFaces[i].m_objectIndex;
+//                }
+//            }
+
+            numMaterials = fileObj.m_OBJInfo.m_objectCount;
+
+            delete[] matInfoCopy;
+        }
 
         // extract materials
         vector<cMaterial> materials;
@@ -237,7 +265,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     cFace face = fileObj.m_pFaces[j];
 
                     // get material index attributed to the face
-                    int objIndex = face.m_materialIndex;
+                    int objIndex = face.m_objectIndex;
 
                     // the mesh that we're reading this triangle into
                     cMesh* curMesh = a_object->getMesh(objIndex);
@@ -696,6 +724,10 @@ cOBJModel::~cOBJModel()
     {
         delete [] m_groupNames[i];
     }
+    for(unsigned int i=0; i<m_objectNames.size(); i++)
+    {
+        delete [] m_objectNames[i];
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -710,6 +742,7 @@ bool cOBJModel::LoadModel(const char a_fileName[])
     char str[C_OBJ_MAX_STR_SIZE] = "";  // buffer string for reading the file
     char basePath[C_OBJ_SIZE_PATH];     // path were all paths in the OBJ start
     unsigned int curMaterial = 0;       // current material
+    unsigned int curObject = 0;       // current material
 
     // get base path
     strcpy(basePath, a_fileName);
@@ -848,14 +881,14 @@ bool cOBJModel::LoadModel(const char a_fileName[])
 
             // convert string into a face structure
             parseFaceString(str, &m_pFaces[currentIndex.m_faceCount],
-            m_pVertices, m_pNormals, m_pTexCoords, curMaterial);
+            m_pVertices, m_pNormals, m_pTexCoords, curMaterial, curObject);
 
             // next face
             currentIndex.m_faceCount++;
         }
 
         // rest of the line contains face information
-        else if (!strncmp(str, C_OBJ_NAME_ID, sizeof(C_OBJ_NAME_ID)))
+        else if (!strncmp(str, C_OBJ_GROUP_ID, sizeof(C_OBJ_GROUP_ID)))
         {
             // read the rest of the line (the complete face)
             getTokenParameter(str, sizeof(str) ,hFile);
@@ -863,6 +896,25 @@ bool cOBJModel::LoadModel(const char a_fileName[])
             char* name = new char[strlen(str)+1];
             strcpy(name,str);
             m_groupNames.push_back(name);
+        }
+
+        // check for object names
+        else if (!strncmp(str, C_OBJ_NAME_ID, sizeof(C_OBJ_NAME_ID)))
+        {
+            // read the rest of the line (the complete face)
+            getTokenParameter(str, sizeof(str) ,hFile);
+
+            char* name = new char[strlen(str)+1];
+            strcpy(name,str);
+            m_objectNames.push_back(name);
+
+            // find material array index for the material name
+            for (unsigned i=0; i<m_OBJInfo.m_objectCount; i++)
+            if (!strncmp(m_objectNames[i], str, sizeof(str)))
+            {
+                curObject = i;
+                break;
+            }
         }
 
         // process material information only if needed
@@ -1000,7 +1052,8 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
                 const cVector3d *a_pVertices,
                 const cVector3d *a_pNormals,
                 const cVector3d *a_pTexCoords,
-                const unsigned int a_materialIndex)
+                const unsigned int a_materialIndex,
+                const int a_objectIndex)
 {
     /////////////////////////////////////////////////////////////////////////
     // CONVERT FACE STRING FROM THE OBJ FILE INTO A FACE STRUCTURE
@@ -1145,6 +1198,8 @@ void cOBJModel::parseFaceString(char a_faceString[], cFace *a_faceOut,
 
     // set material
     a_faceOut->m_materialIndex = a_materialIndex;
+
+    a_faceOut->m_objectIndex = a_objectIndex;
 
     // process per-vertex data
     for (i=0; i<(unsigned int) a_faceOut->m_numVertices; i++)
@@ -1401,6 +1456,10 @@ void cOBJModel::getFileInfo(FILE *a_hStream, cOBJFileInfo *a_info, const char a_
         // face?
         if (!strncmp(str, C_OBJ_FACE_ID, sizeof(C_OBJ_FACE_ID)))
         a_info->m_faceCount++;
+
+        // face?
+        if (!strncmp(str, C_OBJ_NAME_ID, sizeof(C_OBJ_NAME_ID)))
+        a_info->m_objectCount++;
 
         // material library definition?
         if (!strncmp(str, C_OBJ_MTL_LIB_ID, sizeof(C_OBJ_MTL_LIB_ID)))

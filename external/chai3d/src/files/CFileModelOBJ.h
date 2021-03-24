@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Tim Schroder
     \author    Francois Conti
+    \author    Adnan Munawar
     \version   3.2.0 $Rev: 2146 $
 */
 //==============================================================================
@@ -163,7 +164,8 @@ typedef std::map<vertexIndexSet,unsigned int,ltVertexIndexSet> vertexIndexSet_ui
 #define C_OBJ_COMMENT_ID   "#"
 #define C_OBJ_MTL_LIB_ID   "mtllib"
 #define C_OBJ_USE_MTL_ID   "usemtl"
-#define C_OBJ_NAME_ID      "g"
+#define C_OBJ_NAME_ID      "o"
+#define C_OBJ_GROUP_ID     "g"
 
 // MTL File string identifiers
 #define C_OBJ_NEW_MTL_ID       "newmtl"
@@ -197,6 +199,7 @@ struct cOBJFileInfo
         m_texCoordCount = 0;
         m_normalCount = 0;
         m_faceCount = 0;
+        m_objectCount = 0;
         m_materialCount = 0;
     }
 
@@ -205,6 +208,7 @@ struct cOBJFileInfo
     unsigned int m_texCoordCount;
     unsigned int m_normalCount;
     unsigned int m_faceCount;
+    unsigned int m_objectCount;
     unsigned int m_materialCount;
 };
 
@@ -213,6 +217,7 @@ struct cFace
 {
     unsigned int m_numVertices;
     unsigned int m_materialIndex;
+    int          m_objectIndex;
     int          m_groupIndex;
     int*         m_pVertexIndices;
     cVector3d*   m_pVertices;
@@ -232,6 +237,7 @@ struct cFace
         m_numVertices = 0;
         m_materialIndex = -1;
         m_groupIndex = -1;
+        m_objectIndex = -1;
         m_pVertexIndices = NULL;
         m_pVertices = NULL;
         m_pColors = NULL;
@@ -342,6 +348,9 @@ class cOBJModel
     //! List of names obtained from 'g' commands, with the most recent at the back...
     std::vector<char*> m_groupNames;
 
+    //! List of object names obtained from 'o' commands, with the most recent at the back...
+    std::vector<char*> m_objectNames;
+
 
     //--------------------------------------------------------------------------
     // METHODS:
@@ -368,7 +377,7 @@ class cOBJModel
 
     //! Parse information about face.
     void  parseFaceString(char a_faceString[], cFace *a_faceOut, const cVector3d *a_pVertices,
-        const cVector3d *a_pNormals, const cVector3d *a_pTexCoords, const unsigned int a_materialIndex);
+        const cVector3d *a_pNormals, const cVector3d *a_pTexCoords, const unsigned int a_materialIndex, const int a_objectIndex);
 
     //! Read information about file.
     void  getFileInfo(FILE *a_hStream, cOBJFileInfo *a_stat, const char a_constBasePath[]);
