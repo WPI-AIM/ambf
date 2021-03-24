@@ -81,6 +81,10 @@
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 #endif
+
+
+#include <time.h>
+#include <random>
 //-----------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -1455,6 +1459,49 @@ protected:
 };
 
 
+struct afNoiseModel{
+    // Attribs for depth noise model
+
+    afNoiseModel(){}
+    ~afNoiseModel(){
+        if (m_randomDistribution){
+            delete m_randomDistribution;
+        }
+    }
+
+    void initialize(double mean, double std_dev, double bias, bool enable=true){
+        m_attribs.m_enable = enable;
+        m_attribs.m_mean = mean;
+        m_attribs.m_std_dev = std_dev;
+        m_attribs.m_bias = bias;
+
+        // Init Generator and Distribution
+
+        m_randomNumberGenerator = default_random_engine(time(0));
+        m_randomDistribution = new normal_distribution<double>(m_attribs.m_mean, m_attribs.m_std_dev);
+    }
+
+    double generate(){
+        if (m_randomDistribution){
+            return (*m_randomDistribution)(m_randomNumberGenerator) + m_attribs.m_bias;
+        }
+        else{
+            cerr << "ERROR! NOISE DISTRIBUTION NOT INITIALIZED" << endl;
+            return 0.0;
+        }
+    }
+
+    bool isEnabled(){
+        return m_attribs.m_enable;
+    }
+
+protected:
+    default_random_engine m_randomNumberGenerator;
+    normal_distribution<double>* m_randomDistribution = nullptr;
+    afNoiseModelAttribs m_attribs;
+};
+
+
 ///
 /// \brief The afCamera class
 ///
@@ -1683,6 +1730,9 @@ private:
 
     // Flag to enable disable publishing of depth image as a ROS topic
     bool m_publishDepth = false;
+
+    // Depth Noise Model
+    afNoiseModel m_depthNoise;
 
     cVector3d m_camPos;
     cVector3d m_camLookAt;

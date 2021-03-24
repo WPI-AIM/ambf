@@ -1136,6 +1136,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node publishDepthNode = node["publish depth"];
     YAML::Node publishDepthIntervalNode = node["publish depth interval"];
     YAML::Node publishDepthResolutionNode = node["publish depth resolution"];
+    YAML::Node publishDepthNoiseNode = node["publish depth noise"];
     YAML::Node depthShaderNode = node["depth shaders"];
     YAML::Node multiPassNode = node["multipass"];
 
@@ -1214,6 +1215,22 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     if (publishDepthResolutionNode.IsDefined()){
         attribs->m_publishDephtResolution.m_width = publishDepthResolutionNode["width"].as<double>();
         attribs->m_publishDephtResolution.m_height = publishDepthResolutionNode["height"].as<double>();
+    }
+
+    if (publishDepthNoiseNode.IsDefined()){
+        attribs->m_depthNoiseAttribs.m_enable = true;
+        attribs->m_depthNoiseAttribs.m_mean = publishDepthNoiseNode["mean"].as<double>();
+        if (publishDepthNoiseNode["std dev"].IsDefined()){
+            publishDepthNoiseNode["std_dev"] = publishDepthNoiseNode["std dev"];
+        }
+
+        if (publishDepthNoiseNode["std_dev"].IsDefined()){
+            attribs->m_depthNoiseAttribs.m_std_dev = publishDepthNoiseNode["std_dev"].as<double>();
+        }
+
+        if (publishDepthNoiseNode["bias"].IsDefined()){
+            attribs->m_depthNoiseAttribs.m_bias = publishDepthNoiseNode["bias"].as<double>();
+        }
     }
 
     if (depthShaderNode.IsDefined()){

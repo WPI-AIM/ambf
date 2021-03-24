@@ -6265,6 +6265,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 #endif
 
         if (m_publishDepth){
+            // Copy over the depth noise attribs
+            afNoiseModelAttribs* noiseAtt = &attribs.m_depthNoiseAttribs;
+            m_depthNoise.initialize(noiseAtt->m_mean, noiseAtt->m_std_dev, noiseAtt->m_bias, noiseAtt->m_enable);
+
             // Set up the world
             m_dephtWorld = new cWorld();
 
@@ -6600,9 +6604,16 @@ void afCamera::publishDepthPointCloud()
     int height = m_depthBufferColorImage->getHeight();
 
     for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+        double noise;
+        if (m_depthNoise.isEnabled()){
+            noise = m_depthNoise.generate();
+        }
+        else{
+            noise = 0.0;
+        }
         *pcMsg_x = m_depthPC.m_data[idx * m_depthPC.m_numFields + 0];
         *pcMsg_y = m_depthPC.m_data[idx * m_depthPC.m_numFields + 1];
-        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2];
+        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] + noise;
 
         *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
         *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];

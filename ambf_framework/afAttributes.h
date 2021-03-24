@@ -457,6 +457,20 @@ struct afImageResolutionAttribs{
     double m_height;
 };
 
+
+struct afNoiseModelAttribs{
+    afNoiseModelAttribs(){
+        m_enable = false;
+        m_mean = 1.0;
+        m_std_dev = 0.1;
+        m_bias = 0.0;
+    }
+    bool m_enable;
+    double m_mean;
+    double m_std_dev;
+    double m_bias;
+};
+
 ///
 /// \brief The afCameraAttributes struct
 ///
@@ -501,6 +515,7 @@ public:
 
     afImageResolutionAttribs m_publishImageResolution;
     afImageResolutionAttribs m_publishDephtResolution;
+    afNoiseModelAttribs m_depthNoiseAttribs;
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
