@@ -1119,7 +1119,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_
                 //                (*g_cameraIt)->showTargetPos(true);
                 if (a_clicked){
                     if (g_mousePickingEnabled){
-                        cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
+                        cVector3d rayFrom = (*g_cameraIt)->getGlobalTransform().getLocalPos();
                         double x_pos, y_pos;
                         glfwGetCursorPos(a_window, &x_pos, &y_pos);
                         cVector3d rayTo = getRayTo(x_pos, y_pos, *g_cameraIt);
@@ -1172,7 +1172,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
             if( devCam->mouse_l_clicked ){
                 if(g_mousePickingEnabled){
-                    cVector3d rayFrom = (*g_cameraIt)->getGlobalPos();
+                    cVector3d rayFrom = (*g_cameraIt)->getGlobalTransform().getLocalPos();
                     cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
                     g_pickFrom = rayFrom;
                     g_pickTo = rayTo;
@@ -1309,35 +1309,29 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     float tanFov = (top - bottom) * 0.5f / nearPlane;
     float fov = (a_cameraPtr->getFieldViewAngle() * 2 / 1.57079) * btAtan(tanFov);
 
-    btVector3 camPos, camTarget;
-
-    camPos << a_cameraPtr->getGlobalPos();
-    cVector3d targetPos = a_cameraPtr->getTargetPosGlobal();
-    camTarget << targetPos;
-
-    btVector3 rayFrom = camPos;
-    btVector3 rayForward = (camTarget - rayFrom);
+    cVector3d rayFrom = a_cameraPtr->getGlobalTransform().getLocalPos();
+    cVector3d rayForward = a_cameraPtr->getTargetPosGlobal() - a_cameraPtr->getGlobalTransform().getLocalPos();
     rayForward.normalize();
     float farPlane = 10000.f;
     rayForward *= farPlane;
 
-    btVector3 cameraUp = btVector3(0, 0, 0);
-    cameraUp[2] = 1;
+    cVector3d vertical = a_cameraPtr->getUpVector();
+    if (a_cameraPtr->getParentObject()){
+        vertical = a_cameraPtr->getParentObject()->getGlobalTransform().getLocalRot() * vertical;
+    }
 
-    btVector3 vertical = cameraUp;
-
-    btVector3 hor;
-    hor = rayForward.cross(vertical);
-    hor.safeNormalize();
-    vertical = hor.cross(rayForward);
-    vertical.safeNormalize();
+    cVector3d hor;
+    hor = cCross(rayForward, vertical);
+    hor.normalize();
+    vertical = cCross(hor, rayForward);
+    vertical.normalize();
 
     float tanfov = tanf(0.5f * fov);
 
     hor *= 2.f * farPlane * tanfov;
     vertical *= 2.f * farPlane * tanfov;
 
-    btScalar aspect;
+    double aspect;
     float width = float(a_cameraPtr->m_width);
     float height = float(a_cameraPtr->m_height);
 
@@ -1345,16 +1339,15 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
 
     hor *= aspect;
 
-    btVector3 rayToCenter = rayFrom + rayForward;
-    btVector3 dHor = hor * 1.f / width;
-    btVector3 dVert = vertical * 1.f / height;
+    cVector3d rayToCenter = rayFrom + rayForward;
+    cVector3d dHor = hor * 1.f / width;
+    cVector3d dVert = vertical * 1.f / height;
 
-    btVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += btScalar(g_winWidthRatio*x) * dHor;
-    rayTo -= btScalar(g_winHeightRatio*y) * dVert;
-    cVector3d cRay;
-    cRay << rayTo;
-    return cRay;
+    cVector3d rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
+    rayTo += double(g_winWidthRatio*x) * dHor;
+    rayTo -= double(g_winHeightRatio*y) * dVert;
+
+    return rayTo;
 }
 
 
