@@ -1551,11 +1551,6 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     YAML::Node enableFeedbackNode = node["enable feedback"];
     YAML::Node maxMotorImpulseNode = node["max motor impulse"];
     YAML::Node limitsNode = node["joint limits"];
-    YAML::Node coneTwistLimitsNode = node["cone twist limits"];
-    YAML::Node sixDofLimitsNode = node["six dof limits"];
-    YAML::Node sixDofStiffnessNode = node["six dof stiffness"];
-    YAML::Node sixDofEquilibriumNode = node["six dof equilibrium"];
-    YAML::Node sixDofDampingNode = node["six dof damping"];
     YAML::Node erpNode = node["joint erp"];
     YAML::Node cfmNode = node["joint cfm"];
     YAML::Node offsetNode = node["offset"];
@@ -1586,27 +1581,41 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
         attribs->m_offset = offsetNode.as<double>();
     }
 
-    if (dampingNode.IsDefined()){
-        attribs->m_damping = dampingNode.as<double>();
-    }
+    // These three joints have multiple limits, stiffness, damping and equilibrium point so don't read in these yet
+    if ( !(attribs->m_jointType == afJointType::CONE_TWIST) && !(attribs->m_jointType == afJointType::SIX_DOF) && !(attribs->m_jointType == afJointType::SIX_DOF_SPRING)){
+        if(limitsNode.IsDefined()){
+            if (limitsNode["low"].IsDefined()){
+                attribs->m_lowerLimit = limitsNode["low"].as<double>();
+            }
+            if (limitsNode["high"].IsDefined()){
+                attribs->m_upperLimit = limitsNode["high"].as<double>();
+            }
+            if (limitsNode["low"].IsDefined() && limitsNode["high"].IsDefined()){
+                attribs->m_enableLimits = true;
+            }
+        }
 
-    if(limitsNode.IsDefined()){
-        if (limitsNode["low"].IsDefined()){
-            attribs->m_lowerLimit = limitsNode["low"].as<double>();
+        if (dampingNode.IsDefined()){
+            attribs->m_damping = dampingNode.as<double>();
         }
-        if (limitsNode["high"].IsDefined()){
-            attribs->m_upperLimit = limitsNode["high"].as<double>();
+
+        if(stiffnessNode.IsDefined()){
+            attribs->m_stiffness = stiffnessNode.as<double>();
         }
-        if (limitsNode["low"].IsDefined() && limitsNode["high"].IsDefined()){
-            attribs->m_enableLimits = true;
+
+        if(equilibriumPointNode.IsDefined()){
+            attribs->m_equilibriumPoint = equilibriumPointNode.as<double>();
+        }
+        else{
+            attribs->m_equilibriumPoint = attribs->m_lowerLimit + (attribs->m_upperLimit - attribs->m_lowerLimit) / 2.0;
         }
     }
 
     if (attribs->m_jointType == afJointType::CONE_TWIST){
-        if (coneTwistLimitsNode.IsDefined()){
-            attribs->m_coneTwistLimits.m_Z = coneTwistLimitsNode["z"].as<double>();
-            attribs->m_coneTwistLimits.m_Y = coneTwistLimitsNode["y"].as<double>();
-            attribs->m_coneTwistLimits.m_X = coneTwistLimitsNode["x"].as<double>();
+        if (limitsNode.IsDefined()){
+            attribs->m_coneTwistLimits.m_X = limitsNode["x"].as<double>();
+            attribs->m_coneTwistLimits.m_Y = limitsNode["y"].as<double>();
+            attribs->m_coneTwistLimits.m_Z = limitsNode["z"].as<double>();
         }
         else{
             cerr << "ERROR! FOR JOINT " << attribs->m_identificationAttribs.m_name << " UNABLE TO PARSE LIMITS " << endl;
@@ -1614,23 +1623,23 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     }
 
     if (attribs->m_jointType == afJointType::SIX_DOF || attribs->m_jointType == afJointType::SIX_DOF_SPRING){
-        if (sixDofLimitsNode.IsDefined()){
+        if (limitsNode.IsDefined()){
             try{
-                attribs->m_sixDofLimits.m_lowerLimit[0] = sixDofLimitsNode["linear"]["low"]["x"].as<double>();
-                attribs->m_sixDofLimits.m_lowerLimit[1] = sixDofLimitsNode["linear"]["low"]["y"].as<double>();
-                attribs->m_sixDofLimits.m_lowerLimit[2] = sixDofLimitsNode["linear"]["low"]["z"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[0] = limitsNode["linear"]["low"]["x"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[1] = limitsNode["linear"]["low"]["y"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[2] = limitsNode["linear"]["low"]["z"].as<double>();
 
-                attribs->m_sixDofLimits.m_upperLimit[0] = sixDofLimitsNode["linear"]["high"]["x"].as<double>();
-                attribs->m_sixDofLimits.m_upperLimit[1] = sixDofLimitsNode["linear"]["high"]["y"].as<double>();
-                attribs->m_sixDofLimits.m_upperLimit[2] = sixDofLimitsNode["linear"]["high"]["z"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[0] = limitsNode["linear"]["high"]["x"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[1] = limitsNode["linear"]["high"]["y"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[2] = limitsNode["linear"]["high"]["z"].as<double>();
 
-                attribs->m_sixDofLimits.m_lowerLimit[3] = sixDofLimitsNode["angular"]["low"]["x"].as<double>();
-                attribs->m_sixDofLimits.m_lowerLimit[4] = sixDofLimitsNode["angular"]["low"]["y"].as<double>();
-                attribs->m_sixDofLimits.m_lowerLimit[5] = sixDofLimitsNode["angular"]["low"]["z"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[3] = limitsNode["angular"]["low"]["x"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[4] = limitsNode["angular"]["low"]["y"].as<double>();
+                attribs->m_sixDofLimits.m_lowerLimit[5] = limitsNode["angular"]["low"]["z"].as<double>();
 
-                attribs->m_sixDofLimits.m_upperLimit[3] = sixDofLimitsNode["angular"]["high"]["x"].as<double>();
-                attribs->m_sixDofLimits.m_upperLimit[4] = sixDofLimitsNode["angular"]["high"]["y"].as<double>();
-                attribs->m_sixDofLimits.m_upperLimit[5] = sixDofLimitsNode["angular"]["high"]["z"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[3] = limitsNode["angular"]["high"]["x"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[4] = limitsNode["angular"]["high"]["y"].as<double>();
+                attribs->m_sixDofLimits.m_upperLimit[5] = limitsNode["angular"]["high"]["z"].as<double>();
             }
             catch(YAML::Exception e){
                 cerr << e.what() << endl;
@@ -1642,15 +1651,15 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
         if (attribs->m_jointType == afJointType::SIX_DOF_SPRING){
 
             // COPY STIFFNESS VALUES
-            if (sixDofStiffnessNode.IsDefined()){
+            if (stiffnessNode.IsDefined()){
                 try{
-                    attribs->m_sixDofSpringAttribs.m_stiffness[0] = sixDofStiffnessNode["linear"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_stiffness[1] = sixDofStiffnessNode["linear"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_stiffness[2] = sixDofStiffnessNode["linear"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[0] = stiffnessNode["linear"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[1] = stiffnessNode["linear"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[2] = stiffnessNode["linear"]["z"].as<double>();
 
-                    attribs->m_sixDofSpringAttribs.m_stiffness[3] = sixDofStiffnessNode["angular"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_stiffness[4] = sixDofStiffnessNode["angular"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_stiffness[5] = sixDofStiffnessNode["angular"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[3] = stiffnessNode["angular"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[4] = stiffnessNode["angular"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_stiffness[5] = stiffnessNode["angular"]["z"].as<double>();
                 }
                 catch(YAML::Exception e){
                     cerr << e.what() << endl;
@@ -1662,15 +1671,15 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
             }
 
             // COPY EQUILIBRIUM POINT VALUES
-            if (sixDofEquilibriumNode.IsDefined()){
+            if (equilibriumPointNode.IsDefined()){
                 try{
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[0] = sixDofEquilibriumNode["linear"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[1] = sixDofEquilibriumNode["linear"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[2] = sixDofEquilibriumNode["linear"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[0] = equilibriumPointNode["linear"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[1] = equilibriumPointNode["linear"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[2] = equilibriumPointNode["linear"]["z"].as<double>();
 
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[3] = sixDofEquilibriumNode["angular"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[4] = sixDofEquilibriumNode["angular"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[5] = sixDofEquilibriumNode["angular"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[3] = equilibriumPointNode["angular"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[4] = equilibriumPointNode["angular"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_equilibriumPoint[5] = equilibriumPointNode["angular"]["z"].as<double>();
                 }
                 catch(YAML::Exception e){
                     cerr << e.what() << endl;
@@ -1682,15 +1691,15 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
             }
 
             // COPY DAMPING VALUES
-            if (sixDofDampingNode.IsDefined()){
+            if (dampingNode.IsDefined()){
                 try{
-                    attribs->m_sixDofSpringAttribs.m_damping[0] = sixDofDampingNode["linear"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_damping[1] = sixDofDampingNode["linear"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_damping[2] = sixDofDampingNode["linear"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[0] = dampingNode["linear"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[1] = dampingNode["linear"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[2] = dampingNode["linear"]["z"].as<double>();
 
-                    attribs->m_sixDofSpringAttribs.m_damping[3] = sixDofDampingNode["angular"]["x"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_damping[4] = sixDofDampingNode["angular"]["y"].as<double>();
-                    attribs->m_sixDofSpringAttribs.m_damping[5] = sixDofDampingNode["angular"]["z"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[3] = dampingNode["angular"]["x"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[4] = dampingNode["angular"]["y"].as<double>();
+                    attribs->m_sixDofSpringAttribs.m_damping[5] = dampingNode["angular"]["z"].as<double>();
                 }
                 catch(YAML::Exception e){
                     cerr << e.what() << endl;
@@ -1709,17 +1718,6 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
 
     if(maxMotorImpulseNode.IsDefined()){
         attribs->m_maxMotorImpulse = maxMotorImpulseNode.as<double>();
-    }
-
-    if(stiffnessNode.IsDefined()){
-        attribs->m_stiffness = stiffnessNode.as<double>();
-    }
-
-    if(equilibriumPointNode.IsDefined()){
-        attribs->m_equilibriumPoint = equilibriumPointNode.as<double>();
-    }
-    else{
-        attribs->m_equilibriumPoint = attribs->m_lowerLimit + (attribs->m_upperLimit - attribs->m_lowerLimit) / 2.0;
     }
 
     if(erpNode.IsDefined()){
