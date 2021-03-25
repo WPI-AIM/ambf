@@ -577,9 +577,9 @@ public:
     }
 
     struct afConeTwistLimits{
-        double m_swing1 = 0.7;
-        double m_swing2 = 0.7;
-        double m_twist = 0.7;
+        double m_Z = 0.7;
+        double m_Y = 0.7;
+        double m_X = 0.7;
     };
 
     struct afSixDofLimits{

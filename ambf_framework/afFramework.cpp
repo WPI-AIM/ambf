@@ -3706,7 +3706,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         break;
     case afJointType::LINEAR_SPRING:
     case afJointType::TORSION_SPRING:{
-        m_spring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
+        m_spring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, RotateOrder::RO_XYZ);
 
         // Initialize all the 6 axes to 0 stiffness and damping and limits also set to 0-0
         for (int axIdx = 0 ; axIdx < 6 ; axIdx++){
@@ -3730,13 +3730,13 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         if (attribs.m_enableLimits){
             // Somehow bullets springs limits for rotational joints are inverted.
             // So handle them internally rather than breaking AMBF description specificaiton
-            if (m_jointType == afJointType::TORSION_SPRING){
-                m_spring->setLimit(axisIdx, -m_upperLimit, -m_lowerLimit);
-                m_spring->setEquilibriumPoint(axisIdx, -attribs.m_equilibriumPoint);
-            }
-            else{
+            if (m_jointType == afJointType::LINEAR_SPRING){
                 m_spring->setLimit(axisIdx, m_lowerLimit, m_upperLimit);
                 m_spring->setEquilibriumPoint(axisIdx, attribs.m_equilibriumPoint);
+            }
+            else if (m_jointType == afJointType::TORSION_SPRING){
+                m_spring->setLimit(axisIdx, -m_upperLimit, -m_lowerLimit);
+                m_spring->setEquilibriumPoint(axisIdx, -attribs.m_equilibriumPoint);
             }
 
             m_spring->enableSpring(axisIdx, true);
@@ -3760,7 +3760,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         break;
     case afJointType::CONE_TWIST:{
         m_coneTwist = new btConeTwistConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
-        m_coneTwist->setLimit(attribs.m_coneTwistLimits.m_swing1, attribs.m_coneTwistLimits.m_swing2, attribs.m_coneTwistLimits.m_twist);
+        m_coneTwist->setLimit(attribs.m_coneTwistLimits.m_Z, attribs.m_coneTwistLimits.m_Y, attribs.m_coneTwistLimits.m_X);
         m_coneTwist->setDamping(attribs.m_damping);
         m_btConstraint = m_coneTwist;
 
@@ -3768,8 +3768,12 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         break;
     case afJointType::SIX_DOF:{
         m_sixDof = new btGeneric6DofConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
-        for (int id = 0 ; id < 6 ; id++){
+        for (int id = 0 ; id < 3 ; id++){
             m_sixDof->setLimit(id, attribs.m_sixDofLimits.m_lowerLimit[id], attribs.m_sixDofLimits.m_upperLimit[id]);
+        }
+        for (int id = 3 ; id < 6 ; id++){
+            // The rotational limits are inverted in Bullet
+            m_sixDof->setLimit(id, -attribs.m_sixDofLimits.m_upperLimit[id], -attribs.m_sixDofLimits.m_lowerLimit[id]);
         }
 
         m_btConstraint = m_sixDof;
@@ -3777,11 +3781,18 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     }
         break;
     case afJointType::SIX_DOF_SPRING:{
-        m_sixDofSpring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB);
-        for (int id = 0 ; id < 6 ; id++){
+        m_sixDofSpring = new btGeneric6DofSpring2Constraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, RotateOrder::RO_XYZ);
+        for (int id = 0 ; id < 3 ; id++){
             m_sixDofSpring->setLimit(id, attribs.m_sixDofLimits.m_lowerLimit[id], attribs.m_sixDofLimits.m_upperLimit[id]);
-            m_sixDofSpring->setDamping(id, attribs.m_sixDofSpringAttribs.m_damping[id]);
             m_sixDofSpring->setEquilibriumPoint(id, attribs.m_sixDofSpringAttribs.m_equilibriumPoint[id]);
+        }
+        for (int id = 3 ; id < 6 ; id++){
+            // The rotational limits are inverted in Bullet
+            m_sixDofSpring->setLimit(id, -attribs.m_sixDofLimits.m_upperLimit[id], -attribs.m_sixDofLimits.m_lowerLimit[id]);
+            m_sixDofSpring->setEquilibriumPoint(id, -attribs.m_sixDofSpringAttribs.m_equilibriumPoint[id]);
+        }
+        for (int id = 0 ; id < 6 ; id++){
+            m_sixDofSpring->setDamping(id, attribs.m_sixDofSpringAttribs.m_damping[id]);
             m_sixDofSpring->setStiffness(id, attribs.m_sixDofSpringAttribs.m_stiffness[id]);
             m_sixDofSpring->enableSpring(id, true);
         }
@@ -3828,13 +3839,16 @@ void afJoint::update(){
 
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
 {
-    btVector3 jINp;
+    btVector3 jINp(0, 0, 1);
     switch (a_type) {
     case afJointType::REVOLUTE:
     case afJointType::FIXED:
     case afJointType::LINEAR_SPRING:
     case afJointType::TORSION_SPRING:
     case afJointType::P2P:
+    case afJointType::CONE_TWIST:
+    case afJointType::SIX_DOF:
+    case afJointType::SIX_DOF_SPRING:
         jINp.setValue(0, 0, 1);
         break;
     case afJointType::PRISMATIC:
