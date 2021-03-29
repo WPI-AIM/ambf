@@ -53,57 +53,6 @@
 using namespace ambf;
 using namespace chai3d;
 
-
-template<>
-///
-/// \brief afUtils::getRotBetweenVectors<btQuaternion, btVector3>
-/// \param v1
-/// \param v2
-/// \return
-///
-btQuaternion afUtils::getRotBetweenVectors<btQuaternion, btVector3>(const btVector3 &v1, const btVector3 &v2){
-    btQuaternion quat;
-    double rot_angle = v1.angle(v2);
-    if ( abs(rot_angle) < 0.1){
-        quat.setEulerZYX(0,0,0);
-    }
-    else if ( abs(rot_angle) > 3.13 ){
-        btVector3 nx(1, 0, 0);
-        double temp_ang = v1.angle(nx);
-        if ( abs(temp_ang) > 0.1 && abs(temp_ang) < 3.13 ){
-            btVector3 rot_axis = v1.cross(nx);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-        else{
-            btVector3 ny(0, 1, 0);
-            btVector3 rot_axis = v2.cross(ny);
-            quat.setRotation(rot_axis, rot_angle);
-        }
-    }
-    else{
-        btVector3 rot_axis = v1.cross(v2);
-        quat.setRotation(rot_axis, rot_angle);
-    }
-
-    return quat;
-}
-
-
-template<>
-///
-/// \brief afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>
-/// \param v1
-/// \param v2
-/// \return
-///
-btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector3 &v1, const btVector3 &v2){
-    btMatrix3x3 rot_mat;
-    btQuaternion quat = getRotBetweenVectors<btQuaternion, btVector3>(v1, v2);
-    rot_mat.setRotation(quat);
-    return rot_mat;
-}
-
-
 template<>
 ///
 /// \brief afUtils::getRotBetweenVectors<cQuaternion, cVector3d>
@@ -114,13 +63,13 @@ template<>
 cQuaternion afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(const cVector3d &v1, const cVector3d &v2){
     cQuaternion quat;
     double rot_angle = cAngle(v1, v2);
-    if ( abs(rot_angle) < 0.1){
+    if ( abs(rot_angle) < 0.001){
         quat.fromAxisAngle(cVector3d(0, 0, 1), rot_angle);
     }
-    else if ( cAbs(rot_angle) > 3.13 ){
+    else if ( cAbs(rot_angle) > 3.14 ){
         cVector3d nx(1, 0, 0);
         double temp_ang = cAngle(v1, nx);
-        if ( abs(temp_ang) > 0.1 && abs(temp_ang) < 3.13 ){
+        if ( abs(temp_ang) > 0.001 && abs(temp_ang) < 3.14 ){
             cVector3d rot_axis = cCross(v1, nx);
             quat.fromAxisAngle(rot_axis, rot_angle);
         }
@@ -150,6 +99,40 @@ cMatrix3d afUtils::getRotBetweenVectors<cMatrix3d, cVector3d>(const cVector3d &v
     cMatrix3d rot_mat;
     cQuaternion quat = getRotBetweenVectors<cQuaternion, cVector3d>(v1, v2);
     quat.toRotMat(rot_mat);
+    return rot_mat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btQuaternion, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btQuaternion afUtils::getRotBetweenVectors<btQuaternion, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btQuaternion quat;
+    cVector3d va, vb;
+    va.set(v1.x(), v1.y(), v1.z());
+    vb.set(v2.x(), v2.y(), v2.z());
+    cQuaternion cQaut = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(va, vb);
+
+    quat.setX(cQaut.x); quat.setY(cQaut.y); quat.setZ(cQaut.z); quat.setW(cQaut.w);
+    return quat;
+}
+
+
+template<>
+///
+/// \brief afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>
+/// \param v1
+/// \param v2
+/// \return
+///
+btMatrix3x3 afUtils::getRotBetweenVectors<btMatrix3x3, btVector3>(const btVector3 &v1, const btVector3 &v2){
+    btMatrix3x3 rot_mat;
+    btQuaternion quat = getRotBetweenVectors<btQuaternion, btVector3>(v1, v2);
+    rot_mat.setRotation(quat);
     return rot_mat;
 }
 
