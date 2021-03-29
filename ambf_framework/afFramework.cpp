@@ -3552,7 +3552,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
     m_childName = attribs.m_hierarchyAttribs.m_childName;
     m_enableActuator = attribs.m_enableMotor;
-    m_offset = attribs.m_offset;
+    m_jointOffset = attribs.m_jointOffset;
+    m_childOffset = attribs.m_childOffset;
     m_enableLimits = attribs.m_enableLimits;
     m_lowerLimit = attribs.m_lowerLimit;
     m_upperLimit = attribs.m_upperLimit;
@@ -3655,7 +3656,12 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     // Rotation of constraint in parent axis as quaternion
     btQuaternion quat_jINp;
     quat_jINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(ax_jINp, m_axisA);
-    frameA.setRotation(quat_jINp);
+
+    // Offset rotation along the parent axis
+    btQuaternion quat_jOffINp;
+    quat_jOffINp.setRotation(m_axisA, m_jointOffset);
+
+    frameA.setRotation(quat_jOffINp * quat_jINp);
     frameA.setOrigin(m_pvtA);
 
     // Rotation of child axis in parent axis as Quaternion
@@ -3663,11 +3669,11 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     quat_cINp = afUtils::getRotBetweenVectors<btQuaternion, btVector3>(m_axisB, m_axisA);
 
     // Offset rotation along the parent axis
-    btQuaternion quat_offINp;
-    quat_offINp.setRotation(m_axisA, m_offset);
+    btQuaternion quat_cOffINp;
+    quat_cOffINp.setRotation(m_axisA, m_childOffset);
     // We need to post-multiply frameA's rot to cancel out the shift in axis, then
     // the offset along joint axis and finally frameB's axis alignment in frameA.
-    frameB.setRotation( quat_cINp.inverse() * quat_offINp.inverse() * quat_jINp);
+    frameB.setRotation( quat_cINp.inverse() * quat_cOffINp.inverse() * quat_jOffINp * quat_jINp );
     frameB.setOrigin(m_pvtB);
 
     switch (m_jointType) {

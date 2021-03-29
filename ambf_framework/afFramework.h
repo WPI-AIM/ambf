@@ -1114,7 +1114,12 @@ protected:
     bool m_enableActuator;
     bool m_enableLimits;
     double m_lowerLimit, m_upperLimit;
-    double m_offset;
+
+    // Rotational offset of joint along the free joint axis
+    double m_jointOffset;
+
+    // Rotational offset of child along the free joint axis
+    double m_childOffset;
 
     // Store parent and child afRigidBody to prevent lookups.
     afRigidBodyPtr m_afParentBody;

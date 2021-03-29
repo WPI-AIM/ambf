@@ -567,7 +567,8 @@ public:
         m_enableFeedback = false;
         m_enableLimits = false;
         m_maxMotorImpulse = 0.1;
-        m_offset = 0.0;
+        m_jointOffset = 0.0;
+        m_childOffset = 0.0;
         m_damping = 0.0;
         m_stiffness = 0.0;
         m_equilibriumPoint = 0.0;
@@ -619,7 +620,10 @@ public:
     afSixDofSpringAttribs m_sixDofSpringAttribs;
     double m_erp;
     double m_cfm;
-    double m_offset;
+    // Rotational offset of joint along the free joint axis
+    double m_jointOffset;
+    // Rotation offset of child along the free joint axis
+    double m_childOffset;
     double m_damping;
     double m_stiffness;
     double m_equilibriumPoint;

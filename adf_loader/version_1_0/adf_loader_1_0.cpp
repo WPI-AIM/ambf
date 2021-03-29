@@ -1553,7 +1553,8 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     YAML::Node limitsNode = node["joint limits"];
     YAML::Node erpNode = node["joint erp"];
     YAML::Node cfmNode = node["joint cfm"];
-    YAML::Node offsetNode = node["offset"];
+    YAML::Node jointOffsetNode = node["joint offset"];
+    YAML::Node childOffsetNode = node["child offset"];
     YAML::Node dampingNode = node["damping"];
     YAML::Node stiffnessNode = node["stiffness"];
     YAML::Node typeNode = node["type"];
@@ -1576,9 +1577,16 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
 
     attribs->m_jointType = ADFUtils::getJointTypeFromString(typeNode.as<string>());
 
+    if(jointOffsetNode.IsDefined()){
+        attribs->m_jointOffset = jointOffsetNode.as<double>();
+    }
 
-    if(offsetNode.IsDefined()){
-        attribs->m_offset = offsetNode.as<double>();
+    if (node["offset"].IsDefined()){
+        childOffsetNode = node["offset"];
+    }
+
+    if(childOffsetNode.IsDefined()){
+        attribs->m_childOffset = childOffsetNode.as<double>();
     }
 
     // These three joints have multiple limits, stiffness, damping and equilibrium point so don't read in these yet
