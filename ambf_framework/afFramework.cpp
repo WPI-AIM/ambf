@@ -72,6 +72,8 @@ int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
 
+btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
+
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 ros::NodeHandle* afCamera::s_rosNode = nullptr;
 image_transport::ImageTransport* afCamera::s_imageTransport = nullptr;
@@ -221,6 +223,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
         cerr << "ERROR! COLLISION SHAPE PRIMITIVE TYPE NOT UNDERSTOOD" << endl;
         break;
     };
+    collisionShape->setMargin(a_margin);
     return collisionShape;
 }
 
@@ -1393,14 +1396,18 @@ afInertialObject::afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr):
 ///
 afInertialObject::~afInertialObject()
 {
-    if (m_bulletRigidBody)
+    if (m_bulletRigidBody){
         delete m_bulletRigidBody;
-    if (m_bulletSoftBody)
+    }
+    if (m_bulletSoftBody){
         delete m_bulletSoftBody;
-    if (m_bulletCollisionShape)
+    }
+    if (m_bulletCollisionShape){
         delete m_bulletCollisionShape;
-    if (m_bulletMotionState)
+    }
+    if (m_bulletMotionState){
         delete m_bulletMotionState;
+    }
 }
 
 
@@ -4783,28 +4790,21 @@ afWorld::afWorld(string a_global_namespace){
 
 afWorld::~afWorld()
 {
-    if (m_pickedConstraint != nullptr){
-        delete m_pickedConstraint;
-    }
-
-    for(vector<afBaseObjectPtr>::iterator it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
-        delete *it;
-    }
-
-    for (map<string, afPointCloudPtr>::iterator it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
-        delete it->second;
-    }
 
     if(m_bulletWorld){
         delete m_bulletWorld;
+    }
+
+    if(m_bulletCollisionConfiguration){
+        delete m_bulletCollisionConfiguration;
     }
 
     if(m_bulletCollisionDispatcher){
         delete m_bulletCollisionDispatcher;
     }
 
-    if(m_bulletCollisionConfiguration){
-        delete m_bulletCollisionConfiguration;
+    if(m_bulletBroadphase){
+        delete m_bulletBroadphase;
     }
 
     if(m_bulletSoftBodyWorldInfo){
@@ -4819,14 +4819,21 @@ afWorld::~afWorld()
         delete m_bulletSolver;
     }
 
-    if(m_bulletBroadphase){
-        delete m_bulletBroadphase;
+    if (m_pickedConstraint != nullptr){
+        delete m_pickedConstraint;
+    }
+
+    for(vector<afBaseObjectPtr>::iterator it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
+        delete *it;
+    }
+
+    for (map<string, afPointCloudPtr>::iterator it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
+        delete it->second;
     }
 
     if(m_chaiWorld){
         delete m_chaiWorld;
     }
-
 }
 
 
@@ -5077,6 +5084,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         afBaseObject* childObj = *i;
         childObj->update();
     }
+
 }
 
 
@@ -5355,7 +5363,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     }
 
     return true;
-
 }
 
 
@@ -5568,6 +5575,15 @@ string afWorld::addAFSoftBody(afSoftBodyPtr a_obj){
     return remaped_identifier;
 }
 
+string afWorld::addAFGhostObject(afGhostObjectPtr a_obj)
+{
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afGhostObjectMap);
+    string remaped_identifier = qualified_identifier + remap_str;
+    addAFObject<afGhostObjectPtr, afGhostObjectMap>(a_obj, qualified_identifier + remap_str, &m_afGhostObjectMap);
+    return remaped_identifier;
+}
+
 
 string afWorld::addAFJoint(afJointPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
@@ -5681,6 +5697,16 @@ afRigidBodyVec afWorld::getAFRigidBodies(){
 ///
 afSoftBodyVec afWorld::getAFSoftBodies(){
     return getAFObjects<afSoftBodyVec, afSoftBodyMap>(&m_afSoftBodyMap);
+}
+
+
+///
+/// \brief afWorld::getAFGhostObjects
+/// \return
+///
+afGhostObjectVec afWorld::getAFGhostObjects()
+{
+    return getAFObjects<afGhostObjectVec, afGhostObjectMap>(&m_afGhostObjectMap);
 }
 
 
@@ -7267,6 +7293,15 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
+    // Loading Ghost Objects
+    for (size_t i = 0; i < attribs.m_ghostObjectAttribs.size(); ++i) {
+        afGhostObjectPtr gObjPtr = new afGhostObject(m_afWorld, this);
+        if (gObjPtr->createFromAttribs(&attribs.m_ghostObjectAttribs[i])){
+            string remaped_name = m_afWorld->addAFGhostObject(gObjPtr);
+            m_afGhostObjectMapLocal[gObjPtr->getQualifiedIdentifier()] = gObjPtr;
+        }
+    }
+
     /// Loading Sensors
     for (size_t i = 0; i < attribs.m_sensorAttribs.size(); ++i) {
         afSensorPtr sensorPtr = nullptr;
@@ -7626,12 +7661,38 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
         }
     }
     if (!suppress_warning){
-        cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
+        cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
 
-        cerr <<"Existing Bodies in Map: " << m_afSoftBodyMap.size() << endl;
+        cerr <<"Existing Soft Bodies in Map: " << m_afSoftBodyMap.size() << endl;
         afSoftBodyMap::iterator sbIt = m_afSoftBodyMap.begin();
         for (; sbIt != m_afSoftBodyMap.end() ; ++sbIt){
             cerr << sbIt->first << endl;
+        }
+    }
+    return nullptr;
+}
+
+afGhostObjectPtr afWorld::getAFGhostObject(string a_name, bool suppress_warning)
+{
+    return getAFObject<afGhostObjectPtr, afGhostObjectMap>(a_name, &m_afGhostObjectMap, suppress_warning);
+}
+
+afGhostObjectPtr afWorld::getAFGhostObject(btGhostObject *a_body, bool suppress_warning)
+{
+    afGhostObjectMap::iterator afIt;
+    for (afIt = m_afGhostObjectMap.begin() ; afIt != m_afGhostObjectMap.end() ; ++ afIt){
+        afGhostObjectPtr afObj = afIt->second;
+        if (a_body == afObj->m_bulletGhostObject){
+            return afObj;
+        }
+    }
+    if (!suppress_warning){
+        cerr << "WARNING: CAN'T FIND ANY OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
+
+        cerr <<"Existing Objects in Map: " << m_afGhostObjectMap.size() << endl;
+        afGhostObjectMap::iterator goIt = m_afGhostObjectMap.begin();
+        for (; goIt != m_afGhostObjectMap.end() ; ++goIt){
+            cerr << goIt->first << endl;
         }
     }
     return nullptr;
@@ -8132,4 +8193,198 @@ void afPointCloud::update()
     }
 
 #endif
+}
+
+afGhostObject::afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr)
+{
+    m_bulletGhostObject = nullptr;
+}
+
+afGhostObject::~afGhostObject()
+{
+    if(m_bulletGhostObject){
+        delete m_bulletGhostObject;
+    }
+
+    if(m_bulletGhostPairCallback){
+        delete m_bulletGhostPairCallback;
+    }
+}
+
+void afGhostObject::update()
+{
+    cTransform trans;
+    trans << m_bulletGhostObject->getWorldTransform();
+    setLocalTransform(trans);
+    vector<btRigidBody*> localSensedBodies;
+
+    btManifoldArray* manifoldArray = new btManifoldArray();
+    btBroadphasePairArray pairArray = m_bulletGhostObject->getOverlappingPairCache()->getOverlappingPairArray();
+
+    for (int i = 0; i < pairArray.size(); i++)
+    {
+        manifoldArray->clear();
+
+        btBroadphasePair pair = pairArray[i];
+
+        //unless we manually perform collision detection on this pair, the contacts are in the dynamics world paircache:
+        btBroadphasePair* collisionPair = m_afWorld->m_bulletWorld->getPairCache()->findPair(pair.m_pProxy0, pair.m_pProxy1);
+        if (collisionPair == nullptr)
+            continue;
+
+        if (collisionPair->m_algorithm != nullptr){
+            collisionPair->m_algorithm->getAllContactManifolds(*manifoldArray);
+        }
+
+        for (int j = 0; j < manifoldArray->size(); j++)
+        {
+            btPersistentManifold* manifold = manifoldArray->at(j);
+            btCollisionObject* co;
+            if (manifold->getBody0() == m_bulletGhostObject){
+                co = const_cast<btCollisionObject*>(manifold->getBody1());
+            }
+            else{
+                co = const_cast<btCollisionObject*>(manifold->getBody0());
+            }
+
+            for (int p = 0; p < manifold->getNumContacts(); p++)
+            {
+                btManifoldPoint pt = manifold->getContactPoint(p);
+                if (pt.getDistance() < 0.0f)
+                {
+                    btRigidBody* pBody = dynamic_cast<btRigidBody*>(co);
+                    localSensedBodies.push_back(pBody);
+                }
+            }
+        }
+    }
+
+    for (int i = 0 ; i < m_sensedBodies.size() ; i++){
+        m_sensedBodies[i]->setGravity(m_afWorld->m_bulletWorld->getGravity());
+        m_sensedBodies[i]->applyCentralForce(btVector3(0, 0, 0));
+        m_sensedBodies[i]->applyTorque(btVector3(0, 0, 0));
+    }
+
+    m_sensedBodies.clear();
+    m_sensedBodies = localSensedBodies;
+
+
+    for (int i = 0 ; i < m_sensedBodies.size() ; i++){
+        m_sensedBodies[i]->setGravity(btVector3(0, 0, 0));
+        double damping_factor = 1.0 - 0.1;
+        btVector3 damped_lin_vel = damping_factor * m_sensedBodies[i]->getLinearVelocity();
+        btVector3 damped_ang_vel = damping_factor * m_sensedBodies[i]->getAngularVelocity();
+        m_sensedBodies[i]->setLinearVelocity(damped_lin_vel);
+        m_sensedBodies[i]->setAngularVelocity(damped_ang_vel);
+    }
+}
+
+bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
+{
+    afGhostObjectAttributes& attribs = *a_attribs;
+
+    setIdentifier(attribs.m_identifier);
+    setName(attribs.m_identificationAttribs.m_name);
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
+
+    m_bulletGhostObject = new btPairCachingGhostObject();
+
+    m_visualMesh = new cMultiMesh();
+    m_collisionMesh = new cMultiMesh();
+
+    m_scale = attribs.m_kinematicAttribs.m_scale;
+
+    if (attribs.m_visualAttribs.m_geometryType == afGeometryType::MESH){
+        if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str()) ){
+            m_visualMesh->scale(m_scale);
+            m_visualMesh->setUseDisplayList(true);
+//            m_visualMesh->markForUpdate(false);
+        }
+        else{
+            cerr << "WARNING: Ghost Objects "
+                      << m_name
+                      << "'s mesh \"" << attribs.m_visualAttribs.m_meshFilepath.c_str() << "\" not found\n";
+            return 0;
+        }
+    }
+    else if(attribs.m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
+            attribs.m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE){
+
+        for(unsigned long sI = 0 ; sI < attribs.m_visualAttribs.m_primitiveShapes.size() ; sI++){
+            afPrimitiveShapeAttributes pS = attribs.m_visualAttribs.m_primitiveShapes[sI];
+            cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
+            m_visualMesh->m_meshes->push_back(tempMesh);
+        }
+    }
+
+    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
+    m_visualMesh->setMaterial(mat);
+    // Important to set the transparency after setting the material, otherwise the alpha
+    // channel ruins the Z-buffer depth testing in some way.
+    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
+
+    if (attribs.m_collisionAttribs.m_geometryType == afGeometryType::MESH){
+        if (m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str()) ){
+            m_collisionMesh->scale(m_scale);
+            m_bulletCollisionShape = afShapeUtils::createCollisionShape(m_collisionMesh,
+                                                                        attribs.m_collisionAttribs.m_margin,
+                                                                        afTransform(),
+                                                                        attribs.m_collisionAttribs.m_meshShapeType);
+        }
+        else{
+            cerr << "WARNING: Body "
+                      << m_name
+                      << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
+            return false;
+        }
+    }
+    else if(attribs.m_collisionAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
+            attribs.m_collisionAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE){
+
+        // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
+        // Thus instead of using a compound, use the single collision shape.
+        if (attribs.m_collisionAttribs.m_primitiveShapes.size() == 0){
+            // ERROR! NO PRIMITIVE SHAPES HAVE BEEN DEFINED.
+            return false;
+        }
+        else{
+            btCompoundShape* compoundCollisionShape = new btCompoundShape();
+            for (unsigned long sI = 0 ; sI < attribs.m_collisionAttribs.m_primitiveShapes.size() ; sI++){
+                afPrimitiveShapeAttributes pS = attribs.m_collisionAttribs.m_primitiveShapes[sI];
+                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS, attribs.m_collisionAttribs.m_margin);
+
+                // Here again, we consider both the inertial offset transform and the
+                // shape offset transfrom. This will change the legacy behavior but
+                // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
+                // shape. So they shall be updated.
+                btTransform shapeOffset = to_btTransform(pS.getOffset());
+                compoundCollisionShape->addChildShape(shapeOffset, collShape);
+            }
+            m_bulletCollisionShape = compoundCollisionShape;
+        }
+    }
+
+    m_bulletCollisionShape->setMargin(attribs.m_collisionAttribs.m_margin);
+    m_bulletGhostObject->setCollisionShape(m_bulletCollisionShape);
+    m_bulletGhostObject->setCollisionFlags(m_bulletGhostObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+    m_afWorld->m_bulletWorld->addCollisionObject(m_bulletGhostObject, btBroadphaseProxy::DefaultFilter, btBroadphaseProxy::AllFilter);
+
+    if (m_bulletGhostPairCallback == nullptr){
+        m_bulletGhostPairCallback = new btGhostPairCallback();
+        m_afWorld->m_bulletBroadphase->getOverlappingPairCache()->setInternalGhostPairCallback(m_bulletGhostPairCallback);
+    }
+
+    cTransform trans = to_cTransform(attribs.m_kinematicAttribs.m_location);
+    cerr << "SETTING GHOST OBJECT TRANSFORM" << endl;
+    setInitialTransform(trans);
+    setLocalTransform(trans);
+
+    addChildSceneObject(m_visualMesh, cTransform());
+    m_afWorld->addSceneObjectToWorld(m_visualMesh);
+}
+
+void afGhostObject::setLocalTransform(cTransform &trans)
+{
+    m_bulletGhostObject->setWorldTransform(to_btTransform(trans));
+    afBaseObject::setLocalTransform(trans);
 }

@@ -800,6 +800,31 @@ public:
 
 
 ///
+/// \brief The afGhostObjectAttributes struct
+///
+struct afGhostObjectAttributes: public afBaseObjectAttributes
+{
+public:
+    afGhostObjectAttributes(){
+    }
+
+    afCommunicationAttributes m_communicationAttribs;
+    afCollisionAttributes m_collisionAttribs;
+    afKinematicAttributes m_kinematicAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
+    afVisualAttributes m_visualAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        if (m_pathsResolved == false){
+            m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
+    }
+};
+
+
+///
 /// \brief The afWheelAttributes struct
 ///
 struct afWheelAttributes{
@@ -961,6 +986,7 @@ public:
 
     std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     std::vector <afSoftBodyAttributes> m_softBodyAttribs;
+    std::vector <afGhostObjectAttributes> m_ghostObjectAttribs;
     std::vector <afVehicleAttributes> m_vehicleAttribs;
     std::vector <afJointAttributes> m_jointAttribs;
     std::vector <afSensorAttributes*> m_sensorAttribs;
@@ -976,12 +1002,16 @@ public:
                 m_rigidBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
-            for (int i = 0 ; i < m_jointAttribs.size() ; i++){
-                m_jointAttribs[i].resolveRelativeNamespace(a_parentNamespace);
-            }
-
             for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
                 m_softBodyAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_ghostObjectAttribs.size() ; i++){
+                m_ghostObjectAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_jointAttribs.size() ; i++){
+                m_jointAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
             for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
@@ -1011,6 +1041,10 @@ public:
 
             for (int i = 0 ; i < m_softBodyAttribs.size() ; i++){
                 m_softBodyAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_ghostObjectAttribs.size() ; i++){
+                m_ghostObjectAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
             for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){

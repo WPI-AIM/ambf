@@ -1400,6 +1400,8 @@ void close(void)
     // wait for graphics and haptics loops to terminate
     while (!g_simulationFinished) { cSleepMs(100); }
     g_bulletSimThread->stop();
+    delete g_bulletSimThread;
+
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         g_hapticsThreads[i]->stop();
     }

@@ -1530,6 +1530,62 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     return true;
 }
 
+bool ADFLoader_1_0::loadGhostObjectAttribs(YAML::Node *a_node, afGhostObjectAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: GHOST OBJECT " << node << " NODE IS NULL\n";
+        return false;
+    }
+
+    if (attribs == nullptr){
+        cerr << "ERROR: GHOST OBJECT ATTRIBUTES IS A NULLPTR\n";
+        return false;
+    }
+    // Declare all the yaml parameters that we want to look for
+    // IDENTIFICATION
+    YAML::Node nameNode = node["name"];
+    YAML::Node namespaceNode = node["namespace"];
+    // KINEMATICS
+    YAML::Node posNode = node["location"]["position"];
+    YAML::Node rotNode = node["location"]["orientation"];
+    YAML::Node scaleNode = node["scale"];
+    //HIERARCHY
+    YAML::Node parentNode = node["parent"];
+    // VISUAL
+    YAML::Node meshPathHRNode = node["high resolution path"];
+    YAML::Node meshPathLRNode = node["low resolution path"];
+    YAML::Node meshNode = node["mesh"];
+    YAML::Node shapeNode = node["shape"];
+    YAML::Node compoundShapeNode = node["compound shape"];
+    YAML::Node geometryNode = node["geometry"];
+    YAML::Node colorNode = node["color"];
+    YAML::Node colorRGBANode = node["color rgba"];
+    YAML::Node colorComponentsNode = node["color components"];
+    // COLLISION
+    YAML::Node collisionMarginNode = node["collision margin"];
+    YAML::Node collisionMeshNode = node["collision mesh"];
+    YAML::Node collisionShapeNode = node["collision shape"];
+    YAML::Node collisionOffsetNode = node["collision offset"];
+    YAML::Node collisionGeometryNode = node["collision geometry"];
+    YAML::Node compoundCollisionShapeNode = node["compound collision shape"];
+    // COMMUNICATION
+    YAML::Node publishFrequencyNode = node["publish frequency"];
+    YAML::Node passiveNode = node["passive"];
+
+    ADFUtils adfUtils;
+
+    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    return true;
+
+}
+
 bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attribs)
 {
     YAML::Node& node = *a_node;
@@ -2336,6 +2392,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node nameSpaceNode = node["namespace"];
     YAML::Node rigidBodiesNode = node["bodies"];
     YAML::Node softBodiesNode = node["soft bodies"];
+    YAML::Node ghostObjectsNode = node["ghost objects"];
     YAML::Node vehiclesNode = node["vehicles"];
     YAML::Node jointsNode = node["joints"];
     YAML::Node sensorsNode = node["sensors"];
@@ -2384,6 +2441,19 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             sbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             sbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
             attribs->m_softBodyAttribs.push_back(sbAttribs);
+        }
+    }
+
+    // Loading Ghost Objects
+    for (size_t i = 0; i < ghostObjectsNode.size(); ++i) {
+        afGhostObjectAttributes goAttribs;
+        string identifier = ghostObjectsNode[i].as<string>();
+        YAML::Node goNode = node[identifier];
+        if (loadGhostObjectAttribs(&goNode, &goAttribs)){
+            goAttribs.m_identifier = identifier;
+            goAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
+            goAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
+            attribs->m_ghostObjectAttribs.push_back(goAttribs);
         }
     }
 

@@ -132,6 +132,9 @@ public:
     // Load soft body from a YAML::Node
     virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs);
 
+    // Load ghost object from a YAML::Node
+    virtual bool loadGhostObjectAttribs(YAML::Node* a_node, afGhostObjectAttributes* attribs);
+
     // Load joint from a YAML::Node
     virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs);
 
