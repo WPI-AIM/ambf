@@ -1518,6 +1518,43 @@ btVector3 afInertialObject::computeInertialOffset(cMultiMesh *mMesh)
 
 
 ///
+/// \brief afInertialObject::checkCollisionGroupIdx
+/// \param a_idx
+/// \return
+///
+bool afInertialObject::checkCollisionGroupIdx(uint a_idx){
+    bool in_group = false;
+    for (uint i = 0 ; i < m_collisionGroups.size() ; i++){
+        if (m_collisionGroups[i] == a_idx){
+            in_group = true;
+            break;
+        }
+    }
+
+    return in_group;
+}
+
+///
+/// \brief afInertialObject::isCommonCollisionGroupIdx
+/// \param a_idx
+/// \return
+///
+bool afInertialObject::isCommonCollisionGroupIdx(vector<uint> a_idx){
+    bool in_group = false;
+    for (uint i = 0 ; i < a_idx.size() ; i ++){
+        for (uint j = 0 ; j < m_collisionGroups.size() ; j++){
+            if (a_idx[i] == m_collisionGroups[j]){
+                in_group = true;
+                break;
+            }
+        }
+    }
+
+    return in_group;
+}
+
+
+///
 /// \brief afInertialObject::applyForceAtPointOnBody
 /// \param a_forceInWorld
 /// \param a_pointInWorld
@@ -2520,43 +2557,6 @@ void afRigidBody::setAngle(vector<double> &angles){
         }
 
     }
-}
-
-
-///
-/// \brief afRigidBody::checkCollisionGroupIdx
-/// \param a_idx
-/// \return
-///
-bool afRigidBody::checkCollisionGroupIdx(uint a_idx){
-    bool in_group = false;
-    for (uint i = 0 ; i < m_collisionGroups.size() ; i++){
-        if (m_collisionGroups[i] == a_idx){
-            in_group = true;
-            break;
-        }
-    }
-
-    return in_group;
-}
-
-///
-/// \brief afRigidBody::isCommonCollisionGroupIdx
-/// \param a_idx
-/// \return
-///
-bool afRigidBody::isCommonCollisionGroupIdx(vector<uint> a_idx){
-    bool in_group = false;
-    for (uint i = 0 ; i < a_idx.size() ; i ++){
-        for (uint j = 0 ; j < m_collisionGroups.size() ; j++){
-            if (a_idx[i] == m_collisionGroups[j]){
-                in_group = true;
-                break;
-            }
-        }
-    }
-
-    return in_group;
 }
 
 
@@ -5638,22 +5638,22 @@ void afWorld::buildCollisionGroups(){
     if (m_collisionGroups.size() > 0){
         vector<int> groupNumbers;
 
-        map<uint, vector<afRigidBodyPtr> >::iterator cgIt;
+        map<uint, vector<afInertialObjectPtr> >::iterator cgIt;
         for(cgIt = m_collisionGroups.begin() ; cgIt != m_collisionGroups.end() ; ++cgIt){
             groupNumbers.push_back(cgIt->first);
         }
 
         for (uint i = 0 ; i < groupNumbers.size() - 1 ; i++){
             int aIdx = groupNumbers[i];
-            vector<afRigidBodyPtr> grpA = m_collisionGroups[aIdx];
+            vector<afInertialObjectPtr> grpA = m_collisionGroups[aIdx];
             for (uint j = i + 1 ; j < groupNumbers.size() ; j ++){
                 int bIdx = groupNumbers[j];
-                vector<afRigidBodyPtr> grpB = m_collisionGroups[bIdx];
+                vector<afInertialObjectPtr> grpB = m_collisionGroups[bIdx];
 
                 for(uint aBodyIdx = 0 ; aBodyIdx < grpA.size() ; aBodyIdx++){
-                    afRigidBodyPtr bodyA = grpA[aBodyIdx];
+                    afInertialObjectPtr bodyA = grpA[aBodyIdx];
                     for(uint bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
-                        afRigidBodyPtr bodyB = grpB[bBodyIdx];
+                        afInertialObjectPtr bodyB = grpB[bBodyIdx];
                         if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroups))
                             bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
                     }

@@ -97,6 +97,7 @@ using namespace std;
 //------------------------------------------------------------------------------
 class afBaseObject;
 class afModel;
+class afInertialObject;
 class afRigidBody;
 class afSoftBody;
 class afGhostObject;
@@ -112,6 +113,7 @@ class afResistanceSensor;
 
 typedef afBaseObject* afBaseObjectPtr;
 typedef afModel* afModelPtr;
+typedef afInertialObject* afInertialObjectPtr;
 typedef afRigidBody* afRigidBodyPtr;
 typedef afSoftBody* afSoftBodyPtr;
 typedef afGhostObject* afGhostObjectPtr;
@@ -732,6 +734,13 @@ public:
     // Compute the COM of the body and the tranform from mesh origin to the COM
     btVector3 computeInertialOffset(cMultiMesh* mesh);
 
+    // function to check if this rigid body is part of the collision group
+    // at a_idx
+    bool checkCollisionGroupIdx(uint a_idx);
+    // function to check if this rigid body is part of the collision group
+    // at a_idxs
+    bool isCommonCollisionGroupIdx(vector<uint> a_idx);
+
     void estimateInertia();
 
     inline double getMass(){return m_mass;}
@@ -766,6 +775,9 @@ public:
 
     // cMultiMesh representation of collision mesh
     cMultiMesh* m_collisionMesh;
+
+    // Collision groups for this inertial object
+    vector<uint> m_collisionGroups;
 
 protected:
     //! Inertial Offset Transform defined in the body frame
@@ -834,13 +846,6 @@ public:
 
     // Cleanup this rigid body
     void remove();
-
-    // function to check if this rigid body is part of the collision group
-    // at a_idx
-    bool checkCollisionGroupIdx(uint a_idx);
-    // function to check if this rigid body is part of the collision group
-    // at a_idxs
-    bool isCommonCollisionGroupIdx(vector<uint> a_idx);
 
     // Check if the btRigidbody is child of this afBody
     bool isChild(btRigidBody* a_body);
@@ -927,9 +932,6 @@ protected:
 
     // Update the joint efforts of children in afObject State Message
     virtual void afObjectSetJointEfforts();
-
-    // Collision groups for this rigid body
-    vector<uint> m_collisionGroups;
 
     // pool of threads for solving the body's sensors in paralled
     vector<std::thread*> m_sensorThreads;
@@ -2086,7 +2088,7 @@ public:
     // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
     // a body can be a part of multiple groups
-    map<uint, vector<afRigidBodyPtr> > m_collisionGroups;
+    map<uint, vector<afInertialObjectPtr> > m_collisionGroups;
 
 public:
 
