@@ -53,6 +53,7 @@
 #include "btBulletDynamicsCommon.h"
 #include "BulletSoftBody/btSoftBody.h"
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <thread>
 #include <fstream>
 //------------------------------------------------------------------------------
@@ -98,6 +99,7 @@ class afBaseObject;
 class afModel;
 class afRigidBody;
 class afSoftBody;
+class afGhostObject;
 class afJoint;
 class afWorld;
 struct afRenderOptions;
@@ -112,6 +114,7 @@ typedef afBaseObject* afBaseObjectPtr;
 typedef afModel* afModelPtr;
 typedef afRigidBody* afRigidBodyPtr;
 typedef afSoftBody* afSoftBodyPtr;
+typedef afGhostObject* afGhostObjectPtr;
 typedef afJoint* afJointPtr;
 typedef afWorld* afWorldPtr;
 typedef afConstraintActuator* afConstraintActuatorPtr;
@@ -120,9 +123,11 @@ typedef afResistanceSensor* afResistanceSensorPtr;
 
 typedef map<string, afRigidBodyPtr> afRigidBodyMap;
 typedef map<string, afSoftBodyPtr> afSoftBodyMap;
+typedef map<string, afGhostObjectPtr> afGhostObjectMap;
 typedef map<string, afJointPtr> afJointMap;
 typedef vector<afRigidBodyPtr> afRigidBodyVec;
 typedef vector<afSoftBodyPtr> afSoftBodyVec;
+typedef vector<afGhostObjectPtr> afGhostObjectVec;
 typedef vector<afJointPtr> afJointVec;
 //------------------------------------------------------------------------------
 class afLight;
@@ -754,6 +759,8 @@ public:
 
     btSoftBody* m_bulletSoftBody;
 
+    btCollisionShape *m_bulletCollisionShape;
+
     // Filepath to the collision mesh
     afPath m_collisionMeshFilePath;
 
@@ -768,8 +775,6 @@ protected:
     btTransform m_T_bINi;
 
     btDefaultMotionState* m_bulletMotionState;
-
-    btCollisionShape *m_bulletCollisionShape;
 
     // Mass
     double m_mass;
@@ -1035,6 +1040,41 @@ private:
     // Boolean flag to indicate if we have been successful in reducing the mesh.
     // A reduced mesh should speed up rendering.
     bool m_meshReductionSuccessful;
+};
+
+
+class afGhostObject: public afInertialObject{
+
+    friend class afModel;
+    friend class afJoint;
+    friend class afWorld;
+
+public:
+
+    afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+    virtual ~afGhostObject();
+
+    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
+    // In case the body is kinematic, only position cmds will be applied
+    virtual void fetchCommands(double dt){}
+
+    // This method updates the AMBF position representation from the Bullet dynamics engine.
+    virtual void update();
+
+    virtual bool createFromAttribs(afGhostObjectAttributes* a_attribs);
+
+    virtual void setLocalTransform(cTransform &trans);
+
+    // Cleanup this ghost body
+    void remove();
+
+    btPairCachingGhostObject* m_bulletGhostObject;
+
+protected:
+
+    std::vector<btRigidBody*> m_sensedBodies;
+
+    static btGhostPairCallback* m_bulletGhostPairCallback;
 };
 
 
@@ -1934,6 +1974,8 @@ public:
 
     string addAFSoftBody(afSoftBodyPtr a_sb);
 
+    string addAFGhostObject(afGhostObjectPtr a_go);
+
     string addAFJoint(afJointPtr a_jnt);
 
     string addAFActuator(afActuatorPtr a_actuator);
@@ -1961,6 +2003,10 @@ public:
 
     afSoftBodyPtr getAFSoftBody(btSoftBody* a_body, bool suppress_warning=false);
 
+    afGhostObjectPtr getAFGhostObject(string a_name, bool suppress_warning=false);
+
+    afGhostObjectPtr getAFGhostObject(btGhostObject* a_body, bool suppress_warning=false);
+
     afJointPtr getAFJoint(string a_name);
 
     afActuatorPtr getAFActuator(string a_name);
@@ -1980,6 +2026,8 @@ public:
 
     inline afSoftBodyMap* getAFSoftBodyMap(){return &m_afSoftBodyMap;}
 
+    inline afGhostObjectMap* getAFGhostObjectMap(){return &m_afGhostObjectMap;}
+
     inline afJointMap* getAFJointMap(){return &m_afJointMap;}
 
     inline afActuatorMap* getAFActuatorMap(){return &m_afActuatorMap;}
@@ -1998,6 +2046,8 @@ public:
     afRigidBodyVec getAFRigidBodies();
 
     afSoftBodyVec getAFSoftBodies();
+
+    afGhostObjectVec getAFGhostObjects();
 
     afJointVec getAFJoints();
 
@@ -2035,7 +2085,7 @@ public:
     // The collision groups are sorted by integer indices. A group is an array of
     // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
-    // the a body can be a part of multiple groups
+    // a body can be a part of multiple groups
     map<uint, vector<afRigidBodyPtr> > m_collisionGroups;
 
 public:
@@ -2164,6 +2214,8 @@ protected:
 
     afSoftBodyMap m_afSoftBodyMap;
 
+    afGhostObjectMap m_afGhostObjectMap;
+
     afJointMap m_afJointMap;
 
     afActuatorMap m_afActuatorMap;
@@ -2227,6 +2279,7 @@ class afModel: public afBaseObject{
 
     friend class afRigidBody;
     friend class afSoftBody;
+    friend class afGhostObject;
     friend class afJoint;
 
 public:
@@ -2241,6 +2294,7 @@ public:
 
     afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMapLocal;}
     afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMapLocal;}
+    afGhostObjectMap* getGhostObjectMap(){return &m_afGhostObjectMapLocal;}
     afVehicleMap* getVehicleMap(){return &m_afVehicleMapLocal;}
     afJointMap* getJointMap(){return &m_afJointMapLocal;}
     afActuatorMap* getActuatorMap(){return &m_afActuatorMapLocal;}
@@ -2281,6 +2335,7 @@ private:
     // The model has list of bodies and joints defined for this specific model
     afRigidBodyMap m_afRigidBodyMapLocal;
     afSoftBodyMap m_afSoftBodyMapLocal;
+    afGhostObjectMap m_afGhostObjectMapLocal;
     afVehicleMap m_afVehicleMapLocal;
     afJointMap m_afJointMapLocal;
     afActuatorMap m_afActuatorMapLocal;

@@ -548,6 +548,11 @@ int main(int argc, char* argv[])
         temp_lights[i]->resolveParenting();
     }
 
+    afGhostObjectVec temp_ghosts = g_afWorld->getAFGhostObjects();
+    for(int i = 0 ; i < temp_ghosts.size() ; i++){
+        temp_ghosts[i]->resolveParenting();
+    }
+
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
     //-----------------------------------------------------------------------------------------------------------

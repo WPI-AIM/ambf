@@ -8208,14 +8208,16 @@ afGhostObject::~afGhostObject()
 
     if(m_bulletGhostPairCallback){
         delete m_bulletGhostPairCallback;
+        m_bulletGhostPairCallback = nullptr;
     }
 }
 
 void afGhostObject::update()
 {
-    cTransform trans;
-    trans << m_bulletGhostObject->getWorldTransform();
-    setLocalTransform(trans);
+//    cTransform trans;
+//    trans << m_bulletGhostObject->getWorldTransform();
+//    setLocalTransform(trans);
+    m_bulletGhostObject->setWorldTransform(to_btTransform(m_globalTransform));
     vector<btRigidBody*> localSensedBodies;
 
     btManifoldArray* manifoldArray = new btManifoldArray();
@@ -8253,7 +8255,9 @@ void afGhostObject::update()
                 if (pt.getDistance() < 0.0f)
                 {
                     btRigidBody* pBody = dynamic_cast<btRigidBody*>(co);
-                    localSensedBodies.push_back(pBody);
+                    if (pBody){
+                        localSensedBodies.push_back(pBody);
+                    }
                 }
             }
         }
@@ -8270,12 +8274,14 @@ void afGhostObject::update()
 
 
     for (int i = 0 ; i < m_sensedBodies.size() ; i++){
-        m_sensedBodies[i]->setGravity(btVector3(0, 0, 0));
-        double damping_factor = 1.0 - 0.1;
-        btVector3 damped_lin_vel = damping_factor * m_sensedBodies[i]->getLinearVelocity();
-        btVector3 damped_ang_vel = damping_factor * m_sensedBodies[i]->getAngularVelocity();
-        m_sensedBodies[i]->setLinearVelocity(damped_lin_vel);
-        m_sensedBodies[i]->setAngularVelocity(damped_ang_vel);
+        if (m_sensedBodies[i]){
+            m_sensedBodies[i]->setGravity(btVector3(0, 0, 0));
+            double damping_factor = 1.0 - 0.1;
+            btVector3 damped_lin_vel = damping_factor * m_sensedBodies[i]->getLinearVelocity();
+            btVector3 damped_ang_vel = damping_factor * m_sensedBodies[i]->getAngularVelocity();
+            m_sensedBodies[i]->setLinearVelocity(damped_lin_vel);
+            m_sensedBodies[i]->setAngularVelocity(damped_ang_vel);
+        }
     }
 }
 
@@ -8286,6 +8292,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
     m_bulletGhostObject = new btPairCachingGhostObject();
 
@@ -8375,7 +8382,6 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     }
 
     cTransform trans = to_cTransform(attribs.m_kinematicAttribs.m_location);
-    cerr << "SETTING GHOST OBJECT TRANSFORM" << endl;
     setInitialTransform(trans);
     setLocalTransform(trans);
 
