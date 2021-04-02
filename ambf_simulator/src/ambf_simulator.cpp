@@ -1419,7 +1419,6 @@ void close(void)
     delete g_afWorld;
 }
 
-
 ///
 /// \brief updateGraphics
 ///
@@ -1437,6 +1436,7 @@ void updateGraphics()
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
 
+    g_simulationRunning = true;
 }
 
 
@@ -1444,7 +1444,12 @@ void updateGraphics()
 /// \brief updateBulletSim
 ///
 void updatePhysics(){
-    g_simulationRunning = true;
+
+    // Wait for the graphics loop to start the sim
+    while (g_simulationRunning == false){
+        cSleepMs(1);
+    }
+
     g_simulationFinished = false;
 
     // start haptic device
@@ -1651,8 +1656,13 @@ void updatePhysics(){
 ///
 void updateHapticDevice(void* a_arg){
     int devIdx = *(int*) a_arg;
+
+    // Wait for the graphics loop to start the sim
+    while(g_simulationRunning == false){
+        cSleepMs(1);
+    }
+
     // simulation in now running
-    g_simulationRunning = true;
     g_simulationFinished = false;
 
     RateSleep htxSleep(g_cmdOpts.htxFrequency);
