@@ -46,8 +46,11 @@
 # COURTESY:
 # Starting point from CMakeLists of CHAI3D by SEB
 
-cmake_minimum_required (VERSION 3.0.0)
+cmake_minimum_required (VERSION 3.1.0)
 project (AMBF)
+
+# Force setting C++ Standard
+set (CMAKE_CXX_STANDARD 11)
 
 # set version info
 file (READ ${PROJECT_SOURCE_DIR}/ambf_framework/version VERSION)
