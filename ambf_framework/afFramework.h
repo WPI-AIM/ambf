@@ -1636,7 +1636,6 @@ public:
     bool m_useGPUForDepthComputation = true;
 
 protected:
-    std::mutex m_mutex;
     cVector3d m_pos, m_posClutched;
     cMatrix3d m_rot, m_rotClutched;
 
