@@ -49,6 +49,9 @@
 cmake_minimum_required (VERSION 3.1)
 project (AMBF)
 
+# Set C++ Standard
+set (CMAKE_CXX_STANDARD 11)
+
 # set version info
 file (READ ${PROJECT_SOURCE_DIR}/ambf_framework/version VERSION)
 STRING (REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
