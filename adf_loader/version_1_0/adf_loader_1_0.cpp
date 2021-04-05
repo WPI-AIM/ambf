@@ -457,7 +457,7 @@ bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianC
             // internal velocity controller
             P = 10;
             I = 0;
-            D = 0;
+            D = 1;
             attribs->m_positionOutputType = afControlType::VELOCITY;
         }
         attribs->P_lin = P;
@@ -482,7 +482,7 @@ bool ADFUtils::getCartControllerAttribsFromNode(YAML::Node *a_node, afCartesianC
             // internal velocity controller
             P = 10;
             I = 0;
-            D = 0;
+            D = 1;
             attribs->m_orientationOutputType = afControlType::VELOCITY;
         }
         attribs->P_ang = P;
@@ -761,11 +761,11 @@ bool ADFUtils::getJointControllerAttribsFromNode(YAML::Node *a_node, afJointCont
     }
     else{
         // If the controller gains are not defined, a velocity based control will be used.
-        // The tracking velocity can be controller by setting "max motor impulse" field
+        // The tracking velocity can be controlled by setting "max motor impulse" field
         // for the joint data-block in the ADF file.
         attribs->m_P = 10;
         attribs->m_I = 0;
-        attribs->m_D = 0;
+        attribs->m_D = 1;
         attribs->m_outputType = afControlType::VELOCITY;
     }
 
