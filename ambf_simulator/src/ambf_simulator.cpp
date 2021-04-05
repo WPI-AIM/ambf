@@ -78,7 +78,7 @@ afRenderOptions g_afRenderOptions;
 bool fullscreen = false;
 
 
-ADFLoaderInterface* g_adfLoader;
+ADFLoaderInterface* g_adfLoaderPtr;
 afWorld *g_afWorld;
 
 struct CommandLineOptions{
@@ -375,20 +375,20 @@ int main(int argc, char* argv[])
     // 3D - SCENEGRAPH
     //-----------------------------------------------------------------------
 
-    g_adfLoader = new ADFLoaderInterface();
+    g_adfLoaderPtr = new ADFLoaderInterface();
 
     afLaunchAttributes launchAttribs;
     afWorldAttributes worldAttribs;
     std::vector<afTeleRoboticUnitAttributes> tuAttribs;
     std::vector<afModelAttributes> modelsAttribs;
-    if (g_adfLoader->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs) == false){
+    if (g_adfLoaderPtr->loadLaunchFileAttribs(g_cmdOpts.launchFilePath, &launchAttribs) == false){
         // Safely Return the program
         return -1;
     }
 
     launchAttribs.resolveRelativePathAttribs();
 
-    g_adfLoader->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
+    g_adfLoaderPtr->loadWorldAttribs(launchAttribs.m_worldFilepath.c_str(), &worldAttribs);
 
     std::vector<int> devIndexes;
     if (!g_cmdOpts.devicesToLoad.empty()){
@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    g_adfLoader->loadTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &tuAttribs, devIndexes);
+    g_adfLoaderPtr->loadTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &tuAttribs, devIndexes);
 
     // create a dynamic world.
     g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
         }
         for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
             afModelAttributes modelAttribs;
-            if (g_adfLoader->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
+            if (g_adfLoaderPtr->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
                 modelsAttribs.push_back(modelAttribs);
             }
         }
@@ -466,7 +466,7 @@ int main(int argc, char* argv[])
             }
             else{
                 afModelAttributes modelAttribs;
-                if (g_adfLoader->loadModelAttribs(launchAttribs.m_modelFilepaths[fileIdx].c_str(), &modelAttribs)){
+                if (g_adfLoaderPtr->loadModelAttribs(launchAttribs.m_modelFilepaths[fileIdx].c_str(), &modelAttribs)){
                     modelsAttribs.push_back(modelAttribs);
                 }
             }
@@ -689,7 +689,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
                 std::cerr << "LOADING DRAG AND DROPPED FILE NAMED: " << paths[i] << std::endl;
                 g_afWorld->pausePhysics(true);
                 afModelAttributes modelAttribs;
-                if (g_adfLoader->loadModelAttribs(paths[i], &modelAttribs)){
+                if (g_adfLoaderPtr->loadModelAttribs(paths[i], &modelAttribs)){
                     afModelPtr model = new afModel(g_afWorld);
                     if (model->createFromAttribs(&modelAttribs)){
                         g_afWorld->addAFModel(model);
@@ -1401,6 +1401,8 @@ void close(void)
 {
     // stop the simulation
     g_simulationRunning = false;
+
+    delete g_adfLoaderPtr;
 
     // wait for graphics and haptics loops to terminate
     while (!g_simulationFinished) { cSleepMs(100); }
