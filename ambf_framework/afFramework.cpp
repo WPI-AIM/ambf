@@ -8387,6 +8387,20 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
     addChildSceneObject(m_visualMesh, cTransform());
     m_afWorld->addSceneObjectToWorld(m_visualMesh);
+
+    for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
+        uint group =  attribs.m_collisionAttribs.m_groups[gI];
+        // Sanity check for the group number
+        if (group >= 0 && group <= 999){
+            m_afWorld->m_collisionGroups[group].push_back(this);
+            m_collisionGroups.push_back(group);
+        }
+        else{
+            cerr << "WARNING: Ghost's "
+                      << m_name
+                      << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
+        }
+    }
 }
 
 void afGhostObject::setLocalTransform(cTransform &trans)
