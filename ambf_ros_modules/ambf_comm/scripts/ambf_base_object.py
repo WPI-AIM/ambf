@@ -267,7 +267,7 @@ class BaseObject(WatchDog):
         :return:
         """
         self._cmd.header.stamp = rospy.Time.now()
-        self._pub.publish(self._cmd)
+        # self._pub.publish(self._cmd)
         self.acknowledge_wd()
 
     def _clear_command(self):
