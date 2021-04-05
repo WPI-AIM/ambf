@@ -2846,9 +2846,13 @@ bool afSoftBody::cleanupMesh(cMultiMesh *multiMesh, std::vector<afSoftBody::Vert
         for (int i=0 ;  i < a_triangles.size()/3 ; i++){
             reducedMesh->newTriangle(a_triangles[3*i], a_triangles[3*i+1], a_triangles[3*i+2]);
         }
+
         reducedMesh->computeAllEdges();
 //        reducedMesh->computeAllNormals();
         reducedMesh->setMaterial(multiMesh->m_material);
+        reducedMesh->setTexture(multiMesh->getMesh(0)->m_texture);
+        reducedMesh->setUseTexture(multiMesh->getMesh(0)->getUseTexture());
+        reducedMesh->setShaderProgram(multiMesh->getShaderProgram());
         reducedMesh->setShowEdges(false);
         multiMesh->m_meshes->clear();
         multiMesh->addMesh(reducedMesh);
@@ -8277,10 +8281,25 @@ void afGhostObject::update()
         if (m_sensedBodies[i]){
             m_sensedBodies[i]->setGravity(btVector3(0, 0, 0));
             double damping_factor = 1.0 - 0.1;
-            btVector3 damped_lin_vel = damping_factor * m_sensedBodies[i]->getLinearVelocity();
-            btVector3 damped_ang_vel = damping_factor * m_sensedBodies[i]->getAngularVelocity();
-            m_sensedBodies[i]->setLinearVelocity(damped_lin_vel);
-            m_sensedBodies[i]->setAngularVelocity(damped_ang_vel);
+            btVector3 va(0, 0, 0);
+            if (getParentObject()){
+                afRigidBodyPtr parentBody = dynamic_cast<afRigidBodyPtr>(getParentObject());
+                va = parentBody->m_bulletRigidBody->getLinearVelocity();
+            }
+
+            btVector3 vb = m_sensedBodies[i]->getLinearVelocity();
+            double mag_va = va.length();
+            btVector3 proj_vb_va(0, 0, 0);
+
+            if (mag_va > 0.00001){
+                proj_vb_va = va.normalized() * (vb.dot(va) / mag_va);
+            }
+            btVector3 orth_vb_va = vb - proj_vb_va;
+
+            btVector3 wb =  m_sensedBodies[i]->getAngularVelocity();
+
+            m_sensedBodies[i]->setLinearVelocity(damping_factor * orth_vb_va + va);
+            m_sensedBodies[i]->setAngularVelocity(damping_factor * wb);
         }
     }
 }
