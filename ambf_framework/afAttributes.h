@@ -1137,6 +1137,37 @@ public:
 };
 
 
+
+///
+/// \brief The afSkyBoxAttributes struct
+///
+struct afSkyBoxAttributes{
+    afPath m_leftImageFilepath;
+    afPath m_frontImageFilepath;
+    afPath m_rightImageFilepath;
+    afPath m_backImageFilepath;
+    afPath m_topImageFilepath;
+    afPath m_bottomImageFilepath;
+    afShaderAttributes m_shaderAttribs;
+
+    bool resolveRelativePathAttribs(afPath a_parentPath){
+        m_backImageFilepath.resolvePath(a_parentPath);
+        m_bottomImageFilepath.resolvePath(a_parentPath);
+        m_frontImageFilepath.resolvePath(a_parentPath);
+        m_leftImageFilepath.resolvePath(a_parentPath);
+        m_rightImageFilepath.resolvePath(a_parentPath);
+        m_topImageFilepath.resolvePath(a_parentPath);
+
+        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+
+        return true;
+    }
+
+    bool m_use = false;
+};
+
+
 ///
 /// \brief The afWorldAttributes struct
 ///
@@ -1158,32 +1189,6 @@ public:
     std::string m_namespace;
 
     bool m_showGUI;
-
-    struct afSkyBoxAttributes{
-        afPath m_leftImageFilepath;
-        afPath m_frontImageFilepath;
-        afPath m_rightImageFilepath;
-        afPath m_backImageFilepath;
-        afPath m_topImageFilepath;
-        afPath m_bottomImageFilepath;
-        afShaderAttributes m_shaderAttribs;
-
-        bool resolveRelativePathAttribs(afPath a_parentPath){
-            m_backImageFilepath.resolvePath(a_parentPath);
-            m_bottomImageFilepath.resolvePath(a_parentPath);
-            m_frontImageFilepath.resolvePath(a_parentPath);
-            m_leftImageFilepath.resolvePath(a_parentPath);
-            m_rightImageFilepath.resolvePath(a_parentPath);
-            m_topImageFilepath.resolvePath(a_parentPath);
-
-            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
-
-            return true;
-        }
-
-        bool m_use = false;
-    };
 
     struct afEnclosure{
         double m_width;

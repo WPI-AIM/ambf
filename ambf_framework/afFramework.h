@@ -170,64 +170,6 @@ typedef cMultiPoint* cMultiPointPtr;
 typedef unsigned long ulong;
 
 
-static string AF_DEPTH_COMPUTE_VTX =
-        " attribute vec3 aPosition;                                  \n"
-        " attribute vec3 aNormal;                                    \n"
-        " attribute vec3 aTexCoord;                                  \n"
-        " attribute vec4 aColor;                                     \n"
-        " attribute vec3 aTangent;                                   \n"
-        " attribute vec3 aBitangent;                                 \n"
-        "                                                            \n"
-        " varying vec4 vPosition;                                    \n"
-        " varying vec3 vNormal;                                      \n"
-        " varying vec3 vTexCoord;                                    \n"
-        "                                                            \n"
-        " void main(void)                                            \n"
-        " {                                                          \n"
-        "    vTexCoord = aTexCoord;                                  \n"
-        "    gl_Position = vec4(aPosition.x, aPosition.y, 0.0, 1.0); \n"
-        " }                                                          \n";
-
-static string AF_DEPTH_COMPUTE_FRAG =
-        " uniform sampler2D diffuseMap;                                                       \n"
-        " varying vec3 vTexCoord;                                                             \n"
-        " uniform vec3 maxWorldDimensions;                                                    \n"
-        " uniform float nearPlane;                                                            \n"
-        " uniform float farPlane;                                                             \n"
-        "                                                                                     \n"
-        " uniform mat4 invProjection;                                                         \n"
-        "                                                                                     \n"
-        " void main(void)                                                                     \n"
-        " {                                                                                   \n"
-        "     vec4 texColor = texture2D(diffuseMap, vTexCoord.xy);                            \n"
-        "     float x = vTexCoord.x * 2.0 - 1.0;                                              \n"
-        "     float y = vTexCoord.y * 2.0 - 1.0;                                              \n"
-        "     uint b0 = texColor.x * 255.0;                                                   \n"
-        "     uint b1 = texColor.y * 255.0;                                                   \n"
-        "     uint b2 = texColor.z * 255.0;                                                   \n"
-        "     uint b3 = texColor.w * 255.0;                                                   \n"
-        "                                                                                     \n"
-        "     uint depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                         \n"
-        "     depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );                              \n"
-        "     float d = float(depth) / float(pow(2.0, 4*8));                                  \n"
-        "                                                                                     \n"
-        "     float z = d * 2.0 - 1.0;                                                        \n"
-        "     vec4 P = vec4(x, y, z, 1.0);                                                    \n"
-        "                                                                                     \n"
-        "     P = invProjection * P;                                                          \n"
-        "     P /= P.w;                                                                       \n"
-        "                                                                                     \n"
-        "     float deltaZ = farPlane - nearPlane;                                            \n"
-        "     float normalized_z = (P.z - nearPlane)/deltaZ;                                  \n"
-        "                                                                                     \n"
-        "     // Assuming the frustrum is centered vertically and horizontally                \n"
-        "     float normalized_x = (P.x + maxWorldDimensions.x / 2.0)/maxWorldDimensions.x;   \n"
-        "     float normalized_y = (P.y + maxWorldDimensions.y / 2.0)/maxWorldDimensions.y;   \n"
-        "                                                                                     \n"
-        "     gl_FragColor = vec4(normalized_x, normalized_y, normalized_z, 1.0);             \n"
-        " }                                                                                   \n";
-
-
 class afShapeUtils{
 public:
     static cMesh* createVisualShape(const afPrimitiveShapeAttributes* a_primitiveShape);
@@ -656,7 +598,7 @@ public:
     void showVisualFrame();
 
     inline bool isShaderPgmDefined(){
-        return m_shaderProgramDefined;
+        return m_shaderAttribs.m_shaderDefined;
     }
 
     // Enable Shader Program Associate with this object
@@ -694,10 +636,7 @@ protected:
     double m_scale;
 
     // Flag for the Shader Program
-    bool m_shaderProgramDefined = false;
-
-    afPath m_vtxShaderFilePath;
-    afPath m_fragShaderFilePath;
+    afShaderAttributes m_shaderAttribs;
 
     cTransform m_localTransform;
 
@@ -2139,30 +2078,12 @@ public:
     afPath m_fsFilePath;
     //    cMesh* m_pickDragVector;
 
-    // Is skybox defined?
-    bool m_skyBoxDefined = false;
+    afShaderAttributes m_globalBodyShaderAttribs;
 
     // Skybox Mesh
     cMesh* m_skyBoxMesh = nullptr;
 
-    // L, R, T, B, F and B images for the skybox
-    afPath m_skyBoxLeft;
-
-    afPath m_skyBoxRight;
-
-    afPath m_skyBoxTop;
-
-    afPath m_skyBoxBottom;
-
-    afPath m_skyBoxFront;
-
-    afPath m_skyBoxBack;
-
-    bool m_skyBox_shaderProgramDefined = false;
-
-    afPath m_skyBox_vsFilePath;
-
-    afPath m_skyBox_fsFilePath;
+    afSkyBoxAttributes m_skyBoxAttribs;
 
     afPath m_world_config_path;
 

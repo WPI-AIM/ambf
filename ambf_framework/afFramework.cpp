@@ -44,6 +44,7 @@
 //------------------------------------------------------------------------------
 #include "afFramework.h"
 #include "afConversions.h"
+#include "afShaders.h"
 #include "BulletCollision/Gimpact/btGImpactShape.h"
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 #include "BulletSoftBody/btSoftRigidDynamicsWorld.h"
@@ -1924,12 +1925,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     // channel ruins the Z-buffer depth testing in some way.
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
 
-    m_shaderProgramDefined = attribs.m_shaderAttribs.m_shaderDefined;
-    if (m_shaderProgramDefined){
-        m_vtxShaderFilePath = attribs.m_shaderAttribs.m_vtxFilepath;
-        m_fragShaderFilePath = attribs.m_shaderAttribs.m_fragFilepath;
-        enableShaderProgram();
-    }
+    m_shaderAttribs = attribs.m_shaderAttribs;
+    enableShaderProgram();
 
     btTransform iOff;
     if (attribs.m_inertialAttribs.m_estimateInertialOffset){
@@ -2077,12 +2074,12 @@ void afRigidBody::createInertialObject()
 ///
 void afRigidBody::enableShaderProgram(){
 
-    if (m_shaderProgramDefined){
+    if (m_shaderAttribs.m_shaderDefined){
 
         ifstream vsFile;
         ifstream fsFile;
-        vsFile.open(m_vtxShaderFilePath.c_str());
-        fsFile.open(m_fragShaderFilePath.c_str());
+        vsFile.open(m_shaderAttribs.m_vtxFilepath.c_str());
+        fsFile.open(m_shaderAttribs.m_fragFilepath.c_str());
         // create a string stream
         stringstream vsBuffer, fsBuffer;
         // dump the contents of the file into it
@@ -2118,25 +2115,25 @@ void afRigidBody::enableShaderProgram(){
             }
 
             cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vtxShaderFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fragShaderFilePath.c_str() << endl;
+                         "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
+                         "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
 
             m_visualMesh->setShaderProgram(shaderProgram);
         }
         else{
             cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_vtxShaderFilePath.c_str() <<
-                         "\n \t FRAGMENT: " << m_fragShaderFilePath.c_str() << endl;
+                         "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
+                         "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
 
-            m_shaderProgramDefined = false;
+            m_shaderAttribs.m_shaderDefined = false;
         }
     }
     // Check if the shader has been assigned by afWorld
     else if (m_visualMesh->getShaderProgram() != nullptr){
-        m_shaderProgramDefined = true;
+         m_shaderAttribs.m_shaderDefined = true;
     }
     else{
-        m_shaderProgramDefined = false;
+         m_shaderAttribs.m_shaderDefined = false;
     }
 }
 
@@ -5302,23 +5299,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     }
 
 
-    m_skyBoxDefined = attribs.m_skyBoxAttribs.m_use;
-
-    if (m_skyBoxDefined){
-        m_skyBoxRight = attribs.m_skyBoxAttribs.m_rightImageFilepath;
-        m_skyBoxLeft = attribs.m_skyBoxAttribs.m_leftImageFilepath;
-        m_skyBoxTop = attribs.m_skyBoxAttribs.m_topImageFilepath;
-        m_skyBoxBottom = attribs.m_skyBoxAttribs.m_bottomImageFilepath;
-        m_skyBoxFront = attribs.m_skyBoxAttribs.m_frontImageFilepath;
-        m_skyBoxBack = attribs.m_skyBoxAttribs.m_backImageFilepath;
-
-        m_skyBox_shaderProgramDefined = attribs.m_skyBoxAttribs.m_shaderAttribs.m_shaderDefined;
-        if (m_skyBox_shaderProgramDefined){
-            m_skyBox_vsFilePath = attribs.m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath;
-            m_skyBox_fsFilePath = attribs.m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath;
-        }
-    }
-
+    m_skyBoxAttribs = attribs.m_skyBoxAttribs;
 
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
         afLightPtr lightPtr = new afLight(this);
@@ -5358,12 +5339,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
         }
 
-        m_shaderProgramDefined = attribs.m_shaderAttribs.m_shaderDefined;
-
-        if (m_shaderProgramDefined){
-            m_vsFilePath = attribs.m_shaderAttribs.m_vtxFilepath;
-            m_fsFilePath = attribs.m_shaderAttribs.m_fragFilepath;
-        }
+        m_globalBodyShaderAttribs = attribs.m_shaderAttribs;
     }
 
     return true;
@@ -5395,7 +5371,7 @@ void afWorld::render(afRenderOptions &options)
 /// \brief afWorld::createSkyBox
 ///
 void afWorld::loadSkyBox(){
-    if (m_skyBoxDefined && m_skyBox_shaderProgramDefined){
+    if (m_skyBoxAttribs.m_use){
 
         m_skyBoxMesh = new cMesh();
         float cube[] = {
@@ -5460,19 +5436,13 @@ void afWorld::loadSkyBox(){
         }
 
         bool res[6];
-        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxRight.c_str());
-        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxLeft.c_str());
-        res[2] = newTexture->m_images[3]->loadFromFile(m_skyBoxTop.c_str());
-        res[3] = newTexture->m_images[2]->loadFromFile(m_skyBoxBottom.c_str());
-        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxFront.c_str());
-        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBack.c_str());
 
-//        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxFront.c_str());
-//        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxBack.c_str());
-//        res[2] = newTexture->m_images[2]->loadFromFile(m_skyBoxRight.c_str());
-//        res[3] = newTexture->m_images[3]->loadFromFile(m_skyBoxLeft.c_str());
-//        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxTop.c_str());
-//        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxBottom.c_str());
+        res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxAttribs.m_rightImageFilepath.c_str());
+        res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxAttribs.m_leftImageFilepath.c_str());
+        res[2] = newTexture->m_images[3]->loadFromFile(m_skyBoxAttribs.m_topImageFilepath.c_str());
+        res[3] = newTexture->m_images[2]->loadFromFile(m_skyBoxAttribs.m_bottomImageFilepath.c_str());
+        res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxAttribs.m_frontImageFilepath.c_str());
+        res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxAttribs.m_backImageFilepath.c_str());
 
         if (res[0] && res[1] && res[2] && res[3] && res[4] && res[5] && res[5]){
             // All images were loaded succesfully
@@ -5480,13 +5450,12 @@ void afWorld::loadSkyBox(){
             m_skyBoxMesh->setTexture(newTexture);
             m_skyBoxMesh->setUseTexture(true);
 
-            addSceneObjectToWorld(m_skyBoxMesh);
-
-            if (m_skyBox_shaderProgramDefined){
+            cShaderProgramPtr shaderPgm;
+            if (m_skyBoxAttribs.m_shaderAttribs.m_shaderDefined){
                 ifstream vsFile;
                 ifstream fsFile;
-                vsFile.open(m_skyBox_vsFilePath.c_str());
-                fsFile.open(m_skyBox_fsFilePath.c_str());
+                vsFile.open(m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath.c_str());
+                fsFile.open(m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath.c_str());
                 // create a string stream
                 stringstream vsBuffer, fsBuffer;
                 // dump the contents of the file into it
@@ -5496,28 +5465,26 @@ void afWorld::loadSkyBox(){
                 vsFile.close();
                 fsFile.close();
 
-                cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-                if (shaderProgram->linkProgram()){
-                    // Just empty Pts to let us use the shader
-                    cGenericObject* go;
-                    cRenderOptions ro;
-                    shaderProgram->use(go, ro);
+                shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+                cerr << "INFO! USING EXTERNALLY DEFINED SKYBOX SHADER " << m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath.c_str() << endl;
+                cerr << "INFO! USING EXTERNALLY DEFINED SKYBOX SHADER " << m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath.c_str() << endl;
+            }
+            else{
+                cerr << "INFO! USING INTERNALLY DEFINED SKYBOX SHADERS" << endl;
+                shaderPgm = cShaderProgram::create(AF_SKYBOX_VTX, AF_SKYBOX_FRAG);
+            }
+            if (shaderPgm->linkProgram()){
+                // Just empty Pts to let us use the shader
+                cGenericObject* go;
+                cRenderOptions ro;
+                shaderPgm->use(go, ro);
+                m_skyBoxMesh->setShaderProgram(shaderPgm);
+                addSceneObjectToWorld(m_skyBoxMesh);
 
-                    cerr << "USING SKYBOX SHADER FILES: " <<
-                                 "\n \t VERTEX: " << m_skyBox_vsFilePath.c_str() <<
-                                 "\n \t FRAGMENT: " << m_skyBox_fsFilePath.c_str() << endl;
-                    m_skyBoxMesh->setShaderProgram(shaderProgram);
-
-                }
-                else{
-                    cerr << "ERROR! FOR SKYBOX FAILED TO LOAD SHADER FILES: " <<
-                                 "\n \t VERTEX: " << m_skyBox_vsFilePath.c_str() <<
-                                 "\n \t FRAGMENT: " << m_skyBox_fsFilePath.c_str() << endl;
-
-                    m_skyBox_shaderProgramDefined = false;
-                    removeSceneObjectFromWorld(m_skyBoxMesh);
-                    delete m_skyBoxMesh;
-                }
+            }
+            else{
+                cerr << "ERROR! FOR SKYBOX FAILED TO LOAD SHADERS" << endl;
+                delete m_skyBoxMesh;
             }
         }
         else{
@@ -5531,13 +5498,11 @@ void afWorld::loadSkyBox(){
 /// \brief afWorld::enableShaderProgram
 ///
 void afWorld::enableShaderProgram(){
-    if (m_shaderProgramDefined){
+    if (m_globalBodyShaderAttribs.m_shaderDefined){
         afRigidBodyMap::iterator it;
         for (it = m_afRigidBodyMap.begin() ; it != m_afRigidBodyMap.end() ; ++it){
             afRigidBodyPtr rBody = it->second;
-            rBody->m_vtxShaderFilePath = m_vsFilePath;
-            rBody->m_fragShaderFilePath = m_fsFilePath;
-            rBody->m_shaderProgramDefined = true;
+            rBody->m_shaderAttribs = m_globalBodyShaderAttribs;
         }
     }
 }
@@ -6396,21 +6361,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             m_depthBufferColorImage = cImage::create();
             m_depthBufferColorImage->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_INT);
 
-            //                // DEBUGGING USING EXTERNALLY DEFINED SHADERS
-            //                ifstream vsFile;
-            //                ifstream fsFile;
-            //                vsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.vs");
-            //                fsFile.open("/home/adnan/ambf/ambf_shaders/depth/shader.fs");
-            //                // create a string stream
-            //                stringstream vsBuffer, fsBuffer;
-            //                // dump the contents of the file into it
-            //                vsBuffer << vsFile.rdbuf();
-            //                fsBuffer << fsFile.rdbuf();
-            //                // close the files
-            //                vsFile.close();
-            //                fsFile.close();
-            //                cShaderProgramPtr shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-
             cShaderProgramPtr shaderPgm;
             if (attribs.m_depthShaderAttribs.m_shaderDefined){
                 ifstream vsFile;
@@ -6949,18 +6899,17 @@ void afCamera::render(afRenderOptions &options)
         updateLabels(options);
     }
 
-    if (m_afWorld->m_skyBox_shaderProgramDefined && m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
-        cGenericObject* go;
-        cRenderOptions ro;
-        m_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
-
-        cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
-        cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
-        cTransform viewMat = rotOffsetPre * getLocalTransform() * rotOffsetPost;
-
-        m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
-
-        m_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+    if (m_afWorld->m_skyBoxMesh != nullptr){
+        if (m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
+            cGenericObject* go;
+            cRenderOptions ro;
+            m_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
+            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
+            cTransform viewMat = rotOffsetPre * getLocalTransform() * rotOffsetPost;
+            m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+            m_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
+        }
     }
 
     // render world
