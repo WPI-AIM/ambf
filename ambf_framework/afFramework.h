@@ -67,14 +67,14 @@
 
 //-----------------------------------------------------------------------------
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_comm/Actuator.h"
-#include "ambf_comm/Camera.h"
-#include "ambf_comm/Light.h"
-#include "ambf_comm/Object.h"
-#include "ambf_comm/RigidBody.h"
-#include "ambf_comm/Sensor.h"
-#include "ambf_comm/Vehicle.h"
-#include "ambf_comm/World.h"
+#include "ambf_server/Actuator.h"
+#include "ambf_server/Camera.h"
+#include "ambf_server/Light.h"
+#include "ambf_server/Object.h"
+#include "ambf_server/RigidBody.h"
+#include "ambf_server/Sensor.h"
+#include "ambf_server/Vehicle.h"
+#include "ambf_server/World.h"
 #endif
 
 // Support for Depth Image to PointCloud2
