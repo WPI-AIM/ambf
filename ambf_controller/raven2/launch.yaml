@@ -1,0 +1,6 @@
+# This is the base file for Coordination Application
+world config: ../../ambf_models/descriptions/world/raven_world.yaml
+color config: ../../ambf_models/descriptions/color/colors.yaml
+input devices config: ../../ambf_models/descriptions/input_devices/input_devices.yaml
+multibody configs:
+  - "../../ambf_models/descriptions/multi-bodies/robots/blender-raven2.yaml" #0
