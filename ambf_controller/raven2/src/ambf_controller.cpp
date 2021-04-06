@@ -100,21 +100,21 @@ bool AMBFController::init_ros(int argc, char** argv)
 	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
 		topic = AMBFDef::env_append + AMBFDef::raven_append + AMBFDef::arm_append[i] + AMBFDef::sub_append;
-		raven_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
+        raven_subs.push_back(nh_.subscribe<ambf_msgs::RigidBodyState>(topic,1,
 				               boost::bind(&AMBFController::raven_state_cb, this, _1, AMBFDef::arm_append[i])));
 
 		topic = AMBFDef::env_append + AMBFDef::raven_append + AMBFDef::arm_append[i] + AMBFDef::pub_append;
-		raven_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
+        raven_pubs.push_back(nh_.advertise<ambf_msgs::RigidBodyCmd>(topic,1));
 	}
 
 	for(int i=0; i<AMBFDef::camera_count; i++)
 	{
 		topic = AMBFDef::env_append + AMBFDef::cam_append[i] + AMBFDef::sub_append;
-		camera_subs.push_back(nh_.subscribe<ambf_msgs::ObjectState>(topic,1,
+        camera_subs.push_back(nh_.subscribe<ambf_msgs::CameraState>(topic,1,
 				               boost::bind(&AMBFController::camera_state_cb, this, _1, AMBFDef::cam_append[i])));
 
 		topic = AMBFDef::env_append + AMBFDef::cam_append[i] + AMBFDef::pub_append;
-		camera_pubs.push_back(nh_.advertise<ambf_msgs::ObjectCmd>(topic,1));
+        camera_pubs.push_back(nh_.advertise<ambf_msgs::CameraCmd>(topic,1));
 	}
 
 	return true;
@@ -127,7 +127,7 @@ bool AMBFController::init_ros(int argc, char** argv)
  * @param[in]  event       The ROS message event
  * @param[in]  topic_name  The topic name
  */
-void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
+void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::RigidBodyState const>& event,  const std::string& topic_name)
 {
   lock_guard<mutex> _mutexlg(_mutex);
 
@@ -135,7 +135,7 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
   {
   	if(topic_name == AMBFDef::arm_append[i])
   	{
-  		const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
+        const ambf_msgs::RigidBodyStateConstPtr msg = event.getConstMessage();
 
 	   	geometry_msgs::Wrench wr = msg->wrench;
 	   	raven_planner[i].state.ct = tf::Vector3(wr.torque.x,wr.torque.y,wr.torque.z);
@@ -171,7 +171,7 @@ void AMBFController::raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSta
  * @param[in]  event       The ROS message event
  * @param[in]  topic_name  The topic name
  */
-void AMBFController::camera_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>& event,  const std::string& topic_name)
+void AMBFController::camera_state_cb(const ros::MessageEvent<ambf_msgs::CameraState const>& event,  const std::string& topic_name)
 {
   static vector<bool> found_home = {false,false,false};
 
@@ -181,7 +181,7 @@ void AMBFController::camera_state_cb(const ros::MessageEvent<ambf_msgs::ObjectSt
   {
   	if(topic_name == AMBFDef::cam_append[i])
   	{
-  		const ambf_msgs::ObjectStateConstPtr msg = event.getConstMessage();
+        const ambf_msgs::CameraStateConstPtr msg = event.getConstMessage();
 
 	  	geometry_msgs::Pose cp = msg->pose;
 
@@ -401,7 +401,7 @@ bool AMBFController::raven_first_pb()
 {
 	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
-		ambf_msgs::ObjectCmd msg;
+        ambf_msgs::RigidBodyCmd msg;
 		msg.header.stamp = ros::Time::now();
 		msg.publish_children_names  = raven_planner[i].command.cn_flag;
 		msg.publish_joint_names	    = raven_planner[i].command.jn_flag;
@@ -436,7 +436,7 @@ bool AMBFController::raven_command_pb()
 
 	for(int i=0; i<AMBFDef::raven_arms; i++)
 	{
-		ambf_msgs::ObjectCmd msg;
+        ambf_msgs::RigidBodyCmd msg;
 		msg.header.stamp = ros::Time::now();
 		msg.publish_children_names  = raven_planner[i].command.cn_flag;
 		msg.publish_joint_names	    = raven_planner[i].command.jn_flag;
@@ -450,13 +450,13 @@ bool AMBFController::raven_command_pb()
 				case AMBFCmdType::_cp:
 					raven_planner[i].check_incr_safety(raven_planner[i].state.jp, raven_planner[i].command.js, AMBFDef::raven_joints);
 					msg.joint_cmds = raven_planner[i].command.js;
-					msg.position_controller_mask = AMBFDef::true_joints;
+                    msg.joint_cmds_types = AMBFDef::true_joints;
 
 					break;
 
 				case AMBFCmdType::_jw:
 					msg.joint_cmds = raven_planner[i].command.js;
-					msg.position_controller_mask = AMBFDef::false_joints;
+                    msg.joint_cmds_types = AMBFDef::false_joints;
 					break;
 
 				case AMBFCmdType::_cw:
@@ -503,7 +503,7 @@ bool AMBFController::camera_command_pb()
 
 	for(int i=0; i<AMBFDef::camera_count; i++)
 	{
-		ambf_msgs::ObjectCmd msg;
+        ambf_msgs::RigidBodyCmd msg;
 		msg.header.stamp = ros::Time::now();
 
 		if(camera_planner[i].command.updated && camera_planner[i].command.type == AMBFCmdType::_cp)
@@ -517,7 +517,7 @@ bool AMBFController::camera_command_pb()
 			msg.pose.orientation.z = camera_planner[i].command.cp.getRotation().z();
 			msg.pose.orientation.w = camera_planner[i].command.cp.getRotation().w();
 
-			msg.enable_position_controller = true;
+            msg.cartesian_cmd_type = '1';
 
 			camera_pubs[i].publish(msg);
 			camera_planner[i].command.updated = false;

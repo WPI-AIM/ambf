@@ -75,8 +75,8 @@ public:
     bool raven_first_pb();
     bool raven_command_pb();
     bool camera_command_pb();
-    void raven_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
-    void camera_state_cb(const ros::MessageEvent<ambf_msgs::ObjectState const>&,  const string& );
+    void raven_state_cb(const ros::MessageEvent<ambf_msgs::RigidBodyState const>&,  const string& );
+    void camera_state_cb(const ros::MessageEvent<ambf_msgs::CameraState const>&,  const string& );
 
     bool motion_planning();
     bool reset_command();

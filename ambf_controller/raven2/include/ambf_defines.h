@@ -44,18 +44,18 @@
 #define AMBFDEFINES_H
 
 //---------------------------------------------------------------------------
-#include "chai3d.h"
-#include "ambf.h"
+#include "ambf_msgs/RigidBodyCmd.h"
+#include "ambf_msgs/RigidBodyState.h"
+#include "ambf_msgs/CameraCmd.h"
+#include "ambf_msgs/CameraState.h"
 //---------------------------------------------------------------------------
-#include <GLFW/glfw3.h>
-#include <boost/program_options.hpp>
-#include <mutex>
-#include <thread>
+#include "tf/tf.h"
+#include "mutex"
+#include "thread"
+//---------------------------------------------------------------------------
 #include <map>
 #include <termios.h>
 //---------------------------------------------------------------------------
-using namespace ambf;
-using namespace chai3d;
 using namespace std;
 //---------------------------------------------------------------------------
 
@@ -70,7 +70,7 @@ struct AMBFCmd
 {
 	bool updated;		// raven command updated
 	AMBFCmdType type;	// raven command type
-  tf::Transform cp;
+    tf::Transform cp;
 	vector<float> js;  	// raven joint space command (position or wrench: depending on AMBFCmdType)
 	tf::Vector3   cf;	// raven cartesian force command
 	tf::Vector3   ct;	// raven cartesian torque command
@@ -117,8 +117,8 @@ public:
   static const vector<float>           min_joints;
   static const vector<float>           home_joints;
   static const vector<float>           dance_scale_joints;
-  static const vector<unsigned char>   true_joints;
-  static const vector<unsigned char>   false_joints;
+  static const vector<signed char>     true_joints;
+  static const vector<signed char>   false_joints;
 
   static const vector<vector<float>>   raven_joint_limit;
   static const vector<vector<float>>   raven_dh_alpha;

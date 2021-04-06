@@ -145,9 +145,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
 
                 set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
                 set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${OpenCV_LIBRARIES})
-
-                set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-                set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
             else()
                 message("-- *** ROS CV_BRIDGE and IMAGE_TRANSPORT NOT FOUND")
             endif()
@@ -382,9 +379,10 @@ set (AMBF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 # AMBF Simulator
 add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
 
-# AMBF Controller
+
+# AMBF Controller. Add if on Linux, Catkin Found and ambf_server Found
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-  if (${catkin_FOUND})
+  if (${catkin_FOUND} AND ${ambf_server_FOUND})
     add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
   endif()
 endif()

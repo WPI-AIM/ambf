@@ -70,8 +70,8 @@ const vector<float>           AMBFDef::max_joints           = {       M_PI,     
 const vector<float>           AMBFDef::min_joints           = {      -M_PI,       -M_PI,       -0.17,    -M_PI,      -2,        0,         0};
 const vector<float>           AMBFDef::home_joints          = {   M_PI*1/3,    M_PI*3/5,       -0.09, M_PI*3/4,       0,   M_PI/6,    M_PI/6};
 const vector<float>           AMBFDef::dance_scale_joints   = {        0.3,         0.3,        0.06,      0.3,     1.2,   M_PI/6,    M_PI/6};
-const vector<unsigned char>   AMBFDef::true_joints          = {          1,           1,           1,        1,       1,        1,         1};
-const vector<unsigned char>   AMBFDef::false_joints         = {          0,           0,           0,        0,       0,        0,         0};
+const vector<signed char>     AMBFDef::true_joints          = {          1,           1,           1,        1,       1,        1,         1};
+const vector<signed char>     AMBFDef::false_joints         = {          0,           0,           0,        0,       0,        0,         0};
 
 const vector<vector<float>>   AMBFDef::raven_joint_limit    = {{         0,    M_PI*1/4,       -0.17,  -M_PI*2,      -2,       -2,        -2},
                                                                {  M_PI*1/2,    M_PI*3/4,        0.10,   M_PI*2,       2,        2,         2}};  // TODO: finalize this
