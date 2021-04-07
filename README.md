@@ -1,6 +1,8 @@
 # Asynchronous Multi-Body Framework (AMBF)
 ### 1. Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
+### NOTE: The [`restructure`](https://github.com/WPI-AIM/ambf/tree/restructure) branch is recommended for use as it is the active development branch.
+
 #### Build Status  
 
 ![ambf-1.0](https://github.com/WPI-AIM/ambf/workflows/ambf-1.0/badge.svg?branch=ambf-1.0)
