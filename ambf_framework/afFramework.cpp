@@ -6908,6 +6908,7 @@ void afCamera::render(afRenderOptions &options)
             cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
             cTransform viewMat = rotOffsetPre * getLocalTransform() * rotOffsetPost;
             m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
+            m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("projectionMat", m_camera->m_projectionMatrix, 0);
             m_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
         }
     }

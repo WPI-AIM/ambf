@@ -1,10 +1,11 @@
+#version 330
+in vec3 TexCoords;
 
-varying vec3 TexCoords;
+out vec4 FragColor;
 
 uniform samplerCube skybox;
 
 void main()
 {
-    gl_FragColor = textureCube(skybox, TexCoords);
-    // gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    FragColor = texture(skybox, TexCoords);
 }
