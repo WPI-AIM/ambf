@@ -1,3 +1,4 @@
+#version 130
 uniform sampler2D diffuseMap;
 uniform vec3 maxWorldDimensions;
 uniform float nearPlane;
@@ -11,13 +12,13 @@ void main(void)
     vec4 texColor = texture2D(diffuseMap, vTexCoord.xy);
     float x = vTexCoord.x * 2.0 - 1.0;
     float y = vTexCoord.y * 2.0 - 1.0;
-    uint b0 = texColor.x * 255.0;
-    uint b1 = texColor.y * 255.0;
-    uint b2 = texColor.z * 255.0;
-    uint b3 = texColor.w * 255.0;
+    int b0 = int(texColor.x * 255.0);
+    int b1 = int(texColor.y * 255.0);
+    int b2 = int(texColor.z * 255.0);
+    int b3 = int(texColor.w * 255.0);
 
-    uint depth = uint(b3 << 24 | b2 << 16 | b1 << 8 | b0 );
-    float d = float(depth) / float(pow(2.0, 4*8));
+    int depth = int(b3 << 8 | b2);
+    float d = float(depth) / float(pow(2.0, 2*8));
     //
     // uint depth = uint(b3 << 8 | b2);
     // float d = float(depth) / float(pow(2.0, 2*8));
