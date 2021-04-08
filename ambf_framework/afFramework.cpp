@@ -1268,17 +1268,17 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody){
         cVector3d P_aINc;
         P_aINc << T_aINc.getOrigin();
 
-        actuate(a_rigidBody, P_aINc);
+        actuate(a_rigidBody, T_aINc);
     }
 
 }
 
-void afConstraintActuator::actuate(string a_rigid_body_name, cVector3d a_bodyOffset){
+void afConstraintActuator::actuate(string a_rigid_body_name, btTransform a_bodyOffset){
     afRigidBodyPtr body = m_afWorld->getAFRigidBody(a_rigid_body_name);
     actuate(body, a_bodyOffset);
 }
 
-void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset){
+void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, btTransform a_bodyOffset){
     // Check if a constraint is already active
     if (m_constraint){
         // Check if the new requested actuation is the same as what is already
@@ -1298,12 +1298,10 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
     }
 
     if (a_rigidBody){
-        btVector3 pvtA = to_btVector(getLocalPos());
-        btVector3 pvtB = to_btVector(a_bodyOffset);
+        btTransform tranA = to_btTransform(getLocalTransform());
+        btTransform tranB = a_bodyOffset;
         m_childBody = a_rigidBody;
-        m_constraint = new btPoint2PointConstraint(*m_parentBody->m_bulletRigidBody, *m_childBody->m_bulletRigidBody, pvtA, pvtB);
-        m_constraint->m_setting.m_impulseClamp = m_maxImpulse;
-        m_constraint->m_setting.m_tau = m_tau;
+        m_constraint = new btFixedConstraint(*m_parentBody->m_bulletRigidBody, *m_childBody->m_bulletRigidBody, tranA, tranB);
         m_afWorld->m_bulletWorld->addConstraint(m_constraint);
         m_active = true;
         return;
@@ -1321,11 +1319,11 @@ void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index){
 
 }
 
-void afConstraintActuator::actuate(string a_softbody_name, int a_face_index, cVector3d a_bodyOffset){
+void afConstraintActuator::actuate(string a_softbody_name, int a_face_index, btTransform a_bodyOffset){
 
 }
 
-void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset){
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index, btTransform a_bodyOffset){
 
 }
 
@@ -1358,15 +1356,22 @@ void afConstraintActuator::fetchCommands(double dt){
                 return;
             }
              string body_name = cmd.body_name.data;
-            if (cmd.use_offset){
-                cVector3d body_offset(cmd.body_offset.position.x,
-                                      cmd.body_offset.position.y,
-                                      cmd.body_offset.position.z);
-                actuate(body_name, body_offset);
-            }
-            else{
-                actuate(body_name);
-            }
+             if (cmd.use_offset){
+                 // Offset of constraint (joint) in sensed body (child)
+                 btTransform T_jINc;
+                 T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
+                                                cmd.body_offset.position.y,
+                                                cmd.body_offset.position.z));
+
+                 T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
+                                                      cmd.body_offset.orientation.y,
+                                                      cmd.body_offset.orientation.z,
+                                                      cmd.body_offset.orientation.w));
+                 actuate(body_name, T_jINc);
+             }
+             else{
+                 actuate(body_name);
+             }
         }
         else{
             deactuate();

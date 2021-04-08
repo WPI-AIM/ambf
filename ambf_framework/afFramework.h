@@ -1193,13 +1193,13 @@ public:
 
     // In these actuate methods, explicit body offsets are provided.
 
-    virtual void actuate(string a_rigid_body_name, cVector3d a_bodyOffset);
+    virtual void actuate(string a_rigid_body_name, btTransform a_bodyOffset);
 
-    virtual void actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyOffset);
+    virtual void actuate(afRigidBodyPtr a_rigidBody, btTransform a_bodyOffset);
 
-    virtual void actuate(string a_softbody_name, int a_face_index, cVector3d a_bodyOffset);
+    virtual void actuate(string a_softbody_name, int a_face_index, btTransform a_bodyOffset);
 
-    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, cVector3d a_bodyOffset);
+    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, btTransform a_bodyOffset);
 
     // Remove the constraint
     virtual void deactuate();
@@ -1212,7 +1212,7 @@ protected:
 
     double m_maxImpulse = 3.0;
     double m_tau = 0.001;
-    btPoint2PointConstraint* m_constraint = nullptr;
+    btTypedConstraint* m_constraint = nullptr;
     // Transform of actuator w.r.t. parent body
     cTransform m_T_aINp;
 
