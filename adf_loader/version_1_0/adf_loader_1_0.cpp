@@ -2064,7 +2064,7 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
     }
 
     if (visibleSizeNode.IsDefined()){
-        attribs->m_visibleSize = visibleSizeNode.as<bool>();
+        attribs->m_visibleSize = visibleSizeNode.as<double>();
     }
 
     if (maxImpulseNode.IsDefined()){

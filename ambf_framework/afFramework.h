@@ -1216,6 +1216,8 @@ protected:
     // Transform of actuator w.r.t. parent body
     cTransform m_T_aINp;
 
+    cMesh* m_actuatorVisual = nullptr;
+
 
 private:
     afRigidBodyPtr m_childBody = nullptr;

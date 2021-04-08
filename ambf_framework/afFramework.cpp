@@ -1195,6 +1195,20 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     m_showActuator = attribs.m_visible;
 
+    if (m_showActuator){
+        if (m_actuatorVisual == nullptr){
+            cMesh* mesh = new cMesh();
+            cCreateSphere(mesh, attribs.m_visibleSize);
+            mesh->m_material->setYellowGold();
+            mesh->setShowEnabled(true);
+            mesh->setUseDisplayList(true);
+            mesh->markForUpdate(false);
+            m_actuatorVisual = mesh;
+            addChildSceneObject(m_actuatorVisual, cTransform());
+            m_afWorld->addSceneObjectToWorld(mesh);
+        }
+    }
+
     // First search in the local space.
     m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName, true);
 
@@ -1295,7 +1309,7 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, cVector3d a_bodyO
         return;
     }
     else{
-        // We can warn that the requested body is in valid
+        // We can warn that the requested body is invalid
     }
 }
 
@@ -1373,6 +1387,17 @@ void afConstraintActuator::update(){
     }
 #endif
 
+    // If visual is enabled, change the color
+    if (m_showActuator){
+        if (m_actuatorVisual){
+            if (m_active){
+                m_actuatorVisual->m_material->setGreenLime();
+            }
+            else{
+                m_actuatorVisual->m_material->setYellowGold();
+            }
+        }
+    }
 }
 
 
