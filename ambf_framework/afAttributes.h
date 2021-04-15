@@ -510,7 +510,8 @@ public:
     bool m_publishDepth;
     uint m_publishImageInterval;
     uint m_publishDepthInterval;
-    afShaderAttributes m_depthShaderAttribs;
+    afShaderAttributes m_preProcessShaderAttribs;
+    afShaderAttributes m_depthComputeShaderAttribs;
     bool m_multiPass;
 
     afImageResolutionAttribs m_publishImageResolution;
@@ -523,8 +524,8 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
-            m_depthShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_depthShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_depthComputeShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_depthComputeShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
             m_pathsResolved = true;
         }
     }

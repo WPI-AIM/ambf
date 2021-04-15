@@ -189,6 +189,11 @@ public:
     static cMaterial createMaterialFromColor(afColorAttributes* a_color);
 };
 
+class afShaderUtils{
+public:
+    static cShaderProgramPtr createFromAttribs(afShaderAttributes* attribs, string objName, string type);
+};
+
 
 class afComm{
 public:

@@ -2105,33 +2105,10 @@ void afRigidBody::createInertialObject()
 void afRigidBody::loadShaderProgram(){
     bool valid = false;
     if (m_shaderAttribs.m_shaderDefined){
-
-        ifstream vsFile;
-        ifstream fsFile;
-        vsFile.open(m_shaderAttribs.m_vtxFilepath.c_str());
-        fsFile.open(m_shaderAttribs.m_fragFilepath.c_str());
-        // create a string stream
-        stringstream vsBuffer, fsBuffer;
-        // dump the contents of the file into it
-        vsBuffer << vsFile.rdbuf();
-        fsBuffer << fsFile.rdbuf();
-        // close the files
-        vsFile.close();
-        fsFile.close();
-
-        cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-        if (shaderProgram->linkProgram()){
-            valid = true;
-            m_visualMesh->setShaderProgram(shaderProgram);
-            cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
-                         "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-        }
-        else{
-            cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
-                         "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
-                         "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-        }
+        cShaderProgramPtr shaderProgram;
+        shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "OBJECT_SHADERS");
+        m_visualMesh->setShaderProgram(shaderProgram);
+        valid = true;
     }
     else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
         if (m_afWorld->m_shaderProgram.get()){
@@ -5481,35 +5458,20 @@ void afWorld::loadSkyBox(){
             m_skyBoxMesh->setTexture(newTexture);
             m_skyBoxMesh->setUseTexture(true);
 
-            cShaderProgramPtr shaderPgm;
+            cShaderProgramPtr shaderProgram;
             if (m_skyBoxAttribs.m_shaderAttribs.m_shaderDefined){
-                ifstream vsFile;
-                ifstream fsFile;
-                vsFile.open(m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath.c_str());
-                fsFile.open(m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath.c_str());
-                // create a string stream
-                stringstream vsBuffer, fsBuffer;
-                // dump the contents of the file into it
-                vsBuffer << vsFile.rdbuf();
-                fsBuffer << fsFile.rdbuf();
-                // close the files
-                vsFile.close();
-                fsFile.close();
-
-                shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-                cerr << "INFO! USING EXTERNALLY DEFINED SKYBOX SHADER " << m_skyBoxAttribs.m_shaderAttribs.m_vtxFilepath.c_str() << endl;
-                cerr << "INFO! USING EXTERNALLY DEFINED SKYBOX SHADER " << m_skyBoxAttribs.m_shaderAttribs.m_fragFilepath.c_str() << endl;
+                shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "SKYBOX_SHADERS");
             }
             else{
                 cerr << "INFO! USING INTERNALLY DEFINED SKYBOX SHADERS" << endl;
-                shaderPgm = cShaderProgram::create(AF_SKYBOX_VTX, AF_SKYBOX_FRAG);
+                shaderProgram = cShaderProgram::create(AF_SKYBOX_VTX, AF_SKYBOX_FRAG);
             }
-            if (shaderPgm->linkProgram()){
+            if (shaderProgram->linkProgram()){
                 // Just empty Pts to let us use the shader
                 cGenericObject* go;
                 cRenderOptions ro;
-                shaderPgm->use(go, ro);
-                m_skyBoxMesh->setShaderProgram(shaderPgm);
+                shaderProgram->use(go, ro);
+                m_skyBoxMesh->setShaderProgram(shaderProgram);
                 addSceneObjectToWorld(m_skyBoxMesh);
 
             }
@@ -5530,34 +5492,7 @@ void afWorld::loadSkyBox(){
 ///
 void afWorld::loadShaderProgram(){
     if (m_shaderAttribs.m_shaderDefined){
-        if (m_shaderAttribs.m_shaderDefined){
-
-            ifstream vsFile;
-            ifstream fsFile;
-            vsFile.open(m_shaderAttribs.m_vtxFilepath.c_str());
-            fsFile.open(m_shaderAttribs.m_fragFilepath.c_str());
-            // create a string stream
-            stringstream vsBuffer, fsBuffer;
-            // dump the contents of the file into it
-            vsBuffer << vsFile.rdbuf();
-            fsBuffer << fsFile.rdbuf();
-            // close the files
-            vsFile.close();
-            fsFile.close();
-
-            cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-            if (shaderProgram->linkProgram()){
-                cerr << "INFO! USING GLOBAL SHADERS FOR ALL BODIES: " <<
-                             "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
-                             "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-                m_shaderProgram = shaderProgram;
-            }
-            else{
-                cerr << "ERROR! FAILED TO LOAD GLOBAL SHADER FILES: " <<
-                             "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
-                             "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-            }
-        }
+        m_shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "GLOBAL_SHADERS");
     }
 }
 
@@ -6415,36 +6350,21 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             m_depthBufferColorImage = cImage::create();
             m_depthBufferColorImage->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_INT);
 
-            cShaderProgramPtr shaderPgm;
-            if (attribs.m_depthShaderAttribs.m_shaderDefined){
-                ifstream vsFile;
-                ifstream fsFile;
-                vsFile.open(attribs.m_depthShaderAttribs.m_vtxFilepath.c_str());
-                fsFile.open(attribs.m_depthShaderAttribs.m_fragFilepath.c_str());
-                // create a string stream
-                stringstream vsBuffer, fsBuffer;
-                // dump the contents of the file into it
-                vsBuffer << vsFile.rdbuf();
-                fsBuffer << fsFile.rdbuf();
-                // close the files
-                vsFile.close();
-                fsFile.close();
-                shaderPgm = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
-
-                cerr << "INFO! USING EXTERNALLY DEFINED DEPTH VTX SHADER " << attribs.m_depthShaderAttribs.m_vtxFilepath.c_str() << endl;
-                cerr << "INFO! USING EXTERNALLY DEFINED DEPTH FRAG SHADER " << attribs.m_depthShaderAttribs.m_fragFilepath.c_str() << endl;
+            cShaderProgramPtr shaderProgram;
+            if (attribs.m_depthComputeShaderAttribs.m_shaderDefined){
+                shaderProgram = afShaderUtils::createFromAttribs(&attribs.m_depthComputeShaderAttribs, getQualifiedName(), "DEPTH_COMPUTE");
             }
             else{
-                cerr << "INFO! USING INTERNALLY DEFINED DEPTH COMPUTE SHADERS" << endl;
-                shaderPgm = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
+                cerr << "INFO! USING INTERNALLY DEFINED DEPTH_COMPUTE SHADERS" << endl;
+                shaderProgram = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
             }
 
-            if (shaderPgm->linkProgram()){
+            if (shaderProgram->linkProgram()){
                 cGenericObject* go;
                 cRenderOptions ro;
-                shaderPgm->use(go, ro);
-                m_depthMesh->setShaderProgram(shaderPgm);
-                shaderPgm->disable();
+                shaderProgram->use(go, ro);
+                m_depthMesh->setShaderProgram(shaderProgram);
+                shaderProgram->disable();
             }
             else{
                 cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO COMPILE/LINK SHADER FILES: " << endl;
@@ -8310,6 +8230,7 @@ void afGhostObject::update()
 
 bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 {
+    bool valid = false;
     afGhostObjectAttributes& attribs = *a_attribs;
 
     setIdentifier(attribs.m_identifier);
@@ -8394,40 +8315,76 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         }
     }
 
-    m_bulletCollisionShape->setMargin(attribs.m_collisionAttribs.m_margin);
-    m_bulletGhostObject->setCollisionShape(m_bulletCollisionShape);
-    m_bulletGhostObject->setCollisionFlags(m_bulletGhostObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-    m_afWorld->m_bulletWorld->addCollisionObject(m_bulletGhostObject, btBroadphaseProxy::DefaultFilter, btBroadphaseProxy::AllFilter);
+    if (m_bulletCollisionShape){
+        m_bulletCollisionShape->setMargin(attribs.m_collisionAttribs.m_margin);
+        m_bulletGhostObject->setCollisionShape(m_bulletCollisionShape);
+        m_bulletGhostObject->setCollisionFlags(m_bulletGhostObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        m_afWorld->m_bulletWorld->addCollisionObject(m_bulletGhostObject, btBroadphaseProxy::DefaultFilter, btBroadphaseProxy::AllFilter);
 
-    if (m_bulletGhostPairCallback == nullptr){
-        m_bulletGhostPairCallback = new btGhostPairCallback();
-        m_afWorld->m_bulletBroadphase->getOverlappingPairCache()->setInternalGhostPairCallback(m_bulletGhostPairCallback);
+        if (m_bulletGhostPairCallback == nullptr){
+            m_bulletGhostPairCallback = new btGhostPairCallback();
+            m_afWorld->m_bulletBroadphase->getOverlappingPairCache()->setInternalGhostPairCallback(m_bulletGhostPairCallback);
+        }
+
+        cTransform trans = to_cTransform(attribs.m_kinematicAttribs.m_location);
+        setInitialTransform(trans);
+        setLocalTransform(trans);
+
+        addChildSceneObject(m_visualMesh, cTransform());
+        m_afWorld->addSceneObjectToWorld(m_visualMesh);
+
+        for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
+            uint group =  attribs.m_collisionAttribs.m_groups[gI];
+            // Sanity check for the group number
+            if (group >= 0 && group <= 999){
+                m_afWorld->m_collisionGroups[group].push_back(this);
+                m_collisionGroups.push_back(group);
+            }
+            else{
+                cerr << "WARNING: Ghost's "
+                          << m_name
+                          << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
+            }
+        }
+        valid = true;
     }
 
-    cTransform trans = to_cTransform(attribs.m_kinematicAttribs.m_location);
-    setInitialTransform(trans);
-    setLocalTransform(trans);
-
-    addChildSceneObject(m_visualMesh, cTransform());
-    m_afWorld->addSceneObjectToWorld(m_visualMesh);
-
-    for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
-        uint group =  attribs.m_collisionAttribs.m_groups[gI];
-        // Sanity check for the group number
-        if (group >= 0 && group <= 999){
-            m_afWorld->m_collisionGroups[group].push_back(this);
-            m_collisionGroups.push_back(group);
-        }
-        else{
-            cerr << "WARNING: Ghost's "
-                      << m_name
-                      << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
-        }
-    }
+    return valid;
 }
 
 void afGhostObject::setLocalTransform(cTransform &trans)
 {
     m_bulletGhostObject->setWorldTransform(to_btTransform(trans));
     afBaseObject::setLocalTransform(trans);
+}
+
+cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, string objName, string type)
+{
+    cShaderProgramPtr shaderProgram;
+    if (attribs->m_shaderDefined){
+        ifstream vsFile;
+        ifstream fsFile;
+        vsFile.open(attribs->m_vtxFilepath.c_str());
+        fsFile.open(attribs->m_fragFilepath.c_str());
+        // create a string stream
+        stringstream vsBuffer, fsBuffer;
+        // dump the contents of the file into it
+        vsBuffer << vsFile.rdbuf();
+        fsBuffer << fsFile.rdbuf();
+        // close the files
+        vsFile.close();
+        fsFile.close();
+        shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        if (shaderProgram->linkProgram()){
+            cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILES: " <<
+                         "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                         "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+        }
+        else{
+            cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO LOAD SHADER TYPE " << type << " FROM FILES: " <<
+                         "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                         "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+        }
+    }
+    return shaderProgram;
 }

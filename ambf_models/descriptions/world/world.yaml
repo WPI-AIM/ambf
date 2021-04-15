@@ -64,7 +64,7 @@ camera1:
   # publish depth noise: {mean: 0.1, std_dev: 0.01, bias: 0.0}
   # publish depth interval: 1 # Publish every nth scene update
   # publish image resolution: {width: 640, height: 480}
-  # depth shaders:
+  # depth compute shaders:
   #   path: ../../../ambf_shaders/depth
   #   vertex: "shader.vs"
   #   fragment: "shader.fs"
