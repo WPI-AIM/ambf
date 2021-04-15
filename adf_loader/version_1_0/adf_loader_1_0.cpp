@@ -857,7 +857,7 @@ afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const str
         meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
     }
     else{
-        cerr << "ERROR! FOR COLLISION MESH " << a_shape_str << " NOT UNDERSTOOD";
+        cerr << "ERROR! FOR COLLISION MESH STRING TYPE " << a_shape_str << " NOT UNDERSTOOD \n";
     }
     return meshShapeType;
 }

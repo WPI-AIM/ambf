@@ -602,7 +602,7 @@ public:
     }
 
     // Enable Shader Program Associate with this object
-    virtual void enableShaderProgram(){}
+    virtual void loadShaderProgram(){}
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -799,7 +799,7 @@ public:
     void addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
 
     // Enable shader program if defined
-    virtual void enableShaderProgram();
+    virtual void loadShaderProgram();
 
     // Get the sensors for this body
     inline vector<afSensorPtr> getAFSensors(){return m_afSensors;}
@@ -2020,7 +2020,7 @@ public:
 
     void removePickingConstraint();
 
-    virtual void enableShaderProgram();
+    virtual void loadShaderProgram();
 
     void loadSkyBox();
 
@@ -2071,8 +2071,6 @@ public:
 
     cPrecisionClock g_wallClock;
 
-    bool m_shaderProgramDefined = false;
-
     // Vertex Shader Filepath
     afPath m_vsFilePath;
 
@@ -2080,7 +2078,9 @@ public:
     afPath m_fsFilePath;
     //    cMesh* m_pickDragVector;
 
-    afShaderAttributes m_globalBodyShaderAttribs;
+    afShaderAttributes m_shaderAttribs;
+
+    cShaderProgramPtr m_shaderProgram;
 
     // Skybox Mesh
     cMesh* m_skyBoxMesh = nullptr;

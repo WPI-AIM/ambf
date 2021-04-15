@@ -1956,7 +1956,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
 
     m_shaderAttribs = attribs.m_shaderAttribs;
-    enableShaderProgram();
+    loadShaderProgram();
 
     btTransform iOff;
     if (attribs.m_inertialAttribs.m_estimateInertialOffset){
@@ -2100,10 +2100,10 @@ void afRigidBody::createInertialObject()
 
 
 ///
-/// \brief afRigidBody::enableShaderProgram
+/// \brief afRigidBody::loadShaderProgram
 ///
-void afRigidBody::enableShaderProgram(){
-
+void afRigidBody::loadShaderProgram(){
+    bool valid = false;
     if (m_shaderAttribs.m_shaderDefined){
 
         ifstream vsFile;
@@ -2121,49 +2121,49 @@ void afRigidBody::enableShaderProgram(){
 
         cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
         if (shaderProgram->linkProgram()){
-            // Just empty Pts to let us use the shader
-            cGenericObject* go=nullptr;
-            cRenderOptions ro;
-            shaderProgram->use(go, ro);
-            // Set the ID for shadow and normal maps.
-            shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-            bool enable_normal_mapping = false;
-            for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
-                cMesh* mesh = m_visualMesh->getMesh(i);
-                if (mesh->m_normalMap.get() != nullptr){
-                    if (mesh->m_normalMap->m_image.get() != nullptr){
-                        enable_normal_mapping = true;
-                    }
-                }
-            }
-            if (enable_normal_mapping){
-                shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-                shaderProgram->setUniformi("vEnableNormalMapping", 1);
-            }
-            else{
-                shaderProgram->setUniformi("vEnableNormalMapping", 0);
-            }
-
+            valid = true;
+            m_visualMesh->setShaderProgram(shaderProgram);
             cerr << "INFO! FOR BODY: "<< m_name << ", USING SHADER FILES: " <<
                          "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
                          "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-
-            m_visualMesh->setShaderProgram(shaderProgram);
         }
         else{
             cerr << "ERROR! FOR BODY: "<< m_name << ", FAILED TO LOAD SHADER FILES: " <<
                          "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
                          "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
-
-            m_shaderAttribs.m_shaderDefined = false;
         }
     }
-    // Check if the shader has been assigned by afWorld
-    else if (m_visualMesh->getShaderProgram() != nullptr){
-         m_shaderAttribs.m_shaderDefined = true;
+    else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
+        if (m_afWorld->m_shaderProgram.get()){
+            m_visualMesh->setShaderProgram(m_afWorld->m_shaderProgram);
+            valid = true;
+        }
     }
-    else{
-         m_shaderAttribs.m_shaderDefined = false;
+
+    if (valid){
+        // Just empty Pts to let us use the shader
+        cGenericObject* go=nullptr;
+        cRenderOptions ro;
+        cShaderProgramPtr shaderProgram = m_visualMesh->getShaderProgram();
+        shaderProgram->use(go, ro);
+        // Set the ID for shadow and normal maps.
+        shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+        bool enable_normal_mapping = false;
+        for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
+            cMesh* mesh = m_visualMesh->getMesh(i);
+            if (mesh->m_normalMap.get() != nullptr){
+                if (mesh->m_normalMap->m_image.get() != nullptr){
+                    enable_normal_mapping = true;
+                }
+            }
+        }
+        if (enable_normal_mapping){
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
+        }
+        else{
+            shaderProgram->setUniformi("vEnableNormalMapping", 0);
+        }
     }
 }
 
@@ -5369,7 +5369,8 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
         }
 
-        m_globalBodyShaderAttribs = attribs.m_shaderAttribs;
+        m_shaderAttribs = attribs.m_shaderAttribs;
+        loadShaderProgram();
     }
 
     return true;
@@ -5525,14 +5526,37 @@ void afWorld::loadSkyBox(){
 
 
 ///
-/// \brief afWorld::enableShaderProgram
+/// \brief afWorld::loadShaderProgram
 ///
-void afWorld::enableShaderProgram(){
-    if (m_globalBodyShaderAttribs.m_shaderDefined){
-        afRigidBodyMap::iterator it;
-        for (it = m_afRigidBodyMap.begin() ; it != m_afRigidBodyMap.end() ; ++it){
-            afRigidBodyPtr rBody = it->second;
-            rBody->m_shaderAttribs = m_globalBodyShaderAttribs;
+void afWorld::loadShaderProgram(){
+    if (m_shaderAttribs.m_shaderDefined){
+        if (m_shaderAttribs.m_shaderDefined){
+
+            ifstream vsFile;
+            ifstream fsFile;
+            vsFile.open(m_shaderAttribs.m_vtxFilepath.c_str());
+            fsFile.open(m_shaderAttribs.m_fragFilepath.c_str());
+            // create a string stream
+            stringstream vsBuffer, fsBuffer;
+            // dump the contents of the file into it
+            vsBuffer << vsFile.rdbuf();
+            fsBuffer << fsFile.rdbuf();
+            // close the files
+            vsFile.close();
+            fsFile.close();
+
+            cShaderProgramPtr shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+            if (shaderProgram->linkProgram()){
+                cerr << "INFO! USING GLOBAL SHADERS FOR ALL BODIES: " <<
+                             "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
+                             "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
+                m_shaderProgram = shaderProgram;
+            }
+            else{
+                cerr << "ERROR! FAILED TO LOAD GLOBAL SHADER FILES: " <<
+                             "\n \t VERTEX: " << m_shaderAttribs.m_vtxFilepath.c_str() <<
+                             "\n \t FRAGMENT: " << m_shaderAttribs.m_fragFilepath.c_str() << endl;
+            }
         }
     }
 }

@@ -603,15 +603,7 @@ int main(int argc, char* argv[])
 
     //    signal (SIGINT, exitHandler);
 
-    // Enable any shader programs defined via ADF
-    g_afWorld->enableShaderProgram();
-
     afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
-
-    // Override the shader program if defined for bodies if defined
-    for (int i = 0 ; i < rbVec.size() ; i++){
-        rbVec[i]->enableShaderProgram();
-    }
 
     RateSleep graphicsSleep(120);
 
