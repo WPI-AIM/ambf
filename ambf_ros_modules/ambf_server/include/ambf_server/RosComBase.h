@@ -54,15 +54,6 @@
 
 class Node{
   public:
-    Node(){}
-    ~Node(){
-        if (s_initialized){
-            s_initialized = false;
-            std::cerr << "INFO! DESTROYING ROS NODE HANDLE\n";
-            ros::shutdown();
-        }
-        // Any cleanup needed?
-    }
     static boost::shared_ptr<ros::NodeHandle> getNodePtr(){
         if (s_initialized == false){
             int argc = 0;
@@ -72,12 +63,36 @@ class Node{
             s_initialized = true;
             std::cerr << "INFO! INITIALIZING ROS NODE HANDLE\n";
         }
-
+        s_nodeCounter++;
         return s_nodePtr;
+    }
+
+    static void destroyNode(){
+        if (s_initialized){
+            s_initialized = false;
+
+            std::cerr << "INFO! WAITING FOR ALL COMM INSTANCES TO UNREGISTER ... \n";
+            while(s_nodeCounter > 0){
+                usleep(10000);
+                std::cerr << "\tINFO! NUMBER OF ACTIVE COMMs: " << s_nodeCounter << std::endl;
+            }
+
+            std::cerr << "INFO! DESTROYING ROS NODE HANDLE\n";
+            ros::shutdown();
+        }
+    }
+
+    static bool isNodeActive(){
+        return s_initialized;
+    }
+
+    static void unregisterInstance(){
+        s_nodeCounter--;
     }
 
 private:
     static bool s_initialized;
+    static unsigned int s_nodeCounter;
     static boost::shared_ptr<ros::NodeHandle> s_nodePtr;
 };
 
@@ -85,6 +100,7 @@ template <class T_state, class T_cmd>
 class RosComBase{
 public:
     RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    ~RosComBase();
     virtual void init() = 0;
     virtual void run_publishers();
     virtual void cleanUp();
@@ -116,7 +132,7 @@ protected:
 
 template<class T_state, class T_cmd>
 void RosComBase<T_state, T_cmd>::run_publishers(){
-    while(nodePtr->ok()){
+    while(Node::isNodeActive()){
         T_state stateCopy = m_State;
         m_pub.publish(stateCopy);
         m_custom_queue.callAvailable();
@@ -126,6 +142,12 @@ void RosComBase<T_state, T_cmd>::run_publishers(){
         }
         m_watchDogPtr->m_ratePtr->sleep();
     }
+    Node::unregisterInstance();
+}
+
+template<class T_state, class T_cmd>
+RosComBase<T_state, T_cmd>::~RosComBase(){
+    std::cerr << "Thread ShutDown: " << m_name << std::endl;
 }
 
 

@@ -58,11 +58,6 @@ void CameraRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-CameraRosCom::~CameraRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void CameraRosCom::reset_cmd(){
 }
 

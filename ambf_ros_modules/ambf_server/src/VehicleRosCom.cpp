@@ -58,11 +58,6 @@ void VehicleRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-VehicleRosCom::~VehicleRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void VehicleRosCom::reset_cmd(){
     for (int i = 0 ; i < m_Cmd.wheel_power.size() ; i++){
         m_Cmd.wheel_power[i] = 0.0;

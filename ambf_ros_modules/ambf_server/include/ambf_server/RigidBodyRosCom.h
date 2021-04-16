@@ -52,7 +52,6 @@
 class RigidBodyRosCom: public RosComBase<ambf_msgs::RigidBodyState, ambf_msgs::RigidBodyCmd>{
 public:
     RigidBodyRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~RigidBodyRosCom();
     virtual void init();
 
 protected:

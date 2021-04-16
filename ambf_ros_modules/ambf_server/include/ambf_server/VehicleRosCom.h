@@ -52,7 +52,6 @@
 class VehicleRosCom: public RosComBase<ambf_msgs::VehicleState, ambf_msgs::VehicleCmd>{
 public:
     VehicleRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~VehicleRosCom();
     virtual void init();
 
 protected:

@@ -58,11 +58,6 @@ void LightRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-LightRosCom::~LightRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void LightRosCom::reset_cmd(){
 }
 

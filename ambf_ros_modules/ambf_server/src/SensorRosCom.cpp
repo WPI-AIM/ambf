@@ -58,11 +58,6 @@ void SensorRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-SensorRosCom::~SensorRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void SensorRosCom::reset_cmd(){
 }
 

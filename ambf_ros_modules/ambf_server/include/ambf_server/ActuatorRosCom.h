@@ -52,7 +52,6 @@
 class ActuatorRosCom: public RosComBase<ambf_msgs::ActuatorState, ambf_msgs::ActuatorCmd>{
 public:
     ActuatorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~ActuatorRosCom();
     virtual void init();
 
 protected:

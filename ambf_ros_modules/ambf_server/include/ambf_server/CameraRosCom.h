@@ -52,7 +52,6 @@
 class CameraRosCom: public RosComBase<ambf_msgs::CameraState, ambf_msgs::CameraCmd>{
 public:
     CameraRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~CameraRosCom();
     virtual void init();
 
 protected:

@@ -58,11 +58,6 @@ void RigidBodyRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-RigidBodyRosCom::~RigidBodyRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void RigidBodyRosCom::reset_cmd(){
     // For cartesian control, the TYPE_FORCE indicates wrench.
     m_Cmd.cartesian_cmd_type = ambf_msgs::RigidBodyCmd::TYPE_FORCE;

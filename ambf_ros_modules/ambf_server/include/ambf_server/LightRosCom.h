@@ -52,7 +52,6 @@
 class LightRosCom: public RosComBase<ambf_msgs::LightState, ambf_msgs::LightCmd>{
 public:
     LightRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~LightRosCom();
     virtual void init();
 
 protected:

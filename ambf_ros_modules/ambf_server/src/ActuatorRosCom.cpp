@@ -58,11 +58,6 @@ void ActuatorRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-ActuatorRosCom::~ActuatorRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void ActuatorRosCom::reset_cmd(){
 }
 

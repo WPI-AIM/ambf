@@ -52,7 +52,6 @@
 class SensorRosCom: public RosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>{
 public:
     SensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~SensorRosCom();
     virtual void init();
 
 protected:

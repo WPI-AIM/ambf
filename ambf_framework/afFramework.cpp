@@ -4799,6 +4799,9 @@ afWorld::afWorld(string a_global_namespace){
 
 afWorld::~afWorld()
 {
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    Node::destroyNode();
+#endif
 
     if(m_bulletWorld){
         delete m_bulletWorld;

@@ -58,11 +58,6 @@ void ObjectRosCom::init(){
     std::cerr << "Thread Joined: " << m_name << std::endl;
 }
 
-ObjectRosCom::~ObjectRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
-}
-
 void ObjectRosCom::reset_cmd(){
     m_Cmd.enable_position_controller = false;
     m_Cmd.wrench.force.x = 0;

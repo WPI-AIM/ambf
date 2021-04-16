@@ -62,6 +62,7 @@
 
 bool Node::s_initialized;
 boost::shared_ptr<ros::NodeHandle> Node::s_nodePtr;
+unsigned int Node::s_nodeCounter = 0;
 
 template<class T_state, class T_cmd>
 ///
