@@ -1754,6 +1754,9 @@ private:
 
     // Incremented every scene update (render method call)
     uint m_sceneUpdateCounter = 0;
+
+    afShaderAttributes m_preprocessingShaderAttribs;
+    cShaderProgramPtr m_preprocessingShaderProgram;
 };
 
 

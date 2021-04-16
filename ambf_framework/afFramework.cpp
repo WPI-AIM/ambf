@@ -6282,6 +6282,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
 
     if (m_publishImage || m_publishDepth){
+        if (attribs.m_preProcessShaderAttribs.m_shaderDefined){
+            m_preprocessingShaderProgram = afShaderUtils::createFromAttribs(&attribs.m_preProcessShaderAttribs, getQualifiedName(), "FRAMEBUFFER_PREPROCESSING");
+            // ASSIGN ANY SHADER ATTRIBUTES HERE
+        }
         m_publishImageResolution = attribs.m_publishImageResolution;
         m_frameBuffer = new cFrameBuffer();
         m_bufferColorImage = cImage::create();
