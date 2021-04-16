@@ -1509,6 +1509,13 @@ public:
 
     virtual void render(afRenderOptions &options);
 
+    void renderSkyBox();
+
+    void renderFrameBuffer();
+
+    void loadPreProcessingShaders();
+    void unloadPreProcessingShaders();
+
     // Define the virtual method for camera
     virtual void fetchCommands(double dt);
 
@@ -1566,8 +1573,6 @@ public:
 
     // This method enables or disables output image mirroring vertically.
     inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
-
-    void renderFrameBuffer();
 
     void computeDepthOnGPU();
 
@@ -1668,6 +1673,8 @@ public:
     cImagePtr m_depthBufferColorImage;
 
     bool m_useGPUForDepthComputation = true;
+
+    std::map<afRigidBodyPtr, cShaderProgramPtr> m_shaderProgramBackup;
 
 protected:
     cVector3d m_pos, m_posClutched;

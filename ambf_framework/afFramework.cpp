@@ -6397,18 +6397,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     return true;
 }
 
-
-///
-/// \brief afCamera::renderFrameBuffer
-///
-void afCamera::renderFrameBuffer()
-{
-    m_frameBuffer->renderView();
-    m_frameBuffer->copyImageBuffer(m_bufferColorImage);
-    m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
-}
-
-
 ///
 /// \brief afCamera::publishDepthCPUBased
 ///
@@ -6880,6 +6868,27 @@ void afCamera::render(afRenderOptions &options)
         updateLabels(options);
     }
 
+    renderSkyBox();
+
+    // render world
+    m_camera->renderView(m_width,m_height);
+
+    // swap buffers
+    glfwSwapBuffers(m_window);
+
+    renderFrameBuffer();
+
+    // Only set the window_closed if the condition is met
+    // otherwise a non-closed window will set the variable back
+    // to false
+    if (glfwWindowShouldClose(m_window)){
+        options.m_windowClosed = true;
+    }
+
+    m_sceneUpdateCounter++;
+}
+
+void afCamera::renderSkyBox(){
     if (m_afWorld->m_skyBoxMesh != nullptr){
         if (m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){
             cGenericObject* go;
@@ -6893,54 +6902,19 @@ void afCamera::render(afRenderOptions &options)
             m_afWorld->m_skyBoxMesh->getShaderProgram()->disable();
         }
     }
+}
 
-    // render world
-    m_camera->renderView(m_width,m_height);
 
-    // swap buffers
-    glfwSwapBuffers(m_window);
-
-    // Only set the window_closed if the condition is met
-    // otherwise a non-closed window will set the variable back
-    // to false
-    if (glfwWindowShouldClose(m_window)){
-        options.m_windowClosed = true;
-    }
-
-    m_sceneUpdateCounter++;
-
+void afCamera::renderFrameBuffer(){
     if (m_publishImage || m_publishDepth){
-        std::map<afRigidBodyPtr, cShaderProgramPtr> shaderPgmBackup;
-        if (m_preprocessingShaderAttribs.m_shaderDefined){
-            if (m_preprocessingShaderProgram.get()){
-                afRigidBodyMap::iterator rbIt;
-                afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
-                for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                    afRigidBodyPtr rb = rbIt->second;
-                    if (rb->m_visualMesh){
-                        // Store the current shader Pgm
-                        shaderPgmBackup[rb] = rb->m_visualMesh->getShaderProgram();
-                        rb->m_visualMesh->setShaderProgram(m_preprocessingShaderProgram);
-                    }
-                }
-            }
-        }
 
-        renderFrameBuffer();
+        loadPreProcessingShaders();
 
-        if (m_preprocessingShaderAttribs.m_shaderDefined){
-            if (m_preprocessingShaderProgram.get()){
-                afRigidBodyMap::iterator rbIt;
-                afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
-                for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                    afRigidBodyPtr rb = rbIt->second;
-                    if (rb->m_visualMesh){
-                        // Reassign the backedup shaderpgm for next rendering pass
-                        rb->m_visualMesh->setShaderProgram(shaderPgmBackup[rb]);
-                    }
-                }
-            }
-        }
+        m_frameBuffer->renderView();
+        m_frameBuffer->copyImageBuffer(m_bufferColorImage);
+        m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
+
+        unloadPreProcessingShaders();
     }
 
     if (m_publishImage){
@@ -6958,6 +6932,41 @@ void afCamera::render(afRenderOptions &options)
                 computeDepthOnCPU();
             }
             publishDepthPointCloud();
+        }
+    }
+}
+
+void afCamera::loadPreProcessingShaders()
+{
+    if (m_preprocessingShaderAttribs.m_shaderDefined){
+        if (m_preprocessingShaderProgram.get()){
+            afRigidBodyMap::iterator rbIt;
+            afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+                afRigidBodyPtr rb = rbIt->second;
+                if (rb->m_visualMesh){
+                    // Store the current shader Pgm
+                    m_shaderProgramBackup[rb] = rb->m_visualMesh->getShaderProgram();
+                    rb->m_visualMesh->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+        }
+    }
+}
+
+void afCamera::unloadPreProcessingShaders()
+{
+    if (m_preprocessingShaderAttribs.m_shaderDefined){
+        if (m_preprocessingShaderProgram.get()){
+            afRigidBodyMap::iterator rbIt;
+            afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+                afRigidBodyPtr rb = rbIt->second;
+                if (rb->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
+                }
+            }
         }
     }
 }
