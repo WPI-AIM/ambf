@@ -607,7 +607,7 @@ public:
     }
 
     // Enable Shader Program Associate with this object
-    virtual void loadShaderProgram(){}
+    virtual void loadShaderProgram();
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
@@ -802,9 +802,6 @@ public:
 
     // Add sensor to this body
     void addAFActuator(afActuatorPtr a_actuator){m_afActuators.push_back(a_actuator);}
-
-    // Enable shader program if defined
-    virtual void loadShaderProgram();
 
     // Get the sensors for this body
     inline vector<afSensorPtr> getAFSensors(){return m_afSensors;}
@@ -1514,7 +1511,10 @@ public:
     void renderFrameBuffer();
 
     void loadPreProcessingShaders();
+
     void unloadPreProcessingShaders();
+
+    void preProcessingShadersUpdate();
 
     // Define the virtual method for camera
     virtual void fetchCommands(double dt);

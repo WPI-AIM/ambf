@@ -1127,6 +1127,53 @@ void afBaseObject::showVisualFrame()
     }
 }
 
+
+///
+/// \brief afBaseObject::loadShaderProgram
+///
+void afBaseObject::loadShaderProgram()
+{
+    bool valid = false;
+    if (m_shaderAttribs.m_shaderDefined){
+        cShaderProgramPtr shaderProgram;
+        shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "OBJECT_SHADERS");
+        m_visualMesh->setShaderProgram(shaderProgram);
+        valid = true;
+    }
+    else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
+        if (m_afWorld->m_shaderProgram.get()){
+            m_visualMesh->setShaderProgram(m_afWorld->m_shaderProgram);
+            valid = true;
+        }
+    }
+
+    if (valid){
+        // Just empty Pts to let us use the shader
+        cGenericObject* go=nullptr;
+        cRenderOptions ro;
+        cShaderProgramPtr shaderProgram = m_visualMesh->getShaderProgram();
+        shaderProgram->use(go, ro);
+        // Set the ID for shadow and normal maps.
+        shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
+        bool enable_normal_mapping = false;
+        for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
+            cMesh* mesh = m_visualMesh->getMesh(i);
+            if (mesh->m_normalMap.get() != nullptr){
+                if (mesh->m_normalMap->m_image.get() != nullptr){
+                    enable_normal_mapping = true;
+                }
+            }
+        }
+        if (enable_normal_mapping){
+            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
+            shaderProgram->setUniformi("vEnableNormalMapping", 1);
+        }
+        else{
+            shaderProgram->setUniformi("vEnableNormalMapping", 0);
+        }
+    }
+}
+
 bool afBaseObject::resolveParenting(string a_parentName){
     // If the parent name is not empty, override the objects parent name
     if(a_parentName.empty() == false){
@@ -2096,52 +2143,6 @@ void afRigidBody::createInertialObject()
     // by default deactivate sleeping mode
     m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
     m_bulletRigidBody->setSleepingThresholds(0, 0);
-}
-
-
-///
-/// \brief afRigidBody::loadShaderProgram
-///
-void afRigidBody::loadShaderProgram(){
-    bool valid = false;
-    if (m_shaderAttribs.m_shaderDefined){
-        cShaderProgramPtr shaderProgram;
-        shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "OBJECT_SHADERS");
-        m_visualMesh->setShaderProgram(shaderProgram);
-        valid = true;
-    }
-    else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
-        if (m_afWorld->m_shaderProgram.get()){
-            m_visualMesh->setShaderProgram(m_afWorld->m_shaderProgram);
-            valid = true;
-        }
-    }
-
-    if (valid){
-        // Just empty Pts to let us use the shader
-        cGenericObject* go=nullptr;
-        cRenderOptions ro;
-        cShaderProgramPtr shaderProgram = m_visualMesh->getShaderProgram();
-        shaderProgram->use(go, ro);
-        // Set the ID for shadow and normal maps.
-        shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        bool enable_normal_mapping = false;
-        for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
-            cMesh* mesh = m_visualMesh->getMesh(i);
-            if (mesh->m_normalMap.get() != nullptr){
-                if (mesh->m_normalMap->m_image.get() != nullptr){
-                    enable_normal_mapping = true;
-                }
-            }
-        }
-        if (enable_normal_mapping){
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
-        }
-        else{
-            shaderProgram->setUniformi("vEnableNormalMapping", 0);
-        }
-    }
 }
 
 
@@ -6940,6 +6941,7 @@ void afCamera::loadPreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
+            preProcessingShadersUpdate();
             afRigidBodyMap::iterator rbIt;
             afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
             for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
@@ -6969,6 +6971,28 @@ void afCamera::unloadPreProcessingShaders()
             }
         }
     }
+}
+
+void afCamera::preProcessingShadersUpdate()
+{
+    cGenericObject* go;
+    cRenderOptions po;
+    m_preprocessingShaderProgram->use(go, po);
+
+//     Assign any shader attribs here.
+//     Example:
+//    m_preprocessingShaderProgram->setUniform("var_name", var);
+
+//     Also loop through visual objects to assign any specific object IDs etc.
+//     Example:
+//    afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+//    for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+//        afRigidBodyPtr rb = rbIt->second;
+//        if (rb->m_visualMesh){
+//            // Reassign the backedup shaderpgm for the next rendering pass
+//            rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
+//        }
+//    }
 }
 
 
