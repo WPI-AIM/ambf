@@ -6282,8 +6282,9 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
 
     if (m_publishImage || m_publishDepth){
-        if (attribs.m_preProcessShaderAttribs.m_shaderDefined){
-            m_preprocessingShaderProgram = afShaderUtils::createFromAttribs(&attribs.m_preProcessShaderAttribs, getQualifiedName(), "FRAMEBUFFER_PREPROCESSING");
+        m_preprocessingShaderAttribs = attribs.m_preProcessShaderAttribs;
+        if (m_preprocessingShaderAttribs.m_shaderDefined){
+            m_preprocessingShaderProgram = afShaderUtils::createFromAttribs(&m_preprocessingShaderAttribs, getQualifiedName(), "FRAMEBUFFER_PREPROCESSING");
             // ASSIGN ANY SHADER ATTRIBUTES HERE
         }
         m_publishImageResolution = attribs.m_publishImageResolution;
@@ -6850,10 +6851,12 @@ afCamera::~afCamera(){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (s_rosNode != nullptr){
         delete s_rosNode;
+        s_rosNode = 0;
     }
 
     if (m_depthPointCloudModifier != nullptr){
         delete m_depthPointCloudModifier;
+        m_depthPointCloudModifier = 0;
     }
 #endif
 
@@ -6907,7 +6910,37 @@ void afCamera::render(afRenderOptions &options)
     m_sceneUpdateCounter++;
 
     if (m_publishImage || m_publishDepth){
+        std::map<afRigidBodyPtr, cShaderProgramPtr> shaderPgmBackup;
+        if (m_preprocessingShaderAttribs.m_shaderDefined){
+            if (m_preprocessingShaderProgram.get()){
+                afRigidBodyMap::iterator rbIt;
+                afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+                for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+                    afRigidBodyPtr rb = rbIt->second;
+                    if (rb->m_visualMesh){
+                        // Store the current shader Pgm
+                        shaderPgmBackup[rb] = rb->m_visualMesh->getShaderProgram();
+                        rb->m_visualMesh->setShaderProgram(m_preprocessingShaderProgram);
+                    }
+                }
+            }
+        }
+
         renderFrameBuffer();
+
+        if (m_preprocessingShaderAttribs.m_shaderDefined){
+            if (m_preprocessingShaderProgram.get()){
+                afRigidBodyMap::iterator rbIt;
+                afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+                for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+                    afRigidBodyPtr rb = rbIt->second;
+                    if (rb->m_visualMesh){
+                        // Reassign the backedup shaderpgm for next rendering pass
+                        rb->m_visualMesh->setShaderProgram(shaderPgmBackup[rb]);
+                    }
+                }
+            }
+        }
     }
 
     if (m_publishImage){

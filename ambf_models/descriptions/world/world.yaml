@@ -59,6 +59,10 @@ camera1:
   monitor: 0
   # multipass: True
   # publish image: True
+  # preprocessing shaders:
+  #   path: ../../../ambf_shaders/preprocessing/
+  #   vertex: "shader.vs"
+  #   fragment: "shader.fs"
   # publish image interval: 1 # Publish every nth scene update
   # publish depth: True
   # publish depth noise: {mean: 0.1, std_dev: 0.01, bias: 0.0}

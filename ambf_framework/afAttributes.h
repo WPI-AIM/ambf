@@ -524,6 +524,8 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            m_preProcessShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_preProcessShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
             m_depthComputeShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
             m_depthComputeShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
             m_pathsResolved = true;
