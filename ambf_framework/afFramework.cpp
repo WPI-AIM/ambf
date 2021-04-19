@@ -5481,7 +5481,7 @@ void afWorld::loadSkyBox(){
 
             cShaderProgramPtr shaderProgram;
             if (m_skyBoxAttribs.m_shaderAttribs.m_shaderDefined){
-                shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "SKYBOX_SHADERS");
+                shaderProgram = afShaderUtils::createFromAttribs(&m_skyBoxAttribs.m_shaderAttribs, getQualifiedName(), "SKYBOX_SHADERS");
             }
             else{
                 cerr << "INFO! USING INTERNALLY DEFINED SKYBOX SHADERS" << endl;
