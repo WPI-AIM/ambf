@@ -206,6 +206,15 @@ void exitHandler(int s){
     g_afRenderOptions.m_windowClosed = true;
 }
 
+void deleteModelAttribsInternalData(afModelAttributes* modelAttribs){
+    for (int j = 0 ; j < modelAttribs->m_sensorAttribs.size() ; j++){
+        delete modelAttribs->m_sensorAttribs[j];
+    }
+    for (int j = 0 ; j < modelAttribs->m_actuatorAttribs.size() ; j++){
+        delete modelAttribs->m_actuatorAttribs[j];
+    }
+}
+
 ///
 /// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
 /// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
@@ -653,6 +662,10 @@ int main(int argc, char* argv[])
 
     // terminate GLFW library
     glfwTerminate();
+
+    for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
+        deleteModelAttribsInternalData(&modelsAttribs[idx]);
+    }
 
     // exit
     return 0;

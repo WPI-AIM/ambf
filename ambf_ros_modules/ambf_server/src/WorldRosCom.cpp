@@ -68,8 +68,8 @@ sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
 
 
 void PointCloundHandler::remove(){
-    m_StatePtr->points.clear();
-    m_StatePtr->channels.clear();
+//    m_StatePtr->points.clear();
+//    m_StatePtr->channels.clear();
     m_pcSub.shutdown();
 }
 

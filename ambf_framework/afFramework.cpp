@@ -1485,6 +1485,10 @@ afInertialObject::~afInertialObject()
             btCompoundShape* compoundShape = static_cast<btCompoundShape*>(m_bulletCollisionShape);
             for (int i = 0 ; i < compoundShape->getNumChildShapes(); i++){
                 if (compoundShape->getChildShape(i)){
+                    if (compoundShape->getChildShape(i)->getShapeType() == GIMPACT_SHAPE_PROXYTYPE){
+                        btGImpactMeshShape* gimShape = static_cast<btGImpactMeshShape*>(compoundShape->getChildShape(i));
+                        delete gimShape->getMeshInterface();
+                    }
                     delete compoundShape->getChildShape(i);
                 }
             }
