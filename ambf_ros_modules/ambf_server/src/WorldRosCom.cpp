@@ -48,7 +48,7 @@
 /// \param a_node
 /// \param a_topic_name
 ///
-void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::string a_topic_name){
+void PointCloundHandler::init(ros::NodeHandle* a_node, std::string a_topic_name){
     m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloundHandler::sub_cb, this);
 }
 
@@ -68,9 +68,9 @@ sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
 
 
 void PointCloundHandler::remove(){
-    m_pcSub.shutdown();
     m_StatePtr->points.clear();
     m_StatePtr->channels.clear();
+    m_pcSub.shutdown();
 }
 
 
@@ -100,15 +100,6 @@ void WorldRosCom::init(){
 
     m_thread = boost::thread(boost::bind(&WorldRosCom::run_publishers, this));
     std::cerr << "Thread Joined: " << m_name << std::endl;
-}
-
-
-///
-/// \brief WorldRosCom::~WorldRosCom
-///
-WorldRosCom::~WorldRosCom(){
-    ros::shutdown();
-    std::cerr << "Thread Shutdown: " << m_name << std::endl;
 }
 
 

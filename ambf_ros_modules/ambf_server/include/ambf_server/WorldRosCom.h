@@ -53,8 +53,11 @@
 class PointCloundHandler{
 public:
     PointCloundHandler(){}
+    ~PointCloundHandler(){
+        remove();
+    }
 
-    void init(boost::shared_ptr<ros::NodeHandle> a_node , std::string a_topic_name);
+    void init(ros::NodeHandle* a_node , std::string a_topic_name);
     void remove();
 
     sensor_msgs::PointCloudPtr get_point_cloud();
@@ -75,7 +78,6 @@ private:
 class WorldRosCom: public RosComBase<ambf_msgs::WorldState, ambf_msgs::WorldCmd>{
 public:
     WorldRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    ~WorldRosCom();
     virtual void init();
 
 protected:

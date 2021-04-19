@@ -1481,6 +1481,14 @@ afInertialObject::~afInertialObject()
         delete m_bulletSoftBody;
     }
     if (m_bulletCollisionShape){
+        if (m_bulletCollisionShape->getShapeType() == COMPOUND_SHAPE_PROXYTYPE){
+            btCompoundShape* compoundShape = static_cast<btCompoundShape*>(m_bulletCollisionShape);
+            for (int i = 0 ; i < compoundShape->getNumChildShapes(); i++){
+                if (compoundShape->getChildShape(i)){
+                    delete compoundShape->getChildShape(i);
+                }
+            }
+        }
         delete m_bulletCollisionShape;
     }
     if (m_bulletMotionState){
@@ -1972,6 +1980,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
+    m_collisionMesh->setShowEnabled(false);
 
     if (m_visualGeometryType == afGeometryType::MESH){
         if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
@@ -2066,6 +2075,9 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             m_bulletCollisionShape = compoundCollisionShape;
         }
     }
+    else{
+        // No valid collision. Must be an empty object
+    }
 
     // The collision groups are sorted by integer indices. A group is an array of
     // ridig bodies that collide with each other. The bodies in one group
@@ -2117,6 +2129,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     addChildSceneObject(m_visualMesh, cTransform());
     m_afWorld->m_chaiWorld->addChild(m_visualMesh);
+    m_afWorld->m_chaiWorld->addChild(m_collisionMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
     if (isPassive() == false){
@@ -6032,7 +6045,6 @@ bool afCamera::createDefaultCamera(){
     cerr << "INFO: USING DEFAULT CAMERA" << endl;
 
     m_camera = new cCamera(m_afWorld->m_chaiWorld);
-    addChildSceneObject(m_camera, cTransform());
 
     m_namespace = m_afWorld->getNamespace();
 
@@ -6831,6 +6843,14 @@ afCamera::~afCamera(){
 
     if (m_dephtWorld != nullptr){
         delete m_dephtWorld;
+    }
+    else{
+        // If cam was added to depth world, it would delete it, if not, delete it explicitly.
+        delete m_camera;
+    }
+
+    if (m_targetVisualMarker !=nullptr){
+        delete m_targetVisualMarker;
     }
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (s_imageTransport != nullptr){
@@ -8264,6 +8284,8 @@ void afGhostObject::update()
         }
     }
 
+    delete manifoldArray;
+
     for (int i = 0 ; i < m_sensedBodies.size() ; i++){
         m_sensedBodies[i]->setGravity(m_afWorld->m_bulletWorld->getGravity());
         m_sensedBodies[i]->applyCentralForce(btVector3(0, 0, 0));
@@ -8315,6 +8337,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
+    m_collisionMesh->setShowEnabled(false);
 
     m_scale = attribs.m_kinematicAttribs.m_scale;
 
@@ -8405,6 +8428,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
         addChildSceneObject(m_visualMesh, cTransform());
         m_afWorld->addSceneObjectToWorld(m_visualMesh);
+        m_afWorld->addSceneObjectToWorld(m_collisionMesh);
 
         for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
             uint group =  attribs.m_collisionAttribs.m_groups[gI];

@@ -1394,8 +1394,6 @@ void close(void)
     // stop the simulation
     g_simulationRunning = false;
 
-    delete g_adfLoaderPtr;
-
     // wait for graphics and haptics loops to terminate
     while (!g_simulationFinished) { cSleepMs(100); }
     g_bulletSimThread->stop();
@@ -1411,6 +1409,8 @@ void close(void)
         delete g_hapticsThreads[i];
     }
     delete g_afWorld;
+
+    delete g_adfLoaderPtr;
 }
 
 ///

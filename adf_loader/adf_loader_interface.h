@@ -58,6 +58,7 @@ using namespace ambf;
 class ADFLoaderInterface{
 public:
     ADFLoaderInterface();
+    ~ADFLoaderInterface();
 
     bool loadObjectAttribs(std::string a_filepath, std::string a_objectName, afObjectType a_type, afBaseObjectAttributes* attribs);
 

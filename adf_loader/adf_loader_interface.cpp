@@ -183,6 +183,13 @@ ADFLoaderInterface::ADFLoaderInterface()
     m_loader = nullptr;
 }
 
+ADFLoaderInterface::~ADFLoaderInterface()
+{
+    if (m_loader){
+        delete m_loader;
+    }
+}
+
 bool ADFLoaderInterface::loadWorldAttribs(string a_filepath, afWorldAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){

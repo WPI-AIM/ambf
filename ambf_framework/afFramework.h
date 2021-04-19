@@ -1613,7 +1613,7 @@ public:
     // Show a visual marker representing the position of CameraTaregetPosition
     void showTargetPos(bool a_show);
 
-    cMesh* m_targetVisualMarker;
+    cMesh* m_targetVisualMarker = nullptr;
 
 public:
     bool m_cam_pressed;

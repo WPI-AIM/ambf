@@ -54,12 +54,12 @@
 
 class Node{
   public:
-    static boost::shared_ptr<ros::NodeHandle> getNodePtr(){
+    static ros::NodeHandle* getNodePtr(){
         if (s_initialized == false){
             int argc = 0;
             char **argv = 0;
             ros::init(argc, argv, "ambf_comm_node");
-            s_nodePtr.reset(new ros::NodeHandle);
+            s_nodePtr = new ros::NodeHandle;
             s_initialized = true;
             std::cerr << "INFO! INITIALIZING ROS NODE HANDLE\n";
         }
@@ -71,14 +71,16 @@ class Node{
         if (s_initialized){
             s_initialized = false;
 
+            std::cerr << "INFO! TOTAL ACTIVE COMM INSTANCES: " << s_nodeCounter << std::endl;
             std::cerr << "INFO! WAITING FOR ALL COMM INSTANCES TO UNREGISTER ... \n";
             while(s_nodeCounter > 0){
+                std::cerr << "\tINFO! REMAINING ACTIVE COMMs: " << s_nodeCounter << std::endl;
                 usleep(10000);
-                std::cerr << "\tINFO! NUMBER OF ACTIVE COMMs: " << s_nodeCounter << std::endl;
             }
 
             std::cerr << "INFO! DESTROYING ROS NODE HANDLE\n";
             ros::shutdown();
+            delete s_nodePtr;
         }
     }
 
@@ -93,7 +95,7 @@ class Node{
 private:
     static bool s_initialized;
     static unsigned int s_nodeCounter;
-    static boost::shared_ptr<ros::NodeHandle> s_nodePtr;
+    static ros::NodeHandle* s_nodePtr;
 };
 
 template <class T_state, class T_cmd>
@@ -110,7 +112,7 @@ public:
     int m_freq_max;
 
 protected:
-    boost::shared_ptr<ros::NodeHandle> nodePtr;
+    ros::NodeHandle* nodePtr;
     boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
     boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
 
@@ -147,7 +149,7 @@ void RosComBase<T_state, T_cmd>::run_publishers(){
 
 template<class T_state, class T_cmd>
 RosComBase<T_state, T_cmd>::~RosComBase(){
-    std::cerr << "Thread ShutDown: " << m_name << std::endl;
+    std::cerr << "INFO! Thread ShutDown: " << m_name << std::endl;
 }
 
 

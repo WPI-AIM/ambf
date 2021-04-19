@@ -981,6 +981,14 @@ public:
         m_ignoreInterCollision = false;
         m_enableComm = true;
     }
+    ~afModelAttributes(){
+//        for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
+//            delete m_sensorAttribs[i];
+//        }
+//        for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
+//            delete m_actuatorAttribs[i];
+//        }
+    }
 
     afPath m_visualMeshesPath;
     afPath m_collisionMeshesPath;
