@@ -207,11 +207,11 @@ void exitHandler(int s){
 }
 
 void deleteModelAttribsInternalData(afModelAttributes* modelAttribs){
-    for (int j = 0 ; j < modelAttribs->m_sensorAttribs.size() ; j++){
-        delete modelAttribs->m_sensorAttribs[j];
+    for (int i = 0 ; i < modelAttribs->m_sensorAttribs.size() ; i++){
+        delete modelAttribs->m_sensorAttribs[i];
     }
-    for (int j = 0 ; j < modelAttribs->m_actuatorAttribs.size() ; j++){
-        delete modelAttribs->m_actuatorAttribs[j];
+    for (int i = 0 ; i < modelAttribs->m_actuatorAttribs.size() ; i++){
+        delete modelAttribs->m_actuatorAttribs[i];
     }
 }
 
