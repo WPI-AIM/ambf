@@ -6600,6 +6600,7 @@ void afCamera::publishImage(){
     m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
     cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
     sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
+    rosMsg->header.stamp = ros::Time::now();
     m_imagePublisher.publish(rosMsg);
     m_bufferColorImage->flipHorizontal();
 #endif
