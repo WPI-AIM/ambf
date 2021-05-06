@@ -174,6 +174,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     YAML::Node geometryNode = node["geometry"];
     YAML::Node meshPathHRNode = node["high resolution path"];
     YAML::Node colorNode = node["color"];
+    YAML::Node visibleNode = node["visible"];
 
     bool valid = false;
 
@@ -226,6 +227,10 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
 
     ADFUtils utils;
     utils.getColorAttribsFromNode(&node, &attribs->m_colorAttribs);
+
+    if (visibleNode.IsDefined()){
+        attribs->m_visible = visibleNode.as<bool>();
+    }
 
     return valid;
 }

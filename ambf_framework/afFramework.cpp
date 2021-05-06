@@ -2014,6 +2014,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     // Important to set the transparency after setting the material, otherwise the alpha
     // channel ruins the Z-buffer depth testing in some way.
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
+    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
 
     m_shaderAttribs = attribs.m_shaderAttribs;
     loadShaderProgram();
@@ -2703,6 +2704,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     // Important to set the transparency after setting the material, otherwise the alpha
     // channel ruins the Z-buffer depth testing in some way.
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
+    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
 
     btSoftBody* softBody = m_bulletSoftBody;
 
@@ -8374,6 +8376,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     // Important to set the transparency after setting the material, otherwise the alpha
     // channel ruins the Z-buffer depth testing in some way.
     m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
+    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
 
     if (attribs.m_collisionAttribs.m_geometryType == afGeometryType::MESH){
         if (m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str()) ){

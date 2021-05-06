@@ -357,12 +357,15 @@ struct afColorAttributes{
 /// \brief The afVisualAttributes struct
 ///
 struct afVisualAttributes{
-    afVisualAttributes(){}
+    afVisualAttributes(){
+        m_visible = true;
+    }
 
     afPath m_meshFilepath;
     afGeometryType m_geometryType;
     std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     afColorAttributes m_colorAttribs;
+    bool m_visible;
 };
 
 
