@@ -915,6 +915,31 @@ private:
     afGeometryType m_collisionGeometryType;
 };
 
+
+struct afVertexTree{
+    std::vector<int> triangleIdx;
+    std::vector<int> vertexIdx;
+};
+
+///
+/// \brief The afMeshCleanup class
+///
+class afMeshCleanup{
+public:
+
+    static void updateMins(cVector3d &vMin, cVector3d &v);
+
+    static void updateMaxs(cVector3d &vMax, cVector3d &v);
+
+    static void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize);
+
+    // Method to detect, index and store repeat vertices
+    static void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+
+    // Method to detect, index and store repeat vertices
+    static void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+};
+
 ///
 /// \brief The afSoftBody class
 ///
@@ -922,10 +947,7 @@ class afSoftBody: public afInertialObject{
 
     friend class afModel;
 
-    struct VertexTree{
-        std::vector<int> triangleIdx;
-        std::vector<int> vertexIdx;
-    };
+
 
 public:
 
@@ -945,21 +967,9 @@ public:
 
     virtual void updateSceneObjects();
 
-    bool cleanupMesh(cMultiMesh* multiMesh, std::vector<VertexTree>& a_vertexTree, std::vector<unsigned int>& a_triangles);
+    bool cleanupMesh(cMultiMesh* multiMesh, std::vector<afVertexTree>& a_afVertexTree, std::vector<unsigned int>& a_triangles);
 
     bool generateFromMesh(cMultiMesh* mesh, const double margin);
-
-    void updateMins(cVector3d &vMin, cVector3d &v);
-
-    void updateMaxs(cVector3d &vMax, cVector3d &v);
-
-    void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize);
-
-    // Function to detect, index and store repeat vertices
-    void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<uint>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
-
-    // Function to detect, index and store repeat vertices
-    void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<btScalar>* outputVertices, std::vector<uint>* outputTriangles, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
     // Helper Function to Create Links from Lines
     bool createLinksFromLines(btSoftBody* a_sb, std::vector< std::vector<int>>* a_lines, cMesh* a_mesh);
@@ -978,7 +988,7 @@ private:
     std::vector<unsigned int> m_trianglesPtr;
 
     // Vertex Tree containing vtx idx's that are repeated for a given vtx
-    std::vector<VertexTree> m_vertexTree;
+    std::vector<afVertexTree> m_afVertexTree;
 
     // Boolean flag to indicate if we have been successful in reducing the mesh.
     // A reduced mesh should speed up rendering.
