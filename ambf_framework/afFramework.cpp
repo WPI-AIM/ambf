@@ -228,7 +228,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     return collisionShape;
 }
 
-btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMesh,
+btCollisionShape* afShapeUtils::createCollisionShape(const cMesh *a_collisionMesh,
                                                      double a_margin,
                                                      afCollisionMeshShapeType a_meshType)
 {
@@ -295,6 +295,10 @@ btCollisionShape *afShapeUtils::createCollisionShape(const cMesh *a_collisionMes
         // create collision detector for each mesh
         collisionShape = new btConvexHullShape((double*)(&a_collisionMesh->m_vertices->m_localPos[0]),
                 a_collisionMesh->m_vertices->getNumElements(), sizeof(cVector3d));
+        break;
+    }
+    case afCollisionMeshShapeType::POINT_CLOUD:{
+        // NOT IMPLEMENTED YET
         break;
     }
     default:
@@ -398,6 +402,27 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
             collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
             collisionShape->setMargin(a_margin);
             compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+        }
+        break;
+    }
+    case afCollisionMeshShapeType::POINT_CLOUD:{
+        std::vector<cMesh*>::iterator it;
+        for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
+        {
+            cMesh* mesh = (*it);
+            std::vector<double> filteredVtx;
+            std::vector<uint> filterTri;
+            std::vector<afVertexTree> vtxTree;
+            afMeshCleanup::computeUniqueVerticesandTrianglesSequential(mesh, &filteredVtx, &filterTri, &vtxTree, nullptr, false);
+
+            int numVtx = filteredVtx.size() / 3;
+            for (uint i = 0 ; i < numVtx ; i++){
+                collisionShape = new btSphereShape(a_margin);
+                btTransform lT;
+                btVector3 btPos(filteredVtx[i * 3 + 0], filteredVtx[i * 3 + 1], filteredVtx[i * 3 + 2]);
+                lT.setOrigin(btPos);
+                compoundCollisionShape->addChildShape(inverseInertialOffsetTransform * lT, collisionShape);
+            }
         }
         break;
     }
@@ -2690,7 +2715,7 @@ void afMeshCleanup::clearArrays(bool *vtxChkBlock, int *vtxIdxBlock, int blockSi
 /// \param outputLines
 /// \param print_debug_info
 ///
-void afMeshCleanup::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<double> *outputVertices, std::vector<uint> *outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
+void afMeshCleanup::computeUniqueVerticesandTriangles(const cMesh *mesh, std::vector<double> *outputVertices, std::vector<uint> *outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector<std::vector<int> > *outputLines, bool print_debug_info)
 {
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();
@@ -2998,7 +3023,7 @@ void afMeshCleanup::computeUniqueVerticesandTriangles(cMesh *mesh, std::vector<d
 /// \param outputLines
 /// \param print_debug_info
 ///
-void afMeshCleanup::computeUniqueVerticesandTrianglesSequential(cMesh *mesh, std::vector<double> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<afVertexTree>* a_vertexTrees , std::vector<std::vector<int> > *outputLines, bool print_debug_info)
+void afMeshCleanup::computeUniqueVerticesandTrianglesSequential(const cMesh *mesh, std::vector<double> *outputVertices, std::vector<unsigned int> *outputTriangles, std::vector<afVertexTree>* a_vertexTrees , std::vector<std::vector<int> > *outputLines, bool print_debug_info)
 {
     // read number of triangles of the object
     int numTriangles = mesh->m_triangles->getNumElements();

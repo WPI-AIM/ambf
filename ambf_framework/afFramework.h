@@ -934,10 +934,10 @@ public:
     static void clearArrays(bool * vtxChkBlock, int * vtxIdxBlock, int blockSize);
 
     // Method to detect, index and store repeat vertices
-    static void computeUniqueVerticesandTriangles(cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    static void computeUniqueVerticesandTriangles(const cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 
     // Method to detect, index and store repeat vertices
-    static void computeUniqueVerticesandTrianglesSequential(cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
+    static void computeUniqueVerticesandTrianglesSequential(const cMesh* mesh, std::vector<double>* outputVertices, std::vector<uint>* outputTriangles, std::vector<afVertexTree>* a_vertexTrees, std::vector< std::vector<int> >* outputLines = NULL, bool print_debug_info=false);
 };
 
 ///

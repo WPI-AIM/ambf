@@ -861,8 +861,11 @@ afCollisionMeshShapeType ADFUtils::getCollisionMeshShapeTypeFromString(const str
     else if ( (a_shape_str.compare("TRIMESH") == 0) || (a_shape_str.compare("CONCAVE_MESH") == 0) || (a_shape_str.compare("trimesh") == 0) ){
         meshShapeType = afCollisionMeshShapeType::CONCAVE_MESH;
     }
+    else if ( (a_shape_str.compare("POINT_CLOUD") == 0) || (a_shape_str.compare("point_cloud") == 0) ){
+        meshShapeType = afCollisionMeshShapeType::POINT_CLOUD;
+    }
     else{
-        cerr << "ERROR! FOR COLLISION MESH STRING TYPE " << a_shape_str << " NOT UNDERSTOOD \n";
+        cerr << "ERROR! COLLISION MESH TYPE \"" << a_shape_str << "\" NOT UNDERSTOOD \n";
     }
     return meshShapeType;
 }
