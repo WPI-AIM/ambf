@@ -479,7 +479,7 @@ std::vector<afRayAttributes> afShapeUtils::createRayAttribs(cMultiMesh *a_contou
 /// \param a_color
 /// \return
 ///
-cMaterial afMaterialUtils::createMaterialFromColor(afColorAttributes *a_color)
+cMaterial afMaterialUtils::createFromAttribs(afColorAttributes *a_color)
 {
     cMaterial mat;
     mat.m_diffuse.set(a_color->m_diffuse(0), a_color->m_diffuse(1), a_color->m_diffuse(2));
@@ -491,6 +491,42 @@ cMaterial afMaterialUtils::createMaterialFromColor(afColorAttributes *a_color)
 
     return mat;
 }
+
+
+bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *mesh, string obj_name){
+    if (attribs->m_geometryType == afGeometryType::MESH){
+        if (mesh->loadFromFile(attribs->m_meshFilepath.c_str()) ){
+//            mesh->scale(m_scale);
+            mesh->setUseDisplayList(true);
+//            m_visualMesh->markForUpdate(false);
+        }
+        else{
+            cerr << "WARNING: OBJECT "
+                      << obj_name
+                      << "'s mesh \"" << attribs->m_meshFilepath.c_str() << "\" not found\n";
+            return false;
+        }
+    }
+    else if(attribs->m_geometryType == afGeometryType::SINGLE_SHAPE ||
+            attribs->m_geometryType == afGeometryType::COMPOUND_SHAPE){
+
+        for(unsigned long sI = 0 ; sI < attribs->m_primitiveShapes.size() ; sI++){
+            afPrimitiveShapeAttributes pS = attribs->m_primitiveShapes[sI];
+            cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
+            mesh->m_meshes->push_back(tempMesh);
+        }
+    }
+
+    cMaterial mat = afMaterialUtils::createFromAttribs(&attribs->m_colorAttribs);
+    mesh->setMaterial(mat);
+    // Important to set the transparency after setting the material, otherwise the alpha
+    // channel ruins the Z-buffer depth testing in some way.
+    mesh->setTransparencyLevel(attribs->m_colorAttribs.m_alpha);
+    mesh->setShowEnabled(attribs->m_visible);
+
+    return true;
+}
+
 
 ///
 /// \brief afComm::afCreateCommInstance
@@ -2000,7 +2036,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
-    m_visualGeometryType = attribs.m_visualAttribs.m_geometryType;
     m_visualMeshFilePath = attribs.m_visualAttribs.m_meshFilepath;
     m_collisionGeometryType = attribs.m_collisionAttribs.m_geometryType;
     m_collisionMeshFilePath = attribs.m_collisionAttribs.m_meshFilepath;
@@ -2011,35 +2046,13 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_collisionMesh = new cMultiMesh();
     m_collisionMesh->setShowEnabled(false);
 
-    if (m_visualGeometryType == afGeometryType::MESH){
-        if (m_visualMesh->loadFromFile(m_visualMeshFilePath.c_str()) ){
-            m_visualMesh->scale(m_scale);
-            m_visualMesh->setUseDisplayList(true);
-//            m_visualMesh->markForUpdate(false);
-        }
-        else{
-            cerr << "WARNING: Body "
-                      << m_name
-                      << "'s mesh \"" << m_visualMeshFilePath.c_str() << "\" not found\n";
-            return 0;
-        }
+    if (afVisualUtils::createFromAttribs(&attribs.m_visualAttribs, m_visualMesh, m_name)){
+        m_visualMesh->scale(m_scale);
     }
-    else if(m_visualGeometryType == afGeometryType::SINGLE_SHAPE ||
-            m_visualGeometryType == afGeometryType::COMPOUND_SHAPE){
-
-        for(unsigned long sI = 0 ; sI < attribs.m_visualAttribs.m_primitiveShapes.size() ; sI++){
-            afPrimitiveShapeAttributes pS = attribs.m_visualAttribs.m_primitiveShapes[sI];
-            cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
-            m_visualMesh->m_meshes->push_back(tempMesh);
-        }
+    else{
+        // FAILED TO LOAD MESH. RETURN FALSE
+        return 0;
     }
-
-    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
-    m_visualMesh->setMaterial(mat);
-    // Important to set the transparency after setting the material, otherwise the alpha
-    // channel ruins the Z-buffer depth testing in some way.
-    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
-    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
 
     m_shaderAttribs = attribs.m_shaderAttribs;
     loadShaderProgram();
@@ -3232,7 +3245,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     cTransform pose = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(pose);
 
-    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
+    cMaterial mat = afMaterialUtils::createFromAttribs(&attribs.m_visualAttribs.m_colorAttribs);
     m_visualMesh->setMaterial(mat);
     // Important to set the transparency after setting the material, otherwise the alpha
     // channel ruins the Z-buffer depth testing in some way.
@@ -8416,35 +8429,13 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
     m_scale = attribs.m_kinematicAttribs.m_scale;
 
-    if (attribs.m_visualAttribs.m_geometryType == afGeometryType::MESH){
-        if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str()) ){
-            m_visualMesh->scale(m_scale);
-            m_visualMesh->setUseDisplayList(true);
-//            m_visualMesh->markForUpdate(false);
-        }
-        else{
-            cerr << "WARNING: Ghost Objects "
-                      << m_name
-                      << "'s mesh \"" << attribs.m_visualAttribs.m_meshFilepath.c_str() << "\" not found\n";
-            return 0;
-        }
+    if (afVisualUtils::createFromAttribs(&attribs.m_visualAttribs, m_visualMesh, m_name)){
+        m_visualMesh->scale(m_scale);
     }
-    else if(attribs.m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
-            attribs.m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE){
-
-        for(unsigned long sI = 0 ; sI < attribs.m_visualAttribs.m_primitiveShapes.size() ; sI++){
-            afPrimitiveShapeAttributes pS = attribs.m_visualAttribs.m_primitiveShapes[sI];
-            cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
-            m_visualMesh->m_meshes->push_back(tempMesh);
-        }
+    else{
+        // FAILED TO LOAD MESH. RETURN FALSE
+        return 0;
     }
-
-    cMaterial mat = afMaterialUtils::createMaterialFromColor(&attribs.m_visualAttribs.m_colorAttribs);
-    m_visualMesh->setMaterial(mat);
-    // Important to set the transparency after setting the material, otherwise the alpha
-    // channel ruins the Z-buffer depth testing in some way.
-    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
-    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
 
     if (attribs.m_collisionAttribs.m_geometryType == afGeometryType::MESH){
         if (m_collisionMesh->loadFromFile(attribs.m_collisionAttribs.m_meshFilepath.c_str()) ){

@@ -186,7 +186,12 @@ public:
 
 class afMaterialUtils{
 public:
-    static cMaterial createMaterialFromColor(afColorAttributes* a_color);
+    static cMaterial createFromAttribs(afColorAttributes* a_color);
+};
+
+class afVisualUtils{
+public:
+    static bool createFromAttribs(afVisualAttributes* attribs, cMultiMesh* mesh, string obj_name);
 };
 
 class afShaderUtils{
@@ -911,7 +916,6 @@ private:
     btVector3 m_dpos;
 
     // Type of geometry this body has (MESHES OR PRIMITIVES)
-    afGeometryType m_visualGeometryType;
     afGeometryType m_collisionGeometryType;
 };
 
