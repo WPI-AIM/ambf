@@ -265,7 +265,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     cFace face = fileObj.m_pFaces[j];
 
                     // get material index attributed to the face
-                    int objIndex = face.m_objectIndex;
+                    int objIndex = face.m_materialIndex;
 
                     // the mesh that we're reading this triangle into
                     cMesh* curMesh = a_object->getMesh(objIndex);
