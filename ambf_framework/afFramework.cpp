@@ -396,12 +396,19 @@ btCompoundShape *afShapeUtils::createCollisionShape(const cMultiMesh *a_collisio
     case afCollisionMeshShapeType::CONVEX_HULL:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
+        int idx = 0;
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
-            collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
-            collisionShape->setMargin(a_margin);
-            compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+            if (mesh->m_vertices->getNumElements() < 3){
+                cerr << "ERROR! COLLISION MESH \"" << a_collisionMultiMesh->m_name  << "\" AT IDX " << idx << " HAS LESS THAN 3 VERTICES. IGNORING! " << endl;
+            }
+            else{
+                collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
+                collisionShape->setMargin(a_margin);
+                compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+            }
+            idx++;
         }
         break;
     }
