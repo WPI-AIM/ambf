@@ -1399,11 +1399,10 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, btTransform a_bod
         // Check if the new requested actuation is the same as what is already
         // actuated. In this case simply ignore the request
 
-        if (a_rigidBody == m_childBody){
+        if (a_rigidBody == m_childRigidBody){
             // We already have the same constraint. We can ignore the new request
 
-            cerr << "INFO! ACTUATOR \"" << m_name << "\" IS ACTIVATED WITH THE SAME BODY AND OFFSET. THEREBY "
-                                                          "IGNORING REQUEST \n";
+            //cerr << "INFO! ACTUATOR \"" << m_name << "\" IS ACTIVATED WITH THE SAME BODY AND OFFSET. THEREBY IGNORING REQUEST \n";
             return;
         }
         else{
@@ -1415,8 +1414,8 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, btTransform a_bod
     if (a_rigidBody){
         btTransform tranA = to_btTransform(getLocalTransform());
         btTransform tranB = a_bodyOffset;
-        m_childBody = a_rigidBody;
-        m_constraint = new btFixedConstraint(*m_parentBody->m_bulletRigidBody, *m_childBody->m_bulletRigidBody, tranA, tranB);
+        m_childRigidBody = a_rigidBody;
+        m_constraint = new btFixedConstraint(*m_parentBody->m_bulletRigidBody, *m_childRigidBody->m_bulletRigidBody, tranA, tranB);
         m_afWorld->m_bulletWorld->addConstraint(m_constraint);
         m_active = true;
         return;
@@ -1426,20 +1425,101 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody, btTransform a_bod
     }
 }
 
-void afConstraintActuator::actuate(string a_softbody_name, int a_face_index){
+void afConstraintActuator::actuate(string a_softbody_name, btSoftBody::Face* face){
 
 }
 
-void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index){
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, btSoftBody::Face* face){
+    vector<btSoftBody::Node*> nodes;
+    for (int nIdx = 0; nIdx < 3 ; nIdx++){
+        btSoftBody::Node* _node = face->m_n[nIdx];
+        nodes.push_back(_node);
+    }
+    actuate(a_softBody, nodes);
+}
+
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, vector<btSoftBody::Node *> nodes)
+{
+    for (int i = 0 ; i < nodes.size() ; i++){
+        btSoftBody::Node* node = nodes[i];
+        bool node_exists = false;
+        for (int j = 0 ; j < m_softBodyNodes.size() ; j++){
+            if (node == m_softBodyNodes[j]){
+                node_exists = true;
+                break;
+            }
+        }
+
+        if (node_exists){
+            // Node is already anchored, so skip
+            break;
+        }
+
+        btVector3 localPivot = m_parentBody->m_bulletRigidBody->getCenterOfMassTransform().inverse() * node->m_x;
+        btSoftBody::Anchor anchor;
+        node->m_battach = 1;
+        anchor.m_body = m_parentBody->m_bulletRigidBody;
+        anchor.m_node = node;
+        anchor.m_influence = 1;
+        anchor.m_local = localPivot;
+        a_softBody->m_bulletSoftBody->m_anchors.push_back(anchor);
+        m_softBodyNodes.push_back(node);
+    }
+    m_childSoftBody = a_softBody;
+    m_active = true;
+}
+
+void afConstraintActuator::actuate(string a_softbody_name, btSoftBody::Face* face, btTransform a_bodyOffset){
 
 }
 
-void afConstraintActuator::actuate(string a_softbody_name, int a_face_index, btTransform a_bodyOffset){
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, btSoftBody::Face* face, btTransform a_bodyOffset){
 
 }
 
-void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, int a_face_index, btTransform a_bodyOffset){
+void afConstraintActuator::actuate(afSoftBodyPtr a_softBody, vector<btSoftBody::Node *> nodes, btTransform a_bodyOffset)
+{
 
+}
+
+void afConstraintActuator::actuate(afSensorPtr sensorPtr)
+{
+    if (m_active){
+        // Already actuated, nothing to do, return.
+        return;
+    }
+    if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
+        afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
+        for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
+            if (proximitySensorPtr->isTriggered(i)){
+                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
+                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedAFRigidBody(i);
+                    actuate(afBody);
+                }
+
+                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::SOFT_BODY){
+                    // Here we implement the softBody grasp logic. We want to move the
+                    // soft body as we move the simulated end effector
+
+                    // If we get a sensedSoftBody, we should check if it has a detected face. If a face
+                    // is found, we can anchor all the connecting nodes.
+                    if (proximitySensorPtr->getSensedSoftBodyFace(i)){
+                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedAFSoftBody(i);
+                        btSoftBody::Face* sensedFace = proximitySensorPtr->getSensedSoftBodyFace(i);
+                        actuate(afSoftBody, sensedFace);
+                    }
+                    // Otherwise we shall directly anchor to nodes. This case
+                    // arises for ropes, suturing thread etc
+                    else{
+                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedAFSoftBody(i);
+                        vector<btSoftBody::Node*> nodes;
+                        nodes.push_back(proximitySensorPtr->getSensedSoftBodyNode(i));
+                        actuate(afSoftBody, nodes);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void afConstraintActuator::deactuate(){
@@ -1448,9 +1528,27 @@ void afConstraintActuator::deactuate(){
         delete m_constraint;
 
         m_constraint = nullptr;
-        m_childBody = nullptr;
-        m_childSotBody = nullptr;
+        m_childRigidBody = nullptr;
+    }
+
+    if (m_childSoftBody){
+        for (int nIdx = 0 ; nIdx < m_softBodyNodes.size()  ; nIdx++){
+            btSoftBody::Node* nodePtr = m_softBodyNodes[nIdx];
+            btSoftBody* softBody = m_childSoftBody->m_bulletSoftBody;
+            btRigidBody* rigidBody = m_parentBody->m_bulletRigidBody;
+            for (int aIdx = 0 ; aIdx < softBody->m_anchors.size() ; aIdx++){
+                if (softBody->m_anchors[aIdx].m_body == rigidBody){
+                    btSoftBody::Anchor* anchor = &softBody->m_anchors[aIdx];
+                    if (anchor->m_node == nodePtr){
+                        softBody->m_anchors.removeAtIndex(aIdx);
+                        break;
+                    }
+                }
+            }
+        }
+        m_childSoftBody = nullptr;
         m_softBodyFaceIdx = -1;
+        m_softBodyNodes.clear();
     }
     m_active = false;
 }

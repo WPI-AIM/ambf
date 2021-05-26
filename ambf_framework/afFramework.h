@@ -1203,9 +1203,11 @@ public:
 
     virtual void actuate(afRigidBodyPtr a_rigidBody);
 
-    virtual void actuate(string a_softbody_name, int a_face_index);
+    virtual void actuate(string a_softbody_name, btSoftBody::Face* face);
 
-    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index);
+    virtual void actuate(afSoftBodyPtr a_softBody, btSoftBody::Face* face);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, vector<btSoftBody::Node*> nodes);
 
     // In these actuate methods, explicit body offsets are provided.
 
@@ -1213,9 +1215,13 @@ public:
 
     virtual void actuate(afRigidBodyPtr a_rigidBody, btTransform a_bodyOffset);
 
-    virtual void actuate(string a_softbody_name, int a_face_index, btTransform a_bodyOffset);
+    virtual void actuate(string a_softbody_name, btSoftBody::Face* face, btTransform a_bodyOffset);
 
-    virtual void actuate(afSoftBodyPtr a_softBody, int a_face_index, btTransform a_bodyOffset);
+    virtual void actuate(afSoftBodyPtr a_softBody, btSoftBody::Face* face, btTransform a_bodyOffset);
+
+    virtual void actuate(afSoftBodyPtr a_softBody, vector<btSoftBody::Node*> nodes, btTransform a_bodyOffset);
+
+    virtual void actuate(afSensorPtr a_sensorPtr);
 
     // Remove the constraint
     virtual void deactuate();
@@ -1236,9 +1242,10 @@ protected:
 
 
 private:
-    afRigidBodyPtr m_childBody = nullptr;
-    afSensorPtr m_childSotBody = nullptr;
+    afRigidBodyPtr m_childRigidBody = nullptr;
+    afSoftBodyPtr m_childSoftBody = nullptr;
     int m_softBodyFaceIdx = -1;
+    vector<btSoftBody::Node*> m_softBodyNodes;
     // Child offset w.r.t to actuator
     cVector3d m_P_cINp;
 

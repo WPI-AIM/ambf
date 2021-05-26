@@ -160,12 +160,7 @@ public:
     // Gripping constraints, the number is the same as the total
     // number of sensors attached to the gripper. Not all sensors
     // are proximity sensors and necessary for gripping.
-    std::vector<btPoint2PointConstraint*> m_rigidGrippingConstraints;
-
-    // We need different constraint for softBody picking
-    // Softbody achors seems a good fit for now. This map stores
-    // a pair
-    std::vector<SoftBodyGrippingConstraint*> m_softGrippingConstraints;
+    afConstraintActuator* m_grippingConstraint;
 
     // Root link for this simulated device hhhhhhh
     afRigidBodyPtr m_rootLink = nullptr;

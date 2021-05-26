@@ -624,14 +624,20 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
             m_rootLink->m_controller.createFromAttribs(&attribs.m_controllerAttribs);
         }
 
-        m_rigidGrippingConstraints.resize(m_rootLink->getAFSensors().size());
-        m_softGrippingConstraints.resize(m_rootLink->getAFSensors().size());
-        enableJointControl(attribs.m_enableJointControl);
-        // Initialize all the constraint to null ptr
-        for (int sIdx = 0 ; sIdx < m_rigidGrippingConstraints.size() ; sIdx++){
-            m_rigidGrippingConstraints[sIdx] = 0;
-            m_softGrippingConstraints[sIdx] = 0;
+        m_grippingConstraint = new afConstraintActuator(m_afWorld, this);
+        afConstraintActuatorAttributes constraintAttribs;
+        constraintAttribs.m_communicationAttribs.m_passive = true;
+        constraintAttribs.m_identificationAttribs.m_namespace = attribs.m_identificationAttribs.m_namespace;
+        constraintAttribs.m_identificationAttribs.m_name = attribs.m_identificationAttribs.m_name + "_constraint_actuator";
+        constraintAttribs.m_identifier = attribs.m_identifier + "_constraint_actuator";
+        constraintAttribs.m_visible = false;
+        constraintAttribs.m_hierarchyAttribs.m_parentName = m_rootLink->getQualifiedIdentifier();
+
+        if (m_grippingConstraint->createFromAttribs(&constraintAttribs) == false){
+            // PRINT SOME WARNING OR ERROR
         }
+
+        enableJointControl(attribs.m_enableJointControl);
 
         std::string modelName = '/' + m_phyDev->m_hInfo.m_modelName;
         std::replace(modelName.begin(), modelName.end(), ' ', '_');
