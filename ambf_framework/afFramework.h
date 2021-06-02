@@ -617,7 +617,7 @@ public:
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
-    virtual bool resolveParenting(string a_parentName="");
+    virtual bool resolveParenting(string a_parentName="", bool suppress_warning=false);
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -1377,6 +1377,36 @@ class afProximitySensor: public afRayTracerSensor{
 public:
     // Constructor
     afProximitySensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+};
+
+
+///
+/// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
+/// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
+///
+class afRate{
+public:
+    afRate(int a_freq){
+        m_cycle_time = 1.0 / double(a_freq);
+        m_rateClock.start();
+        m_next_expected_time = m_rateClock.getCurrentTimeSeconds() + m_cycle_time;
+    }
+    bool sleep(){
+        double cur_time = m_rateClock.getCurrentTimeSeconds();
+        if (cur_time >= m_next_expected_time){
+            m_next_expected_time = cur_time + m_cycle_time;
+            return true;
+        }
+        while(m_rateClock.getCurrentTimeSeconds() <= m_next_expected_time){
+
+        }
+        m_next_expected_time = m_rateClock.getCurrentTimeSeconds() + m_cycle_time;
+        return true;
+    }
+private:
+    double m_next_expected_time;
+    double m_cycle_time;
+    cPrecisionClock m_rateClock;
 };
 
 
@@ -2191,6 +2221,8 @@ protected:
 
     // Maximum number of iterations.
     int m_integrationMaxIterations;
+
+    vector<afBaseObject*> m_afObjectsMissingParents;
 
 private:
 

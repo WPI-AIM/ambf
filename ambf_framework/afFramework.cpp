@@ -847,8 +847,15 @@ afBaseObject::~afBaseObject(){
     }
 }
 
+
+///
+/// \brief afBaseObject::createFromAttribs
+/// \param a_attribs
+/// \return
+///
 bool afBaseObject::createFromAttribs(afBaseObjectAttributes *a_attribs)
 {
+}
 
 }
 
@@ -1241,15 +1248,15 @@ void afBaseObject::loadShaderProgram()
     }
 }
 
-bool afBaseObject::resolveParenting(string a_parentName){
+bool afBaseObject::resolveParenting(string a_parentName, bool suppress_warning){
     // If the parent name is not empty, override the objects parent name
     if(a_parentName.empty() == false){
         m_parentName = a_parentName;
     }
 
-    // If the parent is empty, indiciate error and return
+    // If the parent is empty, indiciate true as no parent is required
     if (m_parentName.empty() == true){
-        return false;
+        return true;
     }
 
     // Should generalize this to not be just a rigid body that we may parent to.
@@ -1259,8 +1266,6 @@ bool afBaseObject::resolveParenting(string a_parentName){
         return true;
     }
     else{
-        cerr << "WARNING! " << m_name << ": COULDN'T FIND PARENT BODY NAMED\""
-             << m_parentName << "\"" <<endl;
         return false;
     }
 }
@@ -5111,6 +5116,25 @@ string afWorld::resolveGlobalNamespace(string a_name){
     return fully_qualified_name;
 }
 
+void afWorld::addObjectMissingParent(afBaseObject *a_obj)
+{
+    if (!checkIfExists(a_obj, &m_afObjectsMissingParents)){
+        m_afObjectsMissingParents.push_back(a_obj);
+    }
+}
+
+void afWorld::resolveMissingParents()
+{
+    vector<afBaseObject*> stillMissingParents;
+    for (vector<afBaseObject*>::iterator it = m_afObjectsMissingParents.begin() ; it != m_afObjectsMissingParents.end() ; ++it){
+        // Success ?
+        if ((*it)->resolveParenting("", true) == false){
+            stillMissingParents.push_back((*it));
+        }
+    }
+    m_afObjectsMissingParents = stillMissingParents;
+}
+
 
 ///
 /// \brief afWorld::setGlobalNamespace
@@ -6380,8 +6404,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
-    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
-
     m_camPos << attribs.m_kinematicAttribs.m_location.getPosition();
     m_camLookAt << attribs.m_lookAt;
     m_camUp << attribs.m_up;
@@ -6414,6 +6436,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     addChildSceneObject(m_camera, cTransform());
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+
+    if (m_parentName.empty() == false){
+        m_afWorld->addObjectMissingParent(this);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////
     // position and orient the camera
@@ -7323,6 +7349,10 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     m_afWorld->addSceneObjectToWorld(m_spotLight);
 
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+
+    if (m_parentName.empty() == false){
+        m_afWorld->addObjectMissingParent(this);
+    }
 
     m_initialTransform = getLocalTransform();
 
@@ -8572,6 +8602,10 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
+
+    if (m_parentName.empty() == false){
+        m_afWorld->addObjectMissingParent(this);
+    }
 
     m_bulletGhostObject = new btPairCachingGhostObject();
 

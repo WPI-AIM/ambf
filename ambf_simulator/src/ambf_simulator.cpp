@@ -72,42 +72,37 @@ using namespace std;
 */
 cStereoMode stereoMode = C_STEREO_DISABLED;
 
-afRenderOptions g_afRenderOptions;
-
 // fullscreen mode
 bool fullscreen = false;
 
 
-ADFLoaderInterface* g_adfLoaderPtr;
-afWorld *g_afWorld;
-
 struct CommandLineOptions{
     // Control whether to use a fixed physics timestep or not
-    bool useFixedPhxTimeStep = 0;
+    bool useFixedPhxTimeStep;
     // Control whether to use a fixed haptics timestep or not
-    bool useFixedHtxTimeStep = 0;
+    bool useFixedHtxTimeStep;
     // Physics Update Frequency
-    int phxFrequency = 1000;
+    int phxFrequency;
     // Haptics Update Frequency
-    int htxFrequency = 1000;
+    int htxFrequency;
     // Enable Force Feedback
     bool enableForceFeedback = true;
     // Number of Devices to Load
-    int numDevicesToLoad = 0;
+    int numDevicesToLoad;
     // A string of device indexes to load
-    std::string devicesToLoad = "";
+    std::string devicesToLoad;
     // A string list of multibody indexes to load
     std::string multiBodiesToLoad;
     // A string list of multibody files to load
-    std::string multiBodyFilesToLoad = "";
+    std::string multiBodyFilesToLoad;
     // A string of Path of launch file to load
-    std::string launchFilePath = "../../ambf_models/descriptions/launch.yaml";
+    std::string launchFilePath;
     // Control whether to run headless or not
-    bool showGUI = true; //
+    bool showGUI; //
     // Override the default world namespace
-    std::string prepend_namespace = "";
+    std::string prepend_namespace;
     // The running speed of the simulation. 1.0 indicates a stepping of one second.
-    double simulation_speed = 1.0;
+    double simulation_speed;
 
 };
 
@@ -134,19 +129,38 @@ bool g_mouse_inverted_y = false;
 
 // Ratio between Window Height and Width to Frame Buffer Height and Width
 double g_winWidthRatio = 1.0;
+
 double g_winHeightRatio = 1.0;
+
+bool g_enableGrippingAssist = true;
+
+bool g_enableNormalMapping = true;
 
 // haptic thread
 std::vector<cThread*> g_hapticsThreads;
+
 // bullet simulation thread
-cThread* g_bulletSimThread;
+cThread* g_physicsThread;
 
 // swap interval for the display context (vertical synchronization)
 int g_swapInterval = 0;
 
 bool g_mousePickingEnabled = false;
 
+// Vector of WindowCamera Handles Struct
+std::vector<afCamera*> g_cameras;
 
+// Global iterator for WindowsCamera Handle
+std::vector<afCamera*>::iterator g_cameraIt;
+
+// List of input devices
+std::shared_ptr<afCollateralControlManager> g_inputDevices;
+
+ADFLoaderInterface* g_adfLoaderPtr;
+
+afWorld *g_afWorld;
+
+afRenderOptions g_afRenderOptions;
 //---------------------------------------------------------------------------
 // DECLARED FUNCTIONS
 //---------------------------------------------------------------------------
@@ -185,12 +199,6 @@ void updatePhysics(void);
 // this function closes the application
 void close(void);
 
-// Vector of WindowCamera Handles Struct
-std::vector<afCamera*> g_cameras;
-
-// Global iterator for WindowsCamera Handle
-std::vector<afCamera*>::iterator g_cameraIt;
-
 // this function renders the scene
 void updateGraphics();
 
@@ -201,51 +209,10 @@ void updateLabels();
 void preTickCallBack(btDynamicsWorld* world, btScalar timeStep);
 
 // Exit Handler
-void exitHandler(int s){
-    std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
-    g_afRenderOptions.m_windowClosed = true;
-}
+void exitHandler(int s);
 
-void deleteModelAttribsInternalData(afModelAttributes* modelAttribs){
-    for (int i = 0 ; i < modelAttribs->m_sensorAttribs.size() ; i++){
-        delete modelAttribs->m_sensorAttribs[i];
-    }
-    for (int i = 0 ; i < modelAttribs->m_actuatorAttribs.size() ; i++){
-        delete modelAttribs->m_actuatorAttribs[i];
-    }
-}
+void deleteModelAttribsInternalData(afModelAttributes* modelAttribs);
 
-///
-/// \brief This is an implementation of Sleep function that tries to adjust sleep between each cycle to maintain
-/// the desired loop frequency. This class has been inspired from ROS Rate Sleep written by Eitan Marder-Eppstein
-///
-class RateSleep{
-public:
-    RateSleep(int a_freq){
-        m_cycle_time = 1.0 / double(a_freq);
-        m_rateClock.start();
-        m_next_expected_time = m_rateClock.getCurrentTimeSeconds() + m_cycle_time;
-    }
-    bool sleep(){
-        double cur_time = m_rateClock.getCurrentTimeSeconds();
-        if (cur_time >= m_next_expected_time){
-            m_next_expected_time = cur_time + m_cycle_time;
-            return true;
-        }
-        while(m_rateClock.getCurrentTimeSeconds() <= m_next_expected_time){
-
-        }
-        m_next_expected_time = m_rateClock.getCurrentTimeSeconds() + m_cycle_time;
-        return true;
-    }
-private:
-    double m_next_expected_time;
-    double m_cycle_time;
-    cPrecisionClock m_rateClock;
-};
-
-
-std::shared_ptr<afCollateralControlManager> g_inputDevices;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,22 +236,22 @@ int main(int argc, char* argv[])
     p_opt::options_description cmd_opts("InputDevices Application Usage");
     cmd_opts.add_options()
             ("help,h", "Show help")
-            ("ndevs,n", p_opt::value<int>(), "Number of Haptic Devices to Load")
-            ("load_devices,i", p_opt::value<std::string>(), "Index number of devices to load which is specified in input_device.yaml")
-            ("enableforces,e", p_opt::value<bool>(), "Enable Force Feedback on Haptic Devices")
-            ("phx_frequency,p", p_opt::value<int>(), "Physics Update Frequency (default: 1000 Hz)")
-            ("htx_frequency,d", p_opt::value<int>(), "Haptics Update Frequency (default: 1000 Hz)")
-            ("fixed_phx_timestep,t", p_opt::value<bool>(), "Use Fixed Time-Step for Physics (default: False)")
-            ("fixed_htx_timestep,f", p_opt::value<bool>(), "Use Fixed Time-Step for Haptics (default: False)")
-            ("load_multibody_files,a", p_opt::value<std::string>(), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
+            ("ndevs,n", p_opt::value<int>()->default_value(0), "Number of Haptic Devices to Load")
+            ("load_devices,i", p_opt::value<std::string>()->default_value(""), "Index number of devices to load which is specified in input_device.yaml")
+            ("enableforces,e", p_opt::value<bool>()->default_value(false), "Enable Force Feedback on Haptic Devices")
+            ("phx_frequency,p", p_opt::value<int>()->default_value(1000), "Physics Update Frequency (default: 1000 Hz)")
+            ("htx_frequency,d", p_opt::value<int>()->default_value(1000), "Haptics Update Frequency (default: 1000 Hz)")
+            ("fixed_phx_timestep,t", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Physics (default: False)")
+            ("fixed_htx_timestep,f", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Haptics (default: False)")
+            ("load_multibody_files,a", p_opt::value<std::string>()->default_value(""), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
                                                                     "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
                                                                     " and test2.yaml if they are valid files")
-            ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
+            ("load_multibodies,l", p_opt::value<std::string>()->default_value("1"), "Index of Multi-Body(ies) to Launch, .e.g. "
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
-            ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
-            ("show_gui,g", p_opt::value<bool>(), "Show GUI")
-            ("ns", p_opt::value<std::string>(), "Override the default (or specified in ADF) world namespace")
-            ("sim_speed_factor,s", p_opt::value<double>(), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)");
+            ("launch_file", p_opt::value<std::string>()->default_value("../../ambf_models/descriptions/launch.yaml"), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
+            ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
+            ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
+            ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
@@ -309,16 +276,10 @@ int main(int argc, char* argv[])
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
 
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
-    else{
-        if (g_cmdOpts.multiBodyFilesToLoad.empty()){
-            // Fall back file index option if the no options for launching any ambf file is described.
-            g_cmdOpts.multiBodiesToLoad = "1";
-        }
-    }
+
     if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
 
     if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
-
 
     if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
 
@@ -331,7 +292,7 @@ int main(int argc, char* argv[])
     cout << "ASYNCHRONOUS MULTI-BODY FRAMEWORK SIMULATOR (AMBF Simulator)" << endl;
     cout << endl << endl;
     cout << "\t\t(www.aimlab.wpi.edu)" << endl;
-    cout << "\t\t  (Copyright 2019)" << endl;
+    cout << "\t\t  (Copyright 2019-2021)" << endl;
     cout << "____________________________________________________________" << endl << endl;
     cout << "STARTUP COMMAND LINE OPTIONS: " << endl << endl;
     cout << cmd_opts << std::endl << std::endl;
@@ -538,8 +499,7 @@ int main(int argc, char* argv[])
 
         glfwSwapInterval(g_swapInterval);
 
-        // Finally address all the requested parenting if any in the ADF file
-        (*g_cameraIt)->resolveParenting();
+        windowSizeCallback((*g_cameraIt)->m_window, (*g_cameraIt)->m_width, (*g_cameraIt)->m_height);
 
         //        // initialize GLEW library
         //#ifdef GLEW_VERSION
@@ -550,16 +510,6 @@ int main(int argc, char* argv[])
         //            return 1;
         //        }
         //#endif
-    }
-
-    afLightVec temp_lights = g_afWorld->getAFLighs();
-    for(int i = 0 ; i < temp_lights.size() ; i++){
-        temp_lights[i]->resolveParenting();
-    }
-
-    afGhostObjectVec temp_ghosts = g_afWorld->getAFGhostObjects();
-    for(int i = 0 ; i < temp_ghosts.size() ; i++){
-        temp_ghosts[i]->resolveParenting();
     }
 
     //-----------------------------------------------------------------------------------------------------------
@@ -583,8 +533,8 @@ int main(int argc, char* argv[])
     }
 
     //create a thread which starts the Bullet Simulation loop
-    g_bulletSimThread = new cThread();
-    g_bulletSimThread->start(updatePhysics, CTHREAD_PRIORITY_HAPTICS);
+    g_physicsThread = new cThread();
+    g_physicsThread->start(updatePhysics, CTHREAD_PRIORITY_HAPTICS);
 
     // setup callback when application exits
     atexit(close);
@@ -595,11 +545,6 @@ int main(int argc, char* argv[])
     //--------------------------------------------------------------------------
     // MAIN GRAPHIC LOOP
     //--------------------------------------------------------------------------
-
-    // call window size callback at initialization
-    for (g_cameraIt = g_cameras.begin(); g_cameraIt != g_cameras.end() ; ++ g_cameraIt){
-        windowSizeCallback((*g_cameraIt)->m_window, (*g_cameraIt)->m_width, (*g_cameraIt)->m_height);
-    }
 
     // Assign Exit Handler
     struct sigaction sigIntHandler;
@@ -613,7 +558,7 @@ int main(int argc, char* argv[])
 
     afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
 
-    RateSleep graphicsSleep(120);
+    //    signal (SIGINT, exitHandler);
 
     // Compute the window width and height ratio
     if (g_cmdOpts.showGUI){
@@ -630,6 +575,8 @@ int main(int argc, char* argv[])
         g_afWorld->loadSkyBox();
 
     }
+
+    afRate graphicsRate(120);
 
     // main graphic loop
     while (!g_afRenderOptions.m_windowClosed)
@@ -649,8 +596,7 @@ int main(int argc, char* argv[])
             std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
-
-        graphicsSleep.sleep();
+        graphicsRate.sleep();
     }
 
     // close window
@@ -670,6 +616,432 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+///
+/// \brief updateGraphics
+///
+void updateGraphics()
+{
+    g_afRenderOptions.m_IIDModeStr = g_inputDevices->m_mode_str;
+    g_afRenderOptions.m_IIDBtnActionStr = g_inputDevices->m_btn_action_str;
+
+    g_afWorld->render(g_afRenderOptions);
+
+    // wait until all GL commands are completed
+    glFinish();
+
+    // check for any OpenGL errors
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+
+    g_simulationRunning = true;
+}
+
+
+///
+/// \brief updatePhysics
+///
+void updatePhysics(){
+
+    // Wait for the graphics loop to start the sim
+    while (g_simulationRunning == false){
+        cSleepMs(1);
+    }
+
+    g_simulationFinished = false;
+
+    // start haptic device
+    g_afWorld->g_wallClock.start(true);
+
+    afRate phxSleep(g_cmdOpts.phxFrequency);
+    bool bodyPicked = false;
+
+    double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
+
+    cVector3d torque, torque_prev;
+    torque.set(0, 0, 0);
+    torque_prev.set(0, 0, 0);
+    while(g_simulationRunning)
+    {
+        g_afWorld->m_freqCounterHaptics.signal(1);
+
+        // Take care of any picked body by mouse
+        if (g_pickBody){
+            if (bodyPicked == false){
+                bodyPicked = true;
+                g_afWorld->pickBody(g_pickFrom, g_pickTo);
+            }
+            else{
+                g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
+            }
+        }
+        else{
+            bodyPicked = false;
+            g_afWorld->removePickingConstraint();
+        }
+
+        double step_size;
+        if (g_cmdOpts.useFixedPhxTimeStep){
+            step_size = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.phxFrequency);
+        }
+        else{
+            step_size = g_afWorld->computeStepSize(true);
+        }
+
+        for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
+            // update position of simulate gripper
+            afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
+            afRigidBodyPtr rootLink = simDev->m_rootLink;
+            simDev->updateGlobalPose();
+
+            if (g_enableGrippingAssist){
+                for (int sIdx = 0 ; sIdx < rootLink->getSensors().size() ; sIdx++){
+                    afSensorPtr sensorPtr = rootLink->getSensors()[sIdx];
+                    if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
+                        afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
+                        if (simDev->m_gripper_angle < 0.5){
+                            for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
+                                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
+                                    // Check if the sensed body belongs to the gripper, in which case ignore
+                                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedRigidBody(i);
+                                    if (rootLink->isChild(afBody->m_bulletRigidBody) == true){
+                                        continue;
+                                    }
+                                }
+                                simDev->m_grippingConstraint->actuate(sensorPtr);
+                            }
+                        }
+                        else{
+                            simDev->m_grippingConstraint->deactuate();
+                        }
+                    }
+                }
+            }
+
+            cVector3d pCommand, rCommand;
+            // ts is to prevent the saturation of forces
+            double ts = dt_fixed / step_size;
+            pCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
+            pCommand = simDev->P_lc_ramp * pCommand;
+
+            rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
+            rCommand = simDev->P_ac_ramp * rCommand;
+
+            if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
+                simDev->applyForce(pCommand);
+            }
+            else{
+                simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(to_btVector(pCommand));
+            }
+
+            if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
+                simDev->applyTorque(rCommand);
+            }
+            else{
+                simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(to_btVector(rCommand));
+            }
+
+            // Control simulated body joints only if joint control of this physical device has been enabled
+            if (simDev->isJointControlEnabled()){
+                simDev->setGripperAngle(simDev->m_gripper_angle);
+            }
+
+            if (simDev->P_lc_ramp < 1.0)
+            {
+                simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * step_size;
+            }
+            else
+            {
+                simDev->P_lc_ramp = 1.0;
+            }
+
+            if (simDev->P_ac_ramp < 1.0)
+            {
+                simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * step_size;
+            }
+            else
+            {
+                simDev->P_ac_ramp = 1.0;
+            }
+        }
+        g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+        phxSleep.sleep();
+    }
+    g_simulationFinished = true;
+}
+
+///
+/// \brief updateHaptics
+/// \param a_arg
+///
+void updateHapticDevice(void* ccuPtr){
+    afCollateralControlUnit ccu = *(afCollateralControlUnit*) ccuPtr;
+
+    // Wait for the graphics loop to start the sim
+    while(g_simulationRunning == false){
+        cSleepMs(1);
+    }
+
+    // simulation in now running
+    g_simulationFinished = false;
+
+    afRate htxSleep(g_cmdOpts.htxFrequency);
+
+    // update position and orientation of simulated gripper
+    std::string identifyingName = ccu.m_name;
+    afPhysicalDevice *phyDev = ccu.m_physicalDevicePtr;
+    afSimulatedDevice* simDev = ccu.m_simulatedDevicePtr;
+    std::vector<afCameraPtr> devCams = ccu.m_cameras;
+    cLabel* devFreqLabel = ccu.m_devFreqLabel;
+    if (ccu.m_cameras.size() == 0){
+        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
+        devCams = g_cameras;
+    }
+
+    phyDev->setPosClutched(cVector3d(0.0,0.0,0.0));
+    phyDev->getRot();
+    phyDev->setRotClutched(cMatrix3d(0, 0, 0));
+    simDev->setRotRefOrigin(phyDev->getRot());
+
+    double P_lc_offset = 10;
+    double P_ac_offset = 1;
+    double D_lc_offset = 1;
+    double D_ac_offset = 1;
+    double P_lh_offset = 5;
+    double P_ah_offset = 1;
+
+    double wait_time = 3.0;
+    if (std::strcmp(phyDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
+        wait_time = 5.0;
+    }
+
+    cVector3d force, torque;
+    force.set(0,0,0);
+    torque.set(0,0,0);
+
+    // main haptic simulation loop
+    while(g_simulationRunning)
+    {
+        if (!g_afWorld->isPhysicsPaused() || g_afWorld->getManualSteps() > 0){
+            phyDev->m_freq_ctr.signal(1);
+            if (devFreqLabel != NULL){
+                devFreqLabel->setText(identifyingName + " [" + phyDev->m_hInfo.m_modelName + "] " + ": " + cStr(phyDev->m_freq_ctr.getFrequency(), 0) + " Hz");
+            }
+            // Adjust time dilation by computing dt from clockWorld time and the simulationTime
+            double dt;
+            if (g_cmdOpts.useFixedHtxTimeStep){
+
+                dt = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.htxFrequency);
+            }
+            else{
+                dt = g_afWorld->computeStepSize();
+            }
+
+            if(phyDev->m_gripper_pinch_btn >= 0){
+                if(phyDev->isButtonPressed(phyDev->m_gripper_pinch_btn)){
+                    phyDev->enableForceFeedback(true);
+                }
+            }
+            if (phyDev->m_hInfo.m_sensedGripper){
+                simDev->m_gripper_angle = phyDev->getGripperAngle();
+            }
+            else if (phyDev->m_buttons.G1 > 0){
+                // Some devices may have a gripper button instead of a continous gripper.
+                simDev->m_gripper_angle = !phyDev->isButtonPressed(phyDev->m_buttons.G1);
+            }
+            else{
+                simDev->m_gripper_angle = 0.5;
+            }
+
+            if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.NEXT_MODE)) g_inputDevices->nextMode();
+            if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.PREV_MODE)) g_inputDevices->prevMode();
+
+            bool btn_1_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A1);
+            bool btn_1_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A1);
+            bool btn_2_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A2);
+            bool btn_2_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A2);
+
+            double gripper_offset = 0;
+            switch (g_inputDevices->m_simModes){
+            case MODES::CAM_CLUTCH_CONTROL:
+                g_inputDevices->m_clutch_btn_pressed  = phyDev->isButtonPressed(phyDev->m_buttons.A1);
+                g_inputDevices->m_cam_btn_pressed     = phyDev->isButtonPressed(phyDev->m_buttons.A2);
+                if(g_inputDevices->m_clutch_btn_pressed) g_inputDevices->m_btn_action_str = "Clutch Pressed";
+                if(g_inputDevices->m_cam_btn_pressed)   {g_inputDevices->m_btn_action_str = "Cam Pressed";}
+                if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->m_btn_action_str = "";
+                break;
+            case MODES::GRIPPER_JAW_CONTROL:
+                if (btn_1_rising_edge) gripper_offset = 0.1;
+                if (btn_2_rising_edge) gripper_offset = -0.1;
+                simDev->offsetGripperAngle(gripper_offset);
+                break;
+            case MODES::CHANGE_CONT_LIN_GAIN:
+                if(btn_1_rising_edge) g_inputDevices->increment_P_lc(P_lc_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_P_lc(-P_lc_offset);
+                break;
+            case MODES::CHANGE_CONT_ANG_GAIN:
+                if(btn_1_rising_edge) g_inputDevices->increment_P_ac(P_ac_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_P_ac(-P_ac_offset);
+                break;
+            case MODES::CHANGE_CONT_LIN_DAMP:
+                if(btn_1_rising_edge) g_inputDevices->increment_D_lc(D_lc_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_D_lc(-D_lc_offset);
+                break;
+            case MODES::CHANGE_CONT_ANG_DAMP:
+                if(btn_1_rising_edge) g_inputDevices->increment_D_ac(D_ac_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_D_ac(-D_ac_offset);
+                break;
+            case MODES::CHANGE_DEV_LIN_GAIN:
+                if(btn_1_rising_edge) g_inputDevices->increment_K_lh(P_lh_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_K_lh(-P_lh_offset);
+                break;
+            case MODES::CHANGE_DEV_ANG_GAIN:
+                if(btn_1_rising_edge) g_inputDevices->increment_K_ah(P_ah_offset);
+                if(btn_2_rising_edge) g_inputDevices->increment_K_ah(-P_ah_offset);
+                break;
+            }
+
+            devCams[0]->m_cam_pressed = phyDev->isButtonPressed(phyDev->m_buttons.A2);
+            if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
+                double scale = 0.01;
+                for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
+                    devCams[dcIdx]->setLocalPos(devCams[dcIdx]->getLocalPos() + cMul(scale, devCams[dcIdx]->getLocalRot() * phyDev->getLinVel() ) );
+                    devCams[dcIdx]->setLocalRot(phyDev->getRotCamPreClutch() * cTranspose(phyDev->getRotPreClutch()) * phyDev->getRot());
+                }
+
+            }
+            if (!devCams[0]->m_cam_pressed){
+                phyDev->setRotCamPreClutch( devCams[0]->getLocalRot() );
+                phyDev->setRotPreClutch( phyDev->getRot() );
+            }
+
+
+            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
+                phyDev->setPosClutched(phyDev->getPos());
+            }
+
+            if(g_inputDevices->m_cam_btn_pressed){
+                if(phyDev->btn_cam_rising_edge){
+                    phyDev->btn_cam_rising_edge = false;
+                    simDev->setPosRefOrigin(simDev->getPosRef());
+                    simDev->setRotRefOrigin(simDev->getRotRef());
+                }
+                phyDev->setPosClutched(phyDev->getPos());
+                phyDev->setRotClutched(phyDev->getRot());
+            }
+            else{
+                phyDev->btn_cam_rising_edge = true;
+            }
+            if(g_inputDevices->m_clutch_btn_pressed){
+                if(phyDev->btn_clutch_rising_edge){
+                    phyDev->btn_clutch_rising_edge = false;
+                    simDev->setPosRefOrigin(simDev->getPosRef());
+                    simDev->setRotRefOrigin(simDev->getRotRef());
+                }
+                phyDev->setPosClutched(phyDev->getPos());
+                phyDev->setRotClutched(phyDev->getRot());
+            }
+            else{
+                phyDev->btn_clutch_rising_edge = true;
+            }
+
+            simDev->setPosRef(simDev->getPosRefOrigin() + phyDev->m_workspaceScale * (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) ;
+            if (!g_inputDevices->m_use_cam_frame_rot){
+                simDev->setRotRef(simDev->getRotRefOrigin() * devCams[0]->getLocalRot() *
+                        cTranspose(phyDev->getRotClutched()) * phyDev->getRot() *
+                        cTranspose(devCams[0]->getLocalRot()));
+            }
+            else{
+                simDev->setRotRef(simDev->getSimRotInitial() * phyDev->getSimRotOffset() * phyDev->getRot() * phyDev->getSimRotOffsetInverse());
+            }
+
+            if (phyDev->m_showMarker){
+                phyDev->m_refSphere->setLocalPos(simDev->getPosRef());
+                phyDev->m_refSphere->setLocalRot(simDev->getRotRef());
+            }
+
+            // update position of simulated gripper
+            simDev->updateGlobalPose();
+
+            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.computeOutput<cVector3d, cVector3d>(simDev->getPos(), simDev->getPosRef(), dt));
+            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.computeOutput<cVector3d, cMatrix3d>(simDev->getRot(), simDev->getRotRef(), dt));
+
+            // Orient the wrench along the camera view
+            force = cTranspose(devCams[0]->getLocalRot()) * force;
+            torque = cTranspose(devCams[0]->getLocalRot()) * torque;
+
+            if (force.length() < phyDev->m_deadBand){
+                force.set(0,0,0);
+            }
+
+            if (force.length() > phyDev->m_maxForce){
+                force.normalize();
+                force = force * phyDev->m_maxForce;
+            }
+
+            if (torque.length() < phyDev->m_deadBand){
+                torque.set(0,0,0);
+            }
+
+            phyDev->applyWrench(force, torque);
+
+            if (phyDev->P_lh_ramp < 1.0)
+            {
+                phyDev->P_lh_ramp = phyDev->P_lh_ramp + 0.1 * dt * phyDev->m_controller.P_lin;
+            }
+            else
+            {
+                phyDev->P_lh_ramp = 1.0;
+            }
+
+            if (phyDev->P_ah_ramp < 1.0)
+            {
+                phyDev->P_ah_ramp = phyDev->P_ah_ramp + 0.1 * dt * phyDev->m_controller.P_ang;
+            }
+            else
+            {
+                phyDev->P_ah_ramp = 1.0;
+            }
+
+        }
+        htxSleep.sleep();
+    }
+    // exit haptics thread
+}
+
+void exitHandler(int s){
+    std::cerr << "\n(CTRL-C) Caught Signal " << s << std::endl;
+    g_afRenderOptions.m_windowClosed = true;
+}
+
+void deleteModelAttribsInternalData(afModelAttributes* modelAttribs){
+    for (int i = 0 ; i < modelAttribs->m_sensorAttribs.size() ; i++){
+        delete modelAttribs->m_sensorAttribs[i];
+    }
+    for (int i = 0 ; i < modelAttribs->m_actuatorAttribs.size() ; i++){
+        delete modelAttribs->m_actuatorAttribs[i];
+    }
+}
+
+
+///
+/// \brief windowSizeCallback
+/// \param a_window
+/// \param a_width
+/// \param a_height
+///
+void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
+{
+    std::vector<afCameraPtr>::iterator cameraIt;
+
+    for(cameraIt = g_cameras.begin(); cameraIt != g_cameras.end() ; ++cameraIt){
+        if( (*cameraIt)->m_window == a_window){
+            // update window size
+            (*cameraIt)->m_width = a_width;
+            (*cameraIt)->m_height = a_height;
+        }
+    }
+
+}
 
 ///
 /// \brief dragDropCallback
@@ -714,27 +1086,6 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
     g_afWorld->pausePhysics(false);
 }
 
-
-///
-/// \brief windowSizeCallback
-/// \param a_window
-/// \param a_width
-/// \param a_height
-///
-void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
-{
-    std::vector<afCameraPtr>::iterator cameraIt;
-
-    for(cameraIt = g_cameras.begin(); cameraIt != g_cameras.end() ; ++cameraIt){
-        if( (*cameraIt)->m_window == a_window){
-            // update window size
-            (*cameraIt)->m_width = a_width;
-            (*cameraIt)->m_height = a_height;
-        }
-    }
-
-}
-
 ///
 /// \brief errorCallback
 /// \param a_error
@@ -744,9 +1095,6 @@ void errorCallback(int a_error, const char* a_description)
 {
     cout << "Error: " << a_description << endl;
 }
-
-bool g_enableGrippingAssist = true;
-bool g_enableNormalMapping = true;
 
 ///
 /// \brief keyCallback
@@ -1394,8 +1742,8 @@ void close(void)
 
     // wait for graphics and haptics loops to terminate
     while (!g_simulationFinished) { cSleepMs(100); }
-    g_bulletSimThread->stop();
-    delete g_bulletSimThread;
+    g_physicsThread->stop();
+    delete g_physicsThread;
 
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         g_hapticsThreads[i]->stop();
@@ -1409,396 +1757,4 @@ void close(void)
     delete g_afWorld;
 
     delete g_adfLoaderPtr;
-}
-
-///
-/// \brief updateGraphics
-///
-void updateGraphics()
-{
-    g_afRenderOptions.m_IIDModeStr = g_inputDevices->m_mode_str;
-    g_afRenderOptions.m_IIDBtnActionStr = g_inputDevices->m_btn_action_str;
-
-    g_afWorld->render(g_afRenderOptions);
-
-    // wait until all GL commands are completed
-    glFinish();
-
-    // check for any OpenGL errors
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
-
-    g_simulationRunning = true;
-}
-
-
-///
-/// \brief updateBulletSim
-///
-void updatePhysics(){
-
-    // Wait for the graphics loop to start the sim
-    while (g_simulationRunning == false){
-        cSleepMs(1);
-    }
-
-    g_simulationFinished = false;
-
-    // start haptic device
-    g_afWorld->g_wallClock.start(true);
-
-    RateSleep phxSleep(g_cmdOpts.phxFrequency);
-    bool bodyPicked = false;
-
-    double dt_fixed = 1.0 / g_cmdOpts.phxFrequency;
-
-    cVector3d torque, torque_prev;
-    torque.set(0, 0, 0);
-    torque_prev.set(0, 0, 0);
-    while(g_simulationRunning)
-    {
-        g_afWorld->m_freqCounterHaptics.signal(1);
-
-        // Take care of any picked body by mouse
-        if (g_pickBody){
-            if (bodyPicked == false){
-                bodyPicked = true;
-                g_afWorld->pickBody(g_pickFrom, g_pickTo);
-            }
-            else{
-                g_afWorld->movePickedBody(g_pickFrom, g_pickTo);
-            }
-        }
-        else{
-            bodyPicked = false;
-            g_afWorld->removePickingConstraint();
-        }
-
-        double step_size;
-        if (g_cmdOpts.useFixedPhxTimeStep){
-            step_size = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.phxFrequency);
-        }
-        else{
-            step_size = g_afWorld->computeStepSize(true);
-        }
-
-        for (unsigned int devIdx = 0 ; devIdx < g_inputDevices->m_numDevices ; devIdx++){
-            // update position of simulate gripper
-            afSimulatedDevice * simDev = g_inputDevices->m_collateralControlUnits[devIdx].m_simulatedDevicePtr;
-            afRigidBodyPtr rootLink = simDev->m_rootLink;
-            simDev->updateGlobalPose();
-
-            if (g_enableGrippingAssist){
-                for (int sIdx = 0 ; sIdx < rootLink->getAFSensors().size() ; sIdx++){
-                    afSensorPtr sensorPtr = rootLink->getAFSensors()[sIdx];
-                    if (sensorPtr->m_sensorType == afSensorType::RAYTRACER){
-                        afProximitySensor* proximitySensorPtr = (afProximitySensor*) sensorPtr;
-                        if (simDev->m_gripper_angle < 0.5){
-                            for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
-                                if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
-                                    // Check if the sensed body belongs to the gripper, in which case ignore
-                                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedAFRigidBody(i);
-                                    if (rootLink->isChild(afBody->m_bulletRigidBody) == true){
-                                        continue;
-                                    }
-                                }
-                                simDev->m_grippingConstraint->actuate(sensorPtr);
-                            }
-                        }
-                        else{
-                            simDev->m_grippingConstraint->deactuate();
-                        }
-                    }
-                }
-            }
-
-            cVector3d pCommand, rCommand;
-            // ts is to prevent the saturation of forces
-            double ts = dt_fixed / step_size;
-            pCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getPos(), simDev->getPosRef(), step_size, 1);
-            pCommand = simDev->P_lc_ramp * pCommand;
-
-            rCommand = simDev->m_rootLink->m_controller.computeOutput<cVector3d>(simDev->getRot(), simDev->getRotRef(), step_size, 1);
-            rCommand = simDev->P_ac_ramp * rCommand;
-
-            if (simDev->m_rootLink->m_controller.m_positionOutputType == afControlType::FORCE){
-                simDev->applyForce(pCommand);
-            }
-            else{
-                simDev->m_rootLink->m_bulletRigidBody->setLinearVelocity(to_btVector(pCommand));
-            }
-
-            if (simDev->m_rootLink->m_controller.m_orientationOutputType == afControlType::FORCE){
-                simDev->applyTorque(rCommand);
-            }
-            else{
-                simDev->m_rootLink->m_bulletRigidBody->setAngularVelocity(to_btVector(rCommand));
-            }
-
-            // Control simulated body joints only if joint control of this physical device has been enabled
-            if (simDev->isJointControlEnabled()){
-                simDev->setGripperAngle(simDev->m_gripper_angle);
-            }
-
-            if (simDev->P_lc_ramp < 1.0)
-            {
-                simDev->P_lc_ramp = simDev->P_lc_ramp + 0.5 * step_size;
-            }
-            else
-            {
-                simDev->P_lc_ramp = 1.0;
-            }
-
-            if (simDev->P_ac_ramp < 1.0)
-            {
-                simDev->P_ac_ramp = simDev->P_ac_ramp + 0.5 * step_size;
-            }
-            else
-            {
-                simDev->P_ac_ramp = 1.0;
-            }
-        }
-        g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
-        phxSleep.sleep();
-    }
-    g_simulationFinished = true;
-}
-
-///
-/// \brief updateHaptics
-/// \param a_arg
-///
-void updateHapticDevice(void* ccuPtr){
-    afCollateralControlUnit ccu = *(afCollateralControlUnit*) ccuPtr;
-
-    // Wait for the graphics loop to start the sim
-    while(g_simulationRunning == false){
-        cSleepMs(1);
-    }
-
-    // simulation in now running
-    g_simulationFinished = false;
-
-    RateSleep htxSleep(g_cmdOpts.htxFrequency);
-
-    // update position and orientation of simulated gripper
-    std::string identifyingName = ccu.m_name;
-    afPhysicalDevice *phyDev = ccu.m_physicalDevicePtr;
-    afSimulatedDevice* simDev = ccu.m_simulatedDevicePtr;
-    std::vector<afCameraPtr> devCams = ccu.m_cameras;
-    cLabel* devFreqLabel = ccu.m_devFreqLabel;
-    if (ccu.m_cameras.size() == 0){
-        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
-        devCams = g_cameras;
-    }
-
-    phyDev->setPosClutched(cVector3d(0.0,0.0,0.0));
-    phyDev->getRot();
-    phyDev->setRotClutched(cMatrix3d(0, 0, 0));
-    simDev->setRotRefOrigin(phyDev->getRot());
-
-    double P_lc_offset = 10;
-    double P_ac_offset = 1;
-    double D_lc_offset = 1;
-    double D_ac_offset = 1;
-    double P_lh_offset = 5;
-    double P_ah_offset = 1;
-
-    double wait_time = 3.0;
-    if (std::strcmp(phyDev->m_hInfo.m_modelName.c_str(), "Razer Hydra") == 0 ){
-        wait_time = 5.0;
-    }
-
-    cVector3d force, torque;
-    force.set(0,0,0);
-    torque.set(0,0,0);
-
-    // main haptic simulation loop
-    while(g_simulationRunning)
-    {
-        if (!g_afWorld->isPhysicsPaused() || g_afWorld->getManualSteps() > 0){
-            phyDev->m_freq_ctr.signal(1);
-            if (devFreqLabel != NULL){
-                devFreqLabel->setText(identifyingName + " [" + phyDev->m_hInfo.m_modelName + "] " + ": " + cStr(phyDev->m_freq_ctr.getFrequency(), 0) + " Hz");
-            }
-            // Adjust time dilation by computing dt from clockWorld time and the simulationTime
-            double dt;
-            if (g_cmdOpts.useFixedHtxTimeStep){
-
-                dt = g_cmdOpts.simulation_speed * (1.0 / g_cmdOpts.htxFrequency);
-            }
-            else{
-                dt = g_afWorld->computeStepSize();
-            }
-
-            if(phyDev->m_gripper_pinch_btn >= 0){
-                if(phyDev->isButtonPressed(phyDev->m_gripper_pinch_btn)){
-                    phyDev->enableForceFeedback(true);
-                }
-            }
-            if (phyDev->m_hInfo.m_sensedGripper){
-                simDev->m_gripper_angle = phyDev->getGripperAngle();
-            }
-            else if (phyDev->m_buttons.G1 > 0){
-                // Some devices may have a gripper button instead of a continous gripper.
-                simDev->m_gripper_angle = !phyDev->isButtonPressed(phyDev->m_buttons.G1);
-            }
-            else{
-                simDev->m_gripper_angle = 0.5;
-            }
-
-            if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.NEXT_MODE)) g_inputDevices->nextMode();
-            if(phyDev->isButtonPressRisingEdge(phyDev->m_buttons.PREV_MODE)) g_inputDevices->prevMode();
-
-            bool btn_1_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A1);
-            bool btn_1_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A1);
-            bool btn_2_rising_edge = phyDev->isButtonPressRisingEdge(phyDev->m_buttons.A2);
-            bool btn_2_falling_edge = phyDev->isButtonPressFallingEdge(phyDev->m_buttons.A2);
-
-            double gripper_offset = 0;
-            switch (g_inputDevices->m_simModes){
-            case MODES::CAM_CLUTCH_CONTROL:
-                g_inputDevices->m_clutch_btn_pressed  = phyDev->isButtonPressed(phyDev->m_buttons.A1);
-                g_inputDevices->m_cam_btn_pressed     = phyDev->isButtonPressed(phyDev->m_buttons.A2);
-                if(g_inputDevices->m_clutch_btn_pressed) g_inputDevices->m_btn_action_str = "Clutch Pressed";
-                if(g_inputDevices->m_cam_btn_pressed)   {g_inputDevices->m_btn_action_str = "Cam Pressed";}
-                if(btn_1_falling_edge || btn_2_falling_edge) g_inputDevices->m_btn_action_str = "";
-                break;
-            case MODES::GRIPPER_JAW_CONTROL:
-                if (btn_1_rising_edge) gripper_offset = 0.1;
-                if (btn_2_rising_edge) gripper_offset = -0.1;
-                simDev->offsetGripperAngle(gripper_offset);
-                break;
-            case MODES::CHANGE_CONT_LIN_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_P_lc(P_lc_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_P_lc(-P_lc_offset);
-                break;
-            case MODES::CHANGE_CONT_ANG_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_P_ac(P_ac_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_P_ac(-P_ac_offset);
-                break;
-            case MODES::CHANGE_CONT_LIN_DAMP:
-                if(btn_1_rising_edge) g_inputDevices->increment_D_lc(D_lc_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_D_lc(-D_lc_offset);
-                break;
-            case MODES::CHANGE_CONT_ANG_DAMP:
-                if(btn_1_rising_edge) g_inputDevices->increment_D_ac(D_ac_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_D_ac(-D_ac_offset);
-                break;
-            case MODES::CHANGE_DEV_LIN_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_K_lh(P_lh_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_K_lh(-P_lh_offset);
-                break;
-            case MODES::CHANGE_DEV_ANG_GAIN:
-                if(btn_1_rising_edge) g_inputDevices->increment_K_ah(P_ah_offset);
-                if(btn_2_rising_edge) g_inputDevices->increment_K_ah(-P_ah_offset);
-                break;
-            }
-
-            devCams[0]->m_cam_pressed = phyDev->isButtonPressed(phyDev->m_buttons.A2);
-            if(devCams[0]->m_cam_pressed && g_inputDevices->m_simModes == MODES::CAM_CLUTCH_CONTROL){
-                double scale = 0.01;
-                for (int dcIdx = 0 ; dcIdx < devCams.size() ; dcIdx++){
-                    devCams[dcIdx]->setLocalPos(devCams[dcIdx]->getLocalPos() + cMul(scale, devCams[dcIdx]->getLocalRot() * phyDev->getLinVel() ) );
-                    devCams[dcIdx]->setLocalRot(phyDev->getRotCamPreClutch() * cTranspose(phyDev->getRotPreClutch()) * phyDev->getRot());
-                }
-
-            }
-            if (!devCams[0]->m_cam_pressed){
-                phyDev->setRotCamPreClutch( devCams[0]->getLocalRot() );
-                phyDev->setRotPreClutch( phyDev->getRot() );
-            }
-
-
-            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
-                phyDev->setPosClutched(phyDev->getPos());
-            }
-
-            if(g_inputDevices->m_cam_btn_pressed){
-                if(phyDev->btn_cam_rising_edge){
-                    phyDev->btn_cam_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef());
-                    simDev->setRotRefOrigin(simDev->getRotRef());
-                }
-                phyDev->setPosClutched(phyDev->getPos());
-                phyDev->setRotClutched(phyDev->getRot());
-            }
-            else{
-                phyDev->btn_cam_rising_edge = true;
-            }
-            if(g_inputDevices->m_clutch_btn_pressed){
-                if(phyDev->btn_clutch_rising_edge){
-                    phyDev->btn_clutch_rising_edge = false;
-                    simDev->setPosRefOrigin(simDev->getPosRef());
-                    simDev->setRotRefOrigin(simDev->getRotRef());
-                }
-                phyDev->setPosClutched(phyDev->getPos());
-                phyDev->setRotClutched(phyDev->getRot());
-            }
-            else{
-                phyDev->btn_clutch_rising_edge = true;
-            }
-
-            simDev->setPosRef(simDev->getPosRefOrigin() + phyDev->m_workspaceScale * (devCams[0]->getLocalRot() * (phyDev->getPos() - phyDev->getPosClutched() ) ) ) ;
-            if (!g_inputDevices->m_use_cam_frame_rot){
-                simDev->setRotRef(simDev->getRotRefOrigin() * devCams[0]->getLocalRot() *
-                        cTranspose(phyDev->getRotClutched()) * phyDev->getRot() *
-                        cTranspose(devCams[0]->getLocalRot()));
-            }
-            else{
-                simDev->setRotRef(simDev->getSimRotInitial() * phyDev->getSimRotOffset() * phyDev->getRot() * phyDev->getSimRotOffsetInverse());
-            }
-
-            if (phyDev->m_showMarker){
-                phyDev->m_refSphere->setLocalPos(simDev->getPosRef());
-                phyDev->m_refSphere->setLocalRot(simDev->getRotRef());
-            }
-
-            // update position of simulated gripper
-            simDev->updateGlobalPose();
-
-            force  = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_lh_ramp * (phyDev->m_controller.computeOutput<cVector3d, cVector3d>(simDev->getPos(), simDev->getPosRef(), dt));
-            torque = - !g_inputDevices->m_clutch_btn_pressed * g_cmdOpts.enableForceFeedback * phyDev->P_ah_ramp * (phyDev->m_controller.computeOutput<cVector3d, cMatrix3d>(simDev->getRot(), simDev->getRotRef(), dt));
-
-            // Orient the wrench along the camera view
-            force = cTranspose(devCams[0]->getLocalRot()) * force;
-            torque = cTranspose(devCams[0]->getLocalRot()) * torque;
-
-            if (force.length() < phyDev->m_deadBand){
-                force.set(0,0,0);
-            }
-
-            if (force.length() > phyDev->m_maxForce){
-                force.normalize();
-                force = force * phyDev->m_maxForce;
-            }
-
-            if (torque.length() < phyDev->m_deadBand){
-                torque.set(0,0,0);
-            }
-
-            phyDev->applyWrench(force, torque);
-
-            if (phyDev->P_lh_ramp < 1.0)
-            {
-                phyDev->P_lh_ramp = phyDev->P_lh_ramp + 0.1 * dt * phyDev->m_controller.P_lin;
-            }
-            else
-            {
-                phyDev->P_lh_ramp = 1.0;
-            }
-
-            if (phyDev->P_ah_ramp < 1.0)
-            {
-                phyDev->P_ah_ramp = phyDev->P_ah_ramp + 0.1 * dt * phyDev->m_controller.P_ang;
-            }
-            else
-            {
-                phyDev->P_ah_ramp = 1.0;
-            }
-
-        }
-        htxSleep.sleep();
-    }
-    // exit haptics thread
 }
