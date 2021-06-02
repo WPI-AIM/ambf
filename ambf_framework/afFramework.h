@@ -239,9 +239,6 @@ public:
     // Set Max publishing frequency for this object
     inline void setMaxPublishFrequency(int freq){m_maxPubFreq = freq;}
 
-    // Get the type of communication instance
-    afObjectType getCommType(){return m_commType;}
-
     // Set Name of object
     inline void setName(string a_name){m_name = a_name;}
 
@@ -263,7 +260,7 @@ public:
 
     string m_name;
 
-    //! AF CHAI Env
+    //! AMBF ROS COMM
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
@@ -280,9 +277,7 @@ protected:
     // in the internal body tree map.
     string m_namespace = "";
 
-
 private:
-    afObjectType m_commType;
 
 
     // Min publishing frequency
@@ -534,6 +529,9 @@ public:
 
     void setIdentifier(string a_name){m_identifier = a_name;}
 
+    // Get the type of communication instance
+    afObjectType getObjectType(){return m_type;}
+
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
     virtual void fetchCommands(double){}
@@ -639,6 +637,9 @@ public:
     vector<afBaseObjectPtr> m_afChildrenObjects;
 
 protected:
+    // Type of object
+    afObjectType m_type;
+
     // Initial location of Rigid Body
     cTransform m_initialTransform;
 

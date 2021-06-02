@@ -575,7 +575,6 @@ void afComm::afCreateCommInstance(afObjectType type, string a_name, string a_nam
         cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << a_name << " NOT IMPLEMENTED YET" << endl;
         break;
     }
-    m_commType = type;
 #endif
 }
 
@@ -1272,6 +1271,7 @@ bool afBaseObject::resolveParenting(string a_parentName){
 /// \param a_afWorld
 ///
 afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
+    m_type = afObjectType::ACTUATOR;
 }
 
 
@@ -1348,7 +1348,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFActuatorMap());
 
-        afCreateCommInstance(afObjectType::ACTUATOR,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -1861,6 +1861,7 @@ void afInertialObject::applyTorque(const cVector3d &a_torque)
 /// \param a_world
 ///
 afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
+    m_type = afObjectType::RIGID_BODY;
     m_mesh_name.clear();
     m_scale = 1.0;
 
@@ -2284,7 +2285,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFRigidBodyMap());
 
-        afCreateCommInstance(afObjectType::RIGID_BODY,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -3296,6 +3297,7 @@ void afMeshCleanup::computeUniqueVerticesandTrianglesSequential(const cMesh *mes
 /// \param a_afWorld
 ///
 afSoftBody::afSoftBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
+    m_type = afObjectType::SOFT_BODY;
 }
 
 
@@ -3437,7 +3439,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSoftBodyMap());
 
-        afCreateCommInstance(afObjectType::SOFT_BODY,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -4283,6 +4285,7 @@ double afJoint::getEffort(){
 /// \param a_afWorld
 ///
 afSensor::afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
+    m_type = afObjectType::SENSOR;
 }
 
 
@@ -4445,7 +4448,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
 
-        afCreateCommInstance(afObjectType::SENSOR,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -4707,7 +4710,7 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 
             string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
 
-            afCreateCommInstance(afObjectType::SENSOR,
+            afCreateCommInstance(m_type,
                                  getQualifiedName() + remap_idx,
                                  m_afWorld->getGlobalNamespace(),
                                  getMinPublishFrequency(),
@@ -6104,7 +6107,7 @@ void afWorld::removePickingConstraint(){
 /// \brief afCamera::afCamera
 ///
 afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-
+    m_type = afObjectType::CAMERA;
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
@@ -6481,7 +6484,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFCameraMap());
 
-        afCreateCommInstance(afObjectType::CAMERA,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -7217,6 +7220,7 @@ void afCamera::preProcessingShadersUpdate()
 /// \brief afLight::afLight
 ///
 afLight::afLight(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+    m_type = afObjectType::LIGHT;
 }
 
 ///
@@ -7302,7 +7306,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFLightMap());
 
-        afCreateCommInstance(afObjectType::LIGHT,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -7446,6 +7450,7 @@ afModel::afModel(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     //    m_pickDragVector->setUseDisplayList(true);
     //    m_pickDragVector->markForUpdate(false);
     //    m_chaiWorld->addVisualMesh(m_pickDragVector);
+    m_type = afObjectType::MODEL;
 }
 
 
@@ -8051,7 +8056,7 @@ afModel::~afModel(){
 }
 
 afVehicle::afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-
+    m_type = afObjectType::VEHICLE;
 }
 
 afVehicle::~afVehicle()
@@ -8183,7 +8188,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFVehicleMap());
 
-        afCreateCommInstance(afObjectType::VEHICLE,
+        afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
@@ -8411,6 +8416,7 @@ void afPointCloud::update()
 
 afGhostObject::afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr)
 {
+    m_type = afObjectType::GHOST_OBJECT;
     m_bulletGhostObject = nullptr;
 }
 

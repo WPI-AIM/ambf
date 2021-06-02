@@ -1022,12 +1022,10 @@ bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afOb
 
     YAML::Node node = rootNode[a_objName];
     switch (a_objType) {
-    case afObjectType::CONSTRAINT_ACTUATOR:
-        return loadConstraintActuatorAttribs(&node, (afConstraintActuatorAttributes*)attribs);
-    case afObjectType::RAYTRACER_SENSOR:
-        return loadRayTracerSensorAttribs(&node, (afRayTracerSensorAttributes*)attribs);
-    case afObjectType::RESISTANCE_SENSOR:
-        return loadResistanceSensorAttribs(&node, (afResistanceSensorAttributes*)attribs);
+    case afObjectType::ACTUATOR:
+        return loadActuatorAttribs(&node, (afActuatorAttributes*)attribs);
+    case afObjectType::SENSOR:
+        return loadSensorAttribs(&node, (afSensorAttributes*)attribs);
     case afObjectType::RIGID_BODY:
         return loadRigidBodyAttribs(&node, (afRigidBodyAttributes*)attribs);
     case afObjectType::SOFT_BODY:
@@ -1829,10 +1827,20 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
     // Declare all the yaml parameters that we want to look for
     YAML::Node nameNode = node["name"];
     YAML::Node namespaceNode = node["namespace"];
+    YAML::Node typeNode = node["type"];
     YAML::Node parentNameNode = node["parent"];
     YAML::Node posNode = node["location"]["position"];
     YAML::Node rotNode = node["location"]["orientation"];
     YAML::Node publishFrequencyNode = node["publish frequency"];
+
+    try{
+        attribs->m_sensorType = ADFUtils::getSensorTypeFromString(typeNode.as<string>());
+    }
+    catch (YAML::Exception& e){
+        cerr << "ERROR! SENSOR TYPE NOT DEFINED, IGNORING " << endl;
+        cerr << e.what() << endl;
+        return 0;
+    }
 
     ADFUtils adfUtils;
 
@@ -1840,6 +1848,21 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    switch (attribs->m_sensorType) {
+    case afSensorType::RAYTRACER:{
+        return loadRayTracerSensorAttribs(&node, (afRayTracerSensorAttributes*)attribs);
+    }
+    case afSensorType::RESISTANCE:{
+        return loadResistanceSensorAttribs(&node, (afResistanceSensorAttributes*)attribs);
+    }
+        break;
+    default:{
+        cerr << "SENSOR TYPE " << typeNode.as<string>() << " NOT IMPLEMENTED YET" << endl;
+        result = false;
+    }
+        break;
+    }
 
     return result;
 }
@@ -1851,8 +1874,6 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
         cerr << "ERROR: SENSOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
-
-    attribs->m_sensorType = afSensorType::RAYTRACER;
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -1868,8 +1889,6 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
     YAML::Node arrayNode = node["array"];
     YAML::Node meshNode = node["mesh"];
     YAML::Node parametricNode = node["parametric"];
-
-    loadSensorAttribs(&node, attribs);
 
     attribs->m_specificationType = afSensactorSpecificationType::INVALID;
 
@@ -1983,8 +2002,6 @@ bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistance
     bool result = false;
         result = loadRayTracerSensorAttribs(a_node, attribs);
 
-        attribs->m_sensorType = afSensorType::RESISTANCE;
-
         if (result){
 
             YAML::Node resistiveFrictionNode = node["friction"];
@@ -2035,10 +2052,20 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
     // Declare all the yaml parameters that we want to look for
     YAML::Node nameNode = node["name"];
     YAML::Node namespaceNode = node["namespace"];
+    YAML::Node typeNode = node["type"];
     YAML::Node parentNameNode = node["parent"];
     YAML::Node posNode = node["location"]["position"];
     YAML::Node rotNode = node["location"]["orientation"];
     YAML::Node publishFrequencyNode = node["publish frequency"];
+
+    try{
+        attribs->m_actuatorType = ADFUtils::getActuatorTypeFromString(typeNode.as<string>());
+    }
+    catch (YAML::Exception& e){
+        cerr << "ERROR! ACTUATOR TYPE NOT DEFINED, IGNORING " << endl;
+        cerr << e.what() << endl;
+        return 0;
+    }
 
     ADFUtils adfUtils;
 
@@ -2046,6 +2073,18 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
     adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
     adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+
+    switch (attribs->m_actuatorType) {
+    case afActuatorType::CONSTRAINT:{
+        return loadConstraintActuatorAttribs(&node, (afConstraintActuatorAttributes*)attribs);
+    }
+        break;
+    default:{
+        cerr << "ACTUATOR TYPE " << typeNode.as<string>() << " NOT IMPLEMENTED YET" << endl;
+        result = false;
+    }
+        break;
+    }
 
     return result;
 }
@@ -2071,8 +2110,6 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
     YAML::Node maxImpulseNode = node["max impulse"];
     YAML::Node tauNode = node["tau"];
 
-    loadActuatorAttribs(&node, attribs);
-
     if (visibleNode.IsDefined()){
         attribs->m_visible = visibleNode.as<bool>();
     }
@@ -2088,8 +2125,6 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
     if (tauNode.IsDefined()){
         attribs->m_tau = tauNode.as<double>();
     }
-
-    attribs->m_actuatorType = afActuatorType::CONSTRAINT;
 
     return result;
 }
@@ -2478,25 +2513,22 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (senNode["type"].IsDefined()){
             afSensorType senType = ADFUtils::getSensorTypeFromString(senNode["type"].as<string>());
+            afSensorAttributes* senAttribs;
             switch (senType) {
             case afSensorType::RAYTRACER:{
-                afRayTracerSensorAttributes* senAttribs = new afRayTracerSensorAttributes();
-                if(loadRayTracerSensorAttribs(&senNode, senAttribs)){
-                    senAttribs->m_identifier = identifier;
-                    attribs->m_sensorAttribs.push_back(senAttribs);
-                }
+                senAttribs = new afRayTracerSensorAttributes();
                 break;
             }
             case afSensorType::RESISTANCE:{
-                afResistanceSensorAttributes* senAttribs = new afResistanceSensorAttributes();
-                if (loadResistanceSensorAttribs(&senNode, senAttribs)){
-                    senAttribs->m_identifier = identifier;
-                    attribs->m_sensorAttribs.push_back(senAttribs);
-                }
+                senAttribs = new afResistanceSensorAttributes();
                 break;
             }
             default:
                 break;
+            }
+            if (loadSensorAttribs(&senNode, senAttribs)){
+                senAttribs->m_identifier = identifier;
+                attribs->m_sensorAttribs.push_back(senAttribs);
             }
         }
     }
@@ -2509,18 +2541,19 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         // Check which type of sensor is this so we can cast appropriately beforehand
         if (actNode["type"].IsDefined()){
             afActuatorType actType = ADFUtils::getActuatorTypeFromString(actNode["type"].as<string>());
-            // Check if this is a constraint sensor
+            afActuatorAttributes* acAttribs;
+            // Check if this is a constraint actuator
             switch (actType) {
             case afActuatorType::CONSTRAINT:{
-                afConstraintActuatorAttributes* acAttribs = new afConstraintActuatorAttributes();
-                if (loadConstraintActuatorAttribs(&actNode, acAttribs)){
-                    acAttribs->m_identifier = identifier;
-                    attribs->m_actuatorAttribs.push_back(acAttribs);
-                }
+                acAttribs = new afConstraintActuatorAttributes();
                 break;
             }
             default:
                 break;
+            }
+            if (loadActuatorAttribs(&actNode, acAttribs)){
+                acAttribs->m_identifier = identifier;
+                attribs->m_actuatorAttribs.push_back(acAttribs);
             }
         }
     }
