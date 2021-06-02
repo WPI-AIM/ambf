@@ -1253,7 +1253,7 @@ bool afBaseObject::resolveParenting(string a_parentName){
     }
 
     // Should generalize this to not be just a rigid body that we may parent to.
-    afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(m_parentName);
+    afRigidBodyPtr pBody = m_afWorld->getRigidBody(m_parentName, suppress_warning);
     if (pBody){
         pBody->addChildObject(this);
         return true;
@@ -1280,7 +1280,6 @@ afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObjec
 /// \param a_afWorld
 ///
 afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afActuator(a_afWorld, a_modelPtr){
-
 }
 
 afConstraintActuator::~afConstraintActuator(){
@@ -1325,11 +1324,11 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     }
 
     // First search in the local space.
-    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName, true);
+    m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
 
     if(!m_parentBody){
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getActuatorMap());
-        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
+        m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
 
         if (m_parentBody == nullptr){
             cerr << "ERROR: ACTUATOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING ACTUATOR\n";
@@ -1337,7 +1336,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
         }
     }
 
-    m_parentBody->addAFActuator(this);
+    m_parentBody->addActuator(this);
 
     m_parentBody->addChildObject(this);
 
@@ -1346,7 +1345,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFActuatorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getActuatorMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -1364,7 +1363,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
 void afConstraintActuator::actuate(string a_rigid_body_name){
 
-    afRigidBodyPtr body = m_afWorld->getAFRigidBody(a_rigid_body_name);
+    afRigidBodyPtr body = m_afWorld->getRigidBody(a_rigid_body_name);
     actuate(body);
 
 }
@@ -1389,7 +1388,7 @@ void afConstraintActuator::actuate(afRigidBodyPtr a_rigidBody){
 }
 
 void afConstraintActuator::actuate(string a_rigid_body_name, btTransform a_bodyOffset){
-    afRigidBodyPtr body = m_afWorld->getAFRigidBody(a_rigid_body_name);
+    afRigidBodyPtr body = m_afWorld->getRigidBody(a_rigid_body_name);
     actuate(body, a_bodyOffset);
 }
 
@@ -1493,7 +1492,7 @@ void afConstraintActuator::actuate(afSensorPtr sensorPtr)
         for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
             if (proximitySensorPtr->isTriggered(i)){
                 if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
-                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedAFRigidBody(i);
+                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedRigidBody(i);
                     actuate(afBody);
                 }
 
@@ -1504,14 +1503,14 @@ void afConstraintActuator::actuate(afSensorPtr sensorPtr)
                     // If we get a sensedSoftBody, we should check if it has a detected face. If a face
                     // is found, we can anchor all the connecting nodes.
                     if (proximitySensorPtr->getSensedSoftBodyFace(i)){
-                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedAFSoftBody(i);
+                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedSoftBody(i);
                         btSoftBody::Face* sensedFace = proximitySensorPtr->getSensedSoftBodyFace(i);
                         actuate(afSoftBody, sensedFace);
                     }
                     // Otherwise we shall directly anchor to nodes. This case
                     // arises for ropes, suturing thread etc
                     else{
-                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedAFSoftBody(i);
+                        afSoftBodyPtr afSoftBody = proximitySensorPtr->getSensedSoftBody(i);
                         vector<btSoftBody::Node*> nodes;
                         nodes.push_back(proximitySensorPtr->getSensedSoftBodyNode(i));
                         actuate(afSoftBody, nodes);
@@ -2283,7 +2282,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFRigidBodyMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getRigidBodyMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -3437,7 +3436,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSoftBodyMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSoftBodyMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -3790,8 +3789,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     string body1Name = m_namespace + m_parentName;
     string body2Name = m_namespace + m_childName;
 
-    m_afParentBody = m_modelPtr->getAFRigidBodyLocal(body1Name, true);
-    m_afChildBody = m_modelPtr->getAFRigidBodyLocal(body2Name, true);
+    m_afParentBody = m_modelPtr->getRigidBodyLocal(body1Name, true);
+    m_afChildBody = m_modelPtr->getRigidBodyLocal(body2Name, true);
 
 
     // If either body not found
@@ -3800,17 +3799,17 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getJointMap());
 
         if (m_afParentBody == nullptr){
-            m_afParentBody = m_afWorld->getAFRigidBody(body1Name + remap_idx, true);
+            m_afParentBody = m_afWorld->getRigidBody(body1Name + remap_idx, true);
         }
         if (m_afChildBody == nullptr){
-            m_afChildBody = m_afWorld->getAFRigidBody(body2Name + remap_idx, true);
+            m_afChildBody = m_afWorld->getRigidBody(body2Name + remap_idx, true);
         }
     }
 
     // If we couldn't find the body with name_remapping, it might have been
     // Defined in another ambf file. Search without name_remapping string
     if(m_afParentBody == nullptr){
-        m_afParentBody = m_afWorld->getAFRigidBody(m_parentName, true);
+        m_afParentBody = m_afWorld->getRigidBody(m_parentName, true);
         // If a body is still not found, print error and ignore joint
         if (m_afParentBody == nullptr){
             cerr <<"ERROR: JOINT: \"" << m_name <<
@@ -3828,7 +3827,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
     if(m_afChildBody == nullptr){
-        m_afChildBody = m_afWorld->getAFRigidBody(m_childName, true);
+        m_afChildBody = m_afWorld->getRigidBody(m_childName, true);
         // If any body is still not found, print error and ignore joint
         if (m_afChildBody == nullptr){
             cerr <<"ERROR: JOINT: \"" << m_name <<
@@ -4400,18 +4399,18 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     m_visibilitySphereRadius = attribs.m_visibleSize;
 
     // First search in the local space.
-    m_parentBody = m_modelPtr->getAFRigidBodyLocal(m_parentName, true);
+    m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
 
     if(m_parentBody == nullptr){
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getSensorMap());
-        m_parentBody = m_afWorld->getAFRigidBody(m_parentName + remap_idx);
+        m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
         if (m_parentBody == nullptr){
             cerr << "ERROR: SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
             return 0;
         }
     }
 
-    m_parentBody->addAFSensor(this);
+    m_parentBody->addSensor(this);
     m_parentBody->addChildObject(this);
 
     switch (attribs.m_specificationType) {
@@ -4446,7 +4445,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSensorMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -4499,7 +4498,7 @@ void afRayTracerSensor::update(){
             if (rayCallBack.m_collisionObject->getInternalType()
                     == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
                 m_rayTracerResults[i].m_sensedBTRigidBody = (btRigidBody*)btRigidBody::upcast(rayCallBack.m_collisionObject);
-                m_rayTracerResults[i].m_sensedAFRigidBody = m_afWorld->getAFRigidBody(m_rayTracerResults[i].m_sensedBTRigidBody);
+                m_rayTracerResults[i].m_sensedRigidBody = m_afWorld->getRigidBody(m_rayTracerResults[i].m_sensedBTRigidBody);
                 m_rayTracerResults[i].m_sensedBodyType = afBodyType::RIGID_BODY;
             }
             else if (rayCallBack.m_collisionObject->getInternalType()
@@ -4531,7 +4530,7 @@ void afRayTracerSensor::update(){
                     m_rayTracerResults[i].m_sensedSoftBodyFaceIdx = sensedSoftBodyFaceIdx;
                     m_rayTracerResults[i].m_sensedSoftBodyFace = &sensedSoftBody->m_faces[sensedSoftBodyFaceIdx];
                     m_rayTracerResults[i].m_sensedBTSoftBody = sensedSoftBody;
-                    m_rayTracerResults[i].m_sensedAFSoftBody = m_afWorld->getAFSoftBody(m_rayTracerResults[i].m_sensedBTSoftBody);
+                    m_rayTracerResults[i].m_sensedSoftBody = m_afWorld->getSoftBody(m_rayTracerResults[i].m_sensedBTSoftBody);
                     m_rayTracerResults[i].m_sensedBodyType = afBodyType::SOFT_BODY;
                 }
                 // Reset the maxDistance for node checking
@@ -4590,11 +4589,11 @@ void afRayTracerSensor::update(){
         triggers[i] = m_rayTracerResults[i].m_triggered;
         measurements[i] = m_rayTracerResults[i].m_depthFraction;
         if (m_rayTracerResults[i].m_triggered){
-            if (m_rayTracerResults[i].m_sensedAFRigidBody){
-                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedAFRigidBody->m_name;
+            if (m_rayTracerResults[i].m_sensedRigidBody){
+                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedRigidBody->m_name;
             }
-            if (m_rayTracerResults[i].m_sensedAFSoftBody){
-                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedAFSoftBody->m_name;
+            if (m_rayTracerResults[i].m_sensedSoftBody){
+                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedSoftBody->m_name;
             }
         }
         else{
@@ -4708,7 +4707,7 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 
         if (isPassive() == false){
 
-            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFSensorMap());
+            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSensorMap());
 
             afCreateCommInstance(m_type,
                                  getQualifiedName() + remap_idx,
@@ -4921,10 +4920,10 @@ afJoint::~afJoint(){
 /// \brief afWorld::afWorld
 /// \param a_global_namespace
 ///
-bool afWorld::checkIfExists(afBaseObject *a_obj)
+bool afWorld::checkIfExists(afBaseObject *a_obj, vector<afBaseObject*> *a_objectsVec)
 {
     vector<afBaseObject*>::iterator it;
-    for (it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
+    for (it = a_objectsVec->begin() ; it != a_objectsVec->end() ; ++it){
         if ((*it) == a_obj){
             return true;
         }
@@ -5043,8 +5042,12 @@ afWorld::~afWorld()
         delete m_pickedConstraint;
     }
 
-    for(vector<afBaseObjectPtr>::iterator it = m_childrenAFObjects.begin() ; it != m_childrenAFObjects.end() ; ++it){
-        delete *it;
+    for(afChildrenMap::iterator it = m_childrenObjectsMap.begin() ; it != m_childrenObjectsMap.end() ; ++it){
+        map<string, afBaseObject*> objMap = it->second;
+        for(afBaseObjectMap::iterator oIt = objMap.begin() ; oIt != objMap.end() ; ++oIt){
+            afBaseObject* obj = oIt->second;
+            delete obj;
+        }
     }
 
     for (map<string, afPointCloudPtr>::iterator it = m_pcMap.begin() ; it != m_pcMap.end() ; ++it){
@@ -5125,9 +5128,9 @@ void afWorld::setGlobalNamespace(string a_global_namespace){
 /// \brief afWorld::resetCameras
 ///
 void afWorld::resetCameras(){
-    afCameraMap::iterator camIt;
-    for (camIt = m_afCameraMap.begin() ; camIt != m_afCameraMap.end() ; ++camIt){
-        afCameraPtr afCam = (camIt->second);
+    afBaseObjectMap::iterator camIt;
+    for (camIt = getCameraMap()->begin() ; camIt != getCameraMap()->end() ; ++camIt){
+        afCameraPtr afCam = (afCameraPtr)camIt->second;
         afCam->setLocalTransform(afCam->getInitialTransform());
     }
 
@@ -5140,10 +5143,10 @@ void afWorld::resetCameras(){
 void afWorld::resetDynamicBodies(bool reset_time){
     pausePhysics(true);
 
-    afRigidBodyMap::iterator rbIt;
+    afBaseObjectMap::iterator rbIt;
 
-    for (rbIt = m_afRigidBodyMap.begin() ; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
-        afRigidBodyPtr afRB = (rbIt->second);
+    for (rbIt = getRigidBodyMap()->begin() ; rbIt != getRigidBodyMap()->end() ; ++rbIt){
+        afRigidBodyPtr afRB = (afRigidBodyPtr)rbIt->second;
         btRigidBody* rB = afRB->m_bulletRigidBody;
         btVector3 zero(0, 0, 0);
         rB->clearForces();
@@ -5271,12 +5274,14 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     double dt = getSimulationDeltaTime();
 
     // Read the AF_COMM commands and apply to all different types of objects
-    vector<afBaseObjectPtr>::iterator i;
+    afChildrenMap::iterator i;
 
-    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
     {
-        afBaseObject* childObj = *i;
-        childObj->fetchCommands(dt);
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->fetchCommands(dt);
+        }
     }
 
     // integrate simulation during an certain interval
@@ -5299,12 +5304,55 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
     estimateBodyWrenches();
 
-    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
     {
-        afBaseObject* childObj = *i;
-        childObj->update();
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->update();
+        }
     }
 
+}
+
+///
+/// \brief afWorld::initPlugins
+///
+void afWorld::initPlugins(afWorldAttributes* a_attribs)
+{
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->init(this, a_attribs);
+    }
+}
+
+
+///
+/// \brief afWorld::updatePlugins
+///
+void afWorld::updatePlugins(){
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->update();
+    }
+}
+
+///
+/// \brief afWorld::resetPlugins
+///
+void afWorld::resetPlugins()
+{
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->reset();
+    }
+}
+
+
+///
+/// \brief afWorld::closePlugins
+///
+void afWorld::closePlugins()
+{
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->close();
+    }
 }
 
 
@@ -5314,18 +5362,19 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 void afWorld::estimateBodyWrenches(){
 
     // First clear out the wrench estimation from last iteration
-    afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
-    for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
-        rbIt->second->m_estimatedForce.setZero();
-        rbIt->second->m_estimatedTorque.setZero();
+    afBaseObjectMap::iterator rbIt = getRigidBodyMap()->begin();
+    for (; rbIt != getRigidBodyMap()->end() ; ++rbIt){
+        afRigidBodyPtr rb = (afRigidBodyPtr)rbIt->second;
+        rb->m_estimatedForce.setZero();
+        rb->m_estimatedTorque.setZero();
     }
 
 
     // Now estimate the wrenches based on joints that have feedback enabled
-    afJointMap::iterator jIt = m_afJointMap.begin();
-    for (; jIt != m_afJointMap.end() ; ++ jIt){
-        if (jIt->second->isFeedBackEnabled()){
-            afJointPtr jnt = jIt->second;
+    afBaseObjectMap::iterator jIt = getJointMap()->begin();
+    for (; jIt != getJointMap()->end() ; ++ jIt){
+        afJointPtr jnt = (afJointPtr)jIt->second;
+        if (jnt->isFeedBackEnabled()){
             const btJointFeedback* fb = jnt->m_btConstraint->getJointFeedback();
             btMatrix3x3 R_wINp = jnt->m_afParentBody->m_bulletRigidBody->getWorldTransform().getBasis().transpose();
             btMatrix3x3 R_wINc = jnt->m_afChildBody->m_bulletRigidBody->getWorldTransform().getBasis().transpose();
@@ -5373,13 +5422,15 @@ void afWorld::updateSceneObjects()
     }
 #endif
 
-    vector<afBaseObjectPtr>::iterator i;
+    afChildrenMap::iterator i;
 
-    for(i = m_childrenAFObjects.begin(); i != m_childrenAFObjects.end(); ++i)
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
     {
-        afBaseObject* childObj = *i;
-        childObj->updateGlobalPose();
-        childObj->updateSceneObjects();
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->updateGlobalPose();
+            childObj->updateSceneObjects();
+        }
     }
 }
 
@@ -5502,7 +5553,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     if (attribs.m_environmentModel.m_use){
         afModelPtr envModel = new afModel(this);
         if (envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs)){
-            addAFModel(envModel);
+            addModel(envModel);
         }
 
     }
@@ -5523,29 +5574,29 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
-            string remaped_name = addAFLight(lightPtr);
+            string remaped_name = addLight(lightPtr);
         }
     }
 
-    if (m_afLightMap.size() == 0){
+    if (getLightMap()->size() == 0){
         // ADD A DEFAULT LIGHT???
         afLightAttributes lightAttribs;
         lightAttribs.m_kinematicAttribs.m_location.setPosition(afVector3d(2, 2, 5));
         lightAttribs.m_identificationAttribs.m_name = "default_light";
         afLightPtr lightPtr = new afLight(this);
         lightPtr->createFromAttribs(&lightAttribs);
-        string remaped_name = addAFLight(lightPtr);
+        string remaped_name = addLight(lightPtr);
     }
 
     if (attribs.m_showGUI){
         for (size_t idx = 0 ; idx < attribs.m_cameraAttribs.size(); idx++){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
-                string remaped_name = addAFCamera(cameraPtr);
+                string remaped_name = addCamera(cameraPtr);
             }
         }
 
-        if (m_afCameraMap.size() == 0){
+        if (getCameraMap()->size() == 0){
             // No valid cameras defined in the world config file
             // hence create a default camera
             afCameraPtr cameraPtr = new afCamera(this);
@@ -5553,7 +5604,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             camAttribs.m_lookAt.set(-1, 0, 0);
             camAttribs.m_identificationAttribs.m_name = "default_camera";
             if (cameraPtr->createFromAttribs(&camAttribs)){
-                string remaped_name = addAFCamera(cameraPtr);
+                string remaped_name = addCamera(cameraPtr);
             }
 
         }
@@ -5577,9 +5628,9 @@ void afWorld::render(afRenderOptions &options)
 
     updateSceneObjects();
 
-    afCameraMap::iterator camIt;
-    for (camIt = m_afCameraMap.begin(); camIt != m_afCameraMap.end(); ++ camIt){
-        afCameraPtr cameraPtr = (camIt->second);
+    afBaseObjectMap::iterator camIt;
+    for (camIt = getCameraMap()->begin(); camIt != getCameraMap()->end(); ++ camIt){
+        afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
         cameraPtr->render(options);
 
     }
@@ -5710,93 +5761,93 @@ void afWorld::loadShaderProgram(){
 
 
 
-string afWorld::addAFLight(afLightPtr a_obj){
+string afWorld::addLight(afLightPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afLightMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getLightMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afLightPtr, afLightMap>(a_obj, remaped_identifier, &m_afLightMap);
+    addBaseObject(a_obj, remaped_identifier, getLightMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFCamera(afCameraPtr a_obj){
+string afWorld::addCamera(afCameraPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afCameraMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getCameraMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afCameraPtr, afCameraMap>(a_obj, qualified_identifier + remap_str, &m_afCameraMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getCameraMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFRigidBody(afRigidBodyPtr a_obj){
+string afWorld::addRigidBody(afRigidBodyPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afRigidBodyMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getRigidBodyMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afRigidBodyPtr, afRigidBodyMap>(a_obj, qualified_identifier + remap_str, &m_afRigidBodyMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getRigidBodyMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFSoftBody(afSoftBodyPtr a_obj){
+string afWorld::addSoftBody(afSoftBodyPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afSoftBodyMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getSoftBodyMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afSoftBodyPtr, afSoftBodyMap>(a_obj, qualified_identifier + remap_str, &m_afSoftBodyMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getSoftBodyMap());
     return remaped_identifier;
 }
 
-string afWorld::addAFGhostObject(afGhostObjectPtr a_obj)
+string afWorld::addGhostObject(afGhostObjectPtr a_obj)
 {
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afGhostObjectMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getGhostObjectMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afGhostObjectPtr, afGhostObjectMap>(a_obj, qualified_identifier + remap_str, &m_afGhostObjectMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getGhostObjectMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFJoint(afJointPtr a_obj){
+string afWorld::addJoint(afJointPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afJointMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getJointMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afJointPtr, afJointMap>(a_obj, qualified_identifier + remap_str, &m_afJointMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getJointMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFActuator(afActuatorPtr a_obj){
+string afWorld::addActuator(afActuatorPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afActuatorMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getActuatorMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afActuatorPtr, afActuatorMap>(a_obj, qualified_identifier + remap_str, &m_afActuatorMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getActuatorMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFSensor(afSensorPtr a_obj){
+string afWorld::addSensor(afSensorPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afSensorMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getSensorMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afSensorPtr, afSensorMap>(a_obj, qualified_identifier + remap_str, &m_afSensorMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getSensorMap());
     return remaped_identifier;
 }
 
 
-string afWorld::addAFModel(afModelPtr a_obj){
+string afWorld::addModel(afModelPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afModelMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getModelMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afModelPtr, afModelMap>(a_obj, qualified_identifier + remap_str, &m_afModelMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getModelMap());
     return remaped_identifier;
 }
 
 
 
-string afWorld::addAFVehicle(afVehiclePtr a_obj){
+string afWorld::addVehicle(afVehiclePtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, &m_afVehicleMap);
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getVehicleMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addAFObject<afVehiclePtr, afVehicleMap>(a_obj, qualified_identifier + remap_str, &m_afVehicleMap);
+    addBaseObject(a_obj, qualified_identifier + remap_str, getVehicleMap());
     return remaped_identifier;
 }
 
@@ -5838,8 +5889,8 @@ void afWorld::buildCollisionGroups(){
 /// \brief afWorld::getAFLighs
 /// \return
 ///
-afLightVec  afWorld::getAFLighs(){
-    return getAFObjects<afLightVec, afLightMap>(&m_afLightMap);
+afLightVec afWorld::getLights(){
+    return getBaseObjects<afLight>(getLightMap());
 }
 
 
@@ -5847,8 +5898,8 @@ afLightVec  afWorld::getAFLighs(){
 /// \brief afWorld::getAFCameras
 /// \return
 ///
-afCameraVec afWorld::getAFCameras(){
-    return getAFObjects<afCameraVec, afCameraMap>(&m_afCameraMap);
+afCameraVec afWorld::getCameras(){
+    return getBaseObjects<afCamera>(getCameraMap());
 }
 
 
@@ -5856,8 +5907,8 @@ afCameraVec afWorld::getAFCameras(){
 /// \brief afWorld::getAFRigidBodies
 /// \return
 ///
-afRigidBodyVec afWorld::getAFRigidBodies(){
-    return getAFObjects<afRigidBodyVec, afRigidBodyMap>(&m_afRigidBodyMap);
+afRigidBodyVec afWorld::getRigidBodies(){
+    return getBaseObjects<afRigidBody>(getRigidBodyMap());
 }
 
 
@@ -5865,8 +5916,8 @@ afRigidBodyVec afWorld::getAFRigidBodies(){
 /// \brief afWorld::getAFSoftBodies
 /// \return
 ///
-afSoftBodyVec afWorld::getAFSoftBodies(){
-    return getAFObjects<afSoftBodyVec, afSoftBodyMap>(&m_afSoftBodyMap);
+afSoftBodyVec afWorld::getSoftBodies(){
+    return getBaseObjects<afSoftBody>(getSoftBodyMap());
 }
 
 
@@ -5874,9 +5925,9 @@ afSoftBodyVec afWorld::getAFSoftBodies(){
 /// \brief afWorld::getAFGhostObjects
 /// \return
 ///
-afGhostObjectVec afWorld::getAFGhostObjects()
+afGhostObjectVec afWorld::getGhostObjects()
 {
-    return getAFObjects<afGhostObjectVec, afGhostObjectMap>(&m_afGhostObjectMap);
+    return getBaseObjects<afGhostObject>(getGhostObjectMap());
 }
 
 
@@ -5884,8 +5935,8 @@ afGhostObjectVec afWorld::getAFGhostObjects()
 /// \brief afWorld::getJoints
 /// \return
 ///
-afJointVec afWorld::getAFJoints(){
-    return getAFObjects<afJointVec, afJointMap>(&m_afJointMap);
+afJointVec afWorld::getJoints(){
+    return getBaseObjects<afJoint>(getJointMap());
 }
 
 
@@ -5893,8 +5944,8 @@ afJointVec afWorld::getAFJoints(){
 /// \brief afWorld::getSensors
 /// \return
 ///
-afSensorVec afWorld::getAFSensors(){
-    return getAFObjects<afSensorVec, afSensorMap>(&m_afSensorMap);
+afSensorVec afWorld::getSensors(){
+    return getBaseObjects<afSensor>(getSensorMap());
 }
 
 
@@ -5902,8 +5953,8 @@ afSensorVec afWorld::getAFSensors(){
 /// \brief afWorld::getAFMultiBodies
 /// \return
 ///
-afModelVec afWorld::getAFMultiBodies(){
-    return getAFObjects<afModelVec, afModelMap>(&m_afModelMap);
+afModelVec afWorld::getModels(){
+    return getBaseObjects<afModel>(getModelMap());
 }
 
 
@@ -5911,8 +5962,8 @@ afModelVec afWorld::getAFMultiBodies(){
 /// \brief afWorld::getAFVehicles
 /// \return
 ///
-afVehicleVec afWorld::getAFVehicles(){
-    return getAFObjects<afVehicleVec, afVehicleMap>(&m_afVehicleMap);
+afVehicleVec afWorld::getVehicles(){
+    return getBaseObjects<afVehicle>(getVehicleMap());
 }
 
 
@@ -5943,12 +5994,12 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
         if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
             if (body){
-                m_pickedAFRigidBody = getAFRigidBody(body, true);
-                if (m_pickedAFRigidBody){
-                    cerr << "User picked AF rigid body: " << m_pickedAFRigidBody->m_name << endl;
+                m_pickedRigidBody = getRigidBody(body, true);
+                if (m_pickedRigidBody){
+                    cerr << "User picked AF rigid body: " << m_pickedRigidBody->m_name << endl;
                     m_pickedBulletRigidBody = body;
-                    m_pickedAFRigidBodyColor = m_pickedAFRigidBody->m_visualMesh->m_material->copy();
-                    m_pickedAFRigidBody->m_visualMesh->setMaterial(m_pickColor);
+                    m_pickedRigidBodyColor = m_pickedRigidBody->m_visualMesh->m_material->copy();
+                    m_pickedRigidBody->m_visualMesh->setMaterial(m_pickColor);
                     m_savedState = m_pickedBulletRigidBody->getActivationState();
                     m_pickedBulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
                 }
@@ -6090,8 +6141,8 @@ void afWorld::removePickingConstraint(){
         m_pickedBulletRigidBody = nullptr;
     }
 
-    if (m_pickedAFRigidBody){
-        m_pickedAFRigidBody->m_visualMesh->setMaterial(m_pickedAFRigidBodyColor);
+    if (m_pickedRigidBody){
+        m_pickedRigidBody->m_visualMesh->setMaterial(m_pickedRigidBodyColor);
     }
 
     if (m_pickedSoftBody){
@@ -6482,7 +6533,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFCameraMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getCameraMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -7161,10 +7212,10 @@ void afCamera::loadPreProcessingShaders()
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
             preProcessingShadersUpdate();
-            afRigidBodyMap::iterator rbIt;
-            afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+            afBaseObjectMap::iterator rbIt;
+            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
             for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = rbIt->second;
+                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
                 if (rb->m_visualMesh){
                     // Store the current shader Pgm
                     m_shaderProgramBackup[rb] = rb->m_visualMesh->getShaderProgram();
@@ -7179,10 +7230,10 @@ void afCamera::unloadPreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
-            afRigidBodyMap::iterator rbIt;
-            afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+            afBaseObjectMap::iterator rbIt;
+            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
             for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = rbIt->second;
+                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
                 if (rb->m_visualMesh){
                     // Reassign the backedup shaderpgm for the next rendering pass
                     rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
@@ -7241,7 +7292,6 @@ bool afLight::createDefaultLight(){
     m_spotLight->m_shadowMap->setQualityVeryHigh();
     m_spotLight->setEnabled(true);
     m_afWorld->addSceneObjectToWorld(m_spotLight);
-
     return true;
 }
 
@@ -7304,7 +7354,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFLightMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getLightMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -7498,7 +7548,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_rigidBodyAttribs.size(); ++i) {
         afRigidBodyPtr rBodyPtr = new afRigidBody(m_afWorld, this);
         if (rBodyPtr->createFromAttribs(&attribs.m_rigidBodyAttribs[i])){
-            string remaped_name = m_afWorld->addAFRigidBody(rBodyPtr);
+            string remaped_name = m_afWorld->addRigidBody(rBodyPtr);
             m_afRigidBodyMapLocal[rBodyPtr->getQualifiedIdentifier()] = rBodyPtr;
         }
     }
@@ -7507,7 +7557,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_softBodyAttribs.size(); ++i) {
         afSoftBodyPtr sBodyPtr = new afSoftBody(m_afWorld, this);
         if (sBodyPtr->createFromAttribs(&attribs.m_softBodyAttribs[i])){
-            string remaped_name = m_afWorld->addAFSoftBody(sBodyPtr);
+            string remaped_name = m_afWorld->addSoftBody(sBodyPtr);
             m_afSoftBodyMapLocal[sBodyPtr->getQualifiedIdentifier()] = sBodyPtr;
         }
     }
@@ -7516,7 +7566,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_ghostObjectAttribs.size(); ++i) {
         afGhostObjectPtr gObjPtr = new afGhostObject(m_afWorld, this);
         if (gObjPtr->createFromAttribs(&attribs.m_ghostObjectAttribs[i])){
-            string remaped_name = m_afWorld->addAFGhostObject(gObjPtr);
+            string remaped_name = m_afWorld->addGhostObject(gObjPtr);
             m_afGhostObjectMapLocal[gObjPtr->getQualifiedIdentifier()] = gObjPtr;
         }
     }
@@ -7549,7 +7599,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
 
         if (valid){
-            string remaped_name = m_afWorld->addAFSensor(sensorPtr);
+            string remaped_name = m_afWorld->addSensor(sensorPtr);
         }
     }
 
@@ -7571,7 +7621,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
 
         if (valid){
-            string remaped_name = m_afWorld->addAFActuator(actuatorPtr);
+            string remaped_name = m_afWorld->addActuator(actuatorPtr);
         }
     }
 
@@ -7579,7 +7629,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_jointAttribs.size(); ++i) {
         afJointPtr jntPtr = new afJoint(m_afWorld, this);
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
-            string remaped_name = m_afWorld->addAFJoint(jntPtr);
+            string remaped_name = m_afWorld->addJoint(jntPtr);
             m_afJointMapLocal[jntPtr->getQualifiedIdentifier()] = jntPtr;
         }
     }
@@ -7589,7 +7639,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_vehicleAttribs.size(); ++i) {
         vehiclePtr = new afVehicle(m_afWorld, this);
         if (vehiclePtr->createFromAttribs(&attribs.m_vehicleAttribs[i])){
-            string remap_name = m_afWorld->addAFVehicle(vehiclePtr);
+            string remap_name = m_afWorld->addVehicle(vehiclePtr);
             m_afVehicleMapLocal[vehiclePtr->getQualifiedIdentifier()] = vehiclePtr;
         }
     }
@@ -7612,7 +7662,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 /// \param suppress_warning
 /// \return
 ///
-afRigidBodyPtr afModel::getAFRigidBodyLocal(string a_name, bool suppress_warning){
+afRigidBodyPtr afModel::getRigidBodyLocal(string a_name, bool suppress_warning){
     if (m_afRigidBodyMapLocal.find(a_name) != m_afRigidBodyMapLocal.end()){
         return m_afRigidBodyMapLocal[a_name];
     }
@@ -7664,13 +7714,13 @@ void afModel::removeOverlappingCollisionChecking(){
     // if there are more than 1, it means that multiple bodies share each other
     // In this case, iteratively go over all the shared bodies and ignore their
     // collision if their common body has the same pivot
-    afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
-    afRigidBodyMap::iterator rBodyIt = rbMap->begin();
+    afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
+    afBaseObjectMap::iterator rBodyIt = rbMap->begin();
     vector<btRigidBody*> bodyFamily;
     pair<btVector3, btRigidBody*> pvtAandConnectedBody;
     vector< pair<btVector3, btRigidBody*> > pvtAandConnectedBodyVec;
     for ( ; rBodyIt != rbMap->end() ; ++rBodyIt){
-        afRigidBodyPtr afBody = rBodyIt->second;
+        afRigidBodyPtr afBody = (afRigidBody*)rBodyIt->second;
         btRigidBody* rBody = afBody->m_bulletRigidBody;
         bodyFamily.clear();
         for(int cIdx = 0 ; cIdx < rBody->getNumConstraintRefs() ; cIdx++){
@@ -7707,43 +7757,39 @@ void afModel::removeOverlappingCollisionChecking(){
 }
 
 
-
-template <typename T, typename TMap>
 ///
-/// \brief afWorld::addObject
+/// \brief afWorld::addBaseObject
 /// \param a_obj
 /// \param a_name
 /// \param a_map
 /// \return
 ///
-bool afWorld::addAFObject(T a_obj, string a_name, TMap* a_map){
-    (*a_map)[a_name] = a_obj;
-    if (checkIfExists(a_obj) == false){
-        m_childrenAFObjects.push_back(a_obj);
-        a_obj->showVisualFrame();
-    }
+bool afWorld::addBaseObject(afBaseObjectPtr a_obj, string a_name, afBaseObjectMap* a_map){
+    (m_childrenObjectsMap[a_obj->getObjectType()])[a_name] = a_obj;
+    a_obj->showVisualFrame();
+    // Whenever a new object is added, resolve parenting of objects that require parenting.
+    resolveMissingParents();
     return true;
 }
 
 
-template <typename T, typename TMap>
 ///
-/// \brief afWorld::getObject
+/// \brief afWorld::getBaseObject
 /// \param a_name
-/// \param map
+/// \param objMap
 /// \param suppress_warning
 /// \return
 ///
-T afWorld::getAFObject(string a_name, TMap* a_map, bool suppress_warning){
-    if (a_map->find(a_name) != a_map->end()){
-        return ((*a_map)[a_name]);
+afBaseObjectPtr afWorld::getBaseObject(string a_name, afBaseObjectMap* objMap, bool suppress_warning){
+    if (objMap->find(a_name) != objMap->end()){
+        return ((*objMap)[a_name]);
     }
     // We didn't find the object using the full name, try checking if the name is a substring of the fully qualified name
     int matching_obj_count = 0;
     vector<string> matching_obj_names;
-    T objHandle;
-    typename TMap::iterator oIt = a_map->begin();
-    for (; oIt != a_map->end() ; ++oIt){
+    afBaseObjectPtr objHandle;
+    afBaseObjectMap::iterator oIt = objMap->begin();
+    for (; oIt != objMap->end() ; ++oIt){
         if (oIt->first.find(a_name) != string::npos){
             matching_obj_count++;
             matching_obj_names.push_back(oIt->first);
@@ -7766,9 +7812,9 @@ T afWorld::getAFObject(string a_name, TMap* a_map, bool suppress_warning){
         if (!suppress_warning){
             cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
 
-            cerr <<"Existing OBJECTS in Map: " << a_map->size() << endl;
-            typename TMap::iterator oIt = a_map->begin();
-            for (; oIt != a_map->end() ; ++oIt){
+            cerr <<"Existing OBJECTS in Map: " << objMap->size() << endl;
+            afBaseObjectMap::iterator oIt = objMap->begin();
+            for (; oIt != objMap->end() ; ++oIt){
                 cerr << oIt->first << endl;
             }
         }
@@ -7777,18 +7823,13 @@ T afWorld::getAFObject(string a_name, TMap* a_map, bool suppress_warning){
 }
 
 
-template <typename TVec, typename TMap>
-///
-/// \brief afWorld::getObjects
-/// \param a_map
-/// \return
-///
-TVec afWorld::getAFObjects(TMap* a_map){
-    TVec objects;
-    typename TMap::iterator oIt;
+template <class T>
+vector<T*> afWorld::getBaseObjects(afBaseObjectMap* objMap){
+    vector<T*> objects;
+    afBaseObjectMap::iterator oIt;
 
-    for (oIt = a_map->begin() ; oIt != a_map->end() ; ++oIt){
-        objects.push_back(oIt->second);
+    for (oIt = objMap->begin() ; oIt != objMap->end() ; ++oIt){
+        objects.push_back((T*)oIt->second);
     }
 
     return objects;
@@ -7801,8 +7842,8 @@ TVec afWorld::getAFObjects(TMap* a_map){
 /// \param suppress_warning
 /// \return
 ///
-afLightPtr afWorld::getAFLight(string a_name, bool suppress_warning){
-    return getAFObject<afLightPtr, afLightMap>(a_name, &m_afLightMap, suppress_warning);
+afLightPtr afWorld::getLight(string a_name, bool suppress_warning){
+    return (afLightPtr)getBaseObject(a_name, getLightMap(), suppress_warning);
 }
 
 
@@ -7812,8 +7853,8 @@ afLightPtr afWorld::getAFLight(string a_name, bool suppress_warning){
 /// \param suppress_warning
 /// \return
 ///
-afCameraPtr afWorld::getAFCamera(string a_name, bool suppress_warning){
-    return getAFObject<afCameraPtr, afCameraMap>(a_name, &m_afCameraMap, suppress_warning);
+afCameraPtr afWorld::getCamera(string a_name, bool suppress_warning){
+    return (afCameraPtr)getBaseObject(a_name, getCameraMap(), suppress_warning);
 }
 
 
@@ -7822,8 +7863,8 @@ afCameraPtr afWorld::getAFCamera(string a_name, bool suppress_warning){
 /// \param a_name
 /// \return
 ///
-afRigidBodyPtr afWorld::getAFRigidBody(string a_name, bool suppress_warning){
-    return getAFObject<afRigidBodyPtr, afRigidBodyMap>(a_name, &m_afRigidBodyMap, suppress_warning);
+afRigidBodyPtr afWorld::getRigidBody(string a_name, bool suppress_warning){
+    return (afRigidBodyPtr)getBaseObject(a_name, getRigidBodyMap(), suppress_warning);
 }
 
 
@@ -7833,10 +7874,10 @@ afRigidBodyPtr afWorld::getAFRigidBody(string a_name, bool suppress_warning){
 /// \param suppress_warning
 /// \return
 ///
-afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warning){
-    afRigidBodyMap::iterator afIt;
-    for (afIt = m_afRigidBodyMap.begin() ; afIt != m_afRigidBodyMap.end() ; ++ afIt){
-        afRigidBodyPtr afBody = afIt->second;
+afRigidBodyPtr afWorld::getRigidBody(btRigidBody* a_body, bool suppress_warning){
+    afBaseObjectMap::iterator afIt;
+    for (afIt = getRigidBodyMap()->begin() ; afIt != getRigidBodyMap()->end() ; ++ afIt){
+        afRigidBodyPtr afBody = (afRigidBodyPtr)afIt->second;
         if (a_body == afBody->m_bulletRigidBody){
             return afBody;
         }
@@ -7844,9 +7885,9 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
     if (!suppress_warning){
         cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
 
-        cerr <<"Existing Bodies in Map: " << m_afRigidBodyMap.size() << endl;
-        afRigidBodyMap::iterator rbIt = m_afRigidBodyMap.begin();
-        for (; rbIt != m_afRigidBodyMap.end() ; ++rbIt){
+        cerr <<"Existing Bodies in Map: " << getRigidBodyMap()->size() << endl;
+        afBaseObjectMap::iterator rbIt = getRigidBodyMap()->begin();
+        for (; rbIt != getRigidBodyMap()->end() ; ++rbIt){
             cerr << rbIt->first << endl;
         }
     }
@@ -7860,8 +7901,8 @@ afRigidBodyPtr afWorld::getAFRigidBody(btRigidBody* a_body, bool suppress_warnin
 /// \param suppress_warning
 /// \return
 ///
-afSoftBodyPtr afWorld::getAFSoftBody(string a_name, bool suppress_warning){
-    return getAFObject<afSoftBodyPtr, afSoftBodyMap>(a_name, &m_afSoftBodyMap, suppress_warning);
+afSoftBodyPtr afWorld::getSoftBody(string a_name, bool suppress_warning){
+    return (afSoftBodyPtr)getBaseObject(a_name, getSoftBodyMap(), suppress_warning);
 }
 
 
@@ -7871,10 +7912,10 @@ afSoftBodyPtr afWorld::getAFSoftBody(string a_name, bool suppress_warning){
 /// \param suppress_warning
 /// \return
 ///
-afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
-    afSoftBodyMap::iterator afIt;
-    for (afIt = m_afSoftBodyMap.begin() ; afIt != m_afSoftBodyMap.end() ; ++ afIt){
-        afSoftBodyPtr afBody = afIt->second;
+afSoftBodyPtr afWorld::getSoftBody(btSoftBody* a_body, bool suppress_warning){
+    afBaseObjectMap::iterator afIt;
+    for (afIt = getSoftBodyMap()->begin() ; afIt != getSoftBodyMap()->end() ; ++ afIt){
+        afSoftBodyPtr afBody = (afSoftBodyPtr)afIt->second;
         if (a_body == afBody->m_bulletSoftBody){
             return afBody;
         }
@@ -7882,25 +7923,25 @@ afSoftBodyPtr afWorld::getAFSoftBody(btSoftBody* a_body, bool suppress_warning){
     if (!suppress_warning){
         cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
 
-        cerr <<"Existing Soft Bodies in Map: " << m_afSoftBodyMap.size() << endl;
-        afSoftBodyMap::iterator sbIt = m_afSoftBodyMap.begin();
-        for (; sbIt != m_afSoftBodyMap.end() ; ++sbIt){
+        cerr <<"Existing Soft Bodies in Map: " << getSensorMap()->size() << endl;
+        afBaseObjectMap::iterator sbIt = getSoftBodyMap()->begin();
+        for (; sbIt != getSoftBodyMap()->end() ; ++sbIt){
             cerr << sbIt->first << endl;
         }
     }
     return nullptr;
 }
 
-afGhostObjectPtr afWorld::getAFGhostObject(string a_name, bool suppress_warning)
+afGhostObjectPtr afWorld::getGhostObject(string a_name, bool suppress_warning)
 {
-    return getAFObject<afGhostObjectPtr, afGhostObjectMap>(a_name, &m_afGhostObjectMap, suppress_warning);
+    return (afGhostObjectPtr)getBaseObject(a_name, getGhostObjectMap(), suppress_warning);
 }
 
-afGhostObjectPtr afWorld::getAFGhostObject(btGhostObject *a_body, bool suppress_warning)
+afGhostObjectPtr afWorld::getGhostObject(btGhostObject *a_body, bool suppress_warning)
 {
-    afGhostObjectMap::iterator afIt;
-    for (afIt = m_afGhostObjectMap.begin() ; afIt != m_afGhostObjectMap.end() ; ++ afIt){
-        afGhostObjectPtr afObj = afIt->second;
+    afBaseObjectMap::iterator afIt;
+    for (afIt = getGhostObjectMap()->begin() ; afIt != getGhostObjectMap()->end() ; ++ afIt){
+        afGhostObjectPtr afObj = (afGhostObjectPtr)afIt->second;
         if (a_body == afObj->m_bulletGhostObject){
             return afObj;
         }
@@ -7908,9 +7949,9 @@ afGhostObjectPtr afWorld::getAFGhostObject(btGhostObject *a_body, bool suppress_
     if (!suppress_warning){
         cerr << "WARNING: CAN'T FIND ANY OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
 
-        cerr <<"Existing Objects in Map: " << m_afGhostObjectMap.size() << endl;
-        afGhostObjectMap::iterator goIt = m_afGhostObjectMap.begin();
-        for (; goIt != m_afGhostObjectMap.end() ; ++goIt){
+        cerr <<"Existing Objects in Map: " << getGhostObjectMap()->size() << endl;
+        afBaseObjectMap::iterator goIt = getGhostObjectMap()->begin();
+        for (; goIt != getGhostObjectMap()->end() ; ++goIt){
             cerr << goIt->first << endl;
         }
     }
@@ -7924,8 +7965,8 @@ afGhostObjectPtr afWorld::getAFGhostObject(btGhostObject *a_body, bool suppress_
 /// \param suppress_warning
 /// \return
 ///
-afModelPtr afWorld::getAFModel(string a_name, bool suppress_warning){
-    return getAFObject<afModelPtr, afModelMap>(a_name, &m_afModelMap, suppress_warning);
+afModelPtr afWorld::getModel(string a_name, bool suppress_warning){
+    return (afModelPtr)getBaseObject(a_name, getModelMap(), suppress_warning);
 }
 
 
@@ -7935,8 +7976,8 @@ afModelPtr afWorld::getAFModel(string a_name, bool suppress_warning){
 /// \param suppress_warning
 /// \return
 ///
-afVehiclePtr afWorld::getAFVehicle(string a_name, bool suppress_warning){
-    return getAFObject<afVehiclePtr, afVehicleMap>(a_name, &m_afVehicleMap, suppress_warning);
+afVehiclePtr afWorld::getVehicle(string a_name, bool suppress_warning){
+    return (afVehiclePtr)getBaseObject(a_name, getVehicleMap(), suppress_warning);
 }
 
 
@@ -7945,7 +7986,7 @@ afVehiclePtr afWorld::getAFVehicle(string a_name, bool suppress_warning){
 /// \param a_bodyPtr
 /// \return
 ///
-afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
+afRigidBodyPtr afWorld::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
     if (!a_bodyPtr){
         cerr << "ERROR, BODY PTR IS NULL, CAN\'T LOOK UP ROOT BODIES" << endl;
         return nullptr;
@@ -7994,7 +8035,7 @@ afRigidBodyPtr afWorld::getRootAFRigidBody(afRigidBodyPtr a_bodyPtr){
 /// \param a_bodyPtr
 /// \return
 ///
-afRigidBodyPtr afModel::getRootAFRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
+afRigidBodyPtr afModel::getRootRigidBodyLocal(afRigidBodyPtr a_bodyPtr){
     /// Find Root Body
     afRigidBodyPtr rootParentBody;
     vector<int> bodyParentsCount;
@@ -8086,7 +8127,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_chassis = m_afWorld->getAFRigidBody(attribs.m_chassisBodyName);
+    m_chassis = m_afWorld->getRigidBody(attribs.m_chassisBodyName);
 
     if (m_chassis == nullptr){
         result = false;
@@ -8123,7 +8164,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
         }
         case afWheelRepresentationType::RIGID_BODY:{
             string rbName = m_wheelAttribs[i].m_wheelBodyName;
-            m_wheels[i].m_wheelBody = m_afWorld->getAFRigidBody(rbName);
+            m_wheels[i].m_wheelBody = m_afWorld->getRigidBody(rbName);
             if (m_wheels[i].m_wheelBody){
                 // Since the wheel in the RayCast car in implicit. Disable the dynamic
                 // properties of this wheel.
@@ -8186,7 +8227,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFVehicleMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getVehicleMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -8364,7 +8405,7 @@ void afPointCloud::update()
                 m_mpPtr->getParent()->removeChild(m_mpPtr);
             }
 
-            afRigidBodyPtr pBody = m_afWorld->getAFRigidBody(frame_id);
+            afRigidBodyPtr pBody = m_afWorld->getRigidBody(frame_id);
             if(pBody){
                 pBody->addChildObject(this);
             }

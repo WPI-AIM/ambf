@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
     // The world loads the lights and cameras + windows
     g_afWorld->createFromAttribs(&worldAttribs);
 
-    g_cameras = g_afWorld->getAFCameras();
+    g_cameras = g_afWorld->getCameras();
 
     // Process the loadMultiBodyFiles string
     if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
     for (int idx = 0 ; idx < modelsAttribs.size() ; idx++){
         afModelPtr model = new afModel(g_afWorld);
         if (model->createFromAttribs(&modelsAttribs[idx])){
-            g_afWorld->addAFModel(model);
+            g_afWorld->addModel(model);
         }
     }
 
@@ -696,7 +696,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
                 if (g_adfLoaderPtr->loadModelAttribs(paths[i], &modelAttribs)){
                     afModelPtr model = new afModel(g_afWorld);
                     if (model->createFromAttribs(&modelAttribs)){
-                        g_afWorld->addAFModel(model);
+                        g_afWorld->addModel(model);
                     }
                     else{
                         delete model;
@@ -802,9 +802,9 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - If CTRL X is pressed, reset the simulation
         else if (a_key == GLFW_KEY_X){
             g_afWorld->pausePhysics(true);
-            if (g_afWorld->m_pickedAFRigidBody != nullptr){
-                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_pickedAFRigidBody->m_name.c_str());
-                g_afWorld->m_pickedAFRigidBody->remove();
+            if (g_afWorld->m_pickedRigidBody != nullptr){
+                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_pickedRigidBody->m_name.c_str());
+                g_afWorld->m_pickedRigidBody->remove();
             }
             else{
                 printf("Last Picked Body Not Valid for Removal\n");
@@ -834,7 +834,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     }
     else if (a_mods == GLFW_MOD_SHIFT){
         if (a_key == GLFW_KEY_N){
-            afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+            afRigidBodyVec rbVec = g_afWorld->getRigidBodies();
             g_enableNormalMapping = ! g_enableNormalMapping;
             printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
             for (int i = 0 ; i < rbVec.size() ; i++){
@@ -849,8 +849,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - Toogle visibility of body frames and softbody skeleton
         else if (a_key == GLFW_KEY_V){
             printf("Toggling Frame Visibility ON/OFF\n");
-            if (g_afWorld->m_pickedAFRigidBody != nullptr){
-                g_afWorld->m_pickedAFRigidBody->toggleFrameVisibility();
+            if (g_afWorld->m_pickedRigidBody != nullptr){
+                g_afWorld->m_pickedRigidBody->toggleFrameVisibility();
             }
             else{
             }
@@ -962,10 +962,10 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - Toggle Visibility of Sensors
         else if (a_key == GLFW_KEY_S){
-            auto sMap = g_afWorld->getAFSensorMap();
-            afSensorMap::const_iterator sIt;
+            auto sMap = g_afWorld->getSensorMap();
+            afBaseObjectMap::const_iterator sIt;
             for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
-                sIt->second->toggleSensorVisibility();
+                ((afSensorPtr)sIt->second)->toggleSensorVisibility();
             }
         }
 
@@ -981,28 +981,14 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - Toogle visibility of body frames and softbody skeleton
         else if (a_key == GLFW_KEY_V){
-            auto rbMap = g_afWorld->getAFRigidBodyMap();
-            afRigidBodyMap::const_iterator rbIt;
-            for (rbIt = rbMap->begin() ; rbIt != rbMap->end(); ++rbIt){
-                rbIt->second->toggleFrameVisibility();
-            }
-
-            auto lMap = g_afWorld->getAFLightMap();
-            afLightMap::const_iterator lIt;
-            for (lIt = lMap->begin() ; lIt != lMap->end(); ++lIt){
-                lIt->second->toggleFrameVisibility();
-            }
-
-            auto cMap = g_afWorld->getAFCameraMap();
-            afCameraMap::const_iterator cIt;
-            for (cIt = cMap->begin() ; cIt != cMap->end(); ++cIt){
-                cIt->second->toggleFrameVisibility();
-            }
-
-            auto sbMap = g_afWorld->getAFSoftBodyMap();
-            afSoftBodyMap::const_iterator sbIt;
-            for (sbIt = sbMap->begin() ; sbIt != sbMap->end(); ++sbIt){
-                sbIt->second->toggleSkeletalModelVisibility();
+            auto cMap = g_afWorld->getChildrenMap();
+            afChildrenMap::const_iterator cIt;
+            for (cIt = cMap->begin() ; cIt != cMap->end() ; ++cIt){
+                afBaseObjectMap objMap = cIt->second;
+                afBaseObjectMap::iterator objIt;
+                for (objIt = objMap.begin(); objIt != objMap.end(); ++objIt){
+                    objIt->second->toggleFrameVisibility();
+                }
             }
         }
 

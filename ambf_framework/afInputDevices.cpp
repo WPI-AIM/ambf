@@ -604,15 +604,15 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (attribs.m_rootLinkDefined){
-            m_rootLink = getAFRigidBodyLocal(attribs.m_rootLinkName);
+            m_rootLink = getRigidBodyLocal(attribs.m_rootLinkName);
         }
         else{
-            m_rootLink = getRootAFRigidBodyLocal();
+            m_rootLink = getRootRigidBodyLocal();
         }
     }
     // If only the root link is defined, we are going to look for it in the global space
     else if (attribs.m_rootLinkDefined){
-        m_rootLink = m_afWorld->getAFRigidBody(attribs.m_rootLinkName, false);
+        m_rootLink = m_afWorld->getRigidBody(attribs.m_rootLinkName, false);
     }
 
     if (m_rootLink != nullptr){
@@ -1090,7 +1090,7 @@ bool afCollateralControlUnit::pairCameras(afWorldPtr a_afWorld, std::vector<stri
 {
     for(int i = 0 ; i < a_cameraNames.size() ; i++){
         std::string camName = a_cameraNames[i];
-        afCameraPtr camPtr = a_afWorld->getAFCamera(camName);
+        afCameraPtr camPtr = a_afWorld->getCamera(camName);
         if(camPtr){
             // Create labels for the contextual controlling devices for each Window-Camera Pair
             cFontPtr font = NEW_CFONTCALIBRI20();
@@ -1111,7 +1111,7 @@ bool afCollateralControlUnit::pairCameras(afWorldPtr a_afWorld, std::vector<stri
     // If no cameras are specified, maybe pair all the cameras?
     // Can be commented out.
     if(a_cameraNames.size() == 0){
-        afCameraVec camVec = a_afWorld->getAFCameras();
+        afCameraVec camVec = a_afWorld->getCameras();
         for(int i = 0 ; i < camVec.size() ; i++){
             afCameraPtr camPtr = camVec[i];
             // Create labels for the contextual controlling devices for each Window-Camera Pair
