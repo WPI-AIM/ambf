@@ -47,17 +47,33 @@
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
+
 #include "afUtils.h"
 #include "afAttributes.h"
+#include "afPluginInterface.h"
+#include "afPluginGroups.h"
+
+//------------------------------------------------------------------------------
+
 #include "chai3d.h"
+
+//------------------------------------------------------------------------------
+
 #include "btBulletDynamicsCommon.h"
 #include "BulletSoftBody/btSoftBody.h"
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
+
+//------------------------------------------------------------------------------
+
 #include <thread>
 #include <fstream>
-//------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+
 #include <GLFW/glfw3.h>
+
+//-----------------------------------------------------------------------------
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 #include <image_transport/image_transport.h>
@@ -77,15 +93,19 @@
 #include "ambf_server/World.h"
 #endif
 
+//-----------------------------------------------------------------------------
+
 // Support for Depth Image to PointCloud2
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 #endif
 
+//-----------------------------------------------------------------------------
 
 #include <time.h>
 #include <random>
+
 //-----------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -542,6 +562,14 @@ public:
     // The update method called at every simulation iteration.
     virtual void update(){}
 
+    virtual void initPlugins(afBaseObjectAttributes* a_attribs);
+
+    virtual void updatePlugins();
+
+    virtual void resetPlugins();
+
+    virtual void closePlugins();
+
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -657,6 +685,11 @@ protected:
     cTransform m_globalTransform;
 
     afBaseObjectPtr m_parentObject;
+
+    vector<afObjectPlugin*> m_objectPlugins;
+
+private:
+    vector<afObjectPlugin*> m_plugins;
 };
 
 
@@ -1969,6 +2002,14 @@ public:
     //! This method updates the simulation over a time interval.
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
 
+    virtual void initPlugins(afWorldAttributes* a_attribs);
+
+    virtual void updatePlugins();
+
+    virtual void resetPlugins();
+
+    virtual void closePlugins();
+
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updateSceneObjects();
 
@@ -2240,6 +2281,8 @@ private:
     // Step the simulation by this many steps
     // Used when the Physics is paused
     int m_manualStepPhx = 0;
+
+    vector<afWorldPlugin*> m_plugins;
 };
 
 

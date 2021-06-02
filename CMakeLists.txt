@@ -387,6 +387,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
   endif()
 endif()
 
+# PLUGINS
+
+add_subdirectory(ambf_plugins)
+
 
 #
 # export package

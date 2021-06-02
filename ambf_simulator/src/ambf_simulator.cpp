@@ -161,6 +161,10 @@ ADFLoaderInterface* g_adfLoaderPtr;
 afWorld *g_afWorld;
 
 afRenderOptions g_afRenderOptions;
+
+afSimulatorPluginGroup g_simulatorPluginGroup;
+
+
 //---------------------------------------------------------------------------
 // DECLARED FUNCTIONS
 //---------------------------------------------------------------------------
@@ -554,9 +558,9 @@ int main(int argc, char* argv[])
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    //    signal (SIGINT, exitHandler);
+    g_simulatorPluginGroup.add("libtest_simulator_plugin.so", "test_simulator_plugin");
 
-    afRigidBodyVec rbVec = g_afWorld->getAFRigidBodies();
+    g_simulatorPluginGroup.init(argc, argv, g_afWorld);
 
     //    signal (SIGINT, exitHandler);
 
@@ -1444,6 +1448,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             }
         }
     }
+
+    g_simulatorPluginGroup.keyboardUpdate(a_key, a_scancode, a_action, a_mods);
 }
 
 ///

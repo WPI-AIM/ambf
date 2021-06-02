@@ -96,6 +96,17 @@ enum class afObjectType{
 
 
 ///
+/// \brief The afPluginType enum
+///
+enum afPluginType{
+    SIMULATOR,
+    WORLD,
+    MODEL,
+    OBJECT
+};
+
+
+///
 /// \brief The afControlType enum
 ///
 enum class afControlType{

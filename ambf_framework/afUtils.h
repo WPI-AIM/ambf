@@ -69,6 +69,9 @@ public:
         int occurances = 0;
         std::string remap_string = "" ;
         std::stringstream ss;
+        if (tMap == nullptr){
+            return remap_string;
+        }
         if (tMap->find(a_body_name) == tMap->end()){
             return remap_string;
         }

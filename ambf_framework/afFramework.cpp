@@ -857,6 +857,47 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes *a_attribs)
 {
 }
 
+
+///
+/// \brief afBaseObject::initPlugins
+///
+void afBaseObject::initPlugins(afBaseObjectAttributes* a_attribs)
+{
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->init(this, a_attribs);
+    }
+}
+
+
+///
+/// \brief afBaseObject::updatePlugins
+///
+void afBaseObject::updatePlugins()
+{
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->update();
+    }
+}
+
+
+///
+/// \brief afBaseObject::resetPlugins
+///
+void afBaseObject::resetPlugins()
+{
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->reset();
+    }
+}
+
+///
+/// \brief afBaseObject::closePlugins
+///
+void afBaseObject::closePlugins()
+{
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->close();
+    }
 }
 
 
@@ -5015,6 +5056,11 @@ afWorld::~afWorld()
     Node::destroyNode();
 #endif
 
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->close();
+        delete (*it);
+    }
+
     if(m_bulletWorld){
         delete m_bulletWorld;
     }
@@ -5635,6 +5681,12 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
         m_shaderAttribs = attribs.m_shaderAttribs;
         loadShaderProgram();
+    }
+
+    // TEST PLUGIN;
+    afWorldPlugin* plugin = afWorldPlugin::Create("libtest_world_plugin.so", "TestWorldPlugin");
+    if (plugin){
+        m_plugins.push_back(plugin);
     }
 
     return true;
