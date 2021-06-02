@@ -4514,6 +4514,7 @@ void afRayTracerSensor::enableVisualization(){
     for (uint i = 0 ; i < m_count ; i++){
         m_rayTracerResults[i].enableVisualization(this, &m_raysAttribs[i], m_visibilitySphereRadius);
     }
+    m_visualizationEnabled = true;
 }
 
 ///
@@ -4523,6 +4524,10 @@ void afRayTracerSensor::update(){
 
     if (m_parentBody == nullptr){
         return;
+    }
+
+    if (m_visualizationEnabled == false){
+        enableVisualization();
     }
 
     btTransform T_bINw = m_parentBody->getCOMTransform() * to_btTransform(m_localTransform);

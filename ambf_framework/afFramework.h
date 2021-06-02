@@ -1314,6 +1314,8 @@ public:
     // Toggle visibility of this sensor
     bool m_showSensor = true;
 
+    bool m_visualizationEnabled = false;
+
     virtual void fetchCommands(double dt);
 
     // Upate the sensor, usually called at each dynamic tick update of the physics engine
