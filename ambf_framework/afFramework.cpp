@@ -1289,25 +1289,25 @@ void afBaseObject::loadShaderProgram()
     }
 }
 
-bool afBaseObject::resolveParenting(string a_parentName, bool suppress_warning){
-    // If the parent name is not empty, override the objects parent name
-    if(a_parentName.empty() == false){
-        m_parentName = a_parentName;
-    }
-
-    // If the parent is empty, indiciate true as no parent is required
-    if (m_parentName.empty() == true){
+bool afBaseObject::resolveParent(string a_parentName, bool suppress_warning){
+    // If the parent name is empty, return true as nothing to do
+    if(a_parentName.empty()){
         return true;
     }
-
-    // Should generalize this to not be just a rigid body that we may parent to.
-    afRigidBodyPtr pBody = m_afWorld->getRigidBody(m_parentName, suppress_warning);
-    if (pBody){
-        pBody->addChildObject(this);
+    else if ( (m_parentName.compare(a_parentName) == 0) && m_parentObject != nullptr ){
+        // The name of the parent is the same, ignore.
         return true;
     }
     else{
-        return false;
+        // Should generalize this to not be just a rigid body that we may parent to.
+        afRigidBodyPtr pBody = m_afWorld->getRigidBody(m_parentName, suppress_warning);
+        if (pBody){
+            pBody->addChildObject(this);
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 }
 
@@ -5178,19 +5178,26 @@ string afWorld::resolveGlobalNamespace(string a_name){
     return fully_qualified_name;
 }
 
-void afWorld::addObjectMissingParent(afBaseObject *a_obj)
+void afWorld::addObjectMissingParent(afBaseObjectPtr a_obj)
 {
     if (!checkIfExists(a_obj, &m_afObjectsMissingParents)){
         m_afObjectsMissingParents.push_back(a_obj);
     }
 }
 
-void afWorld::resolveMissingParents()
+void afWorld::resolveObjectsMissingParents(afBaseObjectPtr a_newObject)
 {
     vector<afBaseObject*> stillMissingParents;
     for (vector<afBaseObject*>::iterator it = m_afObjectsMissingParents.begin() ; it != m_afObjectsMissingParents.end() ; ++it){
-        // Success ?
-        if ((*it)->resolveParenting("", true) == false){
+        // Check if we get an exact match
+        if ( (*it)->m_parentName.compare( a_newObject->getQualifiedIdentifier() ) == 0 ){
+            a_newObject->addChildObject((*it));
+        }
+        // Check if part of the name matches
+        else if( a_newObject->getQualifiedIdentifier().find((*it)->m_parentName) != string::npos){
+            a_newObject->addChildObject((*it));
+        }
+        else{
             stillMissingParents.push_back((*it));
         }
     }
@@ -7023,9 +7030,7 @@ void afCamera::fetchCommands(double dt){
 
                 m_camera->setClippingPlanes(near_plane, far_plane);
 
-                if (m_parentName.compare(parent_name) != 0){
-                    resolveParenting(parent_name);
-                }
+                resolveParent(parent_name);
 
                 switch (m_afCameraCommPtr->get_projection_type()) {
                 case ambf_comm::ProjectionType::PERSPECTIVE:
@@ -7537,9 +7542,7 @@ void afLight::fetchCommands(double dt){
 
                 m_spotLight->setCutOffAngleDeg(cRadToDeg(cutoff_angle));
 
-                if (m_parentName.compare(parent_name) != 0){
-                    resolveParenting(parent_name);
-                }
+                resolveParent(parent_name);
             }
 
             m_read_count = 0;
@@ -7864,8 +7867,8 @@ bool afWorld::addBaseObject(afBaseObjectPtr a_obj, string a_name){
     }
     (m_childrenObjectsMap[a_obj->getObjectType()])[a_name] = a_obj;
     a_obj->calculateFrameSize();
-    // Whenever a new object is added, resolve parenting of objects that require parenting.
-    resolveMissingParents();
+    // Whenever a new object is added, try to resolve parenting of objects that require parenting.
+    resolveObjectsMissingParents(a_obj);
     return true;
 }
 

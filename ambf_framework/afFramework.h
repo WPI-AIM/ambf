@@ -645,7 +645,7 @@ public:
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.
-    virtual bool resolveParenting(string a_parentName="", bool suppress_warning=false);
+    virtual bool resolveParent(string a_parentName="", bool suppress_warning=false);
 
     // Ptr to afWorld
     afWorldPtr m_afWorld;
@@ -2131,9 +2131,9 @@ public:
 
     string resolveGlobalNamespace(string a_name);
 
-    void addObjectMissingParent(afBaseObject* a_obj);
+    void addObjectMissingParent(afBaseObjectPtr a_obj);
 
-    void resolveMissingParents();
+    void resolveObjectsMissingParents(afBaseObjectPtr a_newObject);
 
     string getGlobalNamespace(){return m_global_namespace;}
 
