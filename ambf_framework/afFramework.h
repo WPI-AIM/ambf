@@ -634,7 +634,7 @@ public:
 
     virtual void updateGlobalPose();
 
-    void showVisualFrame();
+    void calculateFrameSize();
 
     inline bool isShaderPgmDefined(){
         return m_shaderAttribs.m_shaderDefined;
@@ -1207,17 +1207,26 @@ public:
 
     virtual void deactuate(){}
 
+    virtual void enableVisualization(){}
+
+    // Toggle the debug display of the sensor
+    inline void toggleVisibility() {m_show = !m_show; }
+
     // Parent Body for this sensor
     afRigidBodyPtr m_parentBody;
-
-    bool m_showActuator;
 
     virtual void fetchCommands(double){}
 
     virtual void update(){}
 
 protected:
+    bool m_show = false;
+
+    double m_visibleSize = 0.002;
+
     bool m_actuate = false;
+
+    bool m_visualizationEnabled = false;
 };
 
 
@@ -1260,6 +1269,10 @@ public:
 
     virtual void actuate(afSensorPtr a_sensorPtr);
 
+    virtual void enableVisualization();
+
+    void visualize(bool show);
+
     // Remove the constraint
     virtual void deactuate();
 
@@ -1300,7 +1313,7 @@ public:
     virtual bool createFromAttribs(afSensorAttributes* a_attribs){return false;}
 
     // Toggle the debug display of the sensor
-    inline void toggleSensorVisibility() {m_showSensor = !m_showSensor; }
+    inline void toggleVisibility() {m_show = !m_show; }
 
     // Get the body this sensor is a child of
     inline afRigidBodyPtr getParentBody(){return m_parentBody;}
@@ -1312,7 +1325,7 @@ public:
     afSensorType m_sensorType;
 
     // Toggle visibility of this sensor
-    bool m_showSensor = true;
+    bool m_show = true;
 
     bool m_visualizationEnabled = false;
 
@@ -1387,6 +1400,8 @@ public:
     inline double getCount(){return m_count;}
 
     void enableVisualization();
+
+    void visualize(bool show);
 
     virtual void fetchCommands(double dt);
 

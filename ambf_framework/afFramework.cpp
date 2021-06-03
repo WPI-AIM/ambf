@@ -1224,7 +1224,7 @@ void afBaseObject::updateGlobalPose(){
     m_globalTransform = a_globalTransform;
 }
 
-void afBaseObject::showVisualFrame()
+void afBaseObject::calculateFrameSize()
 {
     std::vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
@@ -1352,21 +1352,8 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_showActuator = attribs.m_visible;
-
-    if (m_showActuator){
-        if (m_actuatorVisual == nullptr){
-            cMesh* mesh = new cMesh();
-            cCreateSphere(mesh, attribs.m_visibleSize);
-            mesh->m_material->setYellowGold();
-            mesh->setShowEnabled(true);
-            mesh->setUseDisplayList(true);
-            mesh->markForUpdate(false);
-            m_actuatorVisual = mesh;
-            addChildSceneObject(m_actuatorVisual, cTransform());
-            m_afWorld->addSceneObjectToWorld(mesh);
-        }
-    }
+    m_show = attribs.m_visible;
+    m_visibleSize = attribs.m_visibleSize;
 
     // First search in the local space.
     m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
@@ -1403,6 +1390,41 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     }
 
     return result;
+}
+
+
+///
+/// \brief afActuator::enableVisualization
+///
+void afConstraintActuator::enableVisualization()
+{
+    if (m_visualizationEnabled == false){
+        cMesh* mesh = new cMesh();
+        cCreateSphere(mesh, m_visibleSize);
+        mesh->m_material->setYellowGold();
+        mesh->setShowEnabled(false);
+        mesh->setUseDisplayList(true);
+        mesh->markForUpdate(false);
+        m_actuatorVisual = mesh;
+        addChildSceneObject(m_actuatorVisual, cTransform());
+        m_afWorld->addSceneObjectToWorld(mesh);
+    }
+    m_visualizationEnabled = true;
+}
+
+void afConstraintActuator::visualize(bool show)
+{
+    if (m_visualizationEnabled == false){
+        enableVisualization();
+    }
+    m_actuatorVisual->setShowEnabled(show);
+
+    if (m_active){
+        m_actuatorVisual->m_material->setGreenLime();
+    }
+    else{
+        m_actuatorVisual->m_material->setYellowGold();
+    }
 }
 
 
@@ -1649,17 +1671,7 @@ void afConstraintActuator::update(){
     }
 #endif
 
-    // If visual is enabled, change the color
-    if (m_showActuator){
-        if (m_actuatorVisual){
-            if (m_active){
-                m_actuatorVisual->m_material->setGreenLime();
-            }
-            else{
-                m_actuatorVisual->m_material->setYellowGold();
-            }
-        }
-    }
+    visualize(m_show);
 }
 
 
@@ -4372,7 +4384,7 @@ void afRayTracerResult::enableVisualization(afRayTracerSensor* sensorPtr, const 
         cMesh* mesh = new cMesh();
         cCreateSphere(mesh, sphereRadius);
         mesh->m_material->setRed();
-        mesh->setShowEnabled(true);
+        mesh->setShowEnabled(false);
         mesh->setUseDisplayList(true);
         mesh->markForUpdate(false);
         m_fromSphereMesh = mesh;
@@ -4386,7 +4398,7 @@ void afRayTracerResult::enableVisualization(afRayTracerSensor* sensorPtr, const 
         cMesh* mesh = new cMesh();
         cCreateSphere(mesh, sphereRadius);
         mesh->m_material->setGreen();
-        mesh->setShowEnabled(true);
+        mesh->setShowEnabled(false);
         mesh->setUseDisplayList(true);
         mesh->markForUpdate(false);
         m_toSphereMesh = mesh;
@@ -4437,7 +4449,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_showSensor = attribs.m_visible;
+    m_show = attribs.m_visible;
     m_visibilitySphereRadius = attribs.m_visibleSize;
 
     // First search in the local space.
@@ -4481,10 +4493,6 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    if (m_showSensor){
-        enableVisualization();
-    }
-
     if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSensorMap());
@@ -4513,6 +4521,19 @@ void afRayTracerSensor::enableVisualization(){
     m_visualizationEnabled = true;
 }
 
+void afRayTracerSensor::visualize(bool show)
+{
+    if (m_visualizationEnabled == false){
+        enableVisualization();
+    }
+
+    for (uint i = 0 ; i < m_count ; i++){
+        m_rayTracerResults[i].m_fromSphereMesh->setShowEnabled(show);
+        m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(show && m_rayTracerResults[i].m_triggered);
+        m_rayTracerResults[i].m_toSphereMesh->setShowEnabled(show);
+    }
+}
+
 ///
 /// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
@@ -4520,10 +4541,6 @@ void afRayTracerSensor::update(){
 
     if (m_parentBody == nullptr){
         return;
-    }
-
-    if (m_visualizationEnabled == false){
-        enableVisualization();
     }
 
     btTransform T_bINw = m_parentBody->getCOMTransform() * to_btTransform(m_localTransform);
@@ -4535,11 +4552,10 @@ void afRayTracerSensor::update(){
         btCollisionWorld::ClosestRayResultCallback rayCallBack(rayFromWorld, rayToWorld);
         m_afWorld->m_bulletWorld->rayTest(rayFromWorld, rayToWorld, rayCallBack);
         if (rayCallBack.hasHit()){
-            if (m_showSensor){
+            if (m_visualizationEnabled){
                 cVector3d Ph;
                 Ph << rayCallBack.m_hitPointWorld;
                 m_rayTracerResults[i].m_hitSphereMesh->setLocalPos(Ph);
-                m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(true);
             }
             m_rayTracerResults[i].m_triggered = true;
             if (rayCallBack.m_collisionObject->getInternalType()
@@ -4603,12 +4619,11 @@ void afRayTracerSensor::update(){
             m_rayTracerResults[i].m_sensedLocationWorld << rayCallBack.m_hitPointWorld;
         }
         else{
-            if(m_showSensor){
-                m_rayTracerResults[i].m_hitSphereMesh->setShowEnabled(false);
-            }
             m_rayTracerResults[i].m_triggered = false;
             m_rayTracerResults[i].m_depthFraction = 0;
         }
+
+        visualize(m_show);
     }
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
@@ -4785,7 +4800,7 @@ void afResistanceSensor::update(){
     for (uint i = 0 ; i < m_count ; i++){
 
         if (isTriggered(i)){
-            if (m_showSensor){
+            if (m_show){
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
                                                                 cVector3d>(cVector3d(0,0,1), m_rayTracerResults[i].m_contactNormal));
@@ -4941,7 +4956,7 @@ void afResistanceSensor::update(){
             m_rayContactResults[i].m_contactPointsValid = false;
             m_rayContactResults[i].m_firstTrigger = true;
 
-            if(m_showSensor){
+            if(m_show){
                 m_rayTracerResults[i].m_hitNormalMesh->setShowEnabled(false);
             }
         }
@@ -7848,7 +7863,7 @@ bool afWorld::addBaseObject(afBaseObjectPtr a_obj, string a_name){
         return false;
     }
     (m_childrenObjectsMap[a_obj->getObjectType()])[a_name] = a_obj;
-    a_obj->showVisualFrame();
+    a_obj->calculateFrameSize();
     // Whenever a new object is added, resolve parenting of objects that require parenting.
     resolveMissingParents();
     return true;

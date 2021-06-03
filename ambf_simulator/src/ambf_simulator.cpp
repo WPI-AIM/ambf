@@ -1312,12 +1312,23 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             g_mousePickingEnabled = !g_mousePickingEnabled;
         }
 
+        // option - Toggle Visibility of Actuators
+        else if (a_key == GLFW_KEY_A){
+            printf("Toggling visibility of Actuators:\n");
+            auto aMap = g_afWorld->getActuatorMap();
+            afBaseObjectMap::const_iterator aIt;
+            for (aIt = aMap->begin() ; aIt != aMap->end(); ++aIt){
+                ((afActuatorPtr)aIt->second)->toggleVisibility();
+            }
+        }
+
         // option - Toggle Visibility of Sensors
         else if (a_key == GLFW_KEY_S){
+            printf("Toggling visibility of Sensors:\n");
             auto sMap = g_afWorld->getSensorMap();
             afBaseObjectMap::const_iterator sIt;
             for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
-                ((afSensorPtr)sIt->second)->toggleSensorVisibility();
+                ((afSensorPtr)sIt->second)->toggleVisibility();
             }
         }
 
