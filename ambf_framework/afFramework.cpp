@@ -829,7 +829,7 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 /// \brief afObject::afObject
 /// \param a_afWorld
 ///
-afBaseObject::afBaseObject(afWorldPtr a_afWorld, afModelPtr a_afModel){
+afBaseObject::afBaseObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_afModel): m_type(a_type){
     m_afWorld = a_afWorld;
     m_modelPtr = a_afModel;
     m_parentObject = nullptr;
@@ -1316,8 +1316,7 @@ bool afBaseObject::resolveParenting(string a_parentName, bool suppress_warning){
 /// \brief afActuator::afActuator
 /// \param a_afWorld
 ///
-afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
-    m_type = afObjectType::ACTUATOR;
+afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afObjectType::ACTUATOR, a_afWorld, a_modelPtr){
 }
 
 
@@ -1668,7 +1667,7 @@ void afConstraintActuator::update(){
 /// \brief afInertialObject::afInertialObject
 /// \param a_afWorld
 ///
-afInertialObject::afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr)
+afInertialObject::afInertialObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_type, a_afWorld, a_modelPtr)
 {
     m_T_iINb.setIdentity();
     m_T_bINi.setIdentity();
@@ -1905,8 +1904,7 @@ void afInertialObject::applyTorque(const cVector3d &a_torque)
 /// \brief afBody::afBody
 /// \param a_world
 ///
-afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-    m_type = afObjectType::RIGID_BODY;
+afRigidBody::afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afObjectType::RIGID_BODY, a_afWorld, a_modelPtr){
     m_mesh_name.clear();
     m_scale = 1.0;
 
@@ -3341,8 +3339,7 @@ void afMeshCleanup::computeUniqueVerticesandTrianglesSequential(const cMesh *mes
 /// \brief afSoftBody::afSoftBody
 /// \param a_afWorld
 ///
-afSoftBody::afSoftBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-    m_type = afObjectType::SOFT_BODY;
+afSoftBody::afSoftBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afObjectType::SOFT_BODY, a_afWorld, a_modelPtr){
 }
 
 
@@ -3802,7 +3799,7 @@ void afJointController::boundImpulse(double &effort_cmd){
 ///
 /// \brief afJoint::afJoint
 ///
-afJoint::afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
+afJoint::afJoint(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afObjectType::JOINT, a_afWorld, a_modelPtr){
     m_posArray.resize(m_jpSize);
     m_dtArray.resize(m_jpSize);
     m_enableLimits = false;
@@ -4329,8 +4326,7 @@ double afJoint::getEffort(){
 /// \brief afSensor::afSensor
 /// \param a_afWorld
 ///
-afSensor::afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_afWorld, a_modelPtr){
-    m_type = afObjectType::SENSOR;
+afSensor::afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afObjectType::SENSOR, a_afWorld, a_modelPtr){
 }
 
 
@@ -5713,7 +5709,6 @@ void afWorld::render(afRenderOptions &options)
     for (camIt = getCameraMap()->begin(); camIt != getCameraMap()->end(); ++ camIt){
         afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
         cameraPtr->render(options);
-
     }
 
 }
@@ -5846,7 +5841,7 @@ string afWorld::addLight(afLightPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getLightMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, remaped_identifier, getLightMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5855,7 +5850,7 @@ string afWorld::addCamera(afCameraPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getCameraMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getCameraMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5864,7 +5859,7 @@ string afWorld::addRigidBody(afRigidBodyPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getRigidBodyMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getRigidBodyMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5873,7 +5868,7 @@ string afWorld::addSoftBody(afSoftBodyPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getSoftBodyMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getSoftBodyMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5882,7 +5877,7 @@ string afWorld::addGhostObject(afGhostObjectPtr a_obj)
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getGhostObjectMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getGhostObjectMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5891,7 +5886,7 @@ string afWorld::addJoint(afJointPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getJointMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getJointMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5900,7 +5895,7 @@ string afWorld::addActuator(afActuatorPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getActuatorMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getActuatorMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5909,7 +5904,7 @@ string afWorld::addSensor(afSensorPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getSensorMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getSensorMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5918,7 +5913,7 @@ string afWorld::addModel(afModelPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getModelMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getModelMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -5928,7 +5923,7 @@ string afWorld::addVehicle(afVehiclePtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getVehicleMap());
     string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str, getVehicleMap());
+    addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
 }
 
@@ -6238,8 +6233,7 @@ void afWorld::removePickingConstraint(){
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-    m_type = afObjectType::CAMERA;
+afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(afObjectType::CAMERA, a_afWorld){
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
@@ -7353,8 +7347,7 @@ void afCamera::preProcessingShadersUpdate()
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
-    m_type = afObjectType::LIGHT;
+afLight::afLight(afWorldPtr a_afWorld): afBaseObject(afObjectType::LIGHT, a_afWorld){
 }
 
 ///
@@ -7579,7 +7572,7 @@ void afLight::update()
 }
 
 
-afModel::afModel(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
+afModel::afModel(afWorldPtr a_afWorld): afBaseObject(afObjectType::MODEL, a_afWorld){
     //    m_pickDragVector = new cMesh();
     //    cCreateArrow(m_pickDragVector);
     //    m_pickDragVector->m_material->setPurpleAmethyst();
@@ -7587,7 +7580,6 @@ afModel::afModel(afWorldPtr a_afWorld): afBaseObject(a_afWorld){
     //    m_pickDragVector->setUseDisplayList(true);
     //    m_pickDragVector->markForUpdate(false);
     //    m_chaiWorld->addVisualMesh(m_pickDragVector);
-    m_type = afObjectType::MODEL;
 }
 
 
@@ -7848,10 +7840,13 @@ void afModel::removeOverlappingCollisionChecking(){
 /// \brief afWorld::addBaseObject
 /// \param a_obj
 /// \param a_name
-/// \param a_map
 /// \return
 ///
-bool afWorld::addBaseObject(afBaseObjectPtr a_obj, string a_name, afBaseObjectMap* a_map){
+bool afWorld::addBaseObject(afBaseObjectPtr a_obj, string a_name){
+    if (a_obj->getObjectType() == afObjectType::INVALID){
+        cerr << "ERROR! CANNOT ADD OBJECT TO WORLD WITH OBJECT_TYPE AS INVALID " << endl;
+        return false;
+    }
     (m_childrenObjectsMap[a_obj->getObjectType()])[a_name] = a_obj;
     a_obj->showVisualFrame();
     // Whenever a new object is added, resolve parenting of objects that require parenting.
@@ -8183,8 +8178,7 @@ afModel::~afModel(){
     //    }
 }
 
-afVehicle::afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr){
-    m_type = afObjectType::VEHICLE;
+afVehicle::afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afObjectType::VEHICLE, a_afWorld, a_modelPtr){
 }
 
 afVehicle::~afVehicle()
@@ -8468,7 +8462,7 @@ afDepthPointCloud::~afDepthPointCloud()
 
 //------------------------------------------------------------------------------
 
-afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(a_afWorld)
+afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afObjectType::POINT_CLOUD, a_afWorld)
 {
 
 }
@@ -8542,9 +8536,8 @@ void afPointCloud::update()
 #endif
 }
 
-afGhostObject::afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(a_afWorld, a_modelPtr)
+afGhostObject::afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afObjectType::GHOST_OBJECT, a_afWorld, a_modelPtr)
 {
-    m_type = afObjectType::GHOST_OBJECT;
     m_bulletGhostObject = nullptr;
 }
 

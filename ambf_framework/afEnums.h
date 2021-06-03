@@ -78,6 +78,7 @@ enum class afBodyType{
 /// \brief The afObjectType enum
 ///
 enum class afObjectType{
+    INVALID,
     OBJECT,
     ACTUATOR,
     CAMERA,
@@ -89,9 +90,9 @@ enum class afObjectType{
     SENSOR,
     VEHICLE,
     MODEL,
+    POINT_CLOUD,
     WORLD,
-    JOINT,
-    INVALID
+    JOINT
 };
 
 

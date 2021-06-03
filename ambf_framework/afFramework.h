@@ -543,7 +543,7 @@ protected:
 class afBaseObject: public afComm{
 
 public:
-    afBaseObject(afWorldPtr a_afWorld, afModelPtr a_afModelPtr = nullptr);
+    afBaseObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_afModelPtr = nullptr);
     virtual ~afBaseObject();
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
@@ -669,7 +669,7 @@ public:
 
 protected:
     // Type of object
-    afObjectType m_type;
+    const afObjectType m_type;
 
     // Initial location of Rigid Body
     cTransform m_initialTransform;
@@ -698,7 +698,7 @@ private:
 ///
 class afInertialObject: public afBaseObject{
 public:
-    afInertialObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+    afInertialObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     ~afInertialObject();
 
     // Apply force that is specified in the world frame at a point specified in world frame
@@ -1927,7 +1927,7 @@ class afWorld: public afComm{
 public:
 
     // add children object to world
-    bool addBaseObject(afBaseObjectPtr a_obj, string a_name, afBaseObjectMap* a_map);
+    bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
 
     // Return true if object exists in the vec
     bool checkIfExists(afBaseObject* a_obj, vector<afBaseObject*> *a_objectsVec);
