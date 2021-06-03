@@ -1359,7 +1359,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
 
     if(!m_parentBody){
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getActuatorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getActuatorMap());
         m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
 
         if (m_parentBody == nullptr){
@@ -1377,7 +1377,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getActuatorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getActuatorMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -2338,7 +2338,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getRigidBodyMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -3491,7 +3491,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSoftBodyMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSoftBodyMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -3851,7 +3851,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     // If either body not found
     if (m_afParentBody == nullptr || m_afChildBody == nullptr){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getJointMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getJointMap());
 
         if (m_afParentBody == nullptr){
             m_afParentBody = m_afWorld->getRigidBody(body1Name + remap_idx, true);
@@ -4101,7 +4101,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     if (isPassive() == false){
 
         // Joint Comm not implemented yet.
-//        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getAFJointMap());
+//        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getAFJointMap());
 
 //        afCreateCommInstance(afObjectType::JOINT,
 //                             getQualifiedName() + remap_idx,
@@ -4456,7 +4456,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
 
     if(m_parentBody == nullptr){
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_modelPtr->getSensorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getSensorMap());
         m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
         if (m_parentBody == nullptr){
             cerr << "ERROR: SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
@@ -4495,7 +4495,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSensorMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -4769,7 +4769,7 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 
         if (isPassive() == false){
 
-            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getSensorMap());
+            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
 
             afCreateCommInstance(m_type,
                                  getQualifiedName() + remap_idx,
@@ -6625,7 +6625,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getCameraMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -7449,7 +7449,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getLightMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
@@ -8323,7 +8323,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 
     if (isPassive() == false){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedName(), m_afWorld->getVehicleMap());
+        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getVehicleMap());
 
         afCreateCommInstance(m_type,
                              getQualifiedName() + remap_idx,
