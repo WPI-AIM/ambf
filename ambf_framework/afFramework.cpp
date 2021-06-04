@@ -5189,16 +5189,25 @@ void afWorld::resolveObjectsMissingParents(afBaseObjectPtr a_newObject)
 {
     vector<afBaseObject*> stillMissingParents;
     for (vector<afBaseObject*>::iterator it = m_afObjectsMissingParents.begin() ; it != m_afObjectsMissingParents.end() ; ++it){
-        // Check if we get an exact match
-        if ( (*it)->m_parentName.compare( a_newObject->getQualifiedIdentifier() ) == 0 ){
-            a_newObject->addChildObject((*it));
+        bool parentFound = false;
+        if ( (*it) == a_newObject ){
+            // If the newly added object is the object in question, then search all previously added objects
+            parentFound = (*it)->resolveParent( (*it)->m_parentName, true);
         }
-        // Check if part of the name matches
-        else if( a_newObject->getQualifiedIdentifier().find((*it)->m_parentName) != string::npos){
-            a_newObject->addChildObject((*it));
-        }
-        else{
-            stillMissingParents.push_back((*it));
+
+        if (parentFound == false){
+            // Else, check if we get an exact name match
+            if ( (*it)->m_parentName.compare( a_newObject->getQualifiedIdentifier() ) == 0 ){
+                a_newObject->addChildObject((*it));
+            }
+            // Else, check if part of the name matches
+            else if( a_newObject->getQualifiedIdentifier().find((*it)->m_parentName) != string::npos){
+                a_newObject->addChildObject((*it));
+            }
+            // Tried our best, keep this as an object missing parents, so that we can try again on the next object add.
+            else{
+                stillMissingParents.push_back((*it));
+            }
         }
     }
     m_afObjectsMissingParents = stillMissingParents;
