@@ -247,15 +247,15 @@ int main(int argc, char* argv[])
             ("htx_frequency,d", p_opt::value<int>()->default_value(1000), "Haptics Update Frequency (default: 1000 Hz)")
             ("fixed_phx_timestep,t", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Haptics (default: False)")
-            ("load_multibody_files,a", p_opt::value<std::string>()->default_value(""), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
-                                                                    "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
-                                                                    " and test2.yaml if they are valid files")
-            ("load_multibodies,l", p_opt::value<std::string>()->default_value("1"), "Index of Multi-Body(ies) to Launch, .e.g. "
-                                                                "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file")
             ("launch_file", p_opt::value<std::string>()->default_value("../../ambf_models/descriptions/launch.yaml"), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
             ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
             ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
-            ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)");
+            ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
+            ("load_multibody_files,a", p_opt::value<std::string>()->default_value(""), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
+                                                                    "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
+                                                                    " and test2.yaml if they are valid files")
+            ("load_multibodies,l", p_opt::value<std::string>(), "Index of Multi-Body(ies) to Launch, .e.g. "
+                                                                "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file");
 
     p_opt::variables_map var_map;
     p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
@@ -263,31 +263,28 @@ int main(int argc, char* argv[])
 
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
 
-    if(var_map.count("ndevs")){ g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();}
-
-    if(var_map.count("load_devices")){ g_cmdOpts.devicesToLoad = var_map["load_devices"].as<std::string>();}
-
-    if(var_map.count("phx_frequency")){ g_cmdOpts.phxFrequency = var_map["phx_frequency"].as<int>();}
-
-    if(var_map.count("htx_frequency")){ g_cmdOpts.htxFrequency = var_map["htx_frequency"].as<int>();}
-
-    if(var_map.count("fixed_phx_timestep")){ g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();}
-
-    if(var_map.count("fixed_htx_timestep")){ g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();}
-
-    if(var_map.count("enableforces")){ g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();}
+    g_cmdOpts.numDevicesToLoad = var_map["ndevs"].as<int>();
+    g_cmdOpts.devicesToLoad = var_map["load_devices"].as<std::string>();
+    g_cmdOpts.phxFrequency = var_map["phx_frequency"].as<int>();
+    g_cmdOpts.htxFrequency = var_map["htx_frequency"].as<int>();
+    g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();
+    g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();
+    g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();
+    g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();
+    g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();
+    g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();
+    g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
 
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
 
     if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
+    else{
+        if (g_cmdOpts.multiBodyFilesToLoad.empty()){
+            // Fall back file index option if the no options for launching any ambf file is described.
+            g_cmdOpts.multiBodiesToLoad = "1";
+        }
+    }
 
-    if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
-
-    if(var_map.count("show_gui")){ g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();}
-
-    if(var_map.count("ns")){g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();}
-
-    if(var_map.count("sim_speed_factor")){g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();}
 
     // Process the loadMultiBodies string
 
@@ -303,13 +300,11 @@ int main(int argc, char* argv[])
     cout << "------------------------------------------------------------" << endl << endl << endl;
     cout << endl;
 
-    if(var_map.count("sim_speed_factor")){
-        if (g_cmdOpts.useFixedPhxTimeStep){
-            std::cerr << "INFO! SETTING SIMULATION SPEED FACTOR TO: " << g_cmdOpts.simulation_speed << std::endl;
-        }
-        else{
-            std::cerr << "WARNING! SIMULATION SPEED FACTOR IS ONLY CONSIDERED IN NON REAL-TIME SIMULATION\n";
-        }
+    if(g_cmdOpts.useFixedPhxTimeStep == true){
+        std::cerr << "INFO! USING SIMULATION SPEED FACTOR OF: " << g_cmdOpts.simulation_speed << std::endl;
+    }
+    else if (g_cmdOpts.simulation_speed != 1.0){
+        std::cerr << "WARNING! SIMULATION SPEED FACTOR OTHER THAN (1.0) IS ONLY CONSIDERED FOR NON REAL-TIME SIMULATION\n";
     }
 
     //-----------------------------------------------------------------------
