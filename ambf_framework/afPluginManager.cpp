@@ -206,6 +206,13 @@ void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, afBase
     }
 }
 
+void afBaseObjectPluginManager::graphicsUpdate()
+{
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->graphicsUpdate();
+    }
+}
+
 void afBaseObjectPluginManager::physicsUpdate(double dt)
 {
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){

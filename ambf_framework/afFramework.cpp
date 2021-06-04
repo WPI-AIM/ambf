@@ -841,6 +841,7 @@ afBaseObject::afBaseObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr
 /// \brief afObject::~afObject
 ///
 afBaseObject::~afBaseObject(){
+    m_pluginManager.close();
     for (int i=0; i<m_childrenSceneObjects.size(); i++){
         delete m_childrenSceneObjects[i];
     }
@@ -852,8 +853,14 @@ afBaseObject::~afBaseObject(){
 /// \param a_attribs
 /// \return
 ///
-bool afBaseObject::createFromAttribs(afBaseObjectAttributes *a_attribs)
+bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs)
 {
+    m_pluginManager.init(this, a_attribs);
+}
+
+void afBaseObject::update(double dt)
+{
+    m_pluginManager.physicsUpdate(dt);
 }
 
 
@@ -1157,6 +1164,8 @@ void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
 }
 
 void afBaseObject::updateSceneObjects(){
+
+    m_pluginManager.graphicsUpdate();
     // Assuming that the global pose was computed prior to this call.
     vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
@@ -1312,7 +1321,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_visibleSize = attribs.m_visibleSize;
 
     // First search in the local space.
-    m_parentBody = m_modelPtr->getRigidBodyLocal(m_parentName, true);
+    m_parentBody = m_modelPtr->getRigidBody(m_parentName, true);
 
     if(!m_parentBody){
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getActuatorMap());
@@ -1619,7 +1628,7 @@ void afConstraintActuator::fetchCommands(double dt){
 ///
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
-void afConstraintActuator::update(){
+void afConstraintActuator::update(double dt){
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         m_afActuatorCommPtr->set_name(m_name);
@@ -2361,7 +2370,7 @@ void afRigidBody::estimateCartesianControllerGains(afCartesianController &contro
 ///
 /// \brief afRigidBody::updatePositionFromDynamics
 ///
-void afRigidBody::update()
+void afRigidBody::update(double dt)
 {
     if (m_bulletRigidBody)
     {
@@ -2457,7 +2466,7 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
         if (m_threadUpdateFlags[threadIdx] == true){
 
             for (uint idx = startIdx ; idx < endIdx ; idx++){
-                m_afSensors[idx]->update();
+                m_afSensors[idx]->update(0.001);
             }
 
             m_threadUpdateFlags[threadIdx] = false;
@@ -4073,7 +4082,7 @@ void afJoint::fetchCommands(double dt){
     cacheState(dt);
 }
 
-void afJoint::update(){
+void afJoint::update(double dt){
 }
 
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
@@ -4310,7 +4319,7 @@ void afSensor::fetchCommands(double dt){
 ///
 /// \brief afSensor::updatePositionFromDynamics
 ///
-void afSensor::update(){
+void afSensor::update(double dt){
 
 }
 
@@ -4493,7 +4502,7 @@ void afRayTracerSensor::visualize(bool show)
 ///
 /// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
-void afRayTracerSensor::update(){
+void afRayTracerSensor::update(double dt){
 
     if (m_parentBody == nullptr){
         return;
@@ -4745,9 +4754,9 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 ///
 /// \brief afResistanceSensor::updatePositionFromDynamics
 ///
-void afResistanceSensor::update(){
+void afResistanceSensor::update(double dt){
     // Let's update the RayTracer Sensor First
-    afRayTracerSensor::update();
+    afRayTracerSensor::update(dt);
 
     if (m_parentBody == nullptr){
         return;
@@ -5890,7 +5899,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     {
         for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
-            childObj->update();
+            childObj->update(dt);
         }
     }
 
@@ -7350,7 +7359,7 @@ void afCamera::fetchCommands(double dt){
 ///
 /// \brief afCamera::updatePositionFromDynamics
 ///
-void afCamera::update()
+void afCamera::update(double dt)
 {
 
     // update Transform data for m_ObjectPtr
@@ -7829,7 +7838,7 @@ void afLight::fetchCommands(double dt){
 ///
 /// \brief afLight::updatePositionFromDynamics
 ///
-void afLight::update()
+void afLight::update(double dt)
 {
 
     // update Transform data for m_ObjectPtr
@@ -8336,7 +8345,7 @@ void afVehicle::fetchCommands(double dt){
 ///
 /// \brief afVehicle::updatePositionFromDynamics
 ///
-void afVehicle::update(){
+void afVehicle::update(double dt){
     for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
@@ -8413,7 +8422,7 @@ afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afObjectType::POI
 }
 
 
-void afPointCloud::update()
+void afPointCloud::update(double dt)
 {
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     int mp_size = m_mpPtr->getNumPoints();
@@ -8498,7 +8507,7 @@ afGhostObject::~afGhostObject()
     }
 }
 
-void afGhostObject::update()
+void afGhostObject::update(double dt)
 {
 //    cTransform trans;
 //    trans << m_bulletGhostObject->getWorldTransform();

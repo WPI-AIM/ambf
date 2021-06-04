@@ -230,6 +230,9 @@ public:
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
     virtual bool close(){}
+
+protected:
+    afWorldPtr m_worldPtr;
 };
 
 
@@ -251,6 +254,10 @@ public:
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
     virtual bool close(){}
+
+protected:
+    afWorldPtr m_worldPtr;
+    afWorldAttribsPtr a_attribs;
 };
 
 
@@ -270,6 +277,10 @@ public:
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
     virtual bool close(){}
+
+protected:
+    afModelPtr m_modelPtr;
+    afModelAttribsPtr a_attribs;
 };
 
 ///
@@ -286,6 +297,10 @@ public:
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
     virtual bool close(){}
+
+protected:
+    afBaseObjectPtr m_objectPtr;
+    afBaseObjectAttribsPtr a_attribs;
 };
 
 }

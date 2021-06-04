@@ -559,7 +559,7 @@ public:
     virtual void fetchCommands(double){}
 
     // The update method called at every simulation iteration.
-    virtual void update(){}
+    virtual void update(double dt);
 
     cVector3d getLocalPos();
 
@@ -913,7 +913,7 @@ public:
     virtual void fetchCommands(double dt);
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
-    virtual void update();
+    virtual void update(double dt);
 
     virtual bool createFromAttribs(afRigidBodyAttributes* a_attribs);
 
@@ -1163,7 +1163,7 @@ public:
     virtual void fetchCommands(double dt){}
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
-    virtual void update();
+    virtual void update(double dt);
 
     virtual bool createFromAttribs(afGhostObjectAttributes* a_attribs);
 
@@ -1201,7 +1201,7 @@ public:
 
     virtual void fetchCommands(double);
 
-    virtual void update();
+    virtual void update(double dt);
 
     btVector3 getDefaultJointAxisInParent(afJointType a_type);
 
@@ -1327,7 +1327,7 @@ public:
 
     virtual void fetchCommands(double){}
 
-    virtual void update(){}
+    virtual void update(double dt){}
 
 protected:
     bool m_show = false;
@@ -1388,7 +1388,7 @@ public:
 
     virtual void fetchCommands(double dt);
 
-    virtual void update();
+    virtual void update(double dt);
 
 protected:
 
@@ -1442,7 +1442,7 @@ public:
     virtual void fetchCommands(double dt);
 
     // Upate the sensor, usually called at each dynamic tick update of the physics engine
-    virtual void update();
+    virtual void update(double dt);
 
 };
 
@@ -1462,7 +1462,7 @@ public:
     virtual bool createFromAttribs(afRayTracerSensorAttributes* a_attribs);
 
     // Update sensor is called on each update of positions of RBs and SBs
-    virtual void update();
+    virtual void update(double dt);
 
     // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(uint idx){return m_rayTracerResults[idx].m_triggered;}
@@ -1598,7 +1598,7 @@ public:
 
     virtual bool createFromAttribs(afResistanceSensorAttributes* a_attribs);
 
-    virtual void update();
+    virtual void update(double dt);
 
 public:
     inline void setStaticContactFriction(const double& a_staticFriction){m_staticContactFriction = a_staticFriction;}
@@ -1735,7 +1735,7 @@ public:
     virtual void fetchCommands(double dt);
 
     // Define the virtual method for camera
-    virtual void update();
+    virtual void update(double dt);
 
     // Initialize
     bool init();
@@ -1996,7 +1996,7 @@ public:
 
     virtual void fetchCommands(double dt);
 
-    virtual void update();
+    virtual void update(double dt);
 
     // Set direction of this light
     void setDir(const cVector3d& a_direction);
@@ -2021,7 +2021,7 @@ public:
 
     virtual void fetchCommands(double){}
 
-    virtual void update();
+    virtual void update(double dt);
 
     std::string m_topicName;
 
@@ -2360,7 +2360,7 @@ public:
 
     virtual bool createFromAttribs(afVehicleAttributes* a_attribs);
 
-    virtual void update();
+    virtual void update(double dt);
 
     virtual void fetchCommands(double dt);
 
