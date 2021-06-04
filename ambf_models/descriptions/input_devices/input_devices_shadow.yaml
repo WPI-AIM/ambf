@@ -35,7 +35,7 @@ MTMR:
   haptic gain: {linear: 0.06, angular: 0.0}
   controller gain: {
     linear: {P: 200.0, D: 20.0},
-    angular: {P: 50.0, D: 1.0}
+    angular: {P: 0.0, D: 0.0}
     # angular: {P: 0.0, D: 0.0}
     }
   # enable joint control: False
@@ -44,6 +44,7 @@ MTMR:
   workspace scaling: 5
   simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
   # root link: /ambf/env/BODY r_gripper_palm_link
+  enable joint control: True
   location: {
     position: {x: -0.5, y: 0, z: 0},
     orientation: {r: 0, p: 0, y: 0}}
@@ -52,6 +53,7 @@ MTMR:
     a2: 2,
     next mode: 3,
     prev mode: 4}
+  cameras: [camera1]
 
 
 Geomagic Touch:
@@ -59,26 +61,27 @@ Geomagic Touch:
     haptic gain: {linear: 0.000, angular: 0.0}
     controller gain: {
       linear: {P: 200, D: 20.0},
-      angular: {P: 0.0, D: 0.0}
+      angular: {P: 20.0, D: 1.0}
       }
     enable joint control: False # This flag disables the control of simulated dynamic bodies
     deadband: 0.01
     max force: 2
     max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
-    # root link: /ambf/env/BODY r_gripper_palm_link
+    # simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+    root link: /ambf/env/BODY r_gripper_palm_link
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
     button mapping: {
       a1: 0,
-      a2: -1,
-      g1: 1,
+      a2: 1,
+      g1: 0,
       next mode: 2,
       prev mode: 3}
     # visible: True
     # visible size: 0.005
+    cameras: [camera1]
 
 Razer Hydra0:
     hardware name: Razer Hydra

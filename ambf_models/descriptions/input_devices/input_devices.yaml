@@ -30,6 +30,7 @@ MTMR:
   haptic gain: {linear: 0.03, angular: 1}
   workspace scaling: 5
   simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
+  # enable joint control: False
   # root link:
   location: {
     position: {x: -0.5, y: 0, z: 0},
@@ -39,17 +40,23 @@ MTMR:
     a2: 2,
     next mode: 3,
     prev mode: 4}
-  pair cameras: [camera1, camera2] # The motion of the IID-SDE is w.r.t the first camera in the list
+  pair cameras: [camera1] # The motion of the IID-SDE is w.r.t the first camera in the list
 
 
 Geomagic Touch:
     hardware name: PHANTOM Omni
-    haptic gain: {linear: 0.000, angular: 0.0}
+    haptic gain: {linear: 10.0, angular: 0.0}
+    # controller gain: {
+    #   linear: {P: 0.0, D: 0.0},
+    #   angular: {P: 0.0, D: 0.0}
+    #   # angular: {P: 0.0, D: 0.0}
+    #   }
     deadband: 0.01
     max force: 2
     max jerk: 0.2
     workspace scaling: 10
-    simulated multibody: "../multi-bodies/grippers/resistive/sensorized_box/gripper.yaml"
+    simulated multibody: "../multi-bodies/grippers/pr2 gripper.yaml"
+    # root link: cube_fixed
     location: {
       position: {x: 0.0, y: 0.5, z: 0.0},
       orientation: {r: 0, p: 0, y: 0}}
@@ -61,6 +68,7 @@ Geomagic Touch:
       prev mode: 3}
     # visible: True
     # visible size: 0.005
+    pair cameras: [camera1] # The motion of the IID-SDE is w.r.t the first camera in the list
 
 Razer Hydra0:
     hardware name: Razer Hydra
