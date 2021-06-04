@@ -51,7 +51,7 @@
 #include "afUtils.h"
 #include "afAttributes.h"
 #include "afPluginInterface.h"
-#include "afPluginGroups.h"
+#include "afPluginManager.h"
 
 //------------------------------------------------------------------------------
 
@@ -562,14 +562,6 @@ public:
     // The update method called at every simulation iteration.
     virtual void update(){}
 
-    virtual void initPlugins(afBaseObjectAttributes* a_attribs);
-
-    virtual void updatePlugins();
-
-    virtual void resetPlugins();
-
-    virtual void closePlugins();
-
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -686,10 +678,8 @@ protected:
 
     afBaseObjectPtr m_parentObject;
 
-    vector<afObjectPlugin*> m_objectPlugins;
-
-private:
-    vector<afObjectPlugin*> m_plugins;
+    // Plugin Manager
+    afBaseObjectPluginManager m_pluginManager;
 };
 
 
@@ -2019,14 +2009,6 @@ public:
     //! This method updates the simulation over a time interval.
     virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
 
-    virtual void initPlugins(afWorldAttributes* a_attribs);
-
-    virtual void updatePlugins();
-
-    virtual void resetPlugins();
-
-    virtual void closePlugins();
-
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updateSceneObjects();
 
@@ -2282,6 +2264,8 @@ protected:
 
     vector<afBaseObject*> m_afObjectsMissingParents;
 
+    afWorldPluginManager m_pluginManager;
+
 private:
 
     static double m_enclosureL;
@@ -2298,8 +2282,6 @@ private:
     // Step the simulation by this many steps
     // Used when the Physics is paused
     int m_manualStepPhx = 0;
-
-    vector<afWorldPlugin*> m_plugins;
 };
 
 

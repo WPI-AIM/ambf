@@ -162,7 +162,7 @@ afWorld *g_afWorld;
 
 afRenderOptions g_afRenderOptions;
 
-afSimulatorPluginGroup g_simulatorPluginGroup;
+afSimulatorPluginManager g_pluginManager;
 
 
 //---------------------------------------------------------------------------
@@ -558,9 +558,9 @@ int main(int argc, char* argv[])
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    g_simulatorPluginGroup.add("libtest_simulator_plugin.so", "test_simulator_plugin");
+    g_pluginManager.add("libtest_simulator_plugin.so", "test_simulator_plugin");
 
-    g_simulatorPluginGroup.init(argc, argv, g_afWorld);
+    g_pluginManager.init(argc, argv, g_afWorld);
 
     //    signal (SIGINT, exitHandler);
 
@@ -636,7 +636,7 @@ void updateGraphics()
     // check for any OpenGL errors
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
-
+    g_pluginManager.graphicsUpdate();
     g_simulationRunning = true;
 }
 
@@ -768,6 +768,7 @@ void updatePhysics(){
             }
         }
         g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+        g_pluginManager.physicsUpdate(step_size);
         phxSleep.sleep();
     }
     g_simulationFinished = true;
@@ -1460,7 +1461,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         }
     }
 
-    g_simulatorPluginGroup.keyboardUpdate(a_key, a_scancode, a_action, a_mods);
+    g_pluginManager.keyboardUpdate(a_window, a_key, a_scancode, a_action, a_mods);
 }
 
 ///
@@ -1506,6 +1507,7 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_
             }
         }
     }
+    g_pluginManager.mouseBtnsUpdate(a_window, a_button, a_clicked, a_modes);
 }
 
 
@@ -1609,6 +1611,7 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
         }
     }
+    g_pluginManager.mousePosUpdate(a_window, a_xpos, a_ypos);
 }
 
 
@@ -1650,6 +1653,7 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
             cameraPtr->setTargetPos(newTargetPos);
         }
     }
+    g_pluginManager.mouseScrollUpdate(a_window, a_xpos, a_ypos);
 }
 
 // The following functions have been copied from btRidigBodyBase by Erwin Coumans
@@ -1754,6 +1758,9 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
 ///
 void close(void)
 {
+    // Close plugins
+    g_pluginManager.close();
+
     // stop the simulation
     g_simulationRunning = false;
 

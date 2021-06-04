@@ -1,155 +1,155 @@
-#include <afPluginGroups.h>
+#include <afPluginManager.h>
 #include <afFramework.h>
 
 using namespace std;
 using namespace  ambf;
 
-void afSimulatorPluginGroup::init(int argc, char** argv, const afWorldPtr a_afWorld){
+void afSimulatorPluginManager::init(int argc, char** argv, const afWorldPtr a_afWorld){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->init(argc, argv, a_afWorld);
     }
 }
 
-void afSimulatorPluginGroup::keyboardUpdate(int a_key, int a_scancode, int a_action, int a_mods){
+void afSimulatorPluginManager::keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->keyboardUpdate(a_key, a_scancode, a_action, a_mods);
+        (*it)->keyboardUpdate(a_window, a_key, a_scancode, a_action, a_mods);
     }
 }
 
-void afSimulatorPluginGroup::mouseBtnsUpdate(int a_button, int a_action, int a_modes){
+void afSimulatorPluginManager::mouseBtnsUpdate(GLFWwindow* a_window, int a_button, int a_action, int a_modes){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->mouseBtnsUpdate(a_button, a_action, a_modes);
+        (*it)->mouseBtnsUpdate(a_window, a_button, a_action, a_modes);
     }
 }
 
-void afSimulatorPluginGroup::mousePosUpdate(double x_pos, double y_pos){
+void afSimulatorPluginManager::mousePosUpdate(GLFWwindow* a_window, double x_pos, double y_pos){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->mousePosUpdate(x_pos, y_pos);
+        (*it)->mousePosUpdate(a_window, x_pos, y_pos);
     }
 }
 
-void afSimulatorPluginGroup::mouseScrollUpdate(double x_pos, double y_pos){
+void afSimulatorPluginManager::mouseScrollUpdate(GLFWwindow* a_window, double x_pos, double y_pos){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->mouseScrollUpdate(x_pos, y_pos);
+        (*it)->mouseScrollUpdate(a_window, x_pos, y_pos);
     }
 }
 
-void afSimulatorPluginGroup::graphicsUpdate(){
+void afSimulatorPluginManager::graphicsUpdate(){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->graphicsUpdate();
     }
 }
 
-void afSimulatorPluginGroup::physicsUpdate(){
+void afSimulatorPluginManager::physicsUpdate(double dt){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->physicsUpdate();
+        (*it)->physicsUpdate(dt);
     }
 }
 
-void afSimulatorPluginGroup::reset(){
+void afSimulatorPluginManager::reset(){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->reset();
     }
 }
 
-bool afSimulatorPluginGroup::close(){
+bool afSimulatorPluginManager::close(){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
 }
 
-void ambf::afWorldPluginGroup::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
+void ambf::afWorldPluginManager::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->init(a_afWorld, a_worldAttribs);
     }
 }
 
-void afWorldPluginGroup::onModelAdd(const afModelPtr a_modelPtr)
+void afWorldPluginManager::onModelAdd(const afModelPtr a_modelPtr)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onModelAdd(a_modelPtr);
     }
 }
 
-void afWorldPluginGroup::onModelRemoval(const afModelPtr a_modelPtr)
+void afWorldPluginManager::onModelRemoval(const afModelPtr a_modelPtr)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onModelRemoval(a_modelPtr);
     }
 }
 
-void afWorldPluginGroup::onObjectAdd(const afBaseObjectPtr a_objectPtr)
+void afWorldPluginManager::onObjectAdd(const afBaseObjectPtr a_objectPtr)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onObjectAdd(a_objectPtr);
     }
 }
 
-void afWorldPluginGroup::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
+void afWorldPluginManager::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onObjectRemoval(a_objectPtr);
     }
 }
 
-void ambf::afWorldPluginGroup::update()
+void ambf::afWorldPluginManager::physicsUpdate(double dt)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->update();
+        (*it)->physicsUpdate(dt);
     }
 }
 
-void ambf::afWorldPluginGroup::reset()
+void ambf::afWorldPluginManager::reset()
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->reset();
     }
 }
 
-bool ambf::afWorldPluginGroup::close()
+bool ambf::afWorldPluginManager::close()
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
 }
 
-void afModelPluginGroup::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
+void afModelPluginManager::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->init(a_afModel, a_modelAttribs);
     }
 }
 
-void afModelPluginGroup::onObjectAdd(const afBaseObjectPtr a_objectPtr)
+void afModelPluginManager::onObjectAdd(const afBaseObjectPtr a_objectPtr)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onObjectAdd(a_objectPtr);
     }
 }
 
-void afModelPluginGroup::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
+void afModelPluginManager::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onObjectRemoval(a_objectPtr);
     }
 }
 
-void afModelPluginGroup::update()
+void afModelPluginManager::physicsUpdate(double dt)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->update();
+        (*it)->physicsUpdate(dt);
     }
 }
 
-void afModelPluginGroup::reset()
+void afModelPluginManager::reset()
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->reset();
     }
 }
 
-bool afModelPluginGroup::close()
+bool afModelPluginManager::close()
 {
 
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
@@ -157,28 +157,28 @@ bool afModelPluginGroup::close()
     }
 }
 
-void afBaseObjectPluginGroup::init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs)
+void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs)
 {
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->init(a_afObjectPtr, a_objectAttribs);
     }
 }
 
-void afBaseObjectPluginGroup::update()
+void afBaseObjectPluginManager::physicsUpdate(double dt)
 {
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        (*it)->update();
+        (*it)->physicsUpdate(dt);
     }
 }
 
-void afBaseObjectPluginGroup::reset()
+void afBaseObjectPluginManager::reset()
 {
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->reset();
     }
 }
 
-bool afBaseObjectPluginGroup::close()
+bool afBaseObjectPluginManager::close()
 {
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
