@@ -682,6 +682,127 @@ protected:
 };
 
 
+class afObjectManager{
+public:
+
+    string addLight(afLightPtr a_rb);
+
+    string addCamera(afCameraPtr a_rb);
+
+    string addRigidBody(afRigidBodyPtr a_rb);
+
+    string addSoftBody(afSoftBodyPtr a_sb);
+
+    string addGhostObject(afGhostObjectPtr a_go);
+
+    string addJoint(afJointPtr a_jnt);
+
+    string addActuator(afActuatorPtr a_actuator);
+
+    string addSensor(afSensorPtr a_sensor);
+
+    string addModel(afModelPtr a_model);
+
+    string addVehicle(afVehiclePtr a_vehicle);
+
+    // add children object to world
+    bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
+
+    void addObjectMissingParent(afBaseObjectPtr a_obj);
+
+    void resolveObjectsMissingParents(afBaseObjectPtr a_newObject);
+
+    afLightPtr getLight(string a_name, bool suppress_warning=false);
+
+    afCameraPtr getCamera(string a_name, bool suppress_warning=false);
+
+    afRigidBodyPtr getRigidBody(string a_name, bool suppress_warning=false);
+
+    afRigidBodyPtr getRigidBody(btRigidBody* a_body, bool suppress_warning=false);
+
+    afSoftBodyPtr getSoftBody(string a_name, bool suppress_warning=false);
+
+    afSoftBodyPtr getSoftBody(btSoftBody* a_body, bool suppress_warning=false);
+
+    afGhostObjectPtr getGhostObject(string a_name, bool suppress_warning=false);
+
+    afGhostObjectPtr getGhostObject(btGhostObject* a_body, bool suppress_warning=false);
+
+    // Get the root parent of a body, if null is provided, returns the parent body
+    // with most children. This method is similar to the corresponding afWorld
+    // method however it searches in the local model space than the world space
+    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
+
+    afJointPtr getJoint(string a_name);
+
+    afActuatorPtr getActuator(string a_name);
+
+    afSensorPtr getSensor(string a_name);
+
+    afModelPtr getModel(string a_name, bool suppress_warning=false);
+
+    afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
+
+    afBaseObjectPtr getBaseObject(string a_name, afBaseObjectMap* a_map, bool suppress_warning);
+
+     // Template method to get all objects of specific type
+    template <class T>
+    vector<T*> getBaseObjects(afBaseObjectMap* objMap);
+
+
+    afLightVec getLights();
+
+    afCameraVec getCameras();
+
+    afRigidBodyVec getRigidBodies();
+
+    afSoftBodyVec getSoftBodies();
+
+    afGhostObjectVec getGhostObjects();
+
+    afJointVec getJoints();
+
+    afActuatorVec getActuators();
+
+    afSensorVec getSensors();
+
+    afModelVec getModels();
+
+    afVehicleVec getVehicles();
+
+
+    inline afBaseObjectMap* getLightMap(){return &m_childrenObjectsMap[afObjectType::LIGHT];}
+
+    inline afBaseObjectMap* getCameraMap(){return &m_childrenObjectsMap[afObjectType::CAMERA];}
+
+    inline afBaseObjectMap* getRigidBodyMap(){return &m_childrenObjectsMap[afObjectType::RIGID_BODY];}
+
+    inline afBaseObjectMap* getSoftBodyMap(){return &m_childrenObjectsMap[afObjectType::SOFT_BODY];}
+
+    inline afBaseObjectMap* getGhostObjectMap(){return &m_childrenObjectsMap[afObjectType::GHOST_OBJECT];}
+
+    inline afBaseObjectMap* getJointMap(){return &m_childrenObjectsMap[afObjectType::JOINT];}
+
+    inline afBaseObjectMap* getActuatorMap(){return &m_childrenObjectsMap[afObjectType::ACTUATOR];}
+
+    inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afObjectType::SENSOR];}
+
+    inline afBaseObjectMap* getModelMap(){return &m_childrenObjectsMap[afObjectType::MODEL];}
+
+    inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afObjectType::VEHICLE];}
+
+    inline afChildrenMap* getChildrenMap(){return &m_childrenObjectsMap;}
+
+    // Return true if object exists in the vec
+    bool checkIfExists(afBaseObject* a_obj, vector<afBaseObject*> *a_objectsVec);
+
+protected:
+    map<afObjectType, map<string, afBaseObject*>> m_childrenObjectsMap;
+
+    vector<afBaseObject*> m_afObjectsMissingParents;
+};
+
+
 ///
 /// \brief The afInertialObject class
 ///
@@ -1924,23 +2045,11 @@ struct afRenderOptions{
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afComm{
+class afWorld: public afComm, public afObjectManager{
 
     friend class afModel;
 
 public:
-
-    // add children object to world
-    bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
-
-    // Return true if object exists in the vec
-    bool checkIfExists(afBaseObject* a_obj, vector<afBaseObject*> *a_objectsVec);
-
-    afBaseObjectPtr getBaseObject(string a_name, afBaseObjectMap* a_map, bool suppress_warning);
-
-     // Template method to get all objects of specific type
-    template <class T>
-    vector<T*> getBaseObjects(afBaseObjectMap* objMap);
 
     afWorld(string a_global_namespace);
 
@@ -2015,116 +2124,17 @@ public:
 
     void removeSceneObjectFromWorld(cGenericObject* a_cObject);
 
-    string addLight(afLightPtr a_rb);
-
-    string addCamera(afCameraPtr a_rb);
-
-    string addRigidBody(afRigidBodyPtr a_rb);
-
-    string addSoftBody(afSoftBodyPtr a_sb);
-
-    string addGhostObject(afGhostObjectPtr a_go);
-
-    string addJoint(afJointPtr a_jnt);
-
-    string addActuator(afActuatorPtr a_actuator);
-
-    string addSensor(afSensorPtr a_sensor);
-
-    string addModel(afModelPtr a_model);
-
-    string addVehicle(afVehiclePtr a_vehicle);
-
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
 
-
-    afLightPtr getLight(string a_name, bool suppress_warning=false);
-
-    afCameraPtr getCamera(string a_name, bool suppress_warning=false);
-
-    afRigidBodyPtr getRigidBody(string a_name, bool suppress_warning=false);
-
-    afRigidBodyPtr getRigidBody(btRigidBody* a_body, bool suppress_warning=false);
-
-    afSoftBodyPtr getSoftBody(string a_name, bool suppress_warning=false);
-
-    afSoftBodyPtr getSoftBody(btSoftBody* a_body, bool suppress_warning=false);
-
-    afGhostObjectPtr getGhostObject(string a_name, bool suppress_warning=false);
-
-    afGhostObjectPtr getGhostObject(btGhostObject* a_body, bool suppress_warning=false);
-
-    afJointPtr getJoint(string a_name);
-
-    afActuatorPtr getActuator(string a_name);
-
-    afSensorPtr getSensor(string a_name);
-
-    afModelPtr getModel(string a_name, bool suppress_warning=false);
-
-    afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
-
-
-    inline afBaseObjectMap* getLightMap(){return &m_childrenObjectsMap[afObjectType::LIGHT];}
-
-    inline afBaseObjectMap* getCameraMap(){return &m_childrenObjectsMap[afObjectType::CAMERA];}
-
-    inline afBaseObjectMap* getRigidBodyMap(){return &m_childrenObjectsMap[afObjectType::RIGID_BODY];}
-
-    inline afBaseObjectMap* getSoftBodyMap(){return &m_childrenObjectsMap[afObjectType::SOFT_BODY];}
-
-    inline afBaseObjectMap* getGhostObjectMap(){return &m_childrenObjectsMap[afObjectType::GHOST_OBJECT];}
-
-    inline afBaseObjectMap* getJointMap(){return &m_childrenObjectsMap[afObjectType::JOINT];}
-
-    inline afBaseObjectMap* getActuatorMap(){return &m_childrenObjectsMap[afObjectType::ACTUATOR];}
-
-    inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afObjectType::SENSOR];}
-
-    inline afBaseObjectMap* getModelMap(){return &m_childrenObjectsMap[afObjectType::MODEL];}
-
-    inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afObjectType::VEHICLE];}
-
-    inline afChildrenMap* getChildrenMap(){return &m_childrenObjectsMap;}
-
-
-    afLightVec getLights();
-
-    afCameraVec getCameras();
-
-    afRigidBodyVec getRigidBodies();
-
-    afSoftBodyVec getSoftBodies();
-
-    afGhostObjectVec getGhostObjects();
-
-    afJointVec getJoints();
-
-    afActuatorVec getActuators();
-
-    afSensorVec getSensors();
-
-    afModelVec getModels();
-
-    afVehicleVec getVehicles();
-
     string resolveGlobalNamespace(string a_name);
-
-    void addObjectMissingParent(afBaseObjectPtr a_obj);
-
-    void resolveObjectsMissingParents(afBaseObjectPtr a_newObject);
 
     string getGlobalNamespace(){return m_global_namespace;}
 
     void setGlobalNamespace(string a_namespace);
 
     virtual void fetchCommands(double dt);
-
-    // Get the root parent of a body, if null is provided, returns the parent body
-    // with most children
-    afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
@@ -2240,8 +2250,6 @@ public:
 
 protected:
 
-    map<afObjectType, map<string, afBaseObject*>> m_childrenObjectsMap;
-
     // If this string is set, it will force itself to preeced all nampespaces
     // regardless of whether any namespace starts with a '/' or not.
     string m_global_namespace;
@@ -2260,8 +2268,6 @@ protected:
 
     // Maximum number of iterations.
     int m_integrationMaxIterations;
-
-    vector<afBaseObject*> m_afObjectsMissingParents;
 
     afWorldPluginManager m_pluginManager;
 
@@ -2295,7 +2301,7 @@ struct afPickingConstraintData{
 ///
 /// \brief The afModel class
 ///
-class afModel: public afBaseObject{
+class afModel: public afBaseObject, public afObjectManager{
 
     friend class afRigidBody;
     friend class afSoftBody;
@@ -2312,14 +2318,6 @@ public:
 
     virtual void fetchCommands(double dt){}
 
-    afRigidBodyMap* getRigidBodyMap(){return &m_afRigidBodyMapLocal;}
-    afSoftBodyMap* getSoftBodyMap(){return &m_afSoftBodyMapLocal;}
-    afGhostObjectMap* getGhostObjectMap(){return &m_afGhostObjectMapLocal;}
-    afVehicleMap* getVehicleMap(){return &m_afVehicleMapLocal;}
-    afJointMap* getJointMap(){return &m_afJointMapLocal;}
-    afActuatorMap* getActuatorMap(){return &m_afActuatorMapLocal;}
-    afSensorMap* getSensorMap(){return &m_afSensorMapLocal;}
-
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
     // between all these bodies connected in a tree
@@ -2328,16 +2326,6 @@ public:
     //Remove collision checking for this entire multi-body, mostly for
     // debugging purposes
     void ignoreCollisionChecking();
-
-    // Get Rigid Body or Soft Body belonging to this Specific Model
-    afRigidBodyPtr getRigidBodyLocal(string a_name, bool suppress_warning=false);
-
-    afSoftBodyPtr getSoftBodyLocal(string a_name);
-
-    // Get the root parent of a body, if null is provided, returns the parent body
-    // with most children. This method is similar to the corresponding afWorld
-    // method however it searches in the local model space than the world space
-    afRigidBodyPtr getRootRigidBodyLocal(afRigidBodyPtr a_bodyPtr = nullptr);
 
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
@@ -2349,17 +2337,6 @@ protected:
     template <typename T>
     string getNonCollidingIdx(string a_body_name, const T* tMap);
     void remapName(string &name, string remap_idx_str);
-
-private:
-    // The world has a list of all the bodies and joints belonging to all multibodies
-    // The model has list of bodies and joints defined for this specific model
-    afRigidBodyMap m_afRigidBodyMapLocal;
-    afSoftBodyMap m_afSoftBodyMapLocal;
-    afGhostObjectMap m_afGhostObjectMapLocal;
-    afVehicleMap m_afVehicleMapLocal;
-    afJointMap m_afJointMapLocal;
-    afActuatorMap m_afActuatorMapLocal;
-    afSensorMap m_afSensorMapLocal;
 };
 
 

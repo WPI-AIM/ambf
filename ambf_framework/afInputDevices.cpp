@@ -603,10 +603,10 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (attribs.m_rootLinkDefined){
-            m_rootLink = getRigidBodyLocal(attribs.m_rootLinkName);
+            m_rootLink = getRigidBody(attribs.m_rootLinkName);
         }
         else{
-            m_rootLink = getRootRigidBodyLocal();
+            m_rootLink = getRootRigidBody();
         }
     }
     // If only the root link is defined, we are going to look for it in the global space
