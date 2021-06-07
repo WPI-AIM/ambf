@@ -1,6 +1,6 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2019, AMBF.
-#  (www.aimlab.wpi.edu)
+#  Copyright (c) 2019-2021, AMBF.
+#  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
 #
@@ -35,6 +35,5 @@
 #
 #  $Author: Adnan Munawar $
 #  $Date:  $
-#  $Rev: $
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tf_function)

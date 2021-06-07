@@ -1,5 +1,5 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2020, AMBF.
+#  Copyright (c) 2019-2021, AMBF.
 #  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
@@ -35,7 +35,6 @@
 #
 #  $Author: Melody Su $
 #  $Date:  April, 2019 $
-#  $Rev:  $
 
 
 # common settings required to build examples
