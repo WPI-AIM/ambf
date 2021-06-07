@@ -245,10 +245,10 @@ int main(int argc, char* argv[])
             ("htx_frequency,d", p_opt::value<int>()->default_value(1000), "Haptics Update Frequency (default: 1000 Hz)")
             ("fixed_phx_timestep,t", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Haptics (default: False)")
-            ("launch_file", p_opt::value<std::string>()->default_value("../../ambf_models/descriptions/launch.yaml"), "Launch file path to load (default: ../../ambf_models/descriptions/launch.yaml")
             ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
             ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
             ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
+            ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: <ROOT_PATH>/ambf_models/descriptions/launch.yaml")
             ("load_multibody_files,a", p_opt::value<std::string>()->default_value(""), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
                                                                     "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
                                                                     " and test2.yaml if they are valid files")
@@ -268,10 +268,14 @@ int main(int argc, char* argv[])
     g_cmdOpts.useFixedPhxTimeStep = var_map["fixed_phx_timestep"].as<bool>();
     g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();
     g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();
-    g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();
     g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();
     g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();
     g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
+
+    if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
+    else{
+        g_cmdOpts.launchFilePath = afSystemPaths::getRootPath() + "/ambf_models/descriptions/launch.yaml";
+    }
 
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
 

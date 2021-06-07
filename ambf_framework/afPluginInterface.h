@@ -39,6 +39,11 @@
     \author    Adnan Munawar
 */
 //==============================================================================
+
+// ACKNOWLEDGEMENT: (OSRF GAZEBO SIM https://www.openrobotics.org/)
+// Some of the source code in this file is taken from
+// https://github.com/osrf/gazebo/blob/gazebo11/gazebo/common/Plugin.hh
+
 #ifndef AF_PLUGIN_INTEFACE_H
 #define AF_PLUGIN_INTEFACE_H
 
@@ -113,8 +118,7 @@ public: static TPtr Create(const std::string &_filename,
         bool found = false;
         string fullname, filename(_filename);
         list<string>::iterator iter;
-        list<string> pluginPaths;
-        pluginPaths.push_back("/home/adnan/ambf/build-debug/ambf_plugins");
+        list<string> pluginPaths = afSystemPaths::getPluginPath();
 
 #ifdef __APPLE__
         // This is a hack to work around issue #800,

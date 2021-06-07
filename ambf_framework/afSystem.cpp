@@ -40,48 +40,97 @@
 */
 //==============================================================================
 
-#ifndef AF_SYSTEM_H
-#define AF_SYSTEM_H
 
-#include <list>
-#include <string>
+#include<afSystem.h>
+#include <iterator>
+#include <algorithm>
 
 using namespace std;
+using namespace ambf;
 
-namespace ambf {
+string afSystemPaths::s_rootPath;
+list<string> afSystemPaths::s_pluginPaths;
 
-// Plugins are always visible
-#if defined _WIN32 || defined __CYGWIN__
-  #ifdef __GNUC__
-    #define AF_EXPORT __attribute__ ((dllexport))
-  #else
-    #define AF_EXPORT __declspec(dllexport)
-  #endif
+string afSystemPaths::getSeparator()
+{
+#ifdef _WIN32
+    return "\\";
 #else
-    #define AF_EXPORT
+    return "/";
 #endif
+}
 
-
-class afSystemPaths{
-public:
-
-    static string getSeparator();
-
-    static string getPathSeparator();
-
-    static list<string> splitString(string &a_str, const string &delimiter);
-
-    static list<string> & getPluginPath();
-
-    static string & getRootPath();
-
-    protected:
-    static list<string> s_pluginPaths;
-    static string s_rootPath;
-};
-
-} // ambf namespace
-
-// AF_SYSTEM
+string afSystemPaths::getPathSeparator()
+{
+#ifdef _WIN32
+    return ";";
+#else
+    return ":";
 #endif
+}
 
+list<string> afSystemPaths::splitString(string &a_str, const string &delimiter)
+{
+    list<string> split_str;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = a_str.find(delimiter)) != std::string::npos) {
+        token = a_str.substr(0, pos);
+        split_str.push_back(token);
+        a_str.erase(0, pos + delimiter.length());
+    }
+    // To account for the case if a single path was specified without adding any delimiter
+    if (a_str.empty() == false){
+        split_str.push_back(a_str);
+    }
+    return split_str;
+}
+
+list<string> &afSystemPaths::getPluginPath()
+{
+    string path;
+
+    char *pathCStr = getenv("AMBF_PLUGIN_PATH");
+    if (!pathCStr || *pathCStr == '\0')
+    {
+        // No env var; take the compile-time default.
+        path = AMBF_PLUGIN_PATH;
+    }
+    else
+    {
+        path = pathCStr;
+    }
+
+    list<string> delimitedPaths = splitString(path, getPathSeparator());
+
+    for (auto pathIt : delimitedPaths)
+    {
+        if (!pathIt.empty())
+        {
+            if (find(s_pluginPaths.begin(), s_pluginPaths.end(), pathIt) == s_pluginPaths.end()) {
+              s_pluginPaths.push_back(pathIt);
+            }
+        }
+    }
+    return s_pluginPaths;
+}
+
+string &afSystemPaths::getRootPath()
+{
+    string path;
+
+    char *pathCStr = getenv("AMBF_ROOT_PATH");
+    if (!pathCStr || *pathCStr == '\0')
+    {
+        // No env var; take the compile-time default.
+        path = AMBF_ROOT_PATH;
+    }
+    else
+    {
+        path = pathCStr;
+    }
+
+    s_rootPath = path;
+
+    return s_rootPath;
+}

@@ -88,7 +88,6 @@ public:
             return true;
         }
         else{
-            cerr << "FAILED TO LOAD PLUGIN" << endl;
             return false;
         }
     }
