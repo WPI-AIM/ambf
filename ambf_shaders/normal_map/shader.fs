@@ -1,3 +1,4 @@
+#version 130
 varying vec4 vPosition;
 varying vec3 vNormal;
 varying vec3 vTexCoord;
@@ -60,7 +61,7 @@ vec4 shade(vec3 p, vec3 v, vec3 n)
          float att = attenuation(p, i);
          float intensity = 0.3*spotlight(p, i);
 
-         vec3 texColor = texture(diffuseMap, vTexCoord).xyz;
+         vec3 texColor = texture2D(diffuseMap, vTexCoord.xy).xyz;
 
          vec3 Iambient = gl_FrontLightProduct[i].ambient.rgb;
 
@@ -86,9 +87,9 @@ vec4 shade(vec3 p, vec3 v, vec3 n)
 void main(void)
 {
     vec3 normal;
-    if (vEnableNormalMapping){
+    if (vEnableNormalMapping != 0){
       // obtain normal from normal map in range [0,1]
-      normal = texture(normalMap, gl_TexCoord[0].xy).rgb;
+      normal = texture2D(normalMap, gl_TexCoord[0].xy).rgb;
       // normal = TBN * normal;
       // transform normal vector to range [-1,1]
       normal = normal * 2.0 - 1.0;  // this normal is in tangent space
