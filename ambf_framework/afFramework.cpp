@@ -6378,7 +6378,7 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
                 if (m_pickedRigidBody){
                     cerr << "User picked AF rigid body: " << m_pickedRigidBody->m_name << endl;
                     m_pickedBulletRigidBody = body;
-                    m_pickedRigidBodyColor = m_pickedRigidBody->m_visualMesh->m_material->copy();
+                    m_pickedRigidBody->m_visualMesh->backupMaterialColors(true);
                     m_pickedRigidBody->m_visualMesh->setMaterial(m_pickColor);
                     m_savedState = m_pickedBulletRigidBody->getActivationState();
                     m_pickedBulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
@@ -6522,7 +6522,7 @@ void afWorld::removePickingConstraint(){
     }
 
     if (m_pickedRigidBody){
-        m_pickedRigidBody->m_visualMesh->setMaterial(m_pickedRigidBodyColor);
+        m_pickedRigidBody->m_visualMesh->restoreMaterialColors(true);
     }
 
     if (m_pickedSoftBody){

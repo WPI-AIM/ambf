@@ -2161,8 +2161,6 @@ public:
 
     afRigidBodyPtr m_pickedRigidBody = nullptr;
 
-    cMaterialPtr m_pickedRigidBodyColor; // Original color of picked body for reseting later
-
     cMaterial m_pickColor; // The color to be applied to the picked body
 
     class btSoftBody* m_pickedSoftBody = nullptr; // Picked SoftBody
