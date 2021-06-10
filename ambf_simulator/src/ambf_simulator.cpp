@@ -555,8 +555,6 @@ int main(int argc, char* argv[])
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    g_pluginManager.add("libtest_simulator_plugin.so", "test_simulator_plugin");
-
     g_pluginManager.init(argc, argv, g_afWorld);
 
     //    signal (SIGINT, exitHandler);

@@ -1,5 +1,5 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2020, AMBF.
+#  Copyright (c) 2019-2021, AMBF.
 #  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
@@ -33,14 +33,11 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: seb $
 #  $Author: Adnan Munawar $
 #  $Date:  $
 #  $Rev:  $
 
 
-add_library(test_world_plugin world_plugins/test_world_plugin.cpp)
-target_link_libraries (test_world_plugin ${AMBF_LIBRARIES})
-
-add_library(test_simulator_plugin simulator_plugins/test_simulator_plugin.cpp)
-target_link_libraries (test_simulator_plugin ${AMBF_LIBRARIES})
+add_subdirectory(simulator_example)
+add_subdirectory(world_example)
+add_subdirectory(volumetric_drilling)

@@ -1,5 +1,5 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2019-2020, AMBF.
+#  Copyright (c) 2019-2021, AMBF.
 #  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
@@ -33,17 +33,10 @@
 #  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#  $Author: seb $
 #  $Author: Adnan Munawar $
 #  $Date:  $
 #  $Rev:  $
 
 
-# common settings required to build examples
-find_package (GLFW REQUIRED)
-find_package (Boost COMPONENTS program_options filesystem REQUIRED)
-include_directories (${GLFW_INCLUDE_DIRS})
-
-add_executable (ambf_simulator src/ambf_simulator.cpp)
-#message("AMBF LIBS ARE: " ${AMBF_LIBRARIES})
-target_link_libraries (ambf_simulator ${AMBF_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES})
+add_library(simulator_example simulator_example.cpp )
+target_link_libraries (simulator_example ${AMBF_LIBRARIES})

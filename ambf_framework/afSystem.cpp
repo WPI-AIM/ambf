@@ -69,7 +69,7 @@ string afSystemPaths::getPathSeparator()
 #endif
 }
 
-list<string> afSystemPaths::splitString(string &a_str, const string &delimiter)
+const list<string> afSystemPaths::splitString(string &a_str, const string &delimiter)
 {
     list<string> split_str;
     size_t pos = 0;
@@ -86,7 +86,7 @@ list<string> afSystemPaths::splitString(string &a_str, const string &delimiter)
     return split_str;
 }
 
-list<string> &afSystemPaths::getPluginPath()
+const list<string> &afSystemPaths::getPluginPath()
 {
     string path;
 

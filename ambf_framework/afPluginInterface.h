@@ -121,8 +121,6 @@ public: static TPtr Create(const std::string &_filename,
         list<string> pluginPaths = afSystemPaths::getPluginPath();
 
 #ifdef __APPLE__
-        // This is a hack to work around issue #800,
-        // error loading plugin libraries with different extensions
         {
             size_t soSuffix = filename.rfind(".so");
             if (soSuffix != std::string::npos)
@@ -132,7 +130,6 @@ public: static TPtr Create(const std::string &_filename,
             }
         }
 #elif _WIN32
-        // Corresponding windows hack
         {
             // replace .so with .dll
             size_t soSuffix = filename.rfind(".so");
