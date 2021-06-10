@@ -206,9 +206,9 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                 }
 
                 // get ambient component:
-                newMesh->m_material->m_ambient.setR(material.m_ambient[0]);
-                newMesh->m_material->m_ambient.setG(material.m_ambient[1]);
-                newMesh->m_material->m_ambient.setB(material.m_ambient[2]);
+                newMesh->m_material->m_ambient.setR(material.m_ambient[0] * material.m_diffuse[0]);
+                newMesh->m_material->m_ambient.setG(material.m_ambient[1] * material.m_diffuse[1]);
+                newMesh->m_material->m_ambient.setB(material.m_ambient[2] * material.m_diffuse[2]);
                 newMesh->m_material->m_ambient.setA(alpha);
 
                 // get diffuse component:
@@ -1317,7 +1317,7 @@ bool cOBJModel::loadMaterialLib(const char a_fileName[],
         {
             // read into current material
             if (fscanf(hFile, "%f", &m_pMaterials[*a_curMaterialIndex].m_alpha) < 0) return(false);
-            m_pMaterials[*a_curMaterialIndex].m_alpha = 1.0 - m_pMaterials[*a_curMaterialIndex].m_alpha;
+            m_pMaterials[*a_curMaterialIndex].m_alpha = m_pMaterials[*a_curMaterialIndex].m_alpha;
         }
 
         // opacity
