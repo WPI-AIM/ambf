@@ -401,11 +401,12 @@ add_subdirectory(ambf_plugins)
 #
 
 # export package for use from the build tree
-export (TARGETS ambf_framework FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
+export (TARGETS ambf_framework bullet chai3d FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
 export (PACKAGE AMBF)
 
 # configure package
-set (CONF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS})
+set (CONF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${ADF_LOADER_INCLUDE_DIRS})
+set (CONF_LIBRARIES  ${AMBF_LIBRARIES})
 set (CONF_DEFINITIONS  ${AMBF_DEFINITIONS})
 
 # create package configuration and version files
