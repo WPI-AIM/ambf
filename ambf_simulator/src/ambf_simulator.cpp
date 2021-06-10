@@ -90,7 +90,7 @@ struct CommandLineOptions{
     // A string of device indexes to load
     std::string devicesToLoad;
     // A string list of multibody indexes to load
-    std::string multiBodiesToLoad;
+    std::string multiBodyIndexesToLoad;
     // A string list of multibody files to load
     std::string multiBodyFilesToLoad;
     // A string of Path of launch file to load
@@ -102,6 +102,7 @@ struct CommandLineOptions{
     // The running speed of the simulation. 1.0 indicates a stepping of one second.
     double simulation_speed;
 
+    std::string simulator_plugins;
 };
 
 // Global struct for command line options
@@ -248,6 +249,8 @@ int main(int argc, char* argv[])
             ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
             ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
             ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
+            ("plugins,", p_opt::value<std::string>()->default_value(""), "Simulator plugins to load, .e.g. "
+                                                                "--plugins <plugin1_filepath>, <plugin2_filepath> loads plugin1 and plugin2 simualtor plugin")
             ("launch_file", p_opt::value<std::string>(), "Launch file path to load (default: <ROOT_PATH>/ambf_models/descriptions/launch.yaml")
             ("load_multibody_files,a", p_opt::value<std::string>()->default_value(""), "Description Filenames of Multi-Body(ies) to Launch, .e.g. -a <path>"
                                                                     "/test.yaml, <another_path>/test2.yaml will load multibodies test.yaml"
@@ -271,6 +274,7 @@ int main(int argc, char* argv[])
     g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();
     g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();
     g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
+    g_cmdOpts.simulator_plugins = var_map["plugins"].as<std::string>();
 
     if(var_map.count("launch_file")){ g_cmdOpts.launchFilePath = var_map["launch_file"].as<std::string>();}
     else{
@@ -279,11 +283,11 @@ int main(int argc, char* argv[])
 
     if(var_map.count("load_multibody_files")){ g_cmdOpts.multiBodyFilesToLoad = var_map["load_multibody_files"].as<std::string>();}
 
-    if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodiesToLoad = var_map["load_multibodies"].as<std::string>();}
+    if(var_map.count("load_multibodies")){ g_cmdOpts.multiBodyIndexesToLoad = var_map["load_multibodies"].as<std::string>();}
     else{
         if (g_cmdOpts.multiBodyFilesToLoad.empty()){
             // Fall back file index option if the no options for launching any ambf file is described.
-            g_cmdOpts.multiBodiesToLoad = "1";
+            g_cmdOpts.multiBodyIndexesToLoad = "1";
         }
     }
 
@@ -400,15 +404,7 @@ int main(int argc, char* argv[])
 
     // Process the loadMultiBodyFiles string
     if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
-        std::vector<std::string> mbFileNames;
-        std::string loadMBFilenames = g_cmdOpts.multiBodyFilesToLoad;
-        std::stringstream ss(loadMBFilenames);
-        while(ss.good() )
-        {
-            string mbFilename;
-            getline( ss, mbFilename, ',' );
-            mbFileNames.push_back(mbFilename);
-        }
+        std::vector<std::string> mbFileNames = afUtils::splitString<vector<string> >(g_cmdOpts.multiBodyFilesToLoad, ",");
         for (uint idx = 0 ; idx < mbFileNames.size() ; idx++){
             afModelAttributes modelAttribs;
             if (g_adfLoaderPtr->loadModelAttribs(mbFileNames[idx], &modelAttribs)){
@@ -418,19 +414,12 @@ int main(int argc, char* argv[])
     }
 
     // Process the Multi-body index files
-    if (!g_cmdOpts.multiBodiesToLoad.empty()){
-        std::vector<uint> mbIndexes;
-        std::string loadMBs = g_cmdOpts.multiBodiesToLoad;
+    if (!g_cmdOpts.multiBodyIndexesToLoad.empty()){
+        std::string loadMBs = g_cmdOpts.multiBodyIndexesToLoad;
         loadMBs.erase(std::remove(loadMBs.begin(), loadMBs.end(), ' '), loadMBs.end());
-        std::stringstream ss(loadMBs);
-        while(ss.good() )
-        {
-            string mbIdx;
-            getline( ss, mbIdx, ',' );
-            mbIndexes.push_back(std::stoi(mbIdx));
-        }
+        std::vector<string> mbIndexes = afUtils::splitString<vector<string> >(loadMBs, ",");
         for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
-            uint fileIdx = mbIndexes[idx];
+            uint fileIdx = std::stoi(mbIndexes[idx]);
             if (fileIdx >= launchAttribs.m_modelFilepaths.size()){
                 cerr << "ERROR: -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
                 continue;
@@ -449,6 +438,12 @@ int main(int argc, char* argv[])
         if (model->createFromAttribs(&modelsAttribs[idx])){
             g_afWorld->addModel(model);
         }
+    }
+
+    // Load plugins.
+    vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
+    for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){
+        g_pluginManager.add(plugin_filepaths[pi], plugin_filepaths[pi]);
     }
 
     g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);

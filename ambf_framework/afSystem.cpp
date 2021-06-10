@@ -41,9 +41,10 @@
 //==============================================================================
 
 
-#include<afSystem.h>
+#include <afSystem.h>
 #include <iterator>
 #include <algorithm>
+#include <afUtils.h>
 
 using namespace std;
 using namespace ambf;
@@ -69,23 +70,6 @@ string afSystemPaths::getPathSeparator()
 #endif
 }
 
-const list<string> afSystemPaths::splitString(string &a_str, const string &delimiter)
-{
-    list<string> split_str;
-    size_t pos = 0;
-    std::string token;
-    while ((pos = a_str.find(delimiter)) != std::string::npos) {
-        token = a_str.substr(0, pos);
-        split_str.push_back(token);
-        a_str.erase(0, pos + delimiter.length());
-    }
-    // To account for the case if a single path was specified without adding any delimiter
-    if (a_str.empty() == false){
-        split_str.push_back(a_str);
-    }
-    return split_str;
-}
-
 const list<string> &afSystemPaths::getPluginPath()
 {
     string path;
@@ -101,7 +85,7 @@ const list<string> &afSystemPaths::getPluginPath()
         path = pathCStr;
     }
 
-    list<string> delimitedPaths = splitString(path, getPathSeparator());
+    list<string> delimitedPaths = ambf::afUtils::splitString<list<string>>(path, getPathSeparator());
 
     for (auto pathIt : delimitedPaths)
     {
