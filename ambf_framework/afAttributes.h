@@ -340,6 +340,7 @@ struct afColorAttributes{
 
         m_alpha = 1.0;
         m_shininess = 64;
+        m_useMaterial = true;
     }
 
     afVector3d m_ambient;
@@ -348,7 +349,7 @@ struct afColorAttributes{
     afVector3d m_emission;
     double m_alpha;
     unsigned int m_shininess;
-
+    bool m_useMaterial; // use the color attribs defined above
 };
 
 

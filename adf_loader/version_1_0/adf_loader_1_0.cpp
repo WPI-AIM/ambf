@@ -91,8 +91,18 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
     YAML::Node colorNameNode = matNode["color"];
     YAML::Node colorRGBANode = matNode["color rgba"];
     YAML::Node colorComponentsNode = matNode["color components"];
+    YAML::Node useMaterialNode = matNode["use material"];
 
     afColorAttributes& colorAttribs = *a_color;
+
+
+    if (useMaterialNode.IsDefined()){
+
+        colorAttribs.m_useMaterial = useMaterialNode.as<bool>();
+    }
+    else{
+        colorAttribs.m_useMaterial = true;
+    }
 
     if(colorRGBANode.IsDefined()){
         colorAttribs.m_diffuse(0) = colorRGBANode["r"].as<double>();
@@ -131,6 +141,9 @@ bool ADFUtils::getColorAttribsFromNode(YAML::Node *a_node, afColorAttributes* a_
 //        vector<double> rgba = afConfigHandler::getColorRGBA(colorNameNode.as<string>());
 //        mat.setColorf(rgba[0], rgba[1], rgba[2], rgba[3]);
 //    }
+    else{
+        colorAttribs.m_useMaterial = false;
+    }
 
     return true;
 }
