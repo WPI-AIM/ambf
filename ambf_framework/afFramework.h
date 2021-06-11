@@ -2059,6 +2059,8 @@ public:
 
     virtual void render(afRenderOptions &options);
 
+    cWorld* getChaiWorld();
+
     bool createDefaultWorld();
 
     double getEnclosureLength();
@@ -2215,8 +2217,6 @@ public:
 
     map<string, afPointCloudPtr> m_pcMap;
 
-    cWorld* m_chaiWorld = nullptr;
-
     // Bullet dynamics world.
     btDiscreteDynamicsWorld* m_bulletWorld = nullptr;
 
@@ -2285,6 +2285,8 @@ private:
     // Step the simulation by this many steps
     // Used when the Physics is paused
     int m_manualStepPhx = 0;
+
+    cWorld* m_chaiWorld = nullptr;
 };
 
 

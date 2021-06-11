@@ -2298,8 +2298,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     setPassive(attribs.m_communicationAttribs.m_passive);
 
     addChildSceneObject(m_visualMesh, cTransform());
-    m_afWorld->m_chaiWorld->addChild(m_visualMesh);
-    m_afWorld->m_chaiWorld->addChild(m_collisionMesh);
+    m_afWorld->addSceneObjectToWorld(m_visualMesh);
+    m_afWorld->addSceneObjectToWorld(m_collisionMesh);
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
     if (isPassive() == false){
@@ -3449,7 +3449,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
     addChildSceneObject(m_visualMesh, cTransform());
-    m_afWorld->m_chaiWorld->addChild(m_visualMesh);
+    m_afWorld->addSceneObjectToWorld(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
     m_afWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 
@@ -6187,6 +6187,11 @@ void afWorld::render(afRenderOptions &options)
 
 }
 
+cWorld *afWorld::getChaiWorld(){
+//    cerr << m_chaiWorld << endl;
+    return m_chaiWorld;
+}
+
 
 ///
 /// \brief afWorld::createSkyBox
@@ -6670,7 +6675,7 @@ cVector3d afCamera::getTargetPosGlobal(){
 bool afCamera::createDefaultCamera(){
     cerr << "INFO: USING DEFAULT CAMERA" << endl;
 
-    m_camera = new cCamera(m_afWorld->m_chaiWorld);
+    m_camera = new cCamera(m_afWorld->getChaiWorld());
 
     m_namespace = m_afWorld->getNamespace();
 
@@ -6787,7 +6792,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_camera = new cCamera(m_afWorld->m_chaiWorld);
+    m_camera = new cCamera(m_afWorld->getChaiWorld());
 
     addChildSceneObject(m_camera, cTransform());
 
@@ -7150,7 +7155,7 @@ void afCamera::computeDepthOnGPU()
 
     m_depthBuffer->renderView();
 
-    m_camera->setParentWorld(m_afWorld->m_chaiWorld);
+    m_camera->setParentWorld(m_afWorld->getChaiWorld());
 
     m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_UNSIGNED_INT);
 
@@ -7659,7 +7664,7 @@ afLight::afLight(afWorldPtr a_afWorld): afBaseObject(afObjectType::LIGHT, a_afWo
 ///
 bool afLight::createDefaultLight(){
     cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << endl;
-    m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
+    m_spotLight = new cSpotLight(m_afWorld->getChaiWorld());
     m_namespace = m_afWorld->getNamespace();
     m_name = "default_light";
     addChildSceneObject(m_spotLight, cTransform());
@@ -7695,7 +7700,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     cVector3d dir = to_cVector3d(attribs.m_direction);
     setDir(dir);
 
-    m_spotLight = new cSpotLight(m_afWorld->m_chaiWorld);
+    m_spotLight = new cSpotLight(m_afWorld->getChaiWorld());
 
     addChildSceneObject(m_spotLight, cTransform());
 

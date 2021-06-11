@@ -392,7 +392,7 @@ int main(int argc, char* argv[])
     g_afWorld->m_updateCounterLimit = g_cmdOpts.phxFrequency * 2;
 
     // set the background color of the environment
-    g_afWorld->m_chaiWorld->m_backgroundColor.setWhite();
+    g_afWorld->getChaiWorld()->m_backgroundColor.setWhite();
 
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
