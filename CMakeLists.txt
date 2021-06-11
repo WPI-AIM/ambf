@@ -346,8 +346,10 @@ target_link_libraries(ambf_framework ${chai3d} ${bullet})
  endif()
 
 # AMBF library exports
-set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/external/bullet/src"
-  "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
+set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/ambf_loader" "${PROJECT_SOURCE_DIR}/ambf_framework"
+    "${PROJECT_SOURCE_DIR}/ambf_math" "${PROJECT_SOURCE_DIR}/external/bullet/src"
+    "${PROJECT_SOURCE_DIR}/external/chai3d/src"
+    "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
 
 set (AMBF_LIBRARIES ambf_framework chai3d bullet ${ADF_LOADER_LIBRARIES} ${OPENGL_LIBRARIES})
 set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
