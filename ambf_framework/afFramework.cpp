@@ -899,11 +899,6 @@ cTransform afBaseObject::getGlobalTransform()
     return m_globalTransform;
 }
 
-afBaseObjectPtr afBaseObject::getParentObject()
-{
-    return m_parentObject;
-}
-
 
 ///
 /// \brief afBaseObject::setLocalPos
@@ -1007,6 +1002,7 @@ bool afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
     // Remove any set parent of the child object first?
 //    a_afObject->clearParentObject();
     a_afObject->setParentObject(this);
+    m_childrenObjects.push_back(a_afObject);
     return true;
 }
 
@@ -1175,19 +1171,20 @@ void afBaseObject::updateSceneObjects(){
     }
 }
 
-void afBaseObject::updateGlobalPose(){
-    cTransform a_globalTransform = m_localTransform;
-
-    // Traverse up the parents to resolve the global pose
-    afBaseObjectPtr a_parentObject = getParentObject();
-    if (a_parentObject != nullptr){
-        do{
-            a_globalTransform = a_parentObject->getLocalTransform() * a_globalTransform;
-            a_parentObject = a_parentObject->getParentObject();
-        }
-        while(a_parentObject != nullptr);
+void afBaseObject::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform){
+    if ( (getParentObject() != nullptr) && (a_forceUpdate == false) ){
+        // Don't update the pose as this objects parent is
+        // responsible for it.
+        return;
     }
-    m_globalTransform = a_globalTransform;
+
+    m_globalTransform = a_parentTransform * m_localTransform;
+
+    vector<afBaseObjectPtr>::const_iterator it;
+
+    for (it = m_childrenObjects.begin() ; it != m_childrenObjects.end() ; ++it){
+        (*it)->updateGlobalPose(true, m_globalTransform);
+    }
 }
 
 void afBaseObject::calculateFrameSize()
@@ -2184,11 +2181,6 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     m_shaderAttribs = attribs.m_shaderAttribs;
     loadShaderProgram();
 
-    btTransform iOff;
-    if (attribs.m_inertialAttribs.m_estimateInertialOffset){
-        iOff.setOrigin(computeInertialOffset(m_collisionMesh));
-    }
-
     // Set this now, but if we require the inertial offset to be estimated AND a collision
     // shape is a MESH, then estimate it to override this.
     btTransform inertialOffset = to_btTransform(attribs.m_inertialAttribs.m_inertialOffset);
@@ -2278,11 +2270,11 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         setInertia(attribs.m_inertialAttribs.m_inertia);
     }
 
+    createInertialObject();
+
     // inertial origin in world
     cTransform T_iINw = to_cTransform(attribs.m_kinematicAttribs.m_location);
     cTransform T_mINw = T_iINw * to_cTransform(getInertialOffsetTransform());
-
-    createInertialObject();
 
     setInitialTransform(T_mINw);
     setLocalTransform(T_mINw);
@@ -2802,7 +2794,8 @@ void afRigidBody::setLocalTransform(cTransform &trans)
 {
     m_bulletMotionState->setWorldTransform(to_btTransform(trans));
     m_bulletRigidBody->setCenterOfMassTransform(to_btTransform(trans));
-    afBaseObject::setLocalTransform(trans);
+    cTransform com = trans * to_cTransform(getInverseInertialOffsetTransform());
+    afBaseObject::setLocalTransform(com);
 }
 
 
@@ -5975,11 +5968,20 @@ void afWorld::updateSceneObjects()
 
     afChildrenMap::iterator i;
 
+    // Update global poses of all objects first
     for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
     {
         for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
-            childObj->updateGlobalPose();
+            childObj->updateGlobalPose(false);
+        }
+    }
+
+    // Then update all scene objects
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    {
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
             childObj->updateSceneObjects();
         }
     }
@@ -6174,10 +6176,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 ///
 void afWorld::render(afRenderOptions &options)
 {
+    updateSceneObjects();
+
     // Update shadow maps once
     m_chaiWorld->updateShadowMaps(false, options.m_mirroredDisplay);
-
-    updateSceneObjects();
 
     afBaseObjectMap::iterator camIt;
     for (camIt = getCameraMap()->begin(); camIt != getCameraMap()->end(); ++ camIt){

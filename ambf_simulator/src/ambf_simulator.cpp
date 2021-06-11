@@ -627,7 +627,6 @@ void updateGraphics()
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
     g_pluginManager.graphicsUpdate();
-    g_simulationRunning = true;
 }
 
 
@@ -635,11 +634,7 @@ void updateGraphics()
 /// \brief updatePhysics
 ///
 void updatePhysics(){
-
-    // Wait for the graphics loop to start the sim
-    while (g_simulationRunning == false){
-        cSleepMs(1);
-    }
+    g_simulationRunning = true;
 
     g_simulationFinished = false;
 
@@ -775,9 +770,6 @@ void updateHapticDevice(void* ccuPtr){
     while(g_simulationRunning == false){
         cSleepMs(1);
     }
-
-    // simulation in now running
-    g_simulationFinished = false;
 
     afRate htxSleep(g_cmdOpts.htxFrequency);
 

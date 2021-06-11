@@ -572,7 +572,7 @@ public:
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
 
-    afBaseObjectPtr getParentObject();
+    inline afBaseObjectPtr getParentObject(){return m_parentObject;}
 
     inline cMultiMesh* getVisualMesh(){return m_visualMesh;}
 
@@ -623,7 +623,7 @@ public:
 
     virtual void updateSceneObjects();
 
-    virtual void updateGlobalPose();
+    virtual void updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform = cTransform());
 
     void calculateFrameSize();
 
@@ -679,6 +679,8 @@ protected:
 
     // Plugin Manager
     afBaseObjectPluginManager m_pluginManager;
+
+    vector<afBaseObjectPtr> m_childrenObjects;
 };
 
 
