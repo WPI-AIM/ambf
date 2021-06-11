@@ -5013,6 +5013,7 @@ bool afObjectManager::addBaseObject(afBaseObjectPtr a_obj, string a_name){
         return false;
     }
     (m_childrenObjectsMap[a_obj->getObjectType()])[a_name] = a_obj;
+
     a_obj->calculateFrameSize();
     // Whenever a new object is added, try to resolve parenting of objects that require parenting.
     resolveObjectsMissingParents(a_obj);
@@ -5273,18 +5274,6 @@ afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool sup
     return nullptr;
 }
 
-
-///
-/// \brief afObjectManager::getModel
-/// \param a_name
-/// \param suppress_warning
-/// \return
-///
-afModelPtr afObjectManager::getModel(string a_name, bool suppress_warning){
-    return (afModelPtr)getBaseObject(a_name, getModelMap(), suppress_warning);
-}
-
-
 ///
 /// \brief afObjectManager::getVehicle
 /// \param a_name
@@ -5301,6 +5290,9 @@ afVehiclePtr afObjectManager::getVehicle(string a_name, bool suppress_warning){
 /// \param a_obj
 /// \return
 ///
+afObjectManager::afObjectManager(){
+}
+
 string afObjectManager::addLight(afLightPtr a_obj){
     string qualified_identifier = a_obj->getQualifiedIdentifier();
     string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getLightMap());
@@ -5404,20 +5396,6 @@ string afObjectManager::addSensor(afSensorPtr a_obj){
 
 
 ///
-/// \brief afObjectManager::addModel
-/// \param a_obj
-/// \return
-///
-string afObjectManager::addModel(afModelPtr a_obj){
-    string qualified_identifier = a_obj->getQualifiedIdentifier();
-    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getModelMap());
-    string remaped_identifier = qualified_identifier + remap_str;
-    addBaseObject(a_obj, qualified_identifier + remap_str);
-    return remaped_identifier;
-}
-
-
-///
 /// \brief afObjectManager::addVehicle
 /// \param a_obj
 /// \return
@@ -5428,6 +5406,45 @@ string afObjectManager::addVehicle(afVehiclePtr a_obj){
     string remaped_identifier = qualified_identifier + remap_str;
     addBaseObject(a_obj, qualified_identifier + remap_str);
     return remaped_identifier;
+}
+
+string afObjectManager::addBaseObject(afBaseObjectPtr a_obj)
+{
+    string remaped_name = "";
+    switch (a_obj->getObjectType()) {
+    case afObjectType::RIGID_BODY:
+        remaped_name = addRigidBody((afRigidBodyPtr)a_obj);
+        break;
+    case afObjectType::JOINT:
+        remaped_name = addJoint((afJointPtr)a_obj);
+        break;
+    case afObjectType::SOFT_BODY:
+        remaped_name = addSoftBody((afSoftBodyPtr)a_obj);
+        break;
+    case afObjectType::VEHICLE:
+        remaped_name = addVehicle((afVehiclePtr)a_obj);
+        break;
+    case afObjectType::GHOST_OBJECT:
+        remaped_name = addGhostObject((afGhostObjectPtr)a_obj);
+        break;
+    case afObjectType::SENSOR:
+        remaped_name = addSensor((afSensorPtr)a_obj);
+        break;
+    case afObjectType::ACTUATOR:
+        remaped_name = addActuator((afActuatorPtr)a_obj);
+        break;
+    case afObjectType::CAMERA:
+        remaped_name = addCamera((afCameraPtr)a_obj);
+        break;
+    case afObjectType::LIGHT:
+        remaped_name = addLight((afLightPtr)a_obj);
+        break;
+    default:
+        cerr << "ERROR! OBJECT " << a_obj->getQualifiedIdentifier() << "'s TYPE HAS NOT BEEN IMPLEMENTED IN OBJECT MANAGER YET!" << endl;
+        break;
+    }
+
+    return remaped_name;
 }
 
 
@@ -5496,15 +5513,6 @@ afSensorVec afObjectManager::getSensors(){
 
 
 ///
-/// \brief afObjectManager::getModels
-/// \return
-///
-afModelVec afObjectManager::getModels(){
-    return getBaseObjects<afModel>(getModelMap());
-}
-
-
-///
 /// \brief afObjectManager::getVehicles
 /// \return
 ///
@@ -5514,10 +5522,114 @@ afVehicleVec afObjectManager::getVehicles(){
 
 
 ///
+/// \brief afModelManager::getModel
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afModelPtr afModelManager::getModel(string a_name, bool suppress_warning){
+    afModelMap* modelsMap = getModelMap();
+    if (modelsMap->find(a_name) != modelsMap->end()){
+        return ((*modelsMap)[a_name]);
+    }
+    // We didn't find the object using the full name, try checking if the name is a substring of the fully qualified name
+    int matching_obj_count = 0;
+    vector<string> matching_models_names;
+    afModelPtr objHandle;
+    afModelMap::iterator oIt = modelsMap->begin();
+    for (; oIt != modelsMap->end() ; ++oIt){
+        if (oIt->first.find(a_name) != string::npos){
+            matching_obj_count++;
+            matching_models_names.push_back(oIt->first);
+            objHandle = oIt->second;
+        }
+    }
+
+    if (matching_obj_count == 1){
+        // If only one object is found, return that object
+        return objHandle;
+    }
+    else if(matching_obj_count > 1){
+        cerr << "WARNING: MULTIPLE MODELS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        for (int i = 0 ; i < matching_models_names.size() ; i++){
+            cerr << "\t" << i << ") " << matching_models_names[i] << endl;
+        }
+        return nullptr;
+    }
+    else{
+        if (!suppress_warning){
+            cerr << "WARNING: CAN'T FIND ANY MODELS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
+
+            cerr <<"Existing MODELS in Map: " << modelsMap->size() << endl;
+            afModelMap::iterator oIt = modelsMap->begin();
+            for (; oIt != modelsMap->end() ; ++oIt){
+                cerr << oIt->first << endl;
+            }
+        }
+        return nullptr;
+    }
+}
+
+
+///
+/// \brief afModelManager::addModel
+/// \param a_obj
+/// \return
+///
+afModelManager::afModelManager(afWorldPtr a_afWorld)
+{
+    m_afWorld = a_afWorld;
+}
+
+string afModelManager::addModel(afModelPtr a_model){
+    string qualified_identifier = a_model->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getModelMap());
+    string remaped_identifier = qualified_identifier + remap_str;
+    m_modelsMap[remaped_identifier] = a_model;
+
+    // Add models objects to world
+    addModelsChildrenToWorld(a_model);
+
+    return remaped_identifier;
+}
+
+
+///
+/// \brief afModelManager::getModels
+/// \return
+///
+afModelVec afModelManager::getModels(){
+    vector<afModelPtr> models;
+    afModelMap::iterator oIt;
+
+    for (oIt = m_modelsMap.begin() ; oIt != m_modelsMap.end() ; ++oIt){
+        models.push_back(oIt->second);
+    }
+
+    return models;
+}
+
+void afModelManager::addModelsChildrenToWorld(afModelPtr a_model)
+{
+    afChildrenMap::iterator cIt;
+    afChildrenMap* childrenMap = a_model->getChildrenMap();
+
+    for(cIt = childrenMap->begin(); cIt != childrenMap->end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            m_afWorld->addBaseObject(childObj);
+        }
+    }
+}
+
+
+
+///
 /// \brief afWorld::afWorld
 /// \param a_global_namespace
 ///
-afWorld::afWorld(string a_global_namespace){
+afWorld::afWorld(string a_global_namespace): afModelManager(this){
     m_maxIterations = 10;
 
     // reset simulation time
@@ -5858,15 +5970,8 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
     double dt = getSimulationDeltaTime();
 
-    // Read the AF_COMM commands and apply to all different types of objects
-    afChildrenMap::iterator i;
-
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
-    {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
-            afBaseObject* childObj = oIt->second;
-            childObj->fetchCommands(dt);
-        }
+    for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
+        (mIt->second)->fetchCommands(dt);
     }
 
     // integrate simulation during an certain interval
@@ -5889,12 +5994,8 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
     estimateBodyWrenches();
 
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
-    {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
-            afBaseObject* childObj = oIt->second;
-            childObj->update(dt);
-        }
+    for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
+        (mIt->second)->update(dt);
     }
 
 }
@@ -5966,24 +6067,10 @@ void afWorld::updateSceneObjects()
     }
 #endif
 
-    afChildrenMap::iterator i;
-
-    // Update global poses of all objects first
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    // Update all models
+    for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
     {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
-            afBaseObject* childObj = oIt->second;
-            childObj->updateGlobalPose(false);
-        }
-    }
-
-    // Then update all scene objects
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
-    {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
-            afBaseObject* childObj = oIt->second;
-            childObj->updateSceneObjects();
-        }
+        (mIt->second)->updateSceneObjects();
     }
 }
 
@@ -6103,8 +6190,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     setGravity(attribs.m_gravity);
 
+    afModelPtr envModel;
+
     if (attribs.m_environmentModel.m_use){
-        afModelPtr envModel = new afModel(this);
+        envModel = new afModel(this);
         if (envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs)){
             addModel(envModel);
         }
@@ -6127,6 +6216,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
         afLightPtr lightPtr = new afLight(this);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
+            envModel->addLight(lightPtr);
             string remaped_name = addLight(lightPtr);
         }
     }
@@ -6138,6 +6228,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         lightAttribs.m_identificationAttribs.m_name = "default_light";
         afLightPtr lightPtr = new afLight(this);
         lightPtr->createFromAttribs(&lightAttribs);
+        envModel->addLight(lightPtr);
         string remaped_name = addLight(lightPtr);
     }
 
@@ -6145,6 +6236,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         for (size_t idx = 0 ; idx < attribs.m_cameraAttribs.size(); idx++){
             afCameraPtr cameraPtr = new afCamera(this);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
+                envModel->addCamera(cameraPtr);
                 string remaped_name = addCamera(cameraPtr);
             }
         }
@@ -6157,6 +6249,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             camAttribs.m_lookAt.set(-1, 0, 0);
             camAttribs.m_identificationAttribs.m_name = "default_camera";
             if (cameraPtr->createFromAttribs(&camAttribs)){
+                envModel->addCamera(cameraPtr);
                 string remaped_name = addCamera(cameraPtr);
             }
 
@@ -6668,90 +6761,6 @@ cVector3d afCamera::getTargetPosLocal(){
 ///
 cVector3d afCamera::getTargetPosGlobal(){
     return m_globalTransform * m_targetPos;
-}
-
-///
-/// \brief afCamera::createDefaultCamera
-/// \return
-///
-bool afCamera::createDefaultCamera(){
-    cerr << "INFO: USING DEFAULT CAMERA" << endl;
-
-    m_camera = new cCamera(m_afWorld->getChaiWorld());
-
-    m_namespace = m_afWorld->getNamespace();
-
-    // Set a default name
-    m_name = "default_camera";
-
-    // position and orient the camera
-    setView(cVector3d(4.0, 0.0, 2.0),  // camera position (eye)
-            cVector3d(0.0, 0.0,-0.5),       // lookat position (target)
-            cVector3d(0.0, 0.0, 1.0));      // direction of the "up" vector
-
-    m_initialTransform = getLocalTransform();
-
-    // set the near and far clipping planes of the camera
-    m_camera->setClippingPlanes(0.01, 10.0);
-
-    // Set the Field of View
-    m_camera->setFieldViewAngleRad(0.7);
-
-    // set stereo mode
-    m_camera->setStereoMode(cStereoMode::C_STEREO_DISABLED);
-
-    // set stereo eye separation and focal length (applies only if stereo is enabled)
-    m_camera->setStereoEyeSeparation(0.02);
-    m_camera->setStereoFocalLength(2.0);
-
-    // set vertical mirrored display mode
-    setMirrorVertical(false);
-
-    // create display context
-    // compute desired size of window
-    m_monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * mode->width;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
-    m_window = glfwCreateWindow(w, h, "AMBF Simulator", nullptr, nullptr);
-    s_mainWindow = m_window;
-
-    m_win_x = x;
-    m_win_y = y;
-    m_width = w;
-    m_height = h;
-
-    // create a font
-    cFontPtr font = NEW_CFONTCALIBRI20();
-
-    m_graphicsDynamicsFreqLabel = new cLabel(font);
-    m_wallSimTimeLabel = new cLabel(font);
-    m_devicesModesLabel = new cLabel(font);
-    m_deviceButtonLabel = new cLabel(font);
-    m_controllingDeviceLabel = new cLabel(font);
-
-    m_graphicsDynamicsFreqLabel->m_fontColor.setBlack();
-    m_wallSimTimeLabel->m_fontColor.setBlack();
-    m_devicesModesLabel->m_fontColor.setBlack();
-    m_deviceButtonLabel->m_fontColor.setBlack();
-    m_controllingDeviceLabel->m_fontColor.setBlack();
-    m_controllingDeviceLabel->setFontScale(0.8);
-
-    m_camera->m_frontLayer->addChild(m_graphicsDynamicsFreqLabel);
-    m_camera->m_frontLayer->addChild(m_wallSimTimeLabel);
-    m_camera->m_frontLayer->addChild(m_devicesModesLabel);
-    m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
-    m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
-
-    s_windowIdx++;
-    s_cameraIdx++;
-
-    // Assign the Window Camera Handles
-    addChildSceneObject(m_camera, cTransform());
-
-    return true;
 }
 
 bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
@@ -7660,27 +7669,6 @@ void afCamera::preProcessingShadersUpdate()
 afLight::afLight(afWorldPtr a_afWorld): afBaseObject(afObjectType::LIGHT, a_afWorld){
 }
 
-///
-/// \brief afLight::createDefaultLight
-/// \return
-///
-bool afLight::createDefaultLight(){
-    cerr << "INFO: NO LIGHT SPECIFIED, USING DEFAULT LIGHTING" << endl;
-    m_spotLight = new cSpotLight(m_afWorld->getChaiWorld());
-    m_namespace = m_afWorld->getNamespace();
-    m_name = "default_light";
-    addChildSceneObject(m_spotLight, cTransform());
-    m_spotLight->setLocalPos(cVector3d(0.0, 0.5, 2.5));
-    m_spotLight->setDir(0, 0, -1);
-    m_spotLight->setSpotExponent(0.3);
-    m_spotLight->setCutOffAngleDeg(60);
-    m_spotLight->setShadowMapEnabled(true);
-    m_spotLight->m_shadowMap->setQualityVeryHigh();
-    m_spotLight->setEnabled(true);
-    m_afWorld->addSceneObjectToWorld(m_spotLight);
-    return true;
-}
-
 
 bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 {
@@ -7935,7 +7923,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_rigidBodyAttribs.size(); ++i) {
         afRigidBodyPtr rBodyPtr = new afRigidBody(m_afWorld, this);
         if (rBodyPtr->createFromAttribs(&attribs.m_rigidBodyAttribs[i])){
-            string remaped_name = m_afWorld->addRigidBody(rBodyPtr);
             addRigidBody(rBodyPtr);
         }
     }
@@ -7944,7 +7931,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_softBodyAttribs.size(); ++i) {
         afSoftBodyPtr sBodyPtr = new afSoftBody(m_afWorld, this);
         if (sBodyPtr->createFromAttribs(&attribs.m_softBodyAttribs[i])){
-            string remaped_name = m_afWorld->addSoftBody(sBodyPtr);
             addSoftBody(sBodyPtr);
         }
     }
@@ -7953,7 +7939,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_ghostObjectAttribs.size(); ++i) {
         afGhostObjectPtr gObjPtr = new afGhostObject(m_afWorld, this);
         if (gObjPtr->createFromAttribs(&attribs.m_ghostObjectAttribs[i])){
-            string remaped_name = m_afWorld->addGhostObject(gObjPtr);
             addGhostObject(gObjPtr);
         }
     }
@@ -7986,7 +7971,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
 
         if (valid){
-            string remaped_name = m_afWorld->addSensor(sensorPtr);
+            addSensor(sensorPtr);
         }
     }
 
@@ -8008,7 +7993,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
 
         if (valid){
-            string remaped_name = m_afWorld->addActuator(actuatorPtr);
             addActuator(actuatorPtr);
         }
     }
@@ -8017,7 +8001,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_jointAttribs.size(); ++i) {
         afJointPtr jntPtr = new afJoint(m_afWorld, this);
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
-            string remaped_name = m_afWorld->addJoint(jntPtr);
             addJoint(jntPtr);
         }
     }
@@ -8027,7 +8010,6 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_vehicleAttribs.size(); ++i) {
         vehiclePtr = new afVehicle(m_afWorld, this);
         if (vehiclePtr->createFromAttribs(&attribs.m_vehicleAttribs[i])){
-            string remap_name = m_afWorld->addVehicle(vehiclePtr);
             addVehicle(vehiclePtr);
         }
     }
@@ -8041,6 +8023,70 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     m_afWorld->buildCollisionGroups();
 
     return true;
+}
+
+
+///
+/// \brief afModel::fetchCommands
+/// \param dt
+///
+void afModel::fetchCommands(double dt)
+{
+    // Read the AF_COMM commands and apply to all different types of objects
+    afChildrenMap::iterator cIt;
+
+    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->fetchCommands(dt);
+        }
+    }
+}
+
+
+///
+/// \brief afModel::update
+/// \param dt
+///
+void afModel::update(double dt)
+{
+    afChildrenMap::iterator cIt;
+
+    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->update(dt);
+        }
+    }
+}
+
+
+///
+/// \brief afModel::updateSceneObjects
+///
+void afModel::updateSceneObjects()
+{
+    afChildrenMap::iterator i;
+
+    // Update global poses of all objects first
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    {
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->updateGlobalPose(false);
+        }
+    }
+
+    // Then update all scene objects
+    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    {
+        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->updateSceneObjects();
+        }
+    }
 }
 
 

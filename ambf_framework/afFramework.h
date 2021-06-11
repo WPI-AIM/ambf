@@ -684,8 +684,13 @@ protected:
 };
 
 
+///
+/// \brief The afObjectManager class
+///
 class afObjectManager{
 public:
+
+    afObjectManager();
 
     string addLight(afLightPtr a_rb);
 
@@ -703,14 +708,11 @@ public:
 
     string addSensor(afSensorPtr a_sensor);
 
-    string addModel(afModelPtr a_model);
-
     string addVehicle(afVehiclePtr a_vehicle);
 
-    // add children object to world
-    bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
+    string addBaseObject(afBaseObjectPtr a_obj);
 
-    void addObjectMissingParent(afBaseObjectPtr a_obj);
+    bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
 
     void resolveObjectsMissingParents(afBaseObjectPtr a_newObject);
 
@@ -730,6 +732,9 @@ public:
 
     afGhostObjectPtr getGhostObject(btGhostObject* a_body, bool suppress_warning=false);
 
+    // Mark that this object needs parenting
+    void addObjectMissingParent(afBaseObjectPtr a_obj);
+
     // Get the root parent of a body, if null is provided, returns the parent body
     // with most children. This method is similar to the corresponding afWorld
     // method however it searches in the local model space than the world space
@@ -740,8 +745,6 @@ public:
     afActuatorPtr getActuator(string a_name);
 
     afSensorPtr getSensor(string a_name);
-
-    afModelPtr getModel(string a_name, bool suppress_warning=false);
 
     afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
 
@@ -768,8 +771,6 @@ public:
 
     afSensorVec getSensors();
 
-    afModelVec getModels();
-
     afVehicleVec getVehicles();
 
 
@@ -789,8 +790,6 @@ public:
 
     inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afObjectType::SENSOR];}
 
-    inline afBaseObjectMap* getModelMap(){return &m_childrenObjectsMap[afObjectType::MODEL];}
-
     inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afObjectType::VEHICLE];}
 
     inline afChildrenMap* getChildrenMap(){return &m_childrenObjectsMap;}
@@ -799,9 +798,36 @@ public:
     bool checkIfExists(afBaseObject* a_obj, vector<afBaseObject*> *a_objectsVec);
 
 protected:
-    map<afObjectType, map<string, afBaseObject*>> m_childrenObjectsMap;
+    afChildrenMap m_childrenObjectsMap;
 
-    vector<afBaseObject*> m_afObjectsMissingParents;
+    vector<afBaseObjectPtr> m_afObjectsMissingParents;
+};
+
+
+
+///
+/// \brief The afModelManager class
+///
+class afModelManager: public afObjectManager{
+public:
+    afModelManager(afWorldPtr a_afWorld);
+
+    string addModel(afModelPtr a_model);
+
+
+    afModelPtr getModel(string a_name, bool suppress_warning=false);
+
+    afModelVec getModels();
+
+    inline afModelMap* getModelMap(){return &m_modelsMap;}
+
+protected:
+
+    void addModelsChildrenToWorld(afModelPtr a_model);
+
+    afObjectManager m_objectManager;
+    afModelMap m_modelsMap;
+    afWorldPtr m_afWorld;
 };
 
 
@@ -1744,10 +1770,6 @@ public:
 
     void updateLabels(afRenderOptions &options);
 
-    // Create the default camera. Implemented in case not additional cameras
-    // are define in the AMBF config file
-    bool createDefaultCamera();
-
     cCamera* getInternalCamera(){return m_camera;}
 
     virtual bool createFromAttribs(afCameraAttributes* a_attribs);
@@ -1993,9 +2015,6 @@ public:
 
     virtual bool createFromAttribs(afLightAttributes* a_attribs);
 
-    // Default light incase no lights are defined in the AMBF Config file
-    bool createDefaultLight();
-
     virtual void fetchCommands(double dt);
 
     virtual void update(double dt);
@@ -2047,7 +2066,7 @@ struct afRenderOptions{
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afComm, public afObjectManager{
+class afWorld: public afComm, public afModelManager{
 
     friend class afModel;
 
@@ -2318,7 +2337,11 @@ public:
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
-    virtual void fetchCommands(double dt){}
+    virtual void fetchCommands(double dt);
+
+    virtual void update(double dt);
+
+    virtual void updateSceneObjects();
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
