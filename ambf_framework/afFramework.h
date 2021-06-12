@@ -2341,6 +2341,8 @@ public:
 
     virtual void update(double dt);
 
+    virtual void updateGlobalPose();
+
     virtual void updateSceneObjects();
 
     // We can have multiple bodies connected to a single body.

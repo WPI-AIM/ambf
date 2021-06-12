@@ -6070,6 +6070,12 @@ void afWorld::updateSceneObjects()
     // Update all models
     for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
     {
+        (mIt->second)->updateGlobalPose();
+    }
+
+    // Update all models
+    for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
+    {
         (mIt->second)->updateSceneObjects();
     }
 }
@@ -8064,25 +8070,35 @@ void afModel::update(double dt)
 
 
 ///
-/// \brief afModel::updateSceneObjects
+/// \brief afModel::updateGlobalPose
 ///
-void afModel::updateSceneObjects()
+void afModel::updateGlobalPose()
 {
-    afChildrenMap::iterator i;
+    afChildrenMap::iterator cIt;
 
     // Update global poses of all objects first
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
     {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
             childObj->updateGlobalPose(false);
         }
     }
 
+}
+
+
+///
+/// \brief afModel::updateSceneObjects
+///
+void afModel::updateSceneObjects()
+{
+    afChildrenMap::iterator cIt;
+
     // Then update all scene objects
-    for(i = m_childrenObjectsMap.begin(); i != m_childrenObjectsMap.end(); ++i)
+    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
     {
-        for (afBaseObjectMap::iterator oIt = i->second.begin() ; oIt != i->second.end() ; ++oIt){
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
             childObj->updateSceneObjects();
         }
