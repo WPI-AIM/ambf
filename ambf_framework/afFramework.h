@@ -187,7 +187,7 @@ typedef cMultiPoint* cMultiPointPtr;
 //------------------------------------------------------------------------------
 typedef map<string, afBaseObject*> afBaseObjectMap;
 typedef vector<afBaseObjectPtr> afBaseObjectVec;
-typedef map<afObjectType, map<string, afBaseObject*> > afChildrenMap;
+typedef map<afType, map<string, afBaseObject*> > afChildrenMap;
 
 typedef unsigned long ulong;
 
@@ -222,12 +222,53 @@ public:
 };
 
 
+class afIdentification{
+public:
+
+    afIdentification(afType a_type);
+
+    // Get the type of communication instance
+    afType getType(){return m_type;}
+
+    // Get Name of this object
+    inline string getName(){return m_name;}
+
+    // Get Namespace for this object
+    inline string getNamespace(){return m_namespace;}
+
+    inline string getQualifiedName(){return m_namespace + m_name;}
+
+    // Set Name of object
+    inline void setName(string a_name){m_name = a_name;}
+
+    // Set namespace for this object
+    inline void setNamespace(string a_namespace){m_namespace = a_namespace; }
+
+    inline string getQualifiedIdentifier(){return m_namespace + m_identifier;}
+
+    void setIdentifier(string a_name){m_identifier = a_name;}
+
+protected:
+    // The namespace for this body, this namespace affect afComm and the stored name of the body
+    // in the internal body tree map.
+    string m_namespace;
+
+    string m_name;
+
+    // Identifier name, which could be different from the name
+    string m_identifier;
+
+    // Type of object
+    const afType m_type;
+};
+
+
 class afComm{
 public:
     afComm(){}
     virtual ~afComm(){}
 
-    virtual void afCreateCommInstance(afObjectType type, string a_name, string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
+    virtual void afCreateCommInstance(afType type, string a_name, string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
 
     // This method is to retrieve all the commands for appropriate af comm instances.
     virtual void fetchCommands(double dt=0.001);
@@ -241,14 +282,6 @@ public:
     // Set as passive so it doesn't communication outside
     inline void setPassive(bool a_passive){m_passive = a_passive;}
 
-    // Get Name of this object
-    inline string getName(){return m_name;}
-
-    // Get Namespace for this object
-    inline string getNamespace(){return m_namespace;}
-
-    inline string getQualifiedName(){return m_namespace + m_name;}
-
     // Get Min publishing frequency for this object
     inline int getMinPublishFrequency(){return m_minPubFreq;}
 
@@ -260,12 +293,6 @@ public:
 
     // Set Max publishing frequency for this object
     inline void setMaxPublishFrequency(int freq){m_maxPubFreq = freq;}
-
-    // Set Name of object
-    inline void setName(string a_name){m_name = a_name;}
-
-    // Set namespace for this object
-    inline void setNamespace(string a_namespace){m_namespace = a_namespace; }
 
 public:
 
@@ -280,8 +307,6 @@ public:
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
 
-    string m_name;
-
     //! AMBF ROS COMM
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
@@ -293,11 +318,6 @@ public:
     std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
 #endif
-
-protected:
-    // The namespace for this body, this namespace affect afComm and the stored name of the body
-    // in the internal body tree map.
-    string m_namespace = "";
 
 private:
 
@@ -539,20 +559,13 @@ protected:
 };
 
 
-class afBaseObject: public afComm{
+class afBaseObject: public afIdentification, public afComm{
 
 public:
-    afBaseObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_afModelPtr = nullptr);
+    afBaseObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_afModelPtr = nullptr);
     virtual ~afBaseObject();
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
-
-    inline string getQualifiedIdentifier(){return m_namespace + m_identifier;}
-
-    void setIdentifier(string a_name){m_identifier = a_name;}
-
-    // Get the type of communication instance
-    afObjectType getObjectType(){return m_type;}
 
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
@@ -658,9 +671,6 @@ public:
     // Parent body name defined in the ADF
     string m_parentName;
 
-    // Identifier name, which could be different from the name
-    string m_identifier;
-
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;
 
@@ -671,8 +681,6 @@ public:
     vector<afBaseObjectPtr> m_afChildrenObjects;
 
 protected:
-    // Type of object
-    const afObjectType m_type;
 
     // Initial location of Rigid Body
     cTransform m_initialTransform;
@@ -786,23 +794,23 @@ public:
     afVehicleVec getVehicles();
 
 
-    inline afBaseObjectMap* getLightMap(){return &m_childrenObjectsMap[afObjectType::LIGHT];}
+    inline afBaseObjectMap* getLightMap(){return &m_childrenObjectsMap[afType::LIGHT];}
 
-    inline afBaseObjectMap* getCameraMap(){return &m_childrenObjectsMap[afObjectType::CAMERA];}
+    inline afBaseObjectMap* getCameraMap(){return &m_childrenObjectsMap[afType::CAMERA];}
 
-    inline afBaseObjectMap* getRigidBodyMap(){return &m_childrenObjectsMap[afObjectType::RIGID_BODY];}
+    inline afBaseObjectMap* getRigidBodyMap(){return &m_childrenObjectsMap[afType::RIGID_BODY];}
 
-    inline afBaseObjectMap* getSoftBodyMap(){return &m_childrenObjectsMap[afObjectType::SOFT_BODY];}
+    inline afBaseObjectMap* getSoftBodyMap(){return &m_childrenObjectsMap[afType::SOFT_BODY];}
 
-    inline afBaseObjectMap* getGhostObjectMap(){return &m_childrenObjectsMap[afObjectType::GHOST_OBJECT];}
+    inline afBaseObjectMap* getGhostObjectMap(){return &m_childrenObjectsMap[afType::GHOST_OBJECT];}
 
-    inline afBaseObjectMap* getJointMap(){return &m_childrenObjectsMap[afObjectType::JOINT];}
+    inline afBaseObjectMap* getJointMap(){return &m_childrenObjectsMap[afType::JOINT];}
 
-    inline afBaseObjectMap* getActuatorMap(){return &m_childrenObjectsMap[afObjectType::ACTUATOR];}
+    inline afBaseObjectMap* getActuatorMap(){return &m_childrenObjectsMap[afType::ACTUATOR];}
 
-    inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afObjectType::SENSOR];}
+    inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afType::SENSOR];}
 
-    inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afObjectType::VEHICLE];}
+    inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afType::VEHICLE];}
 
     inline afChildrenMap* getChildrenMap(){return &m_childrenObjectsMap;}
 
@@ -848,7 +856,7 @@ protected:
 ///
 class afInertialObject: public afBaseObject{
 public:
-    afInertialObject(afObjectType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+    afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     ~afInertialObject();
 
     // Apply force that is specified in the world frame at a point specified in world frame
@@ -2078,7 +2086,7 @@ struct afRenderOptions{
 ///
 /// \brief The afWorld class
 ///
-class afWorld: public afComm, public afModelManager{
+class afWorld: public afIdentification, public afComm, public afModelManager{
 
     friend class afModel;
 
@@ -2334,7 +2342,7 @@ struct afPickingConstraintData{
 ///
 /// \brief The afModel class
 ///
-class afModel: public afBaseObject, public afObjectManager{
+class afModel: public afIdentification, public afObjectManager{
 
     friend class afRigidBody;
     friend class afSoftBody;
@@ -2376,6 +2384,9 @@ protected:
     template <typename T>
     string getNonCollidingIdx(string a_body_name, const T* tMap);
     void remapName(string &name, string remap_idx_str);
+
+protected:
+    afWorldPtr m_afWorld;
 };
 
 

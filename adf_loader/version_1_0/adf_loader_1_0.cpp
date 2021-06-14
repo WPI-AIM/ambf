@@ -1024,7 +1024,7 @@ string ADFLoader_1_0::getLoaderVersion(){
     return m_version;
 }
 
-bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afObjectType a_objType, afBaseObjectAttributes *attribs)
+bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afType a_objType, afBaseObjectAttributes *attribs)
 {
     YAML::Node& rootNode = *a_node;
     if (rootNode.IsNull()){
@@ -1034,21 +1034,21 @@ bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afOb
 
     YAML::Node node = rootNode[a_objName];
     switch (a_objType) {
-    case afObjectType::ACTUATOR:
+    case afType::ACTUATOR:
         return loadActuatorAttribs(&node, (afActuatorAttributes*)attribs);
-    case afObjectType::SENSOR:
+    case afType::SENSOR:
         return loadSensorAttribs(&node, (afSensorAttributes*)attribs);
-    case afObjectType::RIGID_BODY:
+    case afType::RIGID_BODY:
         return loadRigidBodyAttribs(&node, (afRigidBodyAttributes*)attribs);
-    case afObjectType::SOFT_BODY:
+    case afType::SOFT_BODY:
         return loadSoftBodyAttribs(&node, (afSoftBodyAttributes*)attribs);
-    case afObjectType::VEHICLE:
+    case afType::VEHICLE:
         return loadVehicleAttribs(&node, (afVehicleAttributes*)attribs);
-    case afObjectType::LIGHT:
+    case afType::LIGHT:
         return loadLightAttribs(&node, (afLightAttributes*)attribs);
-    case afObjectType::CAMERA:
+    case afType::CAMERA:
         return loadCameraAttribs(&node, (afCameraAttributes*)attribs);
-    case afObjectType::INPUT_DEVICE:
+    case afType::INPUT_DEVICE:
         return loadInputDeviceAttribs(&node, (afInputDeviceAttributes*)attribs);
     default:
         return false;

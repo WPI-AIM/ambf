@@ -158,7 +158,7 @@ vector<double> ADFLoaderInterface::getColorRGBA(string a_color_name){
     return rgba;
 }
 
-bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, afObjectType a_type, afBaseObjectAttributes *attribs)
+bool ADFLoaderInterface::loadObjectAttribs(string a_filepath, string a_objName, afType a_type, afBaseObjectAttributes *attribs)
 {
     if (!setLoaderVersionForFile(a_filepath)){
         return false;

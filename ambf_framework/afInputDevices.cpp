@@ -281,7 +281,7 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     m_afCursor->m_visualMesh = new cMultiMesh();
     m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
     a_afWorld->addSceneObjectToWorld(m_afCursor->m_visualMesh);
-    m_afCursor->afCreateCommInstance(afObjectType::OBJECT,
+    m_afCursor->afCreateCommInstance(afType::OBJECT,
                                      a_name, a_afWorld->resolveGlobalNamespace(a_namespace),
                                      minPF,
                                      maxPF);
@@ -653,7 +653,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         // running
         if(attribs.m_sdeDefined){
             std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
-            m_rootLink->afCreateCommInstance(afObjectType::RIGID_BODY,
+            m_rootLink->afCreateCommInstance(afType::RIGID_BODY,
                                                         simDevName,
                                                         m_afWorld->resolveGlobalNamespace(m_rootLink->getNamespace()),
                                                         m_rootLink->getMinPublishFrequency(),

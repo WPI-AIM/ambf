@@ -182,12 +182,12 @@ struct afRayAttributes{
 struct afIdentificationAttributes{
 public:
     afIdentificationAttributes(){
-        m_objectType = afObjectType::INVALID;
+        m_objectType = afType::INVALID;
     }
 
     std::string m_name;
     std::string m_namespace;
-    afObjectType m_objectType;
+    afType m_objectType;
 };
 
 

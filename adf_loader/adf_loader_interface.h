@@ -60,7 +60,7 @@ public:
     ADFLoaderInterface();
     ~ADFLoaderInterface();
 
-    bool loadObjectAttribs(std::string a_filepath, std::string a_objectName, afObjectType a_type, afBaseObjectAttributes* attribs);
+    bool loadObjectAttribs(std::string a_filepath, std::string a_objectName, afType a_type, afBaseObjectAttributes* attribs);
 
     // Load World Attribs
     bool loadWorldAttribs(std::string a_filepath, afWorldAttributes* attribs);

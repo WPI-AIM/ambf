@@ -74,9 +74,9 @@ enum class afBodyType{
 
 
 ///
-/// \brief The afObjectType enum
+/// \brief The afType enum
 ///
-enum class afObjectType{
+enum class afType{
     INVALID,
     OBJECT,
     ACTUATOR,

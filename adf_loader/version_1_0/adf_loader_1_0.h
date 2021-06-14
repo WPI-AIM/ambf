@@ -117,7 +117,7 @@ public:
 
     virtual string getLoaderVersion();
 
-    virtual bool loadObjectAttribs(YAML::Node* a_node, string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs);
+    virtual bool loadObjectAttribs(YAML::Node* a_node, string a_objName, afType a_objType, afBaseObjectAttributes* a_objAttribs);
 
     // Load Light
     virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs);

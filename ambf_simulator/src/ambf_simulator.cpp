@@ -1138,7 +1138,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         else if (a_key == GLFW_KEY_X){
             g_afWorld->pausePhysics(true);
             if (g_afWorld->m_pickedRigidBody != nullptr){
-                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_pickedRigidBody->m_name.c_str());
+                printf("Removing Last Picked Body Named: \"%s\"\n", g_afWorld->m_pickedRigidBody->getName().c_str());
                 g_afWorld->m_pickedRigidBody->remove();
             }
             else{

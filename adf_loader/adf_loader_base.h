@@ -88,7 +88,7 @@ public:
     ~ADFLoaderBase(){}
 
     // Load object attributes
-    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afObjectType a_objType, afBaseObjectAttributes* a_objAttribs){}
+    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afType a_objType, afBaseObjectAttributes* a_objAttribs){}
 
     // Load Light Attributes
     virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs){}
