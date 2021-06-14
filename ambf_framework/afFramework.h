@@ -627,12 +627,24 @@ public:
 
     void calculateFrameSize();
 
-    inline bool isShaderPgmDefined(){
-        return m_shaderAttribs.m_shaderDefined;
-    }
+    bool isShaderProgramDefined();
+
+    bool isShaderProgramDefined(cMesh* a_mesh);
 
     // Enable Shader Program Associate with this object
     virtual void loadShaderProgram();
+
+    virtual bool isNormalMapDefined();
+
+    virtual bool isNormalMapDefined(cMesh* a_mesh);
+
+    virtual bool isNormalTextureDefined();
+
+    virtual bool isNormalTextureDefined(cMesh* a_mesh);
+
+    virtual void enableShaderNormalMapping(bool enable);
+
+    virtual void enableShaderNormalMapping(bool enable, cMesh* a_mesh);
 
     // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
     // to be parented to hasn't been loaded yet.

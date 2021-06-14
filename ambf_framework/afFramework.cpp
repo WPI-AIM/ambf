@@ -1205,6 +1205,23 @@ void afBaseObject::calculateFrameSize()
     }
 }
 
+bool afBaseObject::isShaderProgramDefined(){
+    if (m_visualMesh == nullptr){
+        return false;
+    }
+
+    return m_visualMesh->getShaderProgram().get() == nullptr ? 0 : 1;
+}
+
+bool afBaseObject::isShaderProgramDefined(cMesh *a_mesh)
+{
+    if (a_mesh == nullptr){
+        return false;
+    }
+
+    return a_mesh->getShaderProgram().get() == nullptr ? 0 : 1;
+}
+
 
 ///
 /// \brief afBaseObject::loadShaderProgram
@@ -1220,37 +1237,101 @@ void afBaseObject::loadShaderProgram()
     }
     else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
         if (m_afWorld->m_shaderProgram.get()){
+            m_shaderAttribs.m_shaderDefined = true;
             m_visualMesh->setShaderProgram(m_afWorld->m_shaderProgram);
             valid = true;
         }
     }
 
     if (valid){
-        // Just empty Pts to let us use the shader
-        cGenericObject* go=nullptr;
-        cRenderOptions ro;
         cShaderProgramPtr shaderProgram = m_visualMesh->getShaderProgram();
-        shaderProgram->use(go, ro);
         // Set the ID for shadow and normal maps.
         shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
-        bool enable_normal_mapping = false;
-        for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
-            cMesh* mesh = m_visualMesh->getMesh(i);
-            if (mesh->m_normalMap.get() != nullptr){
-                if (mesh->m_normalMap->m_image.get() != nullptr){
-                    enable_normal_mapping = true;
-                }
-            }
-        }
-        if (enable_normal_mapping){
-            shaderProgram->setUniformi("normalMap", C_TU_NORMALMAP);
-            shaderProgram->setUniformi("vEnableNormalMapping", 1);
+        if (isNormalTextureDefined()){
+            enableShaderNormalMapping(false);
         }
         else{
-            shaderProgram->setUniformi("vEnableNormalMapping", 0);
+            enableShaderNormalMapping(true);
         }
     }
 }
+
+bool afBaseObject::isNormalMapDefined()
+{
+    if (m_visualMesh->m_normalMap.get() != nullptr){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+bool afBaseObject::isNormalMapDefined(cMesh *a_mesh)
+{
+    if (a_mesh->m_normalMap.get() != nullptr){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+bool afBaseObject::isNormalTextureDefined()
+{
+    if (isNormalMapDefined()){
+        if (m_visualMesh->m_normalMap->m_image.get() != nullptr){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    else{
+        return false;
+    }
+}
+
+bool afBaseObject::isNormalTextureDefined(cMesh *a_mesh)
+{
+    if (isNormalMapDefined(a_mesh)){
+        if (a_mesh->m_normalMap->m_image.get() != nullptr){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    else{
+        return false;
+    }
+}
+
+void afBaseObject::enableShaderNormalMapping(bool enable)
+{
+    if (isShaderProgramDefined() == false){
+        return;
+    }
+
+    m_visualMesh->getShaderProgram()->setUniformi("normalMap", C_TU_NORMALMAP);
+    m_visualMesh->getShaderProgram()->setUniformi("vEnableNormalMapping", enable);
+
+    for (int i = 0 ; i < m_visualMesh->getNumMeshes() ; i++){
+        enableShaderNormalMapping(enable, m_visualMesh->getMesh(i));
+    }
+}
+
+void afBaseObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
+{
+    if (isShaderProgramDefined(a_mesh) == false){
+        return;
+    }
+
+    if (isNormalTextureDefined(a_mesh)){
+        a_mesh->getShaderProgram()->setUniformi("normalMap", C_TU_NORMALMAP);
+        a_mesh->getShaderProgram()->setUniformi("vEnableNormalMapping", enable);
+    }
+}
+
 
 bool afBaseObject::resolveParent(string a_parentName, bool suppress_warning){
     // If the parent name is empty, return true as nothing to do

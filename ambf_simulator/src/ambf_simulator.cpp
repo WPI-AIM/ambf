@@ -1173,11 +1173,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             g_enableNormalMapping = ! g_enableNormalMapping;
             printf("Toggling Normal Mapping ON/OFF %d \n", g_enableNormalMapping);
             for (int i = 0 ; i < rbVec.size() ; i++){
-                if (rbVec[i]->isShaderPgmDefined()){
-                    if (rbVec[i]->m_visualMesh->getShaderProgram()){
-                        rbVec[i]->m_visualMesh->getShaderProgram()->setUniformi("vEnableNormalMapping", g_enableNormalMapping);
-                    }
-                }
+                rbVec[i]->enableShaderNormalMapping(g_enableNormalMapping);
             }
         }
 
