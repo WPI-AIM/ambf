@@ -41,7 +41,7 @@
 
 # common settings required to build examples
 find_package (GLFW REQUIRED)
-find_package (Boost COMPONENTS program_options filesystem REQUIRED)
+find_package (Boost COMPONENTS program_options REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
 add_executable (ambf_simulator src/ambf_simulator.cpp)
