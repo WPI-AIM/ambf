@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------
     namespace p_opt = boost::program_options;
 
-    p_opt::options_description cmd_opts("InputDevices Application Usage");
+    p_opt::options_description cmd_opts("ambf_simulator Command Line Options");
     cmd_opts.add_options()
             ("help,h", "Show help")
             ("ndevs,n", p_opt::value<int>()->default_value(0), "Number of Haptic Devices to Load")
@@ -259,7 +259,7 @@ int main(int argc, char* argv[])
                                                                 "-l 1,2,3 will load multibodies at indexes 1,2,3. See launch.yaml file");
 
     p_opt::variables_map var_map;
-    p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).run(), var_map);
+    p_opt::store(p_opt::command_line_parser(argc, argv).options(cmd_opts).allow_unregistered().run(), var_map);
     p_opt::notify(var_map);
 
     if(var_map.count("help")){ std::cout<< cmd_opts << std::endl; return 0;}
@@ -518,6 +518,9 @@ int main(int argc, char* argv[])
     g_inputDevices = std::make_shared<afCollateralControlManager>(g_afWorld);
     g_inputDevices->createFromAttribs(&tuAttribs);
 
+
+    g_pluginManager.init(argc, argv, g_afWorld);
+
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
     //-----------------------------------------------------------------------------------------------------------
@@ -549,8 +552,6 @@ int main(int argc, char* argv[])
     sigIntHandler.sa_flags = 0;
 
     sigaction(SIGINT, &sigIntHandler, NULL);
-
-    g_pluginManager.init(argc, argv, g_afWorld);
 
     //    signal (SIGINT, exitHandler);
 
@@ -1736,9 +1737,6 @@ void preTickCallBack(btDynamicsWorld *world, btScalar timeStep){
 ///
 void close(void)
 {
-    // Close plugins
-    g_pluginManager.close();
-
     // stop the simulation
     g_simulationRunning = false;
 
@@ -1751,8 +1749,12 @@ void close(void)
         g_hapticsThreads[i]->stop();
     }
 
+    // Close plugins
+    g_pluginManager.close();
+
     // delete resources
     g_inputDevices->closeDevices();
+
     for(int i = 0 ; i < g_inputDevices->m_numDevices ; i ++){
         delete g_hapticsThreads[i];
     }
