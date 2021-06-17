@@ -464,8 +464,8 @@ struct afImageResolutionAttribs{
 struct afNoiseModelAttribs{
     afNoiseModelAttribs(){
         m_enable = false;
-        m_mean = 1.0;
-        m_std_dev = 0.1;
+        m_mean = 0.1;
+        m_std_dev = 0.001;
         m_bias = 0.0;
     }
     bool m_enable;
