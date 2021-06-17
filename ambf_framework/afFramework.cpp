@@ -8894,3 +8894,13 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
     }
     return shaderProgram;
 }
+
+void afNoiseModel::createFromAttribs(afNoiseModelAttribs *a_attribs)
+{
+    m_attribs = *a_attribs;
+
+    // Init Generator and Distribution
+
+    m_randomNumberGenerator = default_random_engine(time(0));
+    m_randomDistribution = new normal_distribution<double>(m_attribs.m_mean, m_attribs.m_std_dev);
+}

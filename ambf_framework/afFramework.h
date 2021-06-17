@@ -1724,17 +1724,7 @@ struct afNoiseModel{
         }
     }
 
-    void initialize(double mean, double std_dev, double bias, bool enable=true){
-        m_attribs.m_enable = enable;
-        m_attribs.m_mean = mean;
-        m_attribs.m_std_dev = std_dev;
-        m_attribs.m_bias = bias;
-
-        // Init Generator and Distribution
-
-        m_randomNumberGenerator = default_random_engine(time(0));
-        m_randomDistribution = new normal_distribution<double>(m_attribs.m_mean, m_attribs.m_std_dev);
-    }
+    void createFromAttribs(afNoiseModelAttribs* a_attribs);
 
     double generate(){
         if (m_randomDistribution){
