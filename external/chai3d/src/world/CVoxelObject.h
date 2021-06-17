@@ -53,7 +53,7 @@
 //------------------------------------------------------------------------------
 namespace chai3d {
 //------------------------------------------------------------------------------
-const int C_NUM_VOXEL_RENDERING_MODES = 9;
+const int C_NUM_VOXEL_RENDERING_MODES = 10;
 //------------------------------------------------------------------------------
 
 //==============================================================================
@@ -148,6 +148,9 @@ public:
 
     //! This method sets a custom shader renderer.
     void setRenderingModeCustom();
+
+    //! This method sets the custom shaders. Call before setting custom mode
+    void setCustomShaders(std::string vtx_shader, std::string frag_shader);
 
 
     //--------------------------------------------------------------------------
@@ -310,6 +313,11 @@ protected:
 
     //! Program shaders.
     cShaderProgramPtr m_programShaders[C_NUM_VOXEL_RENDERING_MODES];
+
+protected:
+    std::string C_SHADER_CUSTOM_VERT; // Custom Vtx Shader
+
+    std::string C_SHADER_CUSTOM_FRAG; // Custom Frag Shader
 };
 
 //------------------------------------------------------------------------------
