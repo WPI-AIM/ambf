@@ -59,9 +59,9 @@
 #include "ambf_msgs/WorldCmd.h"
 #include "ambf_msgs/WorldState.h"
 
-bool Node::s_initialized;
-ros::NodeHandle* Node::s_nodePtr;
-unsigned int Node::s_nodeCounter = 0;
+bool afROSNode::s_initialized;
+ros::NodeHandle* afROSNode::s_nodePtr;
+unsigned int afROSNode::s_registeredInstances = 0;
 
 template<class T_state, class T_cmd>
 ///
@@ -80,7 +80,7 @@ RosComBase<T_state, T_cmd>::RosComBase(std::string a_name, std::string a_namespa
 
     m_freq_min = a_freq_min;
     m_freq_max = a_freq_max;
-    nodePtr = Node::getNodePtr();
+    nodePtr = afROSNode::getNodeAndRegister();
     aspinPtr.reset(new ros::AsyncSpinner(1));
     nodePtr->setCallbackQueue(&m_custom_queue);
     m_watchDogPtr.reset(new CmdWatchDog(a_freq_min, a_freq_max, time_out));

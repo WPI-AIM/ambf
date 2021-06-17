@@ -51,9 +51,15 @@
 #include <ros/duration.h>
 #include "ambf_server/CmdWatchDog.h"
 
-class Node{
+class afROSNode{
   public:
-    static ros::NodeHandle* getNodePtr(){
+    static ros::NodeHandle* getNodeAndRegister(){
+        s_nodePtr = getNode();
+        s_registeredInstances++;
+        return s_nodePtr;
+    }
+
+    static ros::NodeHandle* getNode(){
         if (s_initialized == false){
             int argc = 0;
             char **argv = 0;
@@ -62,7 +68,6 @@ class Node{
             s_initialized = true;
             std::cerr << "INFO! INITIALIZING ROS NODE HANDLE\n";
         }
-        s_nodeCounter++;
         return s_nodePtr;
     }
 
@@ -70,10 +75,10 @@ class Node{
         if (s_initialized){
             s_initialized = false;
 
-            std::cerr << "INFO! TOTAL ACTIVE COMM INSTANCES: " << s_nodeCounter << std::endl;
+            std::cerr << "INFO! TOTAL ACTIVE COMM INSTANCES: " << s_registeredInstances << std::endl;
             std::cerr << "INFO! WAITING FOR ALL COMM INSTANCES TO UNREGISTER ... \n";
-            while(s_nodeCounter > 0){
-                std::cerr << "\tINFO! REMAINING ACTIVE COMMs: " << s_nodeCounter << std::endl;
+            while(s_registeredInstances > 0){
+                std::cerr << "\tINFO! REMAINING ACTIVE COMMs: " << s_registeredInstances << std::endl;
                 usleep(10000);
             }
 
@@ -87,13 +92,13 @@ class Node{
         return s_initialized;
     }
 
-    static void unregisterInstance(){
-        s_nodeCounter--;
+    static void unRegister(){
+        s_registeredInstances--;
     }
 
 private:
     static bool s_initialized;
-    static unsigned int s_nodeCounter;
+    static unsigned int s_registeredInstances;
     static ros::NodeHandle* s_nodePtr;
 };
 
@@ -133,7 +138,7 @@ protected:
 
 template<class T_state, class T_cmd>
 void RosComBase<T_state, T_cmd>::run_publishers(){
-    while(Node::isNodeActive()){
+    while(afROSNode::isNodeActive()){
         T_state stateCopy = m_State;
         m_pub.publish(stateCopy);
         m_custom_queue.callAvailable();
@@ -143,7 +148,7 @@ void RosComBase<T_state, T_cmd>::run_publishers(){
         }
         m_watchDogPtr->m_ratePtr->sleep();
     }
-    Node::unregisterInstance();
+    afROSNode::unRegister();
 }
 
 template<class T_state, class T_cmd>
