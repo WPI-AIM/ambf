@@ -8878,19 +8878,9 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
 {
     cShaderProgramPtr shaderProgram;
     if (attribs->m_shaderDefined){
-        ifstream vsFile;
-        ifstream fsFile;
-        vsFile.open(attribs->m_vtxFilepath.c_str());
-        fsFile.open(attribs->m_fragFilepath.c_str());
-        // create a string stream
-        stringstream vsBuffer, fsBuffer;
-        // dump the contents of the file into it
-        vsBuffer << vsFile.rdbuf();
-        fsBuffer << fsFile.rdbuf();
-        // close the files
-        vsFile.close();
-        fsFile.close();
-        shaderProgram = cShaderProgram::create(vsBuffer.str(), fsBuffer.str());
+        string vtxShader = afUtils::loadFileContents(attribs->m_vtxFilepath.c_str());
+        string fragShader = afUtils::loadFileContents(attribs->m_fragFilepath.c_str());
+        shaderProgram = cShaderProgram::create(vtxShader, fragShader);
         if (shaderProgram->linkProgram()){
             cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILES: " <<
                          "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
