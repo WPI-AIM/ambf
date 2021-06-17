@@ -1762,11 +1762,9 @@ public:
 
     void renderFrameBuffer();
 
-    void loadPreProcessingShaders();
+    void enableImagePublishing(afImageResolutionAttribs* imageAttribs);
 
-    void unloadPreProcessingShaders();
-
-    void preProcessingShadersUpdate();
+    void enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afNoiseModelAttribs* noiseAtt, afShaderAttributes* depthComputeShaderAttribs);
 
     // Define the virtual method for camera
     virtual void fetchCommands(double dt);
@@ -1925,7 +1923,26 @@ public:
     std::map<afRigidBodyPtr, cShaderProgramPtr> m_shaderProgramBackup;
 
 protected:
+    void createFrameBuffers(afImageResolutionAttribs* imageAttribs);
+
+    void createPreProcessingShaders(afShaderAttributes* preprocessingShaderAttribs);
+
+    void createImageTransport();
+
+    void createDepthTransport(afImageResolutionAttribs* imageAttribs);
+
+    void activatePreProcessingShaders();
+
+    void deactivatePreProcessingShaders();
+
+    void preProcessingShadersUpdate();
+
+protected:
+
+    bool m_frameBuffersCreated = false;
+
     cVector3d m_pos, m_posClutched;
+
     cMatrix3d m_rot, m_rotClutched;
 
     // This is the position that the camera is supposed to be looking at
@@ -1950,10 +1967,8 @@ protected:
     image_transport::Publisher m_imagePublisher;
 
     // Image Transport ROS Node
-    static ros::NodeHandle* s_rosNode;
+    ros::NodeHandle* m_rosNode;
 
-    // Flag to check if to check if ROS Node and CV ROS Node is initialized
-    static bool s_imageTransportInitialized;
 #endif
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT

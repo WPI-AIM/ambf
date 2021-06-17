@@ -75,9 +75,7 @@ int afCamera::s_windowIdx = 0;
 btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-ros::NodeHandle* afCamera::s_rosNode = nullptr;
 image_transport::ImageTransport* afCamera::s_imageTransport = nullptr;
-bool afCamera::s_imageTransportInitialized = false;
 #endif
 //------------------------------------------------------------------------------
 
@@ -5795,7 +5793,7 @@ afWorld::afWorld(string a_global_namespace): afIdentification(afType::WORLD), af
 afWorld::~afWorld()
 {
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    Node::destroyNode();
+    afROSNode::destroyNode();
 #endif
 
     if(m_bulletWorld){
@@ -6845,6 +6843,66 @@ void afCamera::showTargetPos(bool a_show){
 
 
 ///
+/// \brief afCamera::createFrameBuffers
+/// \param imageAttribs
+///
+void afCamera::createFrameBuffers(afImageResolutionAttribs* imageAttribs){
+    if (m_frameBuffersCreated){
+        return;
+    }
+
+    m_publishImageResolution = *imageAttribs;
+    m_frameBuffer = new cFrameBuffer();
+    m_bufferColorImage = cImage::create();
+    m_bufferDepthImage = cImage::create();
+    m_frameBuffer->setup(m_camera, imageAttribs->m_width, imageAttribs->m_height, true, true);
+
+    m_frameBuffersCreated = true;
+}
+
+
+///
+/// \brief afCamera::createPreProcessingShaders
+/// \param preprocessingShaderAttribs
+///
+void afCamera::createPreProcessingShaders(afShaderAttributes* preprocessingShaderAttribs){
+    m_preprocessingShaderAttribs = *preprocessingShaderAttribs;
+    m_preprocessingShaderProgram = afShaderUtils::createFromAttribs(&m_preprocessingShaderAttribs, getQualifiedName(), "FRAMEBUFFER_PREPROCESSING");
+}
+
+
+///
+/// \brief afCamera::createImageTransport
+///
+void afCamera::createImageTransport(){
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    m_rosNode = afROSNode::getNode();
+    if (s_imageTransport == nullptr){
+        s_imageTransport = new image_transport::ImageTransport(*m_rosNode);
+    }
+    m_imagePublisher = s_imageTransport->advertise(getQualifiedName() + "/ImageData", 1);
+#endif
+}
+
+
+///
+/// \brief afCamera::createDepthTransport
+/// \param imageAttribs
+///
+void afCamera::createDepthTransport(afImageResolutionAttribs* imageAttribs)
+{
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+    m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
+    m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
+    m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
+    m_depthPointCloudModifier->resize(imageAttribs->m_width*imageAttribs->m_height);
+    m_rosNode = afROSNode::getNode();
+    m_depthPointCloudPub = m_rosNode->advertise<sensor_msgs::PointCloud2>(getQualifiedName() + "/DepthData", 1);
+#endif
+}
+
+
+///
 /// \brief afCamera::getTargetPosGlobal
 /// \return
 ///
@@ -7039,115 +7097,13 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
 
     if (m_publishImage || m_publishDepth){
-        m_preprocessingShaderAttribs = attribs.m_preProcessShaderAttribs;
-        if (m_preprocessingShaderAttribs.m_shaderDefined){
-            m_preprocessingShaderProgram = afShaderUtils::createFromAttribs(&m_preprocessingShaderAttribs, getQualifiedName(), "FRAMEBUFFER_PREPROCESSING");
-            // ASSIGN ANY SHADER ATTRIBUTES HERE
-        }
-        m_publishImageResolution = attribs.m_publishImageResolution;
-        m_frameBuffer = new cFrameBuffer();
-        m_bufferColorImage = cImage::create();
-        m_bufferDepthImage = cImage::create();
-        m_frameBuffer->setup(m_camera, m_publishImageResolution.m_width, m_publishImageResolution.m_height, true, true);
 
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-        if (s_imageTransportInitialized == false){
-            s_imageTransportInitialized = true;
-            int argc = 0;
-            char **argv = 0;
-            ros::init(argc, argv, "ambf_image_transport_node");
-            s_rosNode = new ros::NodeHandle();
-            s_imageTransport = new image_transport::ImageTransport(*s_rosNode);
-        }
-        m_imagePublisher = s_imageTransport->advertise(getQualifiedName() + "/ImageData", 1);
-#endif
+        createPreProcessingShaders(&attribs.m_preProcessShaderAttribs);
+
+        enableImagePublishing(&attribs.m_publishImageResolution);
 
         if (m_publishDepth){
-            // Copy over the depth noise attribs
-            afNoiseModelAttribs* noiseAtt = &attribs.m_depthNoiseAttribs;
-            m_depthNoise.initialize(noiseAtt->m_mean, noiseAtt->m_std_dev, noiseAtt->m_bias, noiseAtt->m_enable);
-
-            // Set up the world
-            m_dephtWorld = new cWorld();
-
-            // Set up the frame buffer
-            m_depthBuffer = new cFrameBuffer();
-            m_depthBuffer->setup(m_camera, m_publishImageResolution.m_width, m_publishImageResolution.m_height, true, false, GL_RGBA16);
-
-            m_depthPC.setup(m_publishImageResolution.m_width, m_publishImageResolution.m_height, 3);
-
-            // Set up the quad
-            m_depthMesh = new cMesh();
-            float quad[] = {
-                // positions
-                -1.0f,  1.0f, 0.0f,
-                -1.0f, -1.0f, 0.0f,
-                1.0f, -1.0f, 0.0f,
-                -1.0f, 1.0f, 0.0f,
-                1.0f,  -1.0f, 0.0f,
-                1.0f,  1.0f, 0.0f,
-            };
-            for (int vI = 0 ; vI < 2 ; vI++){
-                int off = vI * 9;
-                m_depthMesh->newTriangle(
-                            cVector3d(quad[off + 0], quad[off + 1], quad[off + 2]),
-                        cVector3d(quad[off + 3], quad[off + 4], quad[off + 5]),
-                        cVector3d(quad[off + 6], quad[off + 7], quad[off + 8]));
-            }
-            m_depthMesh->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
-            m_depthMesh->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
-            m_depthMesh->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
-            m_depthMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
-            m_depthMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
-            m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
-
-            m_depthMesh->computeAllNormals();
-            m_depthMesh->m_texture = cTexture2d::create();
-            m_depthMesh->m_texture->m_image->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_BYTE);
-            m_depthMesh->setUseTexture(true);
-
-            m_dephtWorld->addChild(m_depthMesh);
-            m_dephtWorld->addChild(m_camera);
-
-            m_depthBufferColorImage = cImage::create();
-            m_depthBufferColorImage->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_INT);
-
-            cShaderProgramPtr shaderProgram;
-            if (attribs.m_depthComputeShaderAttribs.m_shaderDefined){
-                shaderProgram = afShaderUtils::createFromAttribs(&attribs.m_depthComputeShaderAttribs, getQualifiedName(), "DEPTH_COMPUTE");
-            }
-            else{
-                cerr << "INFO! USING INTERNALLY DEFINED DEPTH_COMPUTE SHADERS" << endl;
-                shaderProgram = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
-            }
-
-            if (shaderProgram->linkProgram()){
-                cGenericObject* go;
-                cRenderOptions ro;
-                shaderProgram->use(go, ro);
-                m_depthMesh->setShaderProgram(shaderProgram);
-                shaderProgram->disable();
-            }
-            else{
-                cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO COMPILE/LINK SHADER FILES: " << endl;
-                m_publishDepth = false;
-            }
-
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
-            m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
-            m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
-            m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
-            m_depthPointCloudModifier->resize(m_publishImageResolution.m_width*m_publishImageResolution.m_height);
-            if (s_imageTransportInitialized == false){
-                s_imageTransportInitialized = true;
-                int argc = 0;
-                char **argv = 0;
-                ros::init(argc, argv, "ambf_image_transport_node");
-                s_rosNode = new ros::NodeHandle();
-            }
-            m_depthPointCloudPub = s_rosNode->advertise<sensor_msgs::PointCloud2>(getQualifiedName() + "/DepthData", 1);
-#endif
-
+            enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
         }
     }
 
@@ -7595,16 +7551,16 @@ afCamera::~afCamera(){
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (s_imageTransport != nullptr){
         delete s_imageTransport;
+        s_imageTransport = nullptr;
     }
-
-    s_imageTransportInitialized = false;
 #endif
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
-    if (s_rosNode != nullptr){
-        delete s_rosNode;
-        s_rosNode = 0;
-    }
+    // DO NOT DELETE AS THE NODE SHOULD BE DESTROYED EXTERNALLY
+//    if (m_rosNode != nullptr){
+//        delete m_rosNode;
+//        m_rosNode = 0;
+//    }
 
     if (m_depthPointCloudModifier != nullptr){
         delete m_depthPointCloudModifier;
@@ -7669,16 +7625,19 @@ void afCamera::renderSkyBox(){
 }
 
 
+///
+/// \brief afCamera::renderFrameBuffer
+///
 void afCamera::renderFrameBuffer(){
     if (m_publishImage || m_publishDepth){
 
-        loadPreProcessingShaders();
+        activatePreProcessingShaders();
 
         m_frameBuffer->renderView();
         m_frameBuffer->copyImageBuffer(m_bufferColorImage);
         m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
 
-        unloadPreProcessingShaders();
+        deactivatePreProcessingShaders();
     }
 
     if (m_publishImage){
@@ -7700,7 +7659,11 @@ void afCamera::renderFrameBuffer(){
     }
 }
 
-void afCamera::loadPreProcessingShaders()
+
+///
+/// \brief afCamera::activatePreProcessingShaders
+///
+void afCamera::activatePreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
@@ -7719,7 +7682,11 @@ void afCamera::loadPreProcessingShaders()
     }
 }
 
-void afCamera::unloadPreProcessingShaders()
+
+///
+/// \brief afCamera::deactivatePreProcessingShaders
+///
+void afCamera::deactivatePreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
@@ -7755,7 +7722,101 @@ void afCamera::preProcessingShadersUpdate()
 //            // Reassign the backedup shaderpgm for the next rendering pass
 //            rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
 //        }
-//    }
+    //    }
+}
+
+
+///
+/// \brief afCamera::enableImagePublishing
+/// \param imageAttribs
+///
+void afCamera::enableImagePublishing(afImageResolutionAttribs* imageAttribs)
+{
+    createFrameBuffers(imageAttribs);
+    createImageTransport();
+    m_publishImage = true;
+}
+
+
+///
+/// \brief afCamera::enableDepthPublishing
+/// \param imageAttribs
+/// \param depthComputeShaderAttribs
+/// \param noiseAtt
+///
+void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afNoiseModelAttribs* noiseAtt, afShaderAttributes* depthComputeShaderAttribs)
+{
+    createFrameBuffers(imageAttribs);
+    m_depthNoise.createFromAttribs(noiseAtt);
+
+    // Set up the world
+    m_dephtWorld = new cWorld();
+
+    // Set up the frame buffer
+    m_depthBuffer = new cFrameBuffer();
+
+    m_depthBuffer->setup(m_camera, imageAttribs->m_width, imageAttribs->m_height, true, false, GL_RGBA16);
+
+    m_depthPC.setup(imageAttribs->m_width, imageAttribs->m_height, 3);
+
+    // Set up the quad
+    m_depthMesh = new cMesh();
+    float quad[] = {
+        // positions
+        -1.0f,  1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f,
+        1.0f,  -1.0f, 0.0f,
+        1.0f,  1.0f, 0.0f,
+    };
+    for (int vI = 0 ; vI < 2 ; vI++){
+        int off = vI * 9;
+        m_depthMesh->newTriangle(cVector3d(quad[off + 0], quad[off + 1], quad[off + 2]),
+                cVector3d(quad[off + 3], quad[off + 4], quad[off + 5]),
+                cVector3d(quad[off + 6], quad[off + 7], quad[off + 8]));
+    }
+    m_depthMesh->m_vertices->setTexCoord(0, 0.0, 1.0, 1.0);
+    m_depthMesh->m_vertices->setTexCoord(1, 0.0, 0.0, 1.0);
+    m_depthMesh->m_vertices->setTexCoord(2, 1.0, 0.0, 1.0);
+    m_depthMesh->m_vertices->setTexCoord(3, 0.0, 1.0, 1.0);
+    m_depthMesh->m_vertices->setTexCoord(4, 1.0, 0.0, 1.0);
+    m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
+
+    m_depthMesh->computeAllNormals();
+    m_depthMesh->m_texture = cTexture2d::create();
+    m_depthMesh->m_texture->m_image->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_BYTE);
+    m_depthMesh->setUseTexture(true);
+
+    m_dephtWorld->addChild(m_depthMesh);
+    m_dephtWorld->addChild(m_camera);
+
+    m_depthBufferColorImage = cImage::create();
+    m_depthBufferColorImage->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_INT);
+
+    cShaderProgramPtr shaderProgram;
+    if (depthComputeShaderAttribs->m_shaderDefined){
+        shaderProgram = afShaderUtils::createFromAttribs(depthComputeShaderAttribs, getQualifiedName(), "DEPTH_COMPUTE");
+    }
+    else{
+        cerr << "INFO! USING INTERNALLY DEFINED DEPTH_COMPUTE SHADERS" << endl;
+        shaderProgram = cShaderProgram::create(AF_DEPTH_COMPUTE_VTX, AF_DEPTH_COMPUTE_FRAG);
+    }
+
+    if (shaderProgram->linkProgram()){
+        cGenericObject* go;
+        cRenderOptions ro;
+        shaderProgram->use(go, ro);
+        m_depthMesh->setShaderProgram(shaderProgram);
+        shaderProgram->disable();
+
+        createDepthTransport(imageAttribs);
+        m_publishDepth = true;
+    }
+    else{
+        cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO COMPILE/LINK SHADER FILES: " << endl;
+        m_publishDepth = false;
+    }
 }
 
 
