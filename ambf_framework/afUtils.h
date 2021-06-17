@@ -142,6 +142,9 @@ public:
         }
         return split_str;
     }
+
+
+    static string loadFileContents(const string &a_filepath);
 };
 
 }
