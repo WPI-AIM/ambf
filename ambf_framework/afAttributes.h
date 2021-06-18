@@ -1005,6 +1005,8 @@ public:
     std::vector <afJointAttributes> m_jointAttribs;
     std::vector <afSensorAttributes*> m_sensorAttribs;
     std::vector <afActuatorAttributes*> m_actuatorAttribs;
+    std::vector <afCameraAttributes> m_cameraAttribs;
+    std::vector <afLightAttributes> m_lightAttribs;
 
     bool m_ignoreInterCollision;
 
@@ -1038,6 +1040,14 @@ public:
 
             for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
                 m_actuatorAttribs[i]->resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_cameraAttribs.size() ; i++){
+                m_cameraAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_lightAttribs.size() ; i++){
+                m_lightAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
             m_namespaceResolved = true;

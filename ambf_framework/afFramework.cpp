@@ -6309,7 +6309,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     m_skyBoxAttribs = attribs.m_skyBoxAttribs;
 
     for (size_t idx = 0 ; idx < attribs.m_lightAttribs.size(); idx++){
-        afLightPtr lightPtr = new afLight(this);
+        afLightPtr lightPtr = new afLight(this, envModel);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
             envModel->addLight(lightPtr);
             string remaped_name = addLight(lightPtr);
@@ -6321,7 +6321,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         afLightAttributes lightAttribs;
         lightAttribs.m_kinematicAttribs.m_location.setPosition(afVector3d(2, 2, 5));
         lightAttribs.m_identificationAttribs.m_name = "default_light";
-        afLightPtr lightPtr = new afLight(this);
+        afLightPtr lightPtr = new afLight(this, envModel);
         lightPtr->createFromAttribs(&lightAttribs);
         envModel->addLight(lightPtr);
         string remaped_name = addLight(lightPtr);
@@ -6329,7 +6329,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     if (attribs.m_showGUI){
         for (size_t idx = 0 ; idx < attribs.m_cameraAttribs.size(); idx++){
-            afCameraPtr cameraPtr = new afCamera(this);
+            afCameraPtr cameraPtr = new afCamera(this, envModel);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
                 envModel->addCamera(cameraPtr);
                 string remaped_name = addCamera(cameraPtr);
@@ -6339,7 +6339,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         if (getCameraMap()->size() == 0){
             // No valid cameras defined in the world config file
             // hence create a default camera
-            afCameraPtr cameraPtr = new afCamera(this);
+            afCameraPtr cameraPtr = new afCamera(this, envModel);
             afCameraAttributes camAttribs;
             camAttribs.m_lookAt.set(-1, 0, 0);
             camAttribs.m_identificationAttribs.m_name = "default_camera";
@@ -6733,7 +6733,7 @@ void afWorld::removePickingConstraint(){
 ///
 /// \brief afCamera::afCamera
 ///
-afCamera::afCamera(afWorldPtr a_afWorld): afBaseObject(afType::CAMERA, a_afWorld){
+afCamera::afCamera(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::CAMERA, a_afWorld, a_modelPtr){
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
@@ -7824,7 +7824,7 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
 ///
 /// \brief afLight::afLight
 ///
-afLight::afLight(afWorldPtr a_afWorld): afBaseObject(afType::LIGHT, a_afWorld){
+afLight::afLight(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::LIGHT, a_afWorld, a_modelPtr){
 }
 
 
@@ -8156,7 +8156,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    // Loading Joints
+    // Load Joints
     for (size_t i = 0; i < attribs.m_jointAttribs.size(); ++i) {
         afJointPtr jntPtr = new afJoint(m_afWorld, this);
         if (jntPtr->createFromAttribs(&attribs.m_jointAttribs[i])){
@@ -8164,12 +8164,27 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-
-    afVehiclePtr vehiclePtr;
+    // Load Vehicles
     for (size_t i = 0; i < attribs.m_vehicleAttribs.size(); ++i) {
-        vehiclePtr = new afVehicle(m_afWorld, this);
+        afVehiclePtr vehiclePtr = new afVehicle(m_afWorld, this);
         if (vehiclePtr->createFromAttribs(&attribs.m_vehicleAttribs[i])){
             addVehicle(vehiclePtr);
+        }
+    }
+
+    // Load Cameras
+    for (size_t i = 0; i < attribs.m_cameraAttribs.size(); ++i) {
+        afCameraPtr cameraPtr = new afCamera(m_afWorld, this);
+        if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[i])){
+            addCamera(cameraPtr);
+        }
+    }
+
+    // Load Lights
+    for (size_t i = 0; i < attribs.m_lightAttribs.size(); ++i) {
+        afLightPtr lightPtr = new afLight(m_afWorld, this);
+        if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[i])){
+            addLight(lightPtr);
         }
     }
 

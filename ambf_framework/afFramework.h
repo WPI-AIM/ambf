@@ -833,7 +833,6 @@ public:
 
     string addModel(afModelPtr a_model);
 
-
     afModelPtr getModel(string a_name, bool suppress_warning=false);
 
     afModelVec getModels();
@@ -1753,7 +1752,7 @@ protected:
 class afCamera: public afBaseObject{
 public:
 
-    afCamera(afWorld* a_afWorld);
+    afCamera(afWorld* a_afWorld, afModelPtr a_modelPtr);
     ~afCamera();
 
     virtual void render(afRenderOptions &options);
@@ -2035,7 +2034,7 @@ private:
 ///
 class afLight: public afBaseObject{
 public:
-    afLight(afWorld* a_afWorld);
+    afLight(afWorld* a_afWorld, afModelPtr a_modelPtr);
 
     virtual bool createFromAttribs(afLightAttributes* a_attribs);
 
