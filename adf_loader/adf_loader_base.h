@@ -50,35 +50,6 @@
 
 using namespace ambf;
 
-class ADFUtilsBase{
-public:
-    virtual bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs){}
-
-    virtual bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs){}
-
-    virtual bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs){}
-
-    virtual bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs){}
-
-    virtual bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs){}
-
-    virtual bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs){}
-
-    virtual bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs){}
-
-    virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs){}
-
-    virtual bool getColorAttribsFromNode(YAML::Node* a_node, afColorAttributes* color){}
-
-    virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs){}
-
-    virtual bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs){}
-
-    virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs){}
-
-    virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs){}
-
-};
 ///
 /// \brief The ADFLoader class
 ///

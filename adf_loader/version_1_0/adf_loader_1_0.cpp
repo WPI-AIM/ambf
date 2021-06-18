@@ -1083,13 +1083,11 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     double spot_exponent, cuttoff_angle;
     int shadow_quality;
 
-    ADFUtils adfUtils;
-
     node["location"]["position"] = node["location"];
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (directionNode.IsDefined()){
         attribs->m_direction = ADFUtils::positionFromNode(&directionNode);
@@ -1170,13 +1168,11 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
 
     bool valid = true;
 
-    ADFUtils adfUtils;
-
     node["location"]["position"] = node["location"];
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (lookAtNode.IsDefined()){
         attribs->m_lookAt = ADFUtils::positionFromNode(&lookAtNode);
@@ -1263,12 +1259,12 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
 
     if (preProcessingShaderNode.IsDefined()){
         node["shaders"] = preProcessingShaderNode;
-        adfUtils.getShaderAttribsFromNode(&node, &attribs->m_preProcessShaderAttribs);
+        ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_preProcessShaderAttribs);
     }
 
     if (depthShaderNode.IsDefined()){
         node["shaders"] = depthShaderNode;
-        adfUtils.getShaderAttribsFromNode(&node, &attribs->m_depthComputeShaderAttribs);
+        ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_depthComputeShaderAttribs);
     }
 
     if (multiPassNode.IsDefined()){
@@ -1338,17 +1334,15 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
     YAML::Node publishJointNamesNode = node["publish joint names"];
     YAML::Node publishJointPositionsNode = node["publish joint positions"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
-    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
-    adfUtils.getSurfaceAttribsFromNode(&node, &attribs->m_surfaceAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    adfUtils.getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    ADFUtils::getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
+    ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+    ADFUtils::getSurfaceAttribsFromNode(&node, &attribs->m_surfaceAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
 
     if (publishChildrenNamesNode.IsDefined()){
         attribs->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
@@ -1428,15 +1422,13 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
 
     YAML::Node randomizeConstraintsNode = node["randomize constraints"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
-    adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
+    ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
 
     if (configDataNode.IsNull()){
@@ -1597,14 +1589,12 @@ bool ADFLoader_1_0::loadGhostObjectAttribs(YAML::Node *a_node, afGhostObjectAttr
     YAML::Node publishFrequencyNode = node["publish frequency"];
     YAML::Node passiveNode = node["passive"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     return true;
 
@@ -1643,12 +1633,10 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     YAML::Node equilibriumPointNode = node["equilibrium point"];
     YAML::Node passiveNode = node["passive"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    adfUtils.getJointControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getJointControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
 
     attribs->m_parentPivot = ADFUtils::positionFromNode(&parentPivotNode);
     attribs->m_childPivot = ADFUtils::positionFromNode(&childPivotNode);
@@ -1854,12 +1842,10 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
         return 0;
     }
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     switch (attribs->m_sensorType) {
     case afSensorType::RAYTRACER:{
@@ -2079,12 +2065,10 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
         return 0;
     }
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     switch (attribs->m_actuatorType) {
     case afActuatorType::CONSTRAINT:{
@@ -2157,10 +2141,8 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     YAML::Node meshPathHRNode = node["high resolution path"];
     YAML::Node wheelsNode = node["wheels"];
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    adfUtils.getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
 
     if (chassisNode.IsDefined()){
         attribs->m_chassisBodyName = chassisNode.as<string>();
@@ -2173,7 +2155,7 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     for (uint i = 0 ; i < wheelsNode.size() ; i++){
         afWheelAttributes wheelAttribs;
         YAML::Node wheelNode = wheelsNode[i];
-        if (adfUtils.getWheelAttribsFromNode(&wheelNode, & wheelAttribs)){
+        if (ADFUtils::getWheelAttribsFromNode(&wheelNode, & wheelAttribs)){
             attribs->m_wheelAttribs.push_back( wheelAttribs);
         }
     }
@@ -2313,17 +2295,15 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttribs(YAML::Node *a_node, afSimulatedDe
     // body in simulation matching that name. Once succesful we shall then be able to control
     // that link/body in Position control mode and control all the joints lower in hierarchy.
 
-    ADFUtils adfUtils;
-
     if (locationNode.IsDefined()){
-        adfUtils.getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+        ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
         attribs->m_overrideLocation = true;
     }
 
     // set the control gains fields as controller fields.
     if (controllerGainNode.IsDefined()){
         node["controller"] = controllerGainNode;
-        adfUtils.getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+        ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
         attribs->m_overrideController = true;
     }
 
@@ -2458,6 +2438,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node jointsNode = node["joints"];
     YAML::Node sensorsNode = node["sensors"];
     YAML::Node actuatorsNode = node["actuators"];
+    YAML::Node camerasNode = node["cameras"];
+    YAML::Node lightsNode = node["lights"];
     YAML::Node jointERPNode = node["joint erp"];
     YAML::Node jointCFMNode = node["joint cfm"];
     YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
@@ -2546,8 +2528,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     }
 
     /// Loading Actuators
-    size_t totalActuators = actuatorsNode.size();
-    for (size_t i = 0; i < totalActuators; ++i) {
+    for (size_t i = 0; i < actuatorsNode.size(); ++i) {
         string identifier = actuatorsNode[i].as<string>();
         YAML::Node actNode = node[identifier];
         // Check which type of sensor is this so we can cast appropriately beforehand
@@ -2577,7 +2558,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
 //        m_jointCFM = jointCFMNode.as<double>();
 //    }
 
-    // Loading Joints
+    // Load Joints
     for (size_t i = 0; i < jointsNode.size(); ++i) {
         afJointAttributes jntAttribs;
         string identifier = jointsNode[i].as<string>();
@@ -2588,7 +2569,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-
+    // Load Vehicles
     for (size_t i = 0; i < vehiclesNode.size(); ++i) {
         afVehicleAttributes vehAttribs;
         string identifier = vehiclesNode[i].as<string>();
@@ -2596,6 +2577,28 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         if (loadVehicleAttribs(&veh_node, &vehAttribs)){
             vehAttribs.m_identifier = identifier;
             attribs->m_vehicleAttribs.push_back(vehAttribs);
+        }
+    }
+
+    // Load Cameras
+    for (size_t idx = 0 ; idx < camerasNode.size(); idx++){
+        afCameraAttributes cameraAttribs;
+        string identifier = camerasNode[idx].as<string>();
+        YAML::Node cameraNode = node[identifier];
+        if (loadCameraAttribs(&cameraNode, &cameraAttribs)){
+            cameraAttribs.m_identifier = identifier;
+            attribs->m_cameraAttribs.push_back(cameraAttribs);
+        }
+    }
+
+    // Load Lights
+    for (size_t i = 0 ; i < lightsNode.size(); i++){
+        afLightAttributes lightAttribs;
+        string identifier = lightsNode[i].as<string>();
+        YAML::Node lightNode = node[identifier];
+        if (loadLightAttribs(&lightNode, &lightAttribs)){
+            lightAttribs.m_identifier = identifier;
+            attribs->m_lightAttribs.push_back(lightAttribs);
         }
     }
 
@@ -2643,9 +2646,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
     // Set the world name
     node["name"] = "World";
 
-    ADFUtils adfUtils;
-
-    adfUtils.getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
 
     if(maxIterationsNode.IsDefined()){
         attribs->m_maxIterations = maxIterationsNode.as<uint>();
@@ -2694,7 +2695,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
             attribs->m_skyBoxAttribs.m_frontImageFilepath = localPath / skyBoxNode["front"].as<string>();
             attribs->m_skyBoxAttribs.m_backImageFilepath = localPath / skyBoxNode["back"].as<string>();
 
-            adfUtils.getShaderAttribsFromNode(&skyBoxNode, &attribs->m_skyBoxAttribs.m_shaderAttribs);
+            ADFUtils::getShaderAttribsFromNode(&skyBoxNode, &attribs->m_skyBoxAttribs.m_shaderAttribs);
 
             attribs->m_skyBoxAttribs.m_use = true;
         }
@@ -2727,7 +2728,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
         }
     }
 
-    adfUtils.getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
+    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
 
     return true;
 }

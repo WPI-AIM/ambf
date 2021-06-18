@@ -52,33 +52,33 @@ using namespace std;
 
 namespace adf_loader_1_0{
 
-class ADFUtils: public ADFUtilsBase{
+class ADFUtils{
 public:
-    virtual bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs);
+    static bool getCartControllerAttribsFromNode(YAML::Node* a_node, afCartesianControllerAttributes* attribs);
 
-    virtual bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs);
+    static bool getCollisionAttribsFromNode(YAML::Node* a_node, afCollisionAttributes* attribs);
 
-    virtual bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs);
+    static bool getCommunicationAttribsFromNode(YAML::Node* a_node, afCommunicationAttributes* attribs);
 
-    virtual bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs);
+    static bool getHierarchyAttribsFromNode(YAML::Node* a_node, afHierarchyAttributes* attribs);
 
-    virtual bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs);
+    static bool getIdentificationAttribsFromNode(YAML::Node* a_node, afIdentificationAttributes* attribs);
 
-    virtual bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs);
+    static bool getInertialAttrisFromNode(YAML::Node* a_node, afInertialAttributes* attribs);
 
-    virtual bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs);
+    static bool getJointControllerAttribsFromNode(YAML::Node* a_node, afJointControllerAttributes* attribs);
 
-    virtual bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs);
+    static bool getKinematicAttribsFromNode(YAML::Node* a_node, afKinematicAttributes* attribs);
 
-    virtual bool getColorAttribsFromNode(YAML::Node* a_node, afColorAttributes* a_color);
+    static bool getColorAttribsFromNode(YAML::Node* a_node, afColorAttributes* a_color);
 
-    virtual bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs);
+    static bool getShaderAttribsFromNode(YAML::Node* a_node, afShaderAttributes* attribs);
 
-    virtual bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs);
+    static bool getVisualAttribsFromNode(YAML::Node* a_node, afVisualAttributes* attribs);
 
-    virtual bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
+    static bool getSurfaceAttribsFromNode(YAML::Node* a_node, afSurfaceAttributes* attribs);
 
-    virtual bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
+    static bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
 
     static afActuatorType getActuatorTypeFromString(const string & a_str);
 
@@ -97,7 +97,6 @@ public:
 
     // Copy data specified via ADF node
     static bool copyPrimitiveShapeData(YAML::Node* shapeNode, afPrimitiveShapeAttributes* attribs);
-
 
     static afVector3d positionFromNode(YAML::Node* node);
 
