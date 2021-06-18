@@ -6378,8 +6378,64 @@ void afWorld::render(afRenderOptions &options)
 }
 
 cWorld *afWorld::getChaiWorld(){
-//    cerr << m_chaiWorld << endl;
+    //    cerr << m_chaiWorld << endl;
     return m_chaiWorld;
+}
+
+afCameraPtr afWorld::getAssociatedCamera(GLFWwindow *a_window)
+{
+    afBaseObjectMap::iterator g_cameraIt;
+    for (g_cameraIt = getCameraMap()->begin() ; g_cameraIt != getCameraMap()->end() ; ++g_cameraIt){
+        afCameraPtr camPtr = (afCameraPtr)g_cameraIt->second;
+        if (a_window == camPtr->m_window){
+            return camPtr;
+        }
+    }
+    return nullptr;
+}
+
+
+///
+/// \brief afWorld::makeCameraWindowsFullScreen
+/// \param a_fullscreen
+///
+void afWorld::makeCameraWindowsFullScreen(bool a_fullscreen)
+{
+    afBaseObjectMap::iterator cIt;
+
+    for (cIt = getCameraMap()->begin() ; cIt != getCameraMap()->end() ; cIt++){
+        afCameraPtr cameraPtr = (afCameraPtr)cIt->second;
+        cameraPtr->makeWindowFullScreen(a_fullscreen);
+    }
+}
+
+
+///
+/// \brief afWorld::makeCameraWindowsMirrorVertical
+/// \param a_mirrorVertical
+///
+void afWorld::makeCameraWindowsMirrorVertical(bool a_mirrorVertical)
+{
+    afBaseObjectMap::iterator cIt;
+
+    for (cIt = getCameraMap()->begin() ; cIt != getCameraMap()->end() ; cIt++){
+        afCameraPtr cameraPtr = (afCameraPtr)cIt->second;
+        cameraPtr->setWindowMirrorVertical(a_mirrorVertical);
+    }
+}
+
+
+///
+/// \brief afWorld::destroyCameraWindows
+///
+void afWorld::destroyCameraWindows()
+{
+    afBaseObjectMap::iterator cIt;
+
+    for (cIt = getCameraMap()->begin() ; cIt != getCameraMap()->end() ; cIt++){
+        afCameraPtr cameraPtr = (afCameraPtr)cIt->second;
+        cameraPtr->destroyWindow();
+    }
 }
 
 
@@ -7084,6 +7140,10 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     s_windowIdx++;
     s_cameraIdx++;
 
+    if (! assignWindowCallbacks(&m_afWorld->m_cameraWindowCallbacks)){
+        return 0;
+    }
+
     if (isPassive() == false){
 
         string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
@@ -7106,6 +7166,56 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
         }
     }
+
+    return true;
+}
+
+bool afCamera::assignWindowCallbacks(afCameraWindowCallBacks *a_callbacks)
+{
+    if (!m_window)
+    {
+        cout << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
+        cSleepMs(1000);
+        glfwTerminate();
+        return 0;
+    }
+
+    if (a_callbacks->keyCallback){
+        glfwSetKeyCallback(m_window, a_callbacks->keyCallback);
+    }
+
+    if (a_callbacks->mouseBtnsCallback){
+        // set mouse buttons callback
+        glfwSetMouseButtonCallback(m_window, a_callbacks->mouseBtnsCallback);
+    }
+
+    if (a_callbacks->mousePosCallback){
+        //set mouse buttons callback
+        glfwSetCursorPosCallback(m_window, a_callbacks->mousePosCallback);
+    }
+
+    if (a_callbacks->mouseScrollCallback){
+        //set mouse scroll callback
+        glfwSetScrollCallback(m_window, a_callbacks->mouseScrollCallback);
+    }
+
+    if (a_callbacks->windowSizeCallback){
+        // set resize callback
+        glfwSetWindowSizeCallback(m_window, a_callbacks->windowSizeCallback);
+
+        // Initialize the window size
+        a_callbacks->windowSizeCallback(m_window, m_width, m_height);
+    }
+
+    if (a_callbacks->dragDropCallback){
+        // set drag and drop callback
+        glfwSetDropCallback(m_window, a_callbacks->dragDropCallback);
+    }
+
+    // set the current context
+    glfwMakeContextCurrent(m_window);
+
+    glfwSwapInterval(0);
 
     return true;
 }
@@ -7817,6 +7927,42 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
         cerr << "ERROR! FOR DEPTH_TO_PC2 FAILED TO COMPILE/LINK SHADER FILES: " << endl;
         m_publishDepth = false;
     }
+}
+
+
+///
+/// \brief afCamera::makeWindowFullScreen
+/// \param a_fullscreen
+///
+void afCamera::makeWindowFullScreen(bool a_fullscreen)
+{
+    // get information about monitor
+    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
+
+    // set fullscreen or window mode
+    if (a_fullscreen)
+    {
+        glfwSetWindowMonitor(m_window, m_monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwSwapInterval(0);
+    }
+    else
+    {
+        int w = 0.8 * mode->height;
+        int h = 0.5 * mode->height;
+        int x = 0.5 * (mode->width - w);
+        int y = 0.5 * (mode->height - h);
+        glfwSetWindowMonitor(m_window, NULL, x, y, w, h, mode->refreshRate);
+        glfwSwapInterval(0);
+    }
+}
+
+
+///
+/// \brief afCamera::destroyWindow
+///
+void afCamera::destroyWindow()
+{
+    glfwDestroyWindow(m_window);
 }
 
 

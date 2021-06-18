@@ -146,9 +146,6 @@ int g_swapInterval = 0;
 
 bool g_mousePickingEnabled = false;
 
-// Vector of WindowCamera Handles Struct
-std::vector<afCamera*> g_cameras;
-
 // Global iterator for WindowsCamera Handle
 std::vector<afCamera*>::iterator g_cameraIt;
 
@@ -391,6 +388,14 @@ int main(int argc, char* argv[])
     g_afWorld->m_hapticsFrequency = g_cmdOpts.htxFrequency;
     g_afWorld->m_updateCounterLimit = g_cmdOpts.phxFrequency * 2;
 
+    g_afWorld->m_cameraWindowCallbacks.keyCallback = keyCallback;
+    g_afWorld->m_cameraWindowCallbacks.mouseBtnsCallback = mouseBtnsCallback;
+    g_afWorld->m_cameraWindowCallbacks.mousePosCallback = mousePosCallback;
+    g_afWorld->m_cameraWindowCallbacks.mouseScrollCallback = mouseScrollCallback;
+    g_afWorld->m_cameraWindowCallbacks.windowSizeCallback = windowSizeCallback;
+    g_afWorld->m_cameraWindowCallbacks.dragDropCallback = dragDropCallback;
+    g_afWorld->m_cameraWindowCallbacks.errorCallback = errorCallback;
+
     // set the background color of the environment
     g_afWorld->getChaiWorld()->m_backgroundColor.setWhite();
 
@@ -399,8 +404,6 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     // The world loads the lights and cameras + windows
     g_afWorld->createFromAttribs(&worldAttribs);
-
-    g_cameras = g_afWorld->getCameras();
 
     // Process the loadMultiBodyFiles string
     if (!g_cmdOpts.multiBodyFilesToLoad.empty()){
@@ -448,65 +451,6 @@ int main(int argc, char* argv[])
 
     g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
 
-    //-----------------------------------------------------------------------------------------------------------
-    // START: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
-    //-----------------------------------------------------------------------------------------------------------
-    for(g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
-        GLFWwindow* windowPtr = (*g_cameraIt)->m_window;
-        GLFWmonitor* monitorPtr = (*g_cameraIt)->m_monitor;
-        if (!windowPtr)
-        {
-            cout << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
-            cSleepMs(1000);
-            glfwTerminate();
-            return 1;
-        }
-
-        //        // get width and height of window
-        //        int _width, _height;
-        //        glfwGetWindowSize(windowPtr, &_width, &_height);
-
-        //        (*g_cameraIt)->m_width = _width;
-        //        (*g_cameraIt)->m_height = _height;
-
-        //        // set position of window
-        //        glfwSetWindowPos(windowPtr, (*g_cameraIt)->m_win_x, (*g_cameraIt)->m_win_y);
-
-        // set key callback
-        glfwSetKeyCallback(windowPtr, keyCallback);
-
-        // set mouse buttons callback
-        glfwSetMouseButtonCallback(windowPtr, mouseBtnsCallback);
-
-        //set mouse buttons callback
-        glfwSetCursorPosCallback(windowPtr, mousePosCallback);
-
-        //set mouse scroll callback
-        glfwSetScrollCallback(windowPtr, mouseScrollCallback);
-
-        // set resize callback
-        glfwSetWindowSizeCallback(windowPtr, windowSizeCallback);
-
-        // set drag and drop callback
-        glfwSetDropCallback(windowPtr, dragDropCallback);
-
-        // set the current context
-        glfwMakeContextCurrent(windowPtr);
-
-        glfwSwapInterval(g_swapInterval);
-
-        windowSizeCallback((*g_cameraIt)->m_window, (*g_cameraIt)->m_width, (*g_cameraIt)->m_height);
-
-        //        // initialize GLEW library
-        //#ifdef GLEW_VERSION
-        //        if (glewInit() != GLEW_OK)
-        //        {
-        //            cout << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
-        //            glfwTerminate();
-        //            return 1;
-        //        }
-        //#endif
-    }
 
     //-----------------------------------------------------------------------------------------------------------
     // END: INTIALIZE SEPERATE WINDOWS FOR EACH WINDOW-CAMRERA PAIR
@@ -558,10 +502,10 @@ int main(int argc, char* argv[])
     // Compute the window width and height ratio
     if (g_cmdOpts.showGUI){
         int winH, winW;
-        glfwGetWindowSize(g_cameras[0]->m_window, &winW, &winH);
+        glfwGetWindowSize(g_afWorld->getCameras()[0]->m_window, &winW, &winH);
 
         int buffH, buffW;
-        glfwGetFramebufferSize(g_cameras[0]->m_window, &buffW, &buffH);
+        glfwGetFramebufferSize(g_afWorld->getCameras()[0]->m_window, &buffW, &buffH);
 
         g_winWidthRatio = double(buffW) / double(winW);
         g_winHeightRatio = double(buffH) / double(winH);
@@ -595,9 +539,7 @@ int main(int argc, char* argv[])
     }
 
     // close window
-    for (g_cameraIt = g_cameras.begin(); g_cameraIt !=  g_cameras.end() ; ++ g_cameraIt){
-        glfwDestroyWindow((*g_cameraIt)->m_window);
-    }
+    g_afWorld->destroyCameraWindows();
 
 
     // terminate GLFW library
@@ -782,7 +724,7 @@ void updateHapticDevice(void* ccuPtr){
     cLabel* devFreqLabel = ccu.m_devFreqLabel;
     if (ccu.m_cameras.size() == 0){
         cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
-        devCams = g_cameras;
+        devCams = g_afWorld->getCameras();
     }
 
     phyDev->setPosClutched(cVector3d(0.0,0.0,0.0));
@@ -1019,16 +961,12 @@ void deleteModelAttribsInternalData(afModelAttributes* modelAttribs){
 ///
 void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
 {
-    std::vector<afCameraPtr>::iterator cameraIt;
-
-    for(cameraIt = g_cameras.begin(); cameraIt != g_cameras.end() ; ++cameraIt){
-        if( (*cameraIt)->m_window == a_window){
-            // update window size
-            (*cameraIt)->m_width = a_width;
-            (*cameraIt)->m_height = a_height;
-        }
+    afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
+    if( cameraPtr != nullptr){
+        // update window size
+        cameraPtr->m_width = a_width;
+        cameraPtr->m_height = a_height;
     }
-
 }
 
 ///
@@ -1201,35 +1139,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         {
             // toggle state variable
             fullscreen = !fullscreen;
-
-            std::vector<afCameraPtr>::iterator cameraIt;
-            for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
-
-                // get handle to monitor
-                GLFWmonitor* monitor = (*cameraIt)->m_monitor;
-
-                // get handle to window
-                GLFWwindow* window = (*cameraIt)->m_window;
-
-                // get information about monitor
-                const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-                // set fullscreen or window mode
-                if (fullscreen)
-                {
-                    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                    glfwSwapInterval(g_swapInterval);
-                }
-                else
-                {
-                    int w = 0.8 * mode->height;
-                    int h = 0.5 * mode->height;
-                    int x = 0.5 * (mode->width - w);
-                    int y = 0.5 * (mode->height - h);
-                    glfwSetWindowMonitor(window, NULL, x, y, w, h, mode->refreshRate);
-                    glfwSwapInterval(g_swapInterval);
-                }
-            }
+            g_afWorld->makeCameraWindowsFullScreen(fullscreen);
         }
 
         // option - help menu
@@ -1275,10 +1185,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // option - toggle vertical mirroring
         else if (a_key == GLFW_KEY_M){
             g_afRenderOptions.m_mirroredDisplay = ! g_afRenderOptions.m_mirroredDisplay;
-            std::vector<afCameraPtr>::iterator cameraIt;
-            for (cameraIt = g_cameras.begin() ; cameraIt != g_cameras.end() ; ++cameraIt){
-                (*cameraIt)->setMirrorVertical( g_afRenderOptions.m_mirroredDisplay);
-            }
+            g_afWorld->makeCameraWindowsMirrorVertical(g_afRenderOptions.m_mirroredDisplay);
         }
 
         // option - Change to next device mode
@@ -1452,17 +1359,17 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 /// \param a_button4
 ///
 void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_modes){
-    for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
-        if (a_window == (*g_cameraIt)->m_window){
+    afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
+        if (cameraPtr != nullptr){
             if (a_button == GLFW_MOUSE_BUTTON_1){
-                (*g_cameraIt)->mouse_l_clicked = a_clicked;
-                //                (*g_cameraIt)->showTargetPos(true);
+                cameraPtr->mouse_l_clicked = a_clicked;
+                //                cameraPtr->showTargetPos(true);
                 if (a_clicked){
                     if (g_mousePickingEnabled){
-                        cVector3d rayFrom = (*g_cameraIt)->getGlobalTransform().getLocalPos();
+                        cVector3d rayFrom = cameraPtr->getGlobalTransform().getLocalPos();
                         double x_pos, y_pos;
                         glfwGetCursorPos(a_window, &x_pos, &y_pos);
-                        cVector3d rayTo = getRayTo(x_pos, y_pos, *g_cameraIt);
+                        cVector3d rayTo = getRayTo(x_pos, y_pos, cameraPtr);
                         g_pickFrom = rayFrom;
                         g_pickTo = rayTo;
                         g_pickBody = true;
@@ -1473,19 +1380,18 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_
                 }
             }
             else if (a_button == GLFW_MOUSE_BUTTON_2){
-                (*g_cameraIt)->mouse_r_clicked = a_clicked;
+                cameraPtr->mouse_r_clicked = a_clicked;
             }
             else if (a_button == GLFW_MOUSE_BUTTON_3){
                 int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
                 if (state == GLFW_PRESS){
-                    (*g_cameraIt)->mouse_l_clicked = a_clicked;
+                    cameraPtr->mouse_l_clicked = a_clicked;
                 }
                 else{
-                    (*g_cameraIt)->mouse_scroll_clicked = a_clicked;
+                    cameraPtr->mouse_scroll_clicked = a_clicked;
                 }
             }
         }
-    }
     g_pluginManager.mouseBtnsUpdate(a_window, a_button, a_clicked, a_modes);
 }
 
@@ -1497,98 +1403,96 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_
 /// \param a_ypos
 ///
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
-    for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
-        if (a_window == (*g_cameraIt)->m_window){
-            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_CONTROL);
-            double speed_scale = 1.0;
-            if (state == GLFW_PRESS)
-            {
-                speed_scale = 0.1;
-            }
-            afCameraPtr devCam = (*g_cameraIt);
-            (*g_cameraIt)->mouse_x[1] = (*g_cameraIt)->mouse_x[0];
-            (*g_cameraIt)->mouse_x[0] = a_xpos;
-            (*g_cameraIt)->mouse_y[1] = (*g_cameraIt)->mouse_y[0];
-            (*g_cameraIt)->mouse_y[0] = a_ypos;
+    afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
+    if (cameraPtr != nullptr){
+        int state = glfwGetKey(a_window, GLFW_KEY_LEFT_CONTROL);
+        double speed_scale = 1.0;
+        if (state == GLFW_PRESS)
+        {
+            speed_scale = 0.1;
+        }
+        cameraPtr->mouse_x[1] = cameraPtr->mouse_x[0];
+        cameraPtr->mouse_x[0] = a_xpos;
+        cameraPtr->mouse_y[1] = cameraPtr->mouse_y[0];
+        cameraPtr->mouse_y[0] = a_ypos;
 
-            if( devCam->mouse_l_clicked ){
-                if(g_mousePickingEnabled){
-                    cVector3d rayFrom = (*g_cameraIt)->getGlobalTransform().getLocalPos();
-                    cVector3d rayTo = getRayTo(a_xpos, a_ypos, (*g_cameraIt));
-                    g_pickFrom = rayFrom;
-                    g_pickTo = rayTo;
-                }
-                else{
-                    double scale = 0.01;
-                    double x_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                    double y_vel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
-                    if (g_mouse_inverted_y){
-                        y_vel = -y_vel;
-                    }
-                    cVector3d camVel(0, -x_vel, y_vel);
-                    cVector3d dPos = devCam->getLocalPos() + devCam->getLocalRot() * camVel;
-                    devCam->setLocalPos(dPos);
-                }
-            }
-
-            if( devCam->mouse_r_clicked ){
-                cMatrix3d camRot;
-                double scale = 0.3;
-                double yawVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]); // Yaw
-                double pitchVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]); // Pitch
-                if (g_mouse_inverted_y){
-                    pitchVel = -pitchVel;
-                }
-
-                cVector3d nz(0, 0, 1);
-                cVector3d ny(0, 1, 0);
-
-                cMatrix3d camViewWithoutPitch(cCross(devCam->getRightVector(), nz), devCam->getRightVector() ,nz);
-                cMatrix3d camViewPitchOnly;
-                // Use the look vector to avoid locking view at horizon
-                double pitchAngle = cAngle(nz, devCam->getLookVector()) - (C_PI/2);
-                camViewPitchOnly.setAxisAngleRotationRad(ny, -pitchAngle);
-                camRot.setIntrinsicEulerRotationDeg(0, pitchVel, yawVel, cEulerOrder::C_EULER_ORDER_XYZ);
-                (*g_cameraIt)->camRot = camRot;
-
-                devCam->setLocalRot( camViewWithoutPitch * (*g_cameraIt)->camRot * camViewPitchOnly );
+        if( cameraPtr->mouse_l_clicked ){
+            if(g_mousePickingEnabled){
+                cVector3d rayFrom = cameraPtr->getGlobalTransform().getLocalPos();
+                cVector3d rayTo = getRayTo(a_xpos, a_ypos, cameraPtr);
+                g_pickFrom = rayFrom;
+                g_pickTo = rayTo;
             }
             else{
-                devCam->camRotPre = (*g_cameraIt)->camRot;
-            }
-
-            if( devCam->mouse_scroll_clicked){
-                //                devCam->showTargetPos(true);
-                double scale = 0.03;
-                double horizontalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_x[0] - (*g_cameraIt)->mouse_x[1]);
-                double verticalVel = speed_scale * scale * ( (*g_cameraIt)->mouse_y[0] - (*g_cameraIt)->mouse_y[1]);
+                double scale = 0.01;
+                double x_vel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
+                double y_vel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
                 if (g_mouse_inverted_y){
-                    verticalVel = -verticalVel;
+                    y_vel = -y_vel;
                 }
-                cVector3d nz(0, 0, 1);
-
-                // Use the look vector to avoid locking view at horizon
-                double pitchAngle = cAngle(nz, devCam->getLookVector()) - (C_PI/2);
-
-                // Clamp the +ve vertical arc ball to 1.5 Radians
-                if (pitchAngle >= 1.5 && verticalVel > 0.0){
-                    verticalVel = 0.0;
-                }
-                // Clamp the -ve vertical arc ball to -1.5 Radians
-                if (pitchAngle <= -1.5 && verticalVel < 0.0){
-                    verticalVel = 0.0;
-                }
-
-                cVector3d deltaVel(0, -horizontalVel, verticalVel);
-
-                cVector3d newPos = devCam->getLocalPos() + devCam->getLocalRot() * deltaVel;
-                devCam->setView(newPos, devCam->getTargetPosLocal(), cVector3d(0,0,1));
+                cVector3d camVel(0, -x_vel, y_vel);
+                cVector3d dPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * camVel;
+                cameraPtr->setLocalPos(dPos);
             }
-            //            else{
-            //                devCam->showTargetPos(false);
-            //            }
-
         }
+
+        if( cameraPtr->mouse_r_clicked ){
+            cMatrix3d camRot;
+            double scale = 0.3;
+            double yawVel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]); // Yaw
+            double pitchVel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]); // Pitch
+            if (g_mouse_inverted_y){
+                pitchVel = -pitchVel;
+            }
+
+            cVector3d nz(0, 0, 1);
+            cVector3d ny(0, 1, 0);
+
+            cMatrix3d camViewWithoutPitch(cCross(cameraPtr->getRightVector(), nz), cameraPtr->getRightVector() ,nz);
+            cMatrix3d camViewPitchOnly;
+            // Use the look vector to avoid locking view at horizon
+            double pitchAngle = cAngle(nz, cameraPtr->getLookVector()) - (C_PI/2);
+            camViewPitchOnly.setAxisAngleRotationRad(ny, -pitchAngle);
+            camRot.setIntrinsicEulerRotationDeg(0, pitchVel, yawVel, cEulerOrder::C_EULER_ORDER_XYZ);
+            cameraPtr->camRot = camRot;
+
+            cameraPtr->setLocalRot( camViewWithoutPitch * cameraPtr->camRot * camViewPitchOnly );
+        }
+        else{
+            cameraPtr->camRotPre = cameraPtr->camRot;
+        }
+
+        if( cameraPtr->mouse_scroll_clicked){
+            //                devCam->showTargetPos(true);
+            double scale = 0.03;
+            double horizontalVel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
+            double verticalVel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
+            if (g_mouse_inverted_y){
+                verticalVel = -verticalVel;
+            }
+            cVector3d nz(0, 0, 1);
+
+            // Use the look vector to avoid locking view at horizon
+            double pitchAngle = cAngle(nz, cameraPtr->getLookVector()) - (C_PI/2);
+
+            // Clamp the +ve vertical arc ball to 1.5 Radians
+            if (pitchAngle >= 1.5 && verticalVel > 0.0){
+                verticalVel = 0.0;
+            }
+            // Clamp the -ve vertical arc ball to -1.5 Radians
+            if (pitchAngle <= -1.5 && verticalVel < 0.0){
+                verticalVel = 0.0;
+            }
+
+            cVector3d deltaVel(0, -horizontalVel, verticalVel);
+
+            cVector3d newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * deltaVel;
+            cameraPtr->setView(newPos, cameraPtr->getTargetPosLocal(), cVector3d(0,0,1));
+        }
+        //            else{
+        //                devCam->showTargetPos(false);
+        //            }
+
     }
     g_pluginManager.mousePosUpdate(a_window, a_xpos, a_ypos);
 }
@@ -1601,36 +1505,35 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 /// \param a_ypos
 ///
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
-    for (g_cameraIt = g_cameras.begin() ; g_cameraIt != g_cameras.end() ; ++g_cameraIt){
-        if (a_window == (*g_cameraIt)->m_window){
-            int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
-            double speed_scale = 1.0;
-            if (state == GLFW_PRESS)
-            {
-                speed_scale = 0.1;
-            }
-            afCameraPtr cameraPtr = (*g_cameraIt);
-            (*g_cameraIt)->mouse_scroll[1] = (*g_cameraIt)->mouse_scroll[0];
-            (*g_cameraIt)->mouse_scroll[0] = -a_ypos;
-
-            double scale = 0.1;
-            cVector3d camVelAlongLook(speed_scale * scale * (*g_cameraIt)->mouse_scroll[0], 0, 0);
-            cVector3d newTargetPos = cameraPtr->getTargetPosLocal();
-            cVector3d newPos = cameraPtr->getLocalTransform() * camVelAlongLook;
-            cVector3d dPos = newPos - newTargetPos;
-            if(dPos.length() < 0.5){
-                newTargetPos = newTargetPos + cameraPtr->getLocalRot() * camVelAlongLook;
-            }
-
-            if (cameraPtr->isOrthographic()){
-                cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * (*g_cameraIt)->mouse_scroll[0]));
-                cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
-            }
-            else{
-                cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
-            }
-            cameraPtr->setTargetPos(newTargetPos);
+    afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
+    if (cameraPtr != nullptr){
+        int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
+        double speed_scale = 1.0;
+        if (state == GLFW_PRESS)
+        {
+            speed_scale = 0.1;
         }
+
+        cameraPtr->mouse_scroll[1] = cameraPtr->mouse_scroll[0];
+        cameraPtr->mouse_scroll[0] = -a_ypos;
+
+        double scale = 0.1;
+        cVector3d camVelAlongLook(speed_scale * scale * cameraPtr->mouse_scroll[0], 0, 0);
+        cVector3d newTargetPos = cameraPtr->getTargetPosLocal();
+        cVector3d newPos = cameraPtr->getLocalTransform() * camVelAlongLook;
+        cVector3d dPos = newPos - newTargetPos;
+        if(dPos.length() < 0.5){
+            newTargetPos = newTargetPos + cameraPtr->getLocalRot() * camVelAlongLook;
+        }
+
+        if (cameraPtr->isOrthographic()){
+            cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * cameraPtr->mouse_scroll[0]));
+            cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
+        }
+        else{
+            cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
+        }
+        cameraPtr->setTargetPos(newTargetPos);
     }
     g_pluginManager.mouseScrollUpdate(a_window, a_xpos, a_ypos);
 }

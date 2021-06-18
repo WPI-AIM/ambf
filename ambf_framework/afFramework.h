@@ -1746,6 +1746,39 @@ protected:
 };
 
 
+struct afCameraWindowCallBacks{
+    afCameraWindowCallBacks(){
+        windowSizeCallback = nullptr;
+        errorCallback = nullptr;
+        keyCallback = nullptr;
+        mouseBtnsCallback = nullptr;
+        mousePosCallback = nullptr;
+        mouseScrollCallback = nullptr;
+        dragDropCallback = nullptr;
+    }
+    // callback when the window display is resized
+    void (*windowSizeCallback)(GLFWwindow*, int, int);
+
+    // callback when an error GLFW occurs
+    void (*errorCallback)(int, const char*);
+
+    // callback when a key is pressed
+    void (*keyCallback)(GLFWwindow*, int, int, int, int);
+
+    //callback for mouse buttons
+    void (*mouseBtnsCallback)(GLFWwindow*, int, int, int);
+
+    //callback for mouse positions
+    void (*mousePosCallback)(GLFWwindow*, double, double);
+
+    //callback for mouse positions
+    void (*mouseScrollCallback)(GLFWwindow*, double, double);
+
+    // Drag and drop callback
+    void (*dragDropCallback)(GLFWwindow*, int, const char**);
+};
+
+
 ///
 /// \brief The afCamera class
 ///
@@ -1765,6 +1798,10 @@ public:
 
     void enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afNoiseModelAttribs* noiseAtt, afShaderAttributes* depthComputeShaderAttribs);
 
+    void makeWindowFullScreen(bool a_fullscreen);
+
+    void destroyWindow();
+
     // Define the virtual method for camera
     virtual void fetchCommands(double dt);
 
@@ -1779,6 +1816,8 @@ public:
     cCamera* getInternalCamera(){return m_camera;}
 
     virtual bool createFromAttribs(afCameraAttributes* a_attribs);
+
+    bool assignWindowCallbacks(afCameraWindowCallBacks* a_callbacks);
 
     // Since we changed the order of ADF loading such that cameras are loaded before
     // bodies etc. we wouldn't be able to find a body defined as a parent in the
@@ -1817,7 +1856,7 @@ public:
     void setDepthPublishInterval(uint a_interval);
 
     // This method enables or disables output image mirroring vertically.
-    inline void setMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
+    inline void setWindowMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
 
     void computeDepthOnGPU();
 
@@ -2105,6 +2144,14 @@ public:
 
     cWorld* getChaiWorld();
 
+    afCameraPtr getAssociatedCamera(GLFWwindow* window);
+
+    void makeCameraWindowsFullScreen(bool a_fullscreen);
+
+    void makeCameraWindowsMirrorVertical(bool a_mirrorVertical);
+
+    void destroyCameraWindows();
+
     bool createDefaultWorld();
 
     double getEnclosureLength();
@@ -2192,15 +2239,17 @@ public:
 
     void loadSkyBox();
 
+public:
+
+    GLFWwindow* m_mainWindow;
+
     // The collision groups are sorted by integer indices. A group is an array of
     // rigid bodies that collide with each other. The bodies in one group
     // are not meant to collide with bodies from another group. Lastly
     // a body can be a part of multiple groups
     map<uint, vector<afInertialObjectPtr> > m_collisionGroups;
 
-public:
-
-    GLFWwindow* m_mainWindow;
+    afCameraWindowCallBacks m_cameraWindowCallbacks;
 
     //data for picking objects
     class btRigidBody* m_pickedBulletRigidBody = nullptr;
