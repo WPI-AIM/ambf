@@ -500,14 +500,14 @@ cMaterial afMaterialUtils::createFromAttribs(afColorAttributes *a_color)
 bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *mesh, string obj_name){
     if (attribs->m_geometryType == afGeometryType::MESH){
         if (mesh->loadFromFile(attribs->m_meshFilepath.c_str()) ){
-//            mesh->scale(m_scale);
+            //            mesh->scale(m_scale);
             mesh->setUseDisplayList(true);
-//            m_visualMesh->markForUpdate(false);
+            //            m_visualMesh->markForUpdate(false);
         }
         else{
             cerr << "WARNING: OBJECT "
-                      << obj_name
-                      << "'s mesh \"" << attribs->m_meshFilepath.c_str() << "\" not found\n";
+                 << obj_name
+                 << "'s mesh \"" << attribs->m_meshFilepath.c_str() << "\" not found\n";
             return false;
         }
     }
@@ -727,22 +727,22 @@ btVector3 afCartesianController::computeOutput<btVector3, btMatrix3x3>(const btM
     btVector3 output(0, 0, 0);
 
     if (isEnabled()){
-    btVector3 error_cur, error_prev;
-    btMatrix3x3 dRot_prev;
-    btQuaternion dRotQuat, dRotQuat_prev;
-    dRot_prev = m_dRot;
-    dRot_prev.getRotation(dRotQuat_prev);
-    error_prev = dRotQuat_prev.getAxis() * dRotQuat_prev.getAngle();
+        btVector3 error_cur, error_prev;
+        btMatrix3x3 dRot_prev;
+        btQuaternion dRotQuat, dRotQuat_prev;
+        dRot_prev = m_dRot;
+        dRot_prev.getRotation(dRotQuat_prev);
+        error_prev = dRotQuat_prev.getAxis() * dRotQuat_prev.getAngle();
 
-    m_dRot = process_val.transpose() * set_point;
-    m_dRot.getRotation(dRotQuat);
-    error_cur = dRotQuat.getAxis() * dRotQuat.getAngle();
+        m_dRot = process_val.transpose() * set_point;
+        m_dRot.getRotation(dRotQuat);
+        error_cur = dRotQuat.getAxis() * dRotQuat.getAngle();
 
-    output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
+        output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
 
-    // Important to transform the torque in the world frame as its represented
-    // in the body frame from the above computation
-    output = process_val * output;
+        // Important to transform the torque in the world frame as its represented
+        // in the body frame from the above computation
+        output = process_val * output;
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
@@ -786,23 +786,23 @@ template<>
 cVector3d afCartesianController::computeOutput<cVector3d, cMatrix3d>(const cMatrix3d &process_val, const cMatrix3d &set_point, const double &dt, const double &ts){
     cVector3d output(0, 0, 0);
     if (isEnabled()){
-    cVector3d error_cur, error_prev;
-    cMatrix3d dRot_prev;
-    cVector3d e_axis, e_axis_prev;
-    double e_angle, e_angle_prev;
-    dRot_prev = m_dRot_cvec;
-    dRot_prev.toAxisAngle(e_axis_prev, e_angle_prev);
-    error_prev = e_axis_prev * e_angle_prev;
+        cVector3d error_cur, error_prev;
+        cMatrix3d dRot_prev;
+        cVector3d e_axis, e_axis_prev;
+        double e_angle, e_angle_prev;
+        dRot_prev = m_dRot_cvec;
+        dRot_prev.toAxisAngle(e_axis_prev, e_angle_prev);
+        error_prev = e_axis_prev * e_angle_prev;
 
-    m_dRot_cvec = cTranspose(process_val) * set_point;
-    m_dRot_cvec.toAxisAngle(e_axis, e_angle);
-    error_cur = e_axis * e_angle;
+        m_dRot_cvec = cTranspose(process_val) * set_point;
+        m_dRot_cvec.toAxisAngle(e_axis, e_angle);
+        error_cur = e_axis * e_angle;
 
-    output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
+        output = (P_ang * error_cur * ts) + (D_ang * (error_cur - error_prev) / dt);
 
-    // Important to transform the torque in the world frame as its represented
-    // in the body frame from the above computation
-    output = process_val * output;
+        // Important to transform the torque in the world frame as its represented
+        // in the body frame from the above computation
+        output = process_val * output;
     }
     else{
         // Maybe throw a console warning to notify the user that this controller is disabled
@@ -1008,7 +1008,7 @@ bool afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
         return false;
     }
     // Remove any set parent of the child object first?
-//    a_afObject->clearParentObject();
+    //    a_afObject->clearParentObject();
     a_afObject->setParentObject(this);
     m_childrenObjects.push_back(a_afObject);
     return true;
@@ -1033,9 +1033,9 @@ void afBaseObject::toggleFrameVisibility(){
     for (it = m_childrenSceneObjects.begin(); it != m_childrenSceneObjects.end() ; ++it){
         (*it)->getChaiObject()->setShowFrame(!(*it)->getChaiObject()->getShowFrame());
     }
-//    if (m_visualMesh){
-//        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
-//    }
+    //    if (m_visualMesh){
+    //        m_visualMesh->setShowFrame(!m_visualMesh->getShowFrame());
+    //    }
 }
 
 
@@ -1686,23 +1686,23 @@ void afConstraintActuator::fetchCommands(double dt){
                 // Constraint is active. Ignore request
                 return;
             }
-             string body_name = cmd.body_name.data;
-             if (cmd.use_offset){
-                 // Offset of constraint (joint) in sensed body (child)
-                 btTransform T_jINc;
-                 T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
-                                                cmd.body_offset.position.y,
-                                                cmd.body_offset.position.z));
+            string body_name = cmd.body_name.data;
+            if (cmd.use_offset){
+                // Offset of constraint (joint) in sensed body (child)
+                btTransform T_jINc;
+                T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
+                                           cmd.body_offset.position.y,
+                                           cmd.body_offset.position.z));
 
-                 T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
-                                                      cmd.body_offset.orientation.y,
-                                                      cmd.body_offset.orientation.z,
-                                                      cmd.body_offset.orientation.w));
-                 actuate(body_name, T_jINc);
-             }
-             else{
-                 actuate(body_name);
-             }
+                T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
+                                                cmd.body_offset.orientation.y,
+                                                cmd.body_offset.orientation.z,
+                                                cmd.body_offset.orientation.w));
+                actuate(body_name, T_jINc);
+            }
+            else{
+                actuate(body_name);
+            }
         }
         else{
             deactuate();
@@ -2065,8 +2065,8 @@ void afRigidBody::remove(){
     }
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     if (m_afRigidBodyCommPtr){
-//        m_afRigidBodyPtr->cleanUp();
-//        m_afRigidBodyPtr.reset();
+        //        m_afRigidBodyPtr->cleanUp();
+        //        m_afRigidBodyPtr.reset();
     }
 #endif
 
@@ -2292,8 +2292,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
         else{
             cerr << "WARNING: Body "
-                      << m_name
-                      << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
+                 << m_name
+                 << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
             return false;
         }
     }
@@ -2344,8 +2344,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
         else{
             cerr << "WARNING: Body "
-                      << m_name
-                      << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
+                 << m_name
+                 << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
         }
     }
 
@@ -2593,20 +2593,20 @@ void afRigidBody::fetchCommands(double dt){
             if (m_bulletRigidBody->isStaticOrKinematicObject()){
                 btTransform Tcommand;
                 Tcommand.setOrigin(btVector3(afCommand.pose.position.x,
-                                        afCommand.pose.position.y,
-                                        afCommand.pose.position.z));
+                                             afCommand.pose.position.y,
+                                             afCommand.pose.position.z));
 
                 Tcommand.setRotation(btQuaternion(afCommand.pose.orientation.x,
-                                             afCommand.pose.orientation.y,
-                                             afCommand.pose.orientation.z,
-                                             afCommand.pose.orientation.w));
+                                                  afCommand.pose.orientation.y,
+                                                  afCommand.pose.orientation.z,
+                                                  afCommand.pose.orientation.w));
 
-//                If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
+                //                If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
                 if ((m_bulletRigidBody->getWorldTransform().getOrigin() - Tcommand.getOrigin()).norm() > 0.00001 ||
                         m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(Tcommand.getRotation()) > 0.0001){
                     // Compensate for the inertial offset
                     Tcommand = Tcommand * getInertialOffsetTransform();
-//                    cerr << "Updating Static Object Pose \n";
+                    //                    cerr << "Updating Static Object Pose \n";
                     m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
                     m_bulletRigidBody->setWorldTransform(Tcommand);
                 }
@@ -2630,7 +2630,7 @@ void afRigidBody::fetchCommands(double dt){
                                  afCommand.pose.position.z);
                 if( cmd_rot_quat.length() < 0.9 || cmd_rot_quat.length() > 1.1 ){
                     cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
-                                                                 " not normalized" << endl;
+                                                            " not normalized" << endl;
                     if (cmd_rot_quat.length() < 0.1){
                         cmd_rot_quat.setW(1.0); // Invalid Quaternion
                     }
@@ -2694,9 +2694,9 @@ void afRigidBody::fetchCommands(double dt){
                 }
                 else{
                     cerr << "WARNING! FOR JOINT \"" <<
-                                 m_CJ_PairsActive[jntIdx].m_childJoint->getName() <<
-                                 " \" COMMAND TYPE NOT UNDERSTOOD, SUPPORTED TYPES ARE 0 -> FORCE, 1 -> POSITION, 2 -> VELOCITY " <<
-                                 endl;
+                            m_CJ_PairsActive[jntIdx].m_childJoint->getName() <<
+                            " \" COMMAND TYPE NOT UNDERSTOOD, SUPPORTED TYPES ARE 0 -> FORCE, 1 -> POSITION, 2 -> VELOCITY " <<
+                            endl;
                 }
 
             }
@@ -3058,7 +3058,7 @@ void afMeshCleanup::computeUniqueVerticesandTriangles(const cMesh *mesh, std::ve
     for (int xblockNum = 0 ; xblockNum < numBlocks ; xblockNum ++){
         xblockLowerBound = xblockNum * vtxBlockSize;
         xblockUpperBound = xblockLowerBound + vtxBlockSize;
-//        first_print = true;
+        //        first_print = true;
         for (int yblockNum = 0 ; yblockNum < numBlocks ; yblockNum ++){
             yblockLowerBound = yblockNum * vtxBlockSize;
             yblockUpperBound = yblockLowerBound + vtxBlockSize;
@@ -3261,7 +3261,7 @@ void afMeshCleanup::computeUniqueVerticesandTrianglesSequential(const cMesh *mes
 
     int* orderedVtxList = new int[numVertices*3];
 
-    #define ordVtxIdx(a, b) (numVertices * b + a)
+#define ordVtxIdx(a, b) (numVertices * b + a)
 
     orderedVtxList[ordVtxIdx(0,0)] = 0;
     orderedVtxList[ordVtxIdx(0,1)] = 0;
@@ -3465,9 +3465,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     if (attribs.m_useMaterial){
         btSoftBody::Material *pm = softBody->appendMaterial();
-//        pm->m_kLST = attribs.m_kLST;
-//        pm->m_kAST = attribs.m_kAST;
-//        pm->m_kVST = attribs.m_kVST;
+        //        pm->m_kLST = attribs.m_kLST;
+        //        pm->m_kAST = attribs.m_kAST;
+        //        pm->m_kVST = attribs.m_kVST;
 
         softBody->m_materials[0]->m_kLST = attribs.m_kLST;
         softBody->m_materials[0]->m_kAST = attribs.m_kAST;
@@ -3627,7 +3627,7 @@ bool afSoftBody::cleanupMesh(cMultiMesh *multiMesh, std::vector<afVertexTree> &a
         }
 
         reducedMesh->computeAllEdges();
-//        reducedMesh->computeAllNormals();
+        //        reducedMesh->computeAllNormals();
         reducedMesh->setMaterial(multiMesh->m_material);
         reducedMesh->setTexture(multiMesh->getMesh(0)->m_texture);
         reducedMesh->setUseTexture(multiMesh->getMesh(0)->getUseTexture());
@@ -3657,7 +3657,7 @@ bool afSoftBody::generateFromMesh(cMultiMesh *multiMesh, const double a_margin)
         // read number of triangles of the object
         int numTriangles = mesh->m_triangles->getNumElements();
         std::vector<std::vector <int> > polyLines = mesh->m_lines;
-//        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &m_afVertexTree, &polyLines, false);
+        //        computeUniqueVerticesandTriangles(mesh, &m_verticesPtr, &m_trianglesPtr, &m_afVertexTree, &polyLines, false);
         afMeshCleanup::computeUniqueVerticesandTrianglesSequential(mesh, &m_verticesPtr, &m_trianglesPtr, &m_afVertexTree, &polyLines, false);
         if (m_trianglesPtr.size() > 0){
             m_bulletSoftBody = createFromMesh(*m_afWorld->m_bulletSoftBodyWorldInfo,
@@ -3744,7 +3744,7 @@ bool afSoftBody::createLinksFromLines(btSoftBody *a_softBody, std::vector< std::
 
 
 btSoftBody* afSoftBody::createFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes,
-                                                 const unsigned int* triangles, int ntriangles, bool randomizeConstraints)
+                                       const unsigned int* triangles, int ntriangles, bool randomizeConstraints)
 {
     unsigned int maxidx = 0;
     int i, j, ni;
@@ -3924,9 +3924,9 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         if (!(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
-//            cerr <<"INFO: JOINT: \"" << m_name <<
-//                   "\'s\" PARENT BODY \"" << m_parentName <<
-//                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
+            //            cerr <<"INFO: JOINT: \"" << m_name <<
+            //                   "\'s\" PARENT BODY \"" << m_parentName <<
+            //                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
         }
     }
     if(m_afChildBody == nullptr){
@@ -3934,17 +3934,17 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         // If any body is still not found, print error and ignore joint
         if (m_afChildBody == nullptr){
             cerr <<"ERROR: JOINT: \"" << m_name <<
-                        "\'s\" CHILD BODY \"" << m_childName <<
-                        "\" NOT FOUND" << endl;
+                   "\'s\" CHILD BODY \"" << m_childName <<
+                   "\" NOT FOUND" << endl;
             return 0;
         }
         // If the body is not world, print what we just did
         if ( !(strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
-                && !(strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
-                && !(strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
+             && !(strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
+             && !(strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
             cerr <<"INFO: JOINT: \"" << m_name <<
-                        "\'s\" CHILD BODY \"" << m_childName <<
-                        "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
+                   "\'s\" CHILD BODY \"" << m_childName <<
+                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
         }
     }
 
@@ -4003,7 +4003,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     switch (m_jointType) {
     case afJointType::REVOLUTE:{
-//        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
+        //        m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, m_pvtA, m_pvtB, m_axisA, m_axisB, true);
         m_hinge = new btHingeConstraint(*m_afParentBody->m_bulletRigidBody, *m_afChildBody->m_bulletRigidBody, frameA, frameB, true);
         m_hinge->setParam(BT_CONSTRAINT_ERP, attribs.m_erp);
         m_hinge->setParam(BT_CONSTRAINT_CFM, attribs.m_cfm);
@@ -4149,13 +4149,13 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     if (isPassive() == false){
 
         // Joint Comm not implemented yet.
-//        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getAFJointMap());
+        //        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getAFJointMap());
 
-//        afCreateCommInstance(afObjectType::JOINT,
-//                             getQualifiedName() + remap_idx,
-//                             m_afWorld->getGlobalNamespace(),
-//                             getMinPublishFrequency(),
-//                             getMaxPublishFrequency());
+        //        afCreateCommInstance(afObjectType::JOINT,
+        //                             getQualifiedName() + remap_idx,
+        //                             m_afWorld->getGlobalNamespace(),
+        //                             getMinPublishFrequency(),
+        //                             getMaxPublishFrequency());
     }
 
     return true;
@@ -4824,9 +4824,9 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
                                  m_afWorld->getGlobalNamespace(),
                                  getMinPublishFrequency(),
                                  getMaxPublishFrequency());
-    #ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef C_ENABLE_AMBF_COMM_SUPPORT
             m_afSensorCommPtr->set_type("RESISTANCE");
-    #endif
+#endif
         }
     }
 
@@ -4851,7 +4851,7 @@ void afResistanceSensor::update(double dt){
             if (m_show){
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
-                                                                cVector3d>(cVector3d(0,0,1), m_rayTracerResults[i].m_contactNormal));
+                                                                   cVector3d>(cVector3d(0,0,1), m_rayTracerResults[i].m_contactNormal));
                 m_rayTracerResults[i].m_hitNormalMesh->setShowEnabled(true);
             }
 
@@ -4887,13 +4887,13 @@ void afResistanceSensor::update(double dt){
 
                 if (m_rayTracerResults[i].m_depthFraction < 0 || m_rayTracerResults[i].m_depthFraction > 1){
                     cerr << "LOGIC ERROR! "<< m_name <<" Depth Fraction is " << m_rayTracerResults[i].m_depthFraction <<
-                                 ". It should be between [0-1]" << endl;
+                            ". It should be between [0-1]" << endl;
                     cVector3d rayF, rayT, Pc_a;
                     rayF << m_raysAttribs[i].m_rayFromLocal;
                     rayT << m_raysAttribs[i].m_rayToLocal;
                     Pc_a << P_cINa;
                     cerr << "Ray Start: "<< rayF <<"\nRay End: " << rayT <<
-                                 "\nSensed Point: " << Pc_a << endl;
+                            "\nSensed Point: " << Pc_a << endl;
                     cerr << "----------\n";
                     m_rayTracerResults[i].m_depthFraction = 0;
                 }
@@ -5017,7 +5017,7 @@ void afResistanceSensor::update(double dt){
 ///
 afJoint::~afJoint(){
     if (m_btConstraint != nullptr){
-         delete m_btConstraint;
+        delete m_btConstraint;
     }
 
     if (m_feedback != nullptr){
@@ -5944,7 +5944,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
     }
 
     if (reset_time){
-//        s_bulletWorld->setSimulationTime(0.0);
+        //        s_bulletWorld->setSimulationTime(0.0);
     }
 
     pausePhysics(false);
@@ -6253,12 +6253,12 @@ bool afWorld::createDefaultWorld(){
         rbAttribs[i].m_visualAttribs.m_colorAttribs = afColorAttributes();
         rbAttribs[i].m_visualAttribs.m_geometryType = afGeometryType::SINGLE_SHAPE;
         // SET LOCATION
-//        rbAttribs[i].m_kinematicAttribs.m_location = LOCATION;
+        //        rbAttribs[i].m_kinematicAttribs.m_location = LOCATION;
         walls[i].createFromAttribs(&rbAttribs[i]);
     }
 
     // add plane to world as we will want to make it visibe
-//    addChild(walls);
+    //    addChild(walls);
     return true;
 }
 
@@ -6495,8 +6495,8 @@ void afWorld::loadSkyBox(){
             int off = vI * 9;
             m_skyBoxMesh->newTriangle(
                         cVector3d(cube[off + 0], cube[off + 1], cube[off + 2]),
-                        cVector3d(cube[off + 3], cube[off + 4], cube[off + 5]),
-                        cVector3d(cube[off + 6], cube[off + 7], cube[off + 8]));
+                    cVector3d(cube[off + 3], cube[off + 4], cube[off + 5]),
+                    cVector3d(cube[off + 6], cube[off + 7], cube[off + 8]));
         }
 
         m_skyBoxMesh->computeAllNormals();
@@ -7239,7 +7239,7 @@ void afCamera::computeDepthOnCPU()
     float n = -m_camera->getNearClippingPlane();
     float f = -m_camera->getFarClippingPlane();
     double fva = m_camera->getFieldViewAngleRad();
-//    double ar = m_camera->getAspectRatio();
+    //    double ar = m_camera->getAspectRatio();
     double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
 
     double delta_x;
@@ -7302,7 +7302,7 @@ void afCamera::computeDepthOnGPU()
     float n = -m_camera->getNearClippingPlane();
     float f = -m_camera->getFarClippingPlane();
     double fva = m_camera->getFieldViewAngleRad();
-//    double ar = m_camera->getAspectRatio();
+    //    double ar = m_camera->getAspectRatio();
     double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
 
     double maxX;
@@ -7333,19 +7333,19 @@ void afCamera::computeDepthOnGPU()
 
     m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_UNSIGNED_INT);
 
-//    // bind texture
-//    glBindTexture(GL_TEXTURE_2D, m_depthBuffer->m_imageBuffer->getTextureId());
+    //    // bind texture
+    //    glBindTexture(GL_TEXTURE_2D, m_depthBuffer->m_imageBuffer->getTextureId());
 
-//    // settings
-//    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    //    // settings
+    //    glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-//    // copy pixel data if required
-//    glGetTexImage(GL_TEXTURE_2D,
-//                  0,
-//                  GL_RGBA,
-//                  GL_FLOAT,
-//                  (GLvoid*)(m_depthBufferColorImage2)
-//                  );
+    //    // copy pixel data if required
+    //    glGetTexImage(GL_TEXTURE_2D,
+    //                  0,
+    //                  GL_RGBA,
+    //                  GL_FLOAT,
+    //                  (GLvoid*)(m_depthBufferColorImage2)
+    //                  );
 
     uint width = m_depthBufferColorImage->getWidth();
     uint height = m_depthBufferColorImage->getHeight();
@@ -7667,10 +7667,10 @@ afCamera::~afCamera(){
 
 #ifdef C_ENABLE_AMBF_COMM_SUPPORT
     // DO NOT DELETE AS THE NODE SHOULD BE DESTROYED EXTERNALLY
-//    if (m_rosNode != nullptr){
-//        delete m_rosNode;
-//        m_rosNode = 0;
-//    }
+    //    if (m_rosNode != nullptr){
+    //        delete m_rosNode;
+    //        m_rosNode = 0;
+    //    }
 
     if (m_depthPointCloudModifier != nullptr){
         delete m_depthPointCloudModifier;
@@ -7819,19 +7819,19 @@ void afCamera::preProcessingShadersUpdate()
     cRenderOptions po;
     m_preprocessingShaderProgram->use(go, po);
 
-//     Assign any shader attribs here.
-//     Example:
-//    m_preprocessingShaderProgram->setUniform("var_name", var);
+    //     Assign any shader attribs here.
+    //     Example:
+    //    m_preprocessingShaderProgram->setUniform("var_name", var);
 
-//     Also loop through visual objects to assign any specific object IDs etc.
-//     Example:
-//    afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
-//    for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-//        afRigidBodyPtr rb = rbIt->second;
-//        if (rb->m_visualMesh){
-//            // Reassign the backedup shaderpgm for the next rendering pass
-//            rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
-//        }
+    //     Also loop through visual objects to assign any specific object IDs etc.
+    //     Example:
+    //    afRigidBodyMap* rbMap = m_afWorld->getAFRigidBodyMap();
+    //    for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
+    //        afRigidBodyPtr rb = rbIt->second;
+    //        if (rb->m_visualMesh){
+    //            // Reassign the backedup shaderpgm for the next rendering pass
+    //            rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
+    //        }
     //    }
 }
 
@@ -8576,7 +8576,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
             else{
                 m_wheels[i].m_wheelRepresentationType = afWheelRepresentationType::INVALID;
                 cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " MESH NAMED \"" << meshFilepath << "\" FOR VEHICLE \""
-                          << m_name << "\", SKIPPING WHEEL!" << endl;
+                     << m_name << "\", SKIPPING WHEEL!" << endl;
                 continue;
             }
             break;
@@ -8597,7 +8597,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
             else{
                 m_wheels[i].m_wheelRepresentationType = afWheelRepresentationType::INVALID;
                 cerr << "ERROR! UNABLE TO FIND WHEEL IDX " << i << " BODY NAMED \"" << rbName << "\" FOR VEHICLE \""
-                          << m_name << "\", SKIPPING WHEEL!" << endl;
+                     << m_name << "\", SKIPPING WHEEL!" << endl;
                 continue;
             }
             break;
@@ -8607,7 +8607,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
         default:{
             m_wheels[i].m_wheelRepresentationType = afWheelRepresentationType::INVALID;
             cerr << "ERROR! UNABLE TO FIND \"MESH\" OR \"BODY\" FIELD FOR WHEEL OF VEHICLE \""
-                      << m_name << "\", SKIPPING WHEEL!" << endl;
+                 << m_name << "\", SKIPPING WHEEL!" << endl;
             continue;
         }
         };
@@ -8739,7 +8739,7 @@ void afVehicle::update(double dt){
             m_wheels[i].m_mesh->setLocalTransform(cTrans);
         }
         else if (m_wheels[i].m_wheelRepresentationType == afWheelRepresentationType::RIGID_BODY){
-//            m_wheels[i].m_wheelBody->m_bulletRigidBody->setWorldTransform(btTrans);
+            //            m_wheels[i].m_wheelBody->m_bulletRigidBody->setWorldTransform(btTrans);
             m_wheels[i].m_wheelBody->m_bulletRigidBody->getMotionState()->setWorldTransform(btTrans);
         }
         else{
@@ -8893,9 +8893,9 @@ afGhostObject::~afGhostObject()
 
 void afGhostObject::update(double dt)
 {
-//    cTransform trans;
-//    trans << m_bulletGhostObject->getWorldTransform();
-//    setLocalTransform(trans);
+    //    cTransform trans;
+    //    trans << m_bulletGhostObject->getWorldTransform();
+    //    setLocalTransform(trans);
     m_bulletGhostObject->setWorldTransform(to_btTransform(m_globalTransform));
     vector<btRigidBody*> localSensedBodies;
 
@@ -9021,8 +9021,8 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         }
         else{
             cerr << "WARNING: Body "
-                      << m_name
-                      << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
+                 << m_name
+                 << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
             return false;
         }
     }
@@ -9080,8 +9080,8 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
             }
             else{
                 cerr << "WARNING: Ghost's "
-                          << m_name
-                          << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
+                     << m_name
+                     << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
             }
         }
         valid = true;
@@ -9105,13 +9105,13 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
         shaderProgram = cShaderProgram::create(vtxShader, fragShader);
         if (shaderProgram->linkProgram()){
             cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILES: " <<
-                         "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
-                         "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+                    "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                    "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
         }
         else{
             cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO LOAD SHADER TYPE " << type << " FROM FILES: " <<
-                         "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
-                         "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+                    "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                    "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
         }
     }
     return shaderProgram;
