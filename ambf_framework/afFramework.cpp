@@ -7235,25 +7235,6 @@ void afCamera::computeDepthOnCPU()
 
     double varScale = pow(2, sizeof(uint) * 8);
 
-    // Update the dimensions scale information.
-    float n = -m_camera->getNearClippingPlane();
-    float f = -m_camera->getFarClippingPlane();
-    double fva = m_camera->getFieldViewAngleRad();
-    //    double ar = m_camera->getAspectRatio();
-    double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
-
-    double delta_x;
-    if (isOrthographic()){
-        delta_x = m_camera->getOrthographicViewWidth();
-    }
-    else{
-        delta_x = 2.0 * cAbs(f) * cTanRad(fva/2.0);
-    }
-    double delta_y = delta_x / ar;
-    double delta_z = f-n;
-
-    cVector3d maxWorldDimensions(delta_x, delta_y, delta_z);
-
     for (int y_span = 0 ; y_span < height ; y_span++){
         double yImage = double(y_span) / (height - 1);
         for (int x_span = 0 ; x_span < width ; x_span++){
@@ -7302,18 +7283,20 @@ void afCamera::computeDepthOnGPU()
     float n = -m_camera->getNearClippingPlane();
     float f = -m_camera->getFarClippingPlane();
     double fva = m_camera->getFieldViewAngleRad();
-    //    double ar = m_camera->getAspectRatio();
-    double ar = ((double)m_publishImageResolution.m_width / (double)m_publishImageResolution.m_height);
+    double ar = m_camera->getAspectRatio();
 
     double maxX;
+    double maxY;
+    double maxZ;
     if (isOrthographic()){
         maxX = m_camera->getOrthographicViewWidth();
+        maxY = maxX / ar;
     }
     else{
-        maxX = 2.0 * cAbs(f) * cTanRad(fva/2.0);
+        maxY = 2.0 * cAbs(f) * cTanRad(fva/2.0);
+        maxX = maxY * ar;
     }
-    double maxY = maxX / ar;
-    double maxZ = f-n;
+    maxZ = f-n;
 
     cVector3d maxWorldDimensions(maxX, maxY, maxZ);
 
