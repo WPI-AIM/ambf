@@ -1256,10 +1256,10 @@ void afBaseObject::loadShaderProgram()
         // Set the ID for shadow and normal maps.
         shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
         if (isNormalTextureDefined()){
-            enableShaderNormalMapping(false);
+            enableShaderNormalMapping(true);
         }
         else{
-            enableShaderNormalMapping(true);
+            enableShaderNormalMapping(false);
         }
     }
 }
