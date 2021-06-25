@@ -1,7 +1,7 @@
 enclosure size: {length: 10.0, width: 10.0, height: 3.0}
 lights: [light1, light2]
-cameras: [camera1]
-environment: "./checkered_floor.yaml"
+cameras: [camera1] #, cameraEndoscope]
+environment: "./grey_floor.yaml"
 namespace: /ambf/env/
 max iterations: 50
 gravity: {x: 0.0, y: 0.0, z: -9.81}
@@ -79,21 +79,22 @@ camera1:
 cameraEndoscope:
   namespace: cameras/
   name: endo_camera
-  location: {x: 0.0, y: 0.0, z: -0.1}
-  look at: {x: 0.0, y: 0.0, z: -0.5}
+  location: {x: 0.0, y: 0.0, z: 0.0}
+  look at: {x: 0.0, y: 0.0, z: 1.0}
   up: {x: 1.0, y: 0.0, z: 0.0}
   clipping plane: {near: 0.01, far: 10.0}
-  field view angle: 0.8
+  field view angle: 0.6
   monitor: 0
   # stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
-  parent: /ambf/env/ecm/BODY remote center link
+  parent: /ambf/env/BODY Link7
   # multipass: True
+  # device: Razer Hydra
 
 camera2:
   namespace: cameras/
   name: openhmd
-  location: {x: 3.0, y: 0.0, z: 2.0}
-  look at: {x: 0.0, y: 0.0, z: -1.0}
+  location: {x: 0.0, y: 0.0, z: 0.0}
+  look at: {x: 0.0, y: 0.0, z: -0.0}
   up: {x: 0.0, y: 0.0, z: 1.0}
   clipping plane: {near: 0.01, far: 10.0}
   field view angle: 0.8

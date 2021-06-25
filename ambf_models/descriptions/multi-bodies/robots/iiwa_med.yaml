@@ -54,9 +54,9 @@ BODY base:
       p: 0
       y: 0
   passive: false
-  publish children names: false
-  publish joint names: false
-  publish joint positions: false
+  publish children names: true
+  publish joint names: true
+  publish joint positions: true
   friction:
     rolling: 0.01
     static: 0.5
