@@ -7683,7 +7683,7 @@ void afCamera::render(afRenderOptions &options)
     glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
     // Update the Labels in a separate sub-routine
-    if (options.m_updateLabels && !m_publishDepth){
+    if (options.m_updateLabels && !m_publishDepth && !m_publishImage){
         updateLabels(options);
     }
 
