@@ -832,6 +832,18 @@ afIdentification::afIdentification(afType a_type): m_type(a_type)
 
 }
 
+string afIdentification::getName(){return m_name;}
+
+string afIdentification::getNamespace(){return m_namespace;}
+
+string afIdentification::getQualifiedName(){return m_namespace + m_name;}
+
+void afIdentification::setName(string a_name){m_name = a_name;}
+
+void afIdentification::setNamespace(string a_namespace){m_namespace = a_namespace; }
+
+string afIdentification::getQualifiedIdentifier(){return m_namespace + m_identifier;}
+
 
 ///
 /// \brief afObject::afObject
@@ -2403,6 +2415,7 @@ void afRigidBody::createInertialObject()
     // create rigid body
     btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(m_mass, m_bulletMotionState, m_bulletCollisionShape, m_inertia);
     m_bulletRigidBody = new btRigidBody(rigidBodyCI);
+    m_bulletRigidBody->setUserPointer(this);
 
     // by default deactivate sleeping mode
     m_bulletRigidBody->setActivationState(DISABLE_DEACTIVATION);
@@ -3553,6 +3566,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
 void afSoftBody::createInertialObject()
 {
+    m_bulletSoftBody->setUserPointer(this);
 }
 
 void afSoftBody::setLocalTransform(cTransform &trans)
@@ -5218,23 +5232,21 @@ afRigidBodyPtr afObjectManager::getRigidBody(string a_name, bool suppress_warnin
 /// \return
 ///
 afRigidBodyPtr afObjectManager::getRigidBody(btRigidBody* a_body, bool suppress_warning){
-    afBaseObjectMap::iterator afIt;
-    for (afIt = getRigidBodyMap()->begin() ; afIt != getRigidBodyMap()->end() ; ++ afIt){
-        afRigidBodyPtr afBody = (afRigidBodyPtr)afIt->second;
-        if (a_body == afBody->m_bulletRigidBody){
-            return afBody;
+    afRigidBodyPtr rBody = nullptr;
+    if (a_body->getUserPointer() == nullptr){
+        if (!suppress_warning){
+            cerr << "WARNING: CAN'T FIND ANY AF RIGID BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
+            cerr <<"Existing Bodies in Map: " << getRigidBodyMap()->size() << endl;
+            afBaseObjectMap::iterator rbIt = getRigidBodyMap()->begin();
+            for (; rbIt != getRigidBodyMap()->end() ; ++rbIt){
+                cerr << rbIt->first << endl;
+            }
         }
     }
-    if (!suppress_warning){
-        cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
-
-        cerr <<"Existing Bodies in Map: " << getRigidBodyMap()->size() << endl;
-        afBaseObjectMap::iterator rbIt = getRigidBodyMap()->begin();
-        for (; rbIt != getRigidBodyMap()->end() ; ++rbIt){
-            cerr << rbIt->first << endl;
-        }
+    else{
+        rBody = (afRigidBodyPtr) a_body->getUserPointer();
     }
-    return nullptr;
+    return rBody;
 }
 
 
@@ -5304,23 +5316,21 @@ afSoftBodyPtr afObjectManager::getSoftBody(string a_name, bool suppress_warning)
 /// \return
 ///
 afSoftBodyPtr afObjectManager::getSoftBody(btSoftBody* a_body, bool suppress_warning){
-    afBaseObjectMap::iterator afIt;
-    for (afIt = getSoftBodyMap()->begin() ; afIt != getSoftBodyMap()->end() ; ++ afIt){
-        afSoftBodyPtr afBody = (afSoftBodyPtr)afIt->second;
-        if (a_body == afBody->m_bulletSoftBody){
-            return afBody;
+    afSoftBodyPtr sBody = nullptr;
+    if (a_body->getUserPointer() == nullptr){
+        if (!suppress_warning){
+            cerr << "WARNING: CAN'T FIND ANY AF SOFT BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
+            cerr << "Existing Bodies in Map: " << getSoftBodyMap()->size() << endl;
+            afBaseObjectMap::iterator rbIt = getSoftBodyMap()->begin();
+            for (; rbIt != getSoftBodyMap()->end() ; ++rbIt){
+                cerr << rbIt->first << endl;
+            }
         }
     }
-    if (!suppress_warning){
-        cerr << "WARNING: CAN'T FIND ANY BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
-
-        cerr <<"Existing Soft Bodies in Map: " << getSensorMap()->size() << endl;
-        afBaseObjectMap::iterator sbIt = getSoftBodyMap()->begin();
-        for (; sbIt != getSoftBodyMap()->end() ; ++sbIt){
-            cerr << sbIt->first << endl;
-        }
+    else{
+        sBody = (afSoftBodyPtr) a_body->getUserPointer();
     }
-    return nullptr;
+    return sBody;
 }
 
 
@@ -5342,25 +5352,22 @@ afGhostObjectPtr afObjectManager::getGhostObject(string a_name, bool suppress_wa
 /// \param suppress_warning
 /// \return
 ///
-afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool suppress_warning)
-{
-    afBaseObjectMap::iterator afIt;
-    for (afIt = getGhostObjectMap()->begin() ; afIt != getGhostObjectMap()->end() ; ++ afIt){
-        afGhostObjectPtr afObj = (afGhostObjectPtr)afIt->second;
-        if (a_body == afObj->m_bulletGhostObject){
-            return afObj;
+afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool suppress_warning){
+    afGhostObjectPtr ghostObj = nullptr;
+    if (a_body->getUserPointer() == nullptr){
+        if (!suppress_warning){
+            cerr << "WARNING: CAN'T FIND ANY AF GHOST OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
+            cerr << "Existing Bodies in Map: " << getGhostObjectMap()->size() << endl;
+            afBaseObjectMap::iterator rbIt = getGhostObjectMap()->begin();
+            for (; rbIt != getGhostObjectMap()->end() ; ++rbIt){
+                cerr << rbIt->first << endl;
+            }
         }
     }
-    if (!suppress_warning){
-        cerr << "WARNING: CAN'T FIND ANY OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
-
-        cerr <<"Existing Objects in Map: " << getGhostObjectMap()->size() << endl;
-        afBaseObjectMap::iterator goIt = getGhostObjectMap()->begin();
-        for (; goIt != getGhostObjectMap()->end() ; ++goIt){
-            cerr << goIt->first << endl;
-        }
+    else{
+        ghostObj = (afGhostObjectPtr) a_body->getUserPointer();
     }
-    return nullptr;
+    return ghostObj;
 }
 
 ///
@@ -6357,7 +6364,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     return true;
 }
 
-
 ///
 /// \brief afWorld::render
 /// \param options
@@ -6374,7 +6380,6 @@ void afWorld::render(afRenderOptions &options)
         afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
         cameraPtr->render(options);
     }
-
 }
 
 cWorld *afWorld::getChaiWorld(){
@@ -6790,6 +6795,7 @@ void afWorld::removePickingConstraint(){
 /// \brief afCamera::afCamera
 ///
 afCamera::afCamera(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::CAMERA, a_afWorld, a_modelPtr){
+    m_camera = nullptr;
     s_monitors = glfwGetMonitors(&s_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
@@ -6844,6 +6850,8 @@ bool afCamera::setView(const cVector3d &a_localPosition, const cVector3d &a_loca
 
     return true;
 }
+
+double afCamera::getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
 
 
 ///
@@ -6981,7 +6989,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     int monitorToLoad = attribs.m_monitorNumber;
 
     // Set some default values
-    m_stereMode = C_STEREO_DISABLED;
+    m_stereoMode = C_STEREO_DISABLED;
 
     setIdentifier(attribs.m_identifier);
     setName(attribs.m_identificationAttribs.m_name);
@@ -7000,7 +7008,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     }
 
     if (attribs.m_stereo){
-        m_stereMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
+        m_stereoMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
     }
 
     m_controllingDevNames = attribs.m_controllingDeviceNames;
@@ -7032,7 +7040,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_camera->setClippingPlanes(attribs.m_nearPlane, attribs.m_farPlane);
 
     // set stereo mode
-    m_camera->setStereoMode(m_stereMode);
+    m_camera->setStereoMode(m_stereoMode);
 
     // set stereo eye separation and focal length (applies only if stereo is enabled)
     m_camera->setStereoEyeSeparation(attribs.m_stereoEyeSeparation);
@@ -7545,7 +7553,7 @@ void afCamera::update(double dt)
                 m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::ORTHOGRAPHIC);
             }
 
-            if (m_stereMode == C_STEREO_DISABLED){
+            if (m_stereoMode == C_STEREO_DISABLED){
                 m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
             }
             else{
@@ -7617,17 +7625,15 @@ void afCamera::updateLabels(afRenderOptions &options)
 
 }
 
+cCamera *afCamera::getInternalCamera(){
+    return m_camera;
+}
 
-///
-/// \brief afCamera::~afCamera
-///
+
+
 afCamera::~afCamera(){
     if (m_frameBuffer != nullptr){
         delete m_frameBuffer;
-    }
-
-    if (m_depthBuffer != nullptr){
-        delete m_depthBuffer;
     }
 
     if (m_dephtWorld != nullptr){
@@ -7677,7 +7683,7 @@ void afCamera::render(afRenderOptions &options)
     glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
     // Update the Labels in a separate sub-routine
-    if (options.m_updateLabels && !m_publishDepth){
+    if (options.m_updateLabels && !m_publishDepth && !m_publishImage){
         updateLabels(options);
     }
 
@@ -7955,7 +7961,6 @@ void afCamera::destroyWindow()
 ///
 afLight::afLight(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::LIGHT, a_afWorld, a_modelPtr){
 }
-
 
 bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 {
@@ -8978,7 +8983,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         m_afWorld->addObjectMissingParent(this);
     }
 
-    m_bulletGhostObject = new btPairCachingGhostObject();
+    createInertialObject();
 
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
@@ -9071,6 +9076,12 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     }
 
     return valid;
+}
+
+void afGhostObject::createInertialObject()
+{
+    m_bulletGhostObject = new btPairCachingGhostObject();
+    m_bulletGhostObject->setUserPointer(this);
 }
 
 void afGhostObject::setLocalTransform(cTransform &trans)

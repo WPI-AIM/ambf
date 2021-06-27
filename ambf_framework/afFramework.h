@@ -230,20 +230,20 @@ public:
     afType getType(){return m_type;}
 
     // Get Name of this object
-    inline string getName(){return m_name;}
+    string getName();
 
     // Get Namespace for this object
-    inline string getNamespace(){return m_namespace;}
+    string getNamespace();
 
-    inline string getQualifiedName(){return m_namespace + m_name;}
+    string getQualifiedName();
 
     // Set Name of object
-    inline void setName(string a_name){m_name = a_name;}
+    void setName(string a_name);
 
     // Set namespace for this object
-    inline void setNamespace(string a_namespace){m_namespace = a_namespace; }
+    void setNamespace(string a_namespace);
 
-    inline string getQualifiedIdentifier(){return m_namespace + m_identifier;}
+    string getQualifiedIdentifier();
 
     void setIdentifier(string a_name){m_identifier = a_name;}
 
@@ -1213,6 +1213,8 @@ public:
 
     virtual bool createFromAttribs(afGhostObjectAttributes* a_attribs);
 
+    virtual void createInertialObject();
+
     virtual void setLocalTransform(cTransform &trans);
 
     // Cleanup this ghost body
@@ -1813,7 +1815,7 @@ public:
 
     void updateLabels(afRenderOptions &options);
 
-    cCamera* getInternalCamera(){return m_camera;}
+    cCamera* getInternalCamera();
 
     virtual bool createFromAttribs(afCameraAttributes* a_attribs);
 
@@ -1841,7 +1843,7 @@ public:
     inline cVector3d getUpVector()    const { return m_localTransform.getLocalRot().getCol2(); }
 
     // This method returns the field view angle in Radians.
-    inline double getFieldViewAngle() const { return m_camera->getFieldViewAngleRad(); }
+    double getFieldViewAngle() const;
 
     // Get interval between the scene update and publishing of an image
     inline uint getImagePublishInterval(){return m_imagePublishInterval;}
@@ -1908,7 +1910,7 @@ public:
     GLFWmonitor* m_monitor;
     static int s_numMonitors;
 
-    cStereoMode m_stereMode;
+    cStereoMode m_stereoMode;
 
     // Labels
     cLabel* m_graphicsDynamicsFreqLabel;
