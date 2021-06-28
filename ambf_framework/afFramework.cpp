@@ -6555,6 +6555,16 @@ void afWorld::loadSkyBox(){
     }
 }
 
+void afWorld::runHeadless(bool value)
+{
+    m_headless = value;
+}
+
+bool afWorld::isHeadless()
+{
+    return m_headless;
+}
+
 
 ///
 /// \brief afWorld::loadShaderProgram
@@ -6993,6 +7003,10 @@ cVector3d afCamera::getTargetPosGlobal(){
 
 bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 {
+    if (m_afWorld->isHeadless()){
+        // Asked to run headless, don't load cameras
+        return false;
+    }
     afCameraAttributes & attribs = *a_attribs;
 
     int monitorToLoad = attribs.m_monitorNumber;

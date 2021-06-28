@@ -2237,6 +2237,10 @@ public:
 
     void loadSkyBox();
 
+    void runHeadless(bool value);
+
+    bool isHeadless();
+
 public:
 
     GLFWwindow* m_mainWindow;
@@ -2378,6 +2382,8 @@ private:
     int m_manualStepPhx = 0;
 
     cWorld* m_chaiWorld = nullptr;
+
+    bool m_headless = false;
 };
 
 

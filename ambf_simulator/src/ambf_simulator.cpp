@@ -387,6 +387,7 @@ int main(int argc, char* argv[])
     g_afWorld->m_physicsFrequency = g_cmdOpts.phxFrequency;
     g_afWorld->m_hapticsFrequency = g_cmdOpts.htxFrequency;
     g_afWorld->m_updateCounterLimit = g_cmdOpts.phxFrequency * 2;
+    g_afWorld->runHeadless(!g_cmdOpts.showGUI);
 
     g_afWorld->m_cameraWindowCallbacks.keyCallback = keyCallback;
     g_afWorld->m_cameraWindowCallbacks.mouseBtnsCallback = mouseBtnsCallback;
