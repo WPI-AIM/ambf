@@ -1858,7 +1858,7 @@ public:
     void setDepthPublishInterval(uint a_interval);
 
     // This method enables or disables output image mirroring vertically.
-    inline void setWindowMirrorVertical(bool a_enabled){m_camera->setMirrorVertical(a_enabled);}
+    void setWindowMirrorVertical(bool a_enabled);
 
     void computeDepthOnGPU();
 
@@ -1872,14 +1872,10 @@ public:
     void publishDepthPointCloud();
 
     // Front plane scene graph which can be used to attach widgets.
-    inline cWorld* getFrontLayer(){
-        return m_camera->m_frontLayer;
-    }
+    cWorld* getFrontLayer();
 
     // Front plane scene graph which can be used to attach widgets.
-    inline cWorld* getBackLayer(){
-        return m_camera->m_backLayer;
-    }
+    cWorld *getBackLayer();
 
     // Is this camera orthographic or not
     inline bool isOrthographic(){return m_orthographic;}

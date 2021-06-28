@@ -6875,6 +6875,15 @@ void afCamera::setDepthPublishInterval(uint a_interval){
 
 
 ///
+/// \brief afCamera::setWindowMirrorVertical
+/// \param a_enabled
+///
+void afCamera::setWindowMirrorVertical(bool a_enabled){
+    m_camera->setMirrorVertical(a_enabled);
+}
+
+
+///
 /// \brief afCamera::getGlobalPos
 /// \return
 ///
@@ -7438,6 +7447,23 @@ void afCamera::publishDepthPointCloud()
     m_depthPointCloudMsg->header.stamp = ros::Time::now();
     m_depthPointCloudPub.publish(m_depthPointCloudMsg);
 #endif
+}
+
+///
+/// \brief afCamera::getFrontLayer
+/// \return
+///
+cWorld *afCamera::getFrontLayer(){
+    return m_camera->m_frontLayer;
+}
+
+
+///
+/// \brief afCamera::getBackLayer
+/// \return
+///
+cWorld *afCamera::getBackLayer(){
+    return m_camera->m_backLayer;
 }
 
 ///
