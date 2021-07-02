@@ -444,6 +444,11 @@ int main(int argc, char* argv[])
         }
     }
 
+    // Temporary fix for OpenGL Error Invalid Operation
+    for (auto cam : g_afWorld->getCameras()){
+        glfwMakeContextCurrent(cam->m_window);
+    }
+
     // Load plugins.
     vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
     for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){

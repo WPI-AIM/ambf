@@ -7125,16 +7125,18 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
         return 1;
     }
 
-    // get width and height of window
-    glfwGetWindowSize(m_window, &m_width, &m_height);
-
-    // set position of window
-    glfwSetWindowPos(m_window, m_win_x, m_win_y);
+    assignWindowCallbacks(&m_afWorld->m_cameraWindowCallbacks);
 
     // set the current context
     glfwMakeContextCurrent(m_window);
 
     glfwSwapInterval(0);
+
+    // get width and height of window
+    glfwGetWindowSize(m_window, &m_width, &m_height);
+
+    // set position of window
+    glfwSetWindowPos(m_window, m_win_x, m_win_y);
 
     // initialize GLEW library
 #ifdef GLEW_VERSION
@@ -7170,10 +7172,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     s_windowIdx++;
     s_cameraIdx++;
-
-    if (! assignWindowCallbacks(&m_afWorld->m_cameraWindowCallbacks)){
-        return 0;
-    }
 
     if (isPassive() == false){
 
@@ -7242,11 +7240,6 @@ bool afCamera::assignWindowCallbacks(afCameraWindowCallBacks *a_callbacks)
         // set drag and drop callback
         glfwSetDropCallback(m_window, a_callbacks->dragDropCallback);
     }
-
-    // set the current context
-    glfwMakeContextCurrent(m_window);
-
-    glfwSwapInterval(0);
 
     return true;
 }
