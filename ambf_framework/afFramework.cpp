@@ -5079,20 +5079,30 @@ void afObjectManager::resolveObjectsMissingParents(afBaseObjectPtr a_newObject)
 {
     vector<afBaseObject*> stillMissingParents;
     for (vector<afBaseObject*>::iterator it = m_afObjectsMissingParents.begin() ; it != m_afObjectsMissingParents.end() ; ++it){
+        afBaseObject *needParenting = *it;
         bool parentFound = false;
-        if ( (*it) == a_newObject ){
+        if ( needParenting == a_newObject ){
             // If the newly added object is the object in question, then search all previously added objects
             parentFound = (*it)->resolveParent( (*it)->m_parentName, true);
         }
 
         if (parentFound == false){
             // Else, check if we get an exact name match
-            if ( (*it)->m_parentName.compare( a_newObject->getQualifiedIdentifier() ) == 0 ){
+            if ( needParenting->m_parentName.compare( a_newObject->getQualifiedIdentifier() ) == 0 ){
                 a_newObject->addChildObject((*it));
             }
             // Else, check if part of the name matches
             else if( a_newObject->getQualifiedIdentifier().find((*it)->m_parentName) != string::npos){
-                a_newObject->addChildObject((*it));
+                if (needParenting == a_newObject ){
+                    stillMissingParents.push_back((*it));
+                }
+                else{
+                    if (needParenting->m_parentName.compare(a_newObject->getQualifiedIdentifier()) != 0){
+                        cerr << "WARNING! Required parent name of "<< needParenting->getQualifiedName() << " set as " <<
+                                needParenting->m_parentName << ". Parenting to closest match " << a_newObject->getName() << endl;
+                    }
+                    a_newObject->addChildObject((*it));
+                }
             }
             // Tried our best, keep this as an object missing parents, so that we can try again on the next object add.
             else{
