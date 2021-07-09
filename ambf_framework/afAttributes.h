@@ -185,8 +185,8 @@ public:
         m_objectType = afType::INVALID;
     }
 
-    std::string m_name;
-    std::string m_namespace;
+    string m_name;
+    string m_namespace;
     afType m_objectType;
 };
 
@@ -205,8 +205,8 @@ public:
     afPath m_meshFilepath;
     afCollisionMeshShapeType m_meshShapeType;
     afGeometryType m_geometryType;
-    std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
-    std::vector<uint> m_groups;
+    vector<afPrimitiveShapeAttributes> m_primitiveShapes;
+    vector<uint> m_groups;
 };
 
 
@@ -260,8 +260,8 @@ struct afHierarchyAttributes{
 public:
     afHierarchyAttributes(){}
 
-    std::string m_parentName;
-    std::string m_childName;
+    string m_parentName;
+    string m_childName;
 };
 
 
@@ -363,7 +363,7 @@ struct afVisualAttributes{
 
     afPath m_meshFilepath;
     afGeometryType m_geometryType;
-    std::vector<afPrimitiveShapeAttributes> m_primitiveShapes;
+    vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     afColorAttributes m_colorAttribs;
     bool m_visible;
 };
@@ -384,14 +384,32 @@ public:
 };
 
 
+///
+/// \brief The afPluginAttributes struct
+///
+struct afPluginAttributes{
+public:
+    string m_name;
+    string m_filename;
+    map<string, afPath> m_plugins;
+};
+
+
+///
+/// \brief The afBaseObjectAttributes struct
+///
 struct afBaseObjectAttributes{
 public:
     afBaseObjectAttributes(){
         m_pathsResolved = false;
         m_namespaceResolved = false;
     }
-    // Base Struct that can be used to later cast specific Object Attributes
+    // Identification attribs. Is used to determine what type of object this is (Rigid Body, Soft Body, Sensor, etc.)
     afIdentificationAttributes m_identificationAttribs;
+
+    afCommunicationAttributes m_communicationAttribs;
+
+    vector<afPluginAttributes> m_pluginAttribs;
 
     virtual void resolveRelativeNamespace(string a_parentNamespace){
         if (m_namespaceResolved == false){
@@ -400,7 +418,8 @@ public:
         }
     }
 
-    virtual void resolveRelativePathAttribs(afPath a_parentPath){}
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+    }
 
     inline bool areNamespaceAttribsResolved(){ return m_namespaceResolved;}
 
@@ -423,8 +442,6 @@ public:
     afActuatorAttributes(){}
 
     afActuatorType m_actuatorType;
-
-    afCommunicationAttributes m_communicationAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
 };
@@ -507,7 +524,7 @@ public:
     bool m_stereo;
     double m_stereoEyeSeparation;
     double m_stereFocalLength;
-    std::vector<std::string> m_controllingDeviceNames;
+    vector<string> m_controllingDeviceNames;
     uint m_monitorNumber;
     bool m_publishImage;
     bool m_publishDepth;
@@ -523,7 +540,6 @@ public:
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
-    afCommunicationAttributes m_communicationAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
@@ -556,7 +572,6 @@ public:
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
-    afCommunicationAttributes m_communicationAttribs;
 };
 
 
@@ -641,7 +656,6 @@ public:
     bool m_ignoreInterCollision;
 
     afHierarchyAttributes m_hierarchyAttribs;
-    afCommunicationAttributes m_communicationAttribs;
     afJointControllerAttributes m_controllerAttribs;
 };
 
@@ -662,7 +676,6 @@ public:
     bool m_publishJointNames;
     bool m_publishJointPositions;
 
-    afCommunicationAttributes m_communicationAttribs;
     afCollisionAttributes m_collisionAttribs;
     afCartesianControllerAttributes m_controllerAttribs;
     afInertialAttributes m_inertialAttribs;
@@ -783,9 +796,8 @@ public:
     bool m_usePoseMatching;
 
     bool m_useConstraintRandomization;
-    std::vector<uint> m_fixedNodes;
+    vector<uint> m_fixedNodes;
 
-    afCommunicationAttributes m_communicationAttribs;
     afCollisionAttributes m_collisionAttribs;
     afCartesianControllerAttributes m_controllerAttribs;
     afInertialAttributes m_inertialAttribs;
@@ -814,7 +826,6 @@ public:
     afGhostObjectAttributes(){
     }
 
-    afCommunicationAttributes m_communicationAttribs;
     afCollisionAttributes m_collisionAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
@@ -858,7 +869,7 @@ public:
     double m_brakePowerMax;
 
     afVisualAttributes m_visualAttribs;
-    std::string m_wheelBodyName;
+    string m_wheelBodyName;
     afWheelRepresentationType m_representationType;
 
     struct afSuspensionAttributes{
@@ -878,10 +889,9 @@ struct afVehicleAttributes: public afBaseObjectAttributes
 {
 public:
     afVehicleAttributes(){}
-    std::string m_chassisBodyName;
+    string m_chassisBodyName;
     afPath m_wheelsVisualPath;
-    std::vector<afWheelAttributes> m_wheelAttribs;
-    afCommunicationAttributes m_communicationAttribs;
+    vector<afWheelAttributes> m_wheelAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
@@ -901,8 +911,6 @@ public:
     afSensorAttributes(){}
 
     afSensorType m_sensorType;
-
-    afCommunicationAttributes m_communicationAttribs;
     afKinematicAttributes m_kinematicAttribs;
     afHierarchyAttributes m_hierarchyAttribs;
 };
@@ -931,7 +939,7 @@ public:
 
     afPath m_contourMeshFilepath;
     afSensactorSpecificationType m_specificationType;
-    std::vector<afRayAttributes> m_raysAttribs;
+    vector<afRayAttributes> m_raysAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
@@ -974,7 +982,6 @@ public:
     afPath m_filePath;
 };
 
-
 ///
 /// \brief The afMultiBodyAttributes struct
 ///
@@ -998,15 +1005,17 @@ public:
 
     bool m_enableComm;
 
-    std::vector <afRigidBodyAttributes> m_rigidBodyAttribs;
-    std::vector <afSoftBodyAttributes> m_softBodyAttribs;
-    std::vector <afGhostObjectAttributes> m_ghostObjectAttribs;
-    std::vector <afVehicleAttributes> m_vehicleAttribs;
-    std::vector <afJointAttributes> m_jointAttribs;
-    std::vector <afSensorAttributes*> m_sensorAttribs;
-    std::vector <afActuatorAttributes*> m_actuatorAttribs;
-    std::vector <afCameraAttributes> m_cameraAttribs;
-    std::vector <afLightAttributes> m_lightAttribs;
+    vector <afRigidBodyAttributes> m_rigidBodyAttribs;
+    vector <afSoftBodyAttributes> m_softBodyAttribs;
+    vector <afGhostObjectAttributes> m_ghostObjectAttribs;
+    vector <afVehicleAttributes> m_vehicleAttribs;
+    vector <afVolumeAttributes> m_volumeAttribs;
+    vector <afJointAttributes> m_jointAttribs;
+    vector <afSensorAttributes*> m_sensorAttribs;
+    vector <afActuatorAttributes*> m_actuatorAttribs;
+    vector <afCameraAttributes> m_cameraAttribs;
+    vector <afLightAttributes> m_lightAttribs;
+    vector <afPluginAttributes> m_pluginAttribs;
 
     bool m_ignoreInterCollision;
 
@@ -1103,7 +1112,7 @@ struct afSimulatedDeviceAttribs: public afBaseObjectAttributes, public afFileObj
     bool m_overrideLocation;
     bool m_overrideController;
 
-    std::string m_rootLinkName;
+    string m_rootLinkName;
 
 
     afCartesianControllerAttributes m_controllerAttribs;
@@ -1137,7 +1146,7 @@ public:
 
     bool m_visible;
 
-    std::string m_hardwareName;
+    string m_hardwareName;
     afCartesianControllerAttributes m_controllerAttribs;
     afTransform m_orientationOffset;
 
@@ -1157,7 +1166,7 @@ struct afTeleRoboticUnitAttributes{
 public:
     afSimulatedDeviceAttribs m_sdeAttribs;
     afInputDeviceAttributes m_iidAttribs;
-    std::vector<string> m_pairedCamerasNames;
+    vector<string> m_pairedCamerasNames;
 };
 
 
@@ -1204,13 +1213,14 @@ public:
         m_identificationAttribs.m_name = "World";
     }
 
-    std::vector<afLightAttributes> m_lightAttribs;
-    std::vector<afCameraAttributes> m_cameraAttribs;
+    vector<afLightAttributes> m_lightAttribs;
+    vector<afCameraAttributes> m_cameraAttribs;
+    vector<afPluginAttributes> m_pluginAttribs;
 
     afVector3d m_gravity;
     uint m_maxIterations;
     afShaderAttributes m_shaderAttribs;
-    std::string m_namespace;
+    string m_namespace;
 
     bool m_showGUI;
 
@@ -1276,7 +1286,8 @@ public:
     afPath m_colorFilepath;
     afPath m_worldFilepath;
     afPath m_inputDevicesFilepath;
-    std::vector<afPath> m_modelFilepaths;
+    vector<afPath> m_modelFilepaths;
+    vector<afPluginAttributes> m_pluginAttribs;
 
     virtual bool resolveRelativePathAttribs(){
         afPath a_parentPath = m_filePath.parent_path();

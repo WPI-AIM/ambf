@@ -874,14 +874,24 @@ afBaseObject::~afBaseObject(){
 /// \param a_attribs
 /// \return
 ///
-bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs)
-{
-    m_pluginManager.init(this, a_attribs);
+bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 }
 
-void afBaseObject::update(double dt)
-{
-    m_pluginManager.physicsUpdate(dt);
+
+///
+/// \brief afBaseObject::loadPlugins
+/// \param pluginAttribs
+/// \return
+///
+bool afBaseObject::loadPlugins(vector<afPluginAttributes> *pluginAttribs){
+    for (int i = 0 ; i < pluginAttribs->size(); i++){
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+    }
+
+    return true;
+}
+
+void afBaseObject::update(double dt){
 }
 
 
@@ -1172,6 +1182,11 @@ bool afBaseObject::removeChildSceneObject(afSceneObject *a_object, bool removeFr
     return false;
 }
 
+
+///
+/// \brief afBaseObject::removeAllChildSceneObjects
+/// \param removeFromGraph
+///
 void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
     std::vector<afSceneObject*>::iterator it;
 
@@ -1180,9 +1195,11 @@ void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
     }
 }
 
-void afBaseObject::updateSceneObjects(){
 
-    m_pluginManager.graphicsUpdate();
+///
+/// \brief afBaseObject::updateSceneObjects
+///
+void afBaseObject::updateSceneObjects(){
     // Assuming that the global pose was computed prior to this call.
     vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
@@ -1191,6 +1208,30 @@ void afBaseObject::updateSceneObjects(){
     }
 }
 
+
+///
+/// \brief afBaseObject::pluginsGraphicsUpdate
+///
+void afBaseObject::pluginsGraphicsUpdate()
+{
+    m_pluginManager.graphicsUpdate();
+}
+
+
+///
+/// \brief afBaseObject::pluginsPhysicsUpdate
+/// \param dt
+///
+void afBaseObject::pluginsPhysicsUpdate(double dt){
+    m_pluginManager.physicsUpdate(dt);
+}
+
+
+///
+/// \brief afBaseObject::updateGlobalPose
+/// \param a_forceUpdate
+/// \param a_parentTransform
+///
 void afBaseObject::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform){
     if ( (getParentObject() != nullptr) && (a_forceUpdate == false) ){
         // Don't update the pose as this objects parent is
@@ -1207,6 +1248,10 @@ void afBaseObject::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTrans
     }
 }
 
+
+///
+/// \brief afBaseObject::calculateFrameSize
+///
 void afBaseObject::calculateFrameSize()
 {
     std::vector<afSceneObject*>::iterator it;
@@ -1225,6 +1270,11 @@ void afBaseObject::calculateFrameSize()
     }
 }
 
+
+///
+/// \brief afBaseObject::isShaderProgramDefined
+/// \return
+///
 bool afBaseObject::isShaderProgramDefined(){
     if (m_visualMesh == nullptr){
         return false;
@@ -1233,6 +1283,12 @@ bool afBaseObject::isShaderProgramDefined(){
     return m_visualMesh->getShaderProgram().get() == nullptr ? 0 : 1;
 }
 
+
+///
+/// \brief afBaseObject::isShaderProgramDefined
+/// \param a_mesh
+/// \return
+///
 bool afBaseObject::isShaderProgramDefined(cMesh *a_mesh)
 {
     if (a_mesh == nullptr){
@@ -1276,6 +1332,10 @@ void afBaseObject::loadShaderProgram()
     }
 }
 
+///
+/// \brief afBaseObject::isNormalMapDefined
+/// \return
+///
 bool afBaseObject::isNormalMapDefined()
 {
     if (m_visualMesh->m_normalMap.get() != nullptr){
@@ -1286,6 +1346,11 @@ bool afBaseObject::isNormalMapDefined()
     }
 }
 
+///
+/// \brief afBaseObject::isNormalMapDefined
+/// \param a_mesh
+/// \return
+///
 bool afBaseObject::isNormalMapDefined(cMesh *a_mesh)
 {
     if (a_mesh->m_normalMap.get() != nullptr){
@@ -1296,6 +1361,11 @@ bool afBaseObject::isNormalMapDefined(cMesh *a_mesh)
     }
 }
 
+
+///
+/// \brief afBaseObject::isNormalTextureDefined
+/// \return
+///
 bool afBaseObject::isNormalTextureDefined()
 {
     if (isNormalMapDefined()){
@@ -1311,6 +1381,12 @@ bool afBaseObject::isNormalTextureDefined()
     }
 }
 
+
+///
+/// \brief afBaseObject::isNormalTextureDefined
+/// \param a_mesh
+/// \return
+///
 bool afBaseObject::isNormalTextureDefined(cMesh *a_mesh)
 {
     if (isNormalMapDefined(a_mesh)){
@@ -1326,6 +1402,10 @@ bool afBaseObject::isNormalTextureDefined(cMesh *a_mesh)
     }
 }
 
+///
+/// \brief afBaseObject::enableShaderNormalMapping
+/// \param enable
+///
 void afBaseObject::enableShaderNormalMapping(bool enable)
 {
     if (isShaderProgramDefined() == false){
@@ -1340,6 +1420,11 @@ void afBaseObject::enableShaderNormalMapping(bool enable)
     }
 }
 
+///
+/// \brief afBaseObject::enableShaderNormalMapping
+/// \param enable
+/// \param a_mesh
+///
 void afBaseObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
 {
     if (isShaderProgramDefined(a_mesh) == false){
@@ -1352,7 +1437,12 @@ void afBaseObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
     }
 }
 
-
+///
+/// \brief afBaseObject::resolveParent
+/// \param a_parentName
+/// \param suppress_warning
+/// \return
+///
 bool afBaseObject::resolveParent(string a_parentName, bool suppress_warning){
     // If the parent name is empty, return true as nothing to do
     if(a_parentName.empty()){
@@ -1452,6 +1542,9 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
         m_afActuatorCommPtr->set_type("CONSTRAINT");
 #endif
     }
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     return result;
 }
@@ -2405,6 +2498,9 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
                              getMinPublishFrequency(),
                              getMaxPublishFrequency());
     }
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     // Where to add the visual, collision and this object?
     return true;
@@ -3561,6 +3657,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
                              getMaxPublishFrequency());
     }
 
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
+
     return true;
 }
 
@@ -4172,6 +4271,11 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         //                             getMaxPublishFrequency());
     }
 
+
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
+
     return true;
 }
 
@@ -4568,6 +4672,10 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         m_afSensorCommPtr->set_type("PROXIMITY");
 #endif
     }
+
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     return result;
 }
@@ -5813,6 +5921,8 @@ afWorld::~afWorld()
     afROSNode::destroyNode();
 #endif
 
+    m_pluginManager.close();
+
     if(m_bulletWorld){
         delete m_bulletWorld;
     }
@@ -6104,6 +6214,8 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         (mIt->second)->update(dt);
     }
 
+    // Update all plugins, world, models and then objects
+    pluginsPhysicsUpdate(dt);
 }
 
 
@@ -6183,6 +6295,36 @@ void afWorld::updateSceneObjects()
     for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
     {
         (mIt->second)->updateSceneObjects();
+    }
+}
+
+
+///
+/// \brief afWorld::pluginsGraphicsUpdate
+///
+void afWorld::pluginsGraphicsUpdate()
+{
+    m_pluginManager.graphicsUpdate();
+    // Update all models
+    for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
+    {
+        (mIt->second)->pluginsGraphicsUpdate();
+    }
+
+}
+
+
+///
+/// \brief afWorld::pluginsPhysicsUpdate
+/// \param dt
+///
+void afWorld::pluginsPhysicsUpdate(double dt)
+{
+    m_pluginManager.physicsUpdate(dt);
+    // Update all models
+    for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
+    {
+        (mIt->second)->pluginsPhysicsUpdate(dt);
     }
 }
 
@@ -6371,6 +6513,18 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         loadShaderProgram();
     }
 
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
+
+    return true;
+}
+
+bool afWorld::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
+{
+    for (int i = 0 ; i < pluginAttribs->size(); i++){
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+    }
+
     return true;
 }
 
@@ -6390,6 +6544,9 @@ void afWorld::render(afRenderOptions &options)
         afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
         cameraPtr->render(options);
     }
+
+    // Update all plugins, world, then models and then objects
+    pluginsGraphicsUpdate();
 }
 
 cWorld *afWorld::getChaiWorld(){
@@ -7205,6 +7362,9 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
             enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
         }
     }
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     return true;
 }
@@ -8076,6 +8236,9 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
                              getMaxPublishFrequency());
     }
 
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
+
     return valid;
 }
 
@@ -8365,6 +8528,9 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
+
     // This flag would ignore collision for all the multibodies in the scene
 
     if (attribs.m_ignoreInterCollision){
@@ -8372,6 +8538,21 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     }
 
     m_afWorld->buildCollisionGroups();
+
+    return true;
+}
+
+
+///
+/// \brief afModel::loadPlugins
+/// \param pluginAttribs
+/// \return
+///
+bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
+{
+    for (int i = 0 ; i < pluginAttribs->size(); i++){
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+    }
 
     return true;
 }
@@ -8438,14 +8619,43 @@ void afModel::updateGlobalPose()
 ///
 void afModel::updateSceneObjects()
 {
-    afChildrenMap::iterator cIt;
-
     // Then update all scene objects
-    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    for(afChildrenMap::iterator cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
     {
         for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
             childObj->updateSceneObjects();
+        }
+    }
+}
+
+///
+/// \brief afModel::pluginsGraphicsUpdate
+///
+void afModel::pluginsGraphicsUpdate()
+{
+    m_pluginManager.graphicsUpdate();
+    for(afChildrenMap::iterator cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->pluginsGraphicsUpdate();
+        }
+    }
+}
+
+///
+/// \brief afModel::pluginsPhysicsUpdate
+/// \param dt
+///
+void afModel::pluginsPhysicsUpdate(double dt)
+{
+    m_pluginManager.physicsUpdate(dt);
+    for(afChildrenMap::iterator cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->pluginsPhysicsUpdate(dt);
         }
     }
 }
@@ -8545,6 +8755,7 @@ afModel::~afModel(){
     //    for ( ; sIt != m_afSoftBodyMap.end() ; ++sIt){
     //        delete sIt->second;
     //    }
+    m_pluginManager.close();
 }
 
 afVehicle::afVehicle(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afType::VEHICLE, a_afWorld, a_modelPtr){
@@ -9117,6 +9328,9 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         }
         valid = true;
     }
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     return valid;
 }

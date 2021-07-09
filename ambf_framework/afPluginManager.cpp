@@ -135,6 +135,13 @@ void afWorldPluginManager::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
     }
 }
 
+void afWorldPluginManager::graphicsUpdate()
+{
+    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->graphicsUpdate();
+    }
+}
+
 void ambf::afWorldPluginManager::physicsUpdate(double dt)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
@@ -174,6 +181,13 @@ void afModelPluginManager::onObjectRemoval(const afBaseObjectPtr a_objectPtr)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->onObjectRemoval(a_objectPtr);
+    }
+}
+
+void afModelPluginManager::graphicsUpdate()
+{
+    for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
+        (*it)->graphicsUpdate();
     }
 }
 

@@ -566,6 +566,8 @@ public:
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+
     // Method called by afComm to apply positon, force or joint commands on the afRigidBody
     // In case the body is kinematic, only position cmds will be applied
     virtual void fetchCommands(double){}
@@ -634,6 +636,10 @@ public:
     void removeAllChildSceneObjects(bool removeFromGraphs=true);
 
     virtual void updateSceneObjects();
+
+    void pluginsGraphicsUpdate();
+
+    void pluginsPhysicsUpdate(double dt);
 
     virtual void updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform = cTransform());
 
@@ -2138,6 +2144,8 @@ public:
 
     virtual bool createFromAttribs(afWorldAttributes* a_attribs);
 
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+
     virtual void render(afRenderOptions &options);
 
     cWorld* getChaiWorld();
@@ -2210,6 +2218,10 @@ public:
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updateSceneObjects();
+
+    void pluginsGraphicsUpdate();
+
+    void pluginsPhysicsUpdate(double dt);
 
     void addSceneObjectToWorld(cGenericObject* a_cObject);
 
@@ -2413,6 +2425,8 @@ public:
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+
     virtual void fetchCommands(double dt);
 
     virtual void update(double dt);
@@ -2420,6 +2434,10 @@ public:
     virtual void updateGlobalPose();
 
     virtual void updateSceneObjects();
+
+    void pluginsGraphicsUpdate();
+
+    void pluginsPhysicsUpdate(double dt);
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -2433,6 +2451,9 @@ public:
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
     double m_jointCFM = 0.1;
+
+    // Plugin Manager
+    afModelPluginManager m_pluginManager;
 
 protected:
 
