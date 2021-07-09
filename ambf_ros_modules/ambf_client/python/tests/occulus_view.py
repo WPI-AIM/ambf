@@ -42,7 +42,7 @@
 #     \version   0.1
 # */
 # //==============================================================================
-from ambf_msgs.msg import RigidBodyState, RigidBodyCmd
+from ambf_msgs.msg import ObjectState, ObjectCmd
 import rospy
 from geometry_msgs.msg import Pose
 from PyKDL import Rotation, Frame, Vector
@@ -50,8 +50,8 @@ from PyKDL import Rotation, Frame, Vector
 global openhmd_state, occulus_state, occulus_state_valid, openhmd_state_valid
 
 openhmd_state = Pose()
-occulus_state = RigidBodyState()
-occulus_cmd = RigidBodyCmd()
+occulus_state = ObjectState()
+occulus_cmd = ObjectCmd()
 occulus_state_valid = False
 openhmd_state_valid = False
 
@@ -72,8 +72,8 @@ def main():
     global openhmd_state, occulus_state, openhmd_state_valid, occulus_state_valid
     rospy.init_node('occulus_view')
     openhmd_sub = rospy.Subscriber("/openhmd/pose", Pose, openhmd_cb)
-    occulus_sub = rospy.Subscriber("/ambf/env/camera_frame/State", RigidBodyState, occulus_cb, queue_size=1)
-    occulus_pub = rospy.Publisher("/ambf/env/camera_frame/Command", RigidBodyCmd, queue_size=1)
+    occulus_sub = rospy.Subscriber("/ambf/env/default_camera/State", ObjectState, occulus_cb, queue_size=1)
+    occulus_pub = rospy.Publisher("/ambf/env/default_camera/Command", ObjectCmd, queue_size=1)
 
     rate = rospy.Rate(60)
     counter = 0
@@ -83,7 +83,6 @@ def main():
     occulus_initial_rot = Rotation()
     R_pre = Rotation()
     R_aInr_offset = Rotation().RPY(0, -1.57079, -1.57079)
-    scale = 10.0
     # open
     while not rospy.is_shutdown():
         if openhmd_state_valid and occulus_state_valid:
@@ -113,10 +112,7 @@ def main():
                 occulus_cmd.pose.orientation.y = delta_rot.GetQuaternion()[1]
                 occulus_cmd.pose.orientation.z = delta_rot.GetQuaternion()[2]
                 occulus_cmd.pose.orientation.w = delta_rot.GetQuaternion()[3]
-                # occulus_cmd.pose.position.x = openhmd_state.position.z * scale
-                # occulus_cmd.pose.position.y = openhmd_state.position.x * scale
-                # occulus_cmd.pose.position.z = openhmd_state.position.y * scale
-                occulus_cmd.cartesian_cmd_type = 1
+                occulus_cmd.enable_position_controller = True
 
         occulus_pub.publish(occulus_cmd)
         counter = counter + 1
