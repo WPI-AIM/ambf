@@ -2192,6 +2192,40 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     return result;
 }
 
+bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR: VOLUMES'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node nameNode = node["name"];
+    YAML::Node nameSpaceNode = node["namespace"];
+    YAML::Node imagesPathNode = node["images_path"];
+    YAML::Node imagesPrefixNode = node["images_prefix"];
+    YAML::Node imagesCountNode = node["images_count"];
+
+    try{
+        attribs->m_imagesPath = imagesPathNode.as<string>();
+        attribs->m_imagesPrefix = imagesPrefixNode.as<string>();
+        attribs->m_imagesCount = imagesCountNode.as<uint>();
+    }
+    catch(YAML::Exception e){
+        e.what();
+        return 0;
+    }
+
+    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
+    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
+    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+
+    return result;
+}
+
 
 bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs)
 {

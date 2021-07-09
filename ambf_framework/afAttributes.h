@@ -903,6 +903,27 @@ public:
 
 
 ///
+/// \brief The afVolumeAttributes struct
+///
+struct afVolumeAttributes: public afBaseObjectAttributes{
+   public:
+    afVolumeAttributes(){
+        m_imagesCount = 0;
+    }
+    afPath m_imagesPath;
+    string m_imagesPrefix;
+    uint m_imagesCount;
+    afShaderAttributes m_shaderAttribs;
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        m_imagesPath.resolvePath(a_parentPath);
+    }
+};
+
+
+///
 /// \brief The afSensorAttributes struct
 ///
 struct afSensorAttributes: public afBaseObjectAttributes
@@ -1041,6 +1062,10 @@ public:
 
             for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
                 m_vehicleAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
+            for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
+                m_volumeAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
             for (int i = 0 ; i < m_sensorAttribs.size() ; i++){

@@ -88,6 +88,7 @@ enum class afType{
     GHOST_OBJECT,
     SENSOR,
     VEHICLE,
+    VOLUME,
     MODEL,
     POINT_CLOUD,
     WORLD,

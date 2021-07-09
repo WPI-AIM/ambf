@@ -154,6 +154,9 @@ public:
     // Load sensor from a YAML::Node
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
+    // Load sensor from a YAML::Node
+    virtual bool loadVolumeAttribs(YAML::Node* a_node, afVolumeAttributes* attribs);
+
     // Load Input Device Attributes
     virtual bool loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs);
 
