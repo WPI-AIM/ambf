@@ -588,8 +588,6 @@ public:
 
     inline afBaseObjectPtr getParentObject(){return m_parentObject;}
 
-    inline cMultiMesh* getVisualMesh(){return m_visualMesh;}
-
     void setLocalPos(const cVector3d &pos);
 
     void setLocalPos(const afVector3d &pos);
@@ -645,6 +643,52 @@ public:
 
     void calculateFrameSize();
 
+    // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
+    // to be parented to hasn't been loaded yet.
+    virtual bool resolveParent(string a_parentName="", bool suppress_warning=false);
+
+    // Ptr to afWorld
+    afWorldPtr m_afWorld;
+
+    afModelPtr m_modelPtr;
+
+    // Parent body name defined in the ADF
+    string m_parentName;
+
+    std::vector<afSceneObject*> m_childrenSceneObjects;
+
+    vector<afBaseObjectPtr> m_afChildrenObjects;
+
+protected:
+
+    // Initial location of Rigid Body
+    cTransform m_initialTransform;
+
+    // Scale of mesh
+    double m_scale;
+
+    cTransform m_localTransform;
+
+    cTransform m_globalTransform;
+
+    afBaseObjectPtr m_parentObject;
+
+    // Plugin Manager
+    afBaseObjectPluginManager m_pluginManager;
+
+    vector<afBaseObjectPtr> m_childrenObjects;
+};
+
+
+///
+/// \brief The afMeshObject class
+///
+class afMeshObject{
+public:
+    afMeshObject(afWorldPtr a_afWorld);
+
+    cMultiMesh *getVisualObject();
+
     bool isShaderProgramDefined();
 
     bool isShaderProgramDefined(cMesh* a_mesh);
@@ -664,48 +708,17 @@ public:
 
     virtual void enableShaderNormalMapping(bool enable, cMesh* a_mesh);
 
-    // Resolve Parenting. Usuaully a mehtod to be called at a later if the object
-    // to be parented to hasn't been loaded yet.
-    virtual bool resolveParent(string a_parentName="", bool suppress_warning=false);
-
-    // Ptr to afWorld
-    afWorldPtr m_afWorld;
-
-    afModelPtr m_modelPtr;
-
-    // Parent body name defined in the ADF
-    string m_parentName;
-
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;
 
     cMultiMesh* m_visualMesh;
 
-    std::vector<afSceneObject*> m_childrenSceneObjects;
-
-    vector<afBaseObjectPtr> m_afChildrenObjects;
-
 protected:
-
-    // Initial location of Rigid Body
-    cTransform m_initialTransform;
-
-    // Scale of mesh
-    double m_scale;
 
     // Flag for the Shader Program
     afShaderAttributes m_shaderAttribs;
-
-    cTransform m_localTransform;
-
-    cTransform m_globalTransform;
-
-    afBaseObjectPtr m_parentObject;
-
-    // Plugin Manager
-    afBaseObjectPluginManager m_pluginManager;
-
-    vector<afBaseObjectPtr> m_childrenObjects;
+private:
+    afWorldPtr m_world;
 };
 
 
@@ -858,7 +871,7 @@ protected:
 ///
 /// \brief The afInertialObject class
 ///
-class afInertialObject: public afBaseObject{
+class afInertialObject: public afBaseObject, public afMeshObject{
 public:
     afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     ~afInertialObject();
@@ -1501,9 +1514,9 @@ public:
 };
 
 
-
-
-
+///
+/// \brief The afRayTracerSensor class
+///
 class afRayTracerSensor: public afSensor{
 
     friend class afProximitySensor;
@@ -2499,6 +2512,24 @@ protected:
     uint m_numWheels = 0;
     vector<afWheel> m_wheels;
     vector<afWheelAttributes> m_wheelAttribs;
+};
+
+
+class afVolume: public afBaseObject{
+public:
+    afVolume(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+
+    ~afVolume();
+
+    virtual bool createFromAttribs(afVolumeAttributes* a_attribs);
+
+    virtual void update(double dt);
+
+    virtual void fetchCommands(double dt);
+
+protected:
+    afVolumeAttributes m_attribs;
+    cVoxelObject* m_voxelObject;
 };
 
 

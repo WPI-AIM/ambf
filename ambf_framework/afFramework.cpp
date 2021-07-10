@@ -521,6 +521,8 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
         }
     }
 
+    mesh->m_name = obj_name;
+
     if (attribs->m_colorAttribs.m_useMaterial){
         cMaterial mat = afMaterialUtils::createFromAttribs(&attribs->m_colorAttribs);
         mesh->setMaterial(mat);
@@ -853,7 +855,6 @@ afBaseObject::afBaseObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_afM
     m_afWorld = a_afWorld;
     m_modelPtr = a_afModel;
     m_parentObject = nullptr;
-    m_visualMesh = nullptr;
 }
 
 
@@ -1271,11 +1272,21 @@ void afBaseObject::calculateFrameSize()
 }
 
 
+afMeshObject::afMeshObject(afWorldPtr a_afWorld){
+    m_world = a_afWorld;
+    m_visualMesh = nullptr;
+}
+
+///
+cMultiMesh *afMeshObject::getVisualObject(){
+    return m_visualMesh;
+}
+
 ///
 /// \brief afBaseObject::isShaderProgramDefined
 /// \return
 ///
-bool afBaseObject::isShaderProgramDefined(){
+bool afMeshObject::isShaderProgramDefined(){
     if (m_visualMesh == nullptr){
         return false;
     }
@@ -1289,7 +1300,7 @@ bool afBaseObject::isShaderProgramDefined(){
 /// \param a_mesh
 /// \return
 ///
-bool afBaseObject::isShaderProgramDefined(cMesh *a_mesh)
+bool afMeshObject::isShaderProgramDefined(cMesh *a_mesh)
 {
     if (a_mesh == nullptr){
         return false;
@@ -1302,19 +1313,19 @@ bool afBaseObject::isShaderProgramDefined(cMesh *a_mesh)
 ///
 /// \brief afBaseObject::loadShaderProgram
 ///
-void afBaseObject::loadShaderProgram()
+void afMeshObject::loadShaderProgram()
 {
     bool valid = false;
     if (m_shaderAttribs.m_shaderDefined){
         cShaderProgramPtr shaderProgram;
-        shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "OBJECT_SHADERS");
+        shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, m_visualMesh->m_name, "OBJECT_SHADERS");
         m_visualMesh->setShaderProgram(shaderProgram);
         valid = true;
     }
-    else if (m_afWorld->m_shaderAttribs.m_shaderDefined){
-        if (m_afWorld->m_shaderProgram.get()){
+    else if (m_world->m_shaderAttribs.m_shaderDefined){
+        if (m_world->m_shaderProgram.get()){
             m_shaderAttribs.m_shaderDefined = true;
-            m_visualMesh->setShaderProgram(m_afWorld->m_shaderProgram);
+            m_visualMesh->setShaderProgram(m_world->m_shaderProgram);
             valid = true;
         }
     }
@@ -1336,7 +1347,7 @@ void afBaseObject::loadShaderProgram()
 /// \brief afBaseObject::isNormalMapDefined
 /// \return
 ///
-bool afBaseObject::isNormalMapDefined()
+bool afMeshObject::isNormalMapDefined()
 {
     if (m_visualMesh->m_normalMap.get() != nullptr){
         return true;
@@ -1351,7 +1362,7 @@ bool afBaseObject::isNormalMapDefined()
 /// \param a_mesh
 /// \return
 ///
-bool afBaseObject::isNormalMapDefined(cMesh *a_mesh)
+bool afMeshObject::isNormalMapDefined(cMesh *a_mesh)
 {
     if (a_mesh->m_normalMap.get() != nullptr){
         return true;
@@ -1366,7 +1377,7 @@ bool afBaseObject::isNormalMapDefined(cMesh *a_mesh)
 /// \brief afBaseObject::isNormalTextureDefined
 /// \return
 ///
-bool afBaseObject::isNormalTextureDefined()
+bool afMeshObject::isNormalTextureDefined()
 {
     if (isNormalMapDefined()){
         if (m_visualMesh->m_normalMap->m_image.get() != nullptr){
@@ -1387,7 +1398,7 @@ bool afBaseObject::isNormalTextureDefined()
 /// \param a_mesh
 /// \return
 ///
-bool afBaseObject::isNormalTextureDefined(cMesh *a_mesh)
+bool afMeshObject::isNormalTextureDefined(cMesh *a_mesh)
 {
     if (isNormalMapDefined(a_mesh)){
         if (a_mesh->m_normalMap->m_image.get() != nullptr){
@@ -1406,7 +1417,7 @@ bool afBaseObject::isNormalTextureDefined(cMesh *a_mesh)
 /// \brief afBaseObject::enableShaderNormalMapping
 /// \param enable
 ///
-void afBaseObject::enableShaderNormalMapping(bool enable)
+void afMeshObject::enableShaderNormalMapping(bool enable)
 {
     if (isShaderProgramDefined() == false){
         return;
@@ -1425,7 +1436,7 @@ void afBaseObject::enableShaderNormalMapping(bool enable)
 /// \param enable
 /// \param a_mesh
 ///
-void afBaseObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
+void afMeshObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
 {
     if (isShaderProgramDefined(a_mesh) == false){
         return;
@@ -1836,7 +1847,7 @@ void afConstraintActuator::update(double dt){
 /// \brief afInertialObject::afInertialObject
 /// \param a_afWorld
 ///
-afInertialObject::afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_type, a_afWorld, a_modelPtr)
+afInertialObject::afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_type, a_afWorld, a_modelPtr), afMeshObject(a_afWorld)
 {
     m_T_iINb.setIdentity();
     m_T_bINi.setIdentity();
@@ -3528,7 +3539,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     m_visualMesh = new cMultiMesh();
     m_collisionMesh = new cMultiMesh();
 
-    if (m_visualMesh->loadFromFile(attribs.m_visualAttribs.m_meshFilepath.c_str())){
+    if (afVisualUtils::createFromAttribs(&attribs.m_visualAttribs, m_visualMesh, m_name)){
         m_visualMesh->scale(m_scale);
         m_meshReductionSuccessful = false;
     }
@@ -9376,4 +9387,29 @@ void afNoiseModel::createFromAttribs(afNoiseModelAttribs *a_attribs)
 
     m_randomNumberGenerator = default_random_engine(time(0));
     m_randomDistribution = new normal_distribution<double>(m_attribs.m_mean, m_attribs.m_std_dev);
+}
+
+afVolume::afVolume(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::VOLUME, a_afWorld, a_modelPtr)
+{
+
+}
+
+afVolume::~afVolume()
+{
+
+}
+
+bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
+{
+
+}
+
+void afVolume::update(double dt)
+{
+
+}
+
+void afVolume::fetchCommands(double dt)
+{
+
 }
