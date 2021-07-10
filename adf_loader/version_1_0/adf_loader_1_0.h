@@ -80,6 +80,8 @@ public:
 
     static bool getWheelAttribsFromNode(YAML::Node* a_node, afWheelAttributes* attribs);
 
+    static bool getPluginAttribsFromNode(YAML::Node* a_node, vector<afPluginAttributes>* attribs);
+
     static afActuatorType getActuatorTypeFromString(const string & a_str);
 
     static afJointType getJointTypeFromString(const string & a_str);

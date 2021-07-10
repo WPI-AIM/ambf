@@ -391,7 +391,6 @@ struct afPluginAttributes{
 public:
     string m_name;
     string m_filename;
-    map<string, afPath> m_plugins;
 };
 
 
