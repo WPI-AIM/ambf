@@ -331,14 +331,11 @@ void cVoxelObject::setCustomShaders(std::string vtx_shader, std::string frag_sha
     m_fragmentShaders[mode]->loadSourceCode(C_SHADER_CUSTOM_FRAG);
 
     // setup program shader
-    m_programShaders[mode] = cShaderProgram::create();
-    m_programShaders[mode]->attachShader(m_vertexShaders[mode]);
-    m_programShaders[mode]->attachShader(m_fragmentShaders[mode]);
+    cShaderProgramPtr shaderPgm = cShaderProgram::create();
+    shaderPgm->attachShader(m_vertexShaders[mode]);
+    shaderPgm->attachShader(m_fragmentShaders[mode]);
 
-    // link program shader
-    m_programShaders[mode]->linkProgram();
-
-    setRenderingModeCustom();
+    setCustomShaderProgram(shaderPgm);
 }
 
 void cVoxelObject::setCustomShaderProgram(cShaderProgramPtr a_shaderPgm)
@@ -347,9 +344,7 @@ void cVoxelObject::setCustomShaderProgram(cShaderProgramPtr a_shaderPgm)
     int mode = C_RENDERING_MODE_CUSTOM;
 
     // setup program shader
-    m_programShaders[mode] = cShaderProgram::create();
-    m_programShaders[mode]->attachShader(m_vertexShaders[mode]);
-    m_programShaders[mode]->attachShader(m_fragmentShaders[mode]);
+    m_programShaders[mode] = a_shaderPgm;
 
     // link program shader
     m_programShaders[mode]->linkProgram();
