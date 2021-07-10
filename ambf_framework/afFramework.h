@@ -120,6 +120,7 @@ class afRigidBody;
 class afSoftBody;
 class afGhostObject;
 class afJoint;
+class afVolume;
 class afWorld;
 struct afRenderOptions;
 class afCartesianController;
@@ -140,6 +141,7 @@ typedef afWorld* afWorldPtr;
 typedef afConstraintActuator* afConstraintActuatorPtr;
 typedef afRayTracerSensor* afRayTracerSensorPtr;
 typedef afResistanceSensor* afResistanceSensorPtr;
+typedef afVolume* afVolumePtr;
 
 typedef map<string, afRigidBodyPtr> afRigidBodyMap;
 typedef map<string, afSoftBodyPtr> afSoftBodyMap;
@@ -2530,6 +2532,7 @@ public:
 protected:
     afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
+    cMultiImagePtr m_multiImage;
 };
 
 

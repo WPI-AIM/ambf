@@ -2206,29 +2206,30 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     YAML::Node nameSpaceNode = node["namespace"];
     YAML::Node imagesNode = node["images"];
 
-    if (imagesNode.IsDefined()){
-        YAML::Node pathNode = node["path"];
-        YAML::Node prefixNode = node["prefix"];
-        YAML::Node formatNode = node["format"];
-        YAML::Node countNode = node["count"];
-        try{
-            attribs->m_multiImageAttribs.m_path = pathNode.as<string>();
-            attribs->m_multiImageAttribs.m_prefix = prefixNode.as<string>();
-            attribs->m_multiImageAttribs.m_format = formatNode.as<string>();
-            attribs->m_multiImageAttribs.m_count = countNode.as<uint>();
-            attribs->m_specificationType = afVolumeSpecificationType::MULTI_IMAGES;
-        }
-        catch(YAML::Exception e){
-            e.what();
-            return 0;
-        }
-
-    }
 
     ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
     ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
     ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
     ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+
+    if (imagesNode.IsDefined()){
+        YAML::Node pathNode = imagesNode["path"];
+        YAML::Node prefixNode = imagesNode["prefix"];
+        YAML::Node formatNode = imagesNode["format"];
+        YAML::Node countNode = imagesNode["count"];
+        try{
+            attribs->m_multiImageAttribs.m_path = pathNode.as<string>();
+            attribs->m_multiImageAttribs.m_prefix = prefixNode.as<string>();
+            attribs->m_multiImageAttribs.m_format = formatNode.as<string>();
+            attribs->m_multiImageAttribs.m_count = countNode.as<int>();
+            attribs->m_specificationType = afVolumeSpecificationType::MULTI_IMAGE;
+        }
+        catch(YAML::Exception& e){
+            cerr << "ERROR! FAILED TO LOAD VOLUME: " << attribs->m_identificationAttribs.m_name << endl;
+            e.what();
+            return 0;
+        }
+    }
 
     return result;
 }
@@ -2505,6 +2506,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node softBodiesNode = node["soft bodies"];
     YAML::Node ghostObjectsNode = node["ghost objects"];
     YAML::Node vehiclesNode = node["vehicles"];
+    YAML::Node volumesNode = node["volumes"];
     YAML::Node jointsNode = node["joints"];
     YAML::Node sensorsNode = node["sensors"];
     YAML::Node actuatorsNode = node["actuators"];
@@ -2669,6 +2671,17 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         if (loadLightAttribs(&lightNode, &lightAttribs)){
             lightAttribs.m_identifier = identifier;
             attribs->m_lightAttribs.push_back(lightAttribs);
+        }
+    }
+
+    // Load Volumes
+    for (size_t i = 0 ; i < volumesNode.size(); i++){
+        afVolumeAttributes volumeAttribs;
+        string identifier = volumesNode[i].as<string>();
+        YAML::Node volumeNode = node[identifier];
+        if (loadVolumeAttribs(&volumeNode, &volumeAttribs)){
+            volumeAttribs.m_identifier = identifier;
+            attribs->m_volumeAttribs.push_back(volumeAttribs);
         }
     }
 

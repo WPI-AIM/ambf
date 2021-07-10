@@ -152,6 +152,9 @@ public:
     //! This method sets the custom shaders. Call before setting custom mode
     void setCustomShaders(std::string vtx_shader, std::string frag_shader);
 
+    //! This method sets the custom shader Program.
+    void setCustomShaderProgram(cShaderProgramPtr a_shaderPgm);
+
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - SETTINGS:

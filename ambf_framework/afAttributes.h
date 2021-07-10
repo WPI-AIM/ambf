@@ -902,7 +902,7 @@ public:
 
 enum class afVolumeSpecificationType{
     INVALID,
-    MULTI_IMAGES
+    MULTI_IMAGE
 };
 
 
@@ -1136,6 +1136,10 @@ public:
 
             for (int i = 0 ; i < m_actuatorAttribs.size() ; i++){
                 m_actuatorAttribs[i]->resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_volumeAttribs.size() ; i++){
+                m_volumeAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
             m_pathsResolved = true;

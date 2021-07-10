@@ -8539,6 +8539,14 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
+    // Load Volumes
+    for (size_t i = 0; i < attribs.m_volumeAttribs.size(); ++i) {
+        afVolumePtr volumePtr = new afVolume(m_afWorld, this);
+        if (volumePtr->createFromAttribs(&attribs.m_volumeAttribs[i])){
+//            addLight(lightPtr);
+        }
+    }
+
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
@@ -9389,19 +9397,91 @@ void afNoiseModel::createFromAttribs(afNoiseModelAttribs *a_attribs)
     m_randomDistribution = new normal_distribution<double>(m_attribs.m_mean, m_attribs.m_std_dev);
 }
 
+///
+/// \brief afVolume::afVolume
+/// \param a_afWorld
+/// \param a_modelPtr
+///
 afVolume::afVolume(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::VOLUME, a_afWorld, a_modelPtr)
 {
 
 }
 
+
+///
+/// \brief afVolume::~afVolume
+///
 afVolume::~afVolume()
 {
 
 }
 
+///
+/// \brief afVolume::createFromAttribs
+/// \param a_attribs
+/// \return
+///
 bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 {
+    m_attribs = *a_attribs;
 
+    if (m_attribs.m_specificationType == afVolumeSpecificationType::MULTI_IMAGE){
+        m_multiImage = cMultiImage::create();
+        string path_and_prefix = m_attribs.m_multiImageAttribs.m_path.c_str() + "/" + m_attribs.m_multiImageAttribs.m_prefix;
+        if (m_multiImage->loadFromFiles(path_and_prefix, m_attribs.m_multiImageAttribs.m_format, m_attribs.m_multiImageAttribs.m_count)){
+            cTexture3dPtr texture = cTexture3d::create();
+            texture->setImage(m_multiImage);
+            m_voxelObject = new cVoxelObject();
+            m_voxelObject->setTexture(texture);
+
+            cShaderProgramPtr shaderPgm = afShaderUtils::createFromAttribs(&m_attribs.m_shaderAttribs, m_name, "VOLUME");
+            if (shaderPgm){
+                m_voxelObject->setCustomShaderProgram(shaderPgm);
+            }
+            else{
+                m_voxelObject->setRenderingModeIsosurfaceColorMap();
+            }
+
+            m_voxelObject->setLocalPos(0.0, 0.0, 0.0);
+
+            // rotate object
+            m_voxelObject->rotateExtrinsicEulerAnglesDeg(90, 30, -90, C_EULER_ORDER_YXZ);
+
+            // set the dimensions by assigning the position of the min and max corners
+            m_voxelObject->m_minCorner.set(-0.5,-0.5,-0.5);
+            m_voxelObject->m_maxCorner.set( 0.5, 0.5, 0.5);
+
+            // set the texture coordinate at each corner.
+            m_voxelObject->m_minTextureCoord.set(0.0, 0.0, 0.0);
+            m_voxelObject->m_maxTextureCoord.set(1.0, 1.0, 1.0);
+
+            // set haptic properties
+            m_voxelObject->m_material->setStiffness(0.2 * 1);
+            m_voxelObject->m_material->setStaticFriction(0.0);
+            m_voxelObject->m_material->setDynamicFriction(0.0);
+
+            // enable materials
+            m_voxelObject->setUseMaterial(true);
+
+            // set material
+            m_voxelObject->m_material->setWhite();
+
+            // set quality of graphic rendering
+            m_voxelObject->setQuality(0.5);
+
+            m_voxelObject->setTransparencyLevel(1.0);
+
+            m_voxelObject->setIsosurfaceValue(0.45);
+            m_voxelObject->setOpticalDensity(1.2);
+
+            m_afWorld->addSceneObjectToWorld(m_voxelObject);
+        }
+        else{
+            cerr << "ERROR! FAILED TO LOAD VOLUME FROM MULTI_IMAGES PATH: " << m_attribs.m_multiImageAttribs.m_path.c_str() << "/" << m_attribs.m_multiImageAttribs.m_prefix << endl;
+        }
+    }
+
+    return true;
 }
 
 void afVolume::update(double dt)
