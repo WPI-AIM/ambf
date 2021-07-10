@@ -909,9 +909,9 @@ enum class afVolumeSpecificationType{
 ///
 /// \brief The afMultiImagesAttribs struct
 ///
-struct afMultiImagesAttribs{
+struct afMultiImagesAttributes{
 public:
-    afMultiImagesAttribs(){
+    afMultiImagesAttributes(){
         m_count = 0;
     }
     afPath m_path;
@@ -930,11 +930,15 @@ public:
 struct afVolumeAttributes: public afBaseObjectAttributes{
    public:
     afVolumeAttributes(){
+        m_dimensions.set(1.0, 1.0, 1.0);
     }
 
+    afKinematicAttributes m_kinematicAttribs;
+    afHierarchyAttributes m_hierarchyAttribs;
     afVolumeSpecificationType m_specificationType;
-    afMultiImagesAttribs m_multiImageAttribs;
+    afMultiImagesAttributes m_multiImageAttribs;
     afShaderAttributes m_shaderAttribs;
+    afVector3d m_dimensions;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);

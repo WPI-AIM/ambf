@@ -5499,6 +5499,18 @@ afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool sup
     return ghostObj;
 }
 
+
+///
+/// \brief afObjectManager::getVolume
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afVolumePtr afObjectManager::getVolume(string a_name, bool suppress_warning)
+{
+    return (afVolumePtr)getBaseObject(a_name, getVolumeMap(), suppress_warning);
+}
+
 ///
 /// \brief afObjectManager::getVehicle
 /// \param a_name
@@ -5633,6 +5645,20 @@ string afObjectManager::addVehicle(afVehiclePtr a_obj){
     return remaped_identifier;
 }
 
+///
+/// \brief afObjectManager::addVolume
+/// \param a_volume
+/// \return
+///
+string afObjectManager::addVolume(afVolumePtr a_obj)
+{
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getVehicleMap());
+    string remaped_identifier = qualified_identifier + remap_str;
+    addBaseObject(a_obj, qualified_identifier + remap_str);
+    return remaped_identifier;
+}
+
 string afObjectManager::addBaseObject(afBaseObjectPtr a_obj)
 {
     string remaped_name = "";
@@ -5648,6 +5674,9 @@ string afObjectManager::addBaseObject(afBaseObjectPtr a_obj)
         break;
     case afType::VEHICLE:
         remaped_name = addVehicle((afVehiclePtr)a_obj);
+        break;
+    case afType::VOLUME:
+        remaped_name = addVolume((afVolumePtr)a_obj);
         break;
     case afType::GHOST_OBJECT:
         remaped_name = addGhostObject((afGhostObjectPtr)a_obj);
@@ -5743,6 +5772,16 @@ afSensorVec afObjectManager::getSensors(){
 ///
 afVehicleVec afObjectManager::getVehicles(){
     return getBaseObjects<afVehicle>(getVehicleMap());
+}
+
+
+///
+/// \brief afObjectManager::getVolumes
+/// \return
+///
+afVolumeVec afObjectManager::getVolumes()
+{
+    return getBaseObjects<afVolume>(getVolumeMap());
 }
 
 
@@ -8543,7 +8582,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     for (size_t i = 0; i < attribs.m_volumeAttribs.size(); ++i) {
         afVolumePtr volumePtr = new afVolume(m_afWorld, this);
         if (volumePtr->createFromAttribs(&attribs.m_volumeAttribs[i])){
-//            addLight(lightPtr);
+            addVolume(volumePtr);
         }
     }
 
@@ -9424,60 +9463,70 @@ afVolume::~afVolume()
 bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 {
     m_attribs = *a_attribs;
+    afVolumeAttributes &attribs = *a_attribs;
+
+    setNamespace(attribs.m_identificationAttribs.m_namespace);
+    setName(attribs.m_identificationAttribs.m_name);
+    setIdentifier(attribs.m_identifier);
+
+    setLocalTransform(attribs.m_kinematicAttribs.m_location);
+    m_scale = attribs.m_kinematicAttribs.m_scale;
 
     if (m_attribs.m_specificationType == afVolumeSpecificationType::MULTI_IMAGE){
         m_multiImage = cMultiImage::create();
         string path_and_prefix = m_attribs.m_multiImageAttribs.m_path.c_str() + "/" + m_attribs.m_multiImageAttribs.m_prefix;
         if (m_multiImage->loadFromFiles(path_and_prefix, m_attribs.m_multiImageAttribs.m_format, m_attribs.m_multiImageAttribs.m_count)){
+
+            m_voxelObject = new cVoxelObject();
+            // Setting transparency before setting the texture ensures that the rendering does not show empty spaces as black
+            // and the depth point cloud is able to see the volume
+            m_voxelObject->setTransparencyLevel(1.0);
+
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);
-            m_voxelObject = new cVoxelObject();
             m_voxelObject->setTexture(texture);
+
+
+
+            // set the dimensions by assigning the position of the min and max corners
+            m_voxelObject->m_minCorner << ( attribs.m_dimensions / -2.0) * m_scale;
+            m_voxelObject->m_maxCorner << ( attribs.m_dimensions / 2.0) * m_scale;
+
+            // set the texture coordinate at each corner.
+            m_voxelObject->m_minTextureCoord.set(0.0, 0.0, 0.0);
+            m_voxelObject->m_maxTextureCoord.set(1.0, 1.0, 1.0);
+
+//            // set haptic properties
+//            m_voxelObject->m_material->setStiffness(0.2 * 1);
+//            m_voxelObject->m_material->setStaticFriction(0.0);
+//            m_voxelObject->m_material->setDynamicFriction(0.0);
+
+//            // enable materials
+//            m_voxelObject->setUseMaterial(true);
+
+//            // set material
+//            m_voxelObject->m_material->setWhite();
+
+            // set quality of graphic rendering
+            m_voxelObject->setQuality(0.5);
+
+            m_voxelObject->setIsosurfaceValue(0.45);
+            m_voxelObject->setOpticalDensity(1.2);
+
+            m_afWorld->addSceneObjectToWorld(m_voxelObject);
+            addChildSceneObject(m_voxelObject, cTransform());
 
             cShaderProgramPtr shaderPgm = afShaderUtils::createFromAttribs(&m_attribs.m_shaderAttribs, m_name, "VOLUME");
             if (shaderPgm){
                 m_voxelObject->setCustomShaderProgram(shaderPgm);
             }
             else{
-                m_voxelObject->setRenderingModeIsosurfaceColorMap();
+                m_voxelObject->setRenderingModeIsosurfaceColors();
             }
-
-            m_voxelObject->setLocalPos(0.0, 0.0, 0.0);
-
-            // rotate object
-            m_voxelObject->rotateExtrinsicEulerAnglesDeg(90, 30, -90, C_EULER_ORDER_YXZ);
-
-            // set the dimensions by assigning the position of the min and max corners
-            m_voxelObject->m_minCorner.set(-0.5,-0.5,-0.5);
-            m_voxelObject->m_maxCorner.set( 0.5, 0.5, 0.5);
-
-            // set the texture coordinate at each corner.
-            m_voxelObject->m_minTextureCoord.set(0.0, 0.0, 0.0);
-            m_voxelObject->m_maxTextureCoord.set(1.0, 1.0, 1.0);
-
-            // set haptic properties
-            m_voxelObject->m_material->setStiffness(0.2 * 1);
-            m_voxelObject->m_material->setStaticFriction(0.0);
-            m_voxelObject->m_material->setDynamicFriction(0.0);
-
-            // enable materials
-            m_voxelObject->setUseMaterial(true);
-
-            // set material
-            m_voxelObject->m_material->setWhite();
-
-            // set quality of graphic rendering
-            m_voxelObject->setQuality(0.5);
-
-            m_voxelObject->setTransparencyLevel(1.0);
-
-            m_voxelObject->setIsosurfaceValue(0.45);
-            m_voxelObject->setOpticalDensity(1.2);
-
-            m_afWorld->addSceneObjectToWorld(m_voxelObject);
         }
         else{
             cerr << "ERROR! FAILED TO LOAD VOLUME FROM MULTI_IMAGES PATH: " << m_attribs.m_multiImageAttribs.m_path.c_str() << "/" << m_attribs.m_multiImageAttribs.m_prefix << endl;
+            return false;
         }
     }
 

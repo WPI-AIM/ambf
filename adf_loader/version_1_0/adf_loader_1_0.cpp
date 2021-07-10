@@ -2205,12 +2205,19 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     YAML::Node nameNode = node["name"];
     YAML::Node nameSpaceNode = node["namespace"];
     YAML::Node imagesNode = node["images"];
+    YAML::Node dimensionsNode = node["dimensions"];
 
 
     ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
+    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
     ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
     ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
     ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+
+    if (dimensionsNode.IsDefined()){
+        attribs->m_dimensions = ADFUtils::positionFromNode(&dimensionsNode);
+    }
 
     if (imagesNode.IsDefined()){
         YAML::Node pathNode = imagesNode["path"];

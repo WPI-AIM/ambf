@@ -120,7 +120,6 @@ class afRigidBody;
 class afSoftBody;
 class afGhostObject;
 class afJoint;
-class afVolume;
 class afWorld;
 struct afRenderOptions;
 class afCartesianController;
@@ -141,7 +140,6 @@ typedef afWorld* afWorldPtr;
 typedef afConstraintActuator* afConstraintActuatorPtr;
 typedef afRayTracerSensor* afRayTracerSensorPtr;
 typedef afResistanceSensor* afResistanceSensorPtr;
-typedef afVolume* afVolumePtr;
 
 typedef map<string, afRigidBodyPtr> afRigidBodyMap;
 typedef map<string, afSoftBodyPtr> afSoftBodyMap;
@@ -152,14 +150,15 @@ typedef vector<afSoftBodyPtr> afSoftBodyVec;
 typedef vector<afGhostObjectPtr> afGhostObjectVec;
 typedef vector<afJointPtr> afJointVec;
 //------------------------------------------------------------------------------
-class afLight;
 class afCamera;
-typedef afLight* afLightPtr;
 typedef afCamera* afCameraPtr;
-typedef map<string, afLightPtr> afLightMap;
 typedef map<string, afCameraPtr> afCameraMap;
-typedef vector<afLightPtr> afLightVec;
 typedef vector<afCameraPtr> afCameraVec;
+//------------------------------------------------------------------------------
+class afLight;
+typedef afLight* afLightPtr;
+typedef map<string, afLightPtr> afLightMap;
+typedef vector<afLightPtr> afLightVec;
 //------------------------------------------------------------------------------
 class afSensor;
 class afResistanceSensor;
@@ -181,6 +180,11 @@ class afVehicle;
 typedef afVehicle* afVehiclePtr;
 typedef map<string, afVehiclePtr> afVehicleMap;
 typedef vector<afVehiclePtr> afVehicleVec;
+//------------------------------------------------------------------------------
+class afVolume;
+typedef afVolume* afVolumePtr;
+typedef map<string, afVolumePtr> afVolumeMap;
+typedef vector<afVolumePtr> afVolumeVec;
 //------------------------------------------------------------------------------
 class afPointCloud;
 typedef afPointCloud* afPointCloudPtr;
@@ -750,6 +754,8 @@ public:
 
     string addVehicle(afVehiclePtr a_vehicle);
 
+    string addVolume(afVolumePtr a_volume);
+
     string addBaseObject(afBaseObjectPtr a_obj);
 
     bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
@@ -788,6 +794,8 @@ public:
 
     afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
 
+    afVolumePtr getVolume(string a_name, bool suppress_warning=false);
+
     afBaseObjectPtr getBaseObject(string a_name, afBaseObjectMap* a_map, bool suppress_warning);
 
      // Template method to get all objects of specific type
@@ -813,6 +821,8 @@ public:
 
     afVehicleVec getVehicles();
 
+    afVolumeVec getVolumes();
+
 
     inline afBaseObjectMap* getLightMap(){return &m_childrenObjectsMap[afType::LIGHT];}
 
@@ -831,6 +841,8 @@ public:
     inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afType::SENSOR];}
 
     inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afType::VEHICLE];}
+
+    inline afBaseObjectMap* getVolumeMap(){return &m_childrenObjectsMap[afType::VOLUME];}
 
     inline afChildrenMap* getChildrenMap(){return &m_childrenObjectsMap;}
 
