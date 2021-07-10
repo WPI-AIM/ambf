@@ -851,6 +851,7 @@ bool ADFUtils::getPluginAttribsFromNode(YAML::Node *a_node, vector<afPluginAttri
             attribs->push_back(pluginAttribs);
         }
         catch(YAML::Exception e){
+            cerr << "ERROR! FAILED TO LOAD PLUGIN " << endl;
             e.what();
             continue;
         }
@@ -2206,6 +2207,9 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     YAML::Node nameSpaceNode = node["namespace"];
     YAML::Node imagesNode = node["images"];
     YAML::Node dimensionsNode = node["dimensions"];
+    YAML::Node isoSurfaceValueNode = node["iso-surface value"];
+    YAML::Node opticalDensityNode = node["optical density"];
+    YAML::Node qualityNode = node["quality"];
 
 
     ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
@@ -2217,6 +2221,18 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
 
     if (dimensionsNode.IsDefined()){
         attribs->m_dimensions = ADFUtils::positionFromNode(&dimensionsNode);
+    }
+
+    if (isoSurfaceValueNode.IsDefined()){
+        attribs->m_isosurfaceValue = isoSurfaceValueNode.as<double>();
+    }
+
+    if (opticalDensityNode.IsDefined()){
+        attribs->m_opticalDensity = opticalDensityNode.as<double>();
+    }
+
+    if (qualityNode.IsDefined()){
+        attribs->m_quality = qualityNode.as<double>();
     }
 
     if (imagesNode.IsDefined()){
@@ -2540,7 +2556,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         attribs->m_identificationAttribs.m_namespace = nameSpaceNode.as<string>();
     }
 
-    // Loading Rigid Bodies
+    // Load Rigid Bodies
     for (size_t i = 0; i < rigidBodiesNode.size(); ++i) {
         afRigidBodyAttributes rbAttribs;
         string identifier = rigidBodiesNode[i].as<string>();
@@ -2553,7 +2569,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-    // Loading Soft Bodies
+    // Load Soft Bodies
     for (size_t i = 0; i < softBodiesNode.size(); ++i) {
         afSoftBodyAttributes sbAttribs;
         string identifier = softBodiesNode[i].as<string>();
@@ -2566,7 +2582,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-    // Loading Ghost Objects
+    // Load Ghost Objects
     for (size_t i = 0; i < ghostObjectsNode.size(); ++i) {
         afGhostObjectAttributes goAttribs;
         string identifier = ghostObjectsNode[i].as<string>();
@@ -2579,7 +2595,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-    // Loading Sensors
+    // Load Sensors
     for (size_t i = 0; i < sensorsNode.size(); ++i) {
         string identifier = sensorsNode[i].as<string>();
         YAML::Node senNode = node[identifier];
@@ -2606,7 +2622,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-    /// Loading Actuators
+    // Load Actuators
     for (size_t i = 0; i < actuatorsNode.size(); ++i) {
         string identifier = actuatorsNode[i].as<string>();
         YAML::Node actNode = node[identifier];

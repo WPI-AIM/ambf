@@ -931,6 +931,9 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
    public:
     afVolumeAttributes(){
         m_dimensions.set(1.0, 1.0, 1.0);
+        m_isosurfaceValue = 0.5;
+        m_opticalDensity = 1.0;
+        m_quality = 0.5;
     }
 
     afKinematicAttributes m_kinematicAttribs;
@@ -939,6 +942,9 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
     afMultiImagesAttributes m_multiImageAttribs;
     afShaderAttributes m_shaderAttribs;
     afVector3d m_dimensions;
+    double m_isosurfaceValue;
+    double m_opticalDensity;
+    double m_quality;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);

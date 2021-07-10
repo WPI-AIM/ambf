@@ -9468,6 +9468,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
     setNamespace(attribs.m_identificationAttribs.m_namespace);
     setName(attribs.m_identificationAttribs.m_name);
     setIdentifier(attribs.m_identifier);
+    m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
     setLocalTransform(attribs.m_kinematicAttribs.m_location);
     m_scale = attribs.m_kinematicAttribs.m_scale;
@@ -9485,8 +9486,6 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);
             m_voxelObject->setTexture(texture);
-
-
 
             // set the dimensions by assigning the position of the min and max corners
             m_voxelObject->m_minCorner << ( attribs.m_dimensions / -2.0) * m_scale;
@@ -9508,10 +9507,10 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 //            m_voxelObject->m_material->setWhite();
 
             // set quality of graphic rendering
-            m_voxelObject->setQuality(0.5);
+            m_voxelObject->setQuality(attribs.m_quality);
 
-            m_voxelObject->setIsosurfaceValue(0.45);
-            m_voxelObject->setOpticalDensity(1.2);
+            m_voxelObject->setIsosurfaceValue(attribs.m_isosurfaceValue);
+            m_voxelObject->setOpticalDensity(attribs.m_opticalDensity);
 
             m_afWorld->addSceneObjectToWorld(m_voxelObject);
             addChildSceneObject(m_voxelObject, cTransform());
@@ -9529,6 +9528,13 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             return false;
         }
     }
+
+    if (m_parentName.empty() == false){
+        m_afWorld->addObjectMissingParent(this);
+    }
+
+    loadPlugins(&attribs.m_pluginAttribs);
+    m_pluginManager.init(this, a_attribs);
 
     return true;
 }
