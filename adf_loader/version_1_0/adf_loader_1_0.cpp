@@ -2204,18 +2204,25 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     // Declare all the yaml parameters that we want to look for
     YAML::Node nameNode = node["name"];
     YAML::Node nameSpaceNode = node["namespace"];
-    YAML::Node imagesPathNode = node["images_path"];
-    YAML::Node imagesPrefixNode = node["images_prefix"];
-    YAML::Node imagesCountNode = node["images_count"];
+    YAML::Node imagesNode = node["images"];
 
-    try{
-        attribs->m_imagesPath = imagesPathNode.as<string>();
-        attribs->m_imagesPrefix = imagesPrefixNode.as<string>();
-        attribs->m_imagesCount = imagesCountNode.as<uint>();
-    }
-    catch(YAML::Exception e){
-        e.what();
-        return 0;
+    if (imagesNode.IsDefined()){
+        YAML::Node pathNode = node["path"];
+        YAML::Node prefixNode = node["prefix"];
+        YAML::Node formatNode = node["format"];
+        YAML::Node countNode = node["count"];
+        try{
+            attribs->m_multiImageAttribs.m_path = pathNode.as<string>();
+            attribs->m_multiImageAttribs.m_prefix = prefixNode.as<string>();
+            attribs->m_multiImageAttribs.m_format = formatNode.as<string>();
+            attribs->m_multiImageAttribs.m_count = countNode.as<uint>();
+            attribs->m_specificationType = afVolumeSpecificationType::MULTI_IMAGES;
+        }
+        catch(YAML::Exception e){
+            e.what();
+            return 0;
+        }
+
     }
 
     ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);

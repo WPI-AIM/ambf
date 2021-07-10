@@ -900,6 +900,29 @@ public:
     }
 };
 
+enum class afVolumeSpecificationType{
+    INVALID,
+    MULTI_IMAGES
+};
+
+
+///
+/// \brief The afMultiImagesAttribs struct
+///
+struct afMultiImagesAttribs{
+public:
+    afMultiImagesAttribs(){
+        m_count = 0;
+    }
+    afPath m_path;
+    string m_prefix;
+    string m_format;
+    uint m_count;
+
+    void resolveRelativePathAttribs(afPath a_parentPath){
+        m_path.resolvePath(a_parentPath);
+    }
+};
 
 ///
 /// \brief The afVolumeAttributes struct
@@ -907,17 +930,16 @@ public:
 struct afVolumeAttributes: public afBaseObjectAttributes{
    public:
     afVolumeAttributes(){
-        m_imagesCount = 0;
     }
-    afPath m_imagesPath;
-    string m_imagesPrefix;
-    uint m_imagesCount;
+
+    afVolumeSpecificationType m_specificationType;
+    afMultiImagesAttribs m_multiImageAttribs;
     afShaderAttributes m_shaderAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
         m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
-        m_imagesPath.resolvePath(a_parentPath);
+        m_multiImageAttribs.resolveRelativePathAttribs(a_parentPath);
     }
 };
 
