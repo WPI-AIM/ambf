@@ -230,7 +230,7 @@ public:
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 
 protected:
     afWorldPtr m_worldPtr;
@@ -254,7 +254,7 @@ public:
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 
 protected:
     afWorldPtr m_worldPtr;
@@ -277,7 +277,7 @@ public:
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 
 protected:
     afModelPtr m_modelPtr;
@@ -297,7 +297,7 @@ public:
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 
 protected:
     afBaseObjectPtr m_objectPtr;

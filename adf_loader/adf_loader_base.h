@@ -59,58 +59,61 @@ public:
     ~ADFLoaderBase(){}
 
     // Load object attributes
-    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afType a_objType, afBaseObjectAttributes* a_objAttribs){}
+    virtual bool loadObjectAttribs(YAML::Node* a_node, std::string a_objName, afType a_objType, afBaseObjectAttributes* a_objAttribs){return 0;}
 
     // Load Light Attributes
-    virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs){}
+    virtual bool loadLightAttribs(YAML::Node* a_node, afLightAttributes* attribs){return 0;}
 
     // Load Camera Attributes
-    virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs){}
+    virtual bool loadCameraAttribs(YAML::Node* a_node, afCameraAttributes* attribs){return 0;}
 
     // Load rigid body from a YAML::Node
-    virtual bool loadRigidBodyAttribs(YAML::Node* a_node, afRigidBodyAttributes* attribs){}
+    virtual bool loadRigidBodyAttribs(YAML::Node* a_node, afRigidBodyAttributes* attribs){return 0;}
 
     // Load soft body from a YAML::Node
-    virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs){}
+    virtual bool loadSoftBodyAttribs(YAML::Node* a_node, afSoftBodyAttributes* attribs){return 0;}
 
     // Load ghost object from a YAML::Node
-    virtual bool loadGhostObjectAttribs(YAML::Node* a_node, afGhostObjectAttributes* attribs){}
+    virtual bool loadGhostObjectAttribs(YAML::Node* a_node, afGhostObjectAttributes* attribs){return 0;}
 
     // Load joint from a YAML::Node
-    virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs){}
+    virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs){return 0;}
 
     // Load joint from a YAML::Node
-    virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afRayTracerSensorAttributes* attribs){}
+    virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afRayTracerSensorAttributes* attribs){return 0;}
 
     // Load joint from a YAML::Node
-    virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs){}
+    virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs){return 0;}
 
     // Load actuator from a YAML::Node
-    virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs){}
+    virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs){return 0;}
 
     // Load actuator from a YAML::Node
-    virtual bool loadConstraintActuatorAttribs(YAML::Node* a_node, afConstraintActuatorAttributes* attribs){}
+    virtual bool loadConstraintActuatorAttribs(YAML::Node* a_node, afConstraintActuatorAttributes* attribs){return 0;}
 
     // Load sensor from a YAML::Node
-    virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs){}
+    virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs){return 0;}
+
+    // Load sensor from a YAML::Node
+    virtual bool loadVolumeAttribs(YAML::Node* a_node, afVolumeAttributes* attribs){return 0;}
 
     // Load Input Device Attributes
-    virtual bool loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs){}
+    virtual bool loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs){return 0;}
 
     // Load Simulated Device Attributes
-    virtual bool loadSimulatedDeviceAttribs(YAML::Node* a_node, afSimulatedDeviceAttribs *attribs){}
+    virtual bool loadSimulatedDeviceAttribs(YAML::Node* a_node, afSimulatedDeviceAttribs *attribs){return 0;}
 
     // Load all the TU device attributes
-    virtual bool loadTeleRoboticUnitsAttribs(string a_filepath, vector<afTeleRoboticUnitAttributes>* attribs, vector<int> dev_indexes){}
+    virtual bool loadTeleRoboticUnitsAttribs(string a_filepath, vector<afTeleRoboticUnitAttributes>* attribs, vector<int> dev_indexes){return 0;}
 
     // Load model from ADF file
-    virtual bool loadModelAttribs(string a_filepath, afModelAttributes* attribs){}
+    virtual bool loadModelAttribs(string a_filepath, afModelAttributes* attribs){return 0;}
 
     // Load world from ADF file
-    virtual bool loadWorldAttribs(string a_filepath, afWorldAttributes* attribs){}
+    virtual bool loadWorldAttribs(string a_filepath, afWorldAttributes* attribs){return 0;}
 
     // Load the launch file
-    virtual bool loadLaunchFileAttribs(string a_filepath, afLaunchAttributes* attribs){}
+    virtual bool loadLaunchFileAttribs(string a_filepath, afLaunchAttributes* attribs){return 0;}
 
     // Get the version of this loader
     virtual std::string getLoaderVersion();

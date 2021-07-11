@@ -98,6 +98,7 @@ bool afSimulatorPluginManager::close(){
     for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
+    return true;
 }
 
 void ambf::afWorldPluginManager::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
@@ -161,6 +162,7 @@ bool ambf::afWorldPluginManager::close()
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
+    return true;
 }
 
 void afModelPluginManager::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
@@ -207,10 +209,10 @@ void afModelPluginManager::reset()
 
 bool afModelPluginManager::close()
 {
-
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
+    return true;
 }
 
 void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs)
@@ -246,4 +248,5 @@ bool afBaseObjectPluginManager::close()
     for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
         (*it)->close();
     }
+    return true;
 }
