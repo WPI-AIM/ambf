@@ -545,7 +545,7 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
 /// \param time_out
 ///
 void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     switch (type) {
     case afType::ACTUATOR:
         m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
@@ -585,7 +585,7 @@ void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace
 /// \param a_sim_time
 ///
 void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afObjectCommPtr.get() != nullptr){
         m_afObjectCommPtr->set_wall_time(a_wall_time);
         m_afObjectCommPtr->set_sim_time(a_sim_time);
@@ -876,6 +876,7 @@ afBaseObject::~afBaseObject(){
 /// \return
 ///
 bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
+    return false;
 }
 
 
@@ -1549,7 +1550,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
                              getMaxPublishFrequency());
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
         m_afActuatorCommPtr->set_type("CONSTRAINT");
 #endif
     }
@@ -1793,7 +1794,7 @@ void afConstraintActuator::deactuate(){
 /// \param dt
 ///
 void afConstraintActuator::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
 
@@ -1832,7 +1833,7 @@ void afConstraintActuator::fetchCommands(double dt){
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::update(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         m_afActuatorCommPtr->set_name(m_name);
         m_afActuatorCommPtr->set_parent_name(m_parentName);
@@ -2179,7 +2180,7 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_bulletRigidBody->clearForces();
     }
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afRigidBodyCommPtr){
         //        m_afRigidBodyPtr->cleanUp();
         //        m_afRigidBodyPtr.reset();
@@ -2579,7 +2580,7 @@ void afRigidBody::update(double dt)
         m_localTransform << getCOMTransform();
     }
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if(m_afRigidBodyCommPtr.get() != nullptr){
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
         cQuaternion q;
@@ -2684,7 +2685,7 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
 /// \param dt
 ///
 void afRigidBody::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afRigidBodyCommPtr.get() != nullptr){
         btVector3 force, torque;
         btVector3 lin_vel, ang_vel;
@@ -2830,7 +2831,7 @@ void afRigidBody::fetchCommands(double dt){
 /// \brief afRigidBody::afObjectSetChildrenNames
 ///
 void afRigidBody::afObjectStateSetChildrenNames(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int num_children = m_CJ_PairsActive.size();
     if (num_children > 0 && m_afRigidBodyCommPtr != NULL){
         vector<string> children_names;
@@ -2849,7 +2850,7 @@ void afRigidBody::afObjectStateSetChildrenNames(){
 /// \brief afRigidBody::afObjectStateSetJointNames
 ///
 void afRigidBody::afObjectStateSetJointNames(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int num_joints = m_CJ_PairsActive.size();
     if (num_joints > 0 && m_afRigidBodyCommPtr != NULL){
         vector<string> joint_names;
@@ -2867,7 +2868,7 @@ void afRigidBody::afObjectStateSetJointNames(){
 /// \brief afRigidBody::afObjectSetJointPositions
 ///
 void afRigidBody::afObjectSetJointPositions(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int num_jnts = m_CJ_PairsActive.size();
     if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
         if(m_joint_positions.size() != num_jnts){
@@ -2886,7 +2887,7 @@ void afRigidBody::afObjectSetJointPositions(){
 /// \brief afRigidBody::afObjectSetJointVelocities
 ///
 void afRigidBody::afObjectSetJointVelocities(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int num_jnts = m_CJ_PairsActive.size();
     if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
         if(m_joint_velocities.size() != num_jnts){
@@ -2905,7 +2906,7 @@ void afRigidBody::afObjectSetJointVelocities(){
 /// \brief afRigidBody::afObjectSetJointVelocities
 ///
 void afRigidBody::afObjectSetJointEfforts(){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int num_jnts = m_CJ_PairsActive.size();
     if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
         if(m_joint_efforts.size() != num_jnts){
@@ -4679,7 +4680,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
                              m_afWorld->getGlobalNamespace(),
                              getMinPublishFrequency(),
                              getMaxPublishFrequency());
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
         m_afSensorCommPtr->set_type("PROXIMITY");
 #endif
     }
@@ -4807,7 +4808,7 @@ void afRayTracerSensor::update(double dt){
         visualize(m_show);
     }
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     m_afSensorCommPtr->set_count(m_count);
     m_afSensorCommPtr->set_name(m_name);
     m_afSensorCommPtr->set_parent_name(m_parentName);
@@ -4957,7 +4958,7 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
                                  m_afWorld->getGlobalNamespace(),
                                  getMinPublishFrequency(),
                                  getMaxPublishFrequency());
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
             m_afSensorCommPtr->set_type("RESISTANCE");
 #endif
         }
@@ -5967,7 +5968,7 @@ afWorld::afWorld(string a_global_namespace): afIdentification(afType::WORLD), af
 
 afWorld::~afWorld()
 {
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     afROSNode::destroyNode();
 #endif
 
@@ -6156,7 +6157,7 @@ double afWorld::getSimulationDeltaTime()
 /// \param dt
 ///
 void afWorld::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 
     // If throttling in enabled, wait here until the step clock is toggled before
     // progressing towards next step
@@ -6247,7 +6248,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afWorldCommPtr.get() != nullptr){
         m_afWorldCommPtr->set_sim_time(m_simulationTime);
         m_afWorldCommPtr->set_wall_time(m_wallClock);
@@ -6326,7 +6327,7 @@ void afWorld::estimateBodyWrenches(){
 void afWorld::updateSceneObjects()
 {
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_paramsSet == false){
         // Create a default point cloud to listen to
         m_afWorldCommPtr->append_point_cloud_topic(getQualifiedName() + "/" + "point_cloud");
@@ -7191,7 +7192,7 @@ void afCamera::createImageTransport(){
 ///
 void afCamera::createDepthTransport(afImageResolutionAttribs* imageAttribs)
 {
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
     m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
     m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
@@ -7642,7 +7643,7 @@ void afCamera::publishImage(){
 ///
 void afCamera::publishDepthPointCloud()
 {
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
     sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
     sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
@@ -7698,7 +7699,7 @@ cWorld *afCamera::getBackLayer(){
 /// \param dt
 ///
 void afCamera::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
         ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
 
@@ -7787,7 +7788,7 @@ void afCamera::update(double dt)
 {
 
     // update Transform data for m_ObjectPtr
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if(m_afCameraCommPtr.get() != nullptr){
 
         if (m_paramsSet == false){
@@ -7907,7 +7908,7 @@ afCamera::~afCamera(){
     }
 #endif
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     // DO NOT DELETE AS THE NODE SHOULD BE DESTROYED EXTERNALLY
     //    if (m_rosNode != nullptr){
     //        delete m_rosNode;
@@ -8336,7 +8337,7 @@ void afLight::setDir(const cVector3d &a_direction){
 
 
 void afLight::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afLightCommPtr.get() != nullptr){
         ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
 
@@ -8386,7 +8387,7 @@ void afLight::update(double dt)
 {
 
     // update Transform data for m_ObjectPtr
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if(m_afLightCommPtr.get() != nullptr){
 
         if (m_paramsSet == false){
@@ -8964,7 +8965,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 /// \param dt
 ///
 void afVehicle::fetchCommands(double dt){
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
 
     int maxWheelCount;
@@ -9048,7 +9049,7 @@ void afVehicle::update(double dt){
 
     }
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afVehicleCommPtr.get() != nullptr){
 
         afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
@@ -9108,7 +9109,7 @@ afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afType::POINT_CLO
 
 void afPointCloud::update(double dt)
 {
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     int mp_size = m_mpPtr->getNumPoints();
     sensor_msgs::PointCloudPtr pcPtr = m_pcCommPtr->get_point_cloud();
     if(pcPtr){

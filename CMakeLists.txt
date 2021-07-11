@@ -91,6 +91,11 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     ${PROJECT_SOURCE_DIR}/bin/${O
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
 
+set(CHAI3D_DEFINITIONS "")
+set(BULLET_DEFINITIONS "")
+set(AMBF_DEFINITIONS "")
+set(COMMON_DEFINITIONS "")
+
 # SET PATHS
 add_definitions(-DAMBF_ROOT_PATH="${PROJECT_SOURCE_DIR}")
 add_definitions(-DAMBF_PLUGIN_PATH="${PROJECT_SOURCE_DIR}/build/ambf_plugins")
@@ -131,11 +136,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
 
-            add_definitions(-DC_ENABLE_AMBF_COMM_SUPPORT)
-            add_definitions(-DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
+            list(APPEND AMBF_DEFINITIONS -DAF_ENABLE_AMBF_COMM_SUPPORT)
+            list(APPEND CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
 
-            set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_COMM_SUPPORT)
-            set (CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
         else()
             message("-- *** AMBF_COMM, AMBF_MSGS and DVRK_ARM NOT FOUND")
         endif()
@@ -145,8 +148,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             message("-- *** FOUND OPENCV")
             if(${cv_bridge_FOUND} AND ${image_transport_FOUND})
                 message("-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING VIDEO PUBLISHING SUPPORT")
-                add_definitions(-DAF_ENABLE_OPEN_CV_SUPPORT)
 
+                list(APPEND AMBF_DEFINITIONS -DAF_ENABLE_OPEN_CV_SUPPORT)
                 set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
                 set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${OpenCV_LIBRARIES})
             else()
@@ -160,8 +163,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${razer_hydra_LIBRARIES})
 
-            add_definitions(-DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
-            set (CHAI3D_DEFINITIONS -DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
+            list(APPEND AMBF_DEFINITIONS C_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
+            list(APPEND CHAI3D_DEFINITIONS C_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
 
         else()
         message("-- *** RAZER HYDRA'S ROS PACKAGE NOT FOUND")
@@ -176,31 +179,31 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Windows)
 
   # VisualStudio compiler
   if (MSVC)
-    add_definitions (-D_CRT_SECURE_NO_DEPRECATE)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP")
+      list(APPEND COMMON_DEFINITIONS -D_CRT_SECURE_NO_DEPRECATE)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP")
     if (${CMAKE_CL_64})
-      add_definitions (-DWIN64)
+        list(APPEND COMMON_DEFINITIONS -DWIN64)
     else ()
-      add_definitions (-DWIN32)
+      list(APPEND COMMON_DEFINITIONS -DWIN32)
     endif ()
 
   # MinGW compiler
   elseif (MINGW)
-    add_definitions (-DWIN32)
-    add_definitions (-DHAVE_GCC_DESTRUCTOR)
+    list(APPEND COMMON_DEFINITIONS -DWIN32)
+    list(APPEND CHAI3D_DEFINITIONS -DHAVE_GCC_DESTRUCTOR)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wno-deprecated -std=c++0x")
     set (CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=native -Wno-deprecated")
   endif ()
 
 # Linux global build options
 elseif (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-  add_definitions (-DLINUX)
+  list(APPEND COMMON_DEFINITIONS -DLINUX)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -march=native -Wno-deprecated -std=c++0x")
   set (CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fPIC -march=native -Wno-deprecated")
 
 # Mac OS X global build options
 elseif (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
-  add_definitions (-DMACOSX)
+  list(APPEND COMMON_DEFINITIONS -DMACOSX)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments -Wno-deprecated -std=c++0x -stdlib=libc++")
   set (CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Qunused-arguments -Wno-deprecated")
 endif ()
@@ -234,7 +237,6 @@ include_directories (${PROJECT_SOURCE_DIR}/ambf_math)
 include_directories (${PROJECT_SOURCE_DIR}/adf_loader)
 include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d/src)
-include_directories (${PROJECT_SOURCE_DIR}/external/chai3d-gel/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/bullet/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/Eigen)
 include_directories (${PROJECT_SOURCE_DIR}/external/glew/include)
@@ -263,7 +265,6 @@ file (GLOB_RECURSE source_ambf_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJEC
 
 # static library external dependencies source files
 file (GLOB_RECURSE source_chai3d  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d/src/*.h)
-file (GLOB_RECURSE source_chai3d_gel  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/chai3d-gel/src/*.cpp ${PROJECT_SOURCE_DIR}/external/chai3d-gel/src/*.h)
 
 file (GLOB_RECURSE source_bullet_collision  RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletCollision/*.cpp ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletCollision/*.h)
 file (GLOB_RECURSE source_bullet_dynamics   RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletDynamics/*.cpp  ${PROJECT_SOURCE_DIR}/external/bullet/src/BulletDynamics/*.h)
@@ -282,9 +283,6 @@ file (GLOB_RECURSE source_openal    RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOU
 file (GLOB_RECURSE source_theora    RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/theoraplayer/*.c ${PROJECT_SOURCE_DIR}/external/theoraplayer/*.cpp ${PROJECT_SOURCE_DIR}/external/theoraplayer/*.h)
 # build flags
 
-set (PROJECT_DEFINITIONS "${PROJECT_DEFINITIONS} -DBT_USE_DOUBLE_PRECISION")
-add_definitions (${PROJECT_DEFINITIONS})
-
 # platform-specific source files adjustments
 if (${CMAKE_SYSTEM_NAME} MATCHES Windows)
   file (GLOB_RECURSE source_theora_exclude RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/external/theoraplayer/external/theora/lib/x86/*.c)
@@ -294,7 +292,7 @@ endif ()
 list (REMOVE_ITEM source_theora ${source_theora_exclude})
 
 # group source files (MSVC likes this)
-foreach (FILE ${source_ambf_framework} ${source_ambf_math} ${source_adf_loader} ${source_chai3d} ${source_chai3d_gel} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
+foreach (FILE ${source_ambf_framework} ${source_ambf_math} ${source_adf_loader} ${source_chai3d} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
   get_filename_component (PARENT_DIR "${FILE}" PATH)
   string (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
   string (REPLACE "/" "\\" GROUP "${GROUP}")
@@ -303,18 +301,18 @@ endforeach ()
 
 # internal library build flags
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
-  add_definitions ("-DDEBUG")
-  message (USING X86_64_ASM)
+  list(APPEND COMMON_DEFINITIONS -DDEBUG)
 endif ()
 if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
   if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
-    message (USING X86_64_ASM)
-    add_definitions ("-DUSE_X86_64_ASM")
+    list(APPEND BULLET_DEFINITIONS -DUSE_X86_64_ASM)
   endif ()
 endif ()
 
 # build flags
-add_definitions (${PROJECT_DEFINITIONS} -DGLEW_STATIC -DAL_ALEXT_PROTOTYPES -DAL_BUILD_LIBRARY -DAL_LIBTYPE_STATIC -D__THEORA -D_LIB)
+list(APPEND BULLET_DEFINITIONS -DBT_USE_DOUBLE_PRECISION)
+list(APPEND CHAI3D_DEFINITIONS -DAL_ALEXT_PROTOTYPES -DAL_BUILD_LIBRARY -DAL_LIBTYPE_STATIC -D__THEORA -D_LIB)
+list(APPEND COMMON_DEFINITIONS -DGLEW_STATIC)
 
 # static library
 add_library (adf_loader ${source_adf_loader})
@@ -329,12 +327,25 @@ set (ADF_LOADER_LIBRARIES adf_loader)
 
 add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
-add_library(chai3d STATIC ${source_chai3d} ${source_chai3d_gel} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora})
+add_library(chai3d STATIC ${source_chai3d} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora})
 
 add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
 
 # static library
 add_library (ambf_framework STATIC ${source_ambf_framework})
+
+message("1) CHAI3D_DEFINITIONS" ${CHAI3D_DEFINITIONS})
+message("2) BULLET_DEFINITIONS" ${BULLET_DEFINITIONS})
+message("3) AMBF_DEFINITIONS" ${AMBF_DEFINITIONS})
+message("4) COMMON_DEFINITIONS" ${COMMON_DEFINITIONS})
+
+add_definitions(${CHAI3D_DEFINITIONS})
+add_definitions(${BULLET_DEFINITIONS})
+add_definitions(${AMBF_DEFINITIONS})
+add_definitions(${COMMON_DEFINITIONS})
+#target_compile_definitions(chai3d PUBLIC ${CHAI3D_DEFINITIONS} ${COMMON_DEFINITIONS})
+#target_compile_definitions(bullet PUBLIC ${BULLET_DEFINITIONS} ${COMMON_DEFINITIONS})
+#target_compile_definitions(ambf_framework PUBLIC ${AMBF_DEFINITIONS} ${COMMON_DEFINITIONS})
 
 target_link_libraries(ambf_framework ${chai3d} ${bullet} ${Boost_LIBRARIES})
 
@@ -351,7 +362,7 @@ set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/ambf_loader" "${PROJECT_SOURCE_DIR
     "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 
 set (AMBF_LIBRARIES ambf_framework chai3d bullet ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
-set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
+#set (AMBF_DEFINITIONS)
 
 # ROS CATKIN INCLUDES AND LIBRARIES
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
@@ -363,7 +374,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
   if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
     set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
   else ()
-    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
   endif ()
   set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
 else ()
@@ -407,7 +418,7 @@ export (PACKAGE AMBF)
 # configure package
 set (CONF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${ADF_LOADER_INCLUDE_DIRS})
 set (CONF_LIBRARIES  ${AMBF_LIBRARIES})
-set (CONF_DEFINITIONS  ${AMBF_DEFINITIONS})
+set (CONF_DEFINITIONS  ${AMBF_DEFINITIONS} ${CHAI3D_DEFINITIONS} ${BULLET_DEFINITIONS} ${COMMON_DEFINITIONS})
 
 # create package configuration and version files
 configure_file (AMBFConfig.cmake.in "${PROJECT_BINARY_DIR}/AMBFConfig.cmake" @ONLY)

@@ -80,7 +80,7 @@
 #endif
 
 //-----------------------------------------------------------------------------
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 #include "ambf_server/Actuator.h"
 #include "ambf_server/Camera.h"
 #include "ambf_server/Light.h"
@@ -94,7 +94,7 @@
 //-----------------------------------------------------------------------------
 
 // Support for Depth Image to PointCloud2
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 #endif
@@ -313,7 +313,7 @@ public:
     unsigned short m_read_count = 0;
 
     //! AMBF ROS COMM
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
     std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
@@ -2040,13 +2040,13 @@ protected:
 
 #endif
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     ambf_comm::ProjectionType m_projectionType;
     ambf_comm::ViewMode m_viewMode;
 #endif
 
     // Depth to Point Cloud Impl
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
     sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
     ros::Publisher m_depthPointCloudPub;
@@ -2118,7 +2118,7 @@ public:
 protected:
     cSpotLight* m_spotLight;
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     ambf_comm::LightType m_lightType;
 #endif
 };
@@ -2139,7 +2139,7 @@ public:
 
     std::string m_topicName;
 
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     ambf_comm::PointCloudHandlerPtr m_pcCommPtr;
 #endif
 };

@@ -454,7 +454,7 @@ void afPhysicalDevice::updateCursorPose(){
     if(m_afCursor){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
-#ifdef C_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
         m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
         m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
 #endif
