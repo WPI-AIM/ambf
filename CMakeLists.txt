@@ -227,7 +227,6 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE TRUE)
 add_subdirectory (${PROJECT_SOURCE_DIR}/external/GLFW)
 
 # GLFW Includes
-find_package(GLFW REQUIRED)
 include_directories (${GLFW_INCLUDE_DIRS})
 
 # header search path
@@ -337,7 +336,7 @@ add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} $
 # static library
 add_library (ambf_framework STATIC ${source_ambf_framework})
 
-target_link_libraries(ambf_framework ${chai3d} ${bullet})
+target_link_libraries(ambf_framework ${chai3d} ${bullet} ${Boost_LIBRARIES})
 
 # To ensure the ambf_ros_modules are build before the ambf_framework,
 # add catkin's targets as build dependency
@@ -349,9 +348,9 @@ target_link_libraries(ambf_framework ${chai3d} ${bullet})
 set (AMBF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/ambf_loader" "${PROJECT_SOURCE_DIR}/ambf_framework"
     "${PROJECT_SOURCE_DIR}/ambf_math" "${PROJECT_SOURCE_DIR}/external/bullet/src"
     "${PROJECT_SOURCE_DIR}/external/chai3d/src"
-    "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR})
+    "${PROJECT_SOURCE_DIR}/external/Eigen" "${PROJECT_SOURCE_DIR}/external/glew/include" ${OPENGL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 
-set (AMBF_LIBRARIES ambf_framework chai3d bullet ${ADF_LOADER_LIBRARIES} ${OPENGL_LIBRARIES})
+set (AMBF_LIBRARIES ambf_framework chai3d bullet ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
 set (AMBF_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 # ROS CATKIN INCLUDES AND LIBRARIES
@@ -397,13 +396,12 @@ endif()
 
 add_subdirectory(ambf_plugins)
 
-
 #
 # export package
 #
 
 # export package for use from the build tree
-export (TARGETS ambf_framework bullet chai3d FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
+export (TARGETS ambf_framework ${ADF_LOADER_LIBRARIES} bullet chai3d FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
 export (PACKAGE AMBF)
 
 # configure package
