@@ -1,5 +1,5 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2020, AMBF.
+#  Copyright (c) 2019-2021, AMBF.
 #  (https://github.com/WPI-AIM/ambf)
 #
 #  All rights reserved.
@@ -35,9 +35,7 @@
 #
 #  $Author: seb $
 #  $Author: Adnan Munawar $
-#  $Author: Melody Su $
 #  $Date:  April, 2019 $
-#  $Rev: $
 
 
 #
@@ -223,7 +221,7 @@ endif ()
 # static library
 #
 
-# Setting CMake to prepent rather than append include directories
+# Setting CMake to prepend rather than append include directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE TRUE)
 
 # GLFW
@@ -334,10 +332,10 @@ add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} $
 # static library
 add_library (ambf_framework STATIC ${source_ambf_framework})
 
-message("1) CHAI3D_DEFINITIONS" ${CHAI3D_DEFINITIONS})
-message("2) BULLET_DEFINITIONS" ${BULLET_DEFINITIONS})
-message("3) AMBF_DEFINITIONS" ${AMBF_DEFINITIONS})
-message("4) COMMON_DEFINITIONS" ${COMMON_DEFINITIONS})
+#message("1) CHAI3D_DEFINITIONS" ${CHAI3D_DEFINITIONS})
+#message("2) BULLET_DEFINITIONS" ${BULLET_DEFINITIONS})
+#message("3) AMBF_DEFINITIONS" ${AMBF_DEFINITIONS})
+#message("4) COMMON_DEFINITIONS" ${COMMON_DEFINITIONS})
 
 add_definitions(${CHAI3D_DEFINITIONS})
 add_definitions(${BULLET_DEFINITIONS})
@@ -374,7 +372,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
   if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
     set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
   else ()
-#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
+    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
   endif ()
   set (AMBF_LIBRARY_DIRS ${AMBF_LIBRARY_DIRS} ${DHD_LIBRARY_DIRS})
 else ()
