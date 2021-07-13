@@ -2541,6 +2541,8 @@ public:
 
     virtual void fetchCommands(double dt);
 
+    cVoxelObject* getInternalVolume();
+
 protected:
     afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;

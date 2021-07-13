@@ -9549,3 +9549,7 @@ void afVolume::fetchCommands(double dt)
 {
 
 }
+
+cVoxelObject* afVolume::getInternalVolume(){
+    return m_voxelObject;
+}

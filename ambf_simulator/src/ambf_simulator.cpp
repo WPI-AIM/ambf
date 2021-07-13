@@ -455,6 +455,10 @@ int main(int argc, char* argv[])
         g_pluginManager.add(plugin_filepaths[pi], plugin_filepaths[pi]);
     }
 
+    for (int pA = 0 ; pA < launchAttribs.m_pluginAttribs.size() ; pA++){
+        g_pluginManager.add(launchAttribs.m_pluginAttribs[pA].m_filename, launchAttribs.m_pluginAttribs[pA].m_name);
+    }
+
     g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
 
 
