@@ -714,6 +714,14 @@ public:
 
     virtual void enableShaderNormalMapping(bool enable, cMesh* a_mesh);
 
+    virtual cShaderProgramPtr getShaderProgram();
+
+    virtual void setShaderProgram(cShaderProgramPtr a_program);
+
+    virtual void backupShaderProgram();
+
+    virtual void restoreShaderProgram();
+
     // Filepath to the visual mesh
     afPath m_visualMeshFilePath;
 
@@ -723,6 +731,9 @@ protected:
 
     // Flag for the Shader Program
     afShaderAttributes m_shaderAttribs;
+
+    // Shader Program Backup
+    cShaderProgramPtr m_shaderProgramBackup = nullptr;
 private:
     afWorldPtr m_world;
 };
@@ -2541,12 +2552,24 @@ public:
 
     virtual void fetchCommands(double dt);
 
+    virtual cShaderProgramPtr getShaderProgram();
+
+    virtual void setShaderProgram(cShaderProgramPtr a_program);
+
+    virtual void backupShaderProgram();
+
+    virtual void restoreShaderProgram();
+
     cVoxelObject* getInternalVolume();
 
 protected:
     afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
     cMultiImagePtr m_multiImage;
+
+private:
+    int m_previousRenderingMode=0;
+    bool m_prevLinearInterpolationFlag=false;
 };
 
 

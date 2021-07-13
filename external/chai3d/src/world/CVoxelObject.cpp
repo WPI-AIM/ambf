@@ -352,6 +352,18 @@ void cVoxelObject::setCustomShaderProgram(cShaderProgramPtr a_shaderPgm)
     setRenderingModeCustom();
 }
 
+void cVoxelObject::setRenderingMode(int i)
+{
+    if (i >= 0 && i < C_NUM_VOXEL_RENDERING_MODES){
+        m_renderingMode = i;
+    }
+}
+
+int cVoxelObject::getRenderingMode()
+{
+    return m_renderingMode;
+}
+
 
 //==============================================================================
 /*!

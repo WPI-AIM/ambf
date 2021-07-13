@@ -1449,6 +1449,43 @@ void afMeshObject::enableShaderNormalMapping(bool enable, cMesh *a_mesh)
     }
 }
 
+cShaderProgramPtr afMeshObject::getShaderProgram()
+{
+    if (m_visualMesh){
+        return m_visualMesh->getShaderProgram();
+    }
+    else{
+        return nullptr;
+    }
+}
+
+void afMeshObject::setShaderProgram(cShaderProgramPtr a_program)
+{
+    if (m_visualMesh){
+        m_visualMesh->setShaderProgram(a_program);
+    }
+    else{
+        cerr << "ERROR! MESH FOR THIS VISUAL OBJECT HAS NOT BEEN INITIALIZED YET. CAN'T SET SHADER PROGRAM" << endl;
+    }
+}
+
+void afMeshObject::backupShaderProgram()
+{
+    if (m_shaderProgramBackup == nullptr){
+        m_shaderProgramBackup = m_visualMesh->getShaderProgram();
+    }
+    else{
+        cerr << "WARNING! A SHADER PROGRAM FOR " << m_visualMesh->m_name <<
+                " IS ALREADY BACKED UP. RESTORE THE SHADER PROGRAM FIRST" << endl;
+    }
+}
+
+void afMeshObject::restoreShaderProgram()
+{
+    m_visualMesh->setShaderProgram(m_shaderProgramBackup);
+    m_shaderProgramBackup = nullptr;
+}
+
 ///
 /// \brief afBaseObject::resolveParent
 /// \param a_parentName
@@ -8024,11 +8061,24 @@ void afCamera::activatePreProcessingShaders()
             afBaseObjectMap::iterator rbIt;
             afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
             for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
-                if (rb->m_visualMesh){
+                afRigidBodyPtr rbPtr = (afRigidBodyPtr)rbIt->second;
+                if (rbPtr->m_visualMesh){
                     // Store the current shader Pgm
-                    m_shaderProgramBackup[rb] = rb->m_visualMesh->getShaderProgram();
-                    rb->m_visualMesh->setShaderProgram(m_preprocessingShaderProgram);
+                    rbPtr->backupShaderProgram();
+                    rbPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+
+            // Temporary. Set the voxel rendering mode that ignores lighting and
+            // just renders the color of each voxel
+            afBaseObjectMap::iterator vIt;
+            afBaseObjectMap* vMap = m_afWorld->getVolumeMap();
+            for (vIt = vMap->begin(); vIt != vMap->end() ; vIt++){
+                afVolumePtr vPtr = (afVolumePtr)vIt->second;
+                if (vPtr->getInternalVolume()){
+                    // Store the current shader Pgm
+                    vPtr->backupShaderProgram();
+                    vPtr->getInternalVolume()->setRenderingModeVoxelColors();
                 }
             }
         }
@@ -8049,7 +8099,17 @@ void afCamera::deactivatePreProcessingShaders()
                 afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
                 if (rb->m_visualMesh){
                     // Reassign the backedup shaderpgm for the next rendering pass
-                    rb->m_visualMesh->setShaderProgram(m_shaderProgramBackup[rb]);
+                    rb->restoreShaderProgram();
+                }
+            }
+
+            afBaseObjectMap::iterator vIt;
+            afBaseObjectMap* vMap = m_afWorld->getVolumeMap();
+            for (vIt = vMap->begin(); vIt != vMap->end() ; vIt++){
+                afVolumePtr vPtr = (afVolumePtr)vIt->second;
+                if (vPtr->getInternalVolume()){
+                    // Store the current shader Pgm
+                    vPtr->restoreShaderProgram();
                 }
             }
         }
@@ -9522,6 +9582,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             }
             else{
                 m_voxelObject->setRenderingModeIsosurfaceColors();
+//                m_voxelObject->setRenderingModeVoxelColors();
             }
         }
         else{
@@ -9540,16 +9601,74 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
     return true;
 }
 
+///
+/// \brief afVolume::update
+/// \param dt
+///
 void afVolume::update(double dt)
 {
 
 }
 
+///
+/// \brief afVolume::fetchCommands
+/// \param dt
+///
 void afVolume::fetchCommands(double dt)
 {
 
 }
 
+///
+/// \brief afVolume::getShaderProgram
+/// \return
+///
+cShaderProgramPtr afVolume::getShaderProgram()
+{
+
+}
+
+///
+/// \brief afVolume::setShaderProgram
+/// \param a_program
+///
+void afVolume::setShaderProgram(cShaderProgramPtr a_program)
+{
+    if (m_voxelObject){
+        m_voxelObject->setShaderProgram(a_program);
+    }
+    else{
+        cerr << "ERROR! VOLUME FOR THIS VOLUME OBJECT HAS NOT BEEN INITIALIZED YET. CAN'T SET SHADER PROGRAM" << endl;
+    }
+}
+
+
+///
+/// \brief afVolume::backupShaderProgram
+///
+void afVolume::backupShaderProgram()
+{
+   m_previousRenderingMode = m_voxelObject->getRenderingMode();
+   m_prevLinearInterpolationFlag = m_voxelObject->getUseLinearInterpolation();
+}
+
+
+///
+/// \brief afVolume::restoreShaderProgram
+///
+void afVolume::restoreShaderProgram()
+{
+    if (m_voxelObject){
+        m_voxelObject->setRenderingMode(m_previousRenderingMode);
+        m_voxelObject->setUseLinearInterpolation(m_prevLinearInterpolationFlag);
+    }
+}
+
+
+///
+/// \brief afVolume::getInternalVolume
+/// \return
+///
 cVoxelObject* afVolume::getInternalVolume(){
     return m_voxelObject;
 }

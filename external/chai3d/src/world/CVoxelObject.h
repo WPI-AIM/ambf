@@ -155,6 +155,12 @@ public:
     //! This method sets the custom shader Program.
     void setCustomShaderProgram(cShaderProgramPtr a_shaderPgm);
 
+    //! Use with caution
+    void setRenderingMode(int i);
+
+    //! The integer index of rendering mode
+    int getRenderingMode();
+
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - SETTINGS:
