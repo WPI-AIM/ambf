@@ -2533,8 +2533,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     setPassive(attribs.m_communicationAttribs.m_passive);
 
     addChildSceneObject(m_visualMesh, cTransform());
-    m_afWorld->addSceneObjectToWorld(m_visualMesh);
-    m_afWorld->addSceneObjectToWorld(m_collisionMesh);
+    addChildSceneObject(m_collisionMesh, cTransform());
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
     if (isPassive() == false){
@@ -3682,7 +3681,6 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
     addChildSceneObject(m_visualMesh, cTransform());
-    m_afWorld->addSceneObjectToWorld(m_visualMesh);
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
     m_afWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 
@@ -5914,7 +5912,15 @@ void afModelManager::addModelsChildrenToWorld(afModelPtr a_model)
         for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
             m_afWorld->addBaseObject(childObj);
+            m_afWorld->addChildsSceneObjectsToWorld(childObj);
         }
+    }
+}
+
+void afModelManager::addChildsSceneObjectsToWorld(afBaseObjectPtr a_object)
+{
+    for(int i = 0 ; i < a_object->m_childrenSceneObjects.size() ; i++){
+        m_afWorld->addSceneObjectToWorld(a_object->m_childrenSceneObjects[i]->getChaiObject());
     }
 }
 
@@ -8293,8 +8299,6 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
 
     addChildSceneObject(m_spotLight, cTransform());
 
-    m_afWorld->addSceneObjectToWorld(m_spotLight);
-
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
     if (m_parentName.empty() == false){
@@ -9422,8 +9426,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         setLocalTransform(trans);
 
         addChildSceneObject(m_visualMesh, cTransform());
-        m_afWorld->addSceneObjectToWorld(m_visualMesh);
-        m_afWorld->addSceneObjectToWorld(m_collisionMesh);
+        addChildSceneObject(m_visualMesh, cTransform());
 
         for (uint gI = 0 ; gI < attribs.m_collisionAttribs.m_groups.size() ; gI++){
             uint group =  attribs.m_collisionAttribs.m_groups[gI];
@@ -9566,7 +9569,6 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             m_voxelObject->setIsosurfaceValue(attribs.m_isosurfaceValue);
             m_voxelObject->setOpticalDensity(attribs.m_opticalDensity);
 
-            m_afWorld->addSceneObjectToWorld(m_voxelObject);
             addChildSceneObject(m_voxelObject, cTransform());
 
             cShaderProgramPtr shaderPgm = afShaderUtils::createFromAttribs(&m_attribs.m_shaderAttribs, m_name, "VOLUME");

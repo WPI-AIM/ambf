@@ -887,6 +887,8 @@ protected:
 
     void addModelsChildrenToWorld(afModelPtr a_model);
 
+    void addChildsSceneObjectsToWorld(afBaseObjectPtr a_object);
+
     afObjectManager m_objectManager;
     afModelMap m_modelsMap;
     afWorldPtr m_afWorld;
