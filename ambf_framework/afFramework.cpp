@@ -3612,13 +3612,6 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     cTransform pose = to_cTransform(attribs.m_kinematicAttribs.m_location);
     setLocalTransform(pose);
 
-    cMaterial mat = afMaterialUtils::createFromAttribs(&attribs.m_visualAttribs.m_colorAttribs);
-    m_visualMesh->setMaterial(mat);
-    // Important to set the transparency after setting the material, otherwise the alpha
-    // channel ruins the Z-buffer depth testing in some way.
-    m_visualMesh->setTransparencyLevel(attribs.m_visualAttribs.m_colorAttribs.m_alpha);
-    m_visualMesh->setShowEnabled(attribs.m_visualAttribs.m_visible);
-
     btSoftBody* softBody = m_bulletSoftBody;
 
     if (attribs.m_useMaterial){
