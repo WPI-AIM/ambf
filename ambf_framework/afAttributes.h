@@ -1095,7 +1095,7 @@ public:
                 m_vehicleAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
-            for (int i = 0 ; i < m_vehicleAttribs.size() ; i++){
+            for (int i = 0 ; i < m_volumeAttribs.size() ; i++){
                 m_volumeAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
