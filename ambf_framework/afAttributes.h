@@ -500,7 +500,7 @@ public:
         m_up.set(0.0, 0.0, 1.0);
         m_nearPlane = 0.1;
         m_farPlane = 10.0;
-        m_fieldViewAngle = 70.0;
+        m_fieldViewAngle = 0.7;
         m_orthographic = false;
         m_stereo = false;
         m_stereFocalLength = 0.5;

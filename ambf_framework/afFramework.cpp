@@ -834,6 +834,63 @@ afIdentification::afIdentification(afType a_type): m_type(a_type)
 
 }
 
+
+///
+/// \brief afIdentification::getTypeAsStr
+/// \return
+///
+string afIdentification::getTypeAsStr(){
+    switch (m_type) {
+    case afType::ACTUATOR:
+        return "ACTUATOR";
+        break;
+    case afType::CAMERA:
+        return "CAMERA";
+        break;
+    case afType::GHOST_OBJECT:
+        return "GHOST_OBJECT";
+        break;
+    case afType::INPUT_DEVICE:
+        return "INPUT_DEVICE";
+        break;
+    case afType::INVALID:
+        return "INVALID";
+        break;
+    case afType::JOINT:
+        return "JOINT";
+        break;
+    case afType::LIGHT:
+        return "LIGHT";
+        break;
+    case afType::MODEL:
+        return "MODEL";
+        break;
+    case afType::OBJECT:
+        return "OBJECT";
+        break;
+    case afType::POINT_CLOUD:
+        return "POINT_CLOUD";
+        break;
+    case afType::RIGID_BODY:
+        return "RIGID_BODY";
+        break;
+    case afType::SENSOR:
+        return "SENSOR";
+        break;
+    case afType::SOFT_BODY:
+        return "SOFT_BODY";
+        break;
+    case afType::VEHICLE:
+        return "VEHICLE";
+        break;
+    case afType::WORLD:
+        return "WORLD";
+        break;
+    default:
+        break;
+    }
+}
+
 string afIdentification::getName(){return m_name;}
 
 string afIdentification::getNamespace(){return m_namespace;}
@@ -1503,7 +1560,8 @@ bool afBaseObject::resolveParent(string a_parentName, bool suppress_warning){
     }
     else{
         // Should generalize this to not be just a rigid body that we may parent to.
-        afRigidBodyPtr pBody = m_afWorld->getRigidBody(m_parentName, suppress_warning);
+        afBaseObjectPtr pBody = m_afWorld->getBaseObject(m_parentName, suppress_warning);
+//        afBaseObjectPtr pBody = m_afWorld->getRigidBody(m_parentName, suppress_warning);
         if (pBody){
             pBody->addChildObject(this);
             return true;
@@ -5247,7 +5305,7 @@ void afObjectManager::resolveObjectsMissingParents(afBaseObjectPtr a_newObject)
                 else{
                     if (needParenting->m_parentName.compare(a_newObject->getQualifiedIdentifier()) != 0){
                         cerr << "WARNING! Required parent name of "<< needParenting->getQualifiedName() << " set as " <<
-                                needParenting->m_parentName << ". Parenting to closest match " << a_newObject->getName() << endl;
+                                needParenting->m_parentName << ". Parenting to closest match " << a_newObject->getQualifiedIdentifier() << endl;
                     }
                     a_newObject->addChildObject((*it));
                 }
@@ -5526,6 +5584,31 @@ afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool sup
         ghostObj = (afGhostObjectPtr) a_body->getUserPointer();
     }
     return ghostObj;
+}
+
+afBaseObjectPtr afObjectManager::getBaseObject(string a_name, bool suppress_warning)
+{
+    vector<afBaseObjectPtr> foundObjs;
+    afChildrenMap::iterator cmIt;
+    for (cmIt = m_childrenObjectsMap.begin() ; cmIt != m_childrenObjectsMap.end() ; ++cmIt){
+        afBaseObjectMap typedObjMap = cmIt->second;
+        afBaseObjectPtr obj = getBaseObject(a_name, &typedObjMap, suppress_warning);
+        if (obj){
+            foundObjs.push_back(obj);
+        }
+    }
+
+    if (foundObjs.size() == 1){
+        return foundObjs[0];
+    }
+
+//    if (!suppress_warning){
+        cerr << "WARNING! MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        for (int i = 0 ; i < foundObjs.size() ; i++){
+            cerr << "\t" << i << ") " << foundObjs[i]->getQualifiedIdentifier() << ", Object Type " << foundObjs[i]->getTypeAsStr() << endl;
+        }
+        return nullptr;
+//    }
 }
 
 
@@ -7980,7 +8063,7 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
-    m_camera->renderView(m_width,m_height);
+    m_camera->renderView(m_width, m_height);
 
     // swap buffers
     glfwSwapBuffers(m_window);

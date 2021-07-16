@@ -235,6 +235,8 @@ public:
     // Get the type of communication instance
     afType getType(){return m_type;}
 
+    string getTypeAsStr();
+
     // Get Name of this object
     string getName();
 
@@ -788,6 +790,9 @@ public:
     afGhostObjectPtr getGhostObject(string a_name, bool suppress_warning=false);
 
     afGhostObjectPtr getGhostObject(btGhostObject* a_body, bool suppress_warning=false);
+
+    // Get an object by this name. The object could be of any type
+    afBaseObjectPtr getBaseObject(string a_name, bool suppress_warning);
 
     // Mark that this object needs parenting
     void addObjectMissingParent(afBaseObjectPtr a_obj);
