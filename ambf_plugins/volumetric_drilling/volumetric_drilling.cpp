@@ -5,7 +5,7 @@ cImagePtr g_colorLUT;
 
 string g_basePath;
 
-void afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld){
+int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_afWorld){
 
     double maxStiffness = 1.0;
     double g_opticalDensity = 1.2;
@@ -47,7 +47,7 @@ void afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_a
     if (filesloaded == 0) {
         cout << "Error - Failed to load volume data planeXXXX.png." << endl;
         close();
-        return;
+        return -1;
     }
 
     // create texture
@@ -90,7 +90,7 @@ void afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_a
     {
         cout << "Error - Failed to load colormap." << endl;
         close();
-        return;
+        return -1;
     }
 
     // tell the voxel object to load the colour look-up table as a texture
