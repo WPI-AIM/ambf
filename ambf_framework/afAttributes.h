@@ -1152,6 +1152,14 @@ public:
                 m_volumeAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
+            for (int i = 0 ; i < m_cameraAttribs.size() ; i++){
+                m_cameraAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_lightAttribs.size() ; i++){
+                m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
             m_pathsResolved = true;
         }
         return true;
