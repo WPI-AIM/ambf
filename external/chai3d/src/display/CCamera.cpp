@@ -1330,8 +1330,8 @@ void cCamera::renderView(const int a_windowWidth,
                     stereo_multiplier = 1.0;
                 }
 
-                double left   = -1.0 * glAspect * wd2 + stereo_multiplier * 0.5 * m_stereoEyeSeparation * ndfl;
-                double right  =        glAspect * wd2 + stereo_multiplier * 0.5 * m_stereoEyeSeparation * ndfl;
+                double left   = (-1.0 * glAspect * wd2 + stereo_multiplier * 0.5 * m_stereoEyeSeparation * ndfl) * 0.5;
+                double right  = (       glAspect * wd2 + stereo_multiplier * 0.5 * m_stereoEyeSeparation * ndfl) * 0.5;
                 double top    =        wd2;
                 double bottom = -1.0 * wd2;
 
