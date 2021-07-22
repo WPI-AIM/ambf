@@ -643,13 +643,15 @@ void updatePhysics(){
                         if (simDev->m_gripper_angle < 0.5){
                             for (int i = 0 ; i < proximitySensorPtr->getCount() ; i++){
                                 if (proximitySensorPtr->getSensedBodyType(i) == afBodyType::RIGID_BODY){
-                                    // Check if the sensed body belongs to the gripper, in which case ignore
-                                    afRigidBodyPtr afBody = proximitySensorPtr->getSensedRigidBody(i);
-                                    if (rootLink->isChild(afBody->m_bulletRigidBody) == true){
-                                        continue;
+                                    if (proximitySensorPtr->getSensedRigidBody(i)){
+                                        // Check if the sensed body belongs to the gripper, in which case ignore
+                                        afRigidBodyPtr afBody = proximitySensorPtr->getSensedRigidBody(i);
+                                        if (rootLink->isChild(afBody->m_bulletRigidBody) == true){
+                                            continue;
+                                        }
+                                        simDev->m_grippingConstraint->actuate(sensorPtr);
                                     }
                                 }
-                                simDev->m_grippingConstraint->actuate(sensorPtr);
                             }
                         }
                         else{

@@ -5473,7 +5473,7 @@ afRigidBodyPtr afObjectManager::getRigidBody(btRigidBody* a_body, bool suppress_
 ///
 afRigidBodyPtr afObjectManager::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
     /// Find Root Body
-    afRigidBodyPtr rootParentBody;
+    afRigidBodyPtr rootParentBody = nullptr;
     vector<int> bodyParentsCount;
     size_t rootParents = 0;
     if (a_bodyPtr){
@@ -5507,8 +5507,9 @@ afRigidBodyPtr afObjectManager::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
 
     }
 
-    if (rootParents > 1)
+    if (rootParents > 1){
         cerr << "WARNING! " << rootParents << " ROOT PARENTS FOUND, RETURNING THE LAST ONE\n";
+    }
 
     return rootParentBody;
 }
