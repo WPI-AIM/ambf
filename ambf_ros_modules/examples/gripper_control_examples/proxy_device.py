@@ -214,21 +214,21 @@ class ProxyMTM:
         steps = 100
         sleep_s = 0.1
 
-        print 'Testing Roll'
+        print('Testing Roll')
         for i in range(steps):
             val = min_a + span * i / steps
             self.set_orientation(val, 0, 0)
             print('Angle', val)
             time.sleep(sleep_s)
 
-        print 'Testing Pitch'
+        print('Testing Pitch')
         for i in range(steps):
             val = min_a + span * i / steps
             self.set_orientation(0, val, 0)
             print('Angle', val)
             time.sleep(sleep_s)
 
-        print 'Testing Yaw'
+        print('Testing Yaw')
         for i in range(steps):
             val = min_a + span * i / steps
             self.set_orientation(0, 0, val)
