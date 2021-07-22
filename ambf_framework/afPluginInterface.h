@@ -227,7 +227,7 @@ public:
         this->type = afPluginType::SIMULATOR;
     }
 
-    virtual int init(int argc, char** argv, const afWorldPtr a_afWorld){}
+    virtual int init(int argc, char** argv, const afWorldPtr a_afWorld){return -1;}
     virtual void keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods){}
     virtual void mouseBtnsUpdate(GLFWwindow* a_window, int a_button, int a_action, int a_modes){}
     virtual void mousePosUpdate(GLFWwindow* a_window, double x_pos, double y_pos){}
@@ -251,7 +251,7 @@ public:
         this->type = afPluginType::WORLD;
     }
 
-    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){}
+    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){return -1;}
     virtual void onModelAdd(const afModelPtr a_modelPtr){}
     virtual void onModelRemoval(const afModelPtr a_modelPtr){}
     virtual void onObjectAdd(const afBaseObjectPtr a_objectPtr){}
@@ -276,7 +276,7 @@ public:
         this->type = afPluginType::MODEL;
     }
 
-    virtual int init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs){}
+    virtual int init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs){return -1;}
     virtual void onObjectAdd(const afBaseObjectPtr a_objectPtr){}
     virtual void onObjectRemoval(const afBaseObjectPtr a_objectPtr){}
     virtual void graphicsUpdate(){}
@@ -298,7 +298,7 @@ public:
         this->type = afPluginType::OBJECT;
     }
 
-    virtual int init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs){}
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs){return -1;}
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}
