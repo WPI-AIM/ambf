@@ -124,8 +124,6 @@ public:
 
     cMatrix3d getSimRotInitial();
 
-    virtual void updateGlobalPose();
-
     inline void applyForce(cVector3d force){
         if (m_rootLink->m_activeControllerType == afControlType::FORCE){
             m_rootLink->applyForce(force);
@@ -371,7 +369,7 @@ public:
     bool checkClaimedDeviceIdx(int a_idx);
 
 public:
-    std::shared_ptr<cHapticDeviceHandler> m_deviceHandler;
+    cHapticDeviceHandler* m_deviceHandler;
     std::vector<afCollateralControlUnit> m_collateralControlUnits;
 
     uint m_numDevices = 0;

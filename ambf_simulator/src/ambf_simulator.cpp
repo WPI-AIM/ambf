@@ -403,6 +403,7 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////
     // AF MULTIBODY HANDLER
     //////////////////////////////////////////////////////////////////////////
+    g_inputDevices = std::make_shared<afCollateralControlManager>(g_afWorld);
     // The world loads the lights and cameras + windows
     g_afWorld->createFromAttribs(&worldAttribs);
 
@@ -469,7 +470,6 @@ int main(int argc, char* argv[])
     //-----------------------------------------------------------------------------------------------------------
     // START: INITIALIZE THREADS FOR ALL REQUIRED HAPTIC DEVICES AND PHYSICS THREAD
     //-----------------------------------------------------------------------------------------------------------
-    g_inputDevices = std::make_shared<afCollateralControlManager>(g_afWorld);
     g_inputDevices->createFromAttribs(&tuAttribs);
 
 

@@ -582,9 +582,8 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
 {
     afSimulatedDeviceAttribs& attribs = *a_attribs;
 
-
     if (attribs.m_rootLinkDefined == false && attribs.m_sdeDefined == false){
-        std::cerr << "ERROR: PHYSICAL DEVICE BINDING REQUIRES EITHER A \"simulated multibody\""
+        std::cerr << "ERROR: PHYSICAL DEVICE BINDING REQUIRES EITHER A \"simulated multibody\" "
                      "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
         return 0;
     }
@@ -597,13 +596,10 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         if (afModel::createFromAttribs(&attribs.m_modelAttribs) == false){
             return 0;
         }
-        else{
-//            m_afWorld->addAFModel(this);
-        }
 
         // If multibody is defined, then the root link has to be searched in the defined multibody
         if (attribs.m_rootLinkDefined){
-            m_rootLink = getRigidBody(attribs.m_rootLinkName);
+            m_rootLink = getRigidBody(attribs.m_rootLinkName, false);
         }
         else{
             m_rootLink = getRootRigidBody();
@@ -661,6 +657,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         }
     }
     else{
+        cerr << "ERROR! FAILED TO LOAD ROOT LINK FOR MODEL " << attribs.m_modelAttribs.m_filePath.c_str() << endl;
         return 0;
     }
 
@@ -709,15 +706,6 @@ cMatrix3d afSimulatedDevice::getRot(){
 ///
 cMatrix3d afSimulatedDevice::getSimRotInitial(){
     return m_simRotInitial;
-}
-
-///
-/// \brief afSimulatedDevice::updateMeasuredPose
-///
-void afSimulatedDevice::updateGlobalPose(){
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_pos  = m_rootLink->getLocalPos();
-    m_rot = m_rootLink->getLocalRot();
 }
 
 ///
@@ -771,6 +759,7 @@ void afSimulatedDevice::clearWrench(){
 ///
 afCollateralControlManager::afCollateralControlManager(afWorldPtr a_afWorld){
     m_deviceHandler = nullptr;
+    m_deviceHandler = new cHapticDeviceHandler();
     m_afWorld = a_afWorld;
 
     m_use_cam_frame_rot = true;
@@ -790,6 +779,10 @@ afCollateralControlManager::~afCollateralControlManager(){
         if (m_collateralControlUnits[i].m_simulatedDevicePtr != nullptr){
             delete m_collateralControlUnits[i].m_simulatedDevicePtr;
         }
+    }
+
+    if (m_deviceHandler){
+        delete m_deviceHandler;
     }
 }
 
@@ -826,9 +819,9 @@ bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttri
 
     bool load_status = false;
 
-    if (a_attribsVec->size() > 0){
-        m_deviceHandler.reset(new cHapticDeviceHandler());
-    }
+//    if (a_attribsVec->size() > 0){
+//        m_deviceHandler = new cHapticDeviceHandler();
+//    }
 
     for (int i = 0; i < a_attribsVec->size(); i++){
         afTeleRoboticUnitAttributes tuAttrib = (*a_attribsVec)[i];
@@ -838,6 +831,7 @@ bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttri
 
         if (pD->createFromAttribs(&tuAttrib.m_iidAttribs)){
             if (sD->createFromAttribs(&tuAttrib.m_sdeAttribs)){
+                m_afWorld->addModel(sD);
                 afCollateralControlUnit ccu;
                 ccu.m_physicalDevicePtr = pD;
                 ccu.m_simulatedDevicePtr = sD;
@@ -846,11 +840,18 @@ bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttri
                 m_collateralControlUnits.push_back(ccu);
                 load_status = true;
             }
+            else{
+                std::cerr << "WARNING: FAILED TO MODEL " << tuAttrib.m_sdeAttribs.m_filePath.c_str() << " FOR DEVICE: \"" << devName << "\"\n";
+                load_status = false;
+            }
         }
         else
         {
             std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
             load_status = false;
+        }
+
+        if (load_status == false){
             delete pD;
             delete sD;
         }
