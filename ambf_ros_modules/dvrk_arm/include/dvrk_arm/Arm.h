@@ -95,22 +95,22 @@ public:
     void affix_tip_frame(const tf::Vector3 &pos, const tf::Matrix3x3 &tf_mat);
     void affix_tip_frame(const tf::Transform &trans);
 
-    bool set_force(const double &fx,const double &fy,const double &fz);
-    bool set_moment(const double &nx,const double &ny,const double &nz);
-    bool set_wrench(const double &fx,const double &fy,const double &fz,const double &nx,const double &ny,const double &nz);
+    void set_force(const double &fx,const double &fy,const double &fz);
+    void set_moment(const double &nx,const double &ny,const double &nz);
+    void set_wrench(const double &fx,const double &fy,const double &fz,const double &nx,const double &ny,const double &nz);
 
-    bool move_cp_pos(const double &x, const double &y, const double &z);
-    bool move_cp_pos(const geometry_msgs::Point &pos);
-    bool move_cp_pos(const tf::Vector3 &pos);
+    void move_cp_pos(const double &x, const double &y, const double &z);
+    void move_cp_pos(const geometry_msgs::Point &pos);
+    void move_cp_pos(const tf::Vector3 &pos);
 
-    bool move_cp_ori(const double &roll, const double &pitch, const double &yaw);
-    bool move_cp_ori(const double &x, const double &y, const double &z, const double &w);
-    bool move_cp_ori(const tf::Quaternion &tf_quat);
-    bool move_cp_ori(const geometry_msgs::Quaternion &gm_quat);
-    bool move_cp_ori(const tf::Matrix3x3 &mat);
+    void move_cp_ori(const double &roll, const double &pitch, const double &yaw);
+    void move_cp_ori(const double &x, const double &y, const double &z, const double &w);
+    void move_cp_ori(const tf::Quaternion &tf_quat);
+    void move_cp_ori(const geometry_msgs::Quaternion &gm_quat);
+    void move_cp_ori(const tf::Matrix3x3 &mat);
 
-    bool move_cp(geometry_msgs::PoseStamped &pose);
-    bool move_cp(tf::Transform &trans);
+    void move_cp(geometry_msgs::PoseStamped &pose);
+    void move_cp(tf::Transform &trans);
 
     void measured_cp_pos(double &x, double &y, double &z);
     void measured_cp_pos(tf::Vector3 &pos);

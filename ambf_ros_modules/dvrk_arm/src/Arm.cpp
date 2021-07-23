@@ -332,49 +332,49 @@ void DVRK_Arm::measured_gripper_angle(double &pos){
     pos = m_gripper_angle;
 }
 
-bool DVRK_Arm::move_cp_pos(const double &x, const double &y, const double &z){
+void DVRK_Arm::move_cp_pos(const double &x, const double &y, const double &z){
     m_eeCmd.trans.setOrigin(tf::Vector3(x,y,z));
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_pos(const geometry_msgs::Point &pos){
+void DVRK_Arm::move_cp_pos(const geometry_msgs::Point &pos){
     m_eeCmd.trans.setOrigin(tf::Vector3(pos.x, pos.y, pos.z));
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_pos(const tf::Vector3 &pos){
+void DVRK_Arm::move_cp_pos(const tf::Vector3 &pos){
     m_eeCmd.trans.setOrigin(pos);
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_ori(const double &roll, const double &pitch, const double &yaw){
+void DVRK_Arm::move_cp_ori(const double &roll, const double &pitch, const double &yaw){
     m_eeCmd.rot_quat.setRPY(roll, pitch, yaw);
     m_eeCmd.trans.setRotation(m_eeCmd.rot_quat);
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_ori(const double &x, const double &y, const double &z, const double &w){
+void DVRK_Arm::move_cp_ori(const double &x, const double &y, const double &z, const double &w){
     m_eeCmd.trans.setRotation(tf::Quaternion(x,y,z,w));
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_ori(const tf::Quaternion &tf_quat){
+void DVRK_Arm::move_cp_ori(const tf::Quaternion &tf_quat){
     m_eeCmd.trans.setRotation(tf_quat);
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_ori(const geometry_msgs::Quaternion &gm_quat){
+void DVRK_Arm::move_cp_ori(const geometry_msgs::Quaternion &gm_quat){
     m_eeCmd.trans.setRotation(tf::Quaternion(gm_quat.x, gm_quat.y, gm_quat.z, gm_quat.w));
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp_ori(const tf::Matrix3x3 &mat){
+void DVRK_Arm::move_cp_ori(const tf::Matrix3x3 &mat){
     mat.getRotation(m_eeCmd.rot_quat);
     m_eeCmd.trans.setRotation(m_eeCmd.rot_quat);
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp(geometry_msgs::PoseStamped &pose){
+void DVRK_Arm::move_cp(geometry_msgs::PoseStamped &pose){
     m_eeCmd.trans.setOrigin(tf::Vector3(pose.pose.position.x,
                            pose.pose.position.y,
                            pose.pose.position.z));
@@ -386,7 +386,7 @@ bool DVRK_Arm::move_cp(geometry_msgs::PoseStamped &pose){
     move_arm_cartesian(m_eeCmd.trans);
 }
 
-bool DVRK_Arm::move_cp(tf::Transform &trans){
+void DVRK_Arm::move_cp(tf::Transform &trans){
     m_eeCmd.trans = trans;
     move_arm_cartesian(m_eeCmd.trans);
 }
@@ -418,7 +418,7 @@ void DVRK_Arm::move_arm_cartesian(tf::Transform trans){
     m_bridge->set_cur_pose(cmd_pose);
 }
 
-bool DVRK_Arm::set_force(const double &fx, const double &fy, const double &fz){
+void DVRK_Arm::set_force(const double &fx, const double &fy, const double &fz){
     m_eeCmd.force.setX(fx);
     m_eeCmd.force.setY(fy);
     m_eeCmd.force.setZ(fz);
@@ -426,7 +426,7 @@ bool DVRK_Arm::set_force(const double &fx, const double &fy, const double &fz){
     set_arm_wrench(m_eeCmd.force, m_eeCmd.moment);
 }
 
-bool DVRK_Arm::set_moment(const double &nx, const double &ny, const double &nz){
+void DVRK_Arm::set_moment(const double &nx, const double &ny, const double &nz){
     m_eeCmd.moment.setX(nx);
     m_eeCmd.moment.setY(ny);
     m_eeCmd.moment.setZ(nz);
@@ -434,7 +434,7 @@ bool DVRK_Arm::set_moment(const double &nx, const double &ny, const double &nz){
     set_arm_wrench(m_eeCmd.force, m_eeCmd.moment);
 }
 
-bool DVRK_Arm::set_wrench(const double &fx,const double &fy,const double &fz,const double &nx,const double &ny,const double &nz){
+void DVRK_Arm::set_wrench(const double &fx,const double &fy,const double &fz,const double &nx,const double &ny,const double &nz){
     m_eeCmd.force.setX(fx);
     m_eeCmd.force.setY(fy);
     m_eeCmd.force.setZ(fz);
