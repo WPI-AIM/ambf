@@ -822,6 +822,7 @@ template<>
 ///
 btTransform afCartesianController::computeOutput<btTransform, btTransform>(const btTransform &process_val, const btTransform &set_point, const double &dt, const double &tsf){
     // Not implemented yet
+    return btTransform();
 }
 
 
@@ -887,6 +888,8 @@ string afIdentification::getTypeAsStr(){
         return "WORLD";
         break;
     default:
+        cerr << "ERROR! SHOULD NOT HAPPEN" << endl;
+        return "";
         break;
     }
 }
@@ -9704,7 +9707,7 @@ void afVolume::fetchCommands(double dt)
 ///
 cShaderProgramPtr afVolume::getShaderProgram()
 {
-
+    return m_voxelObject->getShaderProgram();
 }
 
 ///

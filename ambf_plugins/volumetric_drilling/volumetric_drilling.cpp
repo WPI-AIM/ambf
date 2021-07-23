@@ -103,6 +103,7 @@ int afVolmetricDrillingPlugin::init(int argc, char **argv, const afWorldPtr a_af
     //    object->setRenderingModeBasic();
     g_volObject->setRenderingModeIsosurfaceColors();
     //    object->setRenderingModeIsosurfaceMaterial();
+    return 1;
 }
 
 void afVolmetricDrillingPlugin::keyboardUpdate(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, int a_mods){
@@ -131,5 +132,5 @@ void afVolmetricDrillingPlugin::reset(){
 
 bool afVolmetricDrillingPlugin::close()
 {
-
+    return 0;
 }

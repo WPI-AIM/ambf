@@ -4,7 +4,7 @@ using namespace std;
 using namespace ambf;
 
 class afTestSimulatorPlugin: public afSimulatorPlugin{
-    virtual void init(int argc, char** argv){}
+    virtual int init(int argc, char** argv){return 1;}
     virtual void keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods){
         cerr << "KEYBOARD INPUT RECEIVED FOR SIMULATION PLUGIN" << a_key << endl;
     }
@@ -14,7 +14,7 @@ class afTestSimulatorPlugin: public afSimulatorPlugin{
     virtual void graphicsUpdate(const afWorldPtr a_afWorld){}
     virtual void physicsUpdate(const afWorldPtr a_afWorld){}
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 };
 
 

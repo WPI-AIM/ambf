@@ -3,7 +3,7 @@
 using namespace ambf;
 
 class afTestWorldPlugin: public afWorldPlugin{
-    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){}
+    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){return 1;}
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(const afWorldPtr a_afWorld){
         std::cerr << "UPDATE FROM PLUGIN CALLED" << std::endl;
@@ -15,7 +15,7 @@ class afTestWorldPlugin: public afWorldPlugin{
         }
     }
     virtual void reset(){}
-    virtual bool close(){}
+    virtual bool close(){return 0;}
 };
 
 
