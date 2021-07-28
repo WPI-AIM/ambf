@@ -37,6 +37,7 @@
 
     \author    <http://www.chai3d.org>
     \author    Francois Conti
+    \contributor    Adnan Munawar
     \version   3.2.0 $Rev: 2161 $
 */
 //==============================================================================
@@ -202,6 +203,15 @@ public:
 
     //! This method sets a texture to this object, optionally propagating the operation to its children.
     virtual void setTexture(cTexture1dPtr, const bool a_affectChildren = false);
+
+    //! This method sets a metallic texture to this object, optionally propagating the operation to its children.
+    virtual void setMetallicTexture(cTexture1dPtr, const bool a_affectChildren = false);
+
+    //! This method sets a roughness texture to this object, optionally propagating the operation to its children.
+    virtual void setRoughnessTexture(cTexture1dPtr, const bool a_affectChildren = false);
+
+    //! This method sets an ambient occulusion texture to this object, optionally propagating the operation to its children.
+    virtual void setAmbientOcculusionTexture(cTexture1dPtr, const bool a_affectChildren = false);
 
 
     //-----------------------------------------------------------------------

@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Francois Conti
     \author    Dan Morris
+    \contributor    Adnan Munawar
     \version   3.2.0 $Rev: 2014 $
 */
 //==============================================================================
@@ -508,6 +509,15 @@ public:
     //! This method sets a texture to this object, optionally propagating the operation to its children.
     virtual void setTexture(cTexture1dPtr a_texture, const bool a_affectChildren = false);
 
+    //! This method sets a metallic texture to this object, optionally propagating the operation to its children.
+    virtual void setMetallicTexture(cTexture1dPtr a_texture, const bool a_affectChildren = false);
+
+    //! This method sets a roughness texture to this object, optionally propagating the operation to its children.
+    virtual void setRoughnessTexture(cTexture1dPtr a_texture, const bool a_affectChildren = false);
+
+    //! This method sets a ambient occulusion texture to this object, optionally propagating the operation to its children.
+    virtual void setAmbientOcculusionTexture(cTexture1dPtr a_texture, const bool a_affectChildren = false);
+
 
     //-----------------------------------------------------------------------
     // PUBLIC METHODS - SHADERS:
@@ -693,12 +703,20 @@ public:
     //! Material property.
     cMaterialPtr m_material;
 
-    //! Texture property.
+    //! Texture property. (Albedo or Diffuse)
     cTexture1dPtr m_texture;
+
+    //! Metallic property.
+    cTexture1dPtr m_metallicTexture;
+
+    //! Roughness property.
+    cTexture1dPtr m_roughnessTexture;
+
+    //! Ambient Occulusion property.
+    cTexture1dPtr m_aoTexture;
 
     //! Normal map property.
     cNormalMapPtr m_normalMap;
-
 
     //-----------------------------------------------------------------------
     // PUBLIC MEMBERS - CUSTOM USER DATA:

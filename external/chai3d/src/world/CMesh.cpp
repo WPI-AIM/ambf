@@ -39,6 +39,7 @@
     \author    Francois Conti
     \author    Dan Morris
     \author    Chris Sewell
+    \contributor    Adnan Munawar
     \version   3.2.0 $Rev: 2167 $
 */
 //==============================================================================
@@ -1433,7 +1434,6 @@ void cMesh::renderMesh(cRenderOptions& a_options)
         m_texture->renderInitialize(a_options);
     }
 
-
     //--------------------------------------------------------------------------
     // RENDER VERTEX COLORS
     //--------------------------------------------------------------------------
@@ -1511,6 +1511,24 @@ void cMesh::renderMesh(cRenderOptions& a_options)
             }
         }
 
+        // render texture if enabled
+        if (m_metallicTexture != nullptr)
+        {
+            m_metallicTexture->renderInitialize(a_options);
+        }
+
+        // render texture if enabled
+        if (m_roughnessTexture != nullptr)
+        {
+            m_roughnessTexture->renderInitialize(a_options);
+        }
+
+        // render texture if enabled
+        if (m_aoTexture != nullptr)
+        {
+            m_aoTexture->renderInitialize(a_options);
+        }
+
         // initialize rendering of VBO
         m_triangles->renderInitialize();
 
@@ -1521,6 +1539,24 @@ void cMesh::renderMesh(cRenderOptions& a_options)
         if (m_normalMap != nullptr)
         {
             m_normalMap->renderFinalize(a_options);
+        }
+
+        // render texture if enabled
+        if ((m_metallicTexture != nullptr))
+        {
+            m_metallicTexture->renderFinalize(a_options);
+        }
+
+        // render texture if enabled
+        if ((m_roughnessTexture != nullptr))
+        {
+            m_roughnessTexture->renderFinalize(a_options);
+        }
+
+        // render texture if enabled
+        if ((m_aoTexture != nullptr))
+        {
+            m_aoTexture->renderFinalize(a_options);
         }
 
         // disable shader

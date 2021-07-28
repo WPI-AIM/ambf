@@ -37,6 +37,7 @@
 
     \author    <http://www.chai3d.org>
     \author    Francois Conti, Sonny Chan
+    \contributor Adnan Munawar
     \version   3.2.0 $Rev: 2187 $
 */
 //==============================================================================
@@ -82,6 +83,12 @@ namespace chai3d {
 #define C_TU_SHADOWMAP          1
 #define C_TU_NORMALMAP          2
 #define C_TU_SPECULARMAP        3
+
+// PBR Based Maps
+#define C_TU_ALBEDO             0
+#define C_TU_METALLIC           3
+#define C_TU_ROUGHNESS          4
+#define C_TU_AO                 5
 
 #define C_TU_IMAGEBUFFER        2
 #define C_TU_DEPTHBUFFER        3

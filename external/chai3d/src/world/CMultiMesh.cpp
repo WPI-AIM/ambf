@@ -37,6 +37,7 @@
 
     \author    <http://www.chai3d.org>
     \author    Francois Conti
+    \contributor    Adnan Munawar
     \version   3.2.0 $Rev: 2181 $
 */
 //==============================================================================
@@ -645,6 +646,75 @@ void cMultiMesh::setTexture(cTexture1dPtr a_texture,
     for (it = m_meshes->begin(); it < m_meshes->end(); it++)
     {
         (*it)->setTexture(a_texture, true);
+    }
+}
+
+
+//==============================================================================
+/*!
+    This method sets the current metallic texture for this mesh, optionally recursively
+    affecting children. \n
+
+    \param  a_texture         The metallic texture to apply to this object.
+    \param  a_affectChildren  If __true__ then children are updated too.
+*/
+//==============================================================================
+void cMultiMesh::setMetallicTexture(cTexture1dPtr a_texture, const bool a_affectChildren)
+{
+    // update current object and possibly children
+    cGenericObject::setMetallicTexture(a_texture, a_affectChildren);
+
+    // updated meshes
+    vector<cMesh*>::iterator it;
+    for (it = m_meshes->begin(); it < m_meshes->end(); it++)
+    {
+        (*it)->setMetallicTexture(a_texture, true);
+    }
+}
+
+
+//==============================================================================
+/*!
+    This method sets the current roughness texture for this mesh, optionally recursively
+    affecting children. \n
+
+    \param  a_texture         The roughness texture to apply to this object.
+    \param  a_affectChildren  If __true__ then children are updated too.
+*/
+//==============================================================================
+void cMultiMesh::setRoughnessTexture(cTexture1dPtr a_texture, const bool a_affectChildren)
+{
+    // update current object and possibly children
+    cGenericObject::setRoughnessTexture(a_texture, a_affectChildren);
+
+    // updated meshes
+    vector<cMesh*>::iterator it;
+    for (it = m_meshes->begin(); it < m_meshes->end(); it++)
+    {
+        (*it)->setRoughnessTexture(a_texture, true);
+    }
+}
+
+
+//==============================================================================
+/*!
+    This method sets the current ambient occulusion texture for this mesh, optionally recursively
+    affecting children. \n
+
+    \param  a_texture         The ambient occulusion texture to apply to this object.
+    \param  a_affectChildren  If __true__ then children are updated too.
+*/
+//==============================================================================
+void cMultiMesh::setAmbientOcculusionTexture(cTexture1dPtr a_texture, const bool a_affectChildren)
+{
+    // update current object and possibly children
+    cGenericObject::setAmbientOcculusionTexture(a_texture, a_affectChildren);
+
+    // updated meshes
+    vector<cMesh*>::iterator it;
+    for (it = m_meshes->begin(); it < m_meshes->end(); it++)
+    {
+        (*it)->setAmbientOcculusionTexture(a_texture, true);
     }
 }
 
