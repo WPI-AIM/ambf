@@ -8011,13 +8011,9 @@ afCamera::~afCamera(){
     }
 
     if (m_dephtWorld != nullptr){
-        m_dephtWorld->removeChild(m_camera);
         delete m_dephtWorld;
     }
 
-    if (m_targetVisualMarker !=nullptr){
-        delete m_targetVisualMarker;
-    }
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (s_imageTransport != nullptr){
         delete s_imageTransport;
