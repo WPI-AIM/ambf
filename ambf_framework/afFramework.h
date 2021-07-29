@@ -2133,6 +2133,8 @@ public:
     // Set direction of this light
     void setDir(const cVector3d& a_direction);
 
+    cGenericLight* getInternalLight();
+
 protected:
     cSpotLight* m_spotLight;
 

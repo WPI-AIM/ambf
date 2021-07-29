@@ -1180,6 +1180,7 @@ bool afBaseObject::addChildSceneObject(afSceneObject *a_object)
 
     // the object does not have any parent yet, so we can add it as a child
     // to current object.
+    a_object->getChaiObject()->m_name = getQualifiedName();
     m_childrenSceneObjects.push_back(a_object);
     return true;
 }
@@ -6622,9 +6623,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     if (attribs.m_environmentModel.m_use){
         envModel = new afModel(this);
-        if (envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs)){
-            addModel(envModel);
-        }
+        envModel->createFromAttribs(&attribs.m_environmentModel.m_modelAttribs);
 
     }
     else if (attribs.m_enclosure.m_use){
@@ -6645,11 +6644,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         afLightPtr lightPtr = new afLight(this, envModel);
         if (lightPtr->createFromAttribs(&attribs.m_lightAttribs[idx])){
             envModel->addLight(lightPtr);
-            string remaped_name = addLight(lightPtr);
         }
     }
 
-    if (getLightMap()->size() == 0){
+    if (envModel->getLightMap()->size() == 0){
         // ADD A DEFAULT LIGHT???
         afLightAttributes lightAttribs;
         lightAttribs.m_kinematicAttribs.m_location.setPosition(afVector3d(2, 2, 5));
@@ -6657,7 +6655,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         afLightPtr lightPtr = new afLight(this, envModel);
         lightPtr->createFromAttribs(&lightAttribs);
         envModel->addLight(lightPtr);
-        string remaped_name = addLight(lightPtr);
     }
 
     if (attribs.m_showGUI){
@@ -6665,11 +6662,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             afCameraPtr cameraPtr = new afCamera(this, envModel);
             if (cameraPtr->createFromAttribs(&attribs.m_cameraAttribs[idx])){
                 envModel->addCamera(cameraPtr);
-                string remaped_name = addCamera(cameraPtr);
             }
         }
 
-        if (getCameraMap()->size() == 0){
+        if (envModel->getCameraMap()->size() == 0){
             // No valid cameras defined in the world config file
             // hence create a default camera
             afCameraPtr cameraPtr = new afCamera(this, envModel);
@@ -6678,7 +6674,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
             camAttribs.m_identificationAttribs.m_name = "default_camera";
             if (cameraPtr->createFromAttribs(&camAttribs)){
                 envModel->addCamera(cameraPtr);
-                string remaped_name = addCamera(cameraPtr);
             }
 
         }
@@ -6686,6 +6681,8 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
         m_shaderAttribs = attribs.m_shaderAttribs;
         loadShaderProgram();
     }
+
+    addModel(envModel);
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
@@ -8014,11 +8011,8 @@ afCamera::~afCamera(){
     }
 
     if (m_dephtWorld != nullptr){
+        m_dephtWorld->removeChild(m_camera);
         delete m_dephtWorld;
-    }
-    else{
-        // If cam was added to depth world, it would delete it, if not, delete it explicitly.
-        delete m_camera;
     }
 
     if (m_targetVisualMarker !=nullptr){
@@ -8480,6 +8474,20 @@ void afLight::setDir(const cVector3d &a_direction){
 }
 
 
+///
+/// \brief afLight::getInternalLight
+/// \return
+///
+cGenericLight *afLight::getInternalLight()
+{
+    return m_spotLight;
+}
+
+
+///
+/// \brief afLight::fetchCommands
+/// \param dt
+///
 void afLight::fetchCommands(double dt){
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afLightCommPtr.get() != nullptr){
