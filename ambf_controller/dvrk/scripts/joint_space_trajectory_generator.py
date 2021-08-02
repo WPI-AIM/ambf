@@ -20,7 +20,7 @@ class JointSpaceTrajectory:
                     self._traj_points[j, k] = joint_biases[k] + normalized_val * joint_ranges[k]
 
     def print_trajectory(self):
-        print self._traj_points
+        print(self._traj_points)
 
     def get_num_traj_points(self):
         return self._num_traj_points

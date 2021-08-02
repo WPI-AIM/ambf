@@ -759,7 +759,7 @@ void afSimulatedDevice::clearWrench(){
 ///
 afCollateralControlManager::afCollateralControlManager(afWorldPtr a_afWorld){
     m_deviceHandler = nullptr;
-    m_deviceHandler = new cHapticDeviceHandler();
+//    m_deviceHandler = new cHapticDeviceHandler();
     m_afWorld = a_afWorld;
 
     m_use_cam_frame_rot = true;
@@ -819,9 +819,9 @@ bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttri
 
     bool load_status = false;
 
-//    if (a_attribsVec->size() > 0){
-//        m_deviceHandler = new cHapticDeviceHandler();
-//    }
+    if (a_attribsVec->size() > 0){
+        m_deviceHandler = new cHapticDeviceHandler();
+    }
 
     for (int i = 0; i < a_attribsVec->size(); i++){
         afTeleRoboticUnitAttributes tuAttrib = (*a_attribsVec)[i];

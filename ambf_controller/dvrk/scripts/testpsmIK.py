@@ -23,7 +23,7 @@ def test_ik():
         print ('******')
         print ('Case:', i)
         print ('Joint Errors from IK Solver')
-        print ["{0:0.2f}".format(k) for k in errors]
+        print (["{0:0.2f}".format(k) for k in errors])
 
 
 def test_ambf_psm():
@@ -100,15 +100,15 @@ def test_ambf_psm():
         errors = [0]*num_joints
         for j in range(num_joints):
             errors[j] = test_q[j] - computed_q[j]
-        print ('--------------------------------------')
-        print ('**************************************')
-        print ('Test Number:', i)
-        print ('Joint Positions used to T_EE_B (EndEffector in Base)')
-        print test_q
-        print ('Requested Transform for T_EE_B (EndEffector in Base)')
-        print (T_7_0)
-        print ('Joint Errors from IK Solver')
-        print ["{0:0.2f}".format(k) for k in errors]
+        # print('--------------------------------------')
+        # print('**************************************')
+        # print('Test Number:', i)
+        # print('Joint Positions used to T_EE_B (EndEffector in Base)')
+        # print(test_q)
+        # print('Requested Transform for T_EE_B (EndEffector in Base)')
+        # print(T_7_0)
+        print('Joint Errors from IK Solver')
+        print(["{0:0.2f}".format(k) for k in errors])
 
         time.sleep(1.0)
 
