@@ -180,8 +180,8 @@ bool ambf::afWorldPluginManager::close()
 void afModelPluginManager::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
-        cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
         if ((*it)->init(a_afModel, a_modelAttribs) == afInitStatus::ERROR){
+            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
             m_plugins.erase(it);
         }
         else{
@@ -233,11 +233,11 @@ bool afModelPluginManager::close()
     return true;
 }
 
-void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs)
+void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
-    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ; ++it){
-        cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING\n";
+    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
         if ((*it)->init(a_afObjectPtr, a_objectAttribs) == afInitStatus::ERROR){
+            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING\n";
             m_plugins.erase(it);
         }
         else{
