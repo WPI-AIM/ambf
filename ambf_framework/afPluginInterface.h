@@ -115,7 +115,8 @@ public: string getHandle() const
     }
 
 public: static TPtr Create(const std::string &_filename,
-                           const std::string &_name)
+                           const std::string &_name,
+                           const std::string &_path)
     {
         TPtr result = nullptr;
         // PluginPtr result;
@@ -124,6 +125,9 @@ public: static TPtr Create(const std::string &_filename,
         string fullname, filename(_filename);
         list<string>::iterator iter;
         list<string> pluginPaths = afSystemPaths::getPluginPath();
+        if (_path.empty() == false){
+            pluginPaths.push_front(_path);
+        }
 
 #ifdef __APPLE__
         {
@@ -298,7 +302,7 @@ public:
         this->type = afPluginType::OBJECT;
     }
 
-    virtual int init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs){return -1;}
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){return -1;}
     virtual void graphicsUpdate(){}
     virtual void physicsUpdate(double dt){}
     virtual void reset(){}

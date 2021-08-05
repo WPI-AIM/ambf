@@ -947,7 +947,7 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 ///
 bool afBaseObject::loadPlugins(vector<afPluginAttributes> *pluginAttribs){
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -6693,7 +6693,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 bool afWorld::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -8758,7 +8758,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name);
+        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;

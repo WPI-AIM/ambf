@@ -845,6 +845,10 @@ bool ADFUtils::getPluginAttribsFromNode(YAML::Node *a_node, vector<afPluginAttri
 
         afPluginAttributes pluginAttribs;
 
+        if (pluginPathNode.IsDefined()){
+           pluginAttribs.m_path = pluginPathNode.as<string>();
+        }
+
         try{
             pluginAttribs.m_name = pluginNameNode.as<string>();
             pluginAttribs.m_filename = pluginFilenameNode.as<string>();

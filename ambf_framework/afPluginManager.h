@@ -77,8 +77,8 @@ public:
         }
     }
 
-    virtual bool add(string lib_name, string plugin_name){
-        T* plugin = T::Create(lib_name, plugin_name);
+    virtual bool add(string lib_name, string plugin_name, string path=""){
+        T* plugin = T::Create(lib_name, plugin_name, path);
         return add(plugin);
     }
 
@@ -168,7 +168,7 @@ public:
 
 class afBaseObjectPluginManager: public afBasePluginManager<afObjectPlugin>{
 public:
-    void init(const afBaseObjectPtr a_afObjectPtr, afBaseObjectAttribsPtr a_objectAttribs);
+    void init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs);
 
     void graphicsUpdate();
 

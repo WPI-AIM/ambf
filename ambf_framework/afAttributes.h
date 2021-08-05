@@ -391,6 +391,13 @@ struct afPluginAttributes{
 public:
     string m_name;
     string m_filename;
+    afPath m_path;
+
+    void resolveRelativePathAttribs(afPath a_parentPath){
+        if (m_path.c_str().empty() == false){
+            m_path.resolvePath(a_parentPath);
+        }
+    }
 };
 
 
@@ -418,6 +425,9 @@ public:
     }
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        for (int i = 0 ; i < m_pluginAttribs.size() ; i++){
+            m_pluginAttribs[i].resolveRelativePathAttribs(a_parentPath);
+        }
     }
 
     inline bool areNamespaceAttribsResolved(){ return m_namespaceResolved;}
@@ -542,6 +552,7 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_preProcessShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
             m_preProcessShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
             m_depthComputeShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
@@ -685,6 +696,7 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
@@ -806,6 +818,7 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
@@ -832,6 +845,7 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_pathsResolved = true;
@@ -894,6 +908,7 @@ public:
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_wheelsVisualPath.resolvePath(a_parentPath);
             m_pathsResolved = true;
         }
@@ -947,6 +962,7 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
     double m_quality;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
         m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
         m_multiImageAttribs.resolveRelativePathAttribs(a_parentPath);
@@ -1160,6 +1176,10 @@ public:
                 m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
+            for (int i = 0 ; i < m_pluginAttribs.size() ; i++){
+                m_pluginAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
             m_pathsResolved = true;
         }
         return true;
@@ -1188,6 +1208,7 @@ struct afSimulatedDeviceAttribs: public afBaseObjectAttributes, public afFileObj
     afModelAttributes m_modelAttribs;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
         if (m_pathsResolved == false){
             m_modelAttribs.m_filePath = a_parentPath;
             m_modelAttribs.resolveRelativePathAttribs();
@@ -1340,6 +1361,10 @@ public:
                 m_cameraAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
+            for (uint i = 0 ; i < m_pluginAttribs.size() ; i++){
+                m_pluginAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
             m_pathsResolved = true;
         }
         return true;
@@ -1366,6 +1391,10 @@ public:
 
         for (uint i = 0 ; i < m_modelFilepaths.size() ; i++){
             m_modelFilepaths[i].resolvePath(a_parentPath);
+        }
+
+        for (uint i = 0 ; i < m_pluginAttribs.size() ; i++){
+            m_pluginAttribs[i].resolveRelativePathAttribs(a_parentPath);
         }
 
         return true;
