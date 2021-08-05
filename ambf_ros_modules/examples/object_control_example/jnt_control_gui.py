@@ -110,31 +110,32 @@ class JointGUI:
                 scale_input = Entry(app, textvariable=sv)
                 scale_input.grid(row=i, column=0)
                 sv.set("1.0")
-                self.cmd_scales[i/2] = sv
+                jidx = int(i/2)
+                self.cmd_scales[jidx] = sv
 
                 slider = Scale(app, from_=_min, to=_max, resolution=_resolution, orient=HORIZONTAL,
-                                 command=functools.partial(self.slider_cb, idx=i/2))
+                                 command=functools.partial(self.slider_cb, idx=jidx))
                 slider.grid(row=i, column=1)
                 self._cmd_sliders.append(slider)
 
                 v = IntVar(value=0)
                 eff_cb = Radiobutton(app, text="Effort", variable=v, indicatoron=False, value=0,
-                                  command=functools.partial(self.effort_button_cb, idx=i/2))
+                                  command=functools.partial(self.effort_button_cb, idx=jidx))
                 eff_cb.grid(row=i, column=2)
 
                 pos_cb = Radiobutton(app, text="Position", variable=v, indicatoron=False, value=1,
-                                  command=functools.partial(self.position_button_cb, idx=i/2))
+                                  command=functools.partial(self.position_button_cb, idx=jidx))
                 pos_cb.grid(row=i, column=3)
 
                 vel_cb = Radiobutton(app, text="Velocity", variable=v, indicatoron=False, value=2,
-                                  command=functools.partial(self.velocity_button_cb, idx=i/2))
+                                  command=functools.partial(self.velocity_button_cb, idx=jidx))
                 vel_cb.grid(row=i, column=4)
 
             else:
-                scale_label = Label(app, text='Cmd ('+str(i/2) + ') Scale')
+                scale_label = Label(app, text='Cmd ('+str(jidx) + ') Scale')
                 scale_label.grid(row=i, column=0)
 
-                label = Label(app, text=jnt_names[i/2])
+                label = Label(app, text=jnt_names[jidx])
                 label.grid(row=i, column=1)
 
         reset_scale_btn = Button(app, text='Reset Scales', command=self.reset_scale_cb)

@@ -154,7 +154,7 @@ def main():
 
     parsed_args = parser.parse_args()
     print('Specified Arguments')
-    print parsed_args
+    print(parsed_args)
 
     initial_xyz = [float(f) for f in parsed_args.initial_xyz.split(',')]
     initial_rpy = [float(f) for f in parsed_args.initial_rpy.split(',')]
