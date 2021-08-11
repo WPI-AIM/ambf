@@ -2542,6 +2542,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node jointERPNode = node["joint erp"];
     YAML::Node jointCFMNode = node["joint cfm"];
     YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
+    YAML::Node shadersNode = node["shaders"];
 
     bool valid = true;
 
@@ -2712,6 +2713,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
+    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
     ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
 
     // This flag would ignore collision for all the multibodies in the scene

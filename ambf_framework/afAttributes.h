@@ -1070,6 +1070,7 @@ public:
 
     afPath m_visualMeshesPath;
     afPath m_collisionMeshesPath;
+    afShaderAttributes m_shaderAttribs;
 
     bool m_enableComm;
 
@@ -1178,6 +1179,11 @@ public:
 
             for (int i = 0 ; i < m_pluginAttribs.size() ; i++){
                 m_pluginAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            if (m_shaderAttribs.m_shaderDefined){
+                m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+                m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
             }
 
             m_pathsResolved = true;

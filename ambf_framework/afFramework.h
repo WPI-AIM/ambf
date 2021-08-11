@@ -693,7 +693,7 @@ protected:
 ///
 class afMeshObject{
 public:
-    afMeshObject(afWorldPtr a_afWorld);
+    afMeshObject(afWorldPtr a_afWorld, afModelPtr a_afModel);
 
     cMultiMesh *getVisualObject();
 
@@ -736,7 +736,10 @@ protected:
 
     // Shader Program Backup
     cShaderProgramPtr m_shaderProgramBackup = nullptr;
+
 private:
+    afModelPtr m_model;
+
     afWorldPtr m_world;
 };
 
@@ -2482,6 +2485,8 @@ public:
 
     virtual void updateSceneObjects();
 
+    virtual void loadShaderProgram();
+
     void pluginsGraphicsUpdate();
 
     void pluginsPhysicsUpdate(double dt);
@@ -2498,6 +2503,10 @@ public:
     // Global Constraint ERP and CFM
     double m_jointERP = 0.1;
     double m_jointCFM = 0.1;
+
+    afShaderAttributes m_shaderAttribs;
+
+    cShaderProgramPtr m_shaderProgram;
 
     // Plugin Manager
     afModelPluginManager m_pluginManager;

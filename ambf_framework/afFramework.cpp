@@ -1334,8 +1334,9 @@ void afBaseObject::calculateFrameSize()
 }
 
 
-afMeshObject::afMeshObject(afWorldPtr a_afWorld){
+afMeshObject::afMeshObject(afWorldPtr a_afWorld, afModelPtr a_afModel){
     m_world = a_afWorld;
+    m_model = a_afModel;
     m_visualMesh = nullptr;
 }
 
@@ -1383,6 +1384,13 @@ void afMeshObject::loadShaderProgram()
         shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, m_visualMesh->m_name, "OBJECT_SHADERS");
         m_visualMesh->setShaderProgram(shaderProgram);
         valid = true;
+    }
+    else if (m_model->m_shaderAttribs.m_shaderDefined){
+        if (m_model->m_shaderProgram.get()){
+            m_shaderAttribs.m_shaderDefined = true;
+            m_visualMesh->setShaderProgram(m_model->m_shaderProgram);
+            valid = true;
+        }
     }
     else if (m_world->m_shaderAttribs.m_shaderDefined){
         if (m_world->m_shaderProgram.get()){
@@ -1947,7 +1955,7 @@ void afConstraintActuator::update(double dt){
 /// \brief afInertialObject::afInertialObject
 /// \param a_afWorld
 ///
-afInertialObject::afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_type, a_afWorld, a_modelPtr), afMeshObject(a_afWorld)
+afInertialObject::afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(a_type, a_afWorld, a_modelPtr), afMeshObject(a_afWorld, a_modelPtr)
 {
     m_T_iINb.setIdentity();
     m_T_bINi.setIdentity();
@@ -6914,9 +6922,6 @@ void afWorld::loadShaderProgram(){
 }
 
 
-
-
-
 ///
 /// \brief afWorld::buildCollisionGroups
 ///
@@ -8604,7 +8609,11 @@ void afModel::remapName(string &name, string remap_idx_str){
     }
 }
 
-
+///
+/// \brief afModel::createFromAttribs
+/// \param a_attribs
+/// \return
+///
 bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 {
     afModelAttributes& attribs = *a_attribs;
@@ -8616,6 +8625,9 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
     setIdentifier(attribs.m_identifier);
 
     bool enable_comm = a_attribs->m_enableComm;
+
+    m_shaderAttribs = attribs.m_shaderAttribs;
+    loadShaderProgram();
 
     // Loading Rigid Bodies
     for (size_t i = 0; i < attribs.m_rigidBodyAttribs.size(); ++i) {
@@ -8833,6 +8845,17 @@ void afModel::updateSceneObjects()
             afBaseObject* childObj = oIt->second;
             childObj->updateSceneObjects();
         }
+    }
+}
+
+
+///
+/// \brief afModel::loadShaderProgram
+///
+void afModel::loadShaderProgram()
+{
+    if (m_shaderAttribs.m_shaderDefined){
+        m_shaderProgram = afShaderUtils::createFromAttribs(&m_shaderAttribs, getQualifiedName(), "GLOBAL_SHADERS");
     }
 }
 
