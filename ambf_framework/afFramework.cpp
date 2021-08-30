@@ -2794,7 +2794,6 @@ void afRigidBody::fetchCommands(double dt){
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afRigidBodyCommPtr.get() != nullptr){
         btVector3 force, torque;
-        btVector3 lin_vel, ang_vel;
         ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
 
         // IF THE COMMAND IS OF TYPE FORCE
@@ -2880,7 +2879,6 @@ void afRigidBody::fetchCommands(double dt){
                     // ELSE USE THE VELOCITY INTERFACE
                     m_bulletRigidBody->setLinearVelocity(pCommand);
                     m_bulletRigidBody->setAngularVelocity(rCommand);
-
                 }
 
 
@@ -2888,6 +2886,7 @@ void afRigidBody::fetchCommands(double dt){
         }
         // IF THE COMMAND IS OF TYPE VELOCITY
         else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
+            btVector3 lin_vel, ang_vel;
             m_activeControllerType = afControlType::VELOCITY;
             if (m_bulletRigidBody){
                 lin_vel.setValue(afCommand.twist.linear.x,
@@ -2898,8 +2897,28 @@ void afRigidBody::fetchCommands(double dt){
                                  afCommand.twist.angular.y,
                                  afCommand.twist.angular.z);
 
-                m_bulletRigidBody->setLinearVelocity(lin_vel);
-                m_bulletRigidBody->setAngularVelocity(ang_vel);
+                // If the body is kinematic, we just want to control the position
+                if (m_bulletRigidBody->isStaticOrKinematicObject()){
+                    btTransform Tcommand, Tcurrent;
+                    Tcurrent = getCOMTransform();
+                    btVector3 posCmd = Tcurrent.getOrigin() + lin_vel * dt;
+                    btVector3 rotCmd = ang_vel * dt;
+                    btQuaternion rotQ;
+                    rotQ.setEulerZYX(rotCmd.z(), rotCmd.y(), rotCmd.x());
+                    Tcommand.setOrigin(posCmd);
+
+                    Tcommand.setRotation(rotQ * Tcurrent.getRotation());
+
+                    // Compensate for the inertial offset
+                    Tcommand = Tcommand * getInertialOffsetTransform();
+                    m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
+                    m_bulletRigidBody->setWorldTransform(Tcommand);
+
+                }
+                else{
+                    m_bulletRigidBody->setLinearVelocity(lin_vel);
+                    m_bulletRigidBody->setAngularVelocity(ang_vel);
+                }
             }
         }
 
