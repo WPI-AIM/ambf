@@ -10,7 +10,7 @@ input devices: [
 
 MTML:
     hardware name: MTML
-    haptic gain: {linear: 0.03, angular: 0.0}
+    haptic gain: {linear: 10.0, angular: 0.0}
     workspace scaling: 5
     simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
     location: {
@@ -27,7 +27,7 @@ MTML:
 
 MTMR:
   hardware name: MTMR
-  haptic gain: {linear: 0.03, angular: 1}
+  haptic gain: {linear: 10.0, angular: 0}
   workspace scaling: 5
   simulated multibody: "../multi-bodies/grippers/pr2 gripper small red.yaml"
   # enable joint control: False
