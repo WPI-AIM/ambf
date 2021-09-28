@@ -2505,6 +2505,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             // Override the inertial offset if it is required by attribs
             if (attribs.m_inertialAttribs.m_estimateInertialOffset){
                 btTransform inertialOffset;
+                inertialOffset.setIdentity();
                 inertialOffset.setOrigin(computeInertialOffset(m_collisionMesh));
                 setInertialOffsetTransform(inertialOffset);
             }
@@ -2552,6 +2553,8 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     }
     else{
         // No valid collision. Must be an empty object
+        m_bulletCollisionShape = new btEmptyShape();
+        cerr << "ERROR!" << m_name << " COLLISION TYPE NOT UNDERSTOOD" << endl;
     }
 
     // The collision groups are sorted by integer indices. A group is an array of
