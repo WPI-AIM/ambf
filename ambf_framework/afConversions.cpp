@@ -450,3 +450,13 @@ cTransform &operator<<(cTransform &lhs, const btTransform &rhs){
     lhs = afConversions::convertDataType<cTransform, btTransform>(rhs);
     return lhs;
 }
+
+afMatrix3d &operator<<(afMatrix3d &lhs, const btMatrix3x3 &rhs){
+    lhs = afConversions::convertDataType<afMatrix3d, btMatrix3x3>(rhs);
+    return lhs;
+}
+
+afMatrix3d &operator<<(afMatrix3d &lhs, const cMatrix3d &rhs){
+    lhs = afConversions::convertDataType<afMatrix3d, cMatrix3d>(rhs);
+    return lhs;
+}

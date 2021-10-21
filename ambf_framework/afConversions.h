@@ -69,6 +69,8 @@ afVector3d& operator<< (afVector3d& lhs, const btVector3& rhs);
 afVector3d& operator<< (afVector3d& lhs, const cVector3d& rhs);
 afVector3d& operator* (cTransform& lhs, afVector3d& rhs);
 afVector3d& operator* (btTransform& lhs, afVector3d& rhs);
+afMatrix3d& operator<< (afMatrix3d& lhs, const btMatrix3x3& rhs);
+afMatrix3d& operator<< (afMatrix3d& lhs, const cMatrix3d& rhs);
 afTransform& operator<< (afTransform& lhs, const btTransform& rhs);
 afTransform& operator<< (afTransform& lhs, const cTransform& rhs);
 
