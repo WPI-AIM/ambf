@@ -805,7 +805,7 @@ public:
     // method however it searches in the local model space than the world space
     afRigidBodyPtr getRootRigidBody(afRigidBodyPtr a_bodyPtr = nullptr);
 
-    afJointPtr getJoint(string a_name);
+    afJointPtr getJoint(string a_name, bool suppress_warning=false);
 
     afActuatorPtr getActuator(string a_name);
 

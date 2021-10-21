@@ -5548,6 +5548,10 @@ afRigidBodyPtr afObjectManager::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
     return rootParentBody;
 }
 
+afJointPtr afObjectManager::getJoint(string a_name, bool suppress_warning){
+    return (afJointPtr)getBaseObject(a_name, getJointMap(), suppress_warning);
+}
+
 
 ///
 /// \brief afObjectManager::getSoftBody
