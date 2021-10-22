@@ -6423,6 +6423,10 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         (mIt->second)->update(dt);
     }
 
+    for (map<string, afPointCloudPtr>::iterator pcIt = m_pcMap.begin() ; pcIt != m_pcMap.end() ; ++pcIt){
+        (pcIt->second)->update(dt);
+    }
+
     // Update all plugins, world, models and then objects
     pluginsPhysicsUpdate(dt);
 }
@@ -9307,13 +9311,12 @@ afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afType::POINT_CLO
 void afPointCloud::update(double dt)
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int mp_size = m_mpPtr->getNumPoints();
     sensor_msgs::PointCloudPtr pcPtr = m_pcCommPtr->get_point_cloud();
     if(pcPtr){
         double radius = m_pcCommPtr->get_radius();
         m_mpPtr->setPointSize(radius);
         int pc_size = pcPtr->points.size();
-        int diff = pc_size - mp_size;
+        int diff = pc_size - m_mpSize;
         string frame_id = pcPtr->header.frame_id;
 
         if (m_parentName.compare(frame_id) != 0 ){
@@ -9324,7 +9327,8 @@ void afPointCloud::update(double dt)
 
             afRigidBodyPtr pBody = m_afWorld->getRigidBody(frame_id);
             if(pBody){
-                pBody->addChildObject(this);
+//                pBody->addChildObject(this);
+                pBody->m_visualMesh->addChild(this->m_mpPtr);
             }
             else{
                 // Parent not found.
@@ -9338,7 +9342,7 @@ void afPointCloud::update(double dt)
 
         if (diff >= 0){
             // PC array has either increased in size or the same size as MP array
-            for (int pIdx = 0 ; pIdx < mp_size ; pIdx++){
+            for (int pIdx = 0 ; pIdx < m_mpSize ; pIdx++){
                 cVector3d pcPos(pcPtr->points[pIdx].x,
                                 pcPtr->points[pIdx].y,
                                 pcPtr->points[pIdx].z);
@@ -9346,7 +9350,7 @@ void afPointCloud::update(double dt)
             }
 
             // Now add the new PC points to MP
-            for (int pIdx = mp_size ; pIdx < mp_size + pc_size ; pIdx++){
+            for (int pIdx = m_mpSize ; pIdx < pc_size ; pIdx++){
                 cVector3d pcPos(pcPtr->points[pIdx].x,
                                 pcPtr->points[pIdx].y,
                                 pcPtr->points[pIdx].z);
@@ -9362,10 +9366,11 @@ void afPointCloud::update(double dt)
                 m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
             }
 
-            for (int pIdx = mp_size ; pIdx > pc_size ; pIdx--){
+            for (int pIdx = m_mpSize ; pIdx > pc_size ; pIdx--){
                 m_mpPtr->removePoint(pIdx-1);
             }
         }
+        m_mpSize = pc_size;
 
     }
 

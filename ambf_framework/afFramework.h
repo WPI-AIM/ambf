@@ -2156,6 +2156,8 @@ public:
 
     cMultiPointPtr m_mpPtr;
 
+    int m_mpSize = 0;
+
     virtual void fetchCommands(double){}
 
     virtual void update(double dt);
