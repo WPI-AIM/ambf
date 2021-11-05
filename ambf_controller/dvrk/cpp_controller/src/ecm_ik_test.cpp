@@ -71,7 +71,7 @@ void ECM::testIK() {
     usleep(20000);
 
 
-    vector<string> object_names = client.getRigidBodyNames();
+    std::vector<std::string> object_names = client.getRigidBodyNames();
 
     std::cout << "object_names" <<std::endl;
     for(std::string object_name : object_names)

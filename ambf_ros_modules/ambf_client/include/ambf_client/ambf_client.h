@@ -75,12 +75,11 @@
 #include <string>
 #include "ros/topic_manager.h"
 
-using namespace std;
 using namespace ambf_client;
 
 //------------------------------------------------------------------------------
 typedef IBaseObject* iBaseObjectPtr;
-typedef std::unordered_map<string, iBaseObjectPtr> iBaseObjectMap;
+typedef std::unordered_map<std::string, iBaseObjectPtr> iBaseObjectMap;
 
 typedef Actuator* actuatorPtr;
 typedef Camera* cameraPtr;
@@ -110,14 +109,14 @@ public:
     void createObjsFromRostopics();
     void printSummary();
 
-    vector<string> getActuatorNames();
-    vector<string> getCameraNames();
-    vector<string> getLightNames();
-    vector<string> getObjectNames();
-    vector<string> getRigidBodyNames();
-    vector<string> getSensorNames();
-    vector<string> getVehicleNames();
-    vector<string> getWorldNames();
+    std::vector<std::string> getActuatorNames();
+    std::vector<std::string> getCameraNames();
+    std::vector<std::string> getLightNames();
+    std::vector<std::string> getObjectNames();
+    std::vector<std::string> getRigidBodyNames();
+    std::vector<std::string> getSensorNames();
+    std::vector<std::string> getVehicleNames();
+    std::vector<std::string> getWorldNames();
 
     actuatorPtr getActuator(std::string a_name, bool suppress_warning);
     cameraPtr getCamera(std::string a_name, bool suppress_warning);
@@ -133,14 +132,14 @@ public:
 
 private:
     ros::master::V_TopicInfo ros_topics_;
-    std::unordered_map<string, std::unordered_map<string, IBaseObject *> > objects_map_;
-    std::unordered_map<string, std::unordered_map<string, IBaseObject *> >::iterator itr_;
-    std::unordered_map<string, IBaseObject *>::iterator ptr_;
+    std::unordered_map<std::string, std::unordered_map<std::string, IBaseObject *> > objects_map_;
+    std::unordered_map<std::string, std::unordered_map<std::string, IBaseObject *> >::iterator itr_;
+    std::unordered_map<std::string, IBaseObject *>::iterator ptr_;
 
 
     const float rate_{1000};
-    string world_name_ = "";
-    string a_namespace_ = "/ambf/env/"; //This needs to be fixed, should not be hardcoded
+    std::string world_name_ = "";
+    std::string a_namespace_ = "/ambf/env/"; //This needs to be fixed, should not be hardcoded
 
 
     const int a_freq_min_{50};
@@ -155,12 +154,12 @@ private:
     void refresh();
     void start();
 
-    string getCommonNamespace();
+    std::string getCommonNamespace();
 
     template <typename T, typename TMap>
     T getObject(std::string a_name, TMap* a_map, bool suppress_warning);
     bool checkMessageType(std::string msg_type);
-    void getObjectNames(string msg_type, vector<string>& object_names);
+    void getObjectNames(std::string msg_type, std::vector<std::string>& object_names);
 };
 
 

@@ -56,10 +56,10 @@ void Client::connect() {
 void Client::createObjsFromRostopics()
 {
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
-        string msg_type = itr_->first;
+        std::string msg_type = itr_->first;
 
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
-            string topic_name = ptr_->first.c_str();
+            std::string topic_name = ptr_->first.c_str();
 
             if (msg_type == "ambf_msgs/ActuatorState") {
                 objects_map_[msg_type][topic_name] = new Actuator(topic_name, a_namespace_, a_freq_min_, a_freq_max_, time_out_);
@@ -86,9 +86,9 @@ void Client::createObjsFromRostopics()
 void Client::printSummary() {
     for (itr_ = objects_map_.begin(); itr_ != objects_map_.end(); itr_++) {
         for (ptr_ = itr_->second.begin(); ptr_ != itr_->second.end(); ptr_++) {
-            cout << "Message Type: " << itr_->first
+            std::cout << "Message Type: " << itr_->first
                  << ", Object name: " << ptr_->first
-                 << endl;
+                 << std::endl;
         }
     }
 }
@@ -97,9 +97,9 @@ void Client::printSummary() {
 ///// \brief Client::getActuatorNames
 ///// \return vector of Actuator names
 /////
-vector<string> Client::getActuatorNames(){
-    string msg_type = "ambf_msgs/ActuatorState";
-    vector<string> object_names;
+std::vector<std::string> Client::getActuatorNames(){
+    std::string msg_type = "ambf_msgs/ActuatorState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
@@ -110,71 +110,71 @@ vector<string> Client::getActuatorNames(){
 ///// \brief Client::getCameraNames
 ///// \return vector of Camera names
 /////
-vector<string> Client::getCameraNames(){
-    string msg_type = "ambf_msgs/CameraState";
-    vector<string> object_names;
+std::vector<std::string> Client::getCameraNames(){
+    std::string msg_type = "ambf_msgs/CameraState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getLightNames() {
-    string msg_type = "ambf_msgs/LightState";
-    vector<string> object_names;
+std::vector<std::string> Client::getLightNames() {
+    std::string msg_type = "ambf_msgs/LightState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getObjectNames() {
-    string msg_type = "ambf_msgs/ObjectState";
-    vector<string> object_names;
+std::vector<std::string> Client::getObjectNames() {
+    std::string msg_type = "ambf_msgs/ObjectState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getRigidBodyNames() {
-    string msg_type = "ambf_msgs/RigidBodyState";
-    vector<string> object_names;
+std::vector<std::string> Client::getRigidBodyNames() {
+    std::string msg_type = "ambf_msgs/RigidBodyState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getSensorNames() {
-    string msg_type = "ambf_msgs/SensorState";
-    vector<string> object_names;
+std::vector<std::string> Client::getSensorNames() {
+    std::string msg_type = "ambf_msgs/SensorState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getVehicleNames() {
-    string msg_type = "ambf_msgs/VehicleState";
-    vector<string> object_names;
+std::vector<std::string> Client::getVehicleNames() {
+    std::string msg_type = "ambf_msgs/VehicleState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-vector<string> Client::getWorldNames() {
-    string msg_type = "ambf_msgs/WorldState";
-    vector<string> object_names;
+std::vector<std::string> Client::getWorldNames() {
+    std::string msg_type = "ambf_msgs/WorldState";
+    std::vector<std::string> object_names;
     if(!checkMessageType(msg_type)) return object_names;
 
     getObjectNames(msg_type, object_names);
     return object_names;
 }
 
-void Client::getObjectNames(string msg_type, vector<string>& object_names) {
-    std::transform (objects_map_[msg_type].begin(), objects_map_[msg_type].end(),back_inserter(object_names), [] (std::pair<string, iBaseObjectPtr> const & pair)
+void Client::getObjectNames(std::string msg_type, std::vector<std::string>& object_names) {
+    std::transform (objects_map_[msg_type].begin(), objects_map_[msg_type].end(),back_inserter(object_names), [] (std::pair<std::string, iBaseObjectPtr> const & pair)
     {
     return pair.first;
 
@@ -188,7 +188,7 @@ void Client::getObjectNames(string msg_type, vector<string>& object_names) {
 ///// \return
 /////
 actuatorPtr Client::getActuator(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/ActuatorState";
+    std::string msg_type = "ambf_msgs/ActuatorState";
     if(!checkMessageType(msg_type)) return NULL;
 
     return dynamic_cast<actuatorPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -201,7 +201,7 @@ actuatorPtr Client::getActuator(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 cameraPtr Client::getCamera(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/CameraState";
+    std::string msg_type = "ambf_msgs/CameraState";
     if(!checkMessageType(msg_type)) return NULL;
 
     return dynamic_cast<cameraPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -214,7 +214,7 @@ cameraPtr Client::getCamera(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 lightPtr Client::getLight(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/LightState";
+    std::string msg_type = "ambf_msgs/LightState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<lightPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
@@ -226,7 +226,7 @@ lightPtr Client::getLight(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 objectPtr Client::getObject(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/ObjectState";
+    std::string msg_type = "ambf_msgs/ObjectState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<objectPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
@@ -238,7 +238,7 @@ objectPtr Client::getObject(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 rigidBodyPtr Client::getRigidBody(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/RigidBodyState";
+    std::string msg_type = "ambf_msgs/RigidBodyState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<rigidBodyPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
@@ -250,7 +250,7 @@ rigidBodyPtr Client::getRigidBody(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 sensorPtr Client::getSensor(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/SensorState";
+    std::string msg_type = "ambf_msgs/SensorState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<sensorPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
@@ -262,7 +262,7 @@ sensorPtr Client::getSensor(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 vehiclePtr Client::getVehicle(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/VehicleState";
+    std::string msg_type = "ambf_msgs/VehicleState";
     if(!checkMessageType(msg_type)) return NULL;
     return dynamic_cast<vehiclePtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
 }
@@ -274,7 +274,7 @@ vehiclePtr Client::getVehicle(std::string a_name, bool suppress_warning){
 ///// \return
 /////
 worldPtr Client::getWorld(std::string a_name, bool suppress_warning){
-    string msg_type = "ambf_msgs/WorldState";
+    std::string msg_type = "ambf_msgs/WorldState";
     if(!checkMessageType(msg_type)) return NULL;
 
     return dynamic_cast<worldPtr>(getObject<iBaseObjectPtr, iBaseObjectMap>(a_name, &objects_map_[msg_type], suppress_warning));
@@ -303,15 +303,15 @@ bool Client::getPublishedTopics(){
 
 //    ros_topics_.clear();
 
-    string trim_topic = "/State";
+    std::string trim_topic = "/State";
     for (int i = 0; i < payload.size(); ++i) {
-       string topic_name = (string(payload[i][0])).c_str();
-       string msg_type = (string(payload[i][1])).c_str();
+       std::string topic_name = (std::string(payload[i][0])).c_str();
+       std::string msg_type = (std::string(payload[i][1])).c_str();
 
        if(endsWith(topic_name, trim_topic)) {
            topic_name.erase (topic_name.begin(), topic_name.begin() + a_namespace_.length());
            topic_name.erase (topic_name.end() - trim_topic.length(), topic_name.end());
-           objects_map_.insert(make_pair(topic_name, std::unordered_map<string, IBaseObject *>()));
+           objects_map_.insert(make_pair(topic_name, std::unordered_map<std::string, IBaseObject *>()));
            objects_map_[msg_type].insert(make_pair(topic_name, nullptr));
 
        }
