@@ -1,6 +1,6 @@
 #  Software License Agreement (BSD License)
-#  Copyright (c) 2019, AMBF.
-#  (www.aimlab.wpi.edu)
+#  Copyright (c) 2019-2021, AMBF.
+#  (http://practicepoint.wpi.edu)
 #
 #  All rights reserved.
 #

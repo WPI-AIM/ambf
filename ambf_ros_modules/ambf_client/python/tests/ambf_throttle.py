@@ -3,7 +3,7 @@
 # /*
 #     Software License Agreement (BSD License)
 #     Copyright (c) 2019, AMBF
-#     (www.aimlab.wpi.edu)
+#     (http://practicepoint.wpi.edu)
 
 #     All rights reserved.
 
@@ -36,7 +36,7 @@
 #     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #     POSSIBILITY OF SUCH DAMAGE.
 
-#     \author    <http://www.aimlab.wpi.edu>
+#     \author    <http://practicepoint.wpi.edu>
 #     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
 #     \version   0.1

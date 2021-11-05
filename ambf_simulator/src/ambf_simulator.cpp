@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
     cout << "____________________________________________________________" << endl << endl;
     cout << "ASYNCHRONOUS MULTI-BODY FRAMEWORK SIMULATOR (AMBF Simulator)" << endl;
     cout << endl << endl;
-    cout << "\t\t(www.aimlab.wpi.edu)" << endl;
+    cout << "\t\t(http://practicepoint.wpi.edu)" << endl;
     cout << "\t\t  (Copyright 2019-2021)" << endl;
     cout << "____________________________________________________________" << endl << endl;
     cout << "STARTUP COMMAND LINE OPTIONS: " << endl << endl;
