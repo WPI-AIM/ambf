@@ -63,7 +63,7 @@ public:
     inline bool is_triggered() { return m_State.triggered[0]; }
     std::vector<bool> get_triggers();
 
-    double get_range() {m_State.range[0];}
+    double get_range() {return m_State.range[0];}
     std::vector<double> get_ranges();
 
     double get_measurement() { return m_State.measurement[0]; }
