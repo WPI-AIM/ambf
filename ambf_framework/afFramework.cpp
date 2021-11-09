@@ -576,6 +576,7 @@ void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace
         break;
     }
 #endif
+    m_commType = type;
 }
 
 
@@ -586,33 +587,55 @@ void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace
 ///
 void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_wall_time(a_wall_time);
-        m_afObjectCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afCameraCommPtr.get() != nullptr){
-        m_afCameraCommPtr->set_wall_time(a_wall_time);
-        m_afCameraCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afLightCommPtr.get() != nullptr){
-        m_afLightCommPtr->set_wall_time(a_wall_time);
-        m_afLightCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afSensorCommPtr.get() != nullptr){
-        m_afSensorCommPtr->set_wall_time(a_wall_time);
-        m_afSensorCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afActuatorCommPtr.get() != nullptr){
+    switch (m_commType) {
+    case afType::ACTUATOR:
+    {
         m_afActuatorCommPtr->set_wall_time(a_wall_time);
         m_afActuatorCommPtr->set_sim_time(a_sim_time);
     }
-    if (m_afVehicleCommPtr.get() != nullptr){
+        break;
+    case afType::CAMERA:
+    {
+        m_afCameraCommPtr->set_wall_time(a_wall_time);
+        m_afCameraCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::LIGHT:
+    {
+        m_afLightCommPtr->set_wall_time(a_wall_time);
+        m_afLightCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::OBJECT:
+    {
+        m_afObjectCommPtr->set_wall_time(a_wall_time);
+        m_afObjectCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::RIGID_BODY:
+    {
+        m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
+        m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::SENSOR:
+    {
+        m_afSensorCommPtr->set_wall_time(a_wall_time);
+        m_afSensorCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::VEHICLE:
+    {
         m_afVehicleCommPtr->set_wall_time(a_wall_time);
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
     }
-    if (m_afWorldCommPtr.get() != nullptr){
+        break;
+    case afType::WORLD:
+    {
         m_afWorldCommPtr->set_wall_time(a_wall_time);
         m_afWorldCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
     }
 #endif
 }

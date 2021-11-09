@@ -337,6 +337,8 @@ private:
 
     // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
+
+    afType m_commType;
 };
 
 
