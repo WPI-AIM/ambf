@@ -7,6 +7,6 @@ uniform sampler2D diffuseMap;
 
 void main(void)
 {
-    vec3 diffuse =  gl_FrontLightProduct[0].ambient.rgb;
+    vec3 diffuse =  gl_FrontLightProduct[0].diffuse.rgb;
     gl_FragColor = vec4(diffuse, 1.0);
 }
