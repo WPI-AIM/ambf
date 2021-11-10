@@ -35,7 +35,7 @@
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-    \author    <http://www.aimlab.wpi.edu>
+    \author    <http://practicepoint.wpi.edu>
     \author    Adnan Munawar
     \version   3.2.1 $Rev: 1869 $
 */
