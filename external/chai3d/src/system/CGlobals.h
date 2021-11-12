@@ -211,7 +211,7 @@
     //--------------------------------------------------------------------
     // HAPTIC DEVICES
     //--------------------------------------------------------------------
-    #if !defined (__arm__)
+    #if !defined (__arm__) && !defined (__aarch64__)
         #define C_ENABLE_DELTA_DEVICE_SUPPORT
     #endif
     #define C_ENABLE_PHANTOM_DEVICE_SUPPORT
@@ -242,7 +242,7 @@
     //--------------------------------------------------------------------
     // HAPTIC DEVICES
     //--------------------------------------------------------------------
-    #if defined (__arm__)
+    #if !defined (__arm__) && !defined (__aarch64__)
         #define C_ENABLE_DELTA_DEVICE_SUPPORT
     #endif
     #define C_ENABLE_LEAP_DEVICE_SUPPORT
