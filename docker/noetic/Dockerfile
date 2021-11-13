@@ -1,5 +1,5 @@
 # Import base ros ${ROS_VERSION} image
-ENV ROS_VERSION noetic
+ARG ROS_VERSION=noetic
 FROM ros:${ROS_VERSION}-ros-base
 
 ENV USERNAME="admin"
