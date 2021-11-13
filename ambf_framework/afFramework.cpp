@@ -72,6 +72,11 @@ int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
 
+// afComm static vars
+bool afComm::s_globalOverride = false;
+int afComm::s_maxFreq = 1000;
+int afComm::s_minFreq = 50;
+
 btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
@@ -638,6 +643,92 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
         break;
     }
 #endif
+}
+
+
+///
+/// \brief afComm::getMinPublishFrequency
+/// \return
+///
+int afComm::getMinPublishFrequency(){
+    if (s_globalOverride){
+        return s_minFreq;
+    }
+    else{
+        return m_minPubFreq;
+    }
+}
+
+
+///
+/// \brief afComm::getMaxPublishFrequency
+/// \return
+///
+int afComm::getMaxPublishFrequency(){
+    if (s_globalOverride){
+        return s_maxFreq;
+    }
+    else{
+        return m_maxPubFreq;
+    }
+}
+
+
+///
+/// \brief afComm::setMinPublishFrequency
+/// \param freq
+///
+void afComm::setMinPublishFrequency(int freq){
+    if (freq > getMaxPublishFrequency()){
+        cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    m_minPubFreq = freq;
+}
+
+
+///
+/// \brief afComm::setMaxPublishFrequency
+/// \param freq
+///
+void afComm::setMaxPublishFrequency(int freq){
+    if (freq < getMinPublishFrequency()){
+        cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    m_maxPubFreq = freq;
+}
+
+
+///
+/// \brief afComm::overrideMaxPublishingFrequency
+/// \param freq
+///
+void afComm::overrideMaxPublishingFrequency(int freq)
+{
+    if (freq < s_minFreq){
+        cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    cerr << "INFO ! Overriding Max Communication Frequency to: " << freq << endl;
+    s_globalOverride = true;
+    s_maxFreq = freq;
+}
+
+
+///
+/// \brief afComm::overrideMinPublishingFrequency
+/// \param freq
+///
+void afComm::overrideMinPublishingFrequency(int freq)
+{
+    if (freq > s_maxFreq){
+        cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    cerr << "INFO ! Overriding Min Communication Frequency to: " << freq << endl;
+    s_globalOverride = true;
+    s_minFreq = freq;
 }
 
 
