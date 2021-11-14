@@ -8284,13 +8284,31 @@ void afCamera::activatePreProcessingShaders()
         if (m_preprocessingShaderProgram.get()){
             preProcessingShadersUpdate();
             afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rbPtr = (afRigidBodyPtr)rbIt->second;
-                if (rbPtr->m_visualMesh){
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afRigidBodyPtr objPtr = (afRigidBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
                     // Store the current shader Pgm
-                    rbPtr->backupShaderProgram();
-                    rbPtr->setShaderProgram(m_preprocessingShaderProgram);
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
                 }
             }
 
@@ -8318,23 +8336,37 @@ void afCamera::deactivatePreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
-            afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
-                if (rb->m_visualMesh){
+            afBaseObjectMap::iterator objIt;
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afRigidBodyPtr objPtr = (afRigidBody*)objIt->second;
+                if (objPtr->m_visualMesh){
                     // Reassign the backedup shaderpgm for the next rendering pass
-                    rb->restoreShaderProgram();
+                    objPtr->restoreShaderProgram();
                 }
             }
-
-            afBaseObjectMap::iterator vIt;
-            afBaseObjectMap* vMap = m_afWorld->getVolumeMap();
-            for (vIt = vMap->begin(); vIt != vMap->end() ; vIt++){
-                afVolumePtr vPtr = (afVolumePtr)vIt->second;
-                if (vPtr->getInternalVolume()){
-                    // Store the current shader Pgm
-                    vPtr->restoreShaderProgram();
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getVolumeMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afVolumePtr volPtr = (afVolumePtr)objIt->second;
+                if (volPtr->getInternalVolume()){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    volPtr->restoreShaderProgram();
                 }
             }
         }
