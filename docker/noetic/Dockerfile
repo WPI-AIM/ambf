@@ -28,7 +28,7 @@ RUN apt-get update && \
   mkdir -p ${AMBF_WS}
 
 # Clone AMBF into $HOME
-COPY . ${AMBF_WS}
+COPY ./../../ ${AMBF_WS}
 WORKDIR ${AMBF_WS}
 RUN cd ${AMBF_WS} && \
   git submodule update --init --recursive
