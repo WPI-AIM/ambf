@@ -55,32 +55,33 @@ rospy.init_node('test_pc')
 # AMBF Will have a default PC listener at /ambf/env/World/point_cloud'
 pc_topics = rospy.get_param(topics_names_param)
 
-print 'Existing Topics AMBF is listening to for Point Cloud'
-print pc_topics
+print('Existing Topics AMBF is listening to for Point Cloud')
+print(pc_topics)
 
 time.sleep(1.0)
 # We can add topics by using the Param Server
 pc_topics.append('/ambf/env/World/another_point_cloud')
 rospy.set_param(topics_names_param, pc_topics)
-print 'Adding another topic via the ROS Param server'
+print('Adding another topic via the ROS Param server')
 
-print 'Updated topics on the param server are now:'
+print('Updated topics on the param server are now:')
 pc_topics = rospy.get_param('/ambf/env/World/point_cloud_topics')
-print pc_topics
+print(pc_topics)
 
 time.sleep(1.0)
 
-print "We can similarly update the size of each individual PC"
+print("We can similarly update the size of each individual PC")
 
 pc_sizes = rospy.get_param(topics_size_param)
-pc_sizes.append(10) # 10 pt size for first PC
-pc_sizes.append(20) # 20 pt size for second PC
+pc_sizes.append(10)  # 10 pt size for first PC
+pc_sizes.append(20)  # 20 pt size for second PC
 rospy.set_param(topics_size_param, pc_sizes)
 
 print('Now publishing to these two topics')
 
 pub = rospy.Publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
-pub2 = rospy.Publisher('/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
+pub2 = rospy.Publisher(
+    '/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
 
 p1 = Point32()
 p1.x = 1.0

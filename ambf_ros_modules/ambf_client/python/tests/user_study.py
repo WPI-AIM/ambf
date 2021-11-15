@@ -1,4 +1,8 @@
-from tkinter import *
+import sys
+if sys.version_info[0] >= 3:
+    from tkinter import *
+else:
+    from Tkinter import *
 import rosbag
 from datetime import datetime
 import subprocess

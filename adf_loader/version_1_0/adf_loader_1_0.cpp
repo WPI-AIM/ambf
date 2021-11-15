@@ -727,8 +727,8 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
 
     if(inertiaNode.IsDefined()){
         double ix = inertiaNode["ix"].as<double>();
-        double iy = inertiaNode["ix"].as<double>();
-        double iz = inertiaNode["ix"].as<double>();
+        double iy = inertiaNode["iy"].as<double>();
+        double iz = inertiaNode["iz"].as<double>();
 
         attribs->m_inertia.set(ix, iy, iz);
         attribs->m_estimateInertia = false;

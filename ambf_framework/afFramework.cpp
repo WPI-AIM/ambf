@@ -72,6 +72,11 @@ int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
 
+// afComm static vars
+bool afComm::s_globalOverride = false;
+int afComm::s_maxFreq = 1000;
+int afComm::s_minFreq = 50;
+
 btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
@@ -576,6 +581,7 @@ void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace
         break;
     }
 #endif
+    m_commType = type;
 }
 
 
@@ -586,35 +592,143 @@ void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace
 ///
 void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afObjectCommPtr.get() != nullptr){
-        m_afObjectCommPtr->set_wall_time(a_wall_time);
-        m_afObjectCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afCameraCommPtr.get() != nullptr){
-        m_afCameraCommPtr->set_wall_time(a_wall_time);
-        m_afCameraCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afLightCommPtr.get() != nullptr){
-        m_afLightCommPtr->set_wall_time(a_wall_time);
-        m_afLightCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afSensorCommPtr.get() != nullptr){
-        m_afSensorCommPtr->set_wall_time(a_wall_time);
-        m_afSensorCommPtr->set_sim_time(a_sim_time);
-    }
-    if (m_afActuatorCommPtr.get() != nullptr){
+    switch (m_commType) {
+    case afType::ACTUATOR:
+    {
         m_afActuatorCommPtr->set_wall_time(a_wall_time);
         m_afActuatorCommPtr->set_sim_time(a_sim_time);
     }
-    if (m_afVehicleCommPtr.get() != nullptr){
+        break;
+    case afType::CAMERA:
+    {
+        m_afCameraCommPtr->set_wall_time(a_wall_time);
+        m_afCameraCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::LIGHT:
+    {
+        m_afLightCommPtr->set_wall_time(a_wall_time);
+        m_afLightCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::OBJECT:
+    {
+        m_afObjectCommPtr->set_wall_time(a_wall_time);
+        m_afObjectCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::RIGID_BODY:
+    {
+        m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
+        m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::SENSOR:
+    {
+        m_afSensorCommPtr->set_wall_time(a_wall_time);
+        m_afSensorCommPtr->set_sim_time(a_sim_time);
+    }
+        break;
+    case afType::VEHICLE:
+    {
         m_afVehicleCommPtr->set_wall_time(a_wall_time);
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
     }
-    if (m_afWorldCommPtr.get() != nullptr){
+        break;
+    case afType::WORLD:
+    {
         m_afWorldCommPtr->set_wall_time(a_wall_time);
         m_afWorldCommPtr->set_sim_time(a_sim_time);
     }
+        break;
+    }
 #endif
+}
+
+
+///
+/// \brief afComm::getMinPublishFrequency
+/// \return
+///
+int afComm::getMinPublishFrequency(){
+    if (s_globalOverride){
+        return s_minFreq;
+    }
+    else{
+        return m_minPubFreq;
+    }
+}
+
+
+///
+/// \brief afComm::getMaxPublishFrequency
+/// \return
+///
+int afComm::getMaxPublishFrequency(){
+    if (s_globalOverride){
+        return s_maxFreq;
+    }
+    else{
+        return m_maxPubFreq;
+    }
+}
+
+
+///
+/// \brief afComm::setMinPublishFrequency
+/// \param freq
+///
+void afComm::setMinPublishFrequency(int freq){
+    if (freq > getMaxPublishFrequency()){
+        cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    m_minPubFreq = freq;
+}
+
+
+///
+/// \brief afComm::setMaxPublishFrequency
+/// \param freq
+///
+void afComm::setMaxPublishFrequency(int freq){
+    if (freq < getMinPublishFrequency()){
+        cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    m_maxPubFreq = freq;
+}
+
+
+///
+/// \brief afComm::overrideMaxPublishingFrequency
+/// \param freq
+///
+void afComm::overrideMaxPublishingFrequency(int freq)
+{
+    if (freq < s_minFreq){
+        cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    cerr << "INFO ! Overriding Max Communication Frequency to: " << freq << endl;
+    s_globalOverride = true;
+    s_maxFreq = freq;
+}
+
+
+///
+/// \brief afComm::overrideMinPublishingFrequency
+/// \param freq
+///
+void afComm::overrideMinPublishingFrequency(int freq)
+{
+    if (freq > s_maxFreq){
+        cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
+        return;
+    }
+    cerr << "INFO ! Overriding Min Communication Frequency to: " << freq << endl;
+    s_globalOverride = true;
+    s_minFreq = freq;
 }
 
 
@@ -8170,13 +8284,31 @@ void afCamera::activatePreProcessingShaders()
         if (m_preprocessingShaderProgram.get()){
             preProcessingShadersUpdate();
             afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rbPtr = (afRigidBodyPtr)rbIt->second;
-                if (rbPtr->m_visualMesh){
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afRigidBodyPtr objPtr = (afRigidBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
                     // Store the current shader Pgm
-                    rbPtr->backupShaderProgram();
-                    rbPtr->setShaderProgram(m_preprocessingShaderProgram);
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
                 }
             }
 
@@ -8204,23 +8336,37 @@ void afCamera::deactivatePreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
-            afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
-                if (rb->m_visualMesh){
+            afBaseObjectMap::iterator objIt;
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afRigidBodyPtr objPtr = (afRigidBody*)objIt->second;
+                if (objPtr->m_visualMesh){
                     // Reassign the backedup shaderpgm for the next rendering pass
-                    rb->restoreShaderProgram();
+                    objPtr->restoreShaderProgram();
                 }
             }
-
-            afBaseObjectMap::iterator vIt;
-            afBaseObjectMap* vMap = m_afWorld->getVolumeMap();
-            for (vIt = vMap->begin(); vIt != vMap->end() ; vIt++){
-                afVolumePtr vPtr = (afVolumePtr)vIt->second;
-                if (vPtr->getInternalVolume()){
-                    // Store the current shader Pgm
-                    vPtr->restoreShaderProgram();
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getVolumeMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afVolumePtr volPtr = (afVolumePtr)objIt->second;
+                if (volPtr->getInternalVolume()){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    volPtr->restoreShaderProgram();
                 }
             }
         }

@@ -243,6 +243,8 @@ int main(int argc, char* argv[])
             ("htx_frequency,d", p_opt::value<int>()->default_value(1000), "Haptics Update Frequency (default: 1000 Hz)")
             ("fixed_phx_timestep,t", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Physics (default: False)")
             ("fixed_htx_timestep,f", p_opt::value<bool>()->default_value(false), "Use Fixed Time-Step for Haptics (default: False)")
+            ("override_max_comm_freq", p_opt::value<int>(), "Override the maximum publishing frequency for all afObjects (default: 1000 Hz)")
+            ("override_min_comm_freq", p_opt::value<int>(), "Override the minimum publishing frequency for all afObjects (default: 50 Hz)")
             ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
             ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
             ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
@@ -286,6 +288,15 @@ int main(int argc, char* argv[])
             // Fall back file index option if the no options for launching any ambf file is described.
             g_cmdOpts.multiBodyIndexesToLoad = "1";
         }
+    }
+
+    if(var_map.count("override_max_comm_freq")){
+        int freq = var_map["override_max_comm_freq"].as<int>();
+        afComm::overrideMaxPublishingFrequency(freq);
+    }
+    if(var_map.count("override_min_comm_freq")){
+        int freq = var_map["override_min_comm_freq"].as<int>();
+        afComm::overrideMinPublishingFrequency(freq);
     }
 
 

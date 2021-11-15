@@ -289,17 +289,23 @@ public:
     // Set as passive so it doesn't communication outside
     inline void setPassive(bool a_passive){m_passive = a_passive;}
 
-    // Get Min publishing frequency for this object
-    inline int getMinPublishFrequency(){return m_minPubFreq;}
-
     // Get Max publishing frequency for this object
-    inline int getMaxPublishFrequency(){return m_maxPubFreq;}
+    int getMaxPublishFrequency();
 
-    // Set Min publishing frequency for this object
-    inline void setMinPublishFrequency(int freq){m_minPubFreq = freq;}
+    // Get Min publishing frequency for this object
+    int getMinPublishFrequency();
 
     // Set Max publishing frequency for this object
-    inline void setMaxPublishFrequency(int freq){m_maxPubFreq = freq;}
+    void setMaxPublishFrequency(int freq);
+
+    // Set Min publishing frequency for this object
+    void setMinPublishFrequency(int freq);
+
+    // Override the Max Freq
+    static void overrideMaxPublishingFrequency(int freq);
+
+    // Override the Min Freq
+    static void overrideMinPublishingFrequency(int freq);
 
 public:
 
@@ -337,6 +343,12 @@ private:
 
     // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
+
+    afType m_commType;
+
+    static bool s_globalOverride;
+    static int s_maxFreq;
+    static int s_minFreq;
 };
 
 
