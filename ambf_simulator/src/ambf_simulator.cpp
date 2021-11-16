@@ -437,7 +437,7 @@ int main(int argc, char* argv[])
         for (uint idx = 0 ; idx < mbIndexes.size() ; idx++){
             uint fileIdx = std::stoi(mbIndexes[idx]);
             if (fileIdx >= launchAttribs.m_modelFilepaths.size()){
-                cerr << "ERROR: -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
+                cerr << "ERROR! -l " << fileIdx << " greater than total number of files " << launchAttribs.m_modelFilepaths.size() << ". Ignoring \n";
                 continue;
             }
             else{
@@ -589,7 +589,7 @@ void updateGraphics()
 
     // check for any OpenGL errors
     GLenum err = glGetError();
-    if (err != GL_NO_ERROR) printf("Error:  %s\n", gluErrorString(err));
+    if (err != GL_NO_ERROR) printf("ERROR!  %s\n", gluErrorString(err));
     g_pluginManager.graphicsUpdate();
 }
 
@@ -746,7 +746,7 @@ void updateHapticDevice(void* ccuPtr){
     std::vector<afCameraPtr> devCams = ccu.m_cameras;
     cLabel* devFreqLabel = ccu.m_devFreqLabel;
     if (ccu.m_cameras.size() == 0){
-        cerr << "WARNING: DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
+        cerr << "WARNING! DEVICE HAPTIC LOOP \"" << phyDev->m_hInfo.m_modelName << "\" NO WINDOW-CAMERA PAIR SPECIFIED, USING DEFAULT" << endl;
         devCams = g_afWorld->getCameras();
     }
 
@@ -1042,7 +1042,7 @@ void dragDropCallback(GLFWwindow* windowPtr, int count, const char** paths){
 ///
 void errorCallback(int a_error, const char* a_description)
 {
-    cout << "Error: " << a_description << endl;
+    cout << "ERROR! " << a_description << endl;
 }
 
 ///
