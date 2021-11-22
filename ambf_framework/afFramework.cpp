@@ -51,6 +51,8 @@
 #include "BulletSoftBody/btSoftBodySolvers.h"
 //------------------------------------------------------------------------------
 
+#include "afCommunicationPlugin.h"
+
 //------------------------------------------------------------------------------
 using namespace ambf;
 using namespace chai3d;
@@ -946,7 +948,7 @@ btTransform afCartesianController::computeOutput<btTransform, btTransform>(const
 ///
 afIdentification::afIdentification(afType a_type): m_type(a_type)
 {
-
+    setGlobalRemapIdx("");
 }
 
 
@@ -1103,6 +1105,14 @@ cTransform afBaseObject::getLocalTransform()
 cTransform afBaseObject::getGlobalTransform()
 {
     return m_globalTransform;
+}
+
+double afBaseObject::getWallTime(){
+    return m_afWorld->getWallTime();
+}
+
+double afBaseObject::getSimulationTime(){
+    return m_afWorld->getSimulationTime();
 }
 
 
@@ -1370,6 +1380,28 @@ void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
     for (it = m_childrenSceneObjects.begin() ; it < m_childrenSceneObjects.end() ; ++it){
         removeChildSceneObject((*it), removeFromGraph);
     }
+}
+
+
+///
+/// \brief afBaseObject::loadCommunicationPlugin
+/// \return
+///
+bool afBaseObject::loadCommunicationPlugin()
+{
+    bool result = false;
+    if (isPassive() == false){
+        afCommunicationPlugin* commPlugin = new afCommunicationPlugin();
+        if (commPlugin->init(this, nullptr)){
+            m_pluginManager.add(commPlugin);
+            result = true;
+        }
+        else{
+            delete commPlugin;
+        }
+    }
+
+    return result;
 }
 
 
@@ -1712,6 +1744,7 @@ afActuator::afActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObjec
 /// \param a_afWorld
 ///
 afConstraintActuator::afConstraintActuator(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afActuator(a_afWorld, a_modelPtr){
+    m_actuatorType = afActuatorType::CONSTRAINT;
 }
 
 afConstraintActuator::~afConstraintActuator(){
@@ -1745,12 +1778,14 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     // First search in the local space.
     m_parentBody = m_modelPtr->getRigidBody(m_parentName, true);
 
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getActuatorMap());
+    setGlobalRemapIdx(remap_idx);
+
     if(!m_parentBody){
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getActuatorMap());
-        m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
+        m_parentBody = m_afWorld->getRigidBody(m_parentName + getGlobalRemapIdx());
 
         if (m_parentBody == nullptr){
-            cerr << "ERROR: ACTUATOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING ACTUATOR\n";
+            cerr << "ERROR: ACTUATOR'S "<< m_parentName + getGlobalRemapIdx() << " NOT FOUND, IGNORING ACTUATOR\n";
             return 0;
         }
     }
@@ -1762,22 +1797,10 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
 
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getActuatorMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-        m_afActuatorCommPtr->set_type("CONSTRAINT");
-#endif
-    }
-
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return result;
 }
@@ -2723,19 +2746,13 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     addChildSceneObject(m_collisionMesh, cTransform());
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-    }
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
+    setGlobalRemapIdx(remap_idx);
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     // Where to add the visual, collision and this object?
     return true;
@@ -3890,21 +3907,15 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     ((btSoftRigidDynamicsWorld*)m_afWorld->m_bulletWorld)->addSoftBody(m_bulletSoftBody);
     m_afWorld->m_bulletSoftBodyWorldInfo->m_sparsesdf.Reset();
 
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSoftBodyMap());
+    setGlobalRemapIdx(remap_idx);
+
     setPassive(true);
-
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSoftBodyMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-    }
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return true;
 }
@@ -4254,17 +4265,17 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_afParentBody = m_modelPtr->getRigidBody(body1Name, true);
     m_afChildBody = m_modelPtr->getRigidBody(body2Name, true);
 
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getJointMap());
+    setGlobalRemapIdx(remap_idx);
 
     // If either body not found
     if (m_afParentBody == nullptr || m_afChildBody == nullptr){
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getJointMap());
-
         if (m_afParentBody == nullptr){
-            m_afParentBody = m_afWorld->getRigidBody(body1Name + remap_idx, true);
+            m_afParentBody = m_afWorld->getRigidBody(body1Name + getGlobalRemapIdx(), true);
         }
         if (m_afChildBody == nullptr){
-            m_afChildBody = m_afWorld->getRigidBody(body2Name + remap_idx, true);
+            m_afChildBody = m_afWorld->getRigidBody(body2Name + getGlobalRemapIdx(), true);
         }
     }
 
@@ -4505,22 +4516,10 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    if (isPassive() == false){
-
-        // Joint Comm not implemented yet.
-        //        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getAFJointMap());
-
-        //        afCreateCommInstance(afObjectType::JOINT,
-        //                             getQualifiedName() + remap_idx,
-        //                             m_afWorld->getGlobalNamespace(),
-        //                             getMinPublishFrequency(),
-        //                             getMaxPublishFrequency());
-    }
-
-
-
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return true;
 }
@@ -4867,11 +4866,13 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     // First search in the local space.
     m_parentBody = m_modelPtr->getRigidBody(m_parentName, true);
 
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
+    setGlobalRemapIdx(remap_idx);
+
     if(m_parentBody == nullptr){
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_modelPtr->getSensorMap());
-        m_parentBody = m_afWorld->getRigidBody(m_parentName + remap_idx);
+        m_parentBody = m_afWorld->getRigidBody(m_parentName + getGlobalRemapIdx());
         if (m_parentBody == nullptr){
-            cerr << "ERROR: SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
+            cerr << "ERROR: SENSOR'S "<< m_parentName + getGlobalRemapIdx() << " NOT FOUND, IGNORING SENSOR\n";
             return 0;
         }
     }
@@ -4905,23 +4906,10 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-        m_afSensorCommPtr->set_type("PROXIMITY");
-#endif
-    }
-
-
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return result;
 }
@@ -5183,19 +5171,6 @@ bool afResistanceSensor::createFromAttribs(afResistanceSensorAttributes *a_attri
 
         }
 
-        if (isPassive() == false){
-
-            string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
-
-            afCreateCommInstance(m_type,
-                                 getQualifiedName() + remap_idx,
-                                 m_afWorld->getGlobalNamespace(),
-                                 getMinPublishFrequency(),
-                                 getMaxPublishFrequency());
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-            m_afSensorCommPtr->set_type("RESISTANCE");
-#endif
-        }
     }
 
     return result;
@@ -7509,7 +7484,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_camLookAt << attribs.m_lookAt;
     m_camUp << attribs.m_up;
 
-    m_orthographic = attribs.m_orthographic;
+    setOrthographic(attribs.m_orthographic);
 
     if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
         cerr << "INFO: CAMERA \"" << attribs.m_identificationAttribs.m_name << "\" MONITOR NUMBER \"" << monitorToLoad
@@ -7559,7 +7534,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     // set vertical mirrored display mode
     m_camera->setMirrorVertical(false);
 
-    if (m_orthographic){
+    if (isOrthographic()){
         m_camera->setOrthographicView(attribs.m_orthoViewWidth);
     }
     else{
@@ -7660,17 +7635,8 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     s_windowIdx++;
     s_cameraIdx++;
 
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-    }
-
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
+    setGlobalRemapIdx(remap_idx);
 
     if (m_publishImage || m_publishDepth){
 
@@ -7685,6 +7651,8 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return true;
 }
@@ -8015,7 +7983,7 @@ void afCamera::fetchCommands(double dt){
                         m_paramsSet = false;
                     }
                     m_camera->setFieldViewAngleRad(field_view_angle);
-                    m_orthographic = false;
+                    setOrthographic(false);
                     break;
                 case ambf_comm::ProjectionType::ORTHOGRAPHIC:
                     if (orthographic_view_width == 0){
@@ -8023,7 +7991,7 @@ void afCamera::fetchCommands(double dt){
                         m_paramsSet = false;
                     }
                     m_camera->setOrthographicView(orthographic_view_width);
-                    m_orthographic = true;
+                    setOrthographic(true);
                     break;
                 default:
                     break;
@@ -8559,19 +8527,13 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     }
     m_spotLight->setEnabled(true);
 
-    if (isPassive() == false){
-
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-    }
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
+    setGlobalRemapIdx(remap_idx);
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return valid;
 }
@@ -8616,6 +8578,11 @@ void afLight::setDir(const cVector3d &a_direction){
 
     // update rotation matrix
     setLocalRot(cMatrix3d(v0,v1,v2));
+}
+
+void afLight::setCutOffAngle(double rad)
+{
+    m_spotLight->setCutOffAngleDeg(cRadToDeg(rad));
 }
 
 
@@ -9260,16 +9227,10 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
         wheelInfo.m_rollInfluence = m_wheelAttribs[i].m_rollInfluence;
     }
 
-    if (isPassive() == false){
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getVehicleMap());
+    setGlobalRemapIdx(remap_idx);
 
-        string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getVehicleMap());
-
-        afCreateCommInstance(m_type,
-                             getQualifiedName() + remap_idx,
-                             m_afWorld->getGlobalNamespace(),
-                             getMinPublishFrequency(),
-                             getMaxPublishFrequency());
-    }
+    loadCommunicationPlugin();
 
     return result;
 }
@@ -9339,6 +9300,45 @@ void afVehicle::fetchCommands(double dt){
     }
 
 #endif
+}
+
+void afVehicle::engageBrake(){
+    for (int i = 0 ; i < getWheelCount() ; i++){
+        setWheelPower(i, 0.0);
+        setWheelBrake(i, m_wheelAttribs[i].m_brakePowerMax);
+    }
+}
+
+void afVehicle::releaseBrake()
+{
+    for (int i = 0 ; i < getWheelCount() ; i++){
+        setWheelBrake(i, 0.0);
+    }
+}
+
+void afVehicle::setWheelBrake(int i, double p){
+    p = cClamp(p, 0.0, m_wheelAttribs[i].m_brakePowerMax);
+    m_vehicle->setBrake(p, i);
+}
+
+void afVehicle::setWheelPower(int i, double p){
+    p = cClamp(p, -m_wheelAttribs[i].m_enginePowerMax, m_wheelAttribs[i].m_enginePowerMax);
+    m_vehicle->applyEngineForce(p, i);
+}
+
+void afVehicle::setWheelSteering(int i, double s){
+    s = cClamp(s, m_wheelAttribs[i].m_steeringLimitMin, m_wheelAttribs[i].m_steeringLimitMax);
+    m_vehicle->setSteeringValue(s, i);
+}
+
+void afVehicle::setChassisForce(btVector3 force){
+    m_chassis->m_bulletRigidBody->applyCentralForce(force);
+//    applyForce(force);
+}
+
+void afVehicle::setChassisTorque(btVector3 torque){
+    m_chassis->m_bulletRigidBody->applyTorque(torque);
+//    applyTorque(torque);
 }
 
 

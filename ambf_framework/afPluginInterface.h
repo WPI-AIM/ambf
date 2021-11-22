@@ -44,8 +44,8 @@
 // Some of the source code in this file is taken from
 // https://github.com/osrf/gazebo/blob/gazebo11/gazebo/common/Plugin.hh
 
-#ifndef AF_PLUGIN_INTEFACE_H
-#define AF_PLUGIN_INTEFACE_H
+#ifndef AF_PLUGIN_INTERFACE_H
+#define AF_PLUGIN_INTERFACE_H
 
 #include <afSystem.h>
 #include <string>
@@ -339,4 +339,4 @@ protected:
         return new PluginClass(); \
     }
 
-#endif // AF_PLUGIN_INTEFACE_H
+#endif // AF_PLUGIN_INTERFACE_H

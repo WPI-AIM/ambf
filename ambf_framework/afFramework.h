@@ -255,6 +255,10 @@ public:
 
     void setIdentifier(string a_name){m_identifier = a_name;}
 
+    void setGlobalRemapIdx(string idx){m_globalRemapIdx = idx;}
+
+    string getGlobalRemapIdx(){return m_globalRemapIdx;}
+
 protected:
     // The namespace for this body, this namespace affect afComm and the stored name of the body
     // in the internal body tree map.
@@ -267,6 +271,8 @@ protected:
 
     // Type of object
     const afType m_type;
+
+    string m_globalRemapIdx;
 };
 
 
@@ -603,6 +609,10 @@ public:
 
     cTransform getGlobalTransform();
 
+    double getWallTime();
+
+    double getSimulationTime();
+
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
 
@@ -652,6 +662,8 @@ public:
     bool removeChildSceneObject(afSceneObject* a_object, bool removeFromGraph);
 
     void removeAllChildSceneObjects(bool removeFromGraphs=true);
+
+    bool loadCommunicationPlugin();
 
     virtual void updateSceneObjects();
 
@@ -1003,7 +1015,6 @@ protected:
     btVector3 m_inertia;
 };
 
-
 ///
 /// \brief The afBody class
 ///
@@ -1082,14 +1093,6 @@ public:
     // Estimated Torque acting on body
     btVector3 m_estimatedTorque;
 
-protected:
-
-    // Name of visual and collision mesh
-    string m_mesh_name, m_collision_mesh_name;
-
-    // Iterator of connected rigid bodies
-    vector<afRigidBodyPtr>::const_iterator m_bodyIt;
-
     // Toggle publishing of joint positions
     bool m_publish_joint_positions = false;
 
@@ -1098,6 +1101,14 @@ protected:
 
     // Toggle publishing of joint names
     bool m_publish_joint_names = true;
+
+protected:
+
+    // Name of visual and collision mesh
+    string m_mesh_name, m_collision_mesh_name;
+
+    // Iterator of connected rigid bodies
+    vector<afRigidBodyPtr>::const_iterator m_bodyIt;
 
     // Sensors for this Rigid Body
     afSensorVec m_afSensors;
@@ -1443,6 +1454,8 @@ public:
 
     virtual void update(double dt){}
 
+    afActuatorType m_actuatorType;
+
 protected:
     bool m_show = false;
 
@@ -1503,6 +1516,8 @@ public:
     virtual void fetchCommands(double dt);
 
     virtual void update(double dt);
+
+    inline bool isActuated(){return m_active;}
 
 protected:
 
@@ -1580,6 +1595,8 @@ public:
 
     // Check if the sensor sensed something. Depending on what type of sensor this is
     inline bool isTriggered(uint idx){return m_rayTracerResults[idx].m_triggered;}
+
+    inline double getDepthFraction(uint idx){return m_rayTracerResults[idx].m_depthFraction;}
 
     // Get the type of sensed body
     inline afBodyType getSensedBodyType(uint idx){return m_rayTracerResults[idx].m_sensedBodyType;}
@@ -1946,6 +1963,8 @@ public:
     // Is this camera orthographic or not
     inline bool isOrthographic(){return m_orthographic;}
 
+    inline void setOrthographic(bool val){m_orthographic = val;}
+
     // Override the get Global Position method for camera
     cVector3d getGlobalPos();
 
@@ -2145,8 +2164,12 @@ public:
 
     virtual void update(double dt);
 
+    inline double getCutOffAngle(){return cDegToRad(m_spotLight->getCutOffAngleDeg());}
+
     // Set direction of this light
     void setDir(const cVector3d& a_direction);
+
+    void setCutOffAngle(double rad);
 
     cGenericLight* getInternalLight();
 
@@ -2560,6 +2583,26 @@ public:
     virtual void update(double dt);
 
     virtual void fetchCommands(double dt);
+
+    inline int getWheelCount(){return m_numWheels;}
+
+    btRaycastVehicle* getInternalVehicle(){return m_vehicle;}
+
+    afWheelAttributes& getWheelAttribs(int i){return m_wheelAttribs[i];}
+
+    void engageBrake();
+
+    void releaseBrake();
+
+    void setWheelBrake(int i, double p);
+
+    void setWheelPower(int i, double p);
+
+    void setWheelSteering(int i, double s);
+
+    void setChassisForce(btVector3 force);
+
+    void setChassisTorque(btVector3 torque);
 
 protected:
     btDefaultVehicleRaycaster* m_vehicleRayCaster = nullptr;
