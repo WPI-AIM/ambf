@@ -53,11 +53,11 @@ BODY base:
       p: 0
       y: 0
   passive: false
-  publish children names: false
-  publish joint names: false
-  publish joint positions: false
+  publish children names: true
+  publish joint names: true
+  publish joint positions: true
   friction:
-    rolling: 0.01
+    rolling: 0.5
     static: 0.5
   restitution: 0.0
   damping:
@@ -112,12 +112,12 @@ BODY Link1:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -167,12 +167,12 @@ BODY Link2:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -222,12 +222,12 @@ BODY Link3:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -277,12 +277,12 @@ BODY Link4:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -332,12 +332,12 @@ BODY Link5:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -387,12 +387,12 @@ BODY Link6:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
@@ -442,12 +442,12 @@ BODY Link7:
   publish joint names: false
   publish joint positions: false
   friction:
-    rolling: 0.0
+    rolling: 0.5
     static: 0.5
   restitution: 0.1
   damping:
-    angular: 0.1
-    linear: 0.04
+    angular: 0.95
+    linear: 0.95
   visible: true
   collision groups:
   - 0
