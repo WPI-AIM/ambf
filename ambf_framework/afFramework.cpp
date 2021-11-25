@@ -9035,6 +9035,11 @@ void afModel::loadShaderProgram()
     }
 }
 
+afWorldPtr afModel::getWorldPtr()
+{
+    return m_afWorld;
+}
+
 ///
 /// \brief afModel::pluginsGraphicsUpdate
 ///
