@@ -2176,9 +2176,6 @@ public:
 protected:
     cSpotLight* m_spotLight;
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    ambf_comm::LightType m_lightType;
-#endif
 };
 
 
@@ -2188,6 +2185,8 @@ protected:
 class afPointCloud: public afBaseObject{
 public:
     afPointCloud(afWorldPtr a_afWorld);
+
+    ~afPointCloud();
 
     cMultiPointPtr m_mpPtr;
 
@@ -2263,6 +2262,8 @@ public:
     inline void stepPhysicsManually(int a_steps){m_manualStepPhx += a_steps;}
 
     int getManualSteps(){return m_manualStepPhx;}
+
+    bool loadCommunicationPlugin();
 
     void resetCameras();
 

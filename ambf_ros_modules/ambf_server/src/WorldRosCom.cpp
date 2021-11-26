@@ -43,37 +43,6 @@
 #include "ambf_server//WorldRosCom.h"
 
 ///
-/// \brief PointCloundHandler::init
-/// \param a_node
-/// \param a_topic_name
-///
-void PointCloundHandler::init(ros::NodeHandle* a_node, std::string a_topic_name){
-    m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloundHandler::sub_cb, this);
-}
-
-
-///
-/// \brief PointCloundHandler::sub_cb
-/// \param msg
-///
-void PointCloundHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
-    m_StatePtr = msg;
-}
-
-
-sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
-    return m_StatePtr;
-}
-
-
-void PointCloundHandler::remove(){
-//    m_StatePtr->points.clear();
-//    m_StatePtr->channels.clear();
-    m_pcSub.shutdown();
-}
-
-
-///
 /// \brief WorldRosCom::WorldRosCom
 /// \param a_name
 /// \param a_namespace

@@ -1391,7 +1391,7 @@ bool afBaseObject::loadCommunicationPlugin()
 {
     bool result = false;
     if (isPassive() == false){
-        afCommunicationPlugin* commPlugin = new afCommunicationPlugin();
+        afObjectCommunicationPlugin* commPlugin = new afObjectCommunicationPlugin();
         if (commPlugin->init(this, nullptr)){
             m_pluginManager.add(commPlugin);
             result = true;
@@ -2038,38 +2038,6 @@ void afConstraintActuator::deactuate(){
 /// \param dt
 ///
 void afConstraintActuator::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afActuatorCommPtr.get() != nullptr){
-        ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
-
-        if (cmd.actuate){
-            if (m_active){
-                // Constraint is active. Ignore request
-                return;
-            }
-            string body_name = cmd.body_name.data;
-            if (cmd.use_offset){
-                // Offset of constraint (joint) in sensed body (child)
-                btTransform T_jINc;
-                T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
-                                           cmd.body_offset.position.y,
-                                           cmd.body_offset.position.z));
-
-                T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
-                                                cmd.body_offset.orientation.y,
-                                                cmd.body_offset.orientation.z,
-                                                cmd.body_offset.orientation.w));
-                actuate(body_name, T_jINc);
-            }
-            else{
-                actuate(body_name);
-            }
-        }
-        else{
-            deactuate();
-        }
-    }
-#endif
 }
 
 
@@ -2077,13 +2045,6 @@ void afConstraintActuator::fetchCommands(double dt){
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::update(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afActuatorCommPtr.get() != nullptr){
-        m_afActuatorCommPtr->set_name(m_name);
-        m_afActuatorCommPtr->set_parent_name(m_parentName);
-    }
-#endif
-
     visualize(m_show);
 }
 
@@ -2424,12 +2385,6 @@ void afRigidBody::remove(){
     if (m_bulletRigidBody){
         m_bulletRigidBody->clearForces();
     }
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afRigidBodyCommPtr){
-        //        m_afRigidBodyPtr->cleanUp();
-        //        m_afRigidBodyPtr.reset();
-    }
-#endif
 
     updateDownwardHeirarchyForRemoval();
     updateUpwardHeirarchyForRemoval();
@@ -2819,79 +2774,6 @@ void afRigidBody::update(double dt)
     {
         m_localTransform << getCOMTransform();
     }
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afRigidBodyCommPtr.get() != nullptr){
-        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        cQuaternion q;
-        q.fromRotMat(m_visualMesh->getLocalRot());
-
-        // Update the Pose
-        cVector3d localPos = getLocalPos();
-        m_afRigidBodyCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
-        m_afRigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-        // Update the Wrench
-        m_afRigidBodyCommPtr->cur_force(m_estimatedForce.x(), m_estimatedForce.y(), m_estimatedForce.z());
-        m_afRigidBodyCommPtr->cur_torque(m_estimatedTorque.x(), m_estimatedTorque.y(), m_estimatedTorque.z());
-
-        btVector3 v = m_bulletRigidBody->getLinearVelocity();
-        btVector3 a = m_bulletRigidBody->getAngularVelocity();
-
-        // Updated the Twist
-        m_afRigidBodyCommPtr->cur_linear_velocity(v.x(), v.y(), v.z());
-        m_afRigidBodyCommPtr->cur_angular_velocity(a.x(), a.y(), a.z());
-
-        // Since the mass and inertia aren't going to change that often, write them
-        // out intermittently
-        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-            m_afRigidBodyCommPtr->set_mass(getMass());
-            m_afRigidBodyCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
-        }
-
-        ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
-        // We can set this body to publish it's children joint names in either its AMBF Description file or
-        // via it's afCommand using ROS Message
-        if (m_publish_joint_names == true || afCommand.publish_joint_names == true){
-            if (m_publish_joint_names == false){
-                m_publish_joint_names = true;
-                afObjectStateSetJointNames();
-            }
-            // Since joint names aren't going to change that often
-            // change the field less so often
-            if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-                afObjectStateSetJointNames();
-            }
-        }
-
-        // We can set this body to publish joint positions in either its AMBF Description file or
-        // via it's afCommand using ROS Message
-        if (m_publish_joint_positions == true || afCommand.publish_joint_positions == true){
-            afObjectSetJointPositions();
-            afObjectSetJointVelocities();
-            afObjectSetJointEfforts();
-        }
-
-        // We can set this body to publish it's children names in either its AMBF Description file or
-        // via it's afCommand using ROS Message
-        if (m_publish_children_names == true || afCommand.publish_children_names == true){
-            if (m_publish_children_names == false){
-                m_publish_children_names = true;
-                afObjectStateSetChildrenNames();
-            }
-            // Since children names aren't going to change that often
-            // change the field less so often
-            if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-
-                afObjectStateSetChildrenNames();
-                m_write_count = 0;
-            }
-        }
-
-
-        m_write_count++;
-    }
-#endif
 }
 
 
@@ -2925,164 +2807,6 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
 /// \param dt
 ///
 void afRigidBody::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afRigidBodyCommPtr.get() != nullptr){
-        btVector3 force, torque;
-        ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
-
-        // IF THE COMMAND IS OF TYPE FORCE
-        if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
-            m_activeControllerType =  afControlType::FORCE;
-            if (m_bulletRigidBody){
-                force.setValue(afCommand.wrench.force.x,
-                               afCommand.wrench.force.y,
-                               afCommand.wrench.force.z);
-
-                torque.setValue(afCommand.wrench.torque.x,
-                                afCommand.wrench.torque.y,
-                                afCommand.wrench.torque.z);
-
-                m_bulletRigidBody->applyCentralForce(force);
-                m_bulletRigidBody->applyTorque(torque);
-            }
-        }
-        // IF THE COMMAND IS OF TYPE POSITION
-        else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-            m_activeControllerType = afControlType::POSITION;
-            // If the body is kinematic, we just want to control the position
-            if (m_bulletRigidBody->isStaticOrKinematicObject()){
-                btTransform Tcommand;
-                Tcommand.setOrigin(btVector3(afCommand.pose.position.x,
-                                             afCommand.pose.position.y,
-                                             afCommand.pose.position.z));
-
-                Tcommand.setRotation(btQuaternion(afCommand.pose.orientation.x,
-                                                  afCommand.pose.orientation.y,
-                                                  afCommand.pose.orientation.z,
-                                                  afCommand.pose.orientation.w));
-
-                //                If the current pose is the same as before, ignore. Otherwise, update pose and collision AABB.
-                if ((m_bulletRigidBody->getWorldTransform().getOrigin() - Tcommand.getOrigin()).norm() > 0.00001 ||
-                        m_bulletRigidBody->getWorldTransform().getRotation().angleShortestPath(Tcommand.getRotation()) > 0.0001){
-                    // Compensate for the inertial offset
-                    Tcommand = Tcommand * getInertialOffsetTransform();
-                    //                    cerr << "Updating Static Object Pose \n";
-                    m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
-                    m_bulletRigidBody->setWorldTransform(Tcommand);
-                }
-
-            }
-            else{
-                btVector3 cur_pos, cmd_pos;
-                btQuaternion cmd_rot_quat = btQuaternion(afCommand.pose.orientation.x,
-                                                         afCommand.pose.orientation.y,
-                                                         afCommand.pose.orientation.z,
-                                                         afCommand.pose.orientation.w);
-
-                btMatrix3x3 cur_rot, cmd_rot;
-                btTransform b_trans;
-                m_bulletRigidBody->getMotionState()->getWorldTransform(b_trans);
-
-                cur_pos = b_trans.getOrigin();
-                cur_rot.setRotation(b_trans.getRotation());
-                cmd_pos.setValue(afCommand.pose.position.x,
-                                 afCommand.pose.position.y,
-                                 afCommand.pose.position.z);
-                if( cmd_rot_quat.length() < 0.9 || cmd_rot_quat.length() > 1.1 ){
-                    cerr << "WARNING: BODY \"" << m_name << "'s\" rotation quaternion command"
-                                                            " not normalized" << endl;
-                    if (cmd_rot_quat.length() < 0.1){
-                        cmd_rot_quat.setW(1.0); // Invalid Quaternion
-                    }
-                }
-                cmd_rot.setRotation(cmd_rot_quat);
-
-                btVector3 pCommand, rCommand;
-                // Use the internal Cartesian Position Controller to Compute Output
-                pCommand = m_controller.computeOutput<btVector3>(cur_pos, cmd_pos, dt);
-                // Use the internal Cartesian Rotation Controller to Compute Output
-                rCommand = m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
-
-                if (m_controller.m_positionOutputType == afControlType::FORCE){
-                    // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
-                    // Use the internal Cartesian Position Controller
-                    m_bulletRigidBody->applyCentralForce(pCommand);
-                    m_bulletRigidBody->applyTorque(rCommand);
-                }
-                else{
-                    // ELSE USE THE VELOCITY INTERFACE
-                    m_bulletRigidBody->setLinearVelocity(pCommand);
-                    m_bulletRigidBody->setAngularVelocity(rCommand);
-                }
-
-
-            }
-        }
-        // IF THE COMMAND IS OF TYPE VELOCITY
-        else if (afCommand.cartesian_cmd_type == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
-            btVector3 lin_vel, ang_vel;
-            m_activeControllerType = afControlType::VELOCITY;
-            if (m_bulletRigidBody){
-                lin_vel.setValue(afCommand.twist.linear.x,
-                                 afCommand.twist.linear.y,
-                                 afCommand.twist.linear.z);
-
-                ang_vel.setValue(afCommand.twist.angular.x,
-                                 afCommand.twist.angular.y,
-                                 afCommand.twist.angular.z);
-
-                // If the body is kinematic, we just want to control the position
-                if (m_bulletRigidBody->isStaticOrKinematicObject()){
-                    btTransform Tcommand, Tcurrent;
-                    Tcurrent = getCOMTransform();
-                    btVector3 posCmd = Tcurrent.getOrigin() + lin_vel * dt;
-                    btVector3 rotCmd = ang_vel * dt;
-                    btQuaternion rotQ;
-                    rotQ.setEulerZYX(rotCmd.z(), rotCmd.y(), rotCmd.x());
-                    Tcommand.setOrigin(posCmd);
-
-                    Tcommand.setRotation(rotQ * Tcurrent.getRotation());
-
-                    // Compensate for the inertial offset
-                    Tcommand = Tcommand * getInertialOffsetTransform();
-                    m_bulletRigidBody->getMotionState()->setWorldTransform(Tcommand);
-                    m_bulletRigidBody->setWorldTransform(Tcommand);
-
-                }
-                else{
-                    m_bulletRigidBody->setLinearVelocity(lin_vel);
-                    m_bulletRigidBody->setAngularVelocity(ang_vel);
-                }
-            }
-        }
-
-        size_t jntCmdSize = afCommand.joint_cmds.size();
-        if (jntCmdSize > 0){
-            size_t jntCmdCnt = m_CJ_PairsActive.size() < jntCmdSize ? m_CJ_PairsActive.size() : jntCmdSize;
-            for (size_t jntIdx = 0 ; jntIdx < jntCmdCnt ; jntIdx++){
-                // A joint can be controller in three different modes, Effort, Positon or Velocity.
-                afJointPtr joint = m_CJ_PairsActive[jntIdx].m_childJoint;
-                double jnt_cmd = afCommand.joint_cmds[jntIdx];
-                if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_FORCE){
-                    joint->commandEffort(jnt_cmd);
-                }
-                else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_POSITION){
-                    joint->commandPosition(jnt_cmd);
-                }
-                else if (afCommand.joint_cmds_types[jntIdx] == ambf_msgs::RigidBodyCmd::TYPE_VELOCITY){
-                    joint->commandVelocity(jnt_cmd);
-                }
-                else{
-                    cerr << "WARNING! FOR JOINT \"" <<
-                            m_CJ_PairsActive[jntIdx].m_childJoint->getName() <<
-                            " \" COMMAND TYPE NOT UNDERSTOOD, SUPPORTED TYPES ARE 0 -> FORCE, 1 -> POSITION, 2 -> VELOCITY " <<
-                            endl;
-                }
-
-            }
-        }
-    }
-#endif
 }
 
 
@@ -3090,18 +2814,6 @@ void afRigidBody::fetchCommands(double dt){
 /// \brief afRigidBody::afObjectSetChildrenNames
 ///
 void afRigidBody::afObjectStateSetChildrenNames(){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int num_children = m_CJ_PairsActive.size();
-    if (num_children > 0 && m_afRigidBodyCommPtr != NULL){
-        vector<string> children_names;
-
-        children_names.resize(num_children);
-        for (size_t i = 0 ; i < num_children ; i++){
-            children_names[i] = m_CJ_PairsActive[i].m_childBody->m_name;
-        }
-        m_afRigidBodyCommPtr->set_children_names(children_names);
-    }
-#endif
 }
 
 
@@ -3109,17 +2821,6 @@ void afRigidBody::afObjectStateSetChildrenNames(){
 /// \brief afRigidBody::afObjectStateSetJointNames
 ///
 void afRigidBody::afObjectStateSetJointNames(){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int num_joints = m_CJ_PairsActive.size();
-    if (num_joints > 0 && m_afRigidBodyCommPtr != NULL){
-        vector<string> joint_names;
-        joint_names.resize(num_joints);
-        for (size_t i = 0 ; i < num_joints ; i++){
-            joint_names[i] = m_CJ_PairsActive[i].m_childJoint->m_name;
-        }
-        m_afRigidBodyCommPtr->set_joint_names(joint_names);
-    }
-#endif
 }
 
 
@@ -3127,18 +2828,6 @@ void afRigidBody::afObjectStateSetJointNames(){
 /// \brief afRigidBody::afObjectSetJointPositions
 ///
 void afRigidBody::afObjectSetJointPositions(){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int num_jnts = m_CJ_PairsActive.size();
-    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
-        if(m_joint_positions.size() != num_jnts){
-            m_joint_positions.resize(num_jnts);
-        }
-        for (size_t i = 0 ; i < num_jnts ; i++){
-            m_joint_positions[i] = m_CJ_PairsActive[i].m_childJoint->getPosition();
-        }
-        m_afRigidBodyCommPtr->set_joint_positions(m_joint_positions);
-    }
-#endif
 }
 
 
@@ -3146,18 +2835,6 @@ void afRigidBody::afObjectSetJointPositions(){
 /// \brief afRigidBody::afObjectSetJointVelocities
 ///
 void afRigidBody::afObjectSetJointVelocities(){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int num_jnts = m_CJ_PairsActive.size();
-    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
-        if(m_joint_velocities.size() != num_jnts){
-            m_joint_velocities.resize(num_jnts);
-        }
-        for (size_t i = 0 ; i < num_jnts ; i++){
-            m_joint_velocities[i] = m_CJ_PairsActive[i].m_childJoint->getVelocity();
-        }
-        m_afRigidBodyCommPtr->set_joint_velocities(m_joint_velocities);
-    }
-#endif
 }
 
 
@@ -3165,18 +2842,6 @@ void afRigidBody::afObjectSetJointVelocities(){
 /// \brief afRigidBody::afObjectSetJointVelocities
 ///
 void afRigidBody::afObjectSetJointEfforts(){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    int num_jnts = m_CJ_PairsActive.size();
-    if (num_jnts > 0 && m_afRigidBodyCommPtr != NULL){
-        if(m_joint_efforts.size() != num_jnts){
-            m_joint_efforts.resize(num_jnts);
-        }
-        for (size_t i = 0 ; i < num_jnts ; i++){
-            m_joint_efforts[i] = m_CJ_PairsActive[i].m_childJoint->getEffort();
-        }
-        m_afRigidBodyCommPtr->set_joint_efforts(m_joint_efforts);
-    }
-#endif
 }
 
 
@@ -5029,50 +4694,6 @@ void afRayTracerSensor::update(double dt){
 
         visualize(m_show);
     }
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    m_afSensorCommPtr->set_count(m_count);
-    m_afSensorCommPtr->set_name(m_name);
-    m_afSensorCommPtr->set_parent_name(m_parentName);
-    m_afSensorCommPtr->set_range(m_range);
-    cVector3d pos = getLocalPos();
-    cMatrix3d rot = getLocalRot();
-    cQuaternion quat;
-    quat.fromRotMat(rot);
-    m_afSensorCommPtr->cur_position(pos.x(), pos.y(), pos.z());
-    m_afSensorCommPtr->cur_orientation(quat.x, quat.y, quat.z, quat.w);
-
-    vector<bool> triggers;
-    triggers.resize(m_count);
-
-    vector<string> sensed_obj_names;
-    sensed_obj_names.resize(m_count);
-
-    vector<double> measurements;
-    measurements.resize(m_count);
-
-    for (int i = 0 ; i < m_count ; i++){
-        triggers[i] = m_rayTracerResults[i].m_triggered;
-        measurements[i] = m_rayTracerResults[i].m_depthFraction;
-        if (m_rayTracerResults[i].m_triggered){
-            if (m_rayTracerResults[i].m_sensedRigidBody){
-                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedRigidBody->getName();
-            }
-            if (m_rayTracerResults[i].m_sensedSoftBody){
-                sensed_obj_names[i] = m_rayTracerResults[i].m_sensedSoftBody->getName();
-            }
-        }
-        else{
-            sensed_obj_names[i] = "";
-        }
-    }
-
-    m_afSensorCommPtr->set_range(m_range);
-    m_afSensorCommPtr->set_triggers(triggers);
-    m_afSensorCommPtr->set_measurements(measurements);
-    m_afSensorCommPtr->set_sensed_objects(sensed_obj_names);
-
-#endif
 }
 
 void afRayTracerSensor::setRayFromInLocal(const cVector3d &a_rayFrom, uint idx){
@@ -6310,6 +5931,23 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_enclosureH;
 }
 
+bool afWorld::loadCommunicationPlugin()
+{
+    bool result = false;
+    if (isPassive() == false){
+        afWorldCommunicationPlugin* commPlugin = new afWorldCommunicationPlugin();
+        if (commPlugin->init(this, nullptr)){
+            m_pluginManager.add(commPlugin);
+            result = true;
+        }
+        else{
+            delete commPlugin;
+        }
+    }
+
+    return result;
+}
+
 
 ///
 /// \brief afWorld::getFullyQualifiedName
@@ -6404,56 +6042,6 @@ double afWorld::getSimulationDeltaTime()
 /// \param dt
 ///
 void afWorld::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-
-    // If throttling in enabled, wait here until the step clock is toggled before
-    // progressing towards next step
-    if(m_afWorldCommPtr.get() != nullptr){
-        while (!m_afWorldCommPtr->step_sim()){
-            usleep(1);
-        }
-    }
-
-    m_read_count++;
-    if(m_read_count % m_updateCounterLimit == 0){
-        m_afWorldCommPtr->update_params_from_server();
-        if (m_afWorldCommPtr->m_paramsChanged){
-            // Do the stuff
-
-            vector<string> def_topics = m_afWorldCommPtr->get_defunct_topic_names();
-            vector<string> new_topics = m_afWorldCommPtr->get_new_topic_names();
-
-            for (int i = 0 ; i < def_topics.size() ; i++){
-                string topic_name = def_topics[i];
-                if (m_pcMap.find(topic_name) != m_pcMap.end()){
-                    // Cleanup
-                    afPointCloudPtr afPC = m_pcMap.find(topic_name)->second;
-                    cMultiPointPtr mpPtr = afPC->m_mpPtr;
-                    mpPtr->removeFromGraph();
-                    m_pcMap.erase(topic_name);
-                    delete mpPtr;
-                }
-            }
-
-            for (int i = 0 ; i < new_topics.size() ; i++){
-                string topic_name = new_topics[i];
-                ambf_comm::PointCloudHandlerPtr pchPtr = m_afWorldCommPtr->get_point_clound_handler(topic_name);
-                if (pchPtr){
-                    cMultiPointPtr mpPtr = new cMultiPoint();
-                    afPointCloudPtr afPC = new afPointCloud(this);
-                    afPC->m_mpPtr = mpPtr;
-                    afPC->m_pcCommPtr = pchPtr;
-                    m_pcMap[topic_name] = afPC;
-                    // Add as child, the header in PC message can override the parent later
-                    addSceneObjectToWorld(mpPtr);
-                }
-
-            }
-        }
-        m_read_count = 0;
-    }
-
-#endif
 }
 
 
@@ -6494,15 +6082,6 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // add time to overall simulation
     m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afWorldCommPtr.get() != nullptr){
-        m_afWorldCommPtr->set_sim_time(m_simulationTime);
-        m_afWorldCommPtr->set_wall_time(m_wallClock);
-        m_afWorldCommPtr->set_loop_freq(a_loopFreq);
-        m_afWorldCommPtr->set_num_devices(a_numDevices);
-    }
-#endif
 
     afUpdateTimes(getWallTime(), getSimulationTime());
 
@@ -6577,16 +6156,6 @@ void afWorld::estimateBodyWrenches(){
 ///
 void afWorld::updateSceneObjects()
 {
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_paramsSet == false){
-        // Create a default point cloud to listen to
-        m_afWorldCommPtr->append_point_cloud_topic(getQualifiedName() + "/" + "point_cloud");
-        m_afWorldCommPtr->set_params_on_server();
-        m_paramsSet = true;
-    }
-#endif
-
     // Update all models
     for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
     {
@@ -6627,6 +6196,10 @@ void afWorld::pluginsPhysicsUpdate(double dt)
     for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
     {
         (mIt->second)->pluginsPhysicsUpdate(dt);
+    }
+
+    for (map<string, afPointCloudPtr>::iterator pcIt = m_pcMap.begin() ; pcIt != m_pcMap.end() ; ++pcIt){
+        (pcIt->second)->pluginsPhysicsUpdate(dt);
     }
 }
 
@@ -6735,13 +6308,6 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
     setName(attribs.m_identificationAttribs.m_name);
     setNamespace(attribs.m_identificationAttribs.m_namespace);
 
-    afCreateCommInstance(getType(),
-                         getQualifiedName(),
-                         getGlobalNamespace(),
-                         getMinPublishFrequency(),
-                         getMaxPublishFrequency(),
-                         10.0);
-
     m_maxIterations = attribs.m_maxIterations;
 
     setGravity(attribs.m_gravity);
@@ -6813,6 +6379,8 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
+
+    loadCommunicationPlugin();
 
     return true;
 }
@@ -7936,85 +7504,6 @@ cWorld *afCamera::getBackLayer(){
 /// \param dt
 ///
 void afCamera::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afCameraCommPtr.get() != nullptr){
-        ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
-
-        if (m_afCommand.enable_position_controller){
-            cVector3d pos(m_afCommand.pose.position.x,
-                          m_afCommand.pose.position.y,
-                          m_afCommand.pose.position.z);
-
-            cQuaternion rot_quat(m_afCommand.pose.orientation.w,
-                                 m_afCommand.pose.orientation.x,
-                                 m_afCommand.pose.orientation.y,
-                                 m_afCommand.pose.orientation.z);
-
-            cMatrix3d rot_mat;
-            rot_quat.toRotMat(rot_mat);
-            setLocalPos(pos);
-            setLocalRot(rot_mat);
-        }
-        m_read_count++;
-        if(m_read_count % (m_afWorld->m_physicsFrequency * 2) == 0){
-            // We may update the params intermittently
-            m_afCameraCommPtr->update_params_from_server();
-            if (m_afCameraCommPtr->m_paramsChanged){
-                // Clear the flag so it can be used for testing again
-                m_afCameraCommPtr->m_paramsChanged = false;
-
-                double near_plane = m_afCameraCommPtr->get_near_plane();
-                double far_plane = m_afCameraCommPtr->get_far_plane();
-                double field_view_angle = m_afCameraCommPtr->get_field_view_angle();
-                double orthographic_view_width = m_afCameraCommPtr->get_orthographic_view_width();
-                double stereo_eye_separation = m_afCameraCommPtr->get_steteo_eye_separation();
-                double stereo_focal_length = m_afCameraCommPtr->get_steteo_focal_length();
-
-                string parent_name = m_afCameraCommPtr->get_parent_name();
-
-                m_camera->setClippingPlanes(near_plane, far_plane);
-
-                resolveParent(parent_name);
-
-                switch (m_afCameraCommPtr->get_projection_type()) {
-                case ambf_comm::ProjectionType::PERSPECTIVE:
-                    if (field_view_angle == 0){
-                        field_view_angle = 0.7;
-                        m_paramsSet = false;
-                    }
-                    m_camera->setFieldViewAngleRad(field_view_angle);
-                    setOrthographic(false);
-                    break;
-                case ambf_comm::ProjectionType::ORTHOGRAPHIC:
-                    if (orthographic_view_width == 0){
-                        orthographic_view_width = 10.0;
-                        m_paramsSet = false;
-                    }
-                    m_camera->setOrthographicView(orthographic_view_width);
-                    setOrthographic(true);
-                    break;
-                default:
-                    break;
-                }
-
-                switch (m_afCameraCommPtr->get_view_mode()) {
-                case ambf_comm::ViewMode::MONO:
-                    m_camera->setStereoMode(cStereoMode::C_STEREO_DISABLED);
-                    break;
-                case ambf_comm::ViewMode::STEREO:
-                    m_camera->setStereoMode(cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT);
-                    m_camera->setStereoEyeSeparation(stereo_eye_separation);
-                    m_camera->setStereoFocalLength(stereo_focal_length);
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            m_read_count = 0;
-        }
-    }
-#endif
 }
 
 
@@ -8023,53 +7512,6 @@ void afCamera::fetchCommands(double dt){
 ///
 void afCamera::update(double dt)
 {
-
-    // update Transform data for m_ObjectPtr
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afCameraCommPtr.get() != nullptr){
-
-        if (m_paramsSet == false){
-            m_afCameraCommPtr->set_near_plane(m_camera->getNearClippingPlane());
-            m_afCameraCommPtr->set_far_plane(m_camera->getFarClippingPlane());
-            m_afCameraCommPtr->set_field_view_angle(m_camera->getFieldViewAngleRad());
-            m_afCameraCommPtr->set_orthographic_view_width(m_camera->getOrthographicViewWidth());
-            m_afCameraCommPtr->set_steteo_eye_separation(m_camera->getStereoEyeSeparation());
-            m_afCameraCommPtr->set_steteo_focal_length(m_camera->getStereoFocalLength());
-            m_afCameraCommPtr->set_parent_name(m_parentName);
-
-            if (m_camera->isViewModePerspective()){
-                m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
-            }
-            else{
-                m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::ORTHOGRAPHIC);
-            }
-
-            if (m_stereoMode == C_STEREO_DISABLED){
-                m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
-            }
-            else{
-                m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::STEREO);;
-            }
-
-            m_afCameraCommPtr->set_params_on_server();
-            m_paramsSet = true;
-        }
-
-        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        cVector3d localPos = getLocalPos();
-        m_afCameraCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
-        cQuaternion q;
-        q.fromRotMat(getLocalRot());
-        m_afCameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-        m_write_count++;
-
-        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-            m_afCameraCommPtr->set_parent_name(m_parentName);
-            m_write_count = 0;
-        }
-    }
-#endif
 }
 
 
@@ -8601,45 +8043,6 @@ cGenericLight *afLight::getInternalLight()
 /// \param dt
 ///
 void afLight::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afLightCommPtr.get() != nullptr){
-        ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
-
-        if (m_afCommand.enable_position_controller){
-            cVector3d pos(m_afCommand.pose.position.x,
-                          m_afCommand.pose.position.y,
-                          m_afCommand.pose.position.z);
-
-            cQuaternion rot_quat(m_afCommand.pose.orientation.w,
-                                 m_afCommand.pose.orientation.x,
-                                 m_afCommand.pose.orientation.y,
-                                 m_afCommand.pose.orientation.z);
-
-            cMatrix3d rot_mat;
-            rot_quat.toRotMat(rot_mat);
-            setLocalPos(pos);
-            setLocalRot(rot_mat);
-        }
-        m_read_count++;
-        if(m_read_count % m_afWorld->m_updateCounterLimit == 0){
-            // We may update the params intermittently
-            m_afLightCommPtr->update_params_from_server();
-            if (m_afLightCommPtr->m_paramsChanged){
-                // Clear the flag so it can be used for testing again
-                m_afLightCommPtr->m_paramsChanged = false;
-
-                double cutoff_angle = m_afLightCommPtr->get_cuttoff_angle();
-                string parent_name = m_afLightCommPtr->get_parent_name();
-
-                m_spotLight->setCutOffAngleDeg(cRadToDeg(cutoff_angle));
-
-                resolveParent(parent_name);
-            }
-
-            m_read_count = 0;
-        }
-    }
-#endif
 }
 
 
@@ -8649,35 +8052,6 @@ void afLight::fetchCommands(double dt){
 ///
 void afLight::update(double dt)
 {
-
-    // update Transform data for m_ObjectPtr
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if(m_afLightCommPtr.get() != nullptr){
-
-        if (m_paramsSet == false){
-            m_afLightCommPtr->set_cuttoff_angle(cDegToRad(m_spotLight->getCutOffAngleDeg()));
-            m_afLightCommPtr->set_type(ambf_comm::LightType::SPOT);
-            m_afLightCommPtr->set_parent_name(m_parentName);
-
-            m_afLightCommPtr->set_params_on_server();
-            m_paramsSet = true;
-        }
-
-        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        cVector3d localPos = getLocalPos();
-        m_afLightCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
-        cQuaternion q;
-        q.fromRotMat(getLocalRot());
-        m_afLightCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-        m_write_count++;
-
-        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-            m_afLightCommPtr->set_parent_name(m_parentName);
-            m_write_count = 0;
-        }
-    }
-#endif
 }
 
 
@@ -9241,65 +8615,6 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
 /// \param dt
 ///
 void afVehicle::fetchCommands(double dt){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
-
-    int maxWheelCount;
-
-    if (af_cmd.brake == true){
-        for (int i = 0 ; i < m_numWheels ; i++){
-            m_vehicle->applyEngineForce(0.0, i);
-            m_vehicle->setBrake(m_wheelAttribs[i].m_brakePowerMax, i);
-        }
-    }
-    else{
-        for (int i = 0 ; i < m_numWheels ; i++){
-            m_vehicle->setBrake(0.0, i);
-        }
-
-        maxWheelCount = af_cmd.wheel_power.size() <= m_numWheels ? af_cmd.wheel_power.size() : m_numWheels;
-
-        for (int i = 0 ; i < maxWheelCount ; i++){
-            double val = af_cmd.wheel_power[i];
-            val = cClamp(val, -m_wheelAttribs[i].m_enginePowerMax, m_wheelAttribs[i].m_enginePowerMax);
-            m_vehicle->applyEngineForce(val, i);
-        }
-
-        maxWheelCount = af_cmd.wheel_brake.size() <= m_numWheels ? af_cmd.wheel_brake.size() : m_numWheels;
-
-        for (int i = 0 ; i < maxWheelCount ; i++){
-            double val = af_cmd.wheel_brake[i];
-            val = cClamp(val, 0.0, m_wheelAttribs[i].m_brakePowerMax);
-            m_vehicle->setBrake(val, i);
-        }
-    }
-
-    maxWheelCount = af_cmd.wheel_steering.size() <= m_numWheels ? af_cmd.wheel_steering.size() : m_numWheels;
-
-    for (int i = 0 ; i < maxWheelCount ; i++){
-        double val = af_cmd.wheel_steering[i];
-        val = cClamp(val, m_wheelAttribs[i].m_steeringLimitMin, m_wheelAttribs[i].m_steeringLimitMax);
-        m_vehicle->setSteeringValue(val, i);
-    }
-
-
-
-    // Apply forces and torques on the chassis
-    btVector3 force(af_cmd.chassis_wrench.force.x,
-                    af_cmd.chassis_wrench.force.y,
-                    af_cmd.chassis_wrench.force.z);
-    btVector3 torque(af_cmd.chassis_wrench.torque.x,
-                     af_cmd.chassis_wrench.torque.y,
-                     af_cmd.chassis_wrench.torque.z);
-
-    if (force.length() > 0.0){
-        m_chassis->m_bulletRigidBody->applyCentralForce(force);
-    }
-    if (torque.length() > 0.0){
-        m_chassis->m_bulletRigidBody->applyTorque(torque);
-    }
-
-#endif
 }
 
 void afVehicle::engageBrake(){
@@ -9363,26 +8678,6 @@ void afVehicle::update(double dt){
         }
 
     }
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_afVehicleCommPtr.get() != nullptr){
-
-        afUpdateTimes(m_afWorld->getWallTime(), m_afWorld->getSimulationTime());
-        cVector3d localPos = getLocalPos();
-        m_afVehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
-        cQuaternion q;
-        q.fromRotMat(getLocalRot());
-        m_afVehicleCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-        // Since the mass and inertia aren't going to change that often, write them
-        // out intermittently
-        if (m_write_count % m_afWorld->m_updateCounterLimit == 0){
-            m_afVehicleCommPtr->set_wheel_count(m_numWheels);
-            m_afVehicleCommPtr->set_mass(m_mass);
-            m_afVehicleCommPtr->set_principal_inertia(getInertia().x(), getInertia().y(), getInertia().z());
-        }
-    }
-#endif
 }
 
 
@@ -9418,77 +8713,18 @@ afDepthPointCloud::~afDepthPointCloud()
 
 afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afType::POINT_CLOUD, a_afWorld)
 {
+    m_mpPtr = new cMultiPoint();
+    m_afWorld->addSceneObjectToWorld(m_mpPtr);
+}
 
+afPointCloud::~afPointCloud()
+{
+    m_mpPtr->removeFromGraph();
+    delete m_mpPtr;
 }
 
 
-void afPointCloud::update(double dt)
-{
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    sensor_msgs::PointCloudPtr pcPtr = m_pcCommPtr->get_point_cloud();
-    if(pcPtr){
-        double radius = m_pcCommPtr->get_radius();
-        m_mpPtr->setPointSize(radius);
-        int pc_size = pcPtr->points.size();
-        int diff = pc_size - m_mpSize;
-        string frame_id = pcPtr->header.frame_id;
-
-        if (m_parentName.compare(frame_id) != 0 ){
-            // First remove any existing parent
-            if (m_mpPtr->getParent() != nullptr){
-                m_mpPtr->getParent()->removeChild(m_mpPtr);
-            }
-
-            afRigidBodyPtr pBody = m_afWorld->getRigidBody(frame_id);
-            if(pBody){
-//                pBody->addChildObject(this);
-                pBody->m_visualMesh->addChild(this->m_mpPtr);
-            }
-            else{
-                // Parent not found.
-                cerr << "WARNING! FOR POINT CLOUD \""<< m_topicName <<
-                        "\" PARENT BODY \"" << frame_id <<
-                        "\" NOT FOUND" << endl;
-            }
-        }
-
-        m_parentName = frame_id;
-
-        if (diff >= 0){
-            // PC array has either increased in size or the same size as MP array
-            for (int pIdx = 0 ; pIdx < m_mpSize ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            // Now add the new PC points to MP
-            for (int pIdx = m_mpSize ; pIdx < pc_size ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                m_mpPtr->newPoint(pcPos);
-            }
-        }
-        else{
-            // PC array has decreased in size as compared to MP array
-            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            for (int pIdx = m_mpSize ; pIdx > pc_size ; pIdx--){
-                m_mpPtr->removePoint(pIdx-1);
-            }
-        }
-        m_mpSize = pc_size;
-
-    }
-
-#endif
+void afPointCloud::update(double dt){
 }
 
 afGhostObject::afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afInertialObject(afType::GHOST_OBJECT, a_afWorld, a_modelPtr)

@@ -43,9 +43,9 @@
 
 #include "sensor_msgs/PointCloud.h"
 
-class PointCloundHandler{
+class PointCloudHandler{
 public:
-    PointCloundHandler(){}
+    PointCloudHandler(){}
 
     void init(boost::shared_ptr<ros::NodeHandle> a_node , std::string a_topic_name);
     void remove();

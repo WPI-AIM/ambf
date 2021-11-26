@@ -74,28 +74,8 @@ struct afRigidBodyState{
     vector<string> m_childrenNames;
 };
 
-
-class afCommunicationPlugin: public afObjectPlugin{
+class afCommunicationCommon{
 public:
-    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
-    virtual void graphicsUpdate() override;
-    virtual void physicsUpdate(double dt) override;
-    virtual bool close() override;
-
-    //! This method applies updates Wall and Sim Time for State Message.
-    virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
-
-    // Check if object is active or passive for communication
-    inline bool isPassive(){return m_passive;}
-
-    // Set as passive so it doesn't communication outside
-    inline void setPassive(bool a_passive){m_passive = a_passive;}
-
-    // Get Max publishing frequency for this object
-    int getMaxPublishFrequency();
-
-    // Get Min publishing frequency for this object
-    int getMinPublishFrequency();
 
     // Set Max publishing frequency for this object
     void setMaxPublishFrequency(int freq);
@@ -108,6 +88,58 @@ public:
 
     // Override the Min Freq
     static void overrideMinPublishingFrequency(int freq);
+
+    // Check if object is active or passive for communication
+    inline bool isPassive(){return m_passive;}
+
+    // Set as passive so it doesn't communication outside
+    inline void setPassive(bool a_passive){m_passive = a_passive;}
+
+
+    // Flag to check if the any params have been set on the server for this comm instance
+    bool m_paramsSet=false;
+
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
+
+protected:
+
+    // Min publishing frequency
+    uint m_minPubFreq=50;
+
+    // Max publishing frequency
+    uint m_maxPubFreq=1000;
+
+    // If passive, this instance will not be reported for communication purposess.
+    bool m_passive = false;
+
+    static bool s_globalOverride;
+    static int s_maxFreq;
+    static int s_minFreq;
+};
+
+
+class afObjectCommunicationPlugin: public afObjectPlugin, public afCommunicationCommon{
+public:
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
+    virtual void graphicsUpdate() override;
+    virtual void physicsUpdate(double dt) override;
+    virtual bool close() override;
+
+
+    // Get Max publishing frequency for this object
+    int getMaxPublishFrequency();
+
+    // Get Min publishing frequency for this object
+    int getMinPublishFrequency();
+
+    //! This method applies updates Wall and Sim Time for State Message.
+    virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
 
     void actuatorFetchCommand(afActuatorPtr, double);
     void actuatorUpdateState(afActuatorPtr, double);
@@ -130,21 +162,13 @@ public:
     void vehicleFetchCommand(afVehiclePtr, double);
     void vehicleUpdateState(afVehiclePtr, double);
 
+    void pointCloudFetchCommand(afPointCloudPtr, double);
+    void pointCloudUpdateState(afPointCloudPtr, double);
+
     void volumeFetchCommand(afVolumePtr, double);
     void volumeUpdateState(afVolumePtr, double);
 
 public:
-
-    // Flag to check if the any params have been set on the server for this comm instance
-    bool m_paramsSet=false;
-
-    // Counter for the times we have written to ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
-
-    // Counter for the times we have read from ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_read_count = 0;
 
     //! AMBF ROS COMM
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
@@ -155,32 +179,43 @@ public:
     std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
-    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+    std::shared_ptr<ambf_comm::PointCloudHandler> m_afPointCloudCommPtr;
 #endif
-
-private:
-
-
-    // Min publishing frequency
-    uint m_minPubFreq=50;
-
-    // Max publishing frequency
-    uint m_maxPubFreq=1000;
-
-    // If passive, this instance will not be reported for communication purposess.
-    bool m_passive = false;
-
-    afType m_commType;
-
-    static bool s_globalOverride;
-    static int s_maxFreq;
-    static int s_minFreq;
 
 protected:
     afRigidBodyState m_rbState;
 
 private:
     afType m_objectType;
+
+
+    afType m_commType;
+};
+
+
+class afWorldCommunicationPlugin: public afWorldPlugin, public afCommunicationCommon{
+public:
+    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs) override;
+    virtual void graphicsUpdate() override;
+    virtual void physicsUpdate(double dt) override;
+    virtual bool close() override;
+
+    // Get Max publishing frequency for this object
+    int getMaxPublishFrequency();
+
+    // Get Min publishing frequency for this object
+    int getMinPublishFrequency();
+
+    void worldFetchCommand(afWorldPtr, double);
+    void worldUpdateState(afWorldPtr, double);
+
+    void pointCloudFetchCommand(afPointCloudPtr, ambf_comm::PointCloudHandlerPtr, double);
+    void pointCloudUpdateState(afPointCloudPtr, ambf_comm::PointCloudHandlerPtr, double);
+
+
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+#endif
 };
 
 

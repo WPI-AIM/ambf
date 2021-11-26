@@ -1,12 +1,12 @@
 #include <afCommunicationPlugin.h>
 
 // afComm static vars
-bool afCommunicationPlugin::s_globalOverride = false;
-int afCommunicationPlugin::s_maxFreq = 1000;
-int afCommunicationPlugin::s_minFreq = 50;
+bool afCommunicationCommon::s_globalOverride = false;
+int afCommunicationCommon::s_maxFreq = 1000;
+int afCommunicationCommon::s_minFreq = 50;
 
 
-int afCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
+int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;
 
@@ -88,15 +88,16 @@ int afCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBas
         success = true;
     }
         break;
-    case afType::WORLD:
+    case afType::POINT_CLOUD:
     {
-        m_afWorldCommPtr.reset(new ambf_comm::World(objName, objNamespace, minFreq, maxFreq, timeOut));
+        afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
+        m_afPointCloudCommPtr.reset(new ambf_comm::PointCloudHandler(pcPtr->m_topicName));
         success = true;
     }
         break;
     default:
     {
-        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " NOT IMPLEMENTED YET" << endl;
+        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET" << endl;
         return -1;
     }
         break;
@@ -105,25 +106,63 @@ int afCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBas
     return success;
 }
 
-void afCommunicationPlugin::graphicsUpdate()
+void afObjectCommunicationPlugin::graphicsUpdate()
 {
 
 }
 
-void afCommunicationPlugin::physicsUpdate(double dt)
+void afObjectCommunicationPlugin::physicsUpdate(double dt)
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     afUpdateTimes(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime());
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:{
-
+        afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
+        actuatorFetchCommand(actPtr, dt);
+        actuatorUpdateState(actPtr, dt);
+    }
+        break;
+    case afType::CAMERA:{
+        afCameraPtr camPtr = (afCameraPtr)m_objectPtr;
+        cameraFetchCommand(camPtr, dt);
+        cameraUpdateState(camPtr, dt);
+    }
+        break;
+    case afType::LIGHT:{
+        afLightPtr lightPtr = (afLightPtr)m_objectPtr;
+        lightFetchCommand(lightPtr, dt);
+        lightUpdateState(lightPtr, dt);
+    }
+        break;
+    case afType::OBJECT:{
+        afRigidBodyPtr objPtr = (afRigidBodyPtr)m_objectPtr;
+//        objectFetchCommand(actPtr, dt);
+//        objectUpdateState(actPtr, dt);
     }
         break;
     case afType::RIGID_BODY:
     {
-        afRigidBodyPtr afRBPtr = (afRigidBodyPtr)m_objectPtr;
-        rigidBodyFetchCommand(afRBPtr, dt);
-        rigidBodyUpdateState(afRBPtr, dt);
+        afRigidBodyPtr rbPtr = (afRigidBodyPtr)m_objectPtr;
+        rigidBodyFetchCommand(rbPtr, dt);
+        rigidBodyUpdateState(rbPtr, dt);
+    }
+        break;
+    case afType::SENSOR:{
+        afSensorPtr senPtr = (afSensorPtr)m_objectPtr;
+        sensorFetchCommand(senPtr, dt);
+        sensorUpdateState(senPtr, dt);
+    }
+        break;
+    case afType::VEHICLE:{
+        afVehiclePtr vehPtr = (afVehiclePtr)m_objectPtr;
+        vehicleFetchCommand(vehPtr, dt);
+        vehicleUpdateState(vehPtr, dt);
+    }
+        break;
+    case afType::POINT_CLOUD:{
+        afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
+        pointCloudFetchCommand(pcPtr, dt);
+        pointCloudUpdateState(pcPtr, dt);
     }
         break;
     default:
@@ -133,13 +172,13 @@ void afCommunicationPlugin::physicsUpdate(double dt)
 #endif
 }
 
-bool afCommunicationPlugin::close()
+bool afObjectCommunicationPlugin::close()
 {
 
     return 1;
 }
 
-void afCommunicationPlugin::afUpdateTimes(const double a_wall_time, const double a_sim_time)
+void afObjectCommunicationPlugin::afUpdateTimes(const double a_wall_time, const double a_sim_time)
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     switch (m_commType) {
@@ -185,17 +224,11 @@ void afCommunicationPlugin::afUpdateTimes(const double a_wall_time, const double
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
     }
         break;
-    case afType::WORLD:
-    {
-        m_afWorldCommPtr->set_wall_time(a_wall_time);
-        m_afWorldCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
     }
 #endif
 }
 
-int afCommunicationPlugin::getMaxPublishFrequency()
+int afObjectCommunicationPlugin::getMaxPublishFrequency()
 {
     if (s_globalOverride){
         return s_maxFreq;
@@ -205,7 +238,7 @@ int afCommunicationPlugin::getMaxPublishFrequency()
     }
 }
 
-int afCommunicationPlugin::getMinPublishFrequency()
+int afObjectCommunicationPlugin::getMinPublishFrequency()
 {
     if (s_globalOverride){
         return s_minFreq;
@@ -215,7 +248,7 @@ int afCommunicationPlugin::getMinPublishFrequency()
     }
 }
 
-void afCommunicationPlugin::overrideMaxPublishingFrequency(int freq)
+void afCommunicationCommon::overrideMaxPublishingFrequency(int freq)
 {
     if (freq < s_minFreq){
         cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
@@ -226,7 +259,7 @@ void afCommunicationPlugin::overrideMaxPublishingFrequency(int freq)
     s_maxFreq = freq;
 }
 
-void afCommunicationPlugin::overrideMinPublishingFrequency(int freq)
+void afCommunicationCommon::overrideMinPublishingFrequency(int freq)
 {
     if (freq > s_maxFreq){
         cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
@@ -237,7 +270,7 @@ void afCommunicationPlugin::overrideMinPublishingFrequency(int freq)
     s_minFreq = freq;
 }
 
-void afCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, double)
+void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, double)
 {
     switch (actPtr->m_actuatorType) {
     case afActuatorType::CONSTRAINT:
@@ -278,13 +311,13 @@ void afCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, double)
     }
 }
 
-void afCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, double)
+void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, double)
 {
     m_afActuatorCommPtr->set_name(actPtr->getName());
     m_afActuatorCommPtr->set_parent_name(actPtr->m_parentName);
 }
 
-void afCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
+void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
@@ -368,7 +401,7 @@ void afCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
 
 }
 
-void afCommunicationPlugin::cameraUpdateState(afCameraPtr camPtr, double dt)
+void afObjectCommunicationPlugin::cameraUpdateState(afCameraPtr camPtr, double dt)
 {
     if (m_paramsSet == false){
         cCamera* cCamPtr = camPtr->getInternalCamera();
@@ -412,17 +445,17 @@ void afCommunicationPlugin::cameraUpdateState(afCameraPtr camPtr, double dt)
     }
 }
 
-void afCommunicationPlugin::jointFetchCommand(afJointPtr jointPtr, double dt)
+void afObjectCommunicationPlugin::jointFetchCommand(afJointPtr jointPtr, double dt)
 {
 
 }
 
-void afCommunicationPlugin::jointUpdateState(afJointPtr jointPtr, double dt)
+void afObjectCommunicationPlugin::jointUpdateState(afJointPtr jointPtr, double dt)
 {
 
 }
 
-void afCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double dt)
+void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double dt)
 {
     ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
 
@@ -461,7 +494,7 @@ void afCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double dt)
     }
 }
 
-void afCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double dt)
+void afObjectCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double dt)
 {
     if (m_paramsSet == false){
         m_afLightCommPtr->set_cuttoff_angle(lightPtr->getCutOffAngle());
@@ -486,7 +519,7 @@ void afCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double dt)
     }
 }
 
-void afCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, double dt)
+void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, double dt)
 {
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     btVector3 force, torque;
@@ -650,7 +683,7 @@ void afCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, double
     }
 }
 
-void afCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, double dt)
+void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, double dt)
 {
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     cQuaternion q;
@@ -731,12 +764,12 @@ void afCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, double 
     m_write_count++;
 }
 
-void afCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double dt)
+void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double dt)
 {
 
 }
 
-void afCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
+void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 {
     switch (senPtr->m_sensorType) {
     case afSensorType::RAYTRACER:
@@ -794,7 +827,7 @@ void afCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 
 }
 
-void afCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, double)
+void afObjectCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, double)
 {
     ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
 
@@ -847,7 +880,7 @@ void afCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, double)
     }
 }
 
-void afCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double dt)
+void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double dt)
 {
     cVector3d localPos = vehPtr->getLocalPos();
     m_afVehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
@@ -865,12 +898,86 @@ void afCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double dt)
     }
 }
 
-void afCommunicationPlugin::volumeFetchCommand(afVolumePtr volPtr, double dt)
+void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr, double)
 {
 
 }
 
-void afCommunicationPlugin::volumeUpdateState(afVolumePtr volPtr, double dt)
+void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointCloudPtr, double)
+{
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    sensor_msgs::PointCloudPtr pcPtr = m_afPointCloudCommPtr->get_point_cloud();
+    if(pcPtr){
+        double radius = m_afPointCloudCommPtr->get_radius();
+        pointCloudPtr->m_mpPtr->setPointSize(radius);
+        int pc_size = pcPtr->points.size();
+        int diff = pc_size - pointCloudPtr->m_mpSize;
+        string frame_id = pcPtr->header.frame_id;
+
+        if (pointCloudPtr->m_parentName.compare(frame_id) != 0 ){
+            // First remove any existing parent
+            if (pointCloudPtr->m_mpPtr->getParent() != nullptr){
+                pointCloudPtr->m_mpPtr->getParent()->removeChild(pointCloudPtr->m_mpPtr);
+            }
+
+            afRigidBodyPtr pBody = pointCloudPtr->m_afWorld->getRigidBody(frame_id);
+            if(pBody){
+//                pBody->addChildObject(this);
+                pBody->m_visualMesh->addChild(pointCloudPtr->m_mpPtr);
+            }
+            else{
+                // Parent not found.
+                cerr << "WARNING! FOR POINT CLOUD \""<< pointCloudPtr->m_topicName <<
+                        "\" PARENT BODY \"" << frame_id <<
+                        "\" NOT FOUND" << endl;
+            }
+        }
+
+        pointCloudPtr->m_parentName = frame_id;
+
+        if (diff >= 0){
+            // PC array has either increased in size or the same size as MP array
+            for (int pIdx = 0 ; pIdx < pointCloudPtr->m_mpSize ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                pointCloudPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            // Now add the new PC points to MP
+            for (int pIdx = pointCloudPtr->m_mpSize ; pIdx < pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                pointCloudPtr->m_mpPtr->newPoint(pcPos);
+            }
+        }
+        else{
+            // PC array has decreased in size as compared to MP array
+            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                pointCloudPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            for (int pIdx = pointCloudPtr->m_mpSize ; pIdx > pc_size ; pIdx--){
+                pointCloudPtr->m_mpPtr->removePoint(pIdx-1);
+            }
+        }
+        pointCloudPtr->m_mpSize = pc_size;
+
+    }
+
+#endif
+}
+
+void afObjectCommunicationPlugin::volumeFetchCommand(afVolumePtr volPtr, double dt)
+{
+
+}
+
+void afObjectCommunicationPlugin::volumeUpdateState(afVolumePtr volPtr, double dt)
 {
 
 }
@@ -934,5 +1041,195 @@ void afRigidBodyState::setJointEfforts(afRigidBodyPtr afRBPtr){
         for (size_t i = 0 ; i < num_jnts ; i++){
             m_jointEfforts[i] = afRBPtr->m_CJ_PairsActive[i].m_childJoint->getEffort();
         }
+    }
+}
+
+int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
+{
+    m_worldPtr = a_afWorld;
+
+    if (m_worldPtr == nullptr){
+        cerr << "ERROR! WORLD IS NULLPTR, FAILED TO INITIALIZE COMMUNICATION PLUGIN" << endl;
+        return 0;
+    }
+
+    string objName = m_worldPtr->getName();
+    string objNamespace = m_worldPtr->getNamespace();
+    int minFreq = getMinPublishFrequency();
+    int maxFreq = getMaxPublishFrequency();
+    double timeOut = 0.5;
+
+    bool success = false;
+
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    m_afWorldCommPtr.reset(new ambf_comm::World(objName, objNamespace, minFreq, maxFreq, timeOut));
+    success = true;
+#endif
+
+    return success;
+}
+
+void afWorldCommunicationPlugin::graphicsUpdate()
+{
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    if (m_paramsSet == false){
+        // Create a default point cloud to listen to
+        m_afWorldCommPtr->append_point_cloud_topic(m_worldPtr->getQualifiedName() + "/" + "point_cloud");
+        m_afWorldCommPtr->set_params_on_server();
+        m_paramsSet = true;
+    }
+#endif
+}
+
+void afWorldCommunicationPlugin::physicsUpdate(double dt)
+{
+    worldFetchCommand(m_worldPtr, dt);
+    worldUpdateState(m_worldPtr, dt);
+
+}
+
+bool afWorldCommunicationPlugin::close()
+{
+    return 1;
+}
+
+int afWorldCommunicationPlugin::getMaxPublishFrequency()
+{
+    if (s_globalOverride){
+        return s_maxFreq;
+    }
+    else{
+        return m_worldPtr->getMaxPublishFrequency();
+    }
+}
+
+int afWorldCommunicationPlugin::getMinPublishFrequency()
+{
+    if (s_globalOverride){
+        return s_minFreq;
+    }
+    else{
+        return m_worldPtr->getMinPublishFrequency();
+    }
+}
+
+void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
+{
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+
+    // If throttling is enabled, wait here until the step clock is toggled before
+    // progressing towards next step
+    while (!m_afWorldCommPtr->step_sim()){
+        usleep(1);
+    }
+
+    m_read_count++;
+    if(m_read_count % worldPtr->m_updateCounterLimit == 0){
+        m_afWorldCommPtr->update_params_from_server();
+        if (m_afWorldCommPtr->m_paramsChanged){
+            // Do the stuff
+
+            vector<string> def_topics = m_afWorldCommPtr->get_defunct_topic_names();
+            vector<string> new_topics = m_afWorldCommPtr->get_new_topic_names();
+
+            for (int i = 0 ; i < def_topics.size() ; i++){
+                string topic_name = def_topics[i];
+                if (worldPtr->m_pcMap.find(topic_name) != worldPtr->m_pcMap.end()){
+                    // Cleanup
+                    afPointCloudPtr afPC = worldPtr->m_pcMap.find(topic_name)->second;
+                    worldPtr->m_pcMap.erase(topic_name);
+                    delete afPC;
+                }
+            }
+
+            for (int i = 0 ; i < new_topics.size() ; i++){
+                string topic_name = new_topics[i];
+                afPointCloudPtr afPC = new afPointCloud(worldPtr);
+                afPC->m_topicName = topic_name;
+                afPC->loadCommunicationPlugin();
+                worldPtr->m_pcMap[topic_name] = afPC;
+            }
+        }
+        m_read_count = 0;
+    }
+
+#endif
+
+}
+
+void afWorldCommunicationPlugin::worldUpdateState(afWorldPtr worldPtr, double dt)
+{
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    m_afWorldCommPtr->set_sim_time(worldPtr->getSimulationTime());
+    m_afWorldCommPtr->set_wall_time(worldPtr->getWallTime());
+    m_afWorldCommPtr->set_loop_freq(1000);
+    m_afWorldCommPtr->set_num_devices(0);
+#endif
+}
+
+
+void afWorldCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr afPCPtr, ambf_comm::PointCloudHandlerPtr pchPtr, double)
+{
+    sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
+    if(pcPtr){
+        double radius = pchPtr->get_radius();
+        afPCPtr->m_mpPtr->setPointSize(radius);
+        int pc_size = pcPtr->points.size();
+        int diff = pc_size - afPCPtr->m_mpSize;
+        string frame_id = pcPtr->header.frame_id;
+
+        if (afPCPtr->m_parentName.compare(frame_id) != 0 ){
+            // First remove any existing parent
+            if (afPCPtr->m_mpPtr->getParent() != nullptr){
+                afPCPtr->m_mpPtr->getParent()->removeChild(afPCPtr->m_mpPtr);
+            }
+
+            afRigidBodyPtr pBody = afPCPtr->m_afWorld->getRigidBody(frame_id);
+            if(pBody){
+//                pBody->addChildObject(this);
+                pBody->m_visualMesh->addChild(afPCPtr->m_mpPtr);
+            }
+            else{
+                // Parent not found.
+                cerr << "WARNING! FOR POINT CLOUD \""<< afPCPtr->m_topicName <<
+                        "\" PARENT BODY \"" << frame_id <<
+                        "\" NOT FOUND" << endl;
+            }
+        }
+
+        afPCPtr->m_parentName = frame_id;
+
+        if (diff >= 0){
+            // PC array has either increased in size or the same size as MP array
+            for (int pIdx = 0 ; pIdx < afPCPtr->m_mpSize ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                afPCPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            // Now add the new PC points to MP
+            for (int pIdx = afPCPtr->m_mpSize ; pIdx < pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                afPCPtr->m_mpPtr->newPoint(pcPos);
+            }
+        }
+        else{
+            // PC array has decreased in size as compared to MP array
+            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
+                cVector3d pcPos(pcPtr->points[pIdx].x,
+                                pcPtr->points[pIdx].y,
+                                pcPtr->points[pIdx].z);
+                afPCPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
+            }
+
+            for (int pIdx = afPCPtr->m_mpSize ; pIdx > pc_size ; pIdx--){
+                afPCPtr->m_mpPtr->removePoint(pIdx-1);
+            }
+        }
+        afPCPtr->m_mpSize = pc_size;
+
     }
 }
