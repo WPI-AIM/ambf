@@ -898,12 +898,7 @@ void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double
     }
 }
 
-void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr, double)
-{
-
-}
-
-void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointCloudPtr, double)
+void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCloudPtr, double)
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloudPtr pcPtr = m_afPointCloudCommPtr->get_point_cloud();
@@ -970,6 +965,10 @@ void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointClo
     }
 
 #endif
+}
+
+void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointCloudPtr, double)
+{
 }
 
 void afObjectCommunicationPlugin::volumeFetchCommand(afVolumePtr volPtr, double dt)
@@ -1165,71 +1164,4 @@ void afWorldCommunicationPlugin::worldUpdateState(afWorldPtr worldPtr, double dt
     m_afWorldCommPtr->set_loop_freq(1000);
     m_afWorldCommPtr->set_num_devices(0);
 #endif
-}
-
-
-void afWorldCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr afPCPtr, ambf_comm::PointCloudHandlerPtr pchPtr, double)
-{
-    sensor_msgs::PointCloudPtr pcPtr = pchPtr->get_point_cloud();
-    if(pcPtr){
-        double radius = pchPtr->get_radius();
-        afPCPtr->m_mpPtr->setPointSize(radius);
-        int pc_size = pcPtr->points.size();
-        int diff = pc_size - afPCPtr->m_mpSize;
-        string frame_id = pcPtr->header.frame_id;
-
-        if (afPCPtr->m_parentName.compare(frame_id) != 0 ){
-            // First remove any existing parent
-            if (afPCPtr->m_mpPtr->getParent() != nullptr){
-                afPCPtr->m_mpPtr->getParent()->removeChild(afPCPtr->m_mpPtr);
-            }
-
-            afRigidBodyPtr pBody = afPCPtr->m_afWorld->getRigidBody(frame_id);
-            if(pBody){
-//                pBody->addChildObject(this);
-                pBody->m_visualMesh->addChild(afPCPtr->m_mpPtr);
-            }
-            else{
-                // Parent not found.
-                cerr << "WARNING! FOR POINT CLOUD \""<< afPCPtr->m_topicName <<
-                        "\" PARENT BODY \"" << frame_id <<
-                        "\" NOT FOUND" << endl;
-            }
-        }
-
-        afPCPtr->m_parentName = frame_id;
-
-        if (diff >= 0){
-            // PC array has either increased in size or the same size as MP array
-            for (int pIdx = 0 ; pIdx < afPCPtr->m_mpSize ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                afPCPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            // Now add the new PC points to MP
-            for (int pIdx = afPCPtr->m_mpSize ; pIdx < pc_size ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                afPCPtr->m_mpPtr->newPoint(pcPos);
-            }
-        }
-        else{
-            // PC array has decreased in size as compared to MP array
-            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                afPCPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            for (int pIdx = afPCPtr->m_mpSize ; pIdx > pc_size ; pIdx--){
-                afPCPtr->m_mpPtr->removePoint(pIdx-1);
-            }
-        }
-        afPCPtr->m_mpSize = pc_size;
-
-    }
 }

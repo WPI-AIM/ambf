@@ -46,6 +46,9 @@
 #include <string>
 #include "ambf_server/WorldRosCom.h"
 
+#include "sensor_msgs/PointCloud.h"
+#include "std_msgs/Float32.h"
+
 namespace ambf_comm{
 
 class PointCloudHandler;
@@ -54,8 +57,7 @@ typedef std::map<std::string, PointCloudHandlerPtr> PointCloudHandlerMap;
 typedef std::vector<PointCloudHandlerPtr> PointCloudHandlerVec;
 
 enum class WorldParamsEnum{
-    point_cloud_topics,
-    point_cloud_radii
+    point_cloud_topics
 };
 
 
@@ -86,9 +88,6 @@ protected:
     // Datatyped Variables for params defined on the server
     std::vector<std::string> m_point_cloud_topics;
 
-    // This vector should be the same size as the topic names and suggests the radius of each stream of PC.
-    std::vector<double> m_point_cloud_radii;
-
     // At each update, any new topics are added to this list
     std::vector<std::string> m_new_topic_names;
 
@@ -112,8 +111,11 @@ public:
     void set_radius(double a_radius){m_radius = abs(a_radius);}
 
 private:
-    void sub_cb(sensor_msgs::PointCloudPtr msg);
+    void pc_sub_cb(sensor_msgs::PointCloudPtr msg);
+    void radius_sub_cb(std_msgs::Float32Ptr msg);
     ros::Subscriber m_pcSub;
+    ros::Subscriber m_radiusSub;
+    ros::Subscriber m_colorSub;
     std::string m_topicName;
     sensor_msgs::PointCloudPtr m_StatePtr;
 

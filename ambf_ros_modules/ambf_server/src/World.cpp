@@ -48,7 +48,6 @@ const std::string world_param_enum_to_str(WorldParamsEnum enumVal)
 {
     std::string str = "";
     if (enumVal == WorldParamsEnum::point_cloud_topics) str = "point_cloud_topics";
-    else if (enumVal == WorldParamsEnum::point_cloud_radii) str = "point_cloud_radii";
 
     return str;
 }
@@ -72,7 +71,8 @@ PointCloudHandler::PointCloudHandler(std::string a_topicName)
 /// \brief PointCloudHandler::init
 ///
 void PointCloudHandler::init(){
-    m_pcSub = afROSNode::getNode()->subscribe(m_topicName, 5, &PointCloudHandler::sub_cb, this);
+    m_pcSub = afROSNode::getNode()->subscribe(m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
+    m_radiusSub = afROSNode::getNode()->subscribe(m_topicName + "/radius", 5, &PointCloudHandler::radius_sub_cb, this);
 }
 
 
@@ -80,8 +80,13 @@ void PointCloudHandler::init(){
 /// \brief PointCloundHandler::sub_cb
 /// \param msg
 ///
-void PointCloudHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
+void PointCloudHandler::pc_sub_cb(sensor_msgs::PointCloudPtr msg){
     m_StatePtr = msg;
+}
+
+void PointCloudHandler::radius_sub_cb(std_msgs::Float32Ptr msg)
+{
+    set_radius((double)msg->data);
 }
 
 
@@ -102,7 +107,6 @@ void PointCloudHandler::remove(){
 ///
 void World::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), m_point_cloud_topics);
-    nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), m_point_cloud_radii);
 }
 
 ///
@@ -110,10 +114,8 @@ void World::set_params_on_server(){
 ///
 void World::update_params_from_server(){
     std::vector<std::string> topic_names;
-    std::vector<double> topic_radii;
 
     nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), topic_names);
-    nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), topic_radii);
 
     std::vector<bool> keep_active_idx;
 

@@ -2197,10 +2197,6 @@ public:
     virtual void update(double dt);
 
     std::string m_topicName;
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    ambf_comm::PointCloudHandlerPtr m_pcCommPtr;
-#endif
 };
 
 

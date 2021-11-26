@@ -209,9 +209,6 @@ public:
     void worldFetchCommand(afWorldPtr, double);
     void worldUpdateState(afWorldPtr, double);
 
-    void pointCloudFetchCommand(afPointCloudPtr, ambf_comm::PointCloudHandlerPtr, double);
-    void pointCloudUpdateState(afPointCloudPtr, ambf_comm::PointCloudHandlerPtr, double);
-
 
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
