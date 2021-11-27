@@ -80,18 +80,6 @@
 #endif
 
 //-----------------------------------------------------------------------------
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_server/Actuator.h"
-#include "ambf_server/Camera.h"
-#include "ambf_server/Light.h"
-#include "ambf_server/Object.h"
-#include "ambf_server/RigidBody.h"
-#include "ambf_server/Sensor.h"
-#include "ambf_server/Vehicle.h"
-#include "ambf_server/World.h"
-#endif
-
-//-----------------------------------------------------------------------------
 
 // Support for Depth Image to PointCloud2
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
@@ -281,14 +269,6 @@ public:
     afComm(){}
     virtual ~afComm(){}
 
-    virtual void afCreateCommInstance(afType type, string a_name, string a_namespace, int a_min_freq=50, int a_max_freq=2000, double time_out=0.5);
-
-    // This method is to retrieve all the commands for appropriate af comm instances.
-    virtual void fetchCommands(double dt=0.001);
-
-    //! This method applies updates Wall and Sim Time for State Message.
-    virtual void afUpdateTimes(const double a_wall_time, const double a_sim_time);
-
     // Check if object is active or passive for communication
     inline bool isPassive(){return m_passive;}
 
@@ -313,31 +293,6 @@ public:
     // Override the Min Freq
     static void overrideMinPublishingFrequency(int freq);
 
-public:
-
-    // Flag to check if the any params have been set on the server for this comm instance
-    bool m_paramsSet=false;
-
-    // Counter for the times we have written to ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
-
-    // Counter for the times we have read from ambf_comm API
-    // This is only for internal use as it could be reset
-    unsigned short m_read_count = 0;
-
-    //! AMBF ROS COMM
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
-    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
-    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
-    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
-    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
-    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
-    std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
-#endif
-
 private:
 
 
@@ -349,8 +304,6 @@ private:
 
     // If passive, this instance will not be reported for communication purposess.
     bool m_passive = false;
-
-    afType m_commType;
 
     static bool s_globalOverride;
     static int s_maxFreq;
@@ -593,10 +546,6 @@ public:
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
     virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
-
-    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
-    // In case the body is kinematic, only position cmds will be applied
-    virtual void fetchCommands(double){}
 
     // The update method called at every simulation iteration.
     virtual void update(double dt);
@@ -1031,10 +980,6 @@ public:
 
     virtual void setLocalTransform(cTransform &trans);
 
-    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
-    // In case the body is kinematic, only position cmds will be applied
-    virtual void fetchCommands(double dt);
-
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void update(double dt);
 
@@ -1281,10 +1226,6 @@ public:
     afGhostObject(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     virtual ~afGhostObject();
 
-    // Method called by afComm to apply positon, force or joint commands on the afRigidBody
-    // In case the body is kinematic, only position cmds will be applied
-    virtual void fetchCommands(double dt){}
-
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void update(double dt);
 
@@ -1323,8 +1264,6 @@ public:
     virtual ~afJoint();
 
     virtual bool createFromAttribs(afJointAttributes* a_attribs);
-
-    virtual void fetchCommands(double);
 
     virtual void update(double dt);
 
@@ -1450,8 +1389,6 @@ public:
     // Parent Body for this sensor
     afRigidBodyPtr m_parentBody;
 
-    virtual void fetchCommands(double){}
-
     virtual void update(double dt){}
 
     afActuatorType m_actuatorType;
@@ -1513,8 +1450,6 @@ public:
     // Remove the constraint
     virtual void deactuate();
 
-    virtual void fetchCommands(double dt);
-
     virtual void update(double dt);
 
     inline bool isActuated(){return m_active;}
@@ -1567,8 +1502,6 @@ public:
     bool m_show = true;
 
     bool m_visualizationEnabled = false;
-
-    virtual void fetchCommands(double dt);
 
     // Upate the sensor, usually called at each dynamic tick update of the physics engine
     virtual void update(double dt);
@@ -1643,8 +1576,6 @@ public:
     void enableVisualization();
 
     void visualize(bool show);
-
-    virtual void fetchCommands(double dt);
 
 
     double m_range;
@@ -1888,9 +1819,6 @@ public:
     void destroyWindow();
 
     // Define the virtual method for camera
-    virtual void fetchCommands(double dt);
-
-    // Define the virtual method for camera
     virtual void update(double dt);
 
     // Initialize
@@ -2092,11 +2020,6 @@ protected:
 
 #endif
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    ambf_comm::ProjectionType m_projectionType;
-    ambf_comm::ViewMode m_viewMode;
-#endif
-
     // Depth to Point Cloud Impl
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
@@ -2160,8 +2083,6 @@ public:
 
     virtual bool createFromAttribs(afLightAttributes* a_attribs);
 
-    virtual void fetchCommands(double dt);
-
     virtual void update(double dt);
 
     inline double getCutOffAngle(){return cDegToRad(m_spotLight->getCutOffAngleDeg());}
@@ -2191,8 +2112,6 @@ public:
     cMultiPointPtr m_mpPtr;
 
     int m_mpSize = 0;
-
-    virtual void fetchCommands(double){}
 
     virtual void update(double dt);
 
@@ -2320,8 +2239,6 @@ public:
     string getGlobalNamespace(){return m_global_namespace;}
 
     void setGlobalNamespace(string a_namespace);
-
-    virtual void fetchCommands(double dt);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
@@ -2511,8 +2428,6 @@ public:
 
     virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
 
-    virtual void fetchCommands(double dt);
-
     virtual void update(double dt);
 
     virtual void updateGlobalPose();
@@ -2581,8 +2496,6 @@ public:
 
     virtual void update(double dt);
 
-    virtual void fetchCommands(double dt);
-
     inline int getWheelCount(){return m_numWheels;}
 
     btRaycastVehicle* getInternalVehicle(){return m_vehicle;}
@@ -2623,8 +2536,6 @@ public:
     virtual bool createFromAttribs(afVolumeAttributes* a_attribs);
 
     virtual void update(double dt);
-
-    virtual void fetchCommands(double dt);
 
     virtual cShaderProgramPtr getShaderProgram();
 

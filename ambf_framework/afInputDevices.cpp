@@ -281,10 +281,6 @@ void afPhysicalDevice::createAfCursor(afWorldPtr a_afWorld, std::string a_name, 
     m_afCursor->m_visualMesh = new cMultiMesh();
     m_afCursor->m_visualMesh->m_meshes->push_back(tempMesh);
     a_afWorld->addSceneObjectToWorld(m_afCursor->m_visualMesh);
-    m_afCursor->afCreateCommInstance(afType::OBJECT,
-                                     a_name, a_afWorld->resolveGlobalNamespace(a_namespace),
-                                     minPF,
-                                     maxPF);
 }
 
 
@@ -454,10 +450,6 @@ void afPhysicalDevice::updateCursorPose(){
     if(m_afCursor){
         m_afCursor->setLocalPos(m_pos * m_workspaceScale);
         m_afCursor->setLocalRot(m_rot);
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-        m_afCursor->m_afObjectCommPtr->set_userdata_desc("haptics frequency");
-        m_afCursor->m_afObjectCommPtr->set_userdata(m_freq_ctr.getFrequency());
-#endif
     }
 }
 
@@ -649,11 +641,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         // running
         if(attribs.m_sdeDefined){
             std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
-            m_rootLink->afCreateCommInstance(afType::RIGID_BODY,
-                                                        simDevName,
-                                                        m_afWorld->resolveGlobalNamespace(m_rootLink->getNamespace()),
-                                                        m_rootLink->getMinPublishFrequency(),
-                                                        m_rootLink->getMaxPublishFrequency());
+            m_rootLink->loadCommunicationPlugin();
         }
     }
     else{

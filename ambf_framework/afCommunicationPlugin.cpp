@@ -1,10 +1,5 @@
 #include <afCommunicationPlugin.h>
 
-// afComm static vars
-bool afCommunicationCommon::s_globalOverride = false;
-int afCommunicationCommon::s_maxFreq = 1000;
-int afCommunicationCommon::s_minFreq = 50;
-
 
 int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
@@ -17,8 +12,8 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 
     string objName = m_objectPtr->getName() + m_objectPtr->getGlobalRemapIdx();
     string objNamespace = m_objectPtr->getNamespace();
-    int minFreq = getMinPublishFrequency();
-    int maxFreq = getMaxPublishFrequency();
+    int minFreq = m_objectPtr->getMinPublishFrequency();
+    int maxFreq = m_objectPtr->getMaxPublishFrequency();
     double timeOut = 0.5;
 
     bool success = false;
@@ -231,48 +226,6 @@ void afObjectCommunicationPlugin::afUpdateTimes(const double a_wall_time, const 
         break;
     }
 #endif
-}
-
-int afObjectCommunicationPlugin::getMaxPublishFrequency()
-{
-    if (s_globalOverride){
-        return s_maxFreq;
-    }
-    else{
-        return m_objectPtr->getMaxPublishFrequency();
-    }
-}
-
-int afObjectCommunicationPlugin::getMinPublishFrequency()
-{
-    if (s_globalOverride){
-        return s_minFreq;
-    }
-    else{
-        return m_objectPtr->getMinPublishFrequency();
-    }
-}
-
-void afCommunicationCommon::overrideMaxPublishingFrequency(int freq)
-{
-    if (freq < s_minFreq){
-        cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
-        return;
-    }
-    cerr << "INFO ! Overriding Max Communication Frequency to: " << freq << endl;
-    s_globalOverride = true;
-    s_maxFreq = freq;
-}
-
-void afCommunicationCommon::overrideMinPublishingFrequency(int freq)
-{
-    if (freq > s_maxFreq){
-        cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
-        return;
-    }
-    cerr << "INFO ! Overriding Min Communication Frequency to: " << freq << endl;
-    s_globalOverride = true;
-    s_minFreq = freq;
 }
 
 void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, double)
@@ -1059,8 +1012,8 @@ int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAt
 
     string objName = m_worldPtr->getName();
     string objNamespace = m_worldPtr->getNamespace();
-    int minFreq = getMinPublishFrequency();
-    int maxFreq = getMaxPublishFrequency();
+    int minFreq = m_worldPtr->getMinPublishFrequency();
+    int maxFreq = m_worldPtr->getMaxPublishFrequency();
     double timeOut = 0.5;
 
     bool success = false;
@@ -1095,26 +1048,6 @@ void afWorldCommunicationPlugin::physicsUpdate(double dt)
 bool afWorldCommunicationPlugin::close()
 {
     return 1;
-}
-
-int afWorldCommunicationPlugin::getMaxPublishFrequency()
-{
-    if (s_globalOverride){
-        return s_maxFreq;
-    }
-    else{
-        return m_worldPtr->getMaxPublishFrequency();
-    }
-}
-
-int afWorldCommunicationPlugin::getMinPublishFrequency()
-{
-    if (s_globalOverride){
-        return s_minFreq;
-    }
-    else{
-        return m_worldPtr->getMinPublishFrequency();
-    }
 }
 
 void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)

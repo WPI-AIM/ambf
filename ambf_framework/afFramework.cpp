@@ -543,112 +543,6 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
 
 
 ///
-/// \brief afComm::afCreateCommInstance
-/// \param type
-/// \param a_name
-/// \param a_namespace
-/// \param a_min_freq
-/// \param a_max_freq
-/// \param time_out
-///
-void afComm::afCreateCommInstance(afType type, string a_name, string a_namespace, int a_min_freq, int a_max_freq, double time_out){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    switch (type) {
-    case afType::ACTUATOR:
-        m_afActuatorCommPtr.reset(new ambf_comm::Actuator(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::CAMERA:
-        m_afCameraCommPtr.reset(new ambf_comm::Camera(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::LIGHT:
-        m_afLightCommPtr.reset(new ambf_comm::Light(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::OBJECT:
-        m_afObjectCommPtr.reset(new ambf_comm::Object(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::RIGID_BODY:
-        m_afRigidBodyCommPtr.reset(new ambf_comm::RigidBody(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::SENSOR:
-        m_afSensorCommPtr.reset(new ambf_comm::Sensor(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::VEHICLE:
-        m_afVehicleCommPtr.reset(new ambf_comm::Vehicle(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    case afType::WORLD:
-        m_afWorldCommPtr.reset(new ambf_comm::World(a_name, a_namespace, a_min_freq, a_max_freq, time_out));
-        break;
-    default:
-        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << a_name << " NOT IMPLEMENTED YET" << endl;
-        break;
-    }
-#endif
-    m_commType = type;
-}
-
-
-///
-/// \brief afComm::afObjectSetTime
-/// \param a_wall_time
-/// \param a_sim_time
-///
-void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    switch (m_commType) {
-    case afType::ACTUATOR:
-    {
-        m_afActuatorCommPtr->set_wall_time(a_wall_time);
-        m_afActuatorCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::CAMERA:
-    {
-        m_afCameraCommPtr->set_wall_time(a_wall_time);
-        m_afCameraCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::LIGHT:
-    {
-        m_afLightCommPtr->set_wall_time(a_wall_time);
-        m_afLightCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::OBJECT:
-    {
-        m_afObjectCommPtr->set_wall_time(a_wall_time);
-        m_afObjectCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::RIGID_BODY:
-    {
-        m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
-        m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::SENSOR:
-    {
-        m_afSensorCommPtr->set_wall_time(a_wall_time);
-        m_afSensorCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::VEHICLE:
-    {
-        m_afVehicleCommPtr->set_wall_time(a_wall_time);
-        m_afVehicleCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    case afType::WORLD:
-    {
-        m_afWorldCommPtr->set_wall_time(a_wall_time);
-        m_afWorldCommPtr->set_sim_time(a_sim_time);
-    }
-        break;
-    }
-#endif
-}
-
-
-///
 /// \brief afComm::getMinPublishFrequency
 /// \return
 ///
@@ -731,14 +625,6 @@ void afComm::overrideMinPublishingFrequency(int freq)
     cerr << "INFO ! OVERRIDING MIN COMMUNICATION FREQUENCY TO: " << freq << endl;
     s_globalOverride = true;
     s_minFreq = freq;
-}
-
-
-///
-/// \brief afComm::afObjectCommandExecute
-/// \param dt
-///
-void afComm::fetchCommands(double dt){
 }
 
 
@@ -2034,14 +1920,6 @@ void afConstraintActuator::deactuate(){
 
 
 ///
-/// \brief afCartesianController::afExecuteCommand
-/// \param dt
-///
-void afConstraintActuator::fetchCommands(double dt){
-}
-
-
-///
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::update(double dt){
@@ -2799,14 +2677,6 @@ bool afRigidBody::updateBodySensors(uint threadIdx){
         usleep(1000);
     }
     return true;
-}
-
-
-///
-/// \brief afRigidBody::afCommandExecute
-/// \param dt
-///
-void afRigidBody::fetchCommands(double dt){
 }
 
 
@@ -4189,11 +4059,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     return true;
 }
 
-void afJoint::fetchCommands(double dt){
-    cacheState(dt);
-}
-
 void afJoint::update(double dt){
+    cacheState(dt);
 }
 
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
@@ -4415,15 +4282,6 @@ double afJoint::getEffort(){
 /// \param a_afWorld
 ///
 afSensor::afSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::SENSOR, a_afWorld, a_modelPtr){
-}
-
-
-///
-/// \brief afSensor::afExecuteCommand
-/// \param dt
-///
-void afSensor::fetchCommands(double dt){
-
 }
 
 
@@ -4706,15 +4564,6 @@ void afRayTracerSensor::setRayToInLocal(const cVector3d &a_rayTo, uint idx){
 
 void afRayTracerSensor::setDirection(const cVector3d &a_direction, uint idx){
     m_raysAttribs[idx].m_direction.set(a_direction.x(), a_direction.y(), a_direction.z());
-}
-
-
-///
-/// \brief afRayTracerSensor::afExecuteCommand
-/// \param dt
-///
-void afRayTracerSensor::fetchCommands(double dt){
-
 }
 
 
@@ -6038,14 +5887,6 @@ double afWorld::getSimulationDeltaTime()
 
 
 ///
-/// \brief afWorld::afExecuteCommand
-/// \param dt
-///
-void afWorld::fetchCommands(double dt){
-}
-
-
-///
 /// \brief afWorld::updateDynamics
 /// \param a_interval
 /// \param a_wallClock
@@ -6066,15 +5907,9 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         }
     }
 
-    fetchCommands(a_interval);
-
     m_wallClock = a_wallClock;
 
     double dt = getSimulationDeltaTime();
-
-    for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
-        (mIt->second)->fetchCommands(dt);
-    }
 
     // integrate simulation during an certain interval
     m_bulletWorld->stepSimulation(a_interval, m_maxIterations, m_integrationTimeStep);
@@ -6082,8 +5917,6 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     // add time to overall simulation
     m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
-
-    afUpdateTimes(getWallTime(), getSimulationTime());
 
     estimateBodyWrenches();
 
@@ -7503,13 +7336,6 @@ cWorld *afCamera::getBackLayer(){
     return m_camera->m_backLayer;
 }
 
-///
-/// \brief afCamera::afObjectCommandExecute
-/// \param dt
-///
-void afCamera::fetchCommands(double dt){
-}
-
 
 ///
 /// \brief afCamera::updatePositionFromDynamics
@@ -7585,12 +7411,6 @@ afCamera::~afCamera(){
 #endif
 
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    // DO NOT DELETE AS THE NODE SHOULD BE DESTROYED EXTERNALLY
-    //    if (m_rosNode != nullptr){
-    //        delete m_rosNode;
-    //        m_rosNode = 0;
-    //    }
-
     if (m_depthPointCloudModifier != nullptr){
         delete m_depthPointCloudModifier;
         m_depthPointCloudModifier = 0;
@@ -8075,15 +7895,6 @@ cGenericLight *afLight::getInternalLight()
 
 
 ///
-/// \brief afLight::fetchCommands
-/// \param dt
-///
-void afLight::fetchCommands(double dt){
-}
-
-
-
-///
 /// \brief afLight::updatePositionFromDynamics
 ///
 void afLight::update(double dt)
@@ -8295,25 +8106,6 @@ bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
     }
 
     return true;
-}
-
-
-///
-/// \brief afModel::fetchCommands
-/// \param dt
-///
-void afModel::fetchCommands(double dt)
-{
-    // Read the AF_COMM commands and apply to all different types of objects
-    afChildrenMap::iterator cIt;
-
-    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
-    {
-        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
-            afBaseObject* childObj = oIt->second;
-            childObj->fetchCommands(dt);
-        }
-    }
 }
 
 
@@ -8648,14 +8440,6 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     loadCommunicationPlugin();
 
     return result;
-}
-
-
-///
-/// \brief afVehicle::afExecuteCommand
-/// \param dt
-///
-void afVehicle::fetchCommands(double dt){
 }
 
 void afVehicle::engageBrake(){
@@ -9137,15 +8921,6 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 /// \param dt
 ///
 void afVolume::update(double dt)
-{
-
-}
-
-///
-/// \brief afVolume::fetchCommands
-/// \param dt
-///
-void afVolume::fetchCommands(double dt)
 {
 
 }
