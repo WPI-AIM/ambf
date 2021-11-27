@@ -2521,6 +2521,8 @@ public:
 
     virtual void loadShaderProgram();
 
+    afWorldPtr getWorldPtr();
+
     void pluginsGraphicsUpdate();
 
     void pluginsPhysicsUpdate(double dt);

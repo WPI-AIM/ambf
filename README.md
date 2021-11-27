@@ -68,8 +68,15 @@ You can also permanently add the install location in your .bashrc with the follo
 `echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
 #### 4.3 Running the Simulator:
-Having completed the steps above running is Simulator is easy. Depending
-on what OS you're using simply follow the commands below:
+Having completed the steps above running is Simulator is easy.
+
+On **Linux OS**, open a terminal and run `roscore`.
+
+```bash
+roscore
+```
+
+Then depending on what OS you're using simply follow the commands below in a new terminal:
 
 ```
 cd ~/ambf/bin/<os>

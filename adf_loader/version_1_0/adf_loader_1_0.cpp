@@ -1065,7 +1065,7 @@ bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afTy
 {
     YAML::Node& rootNode = *a_node;
     if (rootNode.IsNull()){
-        cerr << "ERROR: OBJECT'S YAML NODE IS NULL\n";
+        cerr << "ERROR! OBJECT'S YAML NODE IS NULL\n";
         return 0;
     }
 
@@ -1096,12 +1096,12 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: LIGHT'S " << node << " NODE IS NULL\n";
+        cerr << "ERROR! LIGHT'S " << node << " NODE IS NULL\n";
         return false;
     }
 
     if (attribs == nullptr){
-        cerr << "ERROR: LIGHT'S ATTRIBUTES IS A NULLPTR\n";
+        cerr << "ERROR! LIGHT'S ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
 
@@ -1172,12 +1172,12 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: CAMERA'S " << node << " NODE IS NULL\n";
+        cerr << "ERROR! CAMERA'S " << node << " NODE IS NULL\n";
         return false;
     }
 
     if (attribs == nullptr){
-        cerr << "ERROR: CAMERA'S ATTRIBUTES IS A NULLPTR\n";
+        cerr << "ERROR! CAMERA'S ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
 
@@ -1317,12 +1317,12 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: RIGID BODY " << node << " NODE IS NULL\n";
+        cerr << "ERROR! RIGID BODY " << node << " NODE IS NULL\n";
         return false;
     }
 
     if (attribs == nullptr){
-        cerr << "ERROR: RIGID BODY ATTRIBUTES IS A NULLPTR\n";
+        cerr << "ERROR! RIGID BODY ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
     // Declare all the yaml parameters that we want to look for
@@ -1403,7 +1403,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: SOFT BODY'S YAML NODE IS NULL\n";
+        cerr << "ERROR! SOFT BODY'S YAML NODE IS NULL\n";
         return 0;
     }
     // Declare all the yaml parameters that we want to look for
@@ -1591,12 +1591,12 @@ bool ADFLoader_1_0::loadGhostObjectAttribs(YAML::Node *a_node, afGhostObjectAttr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: GHOST OBJECT " << node << " NODE IS NULL\n";
+        cerr << "ERROR! GHOST OBJECT " << node << " NODE IS NULL\n";
         return false;
     }
 
     if (attribs == nullptr){
-        cerr << "ERROR: GHOST OBJECT ATTRIBUTES IS A NULLPTR\n";
+        cerr << "ERROR! GHOST OBJECT ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
     // Declare all the yaml parameters that we want to look for
@@ -1646,7 +1646,7 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: JOINT'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! JOINT'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
     // Declare all the yaml parameters that we want to look for
@@ -1862,7 +1862,7 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: SENSOR'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! SENSOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -1913,7 +1913,7 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: SENSOR'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! SENSOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2031,7 +2031,7 @@ bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistance
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2080,7 +2080,7 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2128,7 +2128,7 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: ACTUATOR'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2162,7 +2162,7 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: VEHICLE'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! VEHICLE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2201,7 +2201,7 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: VOLUMES'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! VOLUMES'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2266,7 +2266,7 @@ bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2301,7 +2301,7 @@ bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttr
         attribs->m_hardwareName = hardwareNameNode.as<string>();
     }
     else{
-        cerr << "ERROR: PHYSICAL DEVICES HARDWARE NAME NOT DEFINED, IGNORING \n";
+        cerr << "ERROR! PHYSICAL DEVICES HARDWARE NAME NOT DEFINED, IGNORING \n";
         return 0;
     }
 
@@ -2368,7 +2368,7 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttribs(YAML::Node *a_node, afSimulatedDe
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2448,7 +2448,7 @@ bool ADFLoader_1_0::loadTeleRoboticUnitsAttribs(YAML::Node *a_node, string a_fil
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: ALL INPUT DEVICES'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! ALL INPUT DEVICES'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2493,7 +2493,7 @@ bool ADFLoader_1_0::loadTeleRoboticUnitsAttribs(YAML::Node *a_node, string a_fil
                 }
             }
             else{
-                std::cerr << "ERROR: DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevicesNode.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << filePath.c_str() << "\"\n";
+                std::cerr << "ERROR! DEVICE INDEX : \"" << devIdx << "\" > \"" << inputDevicesNode.size() << "\" NO. OF DEVICE SPECIFIED IN \"" << filePath.c_str() << "\"\n";
                 load_status = false;
             }
         }
@@ -2521,7 +2521,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: MODEL'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! MODEL'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2743,7 +2743,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: WORLD'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! WORLD'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 
@@ -2866,7 +2866,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
 {
     YAML::Node& node = *a_node;
     if (node.IsNull()){
-        cerr << "ERROR: LAUNCH FILE'S YAML CONFIG DATA IS NULL\n";
+        cerr << "ERROR! LAUNCH FILE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
 

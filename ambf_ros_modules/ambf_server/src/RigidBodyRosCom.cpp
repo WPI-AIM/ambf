@@ -54,7 +54,7 @@ void RigidBodyRosCom::init(){
     m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &RigidBodyRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&RigidBodyRosCom::run_publishers, this));
-    std::cerr << "Thread Joined: " << m_name << std::endl;
+    std::cerr << "INFO! Thread Joined: " << m_name << std::endl;
 }
 
 void RigidBodyRosCom::reset_cmd(){

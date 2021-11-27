@@ -217,7 +217,7 @@ bool afPhysicalDevice::createFromAttribs(afInputDeviceAttributes *a_attribs)
 
     double _deadBand = attribs.m_deadBand;
     if (_deadBand < 0){
-        std::cerr << "WARNING: PHYSICAL DEVICE : \"" << attribs.m_hardwareName << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
+        std::cerr << "WARNING! PHYSICAL DEVICE : \"" << attribs.m_hardwareName << "\" DEAD BAND MUST BE POSITIVE, IGNORING \n";
     }
     else{
         m_deadBand = _deadBand;
@@ -583,7 +583,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
     afSimulatedDeviceAttribs& attribs = *a_attribs;
 
     if (attribs.m_rootLinkDefined == false && attribs.m_sdeDefined == false){
-        std::cerr << "ERROR: PHYSICAL DEVICE BINDING REQUIRES EITHER A \"simulated multibody\" "
+        std::cerr << "ERROR! PHYSICAL DEVICE BINDING REQUIRES EITHER A \"simulated multibody\" "
                      "or a \"root link\" TO DISPLAY A PROXY IN SIMULATION \n";
         return 0;
     }
@@ -841,13 +841,13 @@ bool afCollateralControlManager::createFromAttribs(vector<afTeleRoboticUnitAttri
                 load_status = true;
             }
             else{
-                std::cerr << "WARNING: FAILED TO MODEL " << tuAttrib.m_sdeAttribs.m_filePath.c_str() << " FOR DEVICE: \"" << devName << "\"\n";
+                std::cerr << "WARNING! FAILED TO MODEL " << tuAttrib.m_sdeAttribs.m_filePath.c_str() << " FOR DEVICE: \"" << devName << "\"\n";
                 load_status = false;
             }
         }
         else
         {
-            std::cerr << "WARNING: FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
+            std::cerr << "WARNING! FAILED TO LOAD DEVICE: \"" << devName << "\"\n";
             load_status = false;
         }
 

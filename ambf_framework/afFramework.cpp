@@ -512,7 +512,7 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
             //            m_visualMesh->markForUpdate(false);
         }
         else{
-            cerr << "WARNING: OBJECT "
+            cerr << "WARNING! OBJECT "
                  << obj_name
                  << "'s mesh \"" << attribs->m_meshFilepath.c_str() << "\" not found\n";
             return false;
@@ -712,7 +712,7 @@ void afComm::overrideMaxPublishingFrequency(int freq)
         cerr << "ERROR! MAX PUBLISHING FREQUENCY CANNOT BE LOWER THAN MIN PUBLISHING FREQUENCY. IGNORING!" << endl;
         return;
     }
-    cerr << "INFO ! Overriding Max Communication Frequency to: " << freq << endl;
+    cerr << "INFO ! OVERRIDING MAX COMMUNICATION FREQUENCY TO: " << freq << endl;
     s_globalOverride = true;
     s_maxFreq = freq;
 }
@@ -728,7 +728,7 @@ void afComm::overrideMinPublishingFrequency(int freq)
         cerr << "ERROR! MIN PUBLISHING FREQUENCY CANNOT BE GREATER THAN MAX PUBLISHING FREQUENCY. IGNORING!" << endl;
         return;
     }
-    cerr << "INFO ! Overriding Min Communication Frequency to: " << freq << endl;
+    cerr << "INFO ! OVERRIDING MIN COMMUNICATION FREQUENCY TO: " << freq << endl;
     s_globalOverride = true;
     s_minFreq = freq;
 }
@@ -1785,7 +1785,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
         m_parentBody = m_afWorld->getRigidBody(m_parentName + getGlobalRemapIdx());
 
         if (m_parentBody == nullptr){
-            cerr << "ERROR: ACTUATOR'S "<< m_parentName + getGlobalRemapIdx() << " NOT FOUND, IGNORING ACTUATOR\n";
+            cerr << "ERROR! ACTUATOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING ACTUATOR\n";
             return 0;
         }
     }
@@ -2608,7 +2608,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
                                                                         attribs.m_collisionAttribs.m_meshShapeType);
         }
         else{
-            cerr << "WARNING: Body "
+            cerr << "WARNING! Body "
                  << m_name
                  << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
             return false;
@@ -2646,7 +2646,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     else{
         // No valid collision. Must be an empty object
         m_bulletCollisionShape = new btEmptyShape();
-        cerr << "ERROR!" << m_name << " COLLISION TYPE NOT UNDERSTOOD" << endl;
+        cerr << "ERROR! " << m_name << " COLLISION TYPE NOT UNDERSTOOD" << endl;
     }
 
     // The collision groups are sorted by integer indices. A group is an array of
@@ -2662,7 +2662,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
             m_collisionGroups.push_back(group);
         }
         else{
-            cerr << "WARNING: Body "
+            cerr << "WARNING! Body "
                  << m_name
                  << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
         }
@@ -3950,7 +3950,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         m_afParentBody = m_afWorld->getRigidBody(m_parentName, true);
         // If a body is still not found, print error and ignore joint
         if (m_afParentBody == nullptr){
-            cerr <<"ERROR: JOINT: \"" << m_name <<
+            cerr <<"ERROR! JOINT: \"" << m_name <<
                    "\'s\" PARENT BODY \"" << m_parentName <<
                    "\" NOT FOUND" << endl;
             return 0;
@@ -3959,7 +3959,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         if (!(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
                 && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
-            //            cerr <<"INFO: JOINT: \"" << m_name <<
+            //            cerr <<"INFO! JOINT: \"" << m_name <<
             //                   "\'s\" PARENT BODY \"" << m_parentName <<
             //                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
         }
@@ -3968,7 +3968,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         m_afChildBody = m_afWorld->getRigidBody(m_childName, true);
         // If any body is still not found, print error and ignore joint
         if (m_afChildBody == nullptr){
-            cerr <<"ERROR: JOINT: \"" << m_name <<
+            cerr <<"ERROR! JOINT: \"" << m_name <<
                    "\'s\" CHILD BODY \"" << m_childName <<
                    "\" NOT FOUND" << endl;
             return 0;
@@ -3977,7 +3977,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         if ( !(strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
              && !(strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
              && !(strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
-            cerr <<"INFO: JOINT: \"" << m_name <<
+            cerr <<"INFO! JOINT: \"" << m_name <<
                    "\'s\" CHILD BODY \"" << m_childName <<
                    "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
         }
@@ -4537,7 +4537,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     if(m_parentBody == nullptr){
         m_parentBody = m_afWorld->getRigidBody(m_parentName + getGlobalRemapIdx());
         if (m_parentBody == nullptr){
-            cerr << "ERROR: SENSOR'S "<< m_parentName + getGlobalRemapIdx() << " NOT FOUND, IGNORING SENSOR\n";
+            cerr << "ERROR! SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
             return 0;
         }
     }
@@ -5113,7 +5113,7 @@ afBaseObjectPtr afObjectManager::getBaseObject(string a_name, afBaseObjectMap* o
         return objHandle;
     }
     else if(matching_obj_count > 1){
-        cerr << "WARNING: MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        cerr << "WARNING! MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
         for (int i = 0 ; i < matching_obj_names.size() ; i++){
             cerr << "\t" << i << ") " << matching_obj_names[i] << endl;
         }
@@ -5121,7 +5121,7 @@ afBaseObjectPtr afObjectManager::getBaseObject(string a_name, afBaseObjectMap* o
     }
     else{
         if (!suppress_warning){
-            cerr << "WARNING: CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
+            cerr << "WARNING! CAN'T FIND ANY OBJECTS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
 
             cerr <<"Existing OBJECTS in Map: " << objMap->size() << endl;
             afBaseObjectMap::iterator oIt = objMap->begin();
@@ -5195,7 +5195,7 @@ afRigidBodyPtr afObjectManager::getRigidBody(btRigidBody* a_body, bool suppress_
     afRigidBodyPtr rBody = nullptr;
     if (a_body->getUserPointer() == nullptr){
         if (!suppress_warning){
-            cerr << "WARNING: CAN'T FIND ANY AF RIGID BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
+            cerr << "WARNING! CAN'T FIND ANY AF RIGID BODY BOUND TO BULLET RIGID BODY: \"" << a_body << "\"\n";
             cerr <<"Existing Bodies in Map: " << getRigidBodyMap()->size() << endl;
             afBaseObjectMap::iterator rbIt = getRigidBodyMap()->begin();
             for (; rbIt != getRigidBodyMap()->end() ; ++rbIt){
@@ -5284,7 +5284,7 @@ afSoftBodyPtr afObjectManager::getSoftBody(btSoftBody* a_body, bool suppress_war
     afSoftBodyPtr sBody = nullptr;
     if (a_body->getUserPointer() == nullptr){
         if (!suppress_warning){
-            cerr << "WARNING: CAN'T FIND ANY AF SOFT BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
+            cerr << "WARNING! CAN'T FIND ANY AF SOFT BODY BOUND TO BULLET SOFT BODY: \"" << a_body << "\"\n";
             cerr << "Existing Bodies in Map: " << getSoftBodyMap()->size() << endl;
             afBaseObjectMap::iterator rbIt = getSoftBodyMap()->begin();
             for (; rbIt != getSoftBodyMap()->end() ; ++rbIt){
@@ -5321,7 +5321,7 @@ afGhostObjectPtr afObjectManager::getGhostObject(btGhostObject *a_body, bool sup
     afGhostObjectPtr ghostObj = nullptr;
     if (a_body->getUserPointer() == nullptr){
         if (!suppress_warning){
-            cerr << "WARNING: CAN'T FIND ANY AF GHOST OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
+            cerr << "WARNING! CAN'T FIND ANY AF GHOST OBJECT BOUND TO BULLET GHOST OBJECT: \"" << a_body << "\"\n";
             cerr << "Existing Bodies in Map: " << getGhostObjectMap()->size() << endl;
             afBaseObjectMap::iterator rbIt = getGhostObjectMap()->begin();
             for (; rbIt != getGhostObjectMap()->end() ; ++rbIt){
@@ -5675,7 +5675,7 @@ afModelPtr afModelManager::getModel(string a_name, bool suppress_warning){
         return objHandle;
     }
     else if(matching_obj_count > 1){
-        cerr << "WARNING: MULTIPLE MODELS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
+        cerr << "WARNING! MULTIPLE MODELS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
         for (int i = 0 ; i < matching_models_names.size() ; i++){
             cerr << "\t" << i << ") " << matching_models_names[i] << endl;
         }
@@ -5683,7 +5683,7 @@ afModelPtr afModelManager::getModel(string a_name, bool suppress_warning){
     }
     else{
         if (!suppress_warning){
-            cerr << "WARNING: CAN'T FIND ANY MODELS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
+            cerr << "WARNING! CAN'T FIND ANY MODELS NAMED: \"" << a_name << "\" IN GLOBAL MAP \n";
 
             cerr <<"Existing MODELS in Map: " << modelsMap->size() << endl;
             afModelMap::iterator oIt = modelsMap->begin();
@@ -7059,7 +7059,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setOrthographic(attribs.m_orthographic);
 
     if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
-        cerr << "INFO: CAMERA \"" << attribs.m_identificationAttribs.m_name << "\" MONITOR NUMBER \"" << monitorToLoad
+        cerr << "INFO! CAMERA \"" << attribs.m_identificationAttribs.m_name << "\" MONITOR NUMBER \"" << monitorToLoad
              << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
         monitorToLoad = -1;
     }
@@ -7698,13 +7698,31 @@ void afCamera::activatePreProcessingShaders()
         if (m_preprocessingShaderProgram.get()){
             preProcessingShadersUpdate();
             afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rbPtr = (afRigidBodyPtr)rbIt->second;
-                if (rbPtr->m_visualMesh){
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afRigidBodyPtr objPtr = (afRigidBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
                     // Store the current shader Pgm
-                    rbPtr->backupShaderProgram();
-                    rbPtr->setShaderProgram(m_preprocessingShaderProgram);
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (rbIt = visualObjMap->begin(); rbIt != visualObjMap->end() ; rbIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)rbIt->second;
+                if (objPtr->m_visualMesh){
+                    // Store the current shader Pgm
+                    objPtr->backupShaderProgram();
+                    objPtr->setShaderProgram(m_preprocessingShaderProgram);
                 }
             }
 
@@ -7732,23 +7750,37 @@ void afCamera::deactivatePreProcessingShaders()
 {
     if (m_preprocessingShaderAttribs.m_shaderDefined){
         if (m_preprocessingShaderProgram.get()){
-            afBaseObjectMap::iterator rbIt;
-            afBaseObjectMap* rbMap = m_afWorld->getRigidBodyMap();
-            for (rbIt = rbMap->begin(); rbIt != rbMap->end() ; rbIt++){
-                afRigidBodyPtr rb = (afRigidBody*)rbIt->second;
-                if (rb->m_visualMesh){
+            afBaseObjectMap::iterator objIt;
+            afBaseObjectMap* visualObjMap = m_afWorld->getRigidBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afRigidBodyPtr objPtr = (afRigidBody*)objIt->second;
+                if (objPtr->m_visualMesh){
                     // Reassign the backedup shaderpgm for the next rendering pass
-                    rb->restoreShaderProgram();
+                    objPtr->restoreShaderProgram();
                 }
             }
-
-            afBaseObjectMap::iterator vIt;
-            afBaseObjectMap* vMap = m_afWorld->getVolumeMap();
-            for (vIt = vMap->begin(); vIt != vMap->end() ; vIt++){
-                afVolumePtr vPtr = (afVolumePtr)vIt->second;
-                if (vPtr->getInternalVolume()){
-                    // Store the current shader Pgm
-                    vPtr->restoreShaderProgram();
+            visualObjMap = m_afWorld->getGhostObjectMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afGhostObjectPtr objPtr = (afGhostObjectPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getSoftBodyMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afSoftBodyPtr objPtr = (afSoftBodyPtr)objIt->second;
+                if (objPtr->m_visualMesh){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    objPtr->restoreShaderProgram();
+                }
+            }
+            visualObjMap = m_afWorld->getVolumeMap();
+            for (objIt = visualObjMap->begin(); objIt != visualObjMap->end() ; objIt++){
+                afVolumePtr volPtr = (afVolumePtr)objIt->second;
+                if (volPtr->getInternalVolume()){
+                    // Reassign the backedup shaderpgm for the next rendering pass
+                    volPtr->restoreShaderProgram();
                 }
             }
         }
@@ -8348,6 +8380,11 @@ void afModel::loadShaderProgram()
     }
 }
 
+afWorldPtr afModel::getWorldPtr()
+{
+    return m_afWorld;
+}
+
 ///
 /// \brief afModel::pluginsGraphicsUpdate
 ///
@@ -8877,7 +8914,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
                                                                         attribs.m_collisionAttribs.m_meshShapeType);
         }
         else{
-            cerr << "WARNING: Body "
+            cerr << "WARNING! Body "
                  << m_name
                  << "'s mesh \"" << m_collisionMeshFilePath.c_str() << "\" not found\n";
             return false;
@@ -8935,7 +8972,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
                 m_collisionGroups.push_back(group);
             }
             else{
-                cerr << "WARNING: Ghost's "
+                cerr << "WARNING! Ghost's "
                      << m_name
                      << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
             }
