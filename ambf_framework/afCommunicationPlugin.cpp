@@ -108,7 +108,18 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 
 void afObjectCommunicationPlugin::graphicsUpdate()
 {
-
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    switch (m_objectPtr->getType()) {
+    case afType::POINT_CLOUD:{
+        afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
+        pointCloudFetchCommand(pcPtr, 0.001);
+        pointCloudUpdateState(pcPtr, 0.001);
+    }
+        break;
+    default:
+        break;
+    }
+#endif
 }
 
 void afObjectCommunicationPlugin::physicsUpdate(double dt)
@@ -157,12 +168,6 @@ void afObjectCommunicationPlugin::physicsUpdate(double dt)
         afVehiclePtr vehPtr = (afVehiclePtr)m_objectPtr;
         vehicleFetchCommand(vehPtr, dt);
         vehicleUpdateState(vehPtr, dt);
-    }
-        break;
-    case afType::POINT_CLOUD:{
-        afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
-        pointCloudFetchCommand(pcPtr, dt);
-        pointCloudUpdateState(pcPtr, dt);
     }
         break;
     default:

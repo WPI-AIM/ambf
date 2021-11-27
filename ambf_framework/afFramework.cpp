@@ -6182,6 +6182,10 @@ void afWorld::pluginsGraphicsUpdate()
         (mIt->second)->pluginsGraphicsUpdate();
     }
 
+    for (map<string, afPointCloudPtr>::iterator pcIt = m_pcMap.begin() ; pcIt != m_pcMap.end() ; ++pcIt){
+        (pcIt->second)->pluginsGraphicsUpdate();
+    }
+
 }
 
 
