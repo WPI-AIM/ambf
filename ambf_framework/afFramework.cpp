@@ -51,7 +51,7 @@
 #include "BulletSoftBody/btSoftBodySolvers.h"
 //------------------------------------------------------------------------------
 
-#include "afCommunicationPlugin.h"
+#include "afROSCommunicationPlugins.h"
 
 //------------------------------------------------------------------------------
 using namespace ambf;
@@ -80,10 +80,6 @@ int afComm::s_maxFreq = 1000;
 int afComm::s_minFreq = 50;
 
 btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
-
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-image_transport::ImageTransport* afCamera::s_imageTransport = nullptr;
-#endif
 //------------------------------------------------------------------------------
 
 
@@ -943,7 +939,7 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 
 
 ///
-/// \brief afBaseObject::loadPlugins
+/// \brief afBaseObject::
 /// \param pluginAttribs
 /// \return
 ///
@@ -1273,12 +1269,12 @@ void afBaseObject::removeAllChildSceneObjects(bool removeFromGraph){
 /// \brief afBaseObject::loadCommunicationPlugin
 /// \return
 ///
-bool afBaseObject::loadCommunicationPlugin()
+bool afBaseObject::loadCommunicationPlugin(afBaseObjectPtr a_objPtr, afBaseObjectAttribsPtr a_attribs)
 {
     bool result = false;
     if (isPassive() == false){
         afObjectCommunicationPlugin* commPlugin = new afObjectCommunicationPlugin();
-        if (commPlugin->init(this, nullptr)){
+        if (commPlugin->init(a_objPtr, a_attribs)){
             m_pluginManager.add(commPlugin);
             result = true;
         }
@@ -1683,10 +1679,10 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return result;
 }
@@ -2582,10 +2578,10 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     // Where to add the visual, collision and this object?
     return true;
@@ -3447,10 +3443,10 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     setPassive(true);
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
@@ -4051,10 +4047,10 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
@@ -4429,10 +4425,10 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return result;
 }
@@ -5685,10 +5681,6 @@ afWorld::afWorld(string a_global_namespace): afIdentification(afType::WORLD), af
 
 afWorld::~afWorld()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    afROSNode::destroyNode();
-#endif
-
     m_pluginManager.close();
 
     if(m_bulletWorld){
@@ -5780,12 +5772,12 @@ void afWorld::getEnclosureExtents(double &length, double &width, double &height)
     height = m_enclosureH;
 }
 
-bool afWorld::loadCommunicationPlugin()
+bool afWorld::loadCommunicationPlugin(afWorldPtr a_worldPtr, afWorldAttribsPtr a_attribs)
 {
     bool result = false;
     if (isPassive() == false){
         afWorldCommunicationPlugin* commPlugin = new afWorldCommunicationPlugin();
-        if (commPlugin->init(this, nullptr)){
+        if (commPlugin->init(a_worldPtr, a_attribs)){
             m_pluginManager.add(commPlugin);
             result = true;
         }
@@ -6214,10 +6206,10 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     addModel(envModel);
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
@@ -6822,37 +6814,6 @@ void afCamera::createPreProcessingShaders(afShaderAttributes* preprocessingShade
 
 
 ///
-/// \brief afCamera::createImageTransport
-///
-void afCamera::createImageTransport(){
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    m_rosNode = afROSNode::getNode();
-    if (s_imageTransport == nullptr){
-        s_imageTransport = new image_transport::ImageTransport(*m_rosNode);
-    }
-    m_imagePublisher = s_imageTransport->advertise(getQualifiedName() + "/ImageData", 1);
-#endif
-}
-
-
-///
-/// \brief afCamera::createDepthTransport
-/// \param imageAttribs
-///
-void afCamera::createDepthTransport(afImageResolutionAttribs* imageAttribs)
-{
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    m_depthPointCloudMsg.reset(new sensor_msgs::PointCloud2());
-    m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
-    m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
-    m_depthPointCloudModifier->resize(imageAttribs->m_width*imageAttribs->m_height);
-    m_rosNode = afROSNode::getNode();
-    m_depthPointCloudPub = m_rosNode->advertise<sensor_msgs::PointCloud2>(getQualifiedName() + "/DepthData", 1);
-#endif
-}
-
-
-///
 /// \brief afCamera::getTargetPosGlobal
 /// \return
 ///
@@ -7043,21 +7004,38 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
     setGlobalRemapIdx(remap_idx);
 
-    if (m_publishImage || m_publishDepth){
-
-        createPreProcessingShaders(&attribs.m_preProcessShaderAttribs);
-
-        enableImagePublishing(&attribs.m_publishImageResolution);
-
-        if (m_publishDepth){
-            enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
-        }
-    }
 
     loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    if (m_publishImage || m_publishDepth){
+
+        createPreProcessingShaders(&attribs.m_preProcessShaderAttribs);
+
+        if(m_publishImage){
+            enableImagePublishing(&attribs.m_publishImageResolution);
+            afCameraVideoStreamer* videoPlugin = new afCameraVideoStreamer();
+            if (videoPlugin->init(this, a_attribs)){
+                m_pluginManager.add(videoPlugin);
+            }
+            else{
+                videoPlugin;
+            }
+        }
+
+        if (m_publishDepth){
+            enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
+            afCameraDepthStreamer* depthPlugin = new afCameraDepthStreamer();
+            if(depthPlugin->init(this, a_attribs)){
+                m_pluginManager.add(depthPlugin);
+            }
+            else{
+                delete depthPlugin;
+            }
+        }
+    }
+
+    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
@@ -7266,17 +7244,6 @@ void afCamera::computeDepthOnGPU()
 /// \brief afCamera::publishImage
 ///
 void afCamera::publishImage(){
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
-    // WITH THE COLORED DETPH POINT CLOUD
-    m_bufferColorImage->flipHorizontal();
-    m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
-    cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
-    sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
-    rosMsg->header.stamp = ros::Time::now();
-    m_imagePublisher.publish(rosMsg);
-    m_bufferColorImage->flipHorizontal();
-#endif
 }
 
 
@@ -7285,38 +7252,6 @@ void afCamera::publishImage(){
 ///
 void afCamera::publishDepthPointCloud()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
-
-    int width = m_depthBufferColorImage->getWidth();
-    int height = m_depthBufferColorImage->getHeight();
-
-    for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
-        double noise;
-        if (m_depthNoise.isEnabled()){
-            noise = m_depthNoise.generate();
-        }
-        else{
-            noise = 0.0;
-        }
-        *pcMsg_x = m_depthPC.m_data[idx * m_depthPC.m_numFields + 0];
-        *pcMsg_y = m_depthPC.m_data[idx * m_depthPC.m_numFields + 1];
-        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] + noise;
-
-        *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
-        *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];
-        *pcMsg_b = m_bufferColorImage->getData()[idx * 4 + 2];
-    }
-
-    m_depthPointCloudMsg->header.frame_id = m_name;
-    m_depthPointCloudMsg->header.stamp = ros::Time::now();
-    m_depthPointCloudPub.publish(m_depthPointCloudMsg);
-#endif
 }
 
 ///
@@ -7402,21 +7337,6 @@ afCamera::~afCamera(){
     if (m_dephtWorld != nullptr){
         delete m_dephtWorld;
     }
-
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    if (s_imageTransport != nullptr){
-        delete s_imageTransport;
-        s_imageTransport = nullptr;
-    }
-#endif
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    if (m_depthPointCloudModifier != nullptr){
-        delete m_depthPointCloudModifier;
-        m_depthPointCloudModifier = 0;
-    }
-#endif
-
 }
 
 
@@ -7637,7 +7557,6 @@ void afCamera::preProcessingShadersUpdate()
 void afCamera::enableImagePublishing(afImageResolutionAttribs* imageAttribs)
 {
     createFrameBuffers(imageAttribs);
-    createImageTransport();
     m_publishImage = true;
 }
 
@@ -7713,8 +7632,6 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
         shaderProgram->use(go, ro);
         m_depthMesh->setShaderProgram(shaderProgram);
         shaderProgram->disable();
-
-        createDepthTransport(imageAttribs);
         m_publishDepth = true;
     }
     else{
@@ -7828,10 +7745,10 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return valid;
 }
@@ -8079,7 +7996,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     // This flag would ignore collision for all the multibodies in the scene
@@ -8095,7 +8012,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 
 
 ///
-/// \brief afModel::loadPlugins
+/// \brief afModel::
 /// \param pluginAttribs
 /// \return
 ///
@@ -8437,7 +8354,7 @@ bool afVehicle::createFromAttribs(afVehicleAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getVehicleMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadCommunicationPlugin();
+    loadCommunicationPlugin(this, a_attribs);
 
     return result;
 }
@@ -8764,7 +8681,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         valid = true;
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     return valid;
@@ -8910,7 +8827,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
         m_afWorld->addObjectMissingParent(this);
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
+    (&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     return true;

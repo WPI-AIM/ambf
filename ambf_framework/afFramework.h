@@ -70,23 +70,6 @@
 //-----------------------------------------------------------------------------
 
 #include <GLFW/glfw3.h>
-
-//-----------------------------------------------------------------------------
-
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-#include <image_transport/image_transport.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.h>
-#endif
-
-//-----------------------------------------------------------------------------
-
-// Support for Depth Image to PointCloud2
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-#include "sensor_msgs/PointCloud2.h"
-#include "sensor_msgs/point_cloud2_iterator.h"
-#endif
-
 //-----------------------------------------------------------------------------
 
 #include <time.h>
@@ -612,7 +595,7 @@ public:
 
     void removeAllChildSceneObjects(bool removeFromGraphs=true);
 
-    bool loadCommunicationPlugin();
+    bool loadCommunicationPlugin(afBaseObjectPtr a_objPtr, afBaseObjectAttribsPtr a_attribs);
 
     virtual void updateSceneObjects();
 
@@ -1720,6 +1703,7 @@ public:
     inline uint getWidth(){return m_width;}
     inline uint getHeight(){return m_height;}
     inline uint getNumFields(){return m_numFields;}
+    float* getData(){return m_data;}
 
 protected:
     float *m_data = nullptr;
@@ -1971,14 +1955,14 @@ public:
 
     std::map<afRigidBodyPtr, cShaderProgramPtr> m_shaderProgramBackup;
 
+    afNoiseModel* getDepthNoiseModel(){return &m_depthNoise;}
+
+    afDepthPointCloud* getDepthPointCloud(){return &m_depthPC;}
+
 protected:
     void createFrameBuffers(afImageResolutionAttribs* imageAttribs);
 
     void createPreProcessingShaders(afShaderAttributes* preprocessingShaderAttribs);
-
-    void createImageTransport();
-
-    void createDepthTransport(afImageResolutionAttribs* imageAttribs);
 
     void activatePreProcessingShaders();
 
@@ -2002,31 +1986,6 @@ protected:
     static int s_numWindows;
     static int s_cameraIdx;
     static int s_windowIdx;
-
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-protected:
-
-    // Open CV Image Matrix
-    cv::Mat m_imageMatrix;
-
-    // Image Transport CV Bridge Node
-    static image_transport::ImageTransport *s_imageTransport;
-
-    // Image Transport Publisher
-    image_transport::Publisher m_imagePublisher;
-
-    // Image Transport ROS Node
-    ros::NodeHandle* m_rosNode;
-
-#endif
-
-    // Depth to Point Cloud Impl
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
-    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
-    ros::Publisher m_depthPointCloudPub;
-#endif
-
 private:
 
     // Hold the cCamera private and shield it's kinematics represented
@@ -2178,7 +2137,7 @@ public:
 
     int getManualSteps(){return m_manualStepPhx;}
 
-    bool loadCommunicationPlugin();
+    bool loadCommunicationPlugin(afWorldPtr, afWorldAttribsPtr);
 
     void resetCameras();
 

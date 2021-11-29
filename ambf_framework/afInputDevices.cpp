@@ -641,7 +641,7 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         // running
         if(attribs.m_sdeDefined){
             std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
-            m_rootLink->loadCommunicationPlugin();
+            m_rootLink->loadCommunicationPlugin(m_rootLink, a_attribs);
         }
     }
     else{

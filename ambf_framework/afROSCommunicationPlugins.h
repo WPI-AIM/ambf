@@ -55,6 +55,15 @@
 #include "ambf_server/Sensor.h"
 #include "ambf_server/Vehicle.h"
 #include "ambf_server/World.h"
+
+#include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/point_cloud2_iterator.h"
+#endif
+
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+#include <image_transport/image_transport.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
 #endif
 
 using namespace ambf;
@@ -145,6 +154,51 @@ private:
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
+};
+
+
+class afCameraDepthStreamer: public afObjectPlugin{
+public:
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
+    virtual void graphicsUpdate() override;
+    virtual void physicsUpdate(double) override;
+    virtual bool close() override;
+
+private:
+    // Image Transport ROS Node
+    ros::NodeHandle* m_rosNode;
+    afCameraPtr m_cameraPtr = nullptr;
+    sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
+    ros::Publisher m_depthPointCloudPub;
+};
+
+
+class afCameraVideoStreamer: public afObjectPlugin{
+public:
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
+    virtual void graphicsUpdate() override;
+    virtual void physicsUpdate(double) override;
+    virtual bool close() override;
+
+private:
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+
+    // Image Transport ROS Node
+    ros::NodeHandle* m_rosNode;
+
+    afCameraPtr m_cameraPtr = nullptr;
+
+    // Open CV Image Matrix
+    cv::Mat m_imageMatrix;
+
+    // Image Transport CV Bridge Node
+    static image_transport::ImageTransport *s_imageTransport;
+
+    // Image Transport Publisher
+    image_transport::Publisher m_imagePublisher;
+
+#endif
 };
 
 
