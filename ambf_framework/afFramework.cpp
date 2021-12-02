@@ -1679,7 +1679,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -2578,7 +2578,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
     setGlobalRemapIdx(remap_idx);
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -3443,7 +3443,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     setPassive(true);
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -4047,7 +4047,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -4425,7 +4425,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -6206,7 +6206,7 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     addModel(envModel);
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -7745,7 +7745,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
     setGlobalRemapIdx(remap_idx);
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     loadCommunicationPlugin(this, a_attribs);
@@ -7996,7 +7996,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     // This flag would ignore collision for all the multibodies in the scene
@@ -8681,7 +8681,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         valid = true;
     }
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     return valid;
@@ -8827,7 +8827,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
         m_afWorld->addObjectMissingParent(this);
     }
 
-    (&attribs.m_pluginAttribs);
+    loadPlugins(&attribs.m_pluginAttribs);
     m_pluginManager.init(this, a_attribs);
 
     return true;
