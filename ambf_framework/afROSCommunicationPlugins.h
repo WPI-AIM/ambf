@@ -157,7 +157,7 @@ private:
 };
 
 
-class afCameraDepthStreamer: public afObjectPlugin{
+class afCameraDepthStreamerPlugin: public afObjectPlugin{
 public:
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
@@ -174,7 +174,7 @@ private:
 };
 
 
-class afCameraVideoStreamer: public afObjectPlugin{
+class afCameraVideoStreamerPlugin: public afObjectPlugin{
 public:
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;

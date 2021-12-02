@@ -1,7 +1,7 @@
 #include <afROSCommunicationPlugins.h>
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-image_transport::ImageTransport* afCameraVideoStreamer::s_imageTransport = nullptr;
+image_transport::ImageTransport* afCameraVideoStreamerPlugin::s_imageTransport = nullptr;
 #endif
 
 int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
@@ -1108,7 +1108,7 @@ void afWorldCommunicationPlugin::worldUpdateState(afWorldPtr worldPtr, double dt
 #endif
 }
 
-int afCameraDepthStreamer::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
+int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;
     m_cameraPtr = (afCameraPtr)a_afObjectPtr;
@@ -1123,7 +1123,7 @@ int afCameraDepthStreamer::init(const afBaseObjectPtr a_afObjectPtr, const afBas
     return 1;
 }
 
-void afCameraDepthStreamer::graphicsUpdate()
+void afCameraDepthStreamerPlugin::graphicsUpdate()
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
@@ -1159,12 +1159,12 @@ void afCameraDepthStreamer::graphicsUpdate()
 #endif
 }
 
-void afCameraDepthStreamer::physicsUpdate(double)
+void afCameraDepthStreamerPlugin::physicsUpdate(double)
 {
 
 }
 
-bool afCameraDepthStreamer::close()
+bool afCameraDepthStreamerPlugin::close()
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_depthPointCloudModifier != nullptr){
@@ -1175,7 +1175,7 @@ bool afCameraDepthStreamer::close()
     return true;
 }
 
-int afCameraVideoStreamer::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
+int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;
     m_cameraPtr = (afCameraPtr)a_afObjectPtr;
@@ -1190,7 +1190,7 @@ int afCameraVideoStreamer::init(const afBaseObjectPtr a_afObjectPtr, const afBas
     return 1;
 }
 
-void afCameraVideoStreamer::graphicsUpdate()
+void afCameraVideoStreamerPlugin::graphicsUpdate()
 {
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
@@ -1205,12 +1205,12 @@ void afCameraVideoStreamer::graphicsUpdate()
 #endif
 }
 
-void afCameraVideoStreamer::physicsUpdate(double)
+void afCameraVideoStreamerPlugin::physicsUpdate(double)
 {
 
 }
 
-bool afCameraVideoStreamer::close()
+bool afCameraVideoStreamerPlugin::close()
 {
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (s_imageTransport != nullptr){

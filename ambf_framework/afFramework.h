@@ -528,7 +528,7 @@ public:
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
-    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
 
     // The update method called at every simulation iteration.
     virtual void update(double dt);
@@ -2104,7 +2104,7 @@ public:
 
     virtual bool createFromAttribs(afWorldAttributes* a_attribs);
 
-    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(afWorldPtr worldPtr, afWorldAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
 
     virtual void render(afRenderOptions &options);
 
@@ -2385,7 +2385,7 @@ public:
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
-    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(afModelPtr modePtr, afModelAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
 
     virtual void update(double dt);
 

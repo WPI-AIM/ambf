@@ -943,9 +943,9 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 /// \param pluginAttribs
 /// \return
 ///
-bool afBaseObject::loadPlugins(vector<afPluginAttributes> *pluginAttribs){
+bool afBaseObject::loadPlugins(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs){
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(objPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -1274,13 +1274,7 @@ bool afBaseObject::loadCommunicationPlugin(afBaseObjectPtr a_objPtr, afBaseObjec
     bool result = false;
     if (isPassive() == false){
         afObjectCommunicationPlugin* commPlugin = new afObjectCommunicationPlugin();
-        if (commPlugin->init(a_objPtr, a_attribs)){
-            m_pluginManager.add(commPlugin);
-            result = true;
-        }
-        else{
-            delete commPlugin;
-        }
+        result = m_pluginManager.loadPlugin(a_objPtr, a_attribs, commPlugin);
     }
 
     return result;
@@ -1679,8 +1673,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = attribs.m_maxImpulse;
     m_tau = attribs.m_tau;
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -2578,8 +2571,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -3443,8 +3435,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     setPassive(true);
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -4047,8 +4038,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -4425,8 +4415,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -5777,13 +5766,7 @@ bool afWorld::loadCommunicationPlugin(afWorldPtr a_worldPtr, afWorldAttribsPtr a
     bool result = false;
     if (isPassive() == false){
         afWorldCommunicationPlugin* commPlugin = new afWorldCommunicationPlugin();
-        if (commPlugin->init(a_worldPtr, a_attribs)){
-            m_pluginManager.add(commPlugin);
-            result = true;
-        }
-        else{
-            delete commPlugin;
-        }
+        result = m_pluginManager.loadPlugin(a_worldPtr, a_attribs, commPlugin);
     }
 
     return result;
@@ -6206,18 +6189,17 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     addModel(envModel);
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
 
-bool afWorld::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
+bool afWorld::loadPlugins(afWorldPtr worldPtr, afWorldAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(worldPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -7005,8 +6987,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setGlobalRemapIdx(remap_idx);
 
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     if (m_publishImage || m_publishDepth){
 
@@ -7014,24 +6995,14 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
         if(m_publishImage){
             enableImagePublishing(&attribs.m_publishImageResolution);
-            afCameraVideoStreamer* videoPlugin = new afCameraVideoStreamer();
-            if (videoPlugin->init(this, a_attribs)){
-                m_pluginManager.add(videoPlugin);
-            }
-            else{
-                videoPlugin;
-            }
+            afCameraVideoStreamerPlugin* videoPlugin = new afCameraVideoStreamerPlugin();
+            m_pluginManager.loadPlugin(this, a_attribs, videoPlugin);
         }
 
         if (m_publishDepth){
             enableDepthPublishing(&attribs.m_publishImageResolution, &attribs.m_depthNoiseAttribs, &attribs.m_depthComputeShaderAttribs);
-            afCameraDepthStreamer* depthPlugin = new afCameraDepthStreamer();
-            if(depthPlugin->init(this, a_attribs)){
-                m_pluginManager.add(depthPlugin);
-            }
-            else{
-                delete depthPlugin;
-            }
+            afCameraDepthStreamerPlugin* depthPlugin = new afCameraDepthStreamerPlugin();
+            m_pluginManager.loadPlugin(this, a_attribs, depthPlugin);
         }
     }
 
@@ -7745,8 +7716,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     loadCommunicationPlugin(this, a_attribs);
 
@@ -7996,8 +7966,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     // This flag would ignore collision for all the multibodies in the scene
 
@@ -8016,10 +7985,10 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 /// \param pluginAttribs
 /// \return
 ///
-bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
+bool afModel::loadPlugins(afModelPtr modelPtr, afModelAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.add((*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(modelPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -8681,8 +8650,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         valid = true;
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     return valid;
 }
@@ -8827,8 +8795,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
         m_afWorld->addObjectMissingParent(this);
     }
 
-    loadPlugins(&attribs.m_pluginAttribs);
-    m_pluginManager.init(this, a_attribs);
+    loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
     return true;
 }
