@@ -7210,21 +7210,6 @@ void afCamera::computeDepthOnGPU()
     }
 }
 
-
-///
-/// \brief afCamera::publishImage
-///
-void afCamera::publishImage(){
-}
-
-
-///
-/// \brief afCamera::publishDepthPointCloud
-///
-void afCamera::publishDepthPointCloud()
-{
-}
-
 ///
 /// \brief afCamera::getFrontLayer
 /// \return
@@ -7380,12 +7365,6 @@ void afCamera::renderFrameBuffer(){
         deactivatePreProcessingShaders();
     }
 
-    if (m_publishImage){
-        if (m_sceneUpdateCounter % m_imagePublishInterval == 0){
-            publishImage();
-        }
-    }
-
     if (m_publishDepth){
         if (m_sceneUpdateCounter % m_depthPublishInterval == 0){
             if (m_useGPUForDepthComputation){
@@ -7394,7 +7373,6 @@ void afCamera::renderFrameBuffer(){
             else{
                 computeDepthOnCPU();
             }
-            publishDepthPointCloud();
         }
     }
 }

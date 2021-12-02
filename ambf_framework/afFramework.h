@@ -1857,14 +1857,8 @@ public:
 
     void computeDepthOnGPU();
 
-    // Publish Image as a ROS Topic
-    void publishImage();
-
     // Publish Depth as a ROS Topic
     void computeDepthOnCPU();
-
-    // Publish Depth as Point Cloud
-    void publishDepthPointCloud();
 
     // Front plane scene graph which can be used to attach widgets.
     cWorld* getFrontLayer();

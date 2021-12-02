@@ -165,12 +165,24 @@ public:
     virtual bool close() override;
 
 private:
+    unsigned int m_publishInterval=10;
+    afCameraPtr m_cameraPtr = nullptr;
+
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
+
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     // Image Transport ROS Node
     ros::NodeHandle* m_rosNode;
-    afCameraPtr m_cameraPtr = nullptr;
     sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
     sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
     ros::Publisher m_depthPointCloudPub;
+#endif
 };
 
 
@@ -182,19 +194,23 @@ public:
     virtual bool close() override;
 
 private:
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+    unsigned int m_publishInterval=1;
 
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_write_count = 0;
+
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned short m_read_count = 0;
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     // Image Transport ROS Node
     ros::NodeHandle* m_rosNode;
-
     afCameraPtr m_cameraPtr = nullptr;
-
     // Open CV Image Matrix
     cv::Mat m_imageMatrix;
-
     // Image Transport CV Bridge Node
     static image_transport::ImageTransport *s_imageTransport;
-
     // Image Transport Publisher
     image_transport::Publisher m_imagePublisher;
 

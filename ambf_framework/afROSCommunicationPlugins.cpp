@@ -1120,43 +1120,49 @@ int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     m_depthPointCloudModifier->resize(camAttribs->m_publishImageResolution.m_width*camAttribs->m_publishImageResolution.m_height);
     m_rosNode = afROSNode::getNode();
     m_depthPointCloudPub = m_rosNode->advertise<sensor_msgs::PointCloud2>(m_cameraPtr->getQualifiedName() + "/DepthData", 1);
+
+    m_publishInterval = camAttribs->m_publishDepthInterval;
+
     return 1;
 }
 
 void afCameraDepthStreamerPlugin::graphicsUpdate()
 {
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
-    sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
-    sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
+    if (m_write_count % m_publishInterval == 0){
+        sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
+        sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
+        sensor_msgs::PointCloud2Iterator<float> pcMsg_z(*m_depthPointCloudMsg, "z");
+        sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_r(*m_depthPointCloudMsg, "r");
+        sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_g(*m_depthPointCloudMsg, "g");
+        sensor_msgs::PointCloud2Iterator<uint8_t> pcMsg_b(*m_depthPointCloudMsg, "b");
 
-    int width = m_cameraPtr->m_depthBufferColorImage->getWidth();
-    int height = m_cameraPtr->m_depthBufferColorImage->getHeight();
+        int width = m_cameraPtr->m_depthBufferColorImage->getWidth();
+        int height = m_cameraPtr->m_depthBufferColorImage->getHeight();
 
-    for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
-        double noise;
-        if (m_cameraPtr->getDepthNoiseModel()->isEnabled()){
-            noise = m_cameraPtr->getDepthNoiseModel()->generate();
+        for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
+            double noise;
+            if (m_cameraPtr->getDepthNoiseModel()->isEnabled()){
+                noise = m_cameraPtr->getDepthNoiseModel()->generate();
+            }
+            else{
+                noise = 0.0;
+            }
+            *pcMsg_x = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 0];
+            *pcMsg_y = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 1];
+            *pcMsg_z = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 2] + noise;
+
+            *pcMsg_r = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 0];
+            *pcMsg_g = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 1];
+            *pcMsg_b = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 2];
         }
-        else{
-            noise = 0.0;
-        }
-        *pcMsg_x = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 0];
-        *pcMsg_y = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 1];
-        *pcMsg_z = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 2] + noise;
 
-        *pcMsg_r = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 0];
-        *pcMsg_g = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 1];
-        *pcMsg_b = m_cameraPtr->m_bufferColorImage->getData()[idx * 4 + 2];
+        m_depthPointCloudMsg->header.frame_id = m_cameraPtr->getName();
+        m_depthPointCloudMsg->header.stamp = ros::Time::now();
+        m_depthPointCloudPub.publish(m_depthPointCloudMsg);
     }
-
-    m_depthPointCloudMsg->header.frame_id = m_cameraPtr->getName();
-    m_depthPointCloudMsg->header.stamp = ros::Time::now();
-    m_depthPointCloudPub.publish(m_depthPointCloudMsg);
 #endif
+    m_write_count++;
 }
 
 void afCameraDepthStreamerPlugin::physicsUpdate(double)
@@ -1179,6 +1185,7 @@ int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 {
     m_objectPtr = a_afObjectPtr;
     m_cameraPtr = (afCameraPtr)a_afObjectPtr;
+    afCameraAttributes* camAttribs = (afCameraAttributes*) a_objectAttribs;
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
     m_rosNode = afROSNode::getNode();
     if (s_imageTransport == nullptr){
@@ -1187,22 +1194,26 @@ int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     m_imagePublisher = s_imageTransport->advertise(m_cameraPtr->getQualifiedName() + "/ImageData", 1);
 #endif
 
+    m_publishInterval = camAttribs->m_publishImageInterval;
     return 1;
 }
 
 void afCameraVideoStreamerPlugin::graphicsUpdate()
 {
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
-    // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
-    // WITH THE COLORED DETPH POINT CLOUD
-    m_cameraPtr->m_bufferColorImage->flipHorizontal();
-    m_imageMatrix = cv::Mat(m_cameraPtr->m_bufferColorImage->getHeight(), m_cameraPtr->m_bufferColorImage->getWidth(), CV_8UC4, m_cameraPtr->m_bufferColorImage->getData());
-    cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
-    sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
-    rosMsg->header.stamp = ros::Time::now();
-    m_imagePublisher.publish(rosMsg);
-    m_cameraPtr->m_bufferColorImage->flipHorizontal();
+    if (m_write_count % m_publishInterval == 0){
+        // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
+        // WITH THE COLORED DETPH POINT CLOUD
+        m_cameraPtr->m_bufferColorImage->flipHorizontal();
+        m_imageMatrix = cv::Mat(m_cameraPtr->m_bufferColorImage->getHeight(), m_cameraPtr->m_bufferColorImage->getWidth(), CV_8UC4, m_cameraPtr->m_bufferColorImage->getData());
+        cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
+        sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
+        rosMsg->header.stamp = ros::Time::now();
+        m_imagePublisher.publish(rosMsg);
+        m_cameraPtr->m_bufferColorImage->flipHorizontal();
+    }
 #endif
+    m_write_count++;
 }
 
 void afCameraVideoStreamerPlugin::physicsUpdate(double)
