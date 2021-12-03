@@ -1510,12 +1510,15 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
             cVector3d deltaVel(0, -horizontalVel, verticalVel);
 
             cVector3d newPos = cameraPtr->getLocalPos() + cameraPtr->getLocalRot() * deltaVel;
-            cameraPtr->setView(newPos, cameraPtr->getTargetPosLocal(), cVector3d(0,0,1));
+            cTransform T_w_c = cameraPtr->getLocalTransform();
+            T_w_c.invert();
+            cVector3d target = T_w_c * cameraPtr->getTargetPosLocal();
+            double th = sqrt(target.length() * target.length() + deltaVel.length() * deltaVel.length()) - target.length();
+            cVector3d dir = cameraPtr->getTargetPosLocal() - newPos;
+            dir.normalize();
+            cVector3d correction = dir * th;
+            cameraPtr->setView(newPos + correction, cameraPtr->getTargetPosLocal(), cVector3d(0,0,1));
         }
-        //            else{
-        //                devCam->showTargetPos(false);
-        //            }
-
     }
     g_pluginManager.mousePosUpdate(a_window, a_xpos, a_ypos);
 }
