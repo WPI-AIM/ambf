@@ -98,7 +98,7 @@ void WorldRosCom::init(){
     m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &WorldRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&WorldRosCom::run_publishers, this));
-    std::cerr << "Thread Joined: " << m_name << std::endl;
+    std::cerr << "INFO! Thread Joined: " << m_name << std::endl;
 }
 
 

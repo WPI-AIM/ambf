@@ -54,7 +54,7 @@ void SensorRosCom::init(){
     m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &SensorRosCom::sub_cb, this);
 
     m_thread = boost::thread(boost::bind(&SensorRosCom::run_publishers, this));
-    std::cerr << "Thread Joined: " << m_name << std::endl;
+    std::cerr << "INFO! Thread Joined: " << m_name << std::endl;
 }
 
 void SensorRosCom::reset_cmd(){
