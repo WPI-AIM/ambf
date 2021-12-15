@@ -3871,10 +3871,40 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->generateBendingConstraints(attribs.m_bendingConstraint);
     }
 
+
+    // If a vertexIdx Map is defined, we can retrieve the actual indices defined in the mesh file.
+    bool useOriginalIndexes = getVisualObject()->m_vtxIdxMap.size() > 0 ? true : false;
+
     for (uint i = 0 ; i < attribs.m_fixedNodes.size() ; i++){
         uint nodeIdx = attribs.m_fixedNodes[i];
         if ( nodeIdx < softBody->m_nodes.size()){
-            softBody->setMass(nodeIdx, 0);
+            if (useOriginalIndexes){
+                // Find the node's original vertex index
+                map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(nodeIdx);
+                if ( nIt != getVisualObject()->m_vtxIdxMap.end()){
+                    if (nIt->second.size() > 0){
+                        int remappedIdx = nIt->second[0];
+                        int j = 0;
+                        bool found = false;
+                        while (j < m_afVertexTree.size() && !found){
+                            for (int k = 0 ; k < m_afVertexTree[j].vertexIdx.size() ; k++){
+                                if (remappedIdx == m_afVertexTree[j].vertexIdx[k]){
+                                    //                                cerr << "Node Idx: " << nodeIdx
+                                    //                                     << " |  Original Vtx Idx: " << nIt->first
+                                    //                                     << " | Remapped Vtx Idx:  " << remappedIdx << endl;
+                                    softBody->setMass(nodeIdx, 0);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            j++;
+                        }
+                    }
+                }
+            }
+            else{
+                softBody->setMass(nodeIdx, 0);
+            }
         }
     }
 
