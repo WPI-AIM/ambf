@@ -3889,10 +3889,10 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
                         while (j < m_afVertexTree.size() && !found){
                             for (int k = 0 ; k < m_afVertexTree[j].vertexIdx.size() ; k++){
                                 if (remappedIdx == m_afVertexTree[j].vertexIdx[k]){
-                                    //                                cerr << "Node Idx: " << nodeIdx
-                                    //                                     << " |  Original Vtx Idx: " << nIt->first
-                                    //                                     << " | Remapped Vtx Idx:  " << remappedIdx << endl;
-                                    softBody->setMass(nodeIdx, 0);
+//                                    cerr << "Node Idx: " << nodeIdx
+//                                         << " |  Original Vtx Idx: " << nIt->first
+//                                         << " | Remapped Vtx Idx:  " << remappedIdx << endl;
+                                    softBody->setMass(j, 0);
                                     found = true;
                                     break;
                                 }
