@@ -7782,6 +7782,13 @@ void afCamera::computeDepthOnCPU()
     for (int y_span = 0 ; y_span < height ; y_span++){
         double yImage = double(y_span) / (height - 1);
         for (int x_span = 0 ; x_span < width ; x_span++){
+            double noise;
+            if (m_depthNoise.isEnabled()){
+                noise = m_depthNoise.generate();
+            }
+            else{
+                noise = 0.0;
+            }
             double xImage = double(x_span) / (width - 1);
             int idx = y_span * width + x_span;
             unsigned char b0 = m_bufferDepthImage->getData()[idx * bbp + 0];
@@ -7801,9 +7808,10 @@ void afCamera::computeDepthOnCPU()
             double wClip = projMatInv(3, 0) * xNDC + projMatInv(3, 1) * yNDC + projMatInv(3, 2) * zNDC + projMatInv(3, 3) * wNDC;
             cVector3d pCam = cDiv(wClip, pClip);
 
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pCam.x();
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = pCam.y();
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pCam.z();
+            // Convert from OpenGL to AMBF coordinate frame.
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pCam.z() + noise;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = pCam.x();
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pCam.y();
 
         }
     }
@@ -7882,6 +7890,13 @@ void afCamera::computeDepthOnGPU()
 
     for (uint y_span = 0 ; y_span < height ; y_span++){
         for (uint x_span = 0 ; x_span < width ; x_span++){
+            double noise;
+            if (m_depthNoise.isEnabled()){
+                noise = m_depthNoise.generate();
+            }
+            else{
+                noise = 0.0;
+            }
 
             uint idx = (y_span * width + x_span);
             unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bbp + 0];
@@ -7911,9 +7926,10 @@ void afCamera::computeDepthOnGPU()
             py = (py  * maxY - (maxY / 2.0));
             pz = (pz * maxZ  + n);
 
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = px;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = py;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pz;
+            // Convert from OpenGL to AMBF coordinate frame.
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pz + noise;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = px;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = py;
         }
     }
 }
@@ -7954,16 +7970,9 @@ void afCamera::publishDepthPointCloud()
     int height = m_depthBufferColorImage->getHeight();
 
     for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
-        double noise;
-        if (m_depthNoise.isEnabled()){
-            noise = m_depthNoise.generate();
-        }
-        else{
-            noise = 0.0;
-        }
         *pcMsg_x = m_depthPC.m_data[idx * m_depthPC.m_numFields + 0];
         *pcMsg_y = m_depthPC.m_data[idx * m_depthPC.m_numFields + 1];
-        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] + noise;
+        *pcMsg_z = m_depthPC.m_data[idx * m_depthPC.m_numFields + 2];
 
         *pcMsg_r = m_bufferColorImage->getData()[idx * 4 + 0];
         *pcMsg_g = m_bufferColorImage->getData()[idx * 4 + 1];
