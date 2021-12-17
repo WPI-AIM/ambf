@@ -41,6 +41,7 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
+#include <chrono>
 #include "afFramework.h"
 #include "afConversions.h"
 #include "afShaders.h"
@@ -7443,6 +7444,16 @@ void afCamera::showTargetPos(bool a_show){
 
 
 ///
+/// \brief afCamera::getRenderTime
+/// \return
+///
+double afCamera::getRenderTimeStamp()
+{
+    return m_renderTimeStamp;
+}
+
+
+///
 /// \brief afCamera::createFrameBuffers
 /// \param imageAttribs
 ///
@@ -7946,7 +7957,7 @@ void afCamera::publishImage(){
     m_imageMatrix = cv::Mat(m_bufferColorImage->getHeight(), m_bufferColorImage->getWidth(), CV_8UC4, m_bufferColorImage->getData());
     cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
     sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
-    rosMsg->header.stamp = ros::Time::now();
+    rosMsg->header.stamp.fromSec(getRenderTimeStamp());
     m_imagePublisher.publish(rosMsg);
     m_bufferColorImage->flipHorizontal();
 #endif
@@ -7980,7 +7991,7 @@ void afCamera::publishDepthPointCloud()
     }
 
     m_depthPointCloudMsg->header.frame_id = m_name;
-    m_depthPointCloudMsg->header.stamp = ros::Time::now();
+    m_depthPointCloudMsg->header.stamp.fromSec(getRenderTimeStamp());
     m_depthPointCloudPub.publish(m_depthPointCloudMsg);
 #endif
 }
@@ -8245,6 +8256,7 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
+    m_renderTimeStamp = chrono::duration<double>(chrono::system_clock::now().time_since_epoch()).count();
     m_camera->renderView(m_width, m_height);
 
     // swap buffers
