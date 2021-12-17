@@ -5877,6 +5877,7 @@ void afWorld::resetDynamicBodies(bool reset_time){
 void afWorld::setGravity(afVector3d &vec)
 {
     m_bulletWorld->setGravity(btVector3(vec(0), vec(1), vec(2)));
+    m_bulletSoftBodyWorldInfo->m_gravity << vec;
 }
 
 
