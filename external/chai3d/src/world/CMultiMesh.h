@@ -48,6 +48,7 @@
 //------------------------------------------------------------------------------
 #include "world/CMesh.h"
 //------------------------------------------------------------------------------
+#include<map>
 
 //------------------------------------------------------------------------------
 namespace chai3d {
@@ -461,6 +462,9 @@ public:
 
     //! Array of meshes.
     std::vector<cMesh*> *m_meshes;
+
+    //! Map of original vertex indices (defined in the mesh file) to regenerated indices in CHAI-3D
+    std::map<int, std::vector<int> > m_vtxIdxMap;
 
 };
 

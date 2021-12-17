@@ -3411,10 +3411,40 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         softBody->generateBendingConstraints(attribs.m_bendingConstraint);
     }
 
+
+    // If a vertexIdx Map is defined, we can retrieve the actual indices defined in the mesh file.
+    bool useOriginalIndexes = getVisualObject()->m_vtxIdxMap.size() > 0 ? true : false;
+
     for (uint i = 0 ; i < attribs.m_fixedNodes.size() ; i++){
         uint nodeIdx = attribs.m_fixedNodes[i];
         if ( nodeIdx < softBody->m_nodes.size()){
-            softBody->setMass(nodeIdx, 0);
+            if (useOriginalIndexes){
+                // Find the node's original vertex index
+                map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(nodeIdx);
+                if ( nIt != getVisualObject()->m_vtxIdxMap.end()){
+                    if (nIt->second.size() > 0){
+                        int remappedIdx = nIt->second[0];
+                        int j = 0;
+                        bool found = false;
+                        while (j < m_afVertexTree.size() && !found){
+                            for (int k = 0 ; k < m_afVertexTree[j].vertexIdx.size() ; k++){
+                                if (remappedIdx == m_afVertexTree[j].vertexIdx[k]){
+//                                    cerr << "Node Idx: " << nodeIdx
+//                                         << " |  Original Vtx Idx: " << nIt->first
+//                                         << " | Remapped Vtx Idx:  " << remappedIdx << endl;
+                                    softBody->setMass(j, 0);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            j++;
+                        }
+                    }
+                }
+            }
+            else{
+                softBody->setMass(nodeIdx, 0);
+            }
         }
     }
 
@@ -7074,6 +7104,13 @@ void afCamera::computeDepthOnCPU()
     for (int y_span = 0 ; y_span < height ; y_span++){
         double yImage = double(y_span) / (height - 1);
         for (int x_span = 0 ; x_span < width ; x_span++){
+            double noise;
+            if (m_depthNoise.isEnabled()){
+                noise = m_depthNoise.generate();
+            }
+            else{
+                noise = 0.0;
+            }
             double xImage = double(x_span) / (width - 1);
             int idx = y_span * width + x_span;
             unsigned char b0 = m_bufferDepthImage->getData()[idx * bbp + 0];
@@ -7093,9 +7130,10 @@ void afCamera::computeDepthOnCPU()
             double wClip = projMatInv(3, 0) * xNDC + projMatInv(3, 1) * yNDC + projMatInv(3, 2) * zNDC + projMatInv(3, 3) * wNDC;
             cVector3d pCam = cDiv(wClip, pClip);
 
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pCam.x();
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = pCam.y();
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pCam.z();
+            // Convert from OpenGL to AMBF coordinate frame.
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pCam.z() + noise;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = pCam.x();
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pCam.y();
 
         }
     }
@@ -7174,6 +7212,13 @@ void afCamera::computeDepthOnGPU()
 
     for (uint y_span = 0 ; y_span < height ; y_span++){
         for (uint x_span = 0 ; x_span < width ; x_span++){
+            double noise;
+            if (m_depthNoise.isEnabled()){
+                noise = m_depthNoise.generate();
+            }
+            else{
+                noise = 0.0;
+            }
 
             uint idx = (y_span * width + x_span);
             unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bbp + 0];
@@ -7203,9 +7248,10 @@ void afCamera::computeDepthOnGPU()
             py = (py  * maxY - (maxY / 2.0));
             pz = (pz * maxZ  + n);
 
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = px;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = py;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = pz;
+            // Convert from OpenGL to AMBF coordinate frame.
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pz + noise;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = px;
+            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = py;
         }
     }
 }

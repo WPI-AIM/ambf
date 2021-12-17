@@ -324,7 +324,7 @@ class cOBJModel
     //! List of lines.
     std::vector< std::vector<int> > m_pLines;
 
-    //! Mapping original vertex indices to regenerated indices in CHAI-3D
+    //! Map of original vertex indices (defined in the mesh file) to regenerated indices in CHAI-3D
     std::map<int, std::vector<int> > m_vtxIdxMap;
 
     //! List of colors.

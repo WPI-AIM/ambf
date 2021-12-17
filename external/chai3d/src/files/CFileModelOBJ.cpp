@@ -327,13 +327,6 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                             {
                                 indexTriangle = curMesh->newTriangle(indexV1,indexV2,indexV3);
                                 curMesh->m_triangles->computeNormal(indexTriangle, true);
-
-                                // This map keeps track of the vertex indices in the newly created mesh
-                                // as compared to original indices in obj file. These indices are later
-                                // used to add polylines without vertex duplication
-                                fileObj.m_vtxIdxMap[originalV1].push_back(curMesh->m_vertices->getNumElements() - 3);
-                                fileObj.m_vtxIdxMap[originalV2].push_back(curMesh->m_vertices->getNumElements() - 2);
-                                fileObj.m_vtxIdxMap[originalV3].push_back(curMesh->m_vertices->getNumElements() - 1);
                             }
                             else
                             {
@@ -363,6 +356,13 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                                 curMesh->m_vertices->setTexCoord(curMesh->m_triangles->getVertexIndex1(indexTriangle), face.m_pTexCoords[triangleVert-1]);
                                 curMesh->m_vertices->setTexCoord(curMesh->m_triangles->getVertexIndex2(indexTriangle), face.m_pTexCoords[triangleVert]);
                             }
+
+                            // This map keeps track of the vertex indices in the newly created mesh
+                            // as compared to original indices in obj file. These indices are later
+                            // used to add polylines without vertex duplication
+                            fileObj.m_vtxIdxMap[originalV1].push_back(indexV1);
+                            fileObj.m_vtxIdxMap[originalV2].push_back(indexV2);
+                            fileObj.m_vtxIdxMap[originalV3].push_back(indexV3);
                         }
                     }
                     else
@@ -393,11 +393,7 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                     cVector3d vertex = fileObj.m_pVertices[j];
                     int vertexIdx = mesh->newVertex(vertex, cVector3d(1,0,0), cVector3d(0,0,0), color);
                     j++;
-
-
-                    // This map keeps track of the vertex indices in the newly created mesh
-                    // as compared to original indices in obj file. These indices are later
-                    // used to add polylines without vertex duplication
+                    // These indices are later used to add polylines without vertex duplication
                     fileObj.m_vtxIdxMap[j].push_back(vertexIdx);
                 }
 
@@ -413,9 +409,18 @@ bool cLoadFileOBJ(cMultiMesh* a_object, const std::string& a_filename)
                         mesh->setUseVertexColors(false);
                     }
                 }
-
             }
         }
+
+        // Remove duplicates from vtxIdxMap
+        std::map<int, std::vector<int> >::iterator vIt;
+
+        for (vIt = fileObj.m_vtxIdxMap.begin() ; vIt != fileObj.m_vtxIdxMap.end() ; ++vIt){
+            sort( vIt->second.begin(), vIt->second.end() );
+            vIt->second.erase( unique( vIt->second.begin(), vIt->second.end() ), vIt->second.end() );
+        }
+
+        a_object->m_vtxIdxMap = fileObj.m_vtxIdxMap;
 
         // Add line data if present
         // get main mesh

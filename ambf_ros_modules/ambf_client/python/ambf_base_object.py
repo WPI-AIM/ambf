@@ -186,6 +186,34 @@ class BaseObject(WatchDog):
         """
         return self._state.parent_name
 
+    def get_msg_header(self):
+        """
+        Get the message header
+        :return:
+        """
+        return self._state.header
+
+    def get_msg_time_stamp(self):
+        """
+        Get the time stamp
+        :return:
+        """
+        return self._state.header.stamp
+
+    def get_msg_seq_num(self):
+        """
+        Get the sequence number
+        :return:
+        """
+        return self._state.header.seq
+
+    def get_msg_frame_id(self):
+        """
+        Get the frame id
+        :return:
+        """
+        return self._state.header.frame_id
+
     def set_name(self, name):
         """
         Set the name for this object

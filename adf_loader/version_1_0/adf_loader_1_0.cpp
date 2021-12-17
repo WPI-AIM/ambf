@@ -1570,7 +1570,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         }
         if (cfg_fixed_nodesNode.IsDefined()){
             for (uint i = 0 ; i < cfg_fixed_nodesNode.size() ; i++){
-                attribs->m_fixedNodes.push_back(i);
+                attribs->m_fixedNodes.push_back(cfg_fixed_nodesNode[i].as<int>());
             }
         }
         if(cfg_clustersNode.IsDefined()){

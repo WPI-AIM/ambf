@@ -181,7 +181,8 @@ void RigidBody::set_rot(tf::Quaternion rot_quat) {
 
 bool RigidBody::is_joint_idx_valid(int joint_idx) {
     int n_joints = m_State.joint_positions.size();
-    if(joint_idx < n_joints) return true;
+    // Invalid joint names have index -1
+    if(joint_idx > -1 && joint_idx < n_joints) return true;
 
     std::cerr << "ERROR! Requested Joint Idx of " << std::to_string(joint_idx) << " outside valid range [0 - " << std::to_string(n_joints - 1) << "]" << std::endl;
 
