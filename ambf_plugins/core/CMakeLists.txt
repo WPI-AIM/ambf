@@ -37,4 +37,5 @@
 #  $Date:  $
 #  $Rev:  $
 
-add_subdirectory(examples)
+
+add_subdirectory(ros_comm_plugin)

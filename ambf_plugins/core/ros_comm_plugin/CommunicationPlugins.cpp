@@ -1,4 +1,4 @@
-#include <afROSCommunicationPlugins.h>
+#include "CommunicationPlugins.h"
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 image_transport::ImageTransport* afCameraVideoStreamerPlugin::s_imageTransport = nullptr;

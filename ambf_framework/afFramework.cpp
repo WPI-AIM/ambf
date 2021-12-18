@@ -51,7 +51,7 @@
 #include "BulletSoftBody/btSoftBodySolvers.h"
 //------------------------------------------------------------------------------
 
-#include "afROSCommunicationPlugins.h"
+#include "ros_comm_plugin/CommunicationPlugins.h"
 
 //------------------------------------------------------------------------------
 using namespace ambf;

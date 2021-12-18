@@ -38,5 +38,5 @@
 #  $Rev:  $
 
 
-add_library(simulator_example simulator_example.cpp )
-target_link_libraries (simulator_example ${AMBF_LIBRARIES})
+#add_library(communication_plugin afCommunicationPlugin.cpp afCommunicationPlugin.h)
+#target_link_libraries (communication_plugin ${AMBF_LIBRARIES})

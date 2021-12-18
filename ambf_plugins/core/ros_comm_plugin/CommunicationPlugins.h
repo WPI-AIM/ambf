@@ -40,8 +40,8 @@
 */
 //==============================================================================
 
-#ifndef AF_COMMUNICATION_PLUGIN
-#define AF_COMMUNICATION_PLUGIN
+#ifndef AF_COMMUNICATION_PLUGINS
+#define AF_COMMUNICATION_PLUGINS
 
 #include "afFramework.h"
 

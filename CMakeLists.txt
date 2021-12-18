@@ -233,6 +233,7 @@ include_directories (${GLFW_INCLUDE_DIRS})
 # header search path
 include_directories (${PROJECT_SOURCE_DIR}/ambf_math)
 include_directories (${PROJECT_SOURCE_DIR}/adf_loader)
+include_directories (${PROJECT_SOURCE_DIR}/ambf_plugins/core)
 include_directories (${PROJECT_SOURCE_DIR}/ambf_framework)
 include_directories (${PROJECT_SOURCE_DIR}/external/chai3d/src)
 include_directories (${PROJECT_SOURCE_DIR}/external/bullet/src)
@@ -258,6 +259,8 @@ include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/src/Theora)
 file (GLOB_RECURSE source_ambf_math RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_math/*.cpp ${PROJECT_SOURCE_DIR}/ambf_math/*.h)
 # static library source files
 file (GLOB_RECURSE source_adf_loader RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/adf_loader/*.cpp ${PROJECT_SOURCE_DIR}/adf_loader/*.h)
+# static library source files
+file (GLOB_RECURSE source_ambf_plugins RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_plugins/core/*.cpp ${PROJECT_SOURCE_DIR}/ambf_plugins/core/*.h)
 # static library source files
 file (GLOB_RECURSE source_ambf_framework RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_framework/*.cpp ${PROJECT_SOURCE_DIR}/ambf_framework/*.h)
 
@@ -290,7 +293,7 @@ endif ()
 list (REMOVE_ITEM source_theora ${source_theora_exclude})
 
 # group source files (MSVC likes this)
-foreach (FILE ${source_ambf_framework} ${source_ambf_math} ${source_adf_loader} ${source_chai3d} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
+foreach (FILE ${source_ambf_framework} ${source_ambf_plugins} ${source_ambf_math} ${source_adf_loader} ${source_chai3d} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora} ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
   get_filename_component (PARENT_DIR "${FILE}" PATH)
   string (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
   string (REPLACE "/" "\\" GROUP "${GROUP}")
@@ -330,7 +333,7 @@ add_library(chai3d STATIC ${source_chai3d} ${source_eigen} ${source_gif} ${sourc
 add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
 
 # static library
-add_library (ambf_framework STATIC ${source_ambf_framework})
+add_library (ambf_framework STATIC ${source_ambf_framework} ${source_ambf_plugins})
 
 #message("1) CHAI3D_DEFINITIONS" ${CHAI3D_DEFINITIONS})
 #message("2) BULLET_DEFINITIONS" ${BULLET_DEFINITIONS})
@@ -407,10 +410,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
     add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
   endif()
 endif()
-
-# PLUGINS
-
-add_subdirectory(ambf_plugins)
 
 #
 # export package

@@ -38,5 +38,5 @@
 #  $Rev:  $
 
 
-add_library(volumetric_drilling volumetric_drilling.cpp volumetric_drilling.h)
-target_link_libraries (volumetric_drilling ${AMBF_LIBRARIES})
+add_library(simulator_example simulator_plugin.cpp )
+target_link_libraries (simulator_example ${AMBF_LIBRARIES})

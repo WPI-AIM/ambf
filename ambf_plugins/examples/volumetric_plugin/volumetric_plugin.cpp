@@ -118,11 +118,11 @@ void afVolmetricDrillingPlugin::mouseScrollUpdate(GLFWwindow *a_window, double x
 
 }
 
-void afVolmetricDrillingPlugin::graphicsUpdate(const afWorldPtr a_afWorld){
+void afVolmetricDrillingPlugin::graphicsUpdate(){
 
 }
 
-void afVolmetricDrillingPlugin::physicsUpdate(const afWorldPtr a_afWorld){
+void afVolmetricDrillingPlugin::physicsUpdate(double dt){
 
 }
 
