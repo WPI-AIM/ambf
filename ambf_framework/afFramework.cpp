@@ -41,6 +41,7 @@
 //==============================================================================
 
 //------------------------------------------------------------------------------
+#include <chrono>
 #include "afFramework.h"
 #include "afConversions.h"
 #include "afShaders.h"
@@ -6798,6 +6799,16 @@ void afCamera::showTargetPos(bool a_show){
 
 
 ///
+/// \brief afCamera::getRenderTime
+/// \return
+///
+double afCamera::getRenderTimeStamp()
+{
+    return m_renderTimeStamp;
+}
+
+
+///
 /// \brief afCamera::createFrameBuffers
 /// \param imageAttribs
 ///
@@ -7363,6 +7374,7 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
+    m_renderTimeStamp = chrono::duration<double>(chrono::system_clock::now().time_since_epoch()).count();
     m_camera->renderView(m_width, m_height);
 
     // swap buffers

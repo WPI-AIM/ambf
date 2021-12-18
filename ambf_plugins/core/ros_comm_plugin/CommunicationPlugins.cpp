@@ -1158,7 +1158,7 @@ void afCameraDepthStreamerPlugin::graphicsUpdate()
         }
 
         m_depthPointCloudMsg->header.frame_id = m_cameraPtr->getName();
-        m_depthPointCloudMsg->header.stamp = ros::Time::now();
+        m_depthPointCloudMsg->header.stamp.fromSec(m_cameraPtr->getRenderTimeStamp());
         m_depthPointCloudPub.publish(m_depthPointCloudMsg);
     }
 #endif
@@ -1208,7 +1208,7 @@ void afCameraVideoStreamerPlugin::graphicsUpdate()
         m_imageMatrix = cv::Mat(m_cameraPtr->m_bufferColorImage->getHeight(), m_cameraPtr->m_bufferColorImage->getWidth(), CV_8UC4, m_cameraPtr->m_bufferColorImage->getData());
         cv::cvtColor(m_imageMatrix, m_imageMatrix, cv::COLOR_RGBA2RGB);
         sensor_msgs::ImagePtr rosMsg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", m_imageMatrix).toImageMsg();
-        rosMsg->header.stamp = ros::Time::now();
+        rosMsg->header.stamp.fromSec(m_cameraPtr->getRenderTimeStamp());
         m_imagePublisher.publish(rosMsg);
         m_cameraPtr->m_bufferColorImage->flipHorizontal();
     }

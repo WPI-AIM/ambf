@@ -1888,6 +1888,8 @@ public:
 
     cMesh* m_targetVisualMarker = nullptr;
 
+    double getRenderTimeStamp();
+
 public:
     bool m_cam_pressed;
     GLFWwindow* m_window;
@@ -2024,6 +2026,8 @@ private:
 
     afShaderAttributes m_preprocessingShaderAttribs;
     cShaderProgramPtr m_preprocessingShaderProgram;
+
+    double m_renderTimeStamp=0.0;
 };
 
 
