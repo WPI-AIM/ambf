@@ -86,6 +86,7 @@ struct afRigidBodyState{
 
 class afObjectCommunicationPlugin: public afObjectPlugin{
 public:
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double dt) override;
@@ -124,7 +125,6 @@ public:
 public:
 
     //! AMBF ROS COMM
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
     std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
     std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
@@ -133,8 +133,6 @@ public:
     std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
     std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
     std::shared_ptr<ambf_comm::PointCloudHandler> m_afPointCloudCommPtr;
-#endif
-
 protected:
     afRigidBodyState m_rbState;
 
@@ -154,11 +152,17 @@ private:
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
+#else
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
+        return -1;
+    }
+#endif
 };
 
 
 class afCameraDepthStreamerPlugin: public afObjectPlugin{
 public:
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double) override;
@@ -176,18 +180,22 @@ private:
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     // Image Transport ROS Node
     ros::NodeHandle* m_rosNode;
     sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
     sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
     ros::Publisher m_depthPointCloudPub;
+#else
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
+        return -1;
+    }
 #endif
 };
 
 
 class afCameraVideoStreamerPlugin: public afObjectPlugin{
 public:
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double) override;
@@ -203,7 +211,6 @@ private:
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
     unsigned short m_read_count = 0;
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     // Image Transport ROS Node
     ros::NodeHandle* m_rosNode;
     afCameraPtr m_cameraPtr = nullptr;
@@ -213,13 +220,17 @@ private:
     static image_transport::ImageTransport *s_imageTransport;
     // Image Transport Publisher
     image_transport::Publisher m_imagePublisher;
-
+#else
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
+        return -1;
+    }
 #endif
 };
 
 
 class afWorldCommunicationPlugin: public afWorldPlugin{
 public:
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double dt) override;
@@ -240,10 +251,12 @@ private:
     unsigned short m_read_count = 0;
 
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
+#else
+    virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){
+        return -1;
+    }
 #endif
 };
-
 
 #endif

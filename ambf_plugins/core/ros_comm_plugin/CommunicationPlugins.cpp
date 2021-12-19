@@ -2,7 +2,6 @@
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 image_transport::ImageTransport* afCameraVideoStreamerPlugin::s_imageTransport = nullptr;
-#endif
 
 int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
@@ -21,8 +20,6 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 
     bool success = false;
 
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:
     {
@@ -100,13 +97,11 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     }
         break;
     }
-#endif
     return success;
 }
 
 void afObjectCommunicationPlugin::graphicsUpdate()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     switch (m_objectPtr->getType()) {
     case afType::POINT_CLOUD:{
         afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
@@ -117,12 +112,10 @@ void afObjectCommunicationPlugin::graphicsUpdate()
     default:
         break;
     }
-#endif
 }
 
 void afObjectCommunicationPlugin::physicsUpdate(double dt)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     afUpdateTimes(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime());
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:{
@@ -172,7 +165,6 @@ void afObjectCommunicationPlugin::physicsUpdate(double dt)
         break;
     }
 
-#endif
 }
 
 bool afObjectCommunicationPlugin::close()
@@ -183,7 +175,6 @@ bool afObjectCommunicationPlugin::close()
 
 void afObjectCommunicationPlugin::afUpdateTimes(const double a_wall_time, const double a_sim_time)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     switch (m_commType) {
     case afType::ACTUATOR:
     {
@@ -228,7 +219,6 @@ void afObjectCommunicationPlugin::afUpdateTimes(const double a_wall_time, const 
     }
         break;
     }
-#endif
 }
 
 void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, double)
@@ -280,7 +270,6 @@ void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, doub
 
 void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afCameraCommPtr.get() != nullptr){
         ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
 
@@ -358,7 +347,6 @@ void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double 
             m_read_count = 0;
         }
     }
-#endif
 
 }
 
@@ -714,13 +702,11 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
         }
     }
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     m_afRigidBodyCommPtr->set_children_names(m_rbState.m_childrenNames);
     m_afRigidBodyCommPtr->set_joint_names(m_rbState.m_jointNames);
     m_afRigidBodyCommPtr->set_joint_positions(m_rbState.m_jointPositions);
     m_afRigidBodyCommPtr->set_joint_velocities(m_rbState.m_jointVelocities);
     m_afRigidBodyCommPtr->set_joint_efforts(m_rbState.m_jointEfforts);
-#endif
 
     m_write_count++;
 }
@@ -861,7 +847,6 @@ void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double
 
 void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCloudPtr, double)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloudPtr pcPtr = m_afPointCloudCommPtr->get_point_cloud();
     if(pcPtr){
         double radius = m_afPointCloudCommPtr->get_radius();
@@ -924,8 +909,6 @@ void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCl
         pointCloudPtr->m_mpSize = pc_size;
 
     }
-
-#endif
 }
 
 void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointCloudPtr, double)
@@ -941,6 +924,7 @@ void afObjectCommunicationPlugin::volumeUpdateState(afVolumePtr volPtr, double d
 {
 
 }
+#endif
 
 void afRigidBodyState::setChildrenNames(afRigidBodyPtr afRBPtr){
     int num_children = afRBPtr->m_CJ_PairsActive.size();
@@ -1004,6 +988,7 @@ void afRigidBodyState::setJointEfforts(afRigidBodyPtr afRBPtr){
     }
 }
 
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
 {
     m_worldPtr = a_afWorld;
@@ -1021,24 +1006,20 @@ int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAt
 
     bool success = false;
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     m_afWorldCommPtr.reset(new ambf_comm::World(objName, objNamespace, minFreq, maxFreq, timeOut));
     success = true;
-#endif
 
     return success;
 }
 
 void afWorldCommunicationPlugin::graphicsUpdate()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_paramsSet == false){
         // Create a default point cloud to listen to
         m_afWorldCommPtr->append_point_cloud_topic(m_worldPtr->getQualifiedName() + "/" + "point_cloud");
         m_afWorldCommPtr->set_params_on_server();
         m_paramsSet = true;
     }
-#endif
 }
 
 void afWorldCommunicationPlugin::physicsUpdate(double dt)
@@ -1056,7 +1037,6 @@ bool afWorldCommunicationPlugin::close()
 
 void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 
     // If throttling is enabled, wait here until the step clock is toggled before
     // progressing towards next step
@@ -1094,20 +1074,20 @@ void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
         m_read_count = 0;
     }
 
-#endif
-
 }
 
 void afWorldCommunicationPlugin::worldUpdateState(afWorldPtr worldPtr, double dt)
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     m_afWorldCommPtr->set_sim_time(worldPtr->getSimulationTime());
     m_afWorldCommPtr->set_wall_time(worldPtr->getWallTime());
     m_afWorldCommPtr->set_loop_freq(1000);
     m_afWorldCommPtr->set_num_devices(0);
-#endif
 }
 
+#endif
+
+
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
 int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;
@@ -1128,7 +1108,6 @@ int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 
 void afCameraDepthStreamerPlugin::graphicsUpdate()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_write_count % m_publishInterval == 0){
         sensor_msgs::PointCloud2Iterator<float> pcMsg_x(*m_depthPointCloudMsg, "x");
         sensor_msgs::PointCloud2Iterator<float> pcMsg_y(*m_depthPointCloudMsg, "y");
@@ -1161,7 +1140,6 @@ void afCameraDepthStreamerPlugin::graphicsUpdate()
         m_depthPointCloudMsg->header.stamp.fromSec(m_cameraPtr->getRenderTimeStamp());
         m_depthPointCloudPub.publish(m_depthPointCloudMsg);
     }
-#endif
     m_write_count++;
 }
 
@@ -1172,27 +1150,25 @@ void afCameraDepthStreamerPlugin::physicsUpdate(double)
 
 bool afCameraDepthStreamerPlugin::close()
 {
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_depthPointCloudModifier != nullptr){
         delete m_depthPointCloudModifier;
         m_depthPointCloudModifier = 0;
     }
-#endif
     return true;
 }
+#endif
 
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
 int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;
     m_cameraPtr = (afCameraPtr)a_afObjectPtr;
     afCameraAttributes* camAttribs = (afCameraAttributes*) a_objectAttribs;
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     m_rosNode = afROSNode::getNode();
     if (s_imageTransport == nullptr){
         s_imageTransport = new image_transport::ImageTransport(*m_rosNode);
     }
     m_imagePublisher = s_imageTransport->advertise(m_cameraPtr->getQualifiedName() + "/ImageData", 1);
-#endif
 
     m_publishInterval = camAttribs->m_publishImageInterval;
     return 1;
@@ -1200,7 +1176,6 @@ int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
 
 void afCameraVideoStreamerPlugin::graphicsUpdate()
 {
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (m_write_count % m_publishInterval == 0){
         // UGLY HACK TO FLIP ONCES BEFORE PUBLISHING AND THEN AGAIN AFTER TO HAVE CORRECT MAPPING
         // WITH THE COLORED DETPH POINT CLOUD
@@ -1212,7 +1187,6 @@ void afCameraVideoStreamerPlugin::graphicsUpdate()
         m_imagePublisher.publish(rosMsg);
         m_cameraPtr->m_bufferColorImage->flipHorizontal();
     }
-#endif
     m_write_count++;
 }
 
@@ -1223,11 +1197,10 @@ void afCameraVideoStreamerPlugin::physicsUpdate(double)
 
 bool afCameraVideoStreamerPlugin::close()
 {
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     if (s_imageTransport != nullptr){
         delete s_imageTransport;
         s_imageTransport = nullptr;
     }
-#endif
     return true;
 }
+#endif
