@@ -2,6 +2,7 @@
 
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
+image_transport::ImageTransport* afCameraVideoStreamerPlugin::s_imageTransport = nullptr;
 int afCameraVideoStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
     m_objectPtr = a_afObjectPtr;

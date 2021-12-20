@@ -62,8 +62,7 @@ void afRigidBodyState::setJointEfforts(afRigidBodyPtr afRBPtr){
     }
 }
 
-#ifdef AF_ENABLE_OPEN_CV_SUPPORT
-image_transport::ImageTransport* afCameraVideoStreamerPlugin::s_imageTransport = nullptr;
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 
 int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {

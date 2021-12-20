@@ -54,6 +54,7 @@
 #include "ambf_server/RigidBody.h"
 #include "ambf_server/Sensor.h"
 #include "ambf_server/Vehicle.h"
+#include "ambf_server/World.h"
 #endif
 
 using namespace ambf;

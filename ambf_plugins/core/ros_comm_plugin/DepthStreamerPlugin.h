@@ -46,6 +46,7 @@
 #include "afFramework.h"
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
+#include "ambf_server/RosComBase.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 #endif
