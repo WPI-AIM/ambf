@@ -52,7 +52,10 @@
 #include "BulletSoftBody/btSoftBodySolvers.h"
 //------------------------------------------------------------------------------
 
-#include "ros_comm_plugin/CommunicationPlugins.h"
+#include "ros_comm_plugin/ObjectCommPlugin.h"
+#include "ros_comm_plugin/WorldCommPlugin.h"
+#include "ros_comm_plugin/VideoStreamerPlugin.h"
+#include "ros_comm_plugin/DepthStreamerPlugin.h"
 
 //------------------------------------------------------------------------------
 using namespace ambf;
