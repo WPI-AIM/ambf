@@ -50,15 +50,10 @@ namespace ambf_comm{
 class Sensor: public SensorRosCom{
 public:
     Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    inline void set_name(std::string name){m_State.name.data = name;}
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
-    void set_wall_time(double a_sec);
     inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
-    inline void set_sim_time(double a_sec){ m_State.sim_time = a_sec;}
-    inline void increment_sim_step(){m_State.sim_step++;}
-    inline void set_sim_step(uint step){m_State.sim_step = step;}
     inline void set_count(int count){m_State.count = count;}
 
     void set_trigger(bool triggered);

@@ -216,17 +216,6 @@ World::World(std::string a_name, std::string a_namespace, int a_freq_min, int a_
 
 
 ///
-/// \brief World::set_wall_time
-/// \param a_sec
-///
-void World::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
-
-///
 /// \brief World::increment_sim_step
 ///
 void World::increment_sim_step(){

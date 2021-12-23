@@ -598,48 +598,56 @@ void afComm::afUpdateTimes(const double a_wall_time, const double a_sim_time){
     {
         m_afActuatorCommPtr->set_wall_time(a_wall_time);
         m_afActuatorCommPtr->set_sim_time(a_sim_time);
+        m_afActuatorCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::CAMERA:
     {
         m_afCameraCommPtr->set_wall_time(a_wall_time);
         m_afCameraCommPtr->set_sim_time(a_sim_time);
+        m_afCameraCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::LIGHT:
     {
         m_afLightCommPtr->set_wall_time(a_wall_time);
         m_afLightCommPtr->set_sim_time(a_sim_time);
+        m_afLightCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::OBJECT:
     {
         m_afObjectCommPtr->set_wall_time(a_wall_time);
         m_afObjectCommPtr->set_sim_time(a_sim_time);
+        m_afObjectCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::RIGID_BODY:
     {
         m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
         m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
+        m_afRigidBodyCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::SENSOR:
     {
         m_afSensorCommPtr->set_wall_time(a_wall_time);
         m_afSensorCommPtr->set_sim_time(a_sim_time);
+        m_afSensorCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::VEHICLE:
     {
         m_afVehicleCommPtr->set_wall_time(a_wall_time);
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
+        m_afVehicleCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     case afType::WORLD:
     {
         m_afWorldCommPtr->set_wall_time(a_wall_time);
         m_afWorldCommPtr->set_sim_time(a_sim_time);
+        m_afWorldCommPtr->set_time_stamp(getTimeStamp());
     }
         break;
     }
@@ -1412,7 +1420,7 @@ void afBaseObject::pluginsPhysicsUpdate(double dt){
 ///
 void afBaseObject::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform){
     if ( (getParentObject() != nullptr) && (a_forceUpdate == false) ){
-        // Don't update the pose as this objects parent is
+        // Don't update the pose as this object's parent is
         // responsible for it.
         return;
     }
@@ -2055,6 +2063,7 @@ void afConstraintActuator::fetchCommands(double dt){
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::update(double dt){
+    setTimeStamp(m_afWorld->getSystemTime());
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afActuatorCommPtr.get() != nullptr){
         m_afActuatorCommPtr->set_name(m_name);
@@ -2799,6 +2808,7 @@ void afRigidBody::estimateCartesianControllerGains(afCartesianController &contro
 ///
 void afRigidBody::update(double dt)
 {
+    setTimeStamp(m_afWorld->getSystemTime());
     if (m_bulletRigidBody)
     {
         m_localTransform << getCOMTransform();
@@ -4561,6 +4571,7 @@ void afJoint::fetchCommands(double dt){
 }
 
 void afJoint::update(double dt){
+    setTimeStamp(m_afWorld->getSystemTime());
 }
 
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
@@ -4985,7 +4996,7 @@ void afRayTracerSensor::visualize(bool show)
 /// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
 void afRayTracerSensor::update(double dt){
-
+    setTimeStamp(m_afWorld->getSystemTime());
     if (m_parentBody == nullptr){
         return;
     }
@@ -6553,13 +6564,11 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if (m_afWorldCommPtr.get() != nullptr){
-        m_afWorldCommPtr->set_sim_time(m_simulationTime);
-        m_afWorldCommPtr->set_wall_time(m_wallClock);
         m_afWorldCommPtr->set_loop_freq(a_loopFreq);
         m_afWorldCommPtr->set_num_devices(a_numDevices);
     }
 #endif
-
+    setTimeStamp(getSystemTime());
     afUpdateTimes(getWallTime(), getSimulationTime());
 
     estimateBodyWrenches();
@@ -8105,7 +8114,7 @@ void afCamera::fetchCommands(double dt){
 ///
 void afCamera::update(double dt)
 {
-
+    setTimeStamp(m_afWorld->getSystemTime());
     // update Transform data for m_ObjectPtr
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if(m_afCameraCommPtr.get() != nullptr){
@@ -8256,13 +8265,15 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
-    m_renderTimeStamp = chrono::duration<double>(chrono::system_clock::now().time_since_epoch()).count();
+    m_renderTimeStamp = getTimeStamp();
     m_camera->renderView(m_width, m_height);
 
     // swap buffers
     glfwSwapBuffers(m_window);
 
     renderFrameBuffer();
+
+//    cerr << "Time Stamp Error: " << m_renderTimeStamp - getTimeStamp() << endl;
 
     // Only set the window_closed if the condition is met
     // otherwise a non-closed window will set the variable back
@@ -8765,11 +8776,10 @@ void afLight::fetchCommands(double dt){
 ///
 void afLight::update(double dt)
 {
-
+    setTimeStamp(m_afWorld->getSystemTime());
     // update Transform data for m_ObjectPtr
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     if(m_afLightCommPtr.get() != nullptr){
-
         if (m_paramsSet == false){
             m_afLightCommPtr->set_cuttoff_angle(cDegToRad(m_spotLight->getCutOffAngleDeg()));
             m_afLightCommPtr->set_type(ambf_comm::LightType::SPOT);
@@ -9029,6 +9039,7 @@ void afModel::fetchCommands(double dt)
 ///
 void afModel::update(double dt)
 {
+//    setTimeStamp(m_afWorld->getSystemTime());
     afChildrenMap::iterator cIt;
 
     for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
@@ -9434,6 +9445,7 @@ void afVehicle::fetchCommands(double dt){
 /// \brief afVehicle::updatePositionFromDynamics
 ///
 void afVehicle::update(double dt){
+    setTimeStamp(m_afWorld->getSystemTime());
     for (uint i = 0; i < m_numWheels ; i++){
         m_vehicle->updateWheelTransform(i, true);
         btTransform btTrans = m_vehicle->getWheelInfo(i).m_worldTransform;
@@ -9512,6 +9524,7 @@ afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afType::POINT_CLO
 
 void afPointCloud::update(double dt)
 {
+    setTimeStamp(m_afWorld->getSystemTime());
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     sensor_msgs::PointCloudPtr pcPtr = m_pcCommPtr->get_point_cloud();
     if(pcPtr){
@@ -9598,6 +9611,7 @@ afGhostObject::~afGhostObject()
 
 void afGhostObject::update(double dt)
 {
+    setTimeStamp(m_afWorld->getSystemTime());
     //    cTransform trans;
     //    trans << m_bulletGhostObject->getWorldTransform();
     //    setLocalTransform(trans);
@@ -9949,6 +9963,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 ///
 void afVolume::update(double dt)
 {
+    setTimeStamp(m_afWorld->getSystemTime());
 
 }
 

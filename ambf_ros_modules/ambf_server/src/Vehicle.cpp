@@ -46,11 +46,6 @@ namespace ambf_comm{
 Vehicle::Vehicle(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): VehicleRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
-ambf_msgs::VehicleCmd Vehicle::get_command(){
-    ambf_msgs::VehicleCmd temp_cmd = m_Cmd;
-    return temp_cmd;
-}
-
 void Vehicle::cur_position(double px, double py, double pz){
     m_trans.setOrigin(tf::Vector3(px, py, pz));
     m_State.pose.position.x = px;
@@ -69,12 +64,6 @@ void Vehicle::cur_orientation(double qx, double qy, double qz, double qw){
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
-
-void Vehicle::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
 }
 
 extern "C"{

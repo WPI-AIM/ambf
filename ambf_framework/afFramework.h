@@ -301,6 +301,10 @@ public:
     // Set Min publishing frequency for this object
     void setMinPublishFrequency(int freq);
 
+    inline double getTimeStamp(){return m_timeStamp;}
+
+    void setTimeStamp(double a_sec){m_timeStamp = a_sec;}
+
     // Override the Max Freq
     static void overrideMaxPublishingFrequency(int freq);
 
@@ -333,8 +337,6 @@ public:
 #endif
 
 private:
-
-
     // Min publishing frequency
     uint m_minPubFreq=50;
 
@@ -349,6 +351,8 @@ private:
     static bool s_globalOverride;
     static int s_maxFreq;
     static int s_minFreq;
+
+    double m_timeStamp = 0.0;
 };
 
 
@@ -2273,6 +2277,8 @@ public:
 
     // This method returns the current simulation time
     double getSimulationTime(){return m_simulationTime;}
+
+    double getSystemTime(){return chrono::duration<double>(chrono::system_clock::now().time_since_epoch()).count();}
 
     // This method gets the time difference between current time and last simulation time
     double getSimulationDeltaTime();
