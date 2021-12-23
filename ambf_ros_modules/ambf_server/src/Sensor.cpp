@@ -66,12 +66,6 @@ void Sensor::cur_orientation(double qx, double qy, double qz, double qw){
     tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
 }
 
-void Sensor::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
 void Sensor::set_trigger(bool triggered){
     if (m_State.triggered.size() == 0){
         m_State.triggered.resize(1);

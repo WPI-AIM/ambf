@@ -94,12 +94,6 @@ ambf_msgs::ObjectCmd Object::get_command(){
     return temp_cmd;
 }
 
-void Object::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
 void Object::set_userdata(float a_data){
     if (m_State.userdata.size() != 1){
         m_State.userdata.resize(1);

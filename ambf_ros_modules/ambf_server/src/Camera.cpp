@@ -184,17 +184,6 @@ void Camera::cur_orientation(double qx, double qy, double qz, double qw){
     tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
 }
 
-void Camera::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
-ambf_msgs::CameraCmd Camera::get_command(){
-    ambf_msgs::CameraCmd temp_cmd = m_Cmd;
-    return temp_cmd;
-}
-
 
 extern "C"{
 

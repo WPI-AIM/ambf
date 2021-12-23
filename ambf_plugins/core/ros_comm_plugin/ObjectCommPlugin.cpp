@@ -177,7 +177,7 @@ void afObjectCommunicationPlugin::graphicsUpdate()
 
 void afObjectCommunicationPlugin::physicsUpdate(double dt)
 {
-    afUpdateTimes(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime());
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime());
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:{
         afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
@@ -234,49 +234,56 @@ bool afObjectCommunicationPlugin::close()
     return 1;
 }
 
-void afObjectCommunicationPlugin::afUpdateTimes(const double a_wall_time, const double a_sim_time)
+void afObjectCommunicationPlugin::setTimeStamps(const double a_wall_time, const double a_sim_time)
 {
     switch (m_commType) {
     case afType::ACTUATOR:
     {
         m_afActuatorCommPtr->set_wall_time(a_wall_time);
         m_afActuatorCommPtr->set_sim_time(a_sim_time);
+        m_afActuatorCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::CAMERA:
     {
         m_afCameraCommPtr->set_wall_time(a_wall_time);
         m_afCameraCommPtr->set_sim_time(a_sim_time);
+        m_afCameraCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::LIGHT:
     {
         m_afLightCommPtr->set_wall_time(a_wall_time);
         m_afLightCommPtr->set_sim_time(a_sim_time);
+        m_afLightCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::OBJECT:
     {
         m_afObjectCommPtr->set_wall_time(a_wall_time);
         m_afObjectCommPtr->set_sim_time(a_sim_time);
+        m_afObjectCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::RIGID_BODY:
     {
         m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
         m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
+        m_afRigidBodyCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::SENSOR:
     {
         m_afSensorCommPtr->set_wall_time(a_wall_time);
         m_afSensorCommPtr->set_sim_time(a_sim_time);
+        m_afSensorCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     case afType::VEHICLE:
     {
         m_afVehicleCommPtr->set_wall_time(a_wall_time);
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
+        m_afVehicleCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
     }
         break;
     }

@@ -111,6 +111,15 @@ public:
     virtual void run_publishers();
     virtual void cleanUp();
     virtual T_cmd get_command(){return m_Cmd;}
+    inline void set_name(std::string name){m_State.name.data = name;}
+    inline void set_time_stamp(double a_sec){ m_State.header.stamp.fromSec(a_sec);}
+    inline void set_wall_time(double a_sec){ m_State.wall_time = a_sec;}
+    inline void set_sim_time(double a_sec){
+        m_State.sim_time = a_sec;
+        increment_sim_step();
+    }
+    virtual void increment_sim_step(){m_State.sim_step++;}
+    inline void set_sim_step(uint step){m_State.sim_step = step;}
 
     int m_freq_min;
     int m_freq_max;
@@ -134,13 +143,17 @@ protected:
     ros::CallbackQueue m_custom_queue;
 
     virtual void reset_cmd() = 0;
+
+private:
+    bool m_copyingState = true;
+    T_state m_stateCopy;
 };
 
 template<class T_state, class T_cmd>
 void RosComBase<T_state, T_cmd>::run_publishers(){
     while(afROSNode::isNodeActive()){
-        T_state stateCopy = m_State;
-        m_pub.publish(stateCopy);
+        m_stateCopy = m_State;
+        m_pub.publish(m_stateCopy);
         m_custom_queue.callAvailable();
         if(m_watchDogPtr->is_wd_expired()){
             m_watchDogPtr->consolePrint(m_name);

@@ -1323,7 +1323,7 @@ void afBaseObject::pluginsPhysicsUpdate(double dt){
 ///
 void afBaseObject::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform){
     if ( (getParentObject() != nullptr) && (a_forceUpdate == false) ){
-        // Don't update the pose as this objects parent is
+        // Don't update the pose as this object's parent is
         // responsible for it.
         return;
     }
@@ -4484,7 +4484,6 @@ void afRayTracerSensor::visualize(bool show)
 /// \brief afRayTracerSensor::updatePositionFromDynamics
 ///
 void afRayTracerSensor::update(double dt){
-
     if (m_parentBody == nullptr){
         return;
     }
@@ -5917,6 +5916,9 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
         }
     }
 
+    m_physicsFreq = a_loopFreq;
+    m_numDevices = a_numDevices;
+
     m_wallClock = a_wallClock;
 
     double dt = getSimulationDeltaTime();
@@ -5928,6 +5930,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     m_lastSimulationTime = m_simulationTime;
     m_simulationTime = m_simulationTime + a_interval;
 
+    setTimeStamp(getSystemTime());
     estimateBodyWrenches();
 
     for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
@@ -5935,6 +5938,7 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
     }
 
     for (map<string, afPointCloudPtr>::iterator pcIt = m_pcMap.begin() ; pcIt != m_pcMap.end() ; ++pcIt){
+        (pcIt->second)->setTimeStamp(getCurrentTimeStamp());
         (pcIt->second)->update(dt);
     }
 
@@ -7377,13 +7381,15 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
-    m_renderTimeStamp = chrono::duration<double>(chrono::system_clock::now().time_since_epoch()).count();
+    m_renderTimeStamp = getCurrentTimeStamp();
     m_camera->renderView(m_width, m_height);
 
     // swap buffers
     glfwSwapBuffers(m_window);
 
     renderFrameBuffer();
+
+//    cerr << "Time Stamp Error: " << m_renderTimeStamp - getTimeStamp() << endl;
 
     // Only set the window_closed if the condition is met
     // otherwise a non-closed window will set the variable back
@@ -8041,12 +8047,14 @@ bool afModel::loadPlugins(afModelPtr modelPtr, afModelAttribsPtr attribs, vector
 ///
 void afModel::update(double dt)
 {
+//    setTimeStamp(m_afWorld->getSystemTime());
     afChildrenMap::iterator cIt;
 
     for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
     {
         for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
+            childObj->setTimeStamp(getWorldPtr()->getCurrentTimeStamp());
             childObj->update(dt);
         }
     }
@@ -8846,7 +8854,6 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 ///
 void afVolume::update(double dt)
 {
-
 }
 
 ///
