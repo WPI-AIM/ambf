@@ -1008,7 +1008,7 @@ double afBaseObject::getSimulationTime(){
 ///
 void afBaseObject::setLocalPos(const cVector3d &pos)
 {
-    return m_localTransform.setLocalPos(pos);
+    m_localTransform.setLocalPos(pos);
 }
 
 void afBaseObject::setLocalPos(const afVector3d &pos)
