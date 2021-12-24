@@ -121,6 +121,18 @@ public:
     virtual void increment_sim_step(){m_State.sim_step++;}
     inline void set_sim_step(uint step){m_State.sim_step = step;}
 
+    void updateStateCopy(){
+        m_updateState = true;
+        // Enable at first state copy
+        if(!m_enableComm){
+            m_enableComm = true;
+        }
+    }
+
+    bool isStateCopyingDone(){
+        return !m_updateState;
+    }
+
     int m_freq_min;
     int m_freq_max;
 
@@ -142,22 +154,47 @@ protected:
     boost::thread m_thread;
     ros::CallbackQueue m_custom_queue;
 
+    inline void updateState(){
+        m_updateState = true;
+        // Enable comm on first write
+        enableComm();
+    }
+
+    inline void enableComm(){
+        m_enableComm = true;
+    }
+
     virtual void reset_cmd() = 0;
 
 private:
-    bool m_copyingState = true;
+    bool m_updateState;
     T_state m_stateCopy;
+    // Flag to enable communication thread
+    bool m_enableComm;
+
+    void copyState(){
+        if (m_updateState){
+            m_stateCopy = m_State;
+            m_updateState = false;
+        }
+    }
 };
 
 template<class T_state, class T_cmd>
 void RosComBase<T_state, T_cmd>::run_publishers(){
     while(afROSNode::isNodeActive()){
-        m_stateCopy = m_State;
-        m_pub.publish(m_stateCopy);
-        m_custom_queue.callAvailable();
-        if(m_watchDogPtr->is_wd_expired()){
-            m_watchDogPtr->consolePrint(m_name);
-            reset_cmd();
+        if (m_enableComm){
+            // Call callbacks
+            m_custom_queue.callAvailable();
+            if(m_watchDogPtr->is_wd_expired()){
+                m_watchDogPtr->consolePrint(m_name);
+                reset_cmd();
+            }
+
+            // Update and publish state
+            copyState();
+            m_pub.publish(m_stateCopy);
+
         }
         m_watchDogPtr->m_ratePtr->sleep();
     }

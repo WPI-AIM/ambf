@@ -77,6 +77,8 @@ RosComBase<T_state, T_cmd>::RosComBase(std::string a_name, std::string a_namespa
 {
     m_name = a_name;
     m_namespace = a_namespace;
+    m_enableComm = false;
+    m_updateState = false;
 
     m_freq_min = a_freq_min;
     m_freq_max = a_freq_max;

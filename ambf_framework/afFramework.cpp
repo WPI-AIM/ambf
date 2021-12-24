@@ -8049,7 +8049,6 @@ void afModel::update(double dt)
 {
 //    setTimeStamp(m_afWorld->getSystemTime());
     afChildrenMap::iterator cIt;
-
     for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
     {
         for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){

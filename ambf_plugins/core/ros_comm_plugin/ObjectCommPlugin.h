@@ -84,7 +84,7 @@ public:
     virtual bool close() override;
 
     //! This method applies updates Wall and Sim Time for State Message.
-    virtual void setTimeStamps(const double a_wall_time, const double a_sim_time);
+    virtual void setTimeStamps(const double a_wall_time, const double a_sim_time, const double a_system_time);
 
     void actuatorFetchCommand(afActuatorPtr, double);
     void actuatorUpdateState(afActuatorPtr, double);
@@ -128,11 +128,6 @@ protected:
     afRigidBodyState m_rbState;
 
 private:
-    afType m_objectType;
-
-
-    afType m_commType;
-
 
     bool m_paramsSet=false;
 

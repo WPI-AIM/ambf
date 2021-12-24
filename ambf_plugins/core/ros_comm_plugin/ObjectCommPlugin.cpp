@@ -177,49 +177,69 @@ void afObjectCommunicationPlugin::graphicsUpdate()
 
 void afObjectCommunicationPlugin::physicsUpdate(double dt)
 {
-    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime());
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:{
         afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
         actuatorFetchCommand(actPtr, dt);
-        actuatorUpdateState(actPtr, dt);
+        if (m_afActuatorCommPtr->isStateCopyingDone()){
+            actuatorUpdateState(actPtr, dt);
+            m_afActuatorCommPtr->updateStateCopy();
+        }
     }
         break;
     case afType::CAMERA:{
         afCameraPtr camPtr = (afCameraPtr)m_objectPtr;
         cameraFetchCommand(camPtr, dt);
-        cameraUpdateState(camPtr, dt);
+        if (m_afCameraCommPtr->isStateCopyingDone()){
+            cameraUpdateState(camPtr, dt);
+            m_afCameraCommPtr->updateStateCopy();
+        }
     }
         break;
     case afType::LIGHT:{
         afLightPtr lightPtr = (afLightPtr)m_objectPtr;
         lightFetchCommand(lightPtr, dt);
-        lightUpdateState(lightPtr, dt);
+        if (m_afLightCommPtr->isStateCopyingDone()){
+            lightUpdateState(lightPtr, dt);
+            m_afLightCommPtr->updateStateCopy();
+        }
     }
         break;
     case afType::OBJECT:{
-        afRigidBodyPtr objPtr = (afRigidBodyPtr)m_objectPtr;
-//        objectFetchCommand(actPtr, dt);
-//        objectUpdateState(actPtr, dt);
+        afBaseObjectPtr objPtr = (afBaseObjectPtr)m_objectPtr;
+//        objectFetchCommand(objPtr, dt);
+//        if (m_afObjectCommPtr->isStateCopyingDone()){
+//            objectUpdateState(objPtr, dt);
+//            m_afObjectCommPtr->updateStateCopy();
+//        }
     }
         break;
     case afType::RIGID_BODY:
     {
         afRigidBodyPtr rbPtr = (afRigidBodyPtr)m_objectPtr;
         rigidBodyFetchCommand(rbPtr, dt);
-        rigidBodyUpdateState(rbPtr, dt);
+        if (m_afRigidBodyCommPtr->isStateCopyingDone()){
+            rigidBodyUpdateState(rbPtr, dt);
+            m_afRigidBodyCommPtr->updateStateCopy();
+        }
     }
         break;
     case afType::SENSOR:{
         afSensorPtr senPtr = (afSensorPtr)m_objectPtr;
         sensorFetchCommand(senPtr, dt);
-        sensorUpdateState(senPtr, dt);
+        if (m_afSensorCommPtr->isStateCopyingDone()){
+            sensorUpdateState(senPtr, dt);
+            m_afSensorCommPtr->updateStateCopy();
+        }
     }
         break;
     case afType::VEHICLE:{
         afVehiclePtr vehPtr = (afVehiclePtr)m_objectPtr;
         vehicleFetchCommand(vehPtr, dt);
-        vehicleUpdateState(vehPtr, dt);
+        if (m_afVehicleCommPtr->isStateCopyingDone()){
+            vehicleUpdateState(vehPtr, dt);
+            m_afVehicleCommPtr->updateStateCopy();
+        }
     }
         break;
     default:
@@ -234,56 +254,56 @@ bool afObjectCommunicationPlugin::close()
     return 1;
 }
 
-void afObjectCommunicationPlugin::setTimeStamps(const double a_wall_time, const double a_sim_time)
+void afObjectCommunicationPlugin::setTimeStamps(const double a_wall_time, const double a_sim_time, const double a_system_time)
 {
-    switch (m_commType) {
+    switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:
     {
         m_afActuatorCommPtr->set_wall_time(a_wall_time);
         m_afActuatorCommPtr->set_sim_time(a_sim_time);
-        m_afActuatorCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afActuatorCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::CAMERA:
     {
         m_afCameraCommPtr->set_wall_time(a_wall_time);
         m_afCameraCommPtr->set_sim_time(a_sim_time);
-        m_afCameraCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afCameraCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::LIGHT:
     {
         m_afLightCommPtr->set_wall_time(a_wall_time);
         m_afLightCommPtr->set_sim_time(a_sim_time);
-        m_afLightCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afLightCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::OBJECT:
     {
         m_afObjectCommPtr->set_wall_time(a_wall_time);
         m_afObjectCommPtr->set_sim_time(a_sim_time);
-        m_afObjectCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afObjectCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::RIGID_BODY:
     {
         m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
         m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
-        m_afRigidBodyCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afRigidBodyCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::SENSOR:
     {
         m_afSensorCommPtr->set_wall_time(a_wall_time);
         m_afSensorCommPtr->set_sim_time(a_sim_time);
-        m_afSensorCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afSensorCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::VEHICLE:
     {
         m_afVehicleCommPtr->set_wall_time(a_wall_time);
         m_afVehicleCommPtr->set_sim_time(a_sim_time);
-        m_afVehicleCommPtr->set_time_stamp(m_objectPtr->getCurrentTimeStamp());
+        m_afVehicleCommPtr->set_time_stamp(a_system_time);
     }
         break;
     }
@@ -332,6 +352,7 @@ void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, dou
 
 void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, double)
 {
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     m_afActuatorCommPtr->set_name(actPtr->getName());
     m_afActuatorCommPtr->set_parent_name(actPtr->m_parentName);
 }
@@ -448,6 +469,7 @@ void afObjectCommunicationPlugin::cameraUpdateState(afCameraPtr camPtr, double d
         m_paramsSet = true;
     }
 
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = camPtr->getLocalPos();
     m_afCameraCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;
@@ -522,6 +544,7 @@ void afObjectCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double d
         m_paramsSet = true;
     }
 
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = lightPtr->getLocalPos();
     m_afLightCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;
@@ -702,6 +725,7 @@ void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, 
 
 void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, double dt)
 {
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     cQuaternion q;
     q.fromRotMat(afRBPtr->m_visualMesh->getLocalRot());
@@ -786,6 +810,7 @@ void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double 
 
 void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 {
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     switch (senPtr->m_sensorType) {
     case afSensorType::RAYTRACER:
     case afSensorType::RESISTANCE:
@@ -897,6 +922,7 @@ void afObjectCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, doubl
 
 void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double dt)
 {
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = vehPtr->getLocalPos();
     m_afVehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;

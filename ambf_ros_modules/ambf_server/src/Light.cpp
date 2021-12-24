@@ -48,6 +48,7 @@ const std::string light_type_enum_to_str(LightType enumVal)
     if (enumVal == LightType::SPOT) return "SPOT";
     else if (enumVal == LightType::POINT) return "POINT";
     else if (enumVal == LightType::DIRECTIONAL) return "DIRECTIONAL";
+    return "";
 }
 
 const std::string light_param_enum_to_str(LightParamsEnum enumVal)
@@ -55,6 +56,7 @@ const std::string light_param_enum_to_str(LightParamsEnum enumVal)
     if (enumVal == LightParamsEnum::cuttoff_angle) return "cutoff_angle";
     else if (enumVal == LightParamsEnum::parent_name) return "parent_name";
     else if (enumVal == LightParamsEnum::type) return "type";
+    return "";
 }
 
 LightParams::LightParams(){

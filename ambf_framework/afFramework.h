@@ -272,7 +272,7 @@ public:
 
     inline double getCurrentTimeStamp(){return m_timeStamp;}
 
-    virtual void setTimeStamp(double a_sec){m_timeStamp = a_sec;}
+    inline void setTimeStamp(double a_sec){m_timeStamp = a_sec;}
 
     // Override the Max Freq
     static void overrideMaxPublishingFrequency(int freq);
