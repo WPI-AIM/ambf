@@ -51,6 +51,7 @@ void afCameraDepthStreamerPlugin::graphicsUpdate()
 
         m_depthPointCloudMsg->header.frame_id = m_cameraPtr->getName();
         m_depthPointCloudMsg->header.stamp.fromSec(m_cameraPtr->getRenderTimeStamp());
+
         m_depthPointCloudPub.publish(m_depthPointCloudMsg);
     }
     m_write_count++;

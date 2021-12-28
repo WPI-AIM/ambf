@@ -67,11 +67,11 @@ private:
 
     // Counter for the times we have written to ambf_comm API
     // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
+    unsigned int m_write_count = 0;
 
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
-    unsigned short m_read_count = 0;
+    unsigned int m_read_count = 0;
     // Image Transport ROS Node
     ros::NodeHandle* m_rosNode;
     afCameraPtr m_cameraPtr = nullptr;

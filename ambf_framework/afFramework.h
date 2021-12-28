@@ -1794,6 +1794,8 @@ public:
 
     virtual void render(afRenderOptions &options);
 
+    virtual void updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform = cTransform());
+
     void renderSkyBox();
 
     void renderFrameBuffer();
@@ -2087,8 +2089,6 @@ struct afRenderOptions{
     string m_IIDModeStr = "";
     string m_IIDBtnActionStr = "";
 };
-
-
 //-----------------------------------------------------------------------------
 
 ///
@@ -2099,7 +2099,6 @@ class afWorld: public afIdentification, public afComm, public afModelManager{
     friend class afModel;
 
 public:
-
     afWorld(string a_global_namespace);
 
     virtual ~afWorld();

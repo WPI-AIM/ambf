@@ -79,8 +79,11 @@ class afObjectCommunicationPlugin: public afObjectPlugin{
 public:
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
+
     virtual void graphicsUpdate() override;
+
     virtual void physicsUpdate(double dt) override;
+
     virtual bool close() override;
 
     //! This method applies updates Wall and Sim Time for State Message.
@@ -116,14 +119,14 @@ public:
 public:
 
     //! AMBF ROS COMM
-    std::shared_ptr<ambf_comm::Actuator> m_afActuatorCommPtr;
-    std::shared_ptr<ambf_comm::Camera> m_afCameraCommPtr;
-    std::shared_ptr<ambf_comm::Light> m_afLightCommPtr;
-    std::shared_ptr<ambf_comm::Object> m_afObjectCommPtr;
-    std::shared_ptr<ambf_comm::RigidBody> m_afRigidBodyCommPtr;
-    std::shared_ptr<ambf_comm::Sensor> m_afSensorCommPtr;
-    std::shared_ptr<ambf_comm::Vehicle> m_afVehicleCommPtr;
-    std::shared_ptr<ambf_comm::PointCloudHandler> m_afPointCloudCommPtr;
+    std::shared_ptr<ambf_comm::Actuator> m_actuatorCommPtr;
+    std::shared_ptr<ambf_comm::Camera> m_cameraCommPtr;
+    std::shared_ptr<ambf_comm::Light> m_lightCommPtr;
+    std::shared_ptr<ambf_comm::Object> m_objectCommPtr;
+    std::shared_ptr<ambf_comm::RigidBody> m_rigidBodyCommPtr;
+    std::shared_ptr<ambf_comm::Sensor> m_sensorCommPtr;
+    std::shared_ptr<ambf_comm::Vehicle> m_vehicleCommPtr;
+    std::shared_ptr<ambf_comm::PointCloudHandler> m_pointCloudCommPtr;
 protected:
     afRigidBodyState m_rbState;
 
@@ -133,11 +136,11 @@ private:
 
     // Counter for the times we have written to ambf_comm API
     // This is only for internal use as it could be reset
-    unsigned short m_write_count = 0;
+    unsigned int m_write_count = 0;
 
     // Counter for the times we have read from ambf_comm API
     // This is only for internal use as it could be reset
-    unsigned short m_read_count = 0;
+    unsigned int m_read_count = 0;
 #else
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
         return -1;

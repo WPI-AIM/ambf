@@ -7348,8 +7348,9 @@ cCamera *afCamera::getInternalCamera(){
     return m_camera;
 }
 
-
-
+///
+/// \brief afCamera::~afCamera
+///
 afCamera::~afCamera(){
     if (m_frameBuffer != nullptr){
         delete m_frameBuffer;
@@ -7381,7 +7382,6 @@ void afCamera::render(afRenderOptions &options)
     renderSkyBox();
 
     // render world
-    m_renderTimeStamp = getCurrentTimeStamp();
     m_camera->renderView(m_width, m_height);
 
     // swap buffers
@@ -7401,6 +7401,22 @@ void afCamera::render(afRenderOptions &options)
     m_sceneUpdateCounter++;
 }
 
+
+///
+/// \brief afCamera::updateGlobalPose
+/// \param a_forceUpdate
+/// \param a_parentTransform
+///
+void afCamera::updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform)
+{
+    m_renderTimeStamp = getCurrentTimeStamp();
+    afBaseObject::updateGlobalPose(a_forceUpdate, a_parentTransform);
+}
+
+
+///
+/// \brief afCamera::renderSkyBox
+///
 void afCamera::renderSkyBox(){
     if (m_afWorld->m_skyBoxMesh != nullptr){
         if (m_afWorld->m_skyBoxMesh->getShaderProgram() != nullptr){

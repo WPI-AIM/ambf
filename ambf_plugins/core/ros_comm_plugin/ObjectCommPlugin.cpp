@@ -84,11 +84,11 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:
     {
-        m_afActuatorCommPtr.reset(new ambf_comm::Actuator(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_actuatorCommPtr.reset(new ambf_comm::Actuator(objName, objNamespace, minFreq, maxFreq, timeOut));
         afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
         switch (actPtr->m_actuatorType) {
         case afActuatorType::CONSTRAINT:
-            m_afActuatorCommPtr->set_type("CONSTRAINT");
+            m_actuatorCommPtr->set_type("CONSTRAINT");
             break;
         default:
             break;
@@ -99,38 +99,38 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         break;
     case afType::CAMERA:
     {
-        m_afCameraCommPtr.reset(new ambf_comm::Camera(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_cameraCommPtr.reset(new ambf_comm::Camera(objName, objNamespace, minFreq, maxFreq, timeOut));
         success = true;
     }
         break;
     case afType::LIGHT:
     {
-        m_afLightCommPtr.reset(new ambf_comm::Light(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_lightCommPtr.reset(new ambf_comm::Light(objName, objNamespace, minFreq, maxFreq, timeOut));
         success = true;
     }
         break;
     case afType::OBJECT:
     {
-        m_afObjectCommPtr.reset(new ambf_comm::Object(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_objectCommPtr.reset(new ambf_comm::Object(objName, objNamespace, minFreq, maxFreq, timeOut));
         success = true;
     }
         break;
     case afType::RIGID_BODY:
     {
-        m_afRigidBodyCommPtr.reset(new ambf_comm::RigidBody(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_rigidBodyCommPtr.reset(new ambf_comm::RigidBody(objName, objNamespace, minFreq, maxFreq, timeOut));
         success = true;
     }
         break;
     case afType::SENSOR:
     {
-        m_afSensorCommPtr.reset(new ambf_comm::Sensor(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_sensorCommPtr.reset(new ambf_comm::Sensor(objName, objNamespace, minFreq, maxFreq, timeOut));
         afSensorPtr senPtr = (afSensorPtr) m_objectPtr;
         switch (senPtr->m_sensorType) {
         case afSensorType::RAYTRACER:
-            m_afSensorCommPtr->set_type("PROXIMITY");
+            m_sensorCommPtr->set_type("PROXIMITY");
             break;
         case afSensorType::RESISTANCE:
-            m_afSensorCommPtr->set_type("RESISTANCE");
+            m_sensorCommPtr->set_type("RESISTANCE");
             break;
         default:
             break;
@@ -140,14 +140,14 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         break;
     case afType::VEHICLE:
     {
-        m_afVehicleCommPtr.reset(new ambf_comm::Vehicle(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_vehicleCommPtr.reset(new ambf_comm::Vehicle(objName, objNamespace, minFreq, maxFreq, timeOut));
         success = true;
     }
         break;
     case afType::POINT_CLOUD:
     {
         afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
-        m_afPointCloudCommPtr.reset(new ambf_comm::PointCloudHandler(pcPtr->m_topicName));
+        m_pointCloudCommPtr.reset(new ambf_comm::PointCloudHandler(pcPtr->m_topicName));
         success = true;
     }
         break;
@@ -181,65 +181,44 @@ void afObjectCommunicationPlugin::physicsUpdate(double dt)
     case afType::ACTUATOR:{
         afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
         actuatorFetchCommand(actPtr, dt);
-        if (m_afActuatorCommPtr->isStateCopyingDone()){
-            actuatorUpdateState(actPtr, dt);
-            m_afActuatorCommPtr->updateStateCopy();
-        }
+        actuatorUpdateState(actPtr, dt);
     }
         break;
     case afType::CAMERA:{
         afCameraPtr camPtr = (afCameraPtr)m_objectPtr;
         cameraFetchCommand(camPtr, dt);
-        if (m_afCameraCommPtr->isStateCopyingDone()){
-            cameraUpdateState(camPtr, dt);
-            m_afCameraCommPtr->updateStateCopy();
-        }
+        cameraUpdateState(camPtr, dt);
     }
         break;
     case afType::LIGHT:{
         afLightPtr lightPtr = (afLightPtr)m_objectPtr;
         lightFetchCommand(lightPtr, dt);
-        if (m_afLightCommPtr->isStateCopyingDone()){
-            lightUpdateState(lightPtr, dt);
-            m_afLightCommPtr->updateStateCopy();
-        }
+        lightUpdateState(lightPtr, dt);
     }
         break;
-    case afType::OBJECT:{
-        afBaseObjectPtr objPtr = (afBaseObjectPtr)m_objectPtr;
+//    case afType::OBJECT:{
+//        afBaseObjectPtr objPtr = (afBaseObjectPtr)m_objectPtr;
+//        objectUpdateState(objPtr, dt);
 //        objectFetchCommand(objPtr, dt);
-//        if (m_afObjectCommPtr->isStateCopyingDone()){
-//            objectUpdateState(objPtr, dt);
-//            m_afObjectCommPtr->updateStateCopy();
-//        }
-    }
+//    }
         break;
     case afType::RIGID_BODY:
     {
         afRigidBodyPtr rbPtr = (afRigidBodyPtr)m_objectPtr;
         rigidBodyFetchCommand(rbPtr, dt);
-        if (m_afRigidBodyCommPtr->isStateCopyingDone()){
-            rigidBodyUpdateState(rbPtr, dt);
-            m_afRigidBodyCommPtr->updateStateCopy();
-        }
+        rigidBodyUpdateState(rbPtr, dt);
     }
         break;
     case afType::SENSOR:{
         afSensorPtr senPtr = (afSensorPtr)m_objectPtr;
         sensorFetchCommand(senPtr, dt);
-        if (m_afSensorCommPtr->isStateCopyingDone()){
-            sensorUpdateState(senPtr, dt);
-            m_afSensorCommPtr->updateStateCopy();
-        }
+        sensorUpdateState(senPtr, dt);
     }
         break;
     case afType::VEHICLE:{
         afVehiclePtr vehPtr = (afVehiclePtr)m_objectPtr;
         vehicleFetchCommand(vehPtr, dt);
-        if (m_afVehicleCommPtr->isStateCopyingDone()){
-            vehicleUpdateState(vehPtr, dt);
-            m_afVehicleCommPtr->updateStateCopy();
-        }
+        vehicleUpdateState(vehPtr, dt);
     }
         break;
     default:
@@ -259,51 +238,51 @@ void afObjectCommunicationPlugin::setTimeStamps(const double a_wall_time, const 
     switch (m_objectPtr->getType()) {
     case afType::ACTUATOR:
     {
-        m_afActuatorCommPtr->set_wall_time(a_wall_time);
-        m_afActuatorCommPtr->set_sim_time(a_sim_time);
-        m_afActuatorCommPtr->set_time_stamp(a_system_time);
+        m_actuatorCommPtr->set_wall_time(a_wall_time);
+        m_actuatorCommPtr->set_sim_time(a_sim_time);
+        m_actuatorCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::CAMERA:
     {
-        m_afCameraCommPtr->set_wall_time(a_wall_time);
-        m_afCameraCommPtr->set_sim_time(a_sim_time);
-        m_afCameraCommPtr->set_time_stamp(a_system_time);
+        m_cameraCommPtr->set_wall_time(a_wall_time);
+        m_cameraCommPtr->set_sim_time(a_sim_time);
+        m_cameraCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::LIGHT:
     {
-        m_afLightCommPtr->set_wall_time(a_wall_time);
-        m_afLightCommPtr->set_sim_time(a_sim_time);
-        m_afLightCommPtr->set_time_stamp(a_system_time);
+        m_lightCommPtr->set_wall_time(a_wall_time);
+        m_lightCommPtr->set_sim_time(a_sim_time);
+        m_lightCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::OBJECT:
     {
-        m_afObjectCommPtr->set_wall_time(a_wall_time);
-        m_afObjectCommPtr->set_sim_time(a_sim_time);
-        m_afObjectCommPtr->set_time_stamp(a_system_time);
+        m_objectCommPtr->set_wall_time(a_wall_time);
+        m_objectCommPtr->set_sim_time(a_sim_time);
+        m_objectCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::RIGID_BODY:
     {
-        m_afRigidBodyCommPtr->set_wall_time(a_wall_time);
-        m_afRigidBodyCommPtr->set_sim_time(a_sim_time);
-        m_afRigidBodyCommPtr->set_time_stamp(a_system_time);
+        m_rigidBodyCommPtr->set_wall_time(a_wall_time);
+        m_rigidBodyCommPtr->set_sim_time(a_sim_time);
+        m_rigidBodyCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::SENSOR:
     {
-        m_afSensorCommPtr->set_wall_time(a_wall_time);
-        m_afSensorCommPtr->set_sim_time(a_sim_time);
-        m_afSensorCommPtr->set_time_stamp(a_system_time);
+        m_sensorCommPtr->set_wall_time(a_wall_time);
+        m_sensorCommPtr->set_sim_time(a_sim_time);
+        m_sensorCommPtr->set_time_stamp(a_system_time);
     }
         break;
     case afType::VEHICLE:
     {
-        m_afVehicleCommPtr->set_wall_time(a_wall_time);
-        m_afVehicleCommPtr->set_sim_time(a_sim_time);
-        m_afVehicleCommPtr->set_time_stamp(a_system_time);
+        m_vehicleCommPtr->set_wall_time(a_wall_time);
+        m_vehicleCommPtr->set_sim_time(a_sim_time);
+        m_vehicleCommPtr->set_time_stamp(a_system_time);
     }
         break;
     }
@@ -314,7 +293,7 @@ void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, dou
     switch (actPtr->m_actuatorType) {
     case afActuatorType::CONSTRAINT:
     {
-        ambf_msgs::ActuatorCmd cmd = m_afActuatorCommPtr->get_command();
+        ambf_msgs::ActuatorCmd cmd = m_actuatorCommPtr->get_command();
         afConstraintActuatorPtr castPtr = (afConstraintActuatorPtr)actPtr;
         if (cmd.actuate){
             if (castPtr->isActuated()){
@@ -352,15 +331,17 @@ void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, dou
 
 void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, double)
 {
+    m_actuatorCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
-    m_afActuatorCommPtr->set_name(actPtr->getName());
-    m_afActuatorCommPtr->set_parent_name(actPtr->m_parentName);
+    m_actuatorCommPtr->set_name(actPtr->getName());
+    m_actuatorCommPtr->set_parent_name(actPtr->m_parentName);
+    m_actuatorCommPtr->m_writeMtx.unlock();
 }
 
 void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
 {
-    if (m_afCameraCommPtr.get() != nullptr){
-        ambf_msgs::CameraCmd m_afCommand = m_afCameraCommPtr->get_command();
+    if (m_cameraCommPtr.get() != nullptr){
+        ambf_msgs::CameraCmd m_afCommand = m_cameraCommPtr->get_command();
 
         if (m_afCommand.enable_position_controller){
             cVector3d pos(m_afCommand.pose.position.x,
@@ -380,25 +361,25 @@ void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double 
         m_read_count++;
         if(m_read_count % (camPtr->m_afWorld->m_updateCounterLimit) == 0){
             // We may update the params intermittently
-            m_afCameraCommPtr->update_params_from_server();
-            if (m_afCameraCommPtr->m_paramsChanged){
+            m_cameraCommPtr->update_params_from_server();
+            if (m_cameraCommPtr->m_paramsChanged){
                 // Clear the flag so it can be used for testing again
-                m_afCameraCommPtr->m_paramsChanged = false;
+                m_cameraCommPtr->m_paramsChanged = false;
 
-                double near_plane = m_afCameraCommPtr->get_near_plane();
-                double far_plane = m_afCameraCommPtr->get_far_plane();
-                double field_view_angle = m_afCameraCommPtr->get_field_view_angle();
-                double orthographic_view_width = m_afCameraCommPtr->get_orthographic_view_width();
-                double stereo_eye_separation = m_afCameraCommPtr->get_steteo_eye_separation();
-                double stereo_focal_length = m_afCameraCommPtr->get_steteo_focal_length();
+                double near_plane = m_cameraCommPtr->get_near_plane();
+                double far_plane = m_cameraCommPtr->get_far_plane();
+                double field_view_angle = m_cameraCommPtr->get_field_view_angle();
+                double orthographic_view_width = m_cameraCommPtr->get_orthographic_view_width();
+                double stereo_eye_separation = m_cameraCommPtr->get_steteo_eye_separation();
+                double stereo_focal_length = m_cameraCommPtr->get_steteo_focal_length();
 
-                string parent_name = m_afCameraCommPtr->get_parent_name();
+                string parent_name = m_cameraCommPtr->get_parent_name();
 
                 camPtr->getInternalCamera()->setClippingPlanes(near_plane, far_plane);
 
                 camPtr->resolveParent(parent_name);
 
-                switch (m_afCameraCommPtr->get_projection_type()) {
+                switch (m_cameraCommPtr->get_projection_type()) {
                 case ambf_comm::ProjectionType::PERSPECTIVE:
                     if (field_view_angle == 0){
                         field_view_angle = 0.7;
@@ -419,7 +400,7 @@ void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double 
                     break;
                 }
 
-                switch (m_afCameraCommPtr->get_view_mode()) {
+                switch (m_cameraCommPtr->get_view_mode()) {
                 case ambf_comm::ViewMode::MONO:
                     camPtr->getInternalCamera()->setStereoMode(cStereoMode::C_STEREO_DISABLED);
                     break;
@@ -443,45 +424,47 @@ void afObjectCommunicationPlugin::cameraUpdateState(afCameraPtr camPtr, double d
 {
     if (m_paramsSet == false){
         cCamera* cCamPtr = camPtr->getInternalCamera();
-        m_afCameraCommPtr->set_near_plane(cCamPtr->getNearClippingPlane());
-        m_afCameraCommPtr->set_far_plane(cCamPtr->getFarClippingPlane());
-        m_afCameraCommPtr->set_field_view_angle(cCamPtr->getFieldViewAngleRad());
-        m_afCameraCommPtr->set_orthographic_view_width(cCamPtr->getOrthographicViewWidth());
-        m_afCameraCommPtr->set_steteo_eye_separation(cCamPtr->getStereoEyeSeparation());
-        m_afCameraCommPtr->set_steteo_focal_length(cCamPtr->getStereoFocalLength());
-        m_afCameraCommPtr->set_parent_name(camPtr->m_parentName);
+        m_cameraCommPtr->set_near_plane(cCamPtr->getNearClippingPlane());
+        m_cameraCommPtr->set_far_plane(cCamPtr->getFarClippingPlane());
+        m_cameraCommPtr->set_field_view_angle(cCamPtr->getFieldViewAngleRad());
+        m_cameraCommPtr->set_orthographic_view_width(cCamPtr->getOrthographicViewWidth());
+        m_cameraCommPtr->set_steteo_eye_separation(cCamPtr->getStereoEyeSeparation());
+        m_cameraCommPtr->set_steteo_focal_length(cCamPtr->getStereoFocalLength());
+        m_cameraCommPtr->set_parent_name(camPtr->m_parentName);
 
         if (camPtr->getInternalCamera()->isViewModePerspective()){
-            m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
+            m_cameraCommPtr->set_projection_type(ambf_comm::ProjectionType::PERSPECTIVE);
         }
         else{
-            m_afCameraCommPtr->set_projection_type(ambf_comm::ProjectionType::ORTHOGRAPHIC);
+            m_cameraCommPtr->set_projection_type(ambf_comm::ProjectionType::ORTHOGRAPHIC);
         }
 
         if (camPtr->m_stereoMode == C_STEREO_DISABLED){
-            m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
+            m_cameraCommPtr->set_view_mode(ambf_comm::ViewMode::MONO);
         }
         else{
-            m_afCameraCommPtr->set_view_mode(ambf_comm::ViewMode::STEREO);;
+            m_cameraCommPtr->set_view_mode(ambf_comm::ViewMode::STEREO);;
         }
 
-        m_afCameraCommPtr->set_params_on_server();
+        m_cameraCommPtr->set_params_on_server();
         m_paramsSet = true;
     }
 
+    m_cameraCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = camPtr->getLocalPos();
-    m_afCameraCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    m_cameraCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;
     q.fromRotMat(camPtr->getLocalRot());
-    m_afCameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-    m_write_count++;
+    m_cameraCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
     if (m_write_count % camPtr->m_afWorld->m_updateCounterLimit == 0){
-        m_afCameraCommPtr->set_parent_name(camPtr->m_parentName);
+        m_cameraCommPtr->set_parent_name(camPtr->m_parentName);
         m_write_count = 0;
     }
+    m_cameraCommPtr->m_writeMtx.unlock();
+    m_cameraCommPtr->enableComm();
+    m_write_count++;
 }
 
 void afObjectCommunicationPlugin::jointFetchCommand(afJointPtr jointPtr, double dt)
@@ -496,7 +479,7 @@ void afObjectCommunicationPlugin::jointUpdateState(afJointPtr jointPtr, double d
 
 void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double dt)
 {
-    ambf_msgs::LightCmd m_afCommand = m_afLightCommPtr->get_command();
+    ambf_msgs::LightCmd m_afCommand = m_lightCommPtr->get_command();
 
     if (m_afCommand.enable_position_controller){
         cVector3d pos(m_afCommand.pose.position.x,
@@ -516,13 +499,13 @@ void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double 
     m_read_count++;
     if(m_read_count % lightPtr->m_afWorld->m_updateCounterLimit == 0){
         // We may update the params intermittently
-        m_afLightCommPtr->update_params_from_server();
-        if (m_afLightCommPtr->m_paramsChanged){
+        m_lightCommPtr->update_params_from_server();
+        if (m_lightCommPtr->m_paramsChanged){
             // Clear the flag so it can be used for testing again
-            m_afLightCommPtr->m_paramsChanged = false;
+            m_lightCommPtr->m_paramsChanged = false;
 
-            double cutoff_angle = m_afLightCommPtr->get_cuttoff_angle();
-            string parent_name = m_afLightCommPtr->get_parent_name();
+            double cutoff_angle = m_lightCommPtr->get_cuttoff_angle();
+            string parent_name = m_lightCommPtr->get_parent_name();
 
             lightPtr->setCutOffAngle(cutoff_angle);
 
@@ -536,34 +519,36 @@ void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double 
 void afObjectCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double dt)
 {
     if (m_paramsSet == false){
-        m_afLightCommPtr->set_cuttoff_angle(lightPtr->getCutOffAngle());
-        m_afLightCommPtr->set_type(ambf_comm::LightType::SPOT);
-        m_afLightCommPtr->set_parent_name(lightPtr->m_parentName);
+        m_lightCommPtr->set_cuttoff_angle(lightPtr->getCutOffAngle());
+        m_lightCommPtr->set_type(ambf_comm::LightType::SPOT);
+        m_lightCommPtr->set_parent_name(lightPtr->m_parentName);
 
-        m_afLightCommPtr->set_params_on_server();
+        m_lightCommPtr->set_params_on_server();
         m_paramsSet = true;
     }
 
+    m_lightCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = lightPtr->getLocalPos();
-    m_afLightCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    m_lightCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;
     q.fromRotMat(lightPtr->getLocalRot());
-    m_afLightCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
-
-    m_write_count++;
+    m_lightCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
     if (m_write_count % lightPtr->m_afWorld->m_updateCounterLimit == 0){
-        m_afLightCommPtr->set_parent_name(lightPtr->m_parentName);
+        m_lightCommPtr->set_parent_name(lightPtr->m_parentName);
         m_write_count = 0;
     }
+    m_lightCommPtr->m_writeMtx.unlock();
+    m_lightCommPtr->enableComm();
+    m_write_count++;
 }
 
 void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, double dt)
 {
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     btVector3 force, torque;
-    ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
+    ambf_msgs::RigidBodyCmd afCommand = m_rigidBodyCommPtr->get_command();
 
     // IF THE COMMAND IS OF TYPE FORCE
     switch (afCommand.cartesian_cmd_type) {
@@ -725,6 +710,7 @@ void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, 
 
 void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, double dt)
 {
+    m_rigidBodyCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     cQuaternion q;
@@ -732,31 +718,31 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
 
     // Update the Pose
     cVector3d localPos = afRBPtr->getLocalPos();
-    m_afRigidBodyCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
-    m_afRigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+    m_rigidBodyCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    m_rigidBodyCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
     // Update the Wrench
     btVector3 force = afRBPtr->m_estimatedForce;
     btVector3 torque = afRBPtr->m_estimatedTorque;
-    m_afRigidBodyCommPtr->cur_force(force.x(), force.y(), force.z());
-    m_afRigidBodyCommPtr->cur_torque(torque.x(), torque.y(), torque.z());
+    m_rigidBodyCommPtr->cur_force(force.x(), force.y(), force.z());
+    m_rigidBodyCommPtr->cur_torque(torque.x(), torque.y(), torque.z());
 
     btVector3 v = btRBPtr->getLinearVelocity();
     btVector3 a = btRBPtr->getAngularVelocity();
 
     // Updated the Twist
-    m_afRigidBodyCommPtr->cur_linear_velocity(v.x(), v.y(), v.z());
-    m_afRigidBodyCommPtr->cur_angular_velocity(a.x(), a.y(), a.z());
+    m_rigidBodyCommPtr->cur_linear_velocity(v.x(), v.y(), v.z());
+    m_rigidBodyCommPtr->cur_angular_velocity(a.x(), a.y(), a.z());
 
     // Since the mass and inertia aren't going to change that often, write them
     // out intermittently
     if (m_write_count % afRBPtr->m_afWorld->m_updateCounterLimit == 0){
-        m_afRigidBodyCommPtr->set_mass(afRBPtr->getMass());
+        m_rigidBodyCommPtr->set_mass(afRBPtr->getMass());
         btVector3 inertia = afRBPtr->getInertia();
-        m_afRigidBodyCommPtr->set_principal_inertia(inertia.x(), inertia.y(), inertia.z());
+        m_rigidBodyCommPtr->set_principal_inertia(inertia.x(), inertia.y(), inertia.z());
     }
 
-    ambf_msgs::RigidBodyCmd afCommand = m_afRigidBodyCommPtr->get_command();
+    ambf_msgs::RigidBodyCmd afCommand = m_rigidBodyCommPtr->get_command();
     // We can set this body to publish it's children joint names in either its AMBF Description file or
     // via it's afCommand using ROS Message
     if (afRBPtr->m_publish_joint_names == true || afCommand.publish_joint_names == true){
@@ -794,12 +780,14 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
         }
     }
 
-    m_afRigidBodyCommPtr->set_children_names(m_rbState.m_childrenNames);
-    m_afRigidBodyCommPtr->set_joint_names(m_rbState.m_jointNames);
-    m_afRigidBodyCommPtr->set_joint_positions(m_rbState.m_jointPositions);
-    m_afRigidBodyCommPtr->set_joint_velocities(m_rbState.m_jointVelocities);
-    m_afRigidBodyCommPtr->set_joint_efforts(m_rbState.m_jointEfforts);
+    m_rigidBodyCommPtr->set_children_names(m_rbState.m_childrenNames);
+    m_rigidBodyCommPtr->set_joint_names(m_rbState.m_jointNames);
+    m_rigidBodyCommPtr->set_joint_positions(m_rbState.m_jointPositions);
+    m_rigidBodyCommPtr->set_joint_velocities(m_rbState.m_jointVelocities);
+    m_rigidBodyCommPtr->set_joint_efforts(m_rbState.m_jointEfforts);
 
+    m_rigidBodyCommPtr->m_writeMtx.unlock();
+    m_rigidBodyCommPtr->enableComm();
     m_write_count++;
 }
 
@@ -810,6 +798,7 @@ void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double 
 
 void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 {
+    m_objectCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     switch (senPtr->m_sensorType) {
     case afSensorType::RAYTRACER:
@@ -817,16 +806,16 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
     case afSensorType::RANGE:
     {
         afRayTracerSensorPtr raySenPtr = (afRayTracerSensorPtr) senPtr;
-        m_afSensorCommPtr->set_count(raySenPtr->getCount());
-        m_afSensorCommPtr->set_name(raySenPtr->getName());
-        m_afSensorCommPtr->set_parent_name(raySenPtr->m_parentName);
-        m_afSensorCommPtr->set_range(raySenPtr->m_range);
+        m_sensorCommPtr->set_count(raySenPtr->getCount());
+        m_sensorCommPtr->set_name(raySenPtr->getName());
+        m_sensorCommPtr->set_parent_name(raySenPtr->m_parentName);
+        m_sensorCommPtr->set_range(raySenPtr->m_range);
         cVector3d pos = raySenPtr->getLocalPos();
         cMatrix3d rot = raySenPtr->getLocalRot();
         cQuaternion quat;
         quat.fromRotMat(rot);
-        m_afSensorCommPtr->cur_position(pos.x(), pos.y(), pos.z());
-        m_afSensorCommPtr->cur_orientation(quat.x, quat.y, quat.z, quat.w);
+        m_sensorCommPtr->cur_position(pos.x(), pos.y(), pos.z());
+        m_sensorCommPtr->cur_orientation(quat.x, quat.y, quat.z, quat.w);
 
         vector<bool> triggers;
         triggers.resize(raySenPtr->getCount());
@@ -854,22 +843,25 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
             }
         }
 
-        m_afSensorCommPtr->set_range(raySenPtr->m_range);
-        m_afSensorCommPtr->set_triggers(triggers);
-        m_afSensorCommPtr->set_measurements(measurements);
-        m_afSensorCommPtr->set_sensed_objects(sensed_obj_names);
+        m_sensorCommPtr->set_range(raySenPtr->m_range);
+        m_sensorCommPtr->set_triggers(triggers);
+        m_sensorCommPtr->set_measurements(measurements);
+        m_sensorCommPtr->set_sensed_objects(sensed_obj_names);
 
     }
         break;
     default:
         break;
     }
+    m_objectCommPtr->m_writeMtx.unlock();
+    m_objectCommPtr->enableComm();
+    m_write_count++;
 
 }
 
 void afObjectCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, double)
 {
-    ambf_msgs::VehicleCmd af_cmd = m_afVehicleCommPtr->get_command();
+    ambf_msgs::VehicleCmd af_cmd = m_vehicleCommPtr->get_command();
 
     int maxWheelCount;
     int actualWheelCount = vehPtr->getWheelCount();
@@ -922,28 +914,32 @@ void afObjectCommunicationPlugin::vehicleFetchCommand(afVehiclePtr vehPtr, doubl
 
 void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double dt)
 {
+    m_vehicleCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     cVector3d localPos = vehPtr->getLocalPos();
-    m_afVehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    m_vehicleCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
     cQuaternion q;
     q.fromRotMat(vehPtr->getLocalRot());
-    m_afVehicleCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+    m_vehicleCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
 
     // Since the mass and inertia aren't going to change that often, write them
     // out intermittently
     if (m_write_count % vehPtr->m_afWorld->m_updateCounterLimit == 0){
-        m_afVehicleCommPtr->set_wheel_count(vehPtr->getWheelCount());
-        m_afVehicleCommPtr->set_mass(vehPtr->getMass());
+        m_vehicleCommPtr->set_wheel_count(vehPtr->getWheelCount());
+        m_vehicleCommPtr->set_mass(vehPtr->getMass());
         btVector3 inertia = vehPtr->getInertia();
-        m_afVehicleCommPtr->set_principal_inertia(inertia.x(), inertia.y(), inertia.z());
+        m_vehicleCommPtr->set_principal_inertia(inertia.x(), inertia.y(), inertia.z());
     }
+    m_vehicleCommPtr->m_writeMtx.unlock();
+    m_vehicleCommPtr->enableComm();
+    m_write_count++;
 }
 
 void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCloudPtr, double)
 {
-    sensor_msgs::PointCloudPtr pcPtr = m_afPointCloudCommPtr->get_point_cloud();
+    sensor_msgs::PointCloudPtr pcPtr = m_pointCloudCommPtr->get_point_cloud();
     if(pcPtr){
-        double radius = m_afPointCloudCommPtr->get_radius();
+        double radius = m_pointCloudCommPtr->get_radius();
         pointCloudPtr->m_mpPtr->setPointSize(radius);
         int pc_size = pcPtr->points.size();
         int diff = pc_size - pointCloudPtr->m_mpSize;
