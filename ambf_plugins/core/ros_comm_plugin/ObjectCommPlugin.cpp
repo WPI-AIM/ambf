@@ -336,6 +336,8 @@ void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, doub
     m_actuatorCommPtr->set_name(actPtr->getName());
     m_actuatorCommPtr->set_parent_name(actPtr->m_parentName);
     m_actuatorCommPtr->m_writeMtx.unlock();
+    m_actuatorCommPtr->enableComm();
+    m_write_count++;
 }
 
 void afObjectCommunicationPlugin::cameraFetchCommand(afCameraPtr camPtr, double dt)
@@ -798,7 +800,7 @@ void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double 
 
 void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 {
-    m_objectCommPtr->m_writeMtx.lock();
+    m_sensorCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     switch (senPtr->m_sensorType) {
     case afSensorType::RAYTRACER:
@@ -853,8 +855,8 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
     default:
         break;
     }
-    m_objectCommPtr->m_writeMtx.unlock();
-    m_objectCommPtr->enableComm();
+    m_sensorCommPtr->m_writeMtx.unlock();
+    m_sensorCommPtr->enableComm();
     m_write_count++;
 
 }
