@@ -218,18 +218,9 @@ To subscribe and publish data using AMBF over multiple machines, the following s
 6. Open a terminal and type the command:  `sudo apt-get install gufw`
 7. Next type `sudo gufw` (type the password when prompted) and ensure both the Incoming and Outgoing traffic is allowed.
 
-### 9 Docker
-In order to use the docker file, follow the instructions [here](https://docs.docker.com/install/) to install docker on your system. To run the file:  
+### 9 Docker with visualization
 
-```bash
-cd ~/
-git clone https://github.com/WPI-AIM/ambf.git && cd ambf
-sudo service docker start
-docker build --rm -f "Dockerfile" -t ambf:latest "."
-docker run --rm -it  ambf:latest
-cd /ambf/bin/lin-x86_64/
-./ambf_simulator -g off
-```
+Please follow these [instructions](https://github.com/collaborative-robotics/docker-ambf). 
 
 ## Citation
 If this work is helpful for your research, please use the following reference for citation:
