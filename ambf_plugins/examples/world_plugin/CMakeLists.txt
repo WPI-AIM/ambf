@@ -37,4 +37,6 @@
 #  $Date:  $
 #  $Rev:  $
 
-add_subdirectory(examples)
+
+add_library(world_example world_plugin.cpp )
+target_link_libraries (world_example ${AMBF_LIBRARIES})

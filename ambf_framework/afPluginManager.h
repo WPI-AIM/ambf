@@ -92,6 +92,22 @@ public:
         }
     }
 
+    template <typename A, typename B>
+    bool load(A* objPtr, B* attribs, string lib_name, string plugin_name, string path=""){
+        bool valid = false;
+        T* plugin = T::Create(lib_name, plugin_name, path);
+        if (plugin){
+            if(plugin->init(objPtr, attribs)){
+                add(plugin);
+                valid = true;
+            }
+            else{
+                delete plugin;
+            }
+        }
+        return valid;
+    }
+
     vector<T*>* getPlugins(){
         return &m_plugins;
     }
@@ -126,6 +142,10 @@ public:
 
 class afWorldPluginManager: public afBasePluginManager<afWorldPlugin>{
 public:
+    bool loadPlugin(afWorldPtr, afWorldAttribsPtr, string lib_name, string plugin_name, string path="");
+
+    bool loadPlugin(afWorldPtr, afWorldAttribsPtr, afWorldPlugin*);
+
     void init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs);
 
     void onModelAdd(const afModelPtr a_modelPtr);
@@ -149,6 +169,10 @@ public:
 
 class afModelPluginManager: public afBasePluginManager<afModelPlugin>{
 public:
+    bool loadPlugin(afModelPtr, afModelAttribsPtr, string lib_name, string plugin_name, string path="");
+
+    bool loadPlugin(afModelPtr, afModelAttribsPtr, afModelPlugin*);
+
     void init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs);
 
     void onObjectAdd(const afBaseObjectPtr a_objectPtr);
@@ -168,6 +192,10 @@ public:
 
 class afBaseObjectPluginManager: public afBasePluginManager<afObjectPlugin>{
 public:
+    bool loadPlugin(afBaseObjectPtr, afBaseObjectAttribsPtr, string lib_name, string plugin_name, string path="");
+
+    bool loadPlugin(afBaseObjectPtr, afBaseObjectAttribsPtr, afObjectPlugin*);
+
     void init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs);
 
     void graphicsUpdate();

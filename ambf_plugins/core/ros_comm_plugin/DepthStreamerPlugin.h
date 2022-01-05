@@ -40,45 +40,50 @@
 */
 //==============================================================================
 
-#ifndef AFSENSORCOMM_H
-#define AFSENSORCOMM_H
+#ifndef AF_DEPTHSTREAMER_PLUGIN
+#define AF_DEPTHSTREAMER_PLUGIN
 
-#include <string>
-#include "ambf_server/SensorRosCom.h"
+#include "afFramework.h"
 
-namespace ambf_comm{
-class Sensor: public SensorRosCom{
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+#include "ambf_server/RosComBase.h"
+#include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/point_cloud2_iterator.h"
+#endif
+
+using namespace ambf;
+
+
+class afCameraDepthStreamerPlugin: public afObjectPlugin{
 public:
-    Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    void cur_position(double px, double py, double pz);
-    void cur_orientation(double roll, double pitch, double yaw);
-    void cur_orientation(double qx, double qy, double qz, double qw);
-    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
-    inline void set_count(int count){m_State.count = count;}
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
+    virtual void graphicsUpdate() override;
+    virtual void physicsUpdate(double) override;
+    virtual bool close() override;
 
-    void set_trigger(bool triggered);
-    void set_triggers(std::vector<bool> triggered);
+private:
+    unsigned int m_publishInterval=10;
+    afCameraPtr m_cameraPtr = nullptr;
 
-    void set_range(double range);
-    void set_ranges(std::vector<double> ranges);
+    // Counter for the times we have written to ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned int m_write_count = 0;
 
-    void set_measurement(double measurements);
-    void set_measurements(std::vector<double> measurements);
+    // Counter for the times we have read from ambf_comm API
+    // This is only for internal use as it could be reset
+    unsigned int m_read_count = 0;
 
-    void set_sensed_object(std::string sensed_object);
-    void set_sensed_objects(std::vector<std::string> sensed_objects);
-
-    void set_type(std::string type);
-
-    // We may have multiple individual sensor elements belonging to this
-    // sensor comm. And groups of sensors may be in contact with different
-    // sets of objects. This method is thus used to specify the mapping
-    // of each sensor element w.r.t. to the sensed_objects list of string.
-    void set_sensed_objects_map(std::vector<int> sensed_objects_map);
-
-    void set_sensed_object_map(int sensed_objects_map);
-
+    // Image Transport ROS Node
+    ros::NodeHandle* m_rosNode;
+    sensor_msgs::PointCloud2::Ptr m_depthPointCloudMsg;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
+    ros::Publisher m_depthPointCloudPub;
+#else
+    virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
+        return -1;
+    }
+#endif
 };
-}
 
 #endif

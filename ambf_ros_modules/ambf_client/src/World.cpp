@@ -159,7 +159,7 @@ void World::update_params_from_server(){
         std::string topic_name = m_new_topic_names[i];
         if (m_pointCloudHandlerMap.find(topic_name) == m_pointCloudHandlerMap.end()){
             // Sanity check to see if the topic isn't already in the map
-            PointCloudHandlerPtr pcHandler(new PointCloundHandler());
+            PointCloudHandlerPtr pcHandler(new PointCloudHandler());
             pcHandler->init(nodePtr, topic_name);
             m_pointCloudHandlerMap[topic_name] = pcHandler;
         }

@@ -41,8 +41,8 @@
 /// \param a_node
 /// \param a_topic_name
 ///
-void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::string a_topic_name){
-    m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloundHandler::sub_cb, this);
+void PointCloudHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::string a_topic_name){
+    m_pcSub = a_node->subscribe(a_topic_name, 5, &PointCloudHandler::sub_cb, this);
 }
 
 
@@ -50,17 +50,17 @@ void PointCloundHandler::init(boost::shared_ptr<ros::NodeHandle> a_node, std::st
 /// \brief PointCloundHandler::sub_cb
 /// \param msg
 ///
-void PointCloundHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
+void PointCloudHandler::sub_cb(sensor_msgs::PointCloudPtr msg){
     m_StatePtr = msg;
 }
 
 
-sensor_msgs::PointCloudPtr PointCloundHandler::get_point_cloud(){
+sensor_msgs::PointCloudPtr PointCloudHandler::get_point_cloud(){
     return m_StatePtr;
 }
 
 
-void PointCloundHandler::remove(){
+void PointCloudHandler::remove(){
     m_pcSub.shutdown();
     m_StatePtr->points.clear();
     m_StatePtr->channels.clear();

@@ -157,17 +157,6 @@ ambf_msgs::RigidBodyCmd RigidBody::get_command(){
 
 
 ///
-/// \brief RigidBody::set_wall_time
-/// \param a_sec
-///
-void RigidBody::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
-
-///
 /// \brief RigidBody::set_children_names
 /// \param children_names
 ///

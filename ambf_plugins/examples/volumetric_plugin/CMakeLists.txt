@@ -38,5 +38,5 @@
 #  $Rev:  $
 
 
-add_library(world_example world_example.cpp )
-target_link_libraries (world_example ${AMBF_LIBRARIES})
+add_library(volumetric_drilling volumetric_plugin.cpp volumetric_plugin.h)
+target_link_libraries (volumetric_drilling ${AMBF_LIBRARIES})

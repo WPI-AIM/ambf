@@ -107,6 +107,21 @@ bool afSimulatorPluginManager::close(){
     return true;
 }
 
+bool afWorldPluginManager::loadPlugin(afWorldPtr worldPtr, afWorldAttribsPtr attribs, string lib_name, string plugin_name, string path){
+    bool res = load<afWorld, afWorldAttributes>(worldPtr, attribs, lib_name, plugin_name, path);
+    return res;
+}
+
+bool afWorldPluginManager::loadPlugin(afWorldPtr worldPtr, afWorldAttribsPtr attribs, afWorldPlugin *plugin){
+    bool res = false;
+    if (plugin){
+        if (plugin->init(worldPtr, attribs)){
+            res = add(plugin);
+        }
+    }
+    return res;
+}
+
 void ambf::afWorldPluginManager::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
 {
     for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
@@ -177,6 +192,22 @@ bool ambf::afWorldPluginManager::close()
     return true;
 }
 
+bool afModelPluginManager::loadPlugin(afModelPtr modelPtr, afModelAttribsPtr attribs, string lib_name, string plugin_name, string path){
+    bool res = load<afModel, afModelAttributes>(modelPtr, attribs, lib_name, plugin_name, path);
+    return res;
+}
+
+bool afModelPluginManager::loadPlugin(afModelPtr modelPtr, afModelAttribsPtr attribs, afModelPlugin *plugin)
+{
+    bool res = false;
+    if (plugin){
+        if (plugin->init(modelPtr, attribs)){
+            res = add(plugin);
+        }
+    }
+    return res;
+}
+
 void afModelPluginManager::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
 {
     for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
@@ -231,6 +262,21 @@ bool afModelPluginManager::close()
         (*it)->close();
     }
     return true;
+}
+
+bool afBaseObjectPluginManager::loadPlugin(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, string lib_name, string plugin_name, string path){
+    bool res = load<afBaseObject, afBaseObjectAttributes>(objPtr, attribs, lib_name, plugin_name, path);
+    return res;
+}
+
+bool afBaseObjectPluginManager::loadPlugin(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, afObjectPlugin* plugin){
+    bool res = false;
+    if (plugin){
+        if (plugin->init(objPtr, attribs)){
+            res = add(plugin);
+        }
+    }
+    return res;
 }
 
 void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)

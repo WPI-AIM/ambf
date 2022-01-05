@@ -42,7 +42,7 @@
 
 namespace ambf_client{
 
-typedef boost::shared_ptr<PointCloundHandler> PointCloudHandlerPtr;
+typedef boost::shared_ptr<PointCloudHandler> PointCloudHandlerPtr;
 typedef std::map<std::string, PointCloudHandlerPtr> PointCloudHandlerMap;
 typedef std::vector<PointCloudHandlerPtr> PointCloudHandlerVec;
 

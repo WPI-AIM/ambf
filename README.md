@@ -2,6 +2,11 @@
 ### 1. Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
 
+#### Build Status  
+
+![ambf-2.0](https://github.com/adnanmunawar/ambf/workflows/ambf-2.0/badge.svg?branch=ambf-2.0)
+
+
 ### 2. [Wiki](https://github.com/WPI-AIM/ambf/wiki):
 Please check out the [Wiki](https://github.com/WPI-AIM/ambf/wiki) for in-depth details about AMBF, its components, examples, and concepts. You can also check out the video below for a brief rundown of some of the features of AMBF.
 

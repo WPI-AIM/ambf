@@ -46,9 +46,10 @@ namespace ambf_comm{
 
 const std::string world_param_enum_to_str(WorldParamsEnum enumVal)
 {
-    if (enumVal == WorldParamsEnum::point_cloud_topics) return "point_cloud_topics";
-    else if (enumVal == WorldParamsEnum::point_cloud_radii) return "point_cloud_radii";
+    std::string str = "";
+    if (enumVal == WorldParamsEnum::point_cloud_topics) str = "point_cloud_topics";
 
+    return str;
 }
 
 
@@ -60,35 +61,45 @@ WorldParams::WorldParams(){
 }
 
 
-int WorldParams::get_num_point_cloud_handlers(){
-    return m_pointCloudHandlerMap.size();
+PointCloudHandler::PointCloudHandler(std::string a_topicName)
+{
+    m_topicName = a_topicName;
+    init();
 }
 
 ///
-/// \brief WorldParams::get_all_point_cloud_handlers
-/// \return
+/// \brief PointCloudHandler::init
 ///
-std::vector<PointCloudHandlerPtr> WorldParams::get_all_point_cloud_handlers(){
-    PointCloudHandlerVec pVec;
-    PointCloudHandlerMap::iterator pIt;
-    for (pIt = m_pointCloudHandlerMap.begin() ; pIt != m_pointCloudHandlerMap.end() ; ++ pIt){
-        pVec.push_back(pIt->second);
-    }
-
-    return pVec;
+void PointCloudHandler::init(){
+    m_pcSub = afROSNode::getNode()->subscribe(m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
+    m_radiusSub = afROSNode::getNode()->subscribe(m_topicName + "/radius", 5, &PointCloudHandler::radius_sub_cb, this);
 }
 
 
-PointCloudHandlerPtr WorldParams::get_point_clound_handler(std::string topic_name){
-    PointCloudHandlerPtr pchPtr;
-    if (m_pointCloudHandlerMap.find(topic_name) != m_pointCloudHandlerMap.end()){
-        pchPtr = m_pointCloudHandlerMap[topic_name];
-    }
-    else{
-        std::cerr << "ERROR: CAN'T FIND ANY PC HANDLER NAMED: " << topic_name << std::endl;
-    }
-    return pchPtr;
+///
+/// \brief PointCloundHandler::sub_cb
+/// \param msg
+///
+void PointCloudHandler::pc_sub_cb(sensor_msgs::PointCloudPtr msg){
+    m_StatePtr = msg;
 }
+
+void PointCloudHandler::radius_sub_cb(std_msgs::Float32Ptr msg)
+{
+    set_radius((double)msg->data);
+}
+
+
+sensor_msgs::PointCloudPtr PointCloudHandler::get_point_cloud(){
+    return m_StatePtr;
+}
+
+void PointCloudHandler::remove(){
+//    m_StatePtr->points.clear();
+//    m_StatePtr->channels.clear();
+    m_pcSub.shutdown();
+}
+
 
 
 ///
@@ -96,7 +107,6 @@ PointCloudHandlerPtr WorldParams::get_point_clound_handler(std::string topic_nam
 ///
 void World::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), m_point_cloud_topics);
-    nodePtr->setParam(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), m_point_cloud_radii);
 }
 
 ///
@@ -104,10 +114,8 @@ void World::set_params_on_server(){
 ///
 void World::update_params_from_server(){
     std::vector<std::string> topic_names;
-    std::vector<double> topic_radii;
 
     nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_topics), topic_names);
-    nodePtr->getParamCached(m_base_prefix + "/" + world_param_enum_to_str(WorldParamsEnum::point_cloud_radii), topic_radii);
 
     std::vector<bool> keep_active_idx;
 
@@ -151,52 +159,23 @@ void World::update_params_from_server(){
         }
     }
 
-    // Lets remove topics that have been marked for removal.
-    for (int i = 0 ; i < m_defunct_topic_names.size() ; i++){
-        std::string topic_name = m_defunct_topic_names[i];
-        if (m_pointCloudHandlerMap.find(topic_name) != m_pointCloudHandlerMap.end()){
-            (*m_pointCloudHandlerMap[topic_name]).remove();
-            m_pointCloudHandlerMap.erase(topic_name);
-        }
-    }
-
-    // Now add new topics
-    for (int i = 0 ; i < m_new_topic_names.size() ; i++){
-        std::string topic_name = m_new_topic_names[i];
-        if (m_pointCloudHandlerMap.find(topic_name) == m_pointCloudHandlerMap.end()){
-            // Sanity check to see if the topic isn't already in the map
-            PointCloudHandlerPtr pcHandler(new PointCloundHandler());
-            pcHandler->init(nodePtr, topic_name);
-            m_pointCloudHandlerMap[topic_name] = pcHandler;
-        }
-    }
-
     // If any topic names need to be removed or added, then update the variable containing the list of topic names
     if (m_defunct_topic_names.size() > 0 || m_new_topic_names.size() > 0){
         m_paramsChanged = true;
-        m_point_cloud_topics.clear();
-        PointCloudHandlerMap::iterator pcIt;
-        for (pcIt = m_pointCloudHandlerMap.begin() ; pcIt != m_pointCloudHandlerMap.end() ; ++pcIt){
-            m_point_cloud_topics.push_back( pcIt->first );
+        for (int i = 0 ; i < m_defunct_topic_names.size() ; i++){
+            std::string removeTopic = m_defunct_topic_names[i];
+            for (int j = 0 ; j < m_point_cloud_topics.size() ; j++){
+                if (m_point_cloud_topics[j].compare(removeTopic) == 0){
+                    m_point_cloud_topics.erase(m_point_cloud_topics.begin() + j);
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0 ; i < m_new_topic_names.size() ; i++){
+            m_point_cloud_topics.push_back(m_new_topic_names[i]);
         }
     }
-
-    // Update the topic radii
-    PointCloudHandlerMap::iterator pcIt;
-    int rIdx = 0;
-    for (pcIt = m_pointCloudHandlerMap.begin() ; pcIt != m_pointCloudHandlerMap.end() ; ++pcIt){
-        if (rIdx < topic_radii.size()){
-            pcIt->second->set_radius(topic_radii[rIdx]);
-        }
-        rIdx++;
-    }
-
-    // DEBUG
-//    std::cerr << "-----------------------\n";
-
-//    for (int i = 0 ; i < m_point_cloud_topics.size() ; i++){
-//        std::cerr << i << ")\t" << m_point_cloud_topics[i] << "\n";
-//    }
 }
 
 
@@ -212,17 +191,6 @@ World::World(std::string a_name, std::string a_namespace, int a_freq_min, int a_
     m_num_skip_steps = 10;
     m_skip_steps_ctr = 0;
     m_base_prefix = a_namespace + '/' + a_name;
-}
-
-
-///
-/// \brief World::set_wall_time
-/// \param a_sec
-///
-void World::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
 }
 
 

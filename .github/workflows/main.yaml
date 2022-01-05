@@ -1,0 +1,15 @@
+name: ambf-2.0
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build docker image
+        run: |
+          docker build --tag=ambf-ros-noetic -f docker/noetic/Dockerfile .

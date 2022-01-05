@@ -45,11 +45,13 @@
 import rospy
 from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
+from std_msgs.msg import Float32
 from rospy import Rate
 import time
+import numpy as np
+import math
 
 topics_names_param = '/ambf/env/World/point_cloud_topics'
-topics_size_param = '/ambf/env/World/point_cloud_radii'
 
 rospy.init_node('test_pc')
 # AMBF Will have a default PC listener at /ambf/env/World/point_cloud'
@@ -72,64 +74,73 @@ time.sleep(1.0)
 
 print("We can similarly update the size of each individual PC")
 
-pc_sizes = rospy.get_param(topics_size_param)
-pc_sizes.append(10)  # 10 pt size for first PC
-pc_sizes.append(20)  # 20 pt size for second PC
-rospy.set_param(topics_size_param, pc_sizes)
-
 print('Now publishing to these two topics')
 
-pub = rospy.Publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
-pub2 = rospy.Publisher(
-    '/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
+pub1 = rospy.Publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
+size_pub1 = rospy.Publisher('/ambf/env/World/point_cloud/radius', Float32, queue_size=10)
 
-p1 = Point32()
-p1.x = 1.0
-p1.y = 1.0
-p1.z = 1.0
-
-p2 = Point32()
-p2.x = 1.0
-p2.y = -1.0
-p2.z = 1.0
-
-p3 = Point32()
-p3.x = -1.0
-p3.y = 1.0
-p3.z = 1.0
-
-p4 = Point32()
-p4.x = 0.5
-p4.y = 0.5
-p4.z = 0.5
-
-p5 = Point32()
-p5.x = 0.5
-p5.y = -0.5
-p5.z = 0.5
-
-p6 = Point32()
-p6.x = -0.5
-p6.y = 0.5
-p6.z = 0.5
+pub2 = rospy.Publisher('/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
+size_pub2 = rospy.Publisher('/ambf/env/World/another_point_cloud/radius', Float32, queue_size=10)
 
 msg = PointCloud()
 msg.header.frame_id = '/ambf/env/BODY Chassis'
-# msg.header.frame_id = '/ambf/env/BODY WheelFL'
-msg.points.append(p1)
-msg.points.append(p2)
-msg.points.append(p3)
 
+num_points = 10000
+for i in range(num_points):
+    msg.points.append(Point32())
 
-msg2 = PointCloud()
-msg2.header.frame_id = '/ambf/env/BODY Chassis'
-# msg2.header.frame_pid = '/ambf/env/BODY WheelFL'
-msg2.points.append(p4)
-msg2.points.append(p5)
-msg2.points.append(p6)
+slp = 0.01
+size_msg = Float32()
+size_msg.data = 4.0
 
-r = Rate(10)
 while not rospy.is_shutdown():
-    pub.publish(msg)
-    pub2.publish(msg2)
-    r.sleep()
+    cnt_i = int(np.sqrt(num_points))
+    cnt_j = int(np.sqrt(num_points))
+    delta_th = 2. * np.pi / cnt_i
+    r_offset = (0.2 * math.sin(rospy.Time.now().to_sec()))
+    r = 0.4 + r_offset
+    for i in range(cnt_i):
+        th = i * delta_th
+        for j in range(cnt_j):
+            phi = j * delta_th
+            idx = i * cnt_j + j
+            msg.points[idx].x = r * math.cos(th) * math.sin(phi)
+            msg.points[idx].y = r * math.sin(th) * math.sin(phi)
+            msg.points[idx].z = r * math.cos(phi)
+
+    pub1.publish(msg)
+    size_pub1.publish(size_msg)
+    time.sleep(slp)
+
+    cnt_i = int(np.sqrt(num_points))
+    cnt_j = int(np.sqrt(num_points))
+    delta_th = 2. * np.pi / cnt_i
+    r = 0.1 + r_offset / 5.0
+    R = 0.5 + r_offset
+    for i in range(cnt_i):
+        th = i * delta_th
+        for j in range(cnt_j):
+            phi = j * delta_th
+            idx = i * cnt_i + j
+            msg.points[idx].x = (R + r * math.cos(th)) * math.cos(phi)
+            msg.points[idx].y = (R + r * math.cos(th)) * math.sin(phi)
+            msg.points[idx].z = r * math.sin(th)
+
+            # This part can be commented out. It is just for cool rotating donut effect
+            t = rospy.Time.now().to_sec()
+            ct = math.cos(t)
+            st = math.sin(t)
+            x = msg.points[idx].x
+            z = msg.points[idx].z
+            # Rotation around the Y axis
+            msg.points[idx].x = x * ct + z * st
+            msg.points[idx].z = -x * st + z * ct
+            x = msg.points[idx].x
+            y = msg.points[idx].y
+            # Further Rotation around the Z axis
+            msg.points[idx].x = x * ct - y * st
+            msg.points[idx].y = x * st + y * ct
+
+    pub2.publish(msg)
+    size_pub2.publish(size_msg)
+    time.sleep(slp)

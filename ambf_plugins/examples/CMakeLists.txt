@@ -37,4 +37,6 @@
 #  $Date:  $
 #  $Rev:  $
 
-add_subdirectory(examples)
+add_subdirectory(simulator_plugin)
+add_subdirectory(world_plugin)
+add_subdirectory(volumetric_plugin)

@@ -45,28 +45,72 @@ namespace ambf_comm{
 
 const std::string projection_type_enum_to_str(ProjectionType enumVal)
 {
-    if (enumVal == ProjectionType::PERSPECTIVE) return "PERSPECTIVE";
-    else if (enumVal == ProjectionType::ORTHOGRAPHIC) return "ORTHOGRAPHIC";
+    std::string enum_str = "";
+    switch (enumVal) {
+    case ProjectionType::PERSPECTIVE:
+        enum_str = "PERSPECTIVE";
+        break;
+    case ProjectionType::ORTHOGRAPHIC:
+        enum_str = "ORTHOGRAPHIC";
+        break;
+    default:
+        break;
+    }
+    return enum_str;
 }
 
 const std::string view_mode_enum_to_str(ViewMode enumVal)
 {
-    if (enumVal == ViewMode::MONO) return "MONO";
-    else if (enumVal == ViewMode::STEREO) return "STEREO";
+    std::string enum_str = "";
+    switch (enumVal) {
+    case ViewMode::MONO:
+        enum_str = "MONO";
+        break;
+    case ViewMode::STEREO:
+        enum_str = "STEREO";
+        break;
+    default:
+        break;
+    }
+    return enum_str;
 }
 
 const std::string camera_param_enum_to_str(CameraParamsEnum enumVal)
 {
-    if (enumVal == CameraParamsEnum::near_plane) return "near_plane";
-    else if (enumVal == CameraParamsEnum::far_plane) return "far_plane";
-    else if (enumVal == CameraParamsEnum::field_view_angle) return "field_view_angle";
-    else if (enumVal == CameraParamsEnum::orthographic_view_width) return "orthographic_view_width";
-    else if (enumVal == CameraParamsEnum::stereo_eye_separation) return "stereo_eye_separation";
-    else if (enumVal == CameraParamsEnum::stereo_focal_length) return "stereo_focal_length";
-    else if (enumVal == CameraParamsEnum::parent_name) return "parent_name";
-    else if (enumVal == CameraParamsEnum::projection) return "projection";
-    else if (enumVal == CameraParamsEnum::mode) return "mode";
+    std::string enum_str = "";
+    switch (enumVal) {
+    case CameraParamsEnum::near_plane:
+        enum_str = "near_plane";
+        break;
+    case CameraParamsEnum::far_plane:
+        enum_str = "far_plane";
+        break;
+    case CameraParamsEnum::field_view_angle:
+        enum_str = "field_view_angle";
+        break;
+    case CameraParamsEnum::orthographic_view_width:
+        enum_str = "orthographic_view_width";
+        break;
+    case CameraParamsEnum::stereo_eye_separation:
+        enum_str = "stereo_eye_separation";
+        break;
+    case CameraParamsEnum::stereo_focal_length:
+        enum_str = "stereo_focal_length";
+        break;
+    case CameraParamsEnum::parent_name:
+        enum_str = "parent_name";
+        break;
+    case CameraParamsEnum::projection:
+        enum_str = "projection";
+        break;
+    case CameraParamsEnum::mode:
+        enum_str = "mode";
+        break;
+    default:
+        break;
+    }
 
+    return enum_str;
 }
 
 CameraParams::CameraParams(){
@@ -182,17 +226,6 @@ void Camera::cur_orientation(double qx, double qy, double qz, double qw){
     tf::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
     tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
-}
-
-void Camera::set_wall_time(double a_sec){
-    m_State.wall_time = a_sec;
-    increment_sim_step();
-    m_State.header.stamp = ros::Time::now();
-}
-
-ambf_msgs::CameraCmd Camera::get_command(){
-    ambf_msgs::CameraCmd temp_cmd = m_Cmd;
-    return temp_cmd;
 }
 
 

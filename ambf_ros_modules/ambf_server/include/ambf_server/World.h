@@ -46,15 +46,18 @@
 #include <string>
 #include "ambf_server/WorldRosCom.h"
 
+#include "sensor_msgs/PointCloud.h"
+#include "std_msgs/Float32.h"
+
 namespace ambf_comm{
 
-typedef boost::shared_ptr<PointCloundHandler> PointCloudHandlerPtr;
+class PointCloudHandler;
+typedef boost::shared_ptr<PointCloudHandler> PointCloudHandlerPtr;
 typedef std::map<std::string, PointCloudHandlerPtr> PointCloudHandlerMap;
 typedef std::vector<PointCloudHandlerPtr> PointCloudHandlerVec;
 
 enum class WorldParamsEnum{
-    point_cloud_topics,
-    point_cloud_radii
+    point_cloud_topics
 };
 
 
@@ -68,18 +71,8 @@ public:
 
     inline void set_qualified_namespace(std::string a_base_prefix){m_base_prefix = a_base_prefix;}
 
-    // Setters
-
-    // Getters
-
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
-
-    int get_num_point_cloud_handlers();
-
-    std::vector<PointCloudHandlerPtr> get_all_point_cloud_handlers();
-
-    PointCloudHandlerPtr get_point_clound_handler(std::string topic_name);
 
     std::vector<std::string> get_new_topic_names(){return m_new_topic_names;}
 
@@ -95,11 +88,6 @@ protected:
     // Datatyped Variables for params defined on the server
     std::vector<std::string> m_point_cloud_topics;
 
-    // This vector should be the same size as the topic names and suggests the radius of each stream of PC.
-    std::vector<double> m_point_cloud_radii;
-
-    PointCloudHandlerMap m_pointCloudHandlerMap;
-
     // At each update, any new topics are added to this list
     std::vector<std::string> m_new_topic_names;
 
@@ -107,14 +95,39 @@ protected:
     std::vector<std::string> m_defunct_topic_names;
 };
 
+class PointCloudHandler{
+public:
+    PointCloudHandler(std::string a_topicName);
+    ~PointCloudHandler(){
+        remove();
+    }
+
+    void init();
+    void remove();
+
+    sensor_msgs::PointCloudPtr get_point_cloud();
+
+    double get_radius(){return m_radius;}
+    void set_radius(double a_radius){m_radius = abs(a_radius);}
+
+private:
+    void pc_sub_cb(sensor_msgs::PointCloudPtr msg);
+    void radius_sub_cb(std_msgs::Float32Ptr msg);
+    ros::Subscriber m_pcSub;
+    ros::Subscriber m_radiusSub;
+    ros::Subscriber m_colorSub;
+    std::string m_topicName;
+    sensor_msgs::PointCloudPtr m_StatePtr;
+
+    double m_radius=10;
+};
+
 class World: public WorldRosCom, public WorldParams{
 public:
     World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    void set_wall_time(double a_sec);
-    void increment_sim_step();
-    inline void set_sim_time(double a_sec){m_State.sim_time = a_sec;}
     inline void set_num_devices(uint a_num){m_State.n_devices = a_num;}
     inline void set_loop_freq(double a_freq){m_State.dynamic_loop_freq = a_freq;}
+    virtual void increment_sim_step();
     inline bool step_sim(){return m_stepSim;}
 
     // This method updates from the ROS param server instead of topics

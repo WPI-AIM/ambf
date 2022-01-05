@@ -50,6 +50,7 @@
 #include <ros/callback_queue.h>
 #include <ros/duration.h>
 #include "ambf_server/CmdWatchDog.h"
+#include "mutex"
 
 class afROSNode{
   public:
@@ -106,45 +107,120 @@ template <class T_state, class T_cmd>
 class RosComBase{
 public:
     RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+
     ~RosComBase();
+
     virtual void init() = 0;
+
     virtual void run_publishers();
+
     virtual void cleanUp();
-    virtual T_cmd get_command(){return m_Cmd;}
+
+    inline void enableComm(){
+        m_enableComm = true;
+    }
+
+    inline void disableComm(){
+        m_enableComm = false;
+    }
+
+    virtual T_cmd get_command(){
+        return m_Cmd;
+    }
+
+    virtual void set_state(T_state& state){
+        m_writeMtx.lock();
+        m_State = state;
+        m_writeMtx.unlock();
+    }
+
+    virtual T_state& get_state(){
+        return m_State;
+    }
+
+    inline void set_name(std::string name){
+        m_State.name.data = name;
+    }
+
+    inline void set_time_stamp(double a_sec){
+        m_State.header.stamp.fromSec(a_sec);
+    }
+
+    inline void set_wall_time(double a_sec){
+        m_State.wall_time = a_sec;
+    }
+
+    inline void set_sim_time(double a_sec){
+        m_State.sim_time = a_sec;
+        increment_sim_step();
+    }
+
+    virtual void increment_sim_step(){
+        m_State.sim_step++;
+    }
+
+public:
+    std::mutex m_writeMtx;
 
     int m_freq_min;
+
     int m_freq_max;
 
 protected:
     ros::NodeHandle* nodePtr;
+
     boost::shared_ptr<ros::AsyncSpinner> aspinPtr;
+
     boost::shared_ptr<CmdWatchDog> m_watchDogPtr;
 
     std::string m_namespace;
+
     std::string m_name;
+
     ros::Publisher m_pub;
+
     ros::Subscriber m_sub;
 
     tf::Transform m_trans;
+
     T_state m_State;
+
     T_cmd m_Cmd;
+
     T_cmd m_CmdPrev;
 
     boost::thread m_thread;
+
     ros::CallbackQueue m_custom_queue;
 
     virtual void reset_cmd() = 0;
+
+private:
+    T_state m_StateCopy;
+
+    // Flag to enable communication thread
+    bool m_enableComm;
+
+    void copyState(){
+        m_writeMtx.lock();
+        m_StateCopy = m_State;
+        m_writeMtx.unlock();
+    }
 };
 
 template<class T_state, class T_cmd>
 void RosComBase<T_state, T_cmd>::run_publishers(){
     while(afROSNode::isNodeActive()){
-        T_state stateCopy = m_State;
-        m_pub.publish(stateCopy);
-        m_custom_queue.callAvailable();
-        if(m_watchDogPtr->is_wd_expired()){
-            m_watchDogPtr->consolePrint(m_name);
-            reset_cmd();
+        if (m_enableComm){
+            // Call callbacks
+            m_custom_queue.callAvailable();
+            if(m_watchDogPtr->is_wd_expired()){
+                m_watchDogPtr->consolePrint(m_name);
+                reset_cmd();
+            }
+            // Update and publish state
+            copyState();
+            m_pub.publish(m_StateCopy);
         }
         m_watchDogPtr->m_ratePtr->sleep();
     }
