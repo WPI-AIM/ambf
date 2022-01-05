@@ -42,14 +42,14 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 # Build AMBF
-RUN . /opt/ros/${ROS_VERSION}/setup.sh && \
+RUN . /opt/ros/noetic/setup.sh && \
   mkdir -p ${AMBF_WS}/build && \
   cd ${AMBF_WS}/build && \
   cmake ../ && \
   make -j$(nproc)
 
 RUN touch ${HOME}/.bashrc && \
-  echo "source /opt/ros/${ROS_VERSION}/setup.bash" >> ${HOME}/.bashrc && \
+  echo "source /opt/ros/noetic/setup.bash" >> ${HOME}/.bashrc && \
   echo "source $AMBF_WS/build/devel/setup.bash" >> ${HOME}/.bashrc
 
 RUN . ${HOME}/.bashrc

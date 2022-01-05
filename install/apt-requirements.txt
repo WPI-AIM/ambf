@@ -19,7 +19,6 @@ libasound2-dev
 libusb-1.0-0-dev
 libgl1-mesa-dev
 xorg-dev
-libyaml-cpp0.5v5
 libyaml-cpp-dev
 freeglut3
 freeglut3-dev
@@ -33,8 +32,6 @@ ros-noetic-tf2-eigen
 ros-noetic-tf2-geometry-msgs
 ros-noetic-tf2-py
 ros-noetic-tf2-msgs
-ros-noetic-tf2-server
-ros-noetic-tf2-relay
 ros-noetic-catkin
 ros-noetic-cv-camera
 ros-noetic-image-geometry
