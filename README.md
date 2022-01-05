@@ -4,7 +4,7 @@
 
 #### Build Status  
 
-![ambf-2.0](https://github.com/adnanmunawar/ambf/workflows/ambf-2.0/badge.svg?branch=ambf-2.0)
+![ambf-2.0](https://github.com/WPI-AIM/ambf/workflows/ambf-2.0/badge.svg?branch=ambf-2.0)
 
 
 ### 2. [Wiki](https://github.com/WPI-AIM/ambf/wiki):
