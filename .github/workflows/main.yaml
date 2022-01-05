@@ -12,4 +12,4 @@ jobs:
 
       - name: Build docker image
         run: |
-          docker build --tag=ambf-ros-noetic .
+          docker build --tag=ambf-ros-noetic docker/noetic/Dockerfile -f .
