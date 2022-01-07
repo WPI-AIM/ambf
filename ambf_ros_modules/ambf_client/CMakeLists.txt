@@ -54,9 +54,10 @@ message_generation)
 
 catkin_python_setup()
 
-catkin_package( INCLUDE_DIRS include
-  LIBRARIES ambf_client_cpp
-  CATKIN_DEPENDS ambf_msgs message_runtime
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ambf_client_cpp
+    CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
 

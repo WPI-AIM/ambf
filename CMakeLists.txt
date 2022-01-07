@@ -107,7 +107,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(yaml-cpp QUIET)
 if (NOT ${yaml-cpp_FOUND})
-    message("-- *** YAML-CPP NOT FOUND, ADDING IT AS AN EXTERNAL PROJECT")
+    message(STATUS "-- *** YAML-CPP NOT FOUND, ADDING IT AS AN EXTERNAL PROJECT")
     include(cmake/ExternalYamlCpp.cmake)
 endif()
 include_directories(${YAML_CPP_INCLUDE_DIR})
@@ -129,7 +129,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
               find_package(tf_function REQUIRED)
 
         if(${ambf_server_FOUND} AND ${ambf_msgs_FOUND} AND ${dvrk_arm_FOUND} AND ${ambf_client_FOUND})
-            message("-- *** FOUND AMBF_COMM, AMBF_MSGS, AMBF_CLIENT and DVRK_ARM, ENABLING DVRK DEVICE SUPPORT")
+            message(STATUS "-- *** FOUND AMBF_COMM, AMBF_MSGS, AMBF_CLIENT and DVRK_ARM, ENABLING DVRK DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${catkin_LIBRARIES})
@@ -138,25 +138,25 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             list(APPEND CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)
 
         else()
-            message("-- *** AMBF_COMM, AMBF_MSGS, AMBF_CLIENT and DVRK_ARM NOT FOUND")
+            message(STATUS "-- *** AMBF_COMM, AMBF_MSGS, AMBF_CLIENT and DVRK_ARM NOT FOUND")
         endif()
 
         find_package(OpenCV QUIET)
         if(${OpenCV_FOUND})
-            message("-- *** FOUND OPENCV")
+            message(STATUS "-- *** FOUND OPENCV")
             if(${cv_bridge_FOUND} AND ${image_transport_FOUND})
-                message("-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING VIDEO PUBLISHING SUPPORT")
+                message(STATUS "-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING VIDEO PUBLISHING SUPPORT")
 
                 list(APPEND AMBF_DEFINITIONS -DAF_ENABLE_OPEN_CV_SUPPORT)
                 set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
                 set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${OpenCV_LIBRARIES})
             else()
-                message("-- *** ROS CV_BRIDGE and IMAGE_TRANSPORT NOT FOUND")
+                message(STATUS "-- *** ROS CV_BRIDGE and IMAGE_TRANSPORT NOT FOUND")
             endif()
         endif()
 
         if (${razer_hydra_FOUND})
-            message("-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING DEVICE SUPPORT")
+            message(STATUS "-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
             set(AMBF_ROS_LIBRARIES ${AMBF_ROS_LIBRARIES} ${razer_hydra_LIBRARIES})
@@ -165,7 +165,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             list(APPEND CHAI3D_DEFINITIONS -DC_ENABLE_RAZER_HYDRA_DEVICE_SUPPORT)
 
         else()
-        message("-- *** RAZER HYDRA'S ROS PACKAGE NOT FOUND")
+        message(STATUS "-- *** RAZER HYDRA'S ROS PACKAGE NOT FOUND")
         endif()
 
     endif()
@@ -335,11 +335,6 @@ add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} $
 # static library
 add_library (ambf_framework STATIC ${source_ambf_framework} ${source_ambf_plugins})
 
-#message("1) CHAI3D_DEFINITIONS" ${CHAI3D_DEFINITIONS})
-#message("2) BULLET_DEFINITIONS" ${BULLET_DEFINITIONS})
-#message("3) AMBF_DEFINITIONS" ${AMBF_DEFINITIONS})
-#message("4) COMMON_DEFINITIONS" ${COMMON_DEFINITIONS})
-
 add_definitions(${CHAI3D_DEFINITIONS})
 add_definitions(${BULLET_DEFINITIONS})
 add_definitions(${AMBF_DEFINITIONS})
@@ -375,12 +370,11 @@ set (AMBF_LIBRARIES ambf_framework chai3d bullet ${GLFW_LIBRARIES} ${OPENGL_LIBR
 # ROS CATKIN INCLUDES AND LIBRARIES
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
     set (AMBF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS} ${AMBF_ROS_INCLUDE_DIRS})
-    set (AMBF_LIBRARIES ${AMBF_LIBRARIES} ${AMBF_ROS_LIBRARIES})
 endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES Windows)
   if (${CMAKE_HOST_SYSTEM_PROCESSOR}  MATCHES "aarch64")
-    set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
+#    set (AMBF_LIBRARIES ${AMBF_LIBRARIES})
   else ()
     set (AMBF_LIBRARIES ${AMBF_LIBRARIES} drd)
   endif ()
@@ -423,6 +417,7 @@ export (PACKAGE AMBF)
 set (CONF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS})
 set (CONF_LIBRARY_DIRS  ${AMBF_LIBRARY_DIRS})
 set (CONF_LIBRARIES  ${AMBF_LIBRARIES})
+set (CONF_ROS_LIBRARIES  ${AMBF_ROS_LIBRARIES})
 set (CONF_DEFINITIONS  ${AMBF_DEFINITIONS} ${CHAI3D_DEFINITIONS} ${BULLET_DEFINITIONS} ${COMMON_DEFINITIONS})
 
 # create package configuration and version files

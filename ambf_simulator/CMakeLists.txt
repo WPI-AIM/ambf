@@ -42,4 +42,4 @@ find_package (Boost COMPONENTS program_options REQUIRED)
 
 add_executable (ambf_simulator src/ambf_simulator.cpp)
 #message("AMBF LIBS ARE: " ${AMBF_LIBRARIES})
-target_link_libraries (ambf_simulator ${AMBF_LIBRARIES} ${ADF_LOADER_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries (ambf_simulator ${AMBF_LIBRARIES} ${AMBF_ROS_LIBRARIES} ${ADF_LOADER_LIBRARIES} ${Boost_LIBRARIES})

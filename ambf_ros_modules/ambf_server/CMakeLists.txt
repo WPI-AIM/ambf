@@ -41,7 +41,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(ambf_server)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
- add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -52,9 +52,10 @@ ambf_msgs
 tf
 message_generation)
 
-catkin_package( INCLUDE_DIRS include
-  LIBRARIES ambf_obj ambf_world
-  CATKIN_DEPENDS ambf_msgs message_runtime
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ambf_server
+    CATKIN_DEPENDS ambf_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -66,63 +67,50 @@ catkin_package( INCLUDE_DIRS include
 ## Your package locations should be listed before other locations
 include_directories( include ${catkin_INCLUDE_DIRS})
 
-set (OBJ_HDR_FILES
+set (HDR_FILES
+    include/${PROJECT_NAME}/RosComBase.h
+    include/${PROJECT_NAME}/CmdWatchDog.h
     include/${PROJECT_NAME}/Actuator.h
-    include/${PROJECT_NAME}/Camera.h
-    include/${PROJECT_NAME}/Light.h
-    include/${PROJECT_NAME}/Object.h
-    include/${PROJECT_NAME}/RigidBody.h
-    include/${PROJECT_NAME}/Sensor.h
-    include/${PROJECT_NAME}/Vehicle.h
-    include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/ActuatorRosCom.h
+    include/${PROJECT_NAME}/Camera.h
     include/${PROJECT_NAME}/CameraRosCom.h
+    include/${PROJECT_NAME}/Light.h
     include/${PROJECT_NAME}/LightRosCom.h
+    include/${PROJECT_NAME}/Object.h
     include/${PROJECT_NAME}/ObjectRosCom.h
+    include/${PROJECT_NAME}/RigidBody.h
     include/${PROJECT_NAME}/RigidBodyRosCom.h
+    include/${PROJECT_NAME}/Sensor.h
     include/${PROJECT_NAME}/SensorRosCom.h
+    include/${PROJECT_NAME}/Vehicle.h
     include/${PROJECT_NAME}/VehicleRosCom.h
-    include/${PROJECT_NAME}/CmdWatchDog.h )
-
-set (OBJ_SRC_FILES
-    src/Actuator.cpp
-    src/Camera.cpp
-    src/Light.cpp
-    src/Object.cpp
-    src/RigidBody.cpp
-    src/Sensor.cpp
-    src/Vehicle.cpp
-    src/ActuatorRosCom.cpp
-    src/CameraRosCom.cpp
-    src/LightRosCom.cpp
-    src/ObjectRosCom.cpp
-    src/RigidBodyRosCom.cpp
-    src/SensorRosCom.cpp
-    src/VehicleRosCom.cpp
-    src/RosComBase.cpp )
-
-
-set (WORLD_HDR_FILES
     include/${PROJECT_NAME}/World.h
-    include/${PROJECT_NAME}/RosComBase.h
-    include/${PROJECT_NAME}/WorldRosCom.h
-    include/${PROJECT_NAME}/CmdWatchDog.h )
+    include/${PROJECT_NAME}/WorldRosCom.h)
 
-set (WORLD_SRC_FILES
+set (SRC_FILES
+    src/RosComBase.cpp
+    src/Actuator.cpp
+    src/ActuatorRosCom.cpp
+    src/Camera.cpp
+    src/CameraRosCom.cpp
+    src/Light.cpp
+    src/LightRosCom.cpp
+    src/Object.cpp
+    src/ObjectRosCom.cpp
+    src/RigidBody.cpp
+    src/RigidBodyRosCom.cpp
+    src/Sensor.cpp
+    src/SensorRosCom.cpp
+    src/Vehicle.cpp
+    src/VehicleRosCom.cpp
     src/World.cpp
     src/WorldRosCom.cpp
-    src/RosComBase.cpp )
+    )
 
 ## Declare a C++ library
-add_library(ambf_obj ${OBJ_HDR_FILES} ${OBJ_SRC_FILES})
-add_library(ambf_world ${WORLD_HDR_FILES} ${WORLD_SRC_FILES})
+add_library(ambf_server ${HDR_FILES} ${SRC_FILES})
 
-add_dependencies(ambf_obj ${catkin_EXPORTED_TARGETS})
-add_dependencies(ambf_world ${catkin_EXPORTED_TARGETS})
+add_dependencies(ambf_server ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ambf_obj ${catkin_LIBRARIES})
-target_link_libraries(ambf_world ${catkin_LIBRARIES})
-
-set (AMBF_COMM_INCLUDE_DIRS include)
-set (AMBF_COMM_LIBRARIES ambf_obj ambf_world)
+target_link_libraries(ambf_server ${catkin_LIBRARIES})

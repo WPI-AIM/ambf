@@ -49,7 +49,7 @@ add_executable (raven_controller raven2/include/ambf_defines.h
                                  raven2/src/ambf_defines.cpp
                                  raven2/src/main.cpp )
 
-target_link_libraries (raven_controller ${AMBF_LIBRARIES})
+target_link_libraries (raven_controller ${AMBF_ROS_LIBRARIES})
 
 set (PSM_IK_HDR_FILES
     dvrk/cpp_controller/include/psm_ik_test.h
@@ -62,7 +62,7 @@ set(PSM_IK_SOURCE_FILES
     dvrk/cpp_controller/src/Utilities.cpp)
 
 add_executable (psm_ik_test  ${PSM_IK_HDR_FILES} ${PSM_IK_SOURCE_FILES})
-target_link_libraries (psm_ik_test ${AMBF_LIBRARIES} ${AMBF_CLIEMT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client_cpp)
+target_link_libraries (psm_ik_test ${AMBF_CLIENT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client_cpp)
 
 
 set (ECM_IK_HDR_FILES
@@ -76,4 +76,4 @@ set(ECM_IK_SOURCE_FILES
     dvrk/cpp_controller/src/Utilities.cpp)
 
 add_executable (ecm_ik_test  ${ECM_IK_HDR_FILES} ${ECM_IK_SOURCE_FILES})
-target_link_libraries (ecm_ik_test ${AMBF_LIBRARIES} ${AMBF_CLIEMT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client_cpp)
+target_link_libraries (ecm_ik_test ${AMBF_CLIENT_LIBRARIES} ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ambf_client_cpp)
