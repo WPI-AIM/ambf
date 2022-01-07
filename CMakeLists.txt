@@ -416,11 +416,12 @@ endif()
 #
 
 # export package for use from the build tree
-export (TARGETS ambf_framework ${ADF_LOADER_LIBRARIES} bullet chai3d FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
+export (TARGETS ambf_framework ${ADF_LOADER_LIBRARIES} bullet chai3d glfw FILE ${PROJECT_BINARY_DIR}/AMBFTargets.cmake)
 export (PACKAGE AMBF)
 
 # configure package
 set (CONF_INCLUDE_DIRS ${AMBF_INCLUDE_DIRS})
+set (CONF_LIBRARY_DIRS  ${AMBF_LIBRARY_DIRS})
 set (CONF_LIBRARIES  ${AMBF_LIBRARIES})
 set (CONF_DEFINITIONS  ${AMBF_DEFINITIONS} ${CHAI3D_DEFINITIONS} ${BULLET_DEFINITIONS} ${COMMON_DEFINITIONS})
 
