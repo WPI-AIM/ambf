@@ -958,6 +958,11 @@ bool afBaseObject::loadPlugins(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr at
 void afBaseObject::update(double dt){
 }
 
+void afBaseObject::reset()
+{
+    setLocalTransform(getInitialTransform());
+}
+
 
 ///
 /// \brief afBaseObject::getLocalPos
@@ -1080,15 +1085,6 @@ void afBaseObject::setLocalRot(double qx, double qy, double qz, double qw)
 void afBaseObject::setLocalTransform(const cTransform &trans)
 {
     m_localTransform = trans;
-}
-
-///
-/// \brief afBaseObject::setLocalTransform
-/// \param trans
-///
-void afBaseObject::setLocalTransform(const afTransform &trans)
-{
-    m_localTransform << trans;
 }
 
 void afBaseObject::clearParentObject()
@@ -1313,6 +1309,11 @@ void afBaseObject::pluginsGraphicsUpdate()
 ///
 void afBaseObject::pluginsPhysicsUpdate(double dt){
     m_pluginManager.physicsUpdate(dt);
+}
+
+void afBaseObject::pluginsReset()
+{
+    m_pluginManager.reset();
 }
 
 
@@ -2648,6 +2649,21 @@ void afRigidBody::update(double dt)
 
 
 ///
+/// \brief afRigidBody::reset
+///
+void afRigidBody::reset()
+{
+    btVector3 zero(0, 0, 0);
+    m_bulletRigidBody->clearForces();
+    m_bulletRigidBody->setLinearVelocity(zero);
+    m_bulletRigidBody->setAngularVelocity(zero);
+//    cTransform T_i = getInitialTransform();
+//    setLocalTransform(T_i);
+    afBaseObject::reset();
+}
+
+
+///
 /// \brief afRigidBody::updateBodySensors
 /// \param threadIdx
 /// \return
@@ -2786,7 +2802,7 @@ afRigidBody::~afRigidBody(){
     }
 }
 
-void afRigidBody::setLocalTransform(cTransform &trans)
+void afRigidBody::setLocalTransform(const cTransform &trans)
 {
     m_bulletMotionState->setWorldTransform(to_btTransform(trans));
     m_bulletRigidBody->setCenterOfMassTransform(to_btTransform(trans));
@@ -3481,7 +3497,7 @@ void afSoftBody::createInertialObject()
     m_bulletSoftBody->setUserPointer(this);
 }
 
-void afSoftBody::setLocalTransform(cTransform &trans)
+void afSoftBody::setLocalTransform(const cTransform &trans)
 {
     m_bulletSoftBody->transform(to_btTransform(trans));
 }
@@ -5836,8 +5852,7 @@ void afWorld::setGlobalNamespace(string a_global_namespace){
 void afWorld::resetCameras(){
     afBaseObjectMap::iterator camIt;
     for (camIt = getCameraMap()->begin() ; camIt != getCameraMap()->end() ; ++camIt){
-        afCameraPtr afCam = (afCameraPtr)camIt->second;
-        afCam->setLocalTransform(afCam->getInitialTransform());
+        camIt->second->reset();
     }
 
 }
@@ -5852,21 +5867,25 @@ void afWorld::resetDynamicBodies(bool reset_time){
     afBaseObjectMap::iterator rbIt;
 
     for (rbIt = getRigidBodyMap()->begin() ; rbIt != getRigidBodyMap()->end() ; ++rbIt){
-        afRigidBodyPtr afRB = (afRigidBodyPtr)rbIt->second;
-        btRigidBody* rB = afRB->m_bulletRigidBody;
-        btVector3 zero(0, 0, 0);
-        rB->clearForces();
-        rB->setLinearVelocity(zero);
-        rB->setAngularVelocity(zero);
-        btTransform bt_T = to_btTransform(afRB->getInitialTransform());
-        rB->getMotionState()->setWorldTransform(bt_T);
-        rB->setWorldTransform(bt_T);
+        rbIt->second->reset();
     }
 
     if (reset_time){
         //        s_bulletWorld->setSimulationTime(0.0);
     }
 
+    pausePhysics(false);
+}
+
+void afWorld::reset()
+{
+    pausePhysics(true);
+    for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
+        (mIt->second)->reset();
+    }
+
+    // Call the reset for all plugins
+    pluginsReset();
     pausePhysics(false);
 }
 
@@ -6051,6 +6070,16 @@ void afWorld::pluginsPhysicsUpdate(double dt)
 
     for (map<string, afPointCloudPtr>::iterator pcIt = m_pcMap.begin() ; pcIt != m_pcMap.end() ; ++pcIt){
         (pcIt->second)->pluginsPhysicsUpdate(dt);
+    }
+}
+
+void afWorld::pluginsReset()
+{
+    m_pluginManager.reset();
+    // Update all models
+    for(afModelMap::iterator mIt = m_modelsMap.begin(); mIt != m_modelsMap.end(); ++mIt)
+    {
+        (mIt->second)->pluginsReset();
     }
 }
 
@@ -8077,6 +8106,21 @@ void afModel::update(double dt)
 
 
 ///
+/// \brief afModel::reset
+///
+void afModel::reset()
+{
+    afChildrenMap::iterator cIt;
+    for(cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            oIt->second->reset();
+        }
+    }
+}
+
+
+///
 /// \brief afModel::updateGlobalPose
 ///
 void afModel::updateGlobalPose()
@@ -8153,6 +8197,22 @@ void afModel::pluginsPhysicsUpdate(double dt)
         for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
             afBaseObject* childObj = oIt->second;
             childObj->pluginsPhysicsUpdate(dt);
+        }
+    }
+}
+
+
+///
+/// \brief afModel::pluginsReset
+///
+void afModel::pluginsReset()
+{
+    m_pluginManager.reset();
+    for(afChildrenMap::iterator cIt = m_childrenObjectsMap.begin(); cIt != m_childrenObjectsMap.end(); ++cIt)
+    {
+        for (afBaseObjectMap::iterator oIt = cIt->second.begin() ; oIt != cIt->second.end() ; ++oIt){
+            afBaseObject* childObj = oIt->second;
+            childObj->pluginsReset();
         }
     }
 }
@@ -8724,7 +8784,7 @@ void afGhostObject::createInertialObject()
     m_bulletGhostObject->setUserPointer(this);
 }
 
-void afGhostObject::setLocalTransform(cTransform &trans)
+void afGhostObject::setLocalTransform(const cTransform &trans)
 {
     m_bulletGhostObject->setWorldTransform(to_btTransform(trans));
     afBaseObject::setLocalTransform(trans);
@@ -8795,7 +8855,8 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
     setIdentifier(attribs.m_identifier);
     m_parentName = attribs.m_hierarchyAttribs.m_parentName;
 
-    setLocalTransform(attribs.m_kinematicAttribs.m_location);
+    m_initialTransform << attribs.m_kinematicAttribs.m_location;
+    setLocalTransform(m_initialTransform);
     m_scale = attribs.m_kinematicAttribs.m_scale;
 
     if (m_attribs.m_specificationType == afVolumeSpecificationType::MULTI_IMAGE){
@@ -8871,6 +8932,17 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
 ///
 void afVolume::update(double dt)
 {
+}
+
+///
+/// \brief afVolume::reset
+///
+void afVolume::reset()
+{
+    cTexture3dPtr tex = copy3DTexture(m_originalTextureCopy);
+    m_voxelObject->setTexture(tex);
+    tex->markForUpdate();
+    afBaseObject::reset();
 }
 
 ///

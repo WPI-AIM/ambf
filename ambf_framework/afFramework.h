@@ -537,6 +537,8 @@ public:
     // The update method called at every simulation iteration.
     virtual void update(double dt);
 
+    virtual void reset();
+
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -568,9 +570,7 @@ public:
 
     void setLocalRot(double qx, double qy, double qz, double qw);
 
-    void setLocalTransform(const cTransform &trans);
-
-    void setLocalTransform(const afTransform &trans);
+    virtual void setLocalTransform(const cTransform &trans);
 
     bool setParentObject(afBaseObjectPtr a_afObject);
 
@@ -606,6 +606,8 @@ public:
     void pluginsGraphicsUpdate();
 
     void pluginsPhysicsUpdate(double dt);
+
+    void pluginsReset();
 
     virtual void updateGlobalPose(bool a_forceUpdate, cTransform a_parentTransform = cTransform());
 
@@ -965,10 +967,12 @@ public:
     afRigidBody(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
     virtual ~afRigidBody();
 
-    virtual void setLocalTransform(cTransform &trans);
+    virtual void setLocalTransform(const cTransform &trans);
 
     // This method updates the AMBF position representation from the Bullet dynamics engine.
     virtual void update(double dt);
+
+    virtual void reset();
 
     virtual bool createFromAttribs(afRigidBodyAttributes* a_attribs);
 
@@ -1169,7 +1173,7 @@ public:
 
     virtual void createInertialObject();
 
-    virtual void setLocalTransform(cTransform &trans);
+    virtual void setLocalTransform(const cTransform &trans);
 
     virtual void updateSceneObjects();
 
@@ -1220,7 +1224,7 @@ public:
 
     virtual void createInertialObject();
 
-    virtual void setLocalTransform(cTransform &trans);
+    virtual void setLocalTransform(const cTransform &trans);
 
     // Cleanup this ghost body
     void remove();
@@ -2144,6 +2148,8 @@ public:
 
     void resetDynamicBodies(bool reset_time=false);
 
+    void reset();
+
     void setGravity(afVector3d &vec);
 
     // This method assigns integration settings of simulator.
@@ -2187,6 +2193,8 @@ public:
     void pluginsGraphicsUpdate();
 
     void pluginsPhysicsUpdate(double dt);
+
+    void pluginsReset();
 
     void addSceneObjectToWorld(cGenericObject* a_cObject);
 
@@ -2400,6 +2408,8 @@ public:
 
     virtual void update(double dt);
 
+    virtual void reset();
+
     virtual void updateGlobalPose();
 
     virtual void updateSceneObjects();
@@ -2411,6 +2421,8 @@ public:
     void pluginsGraphicsUpdate();
 
     void pluginsPhysicsUpdate(double dt);
+
+    void pluginsReset();
 
     // We can have multiple bodies connected to a single body.
     // There isn't a direct way in bullet to disable collision
@@ -2506,6 +2518,8 @@ public:
     virtual bool createFromAttribs(afVolumeAttributes* a_attribs);
 
     virtual void update(double dt);
+
+    virtual void reset();
 
     virtual cShaderProgramPtr getShaderProgram();
 

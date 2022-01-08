@@ -1071,7 +1071,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // MODS IF THE CTRL KEY IS PRESSED
         // option - If CTRL R is pressed, reset the simulation
         if (a_key == GLFW_KEY_R){
-            printf("Resetting the Simulation\n");
+            printf("Resetting Rigid Bodies\n");
             g_afWorld->resetDynamicBodies();
 
             // Reset the clutched position of all Physical devices to their
@@ -1147,6 +1147,16 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             }
             else{
             }
+        }
+    }
+    else if (a_mods == GLFW_MOD_ALT){
+        // option - Toogle visibility of body frames and softbody skeleton
+        if (a_key == GLFW_KEY_R){
+            printf("Resetting The World\n");
+            g_afWorld->reset();
+            g_afWorld->pausePhysics(true);
+            g_pluginManager.reset();
+            g_afWorld->pausePhysics(false);
         }
     }
     else{
