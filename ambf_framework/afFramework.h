@@ -2517,6 +2517,12 @@ public:
 
     cVoxelObject* getInternalVolume();
 
+    void backupTexture();
+
+    void restoreTexture();
+
+    static cTexture3dPtr copy3DTexture(cTexture1dPtr tex3D);
+
 protected:
     afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
@@ -2525,6 +2531,9 @@ protected:
 private:
     int m_previousRenderingMode=0;
     bool m_prevLinearInterpolationFlag=false;
+
+    cTexture3dPtr m_backupTexture;
+    cTexture3dPtr m_originalTextureCopy;
 };
 
 

@@ -8811,6 +8811,8 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);
             m_voxelObject->setTexture(texture);
+            // Copy the texture for reset
+            m_originalTextureCopy = copy3DTexture(texture);
 
             // set the dimensions by assigning the position of the min and max corners
             m_voxelObject->m_minCorner << ( attribs.m_dimensions / -2.0) * m_scale;
@@ -8923,4 +8925,37 @@ void afVolume::restoreShaderProgram()
 ///
 cVoxelObject* afVolume::getInternalVolume(){
     return m_voxelObject;
+}
+
+
+///
+/// \brief afVolume::backupTexture
+///
+void afVolume::backupTexture()
+{
+    m_backupTexture = copy3DTexture(m_voxelObject->m_texture);
+}
+
+
+///
+/// \brief afVolume::restoreTexture
+///
+void afVolume::restoreTexture()
+{
+    m_voxelObject->setTexture(m_backupTexture);
+    m_backupTexture->markForUpdate();
+}
+
+
+///
+/// \brief afVolume::copy3DTexture
+/// \param tex3D
+/// \return
+///
+cTexture3dPtr afVolume::copy3DTexture(cTexture1dPtr tex3D)
+{
+    cTexture3dPtr copyTex = cTexture3d::create();
+    copyTex = static_pointer_cast<cTexture3d>(tex3D)->copy();
+    copyTex->m_image = static_pointer_cast<cMultiImage>(tex3D->m_image)->copy();
+    return copyTex;
 }
