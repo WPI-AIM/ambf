@@ -1,10 +1,14 @@
 # Asynchronous Multi-Body Framework (AMBF)
-### 1. Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
+
+Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawar@wpi.edu)
 
 
 #### Build Status  
 
 ![ambf-2.0](https://github.com/WPI-AIM/ambf/workflows/ambf-2.0/badge.svg?branch=ambf-2.0)
+
+### 1. [Discussions](https://github.com/WPI-AIM/ambf/discussions):
+Please checkout the [discussions](https://github.com/WPI-AIM/ambf/discussions) tab for questions, suggestions and connecting with the community.
 
 
 ### 2. [Wiki](https://github.com/WPI-AIM/ambf/wiki):
@@ -220,7 +224,7 @@ To subscribe and publish data using AMBF over multiple machines, the following s
 
 ### 9 Docker with visualization
 
-Please follow these [instructions](https://github.com/collaborative-robotics/docker-ambf). 
+Please follow these [instructions](https://github.com/collaborative-robotics/docker-ambf).
 
 ## Citation
 If this work is helpful for your research, please use the following reference for citation:
