@@ -958,6 +958,7 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
     afVolumeSpecificationType m_specificationType;
     afMultiImagesAttributes m_multiImageAttribs;
     afShaderAttributes m_shaderAttribs;
+    afColorAttributes m_colorAttribs;
     afVector3d m_dimensions;
     double m_isosurfaceValue;
     double m_opticalDensity;

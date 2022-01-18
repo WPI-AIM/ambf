@@ -2227,6 +2227,7 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
     ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
     ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getColorAttribsFromNode(&node, &attribs->m_colorAttribs);
 
     if (dimensionsNode.IsDefined()){
         attribs->m_dimensions = ADFUtils::positionFromNode(&dimensionsNode);

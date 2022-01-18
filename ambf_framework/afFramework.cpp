@@ -8939,6 +8939,10 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
     if (m_parentName.empty() == false){
         m_afWorld->addObjectMissingParent(this);
     }
+    if (attribs.m_colorAttribs.m_useMaterial){
+        cMaterial mat = afMaterialUtils::createFromAttribs(&attribs.m_colorAttribs);
+        m_voxelObject->setMaterial(mat);
+    }
 
     loadPlugins(this, a_attribs, &attribs.m_pluginAttribs);
 
