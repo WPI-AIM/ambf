@@ -12,7 +12,7 @@ multibody configs:
   - "./multi-bodies/robots/blender-psm.yaml" #5
   - "./multi-bodies/robots/blender-ecm.yaml" #6
   - "./multi-bodies/robots/blender-suj.yaml" #7
-  - "./multi-bodies/robots/blender-kuka.yaml" #8
+  - "./multi-bodies/robots/blender-kuka-lbr-med.yaml" #8
   - "./multi-bodies/robots/blender-pr2.yaml" #9
   - "./multi-bodies/puzzles/parallel_structure.yaml" #10
   - "./multi-bodies/puzzles/puzzle1.yaml" #11

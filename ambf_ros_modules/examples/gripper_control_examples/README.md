@@ -96,6 +96,12 @@ MTMR:
 4. This gripper can now be controlled via the GUI
 that spawned from step 1.
 
+This is an example of what you should see:
+
+<img src="Images/device_example1.png" title="Device Example 1" width="45%" >
+<img src="Images/device_example2.png" title="Device Example 1" width="45%" >
+
+
 # 2. Gripper Control Via Client Interface
 This is the probably the better and more programmatic way to control a gripper
 if you are using an algorithm and don't want to bother with hidden implementations

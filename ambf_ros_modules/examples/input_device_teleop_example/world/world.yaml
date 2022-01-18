@@ -1,0 +1,103 @@
+enclosure size: {length: 10.0, width: 10.0, height: 3.0}
+lights: [light1]
+cameras: [camera1]
+environment: "./checkered_floor/checkered_floor.yaml"
+namespace: /ambf/env/
+max iterations: 50
+gravity: {x: 0.0, y: 0.0, z: 0.0}
+# shaders:
+#   path: ../../ambf_shaders/normal_map
+#   vertex: "shader.vs"
+#   fragment: "shader.fs"
+# skybox: # Uncomment to load this skybox
+#   path: ./skybox/ocean_and_mountains
+#   right: px.png
+#   left:  nx.png
+#   top: py.png
+#   bottom: ny.png
+#   front: pz.png
+#   back: nz.png
+#   shaders:
+#     path: ./skybox/
+#     vertex: "shader.vs"
+#     fragment: "shader.fs"
+
+light1:
+  namespace: /ambf/env/lights/
+  name: light_left
+  location: {x: 0.0, y: 0.5, z: 2.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 5
+  cutoff angle: 0.7
+
+light2:
+  namespace: lights/
+  name: light_right
+  location: {x: 0.5, y: -1, z: 2.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+
+light3:
+  location: {x: 0.5, y: 0.0, z: -0.5}
+  direction: {x: 0, y: 0, z: -1.0}
+  spot exponent: 0.3
+  shadow quality: 0
+  cutoff angle: 0.7
+  parent: /ambf/env/BODY LightCone
+
+camera1:
+  namespace: cameras/
+  name: camera1
+  location: {x: 4.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 50.0}
+  field view angle: 0.8
+  monitor: 0
+  # multipass: True
+
+# This example is to show how to parent w.r.t another body.
+# When a parent is defined, the location, look at and up
+# vector are with respect to the parent and not the world origin
+cameraEndoscope:
+  namespace: cameras/
+  name: endo_camera
+  location: {x: 0.0, y: 0.0, z: -0.1}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 1.0, y: 0.0, z: 0.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+  monitor: 0
+  # stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
+  parent: /ambf/env/ecm/BODY remote center link
+  # multipass: True
+
+camera2:
+  namespace: cameras/
+  name: openhmd
+  location: {x: 3.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -1.0}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+  stereo: {mode: Passive, eye separation: 0.22, focal length: 2.0}
+  monitor: 3
+  # parent: /ambf/env/BODY Occulus
+  # orthographic view width: 6
+  # device: Razer Hydra
+
+camera3:
+  namespace: cameras/
+  name: normal_camera
+  location: {x: -3.0, y: 0.0, z: 2.0}
+  look at: {x: 0.0, y: 0.0, z: -0.5}
+  up: {x: 0.0, y: 0.0, z: 1.0}
+  clipping plane: {near: 0.01, far: 10.0}
+  field view angle: 0.8
+  monitor: 2
+  # parent: /ambf/env/BODY Occulus
+  # orthographic view width: 6
+# device: Razer Hydra
