@@ -551,7 +551,7 @@ public:
 
     double getSimulationTime();
 
-    bool getVisibleFlag(){return m_visible;}
+    virtual bool getVisibleFlag(){return m_visible;}
 
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
@@ -576,7 +576,7 @@ public:
 
     bool setParentObject(afBaseObjectPtr a_afObject);
 
-    void setVisibleFlag(bool val){m_visible = val;}
+    virtual void setVisibleFlag(bool val){m_visible = val;}
 
     void clearParentObject();
 
@@ -1382,9 +1382,6 @@ public:
 
     virtual void enableVisualization(){}
 
-    // Toggle the debug display of the sensor
-    inline void toggleVisibility() {m_show = !m_show; }
-
     // Parent Body for this sensor
     afRigidBodyPtr m_parentBody;
 
@@ -1393,7 +1390,6 @@ public:
     afActuatorType m_actuatorType;
 
 protected:
-    bool m_show = false;
 
     double m_visibleSize = 0.002;
 
@@ -1485,9 +1481,6 @@ public:
 
     virtual bool createFromAttribs(afSensorAttributes* a_attribs){return false;}
 
-    // Toggle the debug display of the sensor
-    inline void toggleVisibility() {m_show = !m_show; }
-
     // Get the body this sensor is a child of
     inline afRigidBodyPtr getParentBody(){return m_parentBody;}
 
@@ -1496,9 +1489,6 @@ public:
 
     // The type this sensor?
     afSensorType m_sensorType;
-
-    // Toggle visibility of this sensor
-    bool m_show = true;
 
     bool m_visualizationEnabled = false;
 

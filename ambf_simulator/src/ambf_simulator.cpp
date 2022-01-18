@@ -1228,7 +1228,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             auto aMap = g_afWorld->getActuatorMap();
             afBaseObjectMap::const_iterator aIt;
             for (aIt = aMap->begin() ; aIt != aMap->end(); ++aIt){
-                ((afActuatorPtr)aIt->second)->toggleVisibility();
+                aIt->second->setVisibleFlag(!aIt->second->getVisibleFlag());
             }
         }
 
@@ -1238,7 +1238,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
             auto sMap = g_afWorld->getSensorMap();
             afBaseObjectMap::const_iterator sIt;
             for (sIt = sMap->begin() ; sIt != sMap->end(); ++sIt){
-                ((afSensorPtr)sIt->second)->toggleVisibility();
+                sIt->second->setVisibleFlag(!sIt->second->getVisibleFlag());
             }
         }
 

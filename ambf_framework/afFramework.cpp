@@ -1653,7 +1653,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_show = attribs.m_visible;
+    setVisibleFlag(attribs.m_visible);
     m_visibleSize = attribs.m_visibleSize;
 
     // First search in the local space.
@@ -1917,7 +1917,7 @@ void afConstraintActuator::deactuate(){
 /// \brief afConstraintActuator::updatePositionFromDynamics
 ///
 void afConstraintActuator::update(double dt){
-    visualize(m_show);
+    visualize(getVisibleFlag());
 }
 
 
@@ -4419,7 +4419,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
     setMaxPublishFrequency(attribs.m_communicationAttribs.m_maxPublishFreq);
     setPassive(attribs.m_communicationAttribs.m_passive);
 
-    m_show = attribs.m_visible;
+    setVisibleFlag(attribs.m_visible);
     m_visibilitySphereRadius = attribs.m_visibleSize;
 
     // First search in the local space.
@@ -4584,7 +4584,7 @@ void afRayTracerSensor::update(double dt){
             m_rayTracerResults[i].m_depthFraction = 0;
         }
 
-        visualize(m_show);
+        visualize(getVisibleFlag());
     }
 }
 
@@ -4695,7 +4695,7 @@ void afResistanceSensor::update(double dt){
     for (uint i = 0 ; i < m_count ; i++){
 
         if (isTriggered(i)){
-            if (m_show){
+            if (getVisibleFlag()){
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalPos(getSensedPoint(i));
                 m_rayTracerResults[i].m_hitNormalMesh->setLocalRot(afUtils::getRotBetweenVectors<cMatrix3d,
                                                                    cVector3d>(cVector3d(0,0,1), m_rayTracerResults[i].m_contactNormal));
@@ -4851,7 +4851,7 @@ void afResistanceSensor::update(double dt){
             m_rayContactResults[i].m_contactPointsValid = false;
             m_rayContactResults[i].m_firstTrigger = true;
 
-            if(m_show){
+            if(getVisibleFlag()){
                 m_rayTracerResults[i].m_hitNormalMesh->setShowEnabled(false);
             }
         }
