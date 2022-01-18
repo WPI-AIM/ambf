@@ -1193,6 +1193,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node stereoNode = node["stereo"];
     YAML::Node controllingDevicesDataNode = node["controlling devices"];
     YAML::Node monitorNode = node["monitor"];
+    YAML::Node visibleNode = node["visible"];
     YAML::Node publishImageNode = node["publish image"];
     YAML::Node publishImageIntervalNode = node["publish image interval"];
     YAML::Node publishImageResolutionNode = node["publish image resolution"];
@@ -1252,6 +1253,10 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
         for(uint idx = 0 ; idx < controllingDevicesDataNode.size() ; idx++){
             attribs->m_controllingDeviceNames.push_back( controllingDevicesDataNode[idx].as<string>());
         }
+    }
+
+    if (visibleNode.IsDefined()){
+        attribs->m_visible = visibleNode.as<bool>();
     }
 
     if (publishImageNode.IsDefined()){

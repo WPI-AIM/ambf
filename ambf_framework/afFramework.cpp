@@ -6897,8 +6897,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     }
     afCameraAttributes & attribs = *a_attribs;
 
-    int monitorToLoad = attribs.m_monitorNumber;
-
     // Set some default values
     m_stereoMode = C_STEREO_DISABLED;
 
@@ -6911,12 +6909,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_camUp << attribs.m_up;
 
     setOrthographic(attribs.m_orthographic);
-
-    if (monitorToLoad < 0 || monitorToLoad >= s_numMonitors){
-        cerr << "INFO! CAMERA \"" << attribs.m_identificationAttribs.m_name << "\" MONITOR NUMBER \"" << monitorToLoad
-             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
-        monitorToLoad = -1;
-    }
 
     if (attribs.m_stereo){
         m_stereoMode = cStereoMode::C_STEREO_PASSIVE_LEFT_RIGHT;
@@ -6969,72 +6961,12 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     m_camera->setUseMultipassTransparency(attribs.m_multiPass);
 
-    string window_name = "AMBF Simulator Window " + to_string(s_cameraIdx + 1);
-    if (m_controllingDevNames.size() > 0){
-        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
-            window_name += (" - " + m_controllingDevNames[i]);
-        }
+    m_monitorNumber = attribs.m_monitorNumber;
 
-    }
+    setVisibleFlag(attribs.m_visible);
 
-    // create display context
-    if (monitorToLoad == -1){
-        if (s_cameraIdx < s_numMonitors){
-            monitorToLoad = s_cameraIdx;
-        }
-        else{
-            monitorToLoad = 0;
-        }
-    }
-    m_monitor = s_monitors[monitorToLoad];
-
-    // compute desired size of window
-    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * mode->width;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
-
-    m_win_x = x;
-    m_win_y = y;
-    m_width = w;
-    m_height = h;
-
-    m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
-    if (s_windowIdx == 0){
-        s_mainWindow = m_window;
-    }
-
-    if (!m_window)
-    {
-        cerr << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
-        cSleepMs(1000);
-        glfwTerminate();
-        return 1;
-    }
-
-    assignWindowCallbacks(&m_afWorld->m_cameraWindowCallbacks);
-
-    // set the current context
-    glfwMakeContextCurrent(m_window);
-
-    glfwSwapInterval(0);
-
-    // get width and height of window
-    glfwGetWindowSize(m_window, &m_width, &m_height);
-
-    // set position of window
-    glfwSetWindowPos(m_window, m_win_x, m_win_y);
-
-    // initialize GLEW library
-#ifdef GLEW_VERSION
-    if (glewInit() != GLEW_OK)
-    {
-        cerr << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
-        glfwTerminate();
-        return 1;
-    }
-#endif
+    //    attribs.m_visible;
+    createWindow();
 
     // create a font
     cFontPtr font = NEW_CFONTCALIBRI20();
@@ -7057,9 +6989,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     m_camera->m_frontLayer->addChild(m_devicesModesLabel);
     m_camera->m_frontLayer->addChild(m_deviceButtonLabel);
     m_camera->m_frontLayer->addChild(m_controllingDeviceLabel);
-
-    s_windowIdx++;
-    s_cameraIdx++;
 
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getCameraMap());
     setGlobalRemapIdx(remap_idx);
@@ -7087,6 +7016,93 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     loadCommunicationPlugin(this, a_attribs);
 
     return true;
+}
+
+
+///
+/// \brief afCamera::createWindow
+/// \return
+///
+bool afCamera::createWindow()
+{
+    string window_name = "AMBF Simulator Window " + to_string(s_cameraIdx + 1);
+    if (m_controllingDevNames.size() > 0){
+        for (int i = 0 ; i < m_controllingDevNames.size() ; i++){
+            window_name += (" - " + m_controllingDevNames[i]);
+        }
+
+    }
+
+    if (m_monitorNumber < 0 || m_monitorNumber >= s_numMonitors){
+        cerr << "INFO! CAMERA \"" << m_name << "\" MONITOR NUMBER \"" << m_monitorNumber
+             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
+        if (s_cameraIdx < s_numMonitors){
+            m_monitorNumber = s_cameraIdx;
+        }
+        else{
+            m_monitorNumber = 0;
+        }
+    }
+
+    m_monitor = s_monitors[m_monitorNumber];
+
+    // compute desired size of window
+    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
+    int w = 0.5 * mode->width;
+    int h = 0.5 * mode->height;
+    int x = 0.5 * (mode->width - w);
+    int y = 0.5 * (mode->height - h);
+
+    m_win_x = x;
+    m_win_y = y;
+    m_width = w;
+    m_height = h;
+
+    if (getVisibleFlag() == false){
+        cerr << "INFO! CAMERA \"" << m_name << "\" SET TO INVISIBLE. THEREFORE IT IS ONLY VIEWABLE"
+                                               " VIA ITS IMAGE / DEPTH TOPICS IF THOSE ARE SET TO TRUE" << endl;
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
+
+    m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
+    if (s_windowIdx == 0){
+        s_mainWindow = m_window;
+    }
+
+    if (!m_window)
+    {
+        cerr << "ERROR! FAILED TO CREATE OPENGL WINDOW" << endl;
+        cSleepMs(1000);
+        glfwTerminate();
+        return 0;
+    }
+
+    assignWindowCallbacks(&m_afWorld->m_cameraWindowCallbacks);
+
+    // set the current context
+    glfwMakeContextCurrent(m_window);
+
+    glfwSwapInterval(0);
+
+    // get width and height of window
+    glfwGetWindowSize(m_window, &m_width, &m_height);
+
+    // set position of window
+    glfwSetWindowPos(m_window, m_win_x, m_win_y);
+
+    // initialize GLEW library
+#ifdef GLEW_VERSION
+    if (glewInit() != GLEW_OK)
+    {
+        cerr << "ERROR! FAILED TO INITIALIZE GLEW LIBRARY" << endl;
+        glfwTerminate();
+        return 0;
+    }
+#endif
+    s_windowIdx++;
+    s_cameraIdx++;
+
+    return 1;
 }
 
 bool afCamera::assignWindowCallbacks(afCameraWindowCallBacks *a_callbacks)
@@ -7397,35 +7413,38 @@ afCamera::~afCamera(){
 ///
 void afCamera::render(afRenderOptions &options)
 {
-    // set current display context
-    glfwMakeContextCurrent(m_window);
+    if (getVisibleFlag()){
 
-    // get width and height of window
-    glfwGetFramebufferSize(m_window, &m_width, &m_height);
+        // set current display context
+        glfwMakeContextCurrent(m_window);
 
-    // Update the Labels in a separate sub-routine
-    if (options.m_updateLabels && !m_publishDepth && !m_publishImage){
-        updateLabels(options);
+        // get width and height of window
+        glfwGetFramebufferSize(m_window, &m_width, &m_height);
+
+        // Update the Labels in a separate sub-routine
+        if (options.m_updateLabels && !m_publishDepth && !m_publishImage){
+            updateLabels(options);
+        }
+
+        renderSkyBox();
+
+        // render world
+        m_camera->renderView(m_width, m_height);
+
+        // swap buffers
+        glfwSwapBuffers(m_window);
+
+        //    cerr << "Time Stamp Error: " << m_renderTimeStamp - getTimeStamp() << endl;
+
+        // Only set the window_closed if the condition is met
+        // otherwise a non-closed window will set the variable back
+        // to false
+        if (glfwWindowShouldClose(m_window)){
+            options.m_windowClosed = true;
+        }
     }
-
-    renderSkyBox();
-
-    // render world
-    m_camera->renderView(m_width, m_height);
-
-    // swap buffers
-    glfwSwapBuffers(m_window);
 
     renderFrameBuffer();
-
-//    cerr << "Time Stamp Error: " << m_renderTimeStamp - getTimeStamp() << endl;
-
-    // Only set the window_closed if the condition is met
-    // otherwise a non-closed window will set the variable back
-    // to false
-    if (glfwWindowShouldClose(m_window)){
-        options.m_windowClosed = true;
-    }
 
     m_sceneUpdateCounter++;
 }

@@ -126,9 +126,6 @@ bool g_simulationFinished = true;
 // Flag to toggle between inverted/non_inverted mouse pitch with mouse
 bool g_mouse_inverted_y = false;
 
-// Ratio between Window Height and Width to Frame Buffer Height and Width
-double g_winWidthRatio = 1.0;
-
 double g_winHeightRatio = 1.0;
 
 bool g_enableGrippingAssist = true;
@@ -458,7 +455,9 @@ int main(int argc, char* argv[])
 
     // Temporary fix for OpenGL Error Invalid Operation
     for (auto cam : g_afWorld->getCameras()){
-        glfwMakeContextCurrent(cam->m_window);
+        if (cam->getVisibleFlag()){
+            glfwMakeContextCurrent(cam->m_window);
+        }
     }
 
     // Load plugins.
@@ -522,15 +521,6 @@ int main(int argc, char* argv[])
 
     // Compute the window width and height ratio
     if (g_cmdOpts.showGUI){
-        int winH, winW;
-        glfwGetWindowSize(g_afWorld->getCameras()[0]->m_window, &winW, &winH);
-
-        int buffH, buffW;
-        glfwGetFramebufferSize(g_afWorld->getCameras()[0]->m_window, &buffW, &buffH);
-
-        g_winWidthRatio = double(buffW) / double(winW);
-        g_winHeightRatio = double(buffH) / double(winH);
-
         // Load the skybox if defined.
         g_afWorld->loadSkyBox();
 
@@ -1626,8 +1616,8 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     cVector3d dVert = vertical * 1.f / height;
 
     cVector3d rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += double(g_winWidthRatio*x) * dHor;
-    rayTo -= double(g_winHeightRatio*y) * dVert;
+    rayTo += double(x) * dHor;
+    rayTo -= double(y) * dVert;
 
     return rayTo;
 }

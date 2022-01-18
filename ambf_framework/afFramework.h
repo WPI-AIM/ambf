@@ -551,6 +551,8 @@ public:
 
     double getSimulationTime();
 
+    bool getVisibleFlag(){return m_visible;}
+
     // Get Initial Pose of this body
     inline cTransform getInitialTransform(){return m_initialTransform;}
 
@@ -573,6 +575,8 @@ public:
     virtual void setLocalTransform(const cTransform &trans);
 
     bool setParentObject(afBaseObjectPtr a_afObject);
+
+    void setVisibleFlag(bool val){m_visible = val;}
 
     void clearParentObject();
 
@@ -647,6 +651,10 @@ protected:
     afBaseObjectPluginManager m_pluginManager;
 
     vector<afBaseObjectPtr> m_childrenObjects;
+
+private:
+    // Whether or not this object is visible
+    bool m_visible = false;
 };
 
 
@@ -1824,6 +1832,8 @@ public:
 
     virtual bool createFromAttribs(afCameraAttributes* a_attribs);
 
+    bool createWindow();
+
     bool assignWindowCallbacks(afCameraWindowCallBacks* a_callbacks);
 
     // Since we changed the order of ADF loading such that cameras are loaded before
@@ -1977,6 +1987,8 @@ protected:
     void preProcessingShadersUpdate();
 
 protected:
+
+    unsigned int m_monitorNumber = 0;
 
     bool m_frameBuffersCreated = false;
 
