@@ -1616,8 +1616,11 @@ cVector3d getRayTo(int x, int y, afCameraPtr a_cameraPtr)
     cVector3d dVert = vertical * 1.f / height;
 
     cVector3d rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
-    rayTo += double(x) * dHor;
-    rayTo -= double(y) * dVert;
+
+    int windowW, windowH;
+    glfwGetWindowSize(a_cameraPtr->m_window, &windowW, &windowH);
+    rayTo += double(x) * dHor * width / windowW;
+    rayTo -= double(y) * dVert * height / windowH;
 
     return rayTo;
 }
