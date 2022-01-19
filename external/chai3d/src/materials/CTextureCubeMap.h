@@ -131,8 +131,8 @@ public:
     cImagePtr m_images[6];
     // RIGHT
     // LEFT
-    // TOP
     // BOTTOM
+    // TOP
     // FRONT
     // BACK
 

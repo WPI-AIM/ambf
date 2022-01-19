@@ -6428,8 +6428,8 @@ void afWorld::loadSkyBox(){
 
         res[0] = newTexture->m_images[0]->loadFromFile(m_skyBoxAttribs.m_rightImageFilepath.c_str());
         res[1] = newTexture->m_images[1]->loadFromFile(m_skyBoxAttribs.m_leftImageFilepath.c_str());
-        res[2] = newTexture->m_images[3]->loadFromFile(m_skyBoxAttribs.m_topImageFilepath.c_str());
-        res[3] = newTexture->m_images[2]->loadFromFile(m_skyBoxAttribs.m_bottomImageFilepath.c_str());
+        res[2] = newTexture->m_images[2]->loadFromFile(m_skyBoxAttribs.m_bottomImageFilepath.c_str());
+        res[3] = newTexture->m_images[3]->loadFromFile(m_skyBoxAttribs.m_topImageFilepath.c_str());
         res[4] = newTexture->m_images[4]->loadFromFile(m_skyBoxAttribs.m_frontImageFilepath.c_str());
         res[5] = newTexture->m_images[5]->loadFromFile(m_skyBoxAttribs.m_backImageFilepath.c_str());
 
@@ -7471,7 +7471,7 @@ void afCamera::renderSkyBox(){
             cGenericObject* go;
             cRenderOptions ro;
             m_afWorld->m_skyBoxMesh->getShaderProgram()->use(go, ro);
-            cMatrix3d rotOffsetPre(0, 0, 90, C_EULER_ORDER_ZYX, false, true);
+            cMatrix3d rotOffsetPre(90, -90, 0, C_EULER_ORDER_XYZ, false, true);
             cMatrix3d rotOffsetPost(90, 90, 0, C_EULER_ORDER_ZYX, false, true);
             cTransform viewMat = rotOffsetPre * getLocalTransform() * rotOffsetPost;
             m_afWorld->m_skyBoxMesh->getShaderProgram()->setUniform("viewMat", viewMat, 1);
