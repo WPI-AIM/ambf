@@ -2533,6 +2533,12 @@ public:
 
     cVoxelObject* getInternalVolume();
 
+    cVector3d getDimensions();
+
+    cVector3d getVoxelCount();
+
+    cVector3d getResolution();
+
     void backupTexture();
 
     void restoreTexture();

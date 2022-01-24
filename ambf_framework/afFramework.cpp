@@ -9024,6 +9024,46 @@ cVoxelObject* afVolume::getInternalVolume(){
 
 
 ///
+/// \brief afVolume::getDimensions
+/// \return
+///
+cVector3d afVolume::getDimensions()
+{
+    cVector3d dim = m_voxelObject->m_maxCorner - m_voxelObject->m_minCorner;
+    return dim;
+}
+
+
+///
+/// \brief afVolume::getVoxelCount
+/// \return
+///
+cVector3d afVolume::getVoxelCount()
+{
+    cVector3d count;
+    count(0) = m_voxelObject->m_texture->m_image->getWidth();
+    count(1) = m_voxelObject->m_texture->m_image->getHeight();
+    count(2) = m_voxelObject->m_texture->m_image->getImageCount();
+    return count;
+}
+
+///
+/// \brief afVolume::getResolution
+/// \return
+///
+cVector3d afVolume::getResolution()
+{
+    cVector3d count = getVoxelCount();
+    cVector3d dims = getDimensions();
+    cVector3d res;
+    res(0) = dims(0) / count(0);
+    res(1) = dims(1) / count(1);
+    res(2) = dims(2) / count(2);
+    return res;
+}
+
+
+///
 /// \brief afVolume::backupTexture
 ///
 void afVolume::backupTexture()
