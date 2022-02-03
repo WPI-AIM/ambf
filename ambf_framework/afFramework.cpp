@@ -7728,23 +7728,25 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
 ///
 void afCamera::makeWindowFullScreen(bool a_fullscreen)
 {
-    // get information about monitor
-    const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
+    if (getVisibleFlag()){
+        // get information about monitor
+        const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
 
-    // set fullscreen or window mode
-    if (a_fullscreen)
-    {
-        glfwSetWindowMonitor(m_window, m_monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-        glfwSwapInterval(0);
-    }
-    else
-    {
-        int w = 0.8 * mode->height;
-        int h = 0.5 * mode->height;
-        int x = 0.5 * (mode->width - w);
-        int y = 0.5 * (mode->height - h);
-        glfwSetWindowMonitor(m_window, NULL, x, y, w, h, mode->refreshRate);
-        glfwSwapInterval(0);
+        // set fullscreen or window mode
+        if (a_fullscreen)
+        {
+            glfwSetWindowMonitor(m_window, m_monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            glfwSwapInterval(0);
+        }
+        else
+        {
+            int w = 0.8 * mode->height;
+            int h = 0.5 * mode->height;
+            int x = 0.5 * (mode->width - w);
+            int y = 0.5 * (mode->height - h);
+            glfwSetWindowMonitor(m_window, NULL, x, y, w, h, mode->refreshRate);
+            glfwSwapInterval(0);
+        }
     }
 }
 
