@@ -8895,8 +8895,11 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             m_originalTextureCopy = copy3DTexture(texture);
 
             // set the dimensions by assigning the position of the min and max corners
-            m_voxelObject->m_minCorner << ( attribs.m_dimensions / -2.0) * m_scale;
-            m_voxelObject->m_maxCorner << ( attribs.m_dimensions / 2.0) * m_scale;
+            m_minCornerInitial << ( attribs.m_dimensions / -2.0) * m_scale;
+            m_maxCornerInitial << ( attribs.m_dimensions / 2.0) * m_scale;
+
+            m_voxelObject->m_minCorner = m_minCornerInitial;
+            m_voxelObject->m_maxCorner = m_maxCornerInitial;
 
             // set the texture coordinate at each corner.
             m_voxelObject->m_minTextureCoord.set(0.0, 0.0, 0.0);
@@ -9029,7 +9032,7 @@ cVoxelObject* afVolume::getInternalVolume(){
 ///
 cVector3d afVolume::getDimensions()
 {
-    cVector3d dim = m_voxelObject->m_maxCorner - m_voxelObject->m_minCorner;
+    cVector3d dim = m_maxCornerInitial - m_minCornerInitial;
     return dim;
 }
 
@@ -9060,6 +9063,112 @@ cVector3d afVolume::getResolution()
     res(1) = dims(1) / count(1);
     res(2) = dims(2) / count(2);
     return res;
+}
+
+
+///
+/// \brief afVolume::localPosToVoxelIndex
+/// \param pos
+/// \param idx
+/// \return
+///
+bool afVolume::localPosToVoxelIndex(cVector3d &pos, cVector3d& idx)
+{
+
+    idx = cVector3d(-1, -1, -1);
+    if (pos.x() > getDimensions().x() || pos.y() > getDimensions().y() || pos.z() > getDimensions().z()){
+        // Point is outside the voxel dimensions
+        return false;
+    }
+
+    for (int i = 0 ; i < 3 ; i++){
+        idx(i) = (pos(i) / getDimensions()(i) + 0.5) * getVoxelCount()(i);
+    }
+
+
+    // Sanity check.
+    if (idx.x() > getVoxelCount().x() || idx.y() > getVoxelCount().y() || idx.z() > getVoxelCount().z()){
+        // ERROR
+        idx.set(-1, -1, -1);
+        return false;
+    }
+    else{
+        return true;
+    }
+}
+
+
+///
+/// \brief afVolume::voxelIndexToLocalPos
+/// \param idx
+/// \param pos
+/// \return
+///
+bool afVolume::voxelIndexToLocalPos(cVector3d &idx, cVector3d &pos)
+{
+    // Init to invalid
+    pos.set(1./0., 1./0., 1./0.);
+
+    if (idx.x() > getVoxelCount().x() || idx.y() > getVoxelCount().y() || idx.z() > getVoxelCount().z()){
+        // Index greater than voxel count
+        return false;
+    }
+
+    for (int i = 0 ; i < 3 ; i++){
+        pos(i) = idx(i) * getDimensions()(i) / getVoxelCount()(i);
+    }
+
+    // Sanity check.
+    if (pos.x() > getDimensions().x() || pos.y() > getDimensions().y() || pos.z() > getDimensions().z()){
+        // ERROR
+        pos.set(1./0., 1./0., 1./0.);
+        return false;
+    }
+    else{
+        // Adjust pos
+        pos -= getDimensions() / 2.0;
+        return true;
+    }
+}
+
+
+///
+/// \brief afVolume::getVoxelValue
+/// \param pos
+/// \param color
+/// \return
+///
+bool afVolume::getVoxelValue(cVector3d &pos, cColorb& color)
+{
+    cVector3d idx;
+    if (localPosToVoxelIndex(pos, idx)){
+        return m_voxelObject->m_texture->m_image->getVoxelColor(idx.x(), idx.y(), idx.z(), color);
+    }
+    else{
+        // IDX not valid
+        float i = -1.;
+        color.set(i, i, i, i);
+        return false;
+    }
+}
+
+///
+/// \brief afVolume::setVoxelValue
+/// \param pos
+/// \param color
+/// \return
+///
+bool afVolume::setVoxelValue(cVector3d &pos, cColorb &color)
+{
+    cVector3d idx;
+    if (localPosToVoxelIndex(pos, idx)){
+        m_voxelObject->m_texture->m_image->setVoxelColor(idx.x(), idx.y(), idx.z(), color);
+        return true;
+    }
+    else{
+        // IDX not valid
+        return false;
+    }
 }
 
 

@@ -2539,6 +2539,18 @@ public:
 
     cVector3d getResolution();
 
+    // Get the idx of a voxel given a position in local volume coordinates
+    bool localPosToVoxelIndex(cVector3d& pos, cVector3d& idx);
+
+    // Get the position in location volume coordinates give a voxel index
+    bool voxelIndexToLocalPos(cVector3d& idx, cVector3d& pos);
+
+    // Pos in voxel's local space. NOT IN WORLD SPACE
+    bool getVoxelValue(cVector3d& pos, cColorb& color);
+
+    // Set a voxel RGBA value by specifying position in voxel's local space
+    bool setVoxelValue(cVector3d& pos, cColorb& val);
+
     void backupTexture();
 
     void restoreTexture();
@@ -2556,6 +2568,12 @@ private:
 
     cTexture3dPtr m_backupTexture;
     cTexture3dPtr m_originalTextureCopy;
+
+    // The initial values of min and max pos coordiantes of the volume AABB.
+    // Storing this as the corners can be changed at runtime to render only
+    // a sub block of the volume.
+    cVector3d m_minCornerInitial;
+    cVector3d m_maxCornerInitial;
 };
 
 
