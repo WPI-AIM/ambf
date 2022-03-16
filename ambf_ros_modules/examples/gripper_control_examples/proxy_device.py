@@ -44,7 +44,7 @@
 
 import rospy
 from std_msgs.msg import Empty, String, Bool
-from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3, TwistStamped
+from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3, TwistStamped, TransformStamped
 from sensor_msgs.msg import Joy, JointState
 # rom geomagic_control.msg import DeviceFeedback, DeviceButtonEvent
 # from phantom_omni.msg import DeviceFeedback, DeviceButtonEvent
@@ -68,6 +68,21 @@ def kdl_frame_to_msg_pose(kdl_pose):
     p.orientation.y = kdl_pose.M.GetQuaternion()[1]
     p.orientation.z = kdl_pose.M.GetQuaternion()[2]
     p.orientation.w = kdl_pose.M.GetQuaternion()[3]
+
+    return ps
+
+
+def kdl_frame_to_msg_transform(kdl_pose):
+    ps = TransformStamped()
+    p = ps.transform
+    p.translation.x = kdl_pose.p[0]
+    p.translation.y = kdl_pose.p[1]
+    p.translation.z = kdl_pose.p[2]
+
+    p.rotation.x = kdl_pose.M.GetQuaternion()[0]
+    p.rotation.y = kdl_pose.M.GetQuaternion()[1]
+    p.rotation.z = kdl_pose.M.GetQuaternion()[2]
+    p.rotation.w = kdl_pose.M.GetQuaternion()[3]
 
     return ps
 
@@ -104,14 +119,15 @@ def msg_pose_to_kdl_frame(msg_pose):
 # Init Relevant MTM
 class ProxyMTM:
     def __init__(self, arm_name):
-        pose_str = '/dvrk/' + arm_name + '/position_cartesian_current'
-        twist_str = '/dvrk/' + arm_name + '/twist_body_current'
-        wrench_str = '/dvrk/' + arm_name + '/set_wrench_body'
-        gripper_str = '/dvrk/' + arm_name + '/state_gripper_current'
-        status_str = '/dvrk/' + arm_name + '/status'
+        prefix = arm_name
+        pose_str = prefix + '/measured_cp'
+        twist_str = prefix + '/measured_cv'
+        wrench_str = prefix + '/body/servo_cf'
+        gripper_str = prefix + '/gripper/measured_js'
+        status_str = prefix + '/status'
         # Init some other pubs that allow the force to sent by dvrk_arm library
-        gripper_closer_str = '/dvrk/' + arm_name + '/gripper_closed_event'
-        state_str = '/dvrk/' + arm_name + '/robot_state'
+        gripper_closer_str = prefix + '/gripper_closed_event'
+        state_str = prefix + '/robot_state'
 
         self.base_frame = Frame(Rotation().RPY(0, 0, 0), Vector(0, 0, 0))
         self.tip_frame = Frame(Rotation().RPY(0, 0, 0), Vector(0, 0, 0))
@@ -145,21 +161,21 @@ class ProxyMTM:
         self._gripper_angle = JointState()
         self._gripper_angle.position.append(0)
 
-        self._pose_pub = rospy.Publisher(pose_str, PoseStamped, queue_size=1)
+        self._pose_pub = rospy.Publisher(pose_str, TransformStamped, queue_size=1)
         self._twist_pub = rospy.Publisher(twist_str, TwistStamped, queue_size=1)
         self._gripper_pub = rospy.Publisher(gripper_str, JointState, queue_size=1)
         self._status_pub = rospy.Publisher(status_str, Empty, queue_size=1)
         self._state_pub = rospy.Publisher(state_str, String, queue_size=1)
         self._gripper_closed_pub = rospy.Publisher(gripper_closer_str, Bool, queue_size=1)
 
-        self._force_sub = rospy.Subscriber(wrench_str, Wrench, self.force_cb, queue_size=10)
+        self._force_sub = rospy.Subscriber(wrench_str, WrenchStamped, self.force_cb, queue_size=10)
 
         pass
 
     def force_cb(self, msg):
-        self._commanded_force[0] = msg.force.x
-        self._commanded_force[1] = msg.force.y
-        self._commanded_force[2] = msg.force.z
+        self._commanded_force[0] = msg.wrench.force.x
+        self._commanded_force[1] = msg.wrench.force.y
+        self._commanded_force[2] = msg.wrench.force.z
 
     def set_base_frame(self, frame):
         self.base_frame = frame
@@ -182,7 +198,7 @@ class ProxyMTM:
     def set_pos(self, a, b, c):
         self.cur_frame.p = Vector(a, b, c)
         pose = self.base_frame.Inverse() * self.cur_frame * self.tip_frame
-        msg = kdl_frame_to_msg_pose(pose)
+        msg = kdl_frame_to_msg_transform(pose)
         self._pose_pub.publish(msg)
 
     def set_twist(self, v_x, v_y, v_z, w_x, w_y, w_z):
@@ -196,7 +212,7 @@ class ProxyMTM:
     def set_orientation(self, a, b, c):
         self.cur_frame.M = Rotation.RPY(a, b, c)
         pose = self.base_frame.Inverse() * self.cur_frame * self.tip_frame
-        msg = kdl_frame_to_msg_pose(pose)
+        msg = kdl_frame_to_msg_transform(pose)
         self._pose_pub.publish(msg)
 
     def get_pose(self):
