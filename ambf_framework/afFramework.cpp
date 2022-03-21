@@ -8849,7 +8849,7 @@ void afNoiseModel::createFromAttribs(afNoiseModelAttribs *a_attribs)
 ///
 afVolume::afVolume(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::VOLUME, a_afWorld, a_modelPtr)
 {
-
+    clearResetFlag();
 }
 
 
@@ -8962,15 +8962,29 @@ void afVolume::update(double dt)
 {
 }
 
+void afVolume::updateSceneObjects()
+{
+    if (m_resetFlag){
+        resetTextures();
+    }
+    afBaseObject::updateSceneObjects();
+}
+
 ///
 /// \brief afVolume::reset
 ///
 void afVolume::reset()
 {
+    setResetFlag();
+}
+
+void afVolume::resetTextures()
+{
     cTexture3dPtr tex = copy3DTexture(m_originalTextureCopy);
     m_voxelObject->setTexture(tex);
     tex->markForUpdate();
     afBaseObject::reset();
+    clearResetFlag();
 }
 
 ///

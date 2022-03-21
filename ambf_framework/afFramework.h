@@ -2521,7 +2521,11 @@ public:
 
     virtual void update(double dt);
 
+    virtual void updateSceneObjects();
+
     virtual void reset();
+
+    void resetTextures();
 
     virtual cShaderProgramPtr getShaderProgram();
 
@@ -2557,6 +2561,10 @@ public:
 
     static cTexture3dPtr copy3DTexture(cTexture1dPtr tex3D);
 
+    void setResetFlag(){m_resetFlag = true;}
+
+    void clearResetFlag(){m_resetFlag = false;}
+
 protected:
     afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
@@ -2574,6 +2582,9 @@ private:
     // a sub block of the volume.
     cVector3d m_minCornerInitial;
     cVector3d m_maxCornerInitial;
+
+    // Should not reset the volume from physics thread, only from graphics thread. This flag is for that purpose.
+    bool m_resetFlag;
 };
 
 
