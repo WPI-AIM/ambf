@@ -2148,7 +2148,7 @@ public:
 
     void resetCameras();
 
-    void resetDynamicBodies(bool reset_time=false);
+    void resetDynamicBodies();
 
     void reset();
 
@@ -2229,6 +2229,14 @@ public:
     int getPhysicsFrequency(){return m_physicsFreq;}
 
     int getNumDevices(){return m_numDevices;}
+
+    void setResetFlag(){m_resetFlag = true;}
+
+    void clearResetFlag(){m_resetFlag = false;}
+
+    void setResetBodiesFlag(){m_resetBodiesFlag = true;}
+
+    void clearResetBodiesFlag(){m_resetBodiesFlag = false;}
 
 public:
 
@@ -2377,6 +2385,10 @@ private:
     cWorld* m_chaiWorld = nullptr;
 
     bool m_headless = false;
+
+    bool m_resetFlag = false;
+
+    bool m_resetBodiesFlag = false;
 };
 
 
