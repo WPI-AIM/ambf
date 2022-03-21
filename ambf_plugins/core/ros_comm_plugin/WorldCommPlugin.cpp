@@ -20,6 +20,7 @@ int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAt
     bool success = false;
 
     m_afWorldCommPtr.reset(new ambf_comm::World(objName, objNamespace, minFreq, maxFreq, timeOut));
+    m_afWorldCommPtr->enableComm();
     success = true;
 
     return success;
