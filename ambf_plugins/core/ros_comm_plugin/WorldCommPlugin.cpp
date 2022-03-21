@@ -20,6 +20,7 @@ int afWorldCommunicationPlugin::init(const afWorldPtr a_afWorld, const afWorldAt
     bool success = false;
 
     m_afWorldCommPtr.reset(new ambf_comm::World(objName, objNamespace, minFreq, maxFreq, timeOut));
+    m_afWorldCommPtr->enableComm();
     success = true;
 
     return success;
@@ -85,6 +86,18 @@ void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
             }
         }
         m_read_count = 0;
+    }
+
+    if (m_afWorldCommPtr->get_reset_flag()){
+        std::cerr << "INFO! RESET CALLED FROM WORLD COMM" << std::endl;
+        m_worldPtr->setResetFlag();
+        m_afWorldCommPtr->clear_reset_flag();
+    }
+
+    if (m_afWorldCommPtr->get_reset_bodies_flag()){
+        std::cerr << "INFO! RESET BODIES CALLED FROM WORLD COMM" << std::endl;
+        m_worldPtr->setResetBodiesFlag();
+        m_afWorldCommPtr->clear_reset_bodies_flag();
     }
 
 }

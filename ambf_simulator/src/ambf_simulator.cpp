@@ -132,6 +132,10 @@ bool g_enableGrippingAssist = true;
 
 bool g_enableNormalMapping = true;
 
+bool g_resetFlag = false;
+
+bool g_bodiesResetFlag = false;
+
 // haptic thread
 std::vector<cThread*> g_hapticsThreads;
 
@@ -605,6 +609,16 @@ void updatePhysics(){
     torque_prev.set(0, 0, 0);
     while(g_simulationRunning)
     {
+        if (g_resetFlag){
+            g_afWorld->reset();
+            g_pluginManager.reset();
+            g_resetFlag = false;
+        }
+
+        if (g_bodiesResetFlag){
+            g_afWorld->resetDynamicBodies();
+            g_bodiesResetFlag = false;
+        }
         g_afWorld->m_freqCounterHaptics.signal(1);
 
         // Take care of any picked body by mouse
@@ -1061,8 +1075,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
         // MODS IF THE CTRL KEY IS PRESSED
         // option - If CTRL R is pressed, reset the simulation
         if (a_key == GLFW_KEY_R){
-            printf("Resetting Rigid Bodies\n");
-            g_afWorld->resetDynamicBodies();
+            printf("Setting bodies reset flag\n");
+            g_bodiesResetFlag = true;
 
             // Reset the clutched position of all Physical devices to their
             // simulated dynamic end-effectors
@@ -1142,11 +1156,8 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
     else if (a_mods == GLFW_MOD_ALT){
         // option - Toogle visibility of body frames and softbody skeleton
         if (a_key == GLFW_KEY_R){
-            printf("Resetting The World\n");
-            g_afWorld->reset();
-            g_afWorld->pausePhysics(true);
-            g_pluginManager.reset();
-            g_afWorld->pausePhysics(false);
+            printf("Setting world reset flag \n");
+            g_resetFlag = true;
         }
     }
     else{

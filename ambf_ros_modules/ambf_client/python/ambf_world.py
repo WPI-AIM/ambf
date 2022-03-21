@@ -44,7 +44,7 @@
 
 from ambf_msgs.msg import WorldState, WorldCmd
 from watch_dog import WatchDog
-
+from std_msgs.msg import Empty
 
 class World(WatchDog):
     def __init__(self, a_name):
@@ -54,6 +54,8 @@ class World(WatchDog):
         self._cmd = WorldCmd()
         self._cmd.enable_step_throttling = False
         self._pub = None
+        self._reset_pub = None
+        self._reset_bodies_pub = None
         self._sub = None
         self._pub_flag = True
         self._active = False
@@ -96,3 +98,9 @@ class World(WatchDog):
                 self.console_print('World')
                 self.clear_cmd()
             self._pub.publish(self._cmd)
+
+    def reset(self):
+        self._reset_pub.publish(Empty())
+
+    def reset_bodies(self):
+        self._reset_bodies_pub.publish(Empty())

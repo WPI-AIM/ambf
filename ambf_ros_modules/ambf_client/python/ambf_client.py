@@ -51,6 +51,7 @@ from ambf_msgs.msg import RigidBodyState, RigidBodyCmd
 from ambf_msgs.msg import WorldState, WorldCmd
 from ambf_msgs.msg import SensorState, SensorCmd
 from ambf_msgs.msg import VehicleState, VehicleCmd
+from std_msgs.msg import Empty
 import threading
 from geometry_msgs.msg import WrenchStamped
 from ambf_actuator import Actuator
@@ -125,6 +126,10 @@ class Client:
                 world_obj._sub = rospy.Subscriber(topic_name, WorldState, world_obj.ros_cb)
                 world_obj._pub = rospy.Publisher(name=topic_name.replace('/State', '/Command'), data_class=WorldCmd,
                                                  queue_size=10)
+                world_obj._reset_pub = rospy.Publisher(name=topic_name.replace('/State', '/Command/Reset'),
+                                                       data_class=Empty, queue_size=1)
+                world_obj._reset_bodies_pub = rospy.Publisher(
+                    name=topic_name.replace('/State', '/Command/Reset/Bodies'), data_class=Empty, queue_size=1)
                 self._world_handle = world_obj
                 self._objects_dict[world_obj.get_name()] = world_obj
             elif msg_type == 'ambf_msgs/ActuatorState':

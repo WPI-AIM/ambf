@@ -53,7 +53,7 @@ cmd.step_clock = True
 cmd.n_skip_steps = 1
 
 if len(sys.argv) > 1:
-    print 'Clock Rate Specified as {}'.format(sys.argv[1])
+    print('Clock Rate Specified as {}'.format(sys.argv[1]))
     clock_rate = float(sys.argv[1])
 else:
     clock_rate = 50

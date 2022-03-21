@@ -5850,6 +5850,7 @@ void afWorld::setGlobalNamespace(string a_global_namespace){
 /// \brief afWorld::resetCameras
 ///
 void afWorld::resetCameras(){
+    cerr << "INFO! RESETTING ALL CAMERAS IN THE WORLD " << endl;
     afBaseObjectMap::iterator camIt;
     for (camIt = getCameraMap()->begin() ; camIt != getCameraMap()->end() ; ++camIt){
         camIt->second->reset();
@@ -5857,28 +5858,26 @@ void afWorld::resetCameras(){
 
 }
 
+
 ///
 /// \brief afWorld::resetWorld
 /// \param reset_time
 ///
-void afWorld::resetDynamicBodies(bool reset_time){
-    pausePhysics(true);
-
+void afWorld::resetDynamicBodies(){
+    cerr << "INFO! RESETTING ALL BODIES IN THE WORLD " << endl;
     afBaseObjectMap::iterator rbIt;
-
     for (rbIt = getRigidBodyMap()->begin() ; rbIt != getRigidBodyMap()->end() ; ++rbIt){
         rbIt->second->reset();
     }
-
-    if (reset_time){
-        //        s_bulletWorld->setSimulationTime(0.0);
-    }
-
-    pausePhysics(false);
+    clearResetBodiesFlag();
 }
 
-void afWorld::reset()
-{
+
+///
+/// \brief afWorld::reset
+///
+void afWorld::reset(){
+    cerr << "INFO! RESETTING WORLD" << endl;
     pausePhysics(true);
     for (afModelMap::iterator mIt = m_modelsMap.begin() ; mIt != m_modelsMap.end() ; ++mIt){
         (mIt->second)->reset();
@@ -5886,6 +5885,7 @@ void afWorld::reset()
 
     // Call the reset for all plugins
     pluginsReset();
+    clearResetFlag();
     pausePhysics(false);
 }
 
@@ -5925,6 +5925,16 @@ void afWorld::updateDynamics(double a_interval, double a_wallClock, double a_loo
 {
     // sanity check
     if (a_interval <= 0) { return; }
+
+    if (m_resetFlag){
+        reset();
+        return;
+    }
+
+    if (m_resetBodiesFlag){
+        resetDynamicBodies();
+        return;
+    }
 
     if (m_pausePhx){
         if (m_manualStepPhx > 0){
@@ -8849,7 +8859,7 @@ void afNoiseModel::createFromAttribs(afNoiseModelAttribs *a_attribs)
 ///
 afVolume::afVolume(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::VOLUME, a_afWorld, a_modelPtr)
 {
-
+    clearResetFlag();
 }
 
 
@@ -8962,15 +8972,29 @@ void afVolume::update(double dt)
 {
 }
 
+void afVolume::updateSceneObjects()
+{
+    if (m_resetFlag){
+        resetTextures();
+    }
+    afBaseObject::updateSceneObjects();
+}
+
 ///
 /// \brief afVolume::reset
 ///
 void afVolume::reset()
 {
+    setResetFlag();
+}
+
+void afVolume::resetTextures()
+{
     cTexture3dPtr tex = copy3DTexture(m_originalTextureCopy);
     m_voxelObject->setTexture(tex);
     tex->markForUpdate();
     afBaseObject::reset();
+    clearResetFlag();
 }
 
 ///
