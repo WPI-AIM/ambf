@@ -7073,6 +7073,9 @@ bool afCamera::createWindow()
                                                " VIA ITS IMAGE / DEPTH TOPICS IF THOSE ARE SET TO TRUE" << endl;
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     }
+    else{
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    }
 
     m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
     if (s_windowIdx == 0){
