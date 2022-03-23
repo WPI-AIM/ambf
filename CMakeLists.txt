@@ -51,7 +51,7 @@ project (AMBF)
 set (CMAKE_CXX_STANDARD 11)
 
 # set version info
-file (READ ${PROJECT_SOURCE_DIR}/ambf_framework/version VERSION)
+file (READ ${PROJECT_SOURCE_DIR}/ambf_framework/version.txt VERSION)
 STRING (REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
 STRING (REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING (REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")

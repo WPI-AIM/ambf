@@ -45,7 +45,7 @@ cmake_minimum_required (VERSION 3.0.0)
 project (CHAI3D)
 
 # version info
-file (READ ${PROJECT_SOURCE_DIR}/src/version VERSION)
+file (READ ${PROJECT_SOURCE_DIR}/src/version.txt VERSION)
 STRING (REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")
 STRING (REGEX REPLACE ".*MINOR=([0-9]+).*" "\\1" MINOR_VERSION "${VERSION}")
 STRING (REGEX REPLACE ".*RELEASE=([0-9]+).*" "\\1" RELEASE_VERSION "${VERSION}")
