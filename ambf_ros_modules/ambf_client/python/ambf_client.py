@@ -72,14 +72,17 @@ class Client:
         self._objects_dict = {}
         self._sub_thread = []
         self._pub_thread = []
-        self._rate = 0
         self._world_name = ''
         self._common_obj_namespace = ''
         self._client_name = client_name
         self._world_handle = None
+        self._rate = None
         pass
 
-    def create_objs_from_rostopics(self):
+    def set_publish_rate(self, rate):
+        self._rate = rospy.Rate(rate)
+
+    def create_objs_from_rostopics(self, publish_rate):
         
         # Check if a node is running, if not create one
         # else get the name of the node
@@ -87,9 +90,8 @@ class Client:
             rospy.init_node(self._client_name)
         else:
             self._client_name = rospy.get_name()
-
+        self.set_publish_rate(publish_rate)
         rospy.on_shutdown(self.clean_up)
-        self._rate = rospy.Rate(1000)
         self._ros_topics = rospy.get_published_topics()
         # Find the common longest substring to make the object names shorter
         first_run = True
@@ -203,8 +205,8 @@ class Client:
                                                 tcp_nodelay=True, queue_size=10)
                 self._objects_dict[base_obj.get_name()] = base_obj
 
-    def connect(self):
-        self.create_objs_from_rostopics()
+    def connect(self, default_publish_rate=120):
+        self.create_objs_from_rostopics(default_publish_rate)
         self.start()
 
     def refresh(self):
