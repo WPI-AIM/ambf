@@ -555,7 +555,7 @@ void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, 
     // IF THE COMMAND IS OF TYPE FORCE
     switch (afCommand.cartesian_cmd_type) {
     case ambf_msgs::RigidBodyCmd::TYPE_FORCE:{
-        afRBPtr->m_activeControllerType =  afControlType::FORCE;
+        afRBPtr->m_activeControllerType = afControlType::FORCE;
         if (afRBPtr->m_bulletRigidBody){
             force.setValue(afCommand.wrench.force.x,
                            afCommand.wrench.force.y,
