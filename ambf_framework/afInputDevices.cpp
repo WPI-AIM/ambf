@@ -640,9 +640,13 @@ bool afSimulatedDevice::createFromAttribs(afSimulatedDeviceAttribs *a_attribs)
         // Since an existing root body is bound to the physical device whose afComm should already be
         // running
         if(attribs.m_sdeDefined){
-            std::string simDevName = "simulated_device_" + std::to_string(m_phyDev->m_CCU_Manager->s_inputDeviceCount) + modelName;
+            m_rootLink->setPassive(false);
+            m_rootLink->setNamespace(m_rootLink->getNamespace() + "/simulated_device/");
             m_rootLink->loadCommunicationPlugin(m_rootLink, a_attribs);
         }
+
+        // Initialize the default controller to be the force controller
+        m_rootLink->m_activeControllerType = afControlType::FORCE;
     }
     else{
         cerr << "ERROR! FAILED TO LOAD ROOT LINK FOR MODEL " << attribs.m_modelAttribs.m_filePath.c_str() << endl;
