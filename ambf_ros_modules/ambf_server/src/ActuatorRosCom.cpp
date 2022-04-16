@@ -58,6 +58,8 @@ void ActuatorRosCom::init(){
 }
 
 void ActuatorRosCom::reset_cmd(){
+    m_Cmd.actuate = false;
+    m_Cmd.body_name.data = "";
 }
 
 void ActuatorRosCom::sub_cb(ambf_msgs::ActuatorCmdConstPtr msg){
