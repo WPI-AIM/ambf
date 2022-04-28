@@ -56,7 +56,7 @@ using namespace ambf;
 
 class afCameraDepthStreamerPlugin: public afObjectPlugin{
 public:
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double) override;
