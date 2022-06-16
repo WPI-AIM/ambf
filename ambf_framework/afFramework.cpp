@@ -82,6 +82,7 @@ int afCamera::s_windowIdx = 0;
 bool afComm::s_globalOverride = false;
 int afComm::s_maxFreq = 1000;
 int afComm::s_minFreq = 50;
+string afComm::s_global_namespace_prefix = "";
 
 btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
 //------------------------------------------------------------------------------
@@ -628,6 +629,18 @@ void afComm::overrideMinPublishingFrequency(int freq)
 }
 
 
+///
+/// \brief afComm::setGlobalNamespacePrefix
+/// \param a_global_namespace_prefix
+///
+void afComm::setGlobalNamespacePrefix(string a_global_namespace_prefix){
+    s_global_namespace_prefix = a_global_namespace_prefix;
+    if (!s_global_namespace_prefix.empty()){
+        cerr << " INFO! FORCE PREPENDING GLOBAL NAMESPACE PREFIX \"" << s_global_namespace_prefix << "\" \n" ;
+    }
+}
+
+
 
 ///
 /// \brief afCartesianController::afCartesianController
@@ -898,15 +911,15 @@ string afIdentification::getTypeAsStr(){
 
 string afIdentification::getName(){return m_name;}
 
-string afIdentification::getNamespace(){return m_namespace;}
+string afIdentification::getNamespace(){return afComm::getGlobalNamespacePrefix() + m_namespace;}
 
-string afIdentification::getQualifiedName(){return m_namespace + m_name;}
+string afIdentification::getQualifiedName(){return getNamespace() + m_name;}
 
 void afIdentification::setName(string a_name){m_name = a_name;}
 
 void afIdentification::setNamespace(string a_namespace){m_namespace = a_namespace; }
 
-string afIdentification::getQualifiedIdentifier(){return m_namespace + m_identifier;}
+string afIdentification::getQualifiedIdentifier(){return getNamespace() + m_identifier;}
 
 
 ///
@@ -3829,10 +3842,10 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_damping = attribs.m_damping; // Initialize damping to 0
 
     // First we should search in the local Model space and if we don't find the body.
-    // On then we find the world space
+    // Only then we find the world space
 
-    string body1Name = m_namespace + m_parentName;
-    string body2Name = m_namespace + m_childName;
+    string body1Name = getNamespace() + m_parentName;
+    string body2Name = getNamespace() + m_childName;
 
     m_afParentBody = m_modelPtr->getRigidBody(body1Name, true);
     m_afChildBody = m_modelPtr->getRigidBody(body2Name, true);
@@ -5645,7 +5658,7 @@ void afModelManager::addChildsSceneObjectsToWorld(afBaseObjectPtr a_object)
 /// \brief afWorld::afWorld
 /// \param a_global_namespace
 ///
-afWorld::afWorld(string a_global_namespace): afIdentification(afType::WORLD), afModelManager(this){
+afWorld::afWorld(): afIdentification(afType::WORLD), afModelManager(this){
     m_maxIterations = 10;
 
     // reset simulation time
@@ -5714,7 +5727,6 @@ afWorld::afWorld(string a_global_namespace): afIdentification(afType::WORLD), af
     m_pickColor.setOrangeTomato();
     m_pickColor.setTransparencyLevel(0.3);
     m_namespace = "";
-    setGlobalNamespace(a_global_namespace);
 }
 
 afWorld::~afWorld()
@@ -5819,30 +5831,6 @@ bool afWorld::loadCommunicationPlugin(afWorldPtr a_worldPtr, afWorldAttribsPtr a
     }
 
     return result;
-}
-
-
-///
-/// \brief afWorld::getFullyQualifiedName
-/// \param a_name
-/// \return
-///
-string afWorld::resolveGlobalNamespace(string a_name){
-    string fully_qualified_name = getGlobalNamespace() + a_name;
-    fully_qualified_name = afUtils::removeAdjacentBackSlashes(fully_qualified_name);
-    return fully_qualified_name;
-}
-
-
-///
-/// \brief afWorld::setGlobalNamespace
-/// \param a_global_namespace
-///
-void afWorld::setGlobalNamespace(string a_global_namespace){
-    m_global_namespace = a_global_namespace;
-    if (!m_global_namespace.empty()){
-        cerr << " INFO! FORCE PREPENDING GLOBAL NAMESPACE \"" << m_global_namespace << "\" \n" ;
-    }
 }
 
 

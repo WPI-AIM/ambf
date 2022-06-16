@@ -98,7 +98,7 @@ struct CommandLineOptions{
     // Control whether to run headless or not
     bool showGUI; //
     // Override the default world namespace
-    std::string prepend_namespace;
+    std::string namespace_prefix;
     // The running speed of the simulation. 1.0 indicates a stepping of one second.
     double simulation_speed;
 
@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
             ("override_max_comm_freq", p_opt::value<int>(), "Override the maximum publishing frequency for all afObjects (default: 1000 Hz)")
             ("override_min_comm_freq", p_opt::value<int>(), "Override the minimum publishing frequency for all afObjects (default: 50 Hz)")
             ("show_gui,g", p_opt::value<bool>()->default_value(true), "Show GUI")
-            ("ns", p_opt::value<std::string>()->default_value(""), "Override the default (or specified in ADF) world namespace")
+            ("ns", p_opt::value<std::string>()->default_value(""), "Global namespace prefix for ROS Communication")
             ("sim_speed_factor,s", p_opt::value<double>()->default_value(1.0), "Override the speed of \"NON REAL-TIME\" simulation by a specified factor (Default 1.0)")
             ("plugins,", p_opt::value<std::string>()->default_value(""), "Simulator plugins to load, .e.g. "
                                                                 "--plugins <plugin1_filepath>, <plugin2_filepath> loads plugin1 and plugin2 simualtor plugin")
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
     g_cmdOpts.useFixedHtxTimeStep = var_map["fixed_htx_timestep"].as<bool>();
     g_cmdOpts.enableForceFeedback = var_map["enableforces"].as<bool>();
     g_cmdOpts.showGUI = var_map["show_gui"].as<bool>();
-    g_cmdOpts.prepend_namespace = var_map["ns"].as<std::string>();
+    g_cmdOpts.namespace_prefix = var_map["ns"].as<std::string>();
     g_cmdOpts.simulation_speed = var_map["sim_speed_factor"].as<double>();
     g_cmdOpts.simulator_plugins = var_map["plugins"].as<std::string>();
 
@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
         glfwSetErrorCallback(errorCallback);
 
         // set OpenGL version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
         // set active stereo mode
@@ -353,6 +353,8 @@ int main(int argc, char* argv[])
             glfwWindowHint(GLFW_STEREO, GL_FALSE);
         }
     }
+
+    cerr << "GLFW VERSION: " << glfwGetVersionString() << endl;
 
 
     //-----------------------------------------------------------------------
@@ -395,7 +397,8 @@ int main(int argc, char* argv[])
     g_adfLoaderPtr->loadTeleRoboticUnitsAttribs(launchAttribs.m_inputDevicesFilepath.c_str(), &tuAttribs, devIndexes);
 
     // create a dynamic world.
-    g_afWorld = new afWorld(g_cmdOpts.prepend_namespace);
+    afComm::setGlobalNamespacePrefix(g_cmdOpts.namespace_prefix);
+    g_afWorld = new afWorld();
     g_afWorld->m_physicsFrequency = g_cmdOpts.phxFrequency;
     g_afWorld->m_hapticsFrequency = g_cmdOpts.htxFrequency;
     g_afWorld->m_updateCounterLimit = g_cmdOpts.phxFrequency * 2;

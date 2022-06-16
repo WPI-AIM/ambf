@@ -280,6 +280,10 @@ public:
     // Override the Min Freq
     static void overrideMinPublishingFrequency(int freq);
 
+    static string getGlobalNamespacePrefix(){return s_global_namespace_prefix;}
+
+    static void setGlobalNamespacePrefix(string a_namespace_prefix);
+
 private:
     // Min publishing frequency
     uint m_minPubFreq=50;
@@ -293,6 +297,8 @@ private:
     static bool s_globalOverride;
     static int s_maxFreq;
     static int s_minFreq;
+
+    static string s_global_namespace_prefix;
 
     double m_timeStamp = 0.0;
 };
@@ -2105,7 +2111,7 @@ class afWorld: public afIdentification, public afComm, public afModelManager{
     friend class afModel;
 
 public:
-    afWorld(string a_global_namespace);
+    afWorld();
 
     virtual ~afWorld();
 
@@ -2205,12 +2211,6 @@ public:
     // This method build the collision graph based on the collision group numbers
     // defined in the bodies
     void buildCollisionGroups();
-
-    string resolveGlobalNamespace(string a_name);
-
-    string getGlobalNamespace(){return m_global_namespace;}
-
-    void setGlobalNamespace(string a_namespace);
 
     bool pickBody(const cVector3d& rayFromWorld, const cVector3d& rayToWorld);
 
@@ -2339,10 +2339,6 @@ public:
     uint m_updateCounterLimit = 2000;
 
 protected:
-
-    // If this string is set, it will force itself to preeced all nampespaces
-    // regardless of whether any namespace starts with a '/' or not.
-    string m_global_namespace;
 
     // Current time of simulation.
     double m_simulationTime;
