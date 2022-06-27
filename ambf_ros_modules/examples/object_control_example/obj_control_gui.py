@@ -99,6 +99,8 @@ class ObjectGUI:
         self.ry_scale = None
         self.rz_scale = None
 
+        self.step_size_scale = 1.0
+
         self.cartesian_mode = 0
         self.create_gui(self.App, obj_name)
 
@@ -240,7 +242,7 @@ class ObjectGUI:
         sv = StringVar()
         scale_input = Entry(app, textvariable=sv)
         scale_input.grid(row=row_count, column=0)
-        sv.set("1.0")
+        sv.set("3.0")
         self.px_scale = sv
 
         row_count = row_count + 1
@@ -264,7 +266,7 @@ class ObjectGUI:
         sv = StringVar()
         scale_input = Entry(app, textvariable=sv)
         scale_input.grid(row=row_count, column=0)
-        sv.set("1.0")
+        sv.set("3.0")
         self.py_scale = sv
 
         row_count = row_count + 1
@@ -299,13 +301,13 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        zero_xyz = Button(app, width=_width, command=self.zero_p_cb)
+        zero_xyz = Button(app, width=_width, command=self.zero_p_cb, text="Reset Position")
         zero_xyz.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_xyz_label = Label(app, text="Reset Position")
-        zero_xyz_label.grid(row=row_count, column=1)
+        # zero_xyz_label = Label(app, text="Reset Position")
+        # zero_xyz_label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
@@ -378,20 +380,64 @@ class ObjectGUI:
 
         row_count = row_count + 1
 
-        zero_rpy = Button(app, width=_width, command=self.zero_r_cb)
+        zero_rpy = Button(app, width=_width, command=self.zero_r_cb, text="Reset Rotation")
         zero_rpy.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_rpy_label = Label(app, text="Reset Rotation")
-        zero_rpy_label.grid(row=row_count, column=1)
+        # zero_rpy_label = Label(app, text="Reset Rotation")
+        # zero_rpy_label.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_all = Button(app, width=_width, command=self.zero_all_cb)
+        zero_all = Button(app, width=_width, command=self.zero_all_cb, text="Reset All")
         zero_all.grid(row=row_count, column=1)
 
         row_count = row_count + 1
 
-        zero_all_label = Label(app, text="Reset All")
-        zero_all_label.grid(row=row_count, column=1)
+        # zero_all_label = Label(app, text="Reset All")
+        # zero_all_label.grid(row=row_count, column=1)
+        self.init_keyboard_control(app)
+
+    def init_keyboard_control(self, app):
+        self.key_stack = []
+        inputs = [('w', 'Forth'),
+                  ('W', 'Forth'),
+                  ('a', 'Left'),
+                  ('A', 'Left'),
+                  ('s', 'Back'),
+                  ('S', 'Back'),
+                  ('d', 'Right'),
+                  ('D', 'Right'),
+                  ('Up', 'Up'),
+                  ('Down', 'Down'),
+                  ('Shift_L', 'Slow'),
+                  ('t', 'Roll+'),
+                  ('T', 'Roll+'),
+                  ('g', 'Roll-'),
+                  ('G', 'Roll-'),
+                  ('f', 'Pitch+'),
+                  ('F', 'Pitch+'),
+                  ('h', 'Pitch-'),
+                  ('H', 'Pitch-'),
+                  ('Left', 'Yaw+'),
+                  ('Right', 'Yaw-')]
+
+        for key, direction in inputs:
+            app.bind('<KeyPress-' + key + '>', functools.partial(key_down, self, direction))
+            app.bind('<KeyRelease-' + key + '>', functools.partial(key_up, self, direction))
+
+        app.bind('<FocusOut>', self.on_focus_out)
+
+    def on_focus_out(self, event):
+        self.key_stack = []
+
+
+def key_down(app, direction, event):
+    app.key_stack.append(direction)
+
+def key_up(app, direction, event):
+    app.key_stack.remove(direction)
+
+
+
