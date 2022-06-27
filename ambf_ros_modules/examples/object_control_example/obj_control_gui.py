@@ -242,7 +242,7 @@ class ObjectGUI:
         sv = StringVar()
         scale_input = Entry(app, textvariable=sv)
         scale_input.grid(row=row_count, column=0)
-        sv.set("3.0")
+        sv.set("1.0")
         self.px_scale = sv
 
         row_count = row_count + 1
@@ -266,7 +266,7 @@ class ObjectGUI:
         sv = StringVar()
         scale_input = Entry(app, textvariable=sv)
         scale_input.grid(row=row_count, column=0)
-        sv.set("3.0")
+        sv.set("1.0")
         self.py_scale = sv
 
         row_count = row_count + 1
