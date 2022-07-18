@@ -64,7 +64,7 @@ class afROSNode{
         if (s_initialized == false){
             int argc = 0;
             char **argv = 0;
-            ros::init(argc, argv, "ambf_comm_node");
+            ros::init(argc, argv, "ambf_comm_node", ros::init_options::AnonymousName);
             s_nodePtr = new ros::NodeHandle;
             s_initialized = true;
             std::cerr << "INFO! INITIALIZING ROS NODE HANDLE\n";
