@@ -141,9 +141,9 @@ class BaseObject(WatchDog):
         quat = self._state.pose.orientation
         explicit_quat = [quat.x, quat.y, quat.z, quat.w]
         # Edited python3 code
-        rpy = euler_from_quaternion(explicit_quat, 'szyx')
+        rpy = euler_from_quaternion(explicit_quat)
         # Initial python2 code
-        # rpy = transformations.euler_from_quaternion(explicit_quat, 'szyx')
+        # rpy = transformations.euler_from_quaternion(explicit_quat)
         pose = [self._state.pose.position.x,
                 self._state.pose.position.y,
                 self._state.pose.position.z,
