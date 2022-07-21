@@ -93,6 +93,7 @@ void DVRK_Bridge::init(){
     state_pub = n->advertise<std_msgs::String>(_namespace + "/set_robot_state", 10);
     servo_cf_pub = n->advertise<geometry_msgs::WrenchStamped>(_namespace + "/body/servo_cf", 10);
     force_orientation_lock_pub = n->advertise<std_msgs::Bool>(_namespace + "/body/set_cf_orientation_absolute", 10);
+    gravity_comp_ena_pub = n->advertise<std_msgs::Bool>(_namespace + "/use_gravity_compensation", 1);
 
     activeState = DVRK_UNINITIALIZED;
     _gripper_closed = false;
@@ -108,6 +109,10 @@ void DVRK_Bridge::init(){
     _on = true;
     usleep(300000);
     scale = 0.1;
+
+    std_msgs::Bool ena_gravity_comp;
+    ena_gravity_comp.data = true;
+    gravity_comp_ena_pub.publish(ena_gravity_comp);
 }
 
 void DVRK_Bridge::measured_js_cb(const sensor_msgs::JointStateConstPtr &msg){

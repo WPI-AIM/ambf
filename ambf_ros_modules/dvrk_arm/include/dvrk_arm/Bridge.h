@@ -106,6 +106,7 @@ private:
     ros::Publisher state_pub;
     ros::Publisher servo_cp_pub;
     ros::Publisher servo_jp_pub;
+    ros::Publisher gravity_comp_ena_pub;
 
     ros::Subscriber measured_cp_sub;
     ros::Subscriber measured_js_sub;
