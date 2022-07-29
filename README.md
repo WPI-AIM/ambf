@@ -26,7 +26,7 @@ external tools that include an extended version of CHAI-3D (developed alongside 
 
 ### 4. Usage:
 #### 4.1 Tested Platforms:
-AMBF has been tested on **Ubuntu 16.04** and **Ubuntu 18.04**. We need a few extra steps on **Ubuntu 14.04**, please create an issue if you would like to get instructions for that.
+AMBF has been tested on **Ubuntu 16.04**, **Ubuntu 18.04** and **Ubuntu 20.04**. We need a few extra steps on **Ubuntu 14.04**, please create an issue if you would like to get instructions for that.
 
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support.
 
