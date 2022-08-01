@@ -726,7 +726,9 @@ void updatePhysics(){
             }
         }
         g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
-        g_pluginManager.physicsUpdate(step_size);
+        if (!g_afWorld->isPhysicsPaused()){
+                g_pluginManager.physicsUpdate(step_size);
+        }
         phxSleep.sleep();
     }
     g_simulationFinished = true;
