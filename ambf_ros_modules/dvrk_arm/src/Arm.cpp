@@ -396,11 +396,27 @@ bool DVRK_Arm::is_gripper_pressed(){
 }
 
 bool DVRK_Arm::is_clutch_pressed(){
-    return m_bridge->_clutch_pressed;
+    return m_bridge->m_buttonHandles[ButtonEnum::CLUTCH]->isPressed();
 }
 
 bool DVRK_Arm::is_coag_pressed(){
-    return m_bridge->_coag_pressed;
+   return m_bridge->m_buttonHandles[ButtonEnum::COAG]->isPressed();
+}
+
+bool DVRK_Arm::is_op_present_pressed(){
+    return m_bridge->m_buttonHandles[ButtonEnum::OPERATORPRESENT]->isPressed();
+}
+
+bool DVRK_Arm::is_cam_pressed(){
+    return m_bridge->m_buttonHandles[ButtonEnum::CAMERA]->isPressed();
+}
+
+bool DVRK_Arm::is_cam_plus_pressed(){
+    return m_bridge->m_buttonHandles[ButtonEnum::CAM_PLUS]->isPressed();
+}
+
+bool DVRK_Arm::is_cam_minus_pressed(){
+    return m_bridge->m_buttonHandles[ButtonEnum::CAM_MINUS]->isPressed();
 }
 
 void DVRK_Arm::set_mode(const std::string &state, bool lock_wrench_ori){
@@ -445,7 +461,7 @@ void DVRK_Arm::set_wrench(const double &fx,const double &fy,const double &fz,con
 }
 
 void DVRK_Arm::set_arm_wrench(tf::Vector3 &force, tf::Vector3 &moment){
-    if(m_bridge->_clutch_pressed == true){
+    if(m_bridge->m_buttonHandles[ButtonEnum::CLUTCH]->isPressed() == true){
         force.setZero();
         moment.setZero();
     }
