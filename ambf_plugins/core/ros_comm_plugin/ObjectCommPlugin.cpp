@@ -308,22 +308,35 @@ void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, dou
                 // Constraint is active. Ignore request
                 return;
             }
-            string body_name = cmd.body_name.data;
-            if (cmd.use_offset){
-                // Offset of constraint (joint) in sensed body (child)
-                btTransform T_jINc;
-                T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
-                                           cmd.body_offset.position.y,
-                                           cmd.body_offset.position.z));
-
-                T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
-                                                cmd.body_offset.orientation.y,
-                                                cmd.body_offset.orientation.z,
-                                                cmd.body_offset.orientation.w));
-                castPtr->actuate(body_name, T_jINc);
+            else if (cmd.use_sensor_data){
+                std::string sensorName = cmd.sensor_identifier.data;
+                afSensorPtr senPtr = actPtr->m_afWorld->getSensor(sensorName);
+                if (senPtr){
+                    castPtr->actuate(senPtr);
+                }
+                else{
+                    cerr << "ERROR! IN ACTUATOR CALLBACK " << castPtr->getName() <<
+                            ", REQUESTED SENSOR NAME " << sensorName << " NOT FOUND. IGNORING!" << endl;
+                }
             }
             else{
-                castPtr->actuate(body_name);
+                string body_name = cmd.body_name.data;
+                if (cmd.use_offset){
+                    // Offset of constraint (joint) in sensed body (child)
+                    btTransform T_jINc;
+                    T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
+                                               cmd.body_offset.position.y,
+                                               cmd.body_offset.position.z));
+
+                    T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
+                                                    cmd.body_offset.orientation.y,
+                                                    cmd.body_offset.orientation.z,
+                                                    cmd.body_offset.orientation.w));
+                    castPtr->actuate(body_name, T_jINc);
+                }
+                else{
+                    castPtr->actuate(body_name);
+                }
             }
         }
         else{
