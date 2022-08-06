@@ -52,3 +52,32 @@ This is an example of what you should see:
 
 ### Note:
 If you accidentally drop or misplace the box, you can click the simulation window and hit `CRTL + R` to reset the object poses in the simulation.
+
+### SOFT-BODY GRASPING (Beta Feature):
+
+Run the simulation as follows:
+
+``` bash
+cd <ambf>/bin/lin-x86_64/
+./ambf_simulator --launch_file <ambf>/ambf_ros_modules/examples/sensors_actuators_example/launch.yaml -l 0,1,2,3,4
+```
+The last two ADF files represent a textured ground and a softbody box.
+
+Similar to before, run the GUI with joint sliders and the sensing_and_grasping.py script.
+
+```
+cd <ambf>/ambf_ros_modules/examples/sensors_actuators_example/
+python sensing_and_grasping.py
+```
+
+By moving the KUKA robot such that the visible sensors touch the softbody, one can press the grasp button (from sensing_and_grasping GUI) to grasp the softbody. Pressing the release button will release the softbody.
+
+This is what the demo should look like.
+
+<img src="Images/sb_grasp1.png" title="Pre Grasp" width="30%" >
+
+<img src="Images/sb_grasp2.png" title="Grasp" width="30%">
+
+<img src="Images/sb_grasp3.png" title="Grasp and lift" width="30%">
+
+Checkout the `sensing_and_grasping.py` script for understanding how to use the `constraint actuators` for grasping a softbody using the new beta API.
