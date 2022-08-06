@@ -5154,8 +5154,36 @@ afRigidBodyPtr afObjectManager::getRootRigidBody(afRigidBodyPtr a_bodyPtr){
     return rootParentBody;
 }
 
+///
+/// \brief afObjectManager::getJoint
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
 afJointPtr afObjectManager::getJoint(string a_name, bool suppress_warning){
     return (afJointPtr)getBaseObject(a_name, getJointMap(), suppress_warning);
+}
+
+
+///
+/// \brief afObjectManager::getActuator
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afActuatorPtr afObjectManager::getActuator(string a_name, bool suppress_warning){
+    return (afActuatorPtr)getBaseObject(a_name, getActuatorMap(), suppress_warning);
+}
+
+///
+/// \brief afObjectManager::getSensor
+/// \param a_name
+/// \param suppress_warning
+/// \return
+///
+afSensorPtr afObjectManager::getSensor(string a_name, bool suppress_warning){
+    return (afSensorPtr)getBaseObject(a_name, getSensorMap(), suppress_warning);
+
 }
 
 
