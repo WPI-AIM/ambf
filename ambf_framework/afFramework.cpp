@@ -72,8 +72,6 @@ double afWorld::m_enclosureH;
 int afWorld::m_maxIterations;
 
 GLFWwindow* afCamera::s_mainWindow = nullptr;
-GLFWmonitor** afCamera::s_monitors;
-int afCamera::s_numMonitors = 0;
 int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
@@ -6713,7 +6711,7 @@ void afWorld::removePickingConstraint(){
 ///
 afCamera::afCamera(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::CAMERA, a_afWorld, a_modelPtr){
     m_camera = nullptr;
-    s_monitors = glfwGetMonitors(&s_numMonitors);
+    m_monitors = glfwGetMonitors(&m_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
     m_targetVisualMarker->m_material->setBlack();
@@ -7031,10 +7029,10 @@ bool afCamera::createWindow()
 
     }
 
-    if (m_monitorNumber < 0 || m_monitorNumber >= s_numMonitors){
+    if (m_monitorNumber < 0 || m_monitorNumber >= m_numMonitors){
         cerr << "INFO! CAMERA \"" << m_name << "\" MONITOR NUMBER \"" << m_monitorNumber
-             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
-        if (s_cameraIdx < s_numMonitors){
+             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< m_numMonitors <<"\", USING DEFAULT" << endl;
+        if (s_cameraIdx < m_numMonitors){
             m_monitorNumber = s_cameraIdx;
         }
         else{
@@ -7042,17 +7040,15 @@ bool afCamera::createWindow()
         }
     }
 
-    m_monitor = s_monitors[m_monitorNumber];
+    m_monitor = m_monitors[m_monitorNumber];
 
     // compute desired size of window
     const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * mode->width;
+    int w = 0.8 * mode->width;
     int h = 0.5 * mode->height;
     int x = 0.5 * (mode->width - w);
     int y = 0.5 * (mode->height - h);
 
-    m_win_x = x;
-    m_win_y = y;
     m_width = w;
     m_height = h;
 
@@ -7088,8 +7084,15 @@ bool afCamera::createWindow()
     // get width and height of window
     glfwGetWindowSize(m_window, &m_width, &m_height);
 
+
+    int xpos, ypos;
+    glfwGetMonitorPos(m_monitor, &xpos, &ypos);
+    x += xpos; y += ypos;
+
     // set position of window
-    glfwSetWindowPos(m_window, m_win_x, m_win_y);
+    glfwSetWindowPos(m_window, x, y);
+
+//    glfwSetWindowMonitor(m_window, m_monitor, m_win_x, m_win_y, m_width, m_height, mode->refreshRate);
 
     // initialize GLEW library
 #ifdef GLEW_VERSION
@@ -7741,11 +7744,16 @@ void afCamera::makeWindowFullScreen(bool a_fullscreen)
         }
         else
         {
-            int w = 0.8 * mode->height;
+            int w = 0.8 * mode->width;
             int h = 0.5 * mode->height;
             int x = 0.5 * (mode->width - w);
             int y = 0.5 * (mode->height - h);
             glfwSetWindowMonitor(m_window, NULL, x, y, w, h, mode->refreshRate);
+
+            int xpos, ypos;
+            glfwGetMonitorPos(m_monitor, &xpos, &ypos);
+            x += xpos; y += ypos;
+            glfwSetWindowPos(m_window, x, y);
             glfwSwapInterval(0);
         }
     }

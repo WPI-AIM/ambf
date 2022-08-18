@@ -1911,9 +1911,9 @@ public:
     GLFWwindow* m_window;
 
     static GLFWwindow* s_mainWindow;
-    static GLFWmonitor** s_monitors;
+    GLFWmonitor** m_monitors;
     GLFWmonitor* m_monitor;
-    static int s_numMonitors;
+    int m_numMonitors;
 
     cStereoMode m_stereoMode;
 
@@ -1935,7 +1935,6 @@ public:
 
     // Window parameters
     int m_width, m_height;
-    int m_win_x, m_win_y;
 
     vector<string> m_controllingDevNames;
 
