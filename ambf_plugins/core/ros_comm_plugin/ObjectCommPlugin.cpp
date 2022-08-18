@@ -69,7 +69,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     m_objectPtr = a_afObjectPtr;
 
     if (m_objectPtr == nullptr){
-        cerr << "ERROR! OBJECT IS NULLPTR, FAILED TO INITIALIZE COMMUNICATION PLUGIN" << endl;
+        cerr << "ERROR! OBJECT IS NULLPTR, FAILED TO INITIALIZE COMMUNICATION PLUGIN." << endl;
         return 0;
     }
 
@@ -153,7 +153,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         break;
     default:
     {
-        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET" << endl;
+        cerr << "WARNING! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET. IGNORING." << endl;
         return -1;
     }
         break;
