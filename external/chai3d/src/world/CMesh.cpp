@@ -1497,7 +1497,7 @@ void cMesh::renderMesh(cRenderOptions& a_options)
     //--------------------------------------------------------------------------
     // RENDER OBJECT (OBJECT BUFFER + SHADERS)
     //--------------------------------------------------------------------------
-    if ((m_shaderProgram != nullptr) && (!a_options.m_creating_shadow_map))
+    if ((m_shaderProgram != nullptr) && (!a_options.m_creating_shadow_map || m_is_voxelObject)) // If a voxelObject, use shaderPgm for shadowrendering
     {
         // enable shader
         m_shaderProgram->use(this, a_options);

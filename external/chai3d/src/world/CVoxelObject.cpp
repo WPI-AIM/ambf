@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Sonny Chan
     \author    Francois Conti
+    \contributor    Adnan Munawar
     \version   3.2.0 $Rev: 2175 $
 */
 //==============================================================================
@@ -141,6 +142,8 @@ cVoxelObject::cVoxelObject()
     
     // render only front faces
     setUseCulling(true);
+
+    m_is_voxelObject = true;
 }
 
 
