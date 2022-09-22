@@ -6283,7 +6283,9 @@ void afWorld::render(afRenderOptions &options)
     afBaseObjectMap::iterator camIt;
     for (camIt = getCameraMap()->begin(); camIt != getCameraMap()->end(); ++ camIt){
         afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
-        cameraPtr->render(options);
+        if (!cameraPtr->overrideRendering()){
+            cameraPtr->render(options);
+        }
     }
 
     // Update all plugins, world, then models and then objects
@@ -6711,6 +6713,7 @@ void afWorld::removePickingConstraint(){
 ///
 afCamera::afCamera(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::CAMERA, a_afWorld, a_modelPtr){
     m_camera = nullptr;
+    setOverrideRendering(false);
     m_monitors = glfwGetMonitors(&m_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
