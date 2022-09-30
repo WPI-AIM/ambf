@@ -32,8 +32,13 @@ void afCameraDepthStreamerPlugin::graphicsUpdate()
         int width = m_cameraPtr->m_depthBufferColorImage->getWidth();
         int height = m_cameraPtr->m_depthBufferColorImage->getHeight();
 
+        double noise = 0;
+
         for (int idx = 0 ; idx < width * height ; idx++, ++pcMsg_x, ++pcMsg_y, ++pcMsg_z, ++pcMsg_r, ++pcMsg_g, ++pcMsg_b){
-            *pcMsg_x = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 0];
+            if (m_cameraPtr->getDepthNoiseModel()->isEnabled()){
+                noise = m_cameraPtr->getDepthNoiseModel()->generate();
+            }
+            *pcMsg_x = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 0] + noise;
             *pcMsg_y = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 1];
             *pcMsg_z = m_cameraPtr->getDepthPointCloud()->getData()[idx * m_cameraPtr->getDepthPointCloud()->getNumFields() + 2];
 
