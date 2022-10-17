@@ -1301,6 +1301,27 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                             }
                                         }
                                     }
+
+                                    // Only record if this setting is enabled so as not to not mess with the other collisions
+                                    if (a_settings.m_checkForNearestCollisionOnly){
+                                        cCollisionEvent newCollisionEvent;
+
+                                        // report basic collision data
+                                        newCollisionEvent.m_type = C_COL_VOXEL;
+                                        newCollisionEvent.m_object = this;
+                                        newCollisionEvent.m_triangles = nullptr;
+                                        newCollisionEvent.m_voxelIndexX = t0;
+                                        newCollisionEvent.m_voxelIndexY = t1;
+                                        newCollisionEvent.m_voxelIndexZ = t2;
+                                        newCollisionEvent.m_localPos = t_collisionPoint;
+                                        newCollisionEvent.m_localNormal = t_collisionNormal;
+                                        newCollisionEvent.m_squareDistance = collisionDistanceSq;
+                                        newCollisionEvent.m_adjustedSegmentAPoint = a_segmentPointA;
+                                        newCollisionEvent.m_posV01 = 0.;
+                                        newCollisionEvent.m_posV02 = 0.;
+
+                                        a_recorder.m_nearestCollision.m_events.push_back(newCollisionEvent);
+                                    }
                                 }
                             }
                         }
