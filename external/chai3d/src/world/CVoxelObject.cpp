@@ -1136,6 +1136,7 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
     // COMPUTE COLLISIONS
     ////////////////////////////////////////////////////////////////////////////
     int counter = 0;
+    int min_idx = -1;
 
     // compute collision radius; this also handle the case when the tool has radius 0.
     double r = cMax(collisionRadius + 0.9 * voxelLargestSize, 0.9 * voxelLargestSize);
@@ -1232,6 +1233,7 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                     cVector3d t_p, t_n;
                                     cVector3d t_collisionPoint, t_collisionNormal;
                                     double t_collisionDistanceSq;
+                                    bool inside = false;
 
                                     if (a_settings.m_collisionRadius == 0)
                                     {
@@ -1244,6 +1246,7 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                         {
                                             // intersection occurred
                                             hit = true;
+                                            inside = true;
 
                                             counter++;
 
@@ -1261,6 +1264,8 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                                 voxelIndexX = t0;
                                                 voxelIndexY = t1;
                                                 voxelIndexZ = t2;
+
+                                                min_idx = counter-1;
                                             }
                                         }
                                     }
@@ -1281,6 +1286,7 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                         {
                                             // intersection occurred
                                             hit = true;
+                                            inside = true;
 
                                             counter++;
 
@@ -1298,12 +1304,13 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                                                 voxelIndexX = t0;
                                                 voxelIndexY = t1;
                                                 voxelIndexZ = t2;
+                                                min_idx = counter-1;
                                             }
                                         }
                                     }
 
                                     // Only record if this setting is enabled so as not to not mess with the other collisions
-                                    if (a_settings.m_checkForNearestCollisionOnly){
+                                    if (a_settings.m_checkForNearestCollisionOnly && inside){
                                         cCollisionEvent newCollisionEvent;
 
                                         // report basic collision data
@@ -1338,7 +1345,7 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
         // need to update the nearest collision.
         if (a_settings.m_checkForNearestCollisionOnly)
         {
-            // no new collision event is create. We just check if we need
+            // no new collision event is created. We just check if we need
             // to update the nearest collision
             if(collisionDistanceSq <= a_recorder.m_nearestCollision.m_squareDistance)
             {
@@ -1354,6 +1361,14 @@ bool cVoxelObject::computeOtherCollisionDetection(cVector3d& a_segmentPointA,
                 a_recorder.m_nearestCollision.m_adjustedSegmentAPoint = a_segmentPointA;
                 a_recorder.m_nearestCollision.m_posV01 = collisionPointV01;
                 a_recorder.m_nearestCollision.m_posV02 = collisionPointV02;
+
+                // Set the closest collision event to the first element in list of events
+                // Swap with the first element if different.
+                if (min_idx > 0){
+                    cCollisionEvent tempEvent = a_recorder.m_nearestCollision.m_events[0];
+                    a_recorder.m_nearestCollision.m_events[0] = a_recorder.m_nearestCollision.m_events[min_idx];
+                    a_recorder.m_nearestCollision.m_events[min_idx] = tempEvent;
+                }
 
                 // report advanced collision data
                 if (!a_settings.m_returnMinimalCollisionData)
