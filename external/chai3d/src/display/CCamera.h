@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Francois Conti
     \author    Dan Morris
+    \contributor Adnan Munawar
     \version   3.2.0 $Rev: 2164 $
 */
 //==============================================================================
@@ -276,6 +277,10 @@ public:
 
     //! If __true__, then use projection matrix specified in m_projectionMatrix.
     bool m_useCustomModelViewMatrix;
+
+    // Used adding stereo to 2D front and back layers
+    double m_stereoOffsetW;
+    double m_stereoOffsetH;
 
 
     //-----------------------------------------------------------------------
@@ -527,7 +532,7 @@ protected:
 protected:
 
     //! Renders a 2D layer within this camera's view.
-    void renderLayer(cGenericObject* a_graph, int a_width, int a_height);
+    void renderLayer(cGenericObject* a_graph, int a_width, int a_height, int a_stereoOffsetW=0, int a_stereoOffsettH=0);
 };
 
 //------------------------------------------------------------------------------

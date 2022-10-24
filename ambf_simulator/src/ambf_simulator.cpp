@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
         glfwSetErrorCallback(errorCallback);
 
         // set OpenGL version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
         // set active stereo mode
@@ -1265,6 +1265,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - Toggle visibility of label updates
         else if (a_key == GLFW_KEY_U){
+            printf("Toggling upadating the labels\n");
             g_afRenderOptions.m_updateLabels = !g_afRenderOptions.m_updateLabels;
         }
 

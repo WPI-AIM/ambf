@@ -72,8 +72,6 @@ double afWorld::m_enclosureH;
 int afWorld::m_maxIterations;
 
 GLFWwindow* afCamera::s_mainWindow = nullptr;
-GLFWmonitor** afCamera::s_monitors;
-int afCamera::s_numMonitors = 0;
 int afCamera::s_numWindows = 0;
 int afCamera::s_cameraIdx = 0;
 int afCamera::s_windowIdx = 0;
@@ -6313,7 +6311,9 @@ void afWorld::render(afRenderOptions &options)
     afBaseObjectMap::iterator camIt;
     for (camIt = getCameraMap()->begin(); camIt != getCameraMap()->end(); ++ camIt){
         afCameraPtr cameraPtr = (afCameraPtr)camIt->second;
-        cameraPtr->render(options);
+        if (!cameraPtr->overrideRendering()){
+            cameraPtr->render(options);
+        }
     }
 
     // Update all plugins, world, then models and then objects
@@ -6741,7 +6741,8 @@ void afWorld::removePickingConstraint(){
 ///
 afCamera::afCamera(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::CAMERA, a_afWorld, a_modelPtr){
     m_camera = nullptr;
-    s_monitors = glfwGetMonitors(&s_numMonitors);
+    setOverrideRendering(false);
+    m_monitors = glfwGetMonitors(&m_numMonitors);
     m_targetVisualMarker = new cMesh();
     cCreateSphere(m_targetVisualMarker, 0.03);
     m_targetVisualMarker->m_material->setBlack();
@@ -7059,10 +7060,10 @@ bool afCamera::createWindow()
 
     }
 
-    if (m_monitorNumber < 0 || m_monitorNumber >= s_numMonitors){
+    if (m_monitorNumber < 0 || m_monitorNumber >= m_numMonitors){
         cerr << "INFO! CAMERA \"" << m_name << "\" MONITOR NUMBER \"" << m_monitorNumber
-             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< s_numMonitors <<"\", USING DEFAULT" << endl;
-        if (s_cameraIdx < s_numMonitors){
+             << "\" IS NOT IN RANGE OF AVAILABLE MONITORS \""<< m_numMonitors <<"\", USING DEFAULT" << endl;
+        if (s_cameraIdx < m_numMonitors){
             m_monitorNumber = s_cameraIdx;
         }
         else{
@@ -7070,17 +7071,15 @@ bool afCamera::createWindow()
         }
     }
 
-    m_monitor = s_monitors[m_monitorNumber];
+    m_monitor = m_monitors[m_monitorNumber];
 
     // compute desired size of window
     const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
-    int w = 0.5 * mode->width;
+    int w = 0.8 * mode->width;
     int h = 0.5 * mode->height;
     int x = 0.5 * (mode->width - w);
     int y = 0.5 * (mode->height - h);
 
-    m_win_x = x;
-    m_win_y = y;
     m_width = w;
     m_height = h;
 
@@ -7116,8 +7115,15 @@ bool afCamera::createWindow()
     // get width and height of window
     glfwGetWindowSize(m_window, &m_width, &m_height);
 
+
+    int xpos, ypos;
+    glfwGetMonitorPos(m_monitor, &xpos, &ypos);
+    x += xpos; y += ypos;
+
     // set position of window
-    glfwSetWindowPos(m_window, m_win_x, m_win_y);
+    glfwSetWindowPos(m_window, x, y);
+
+//    glfwSetWindowMonitor(m_window, m_monitor, m_win_x, m_win_y, m_width, m_height, mode->refreshRate);
 
     // initialize GLEW library
 #ifdef GLEW_VERSION
@@ -7184,6 +7190,9 @@ bool afCamera::assignWindowCallbacks(afCameraWindowCallBacks *a_callbacks)
 ///
 void afCamera::computeDepthOnCPU()
 {
+
+    m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
+
     cTransform projMatInv = m_camera->m_projectionMatrix;
     projMatInv.m_flagTransform = false;
     projMatInv.invert();
@@ -7230,7 +7239,6 @@ void afCamera::computeDepthOnCPU()
 
         }
     }
-
 }
 
 
@@ -7239,37 +7247,10 @@ void afCamera::computeDepthOnCPU()
 ///
 void afCamera::computeDepthOnGPU()
 {
-
-    m_bufferDepthImage->copyTo(m_depthMesh->m_texture->m_image);
-    m_depthMesh->m_texture->markForUpdate();
-
     // Change the parent world for the camera so it only render's the depth quad (Mesh)
     m_camera->setParentWorld(m_dephtWorld);
 
-    // Update the dimensions scale information.
-    float n = -m_camera->getNearClippingPlane();
-    float f = -m_camera->getFarClippingPlane();
-    double fva = m_camera->getFieldViewAngleRad();
-    double ar = m_camera->getAspectRatio();
-
-    double maxX;
-    double maxY;
-    double maxZ;
-    if (isOrthographic()){
-        maxX = m_camera->getOrthographicViewWidth();
-        maxY = maxX / ar;
-    }
-    else{
-        maxY = 2.0 * cAbs(f) * cTanRad(fva/2.0);
-        maxX = maxY * ar;
-    }
-    maxZ = f-n;
-
-    cVector3d maxWorldDimensions(maxX, maxY, maxZ);
-
-    m_depthMesh->getShaderProgram()->setUniform("maxWorldDimensions", maxWorldDimensions);
-    m_depthMesh->getShaderProgram()->setUniformf("nearPlane", n);
-    m_depthMesh->getShaderProgram()->setUniformf("farPlane", f);
+    m_depthMesh->getShaderProgram()->setUniformi("diffuseMap", 3); // TextureUnit of frambuffer depth attachment
 
     cTransform invProj = m_camera->m_projectionMatrix;
     invProj.m_flagTransform = false;
@@ -7281,72 +7262,14 @@ void afCamera::computeDepthOnGPU()
 
     m_camera->setParentWorld(m_afWorld->getChaiWorld());
 
-    m_depthBuffer->copyImageBuffer(m_depthBufferColorImage, GL_UNSIGNED_INT);
+    // bind texture
+    glBindTexture(GL_TEXTURE_2D, m_depthBuffer->m_imageBuffer->getTextureId());
 
-    //    // bind texture
-    //    glBindTexture(GL_TEXTURE_2D, m_depthBuffer->m_imageBuffer->getTextureId());
+    // settings
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-    //    // settings
-    //    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-
-    //    // copy pixel data if required
-    //    glGetTexImage(GL_TEXTURE_2D,
-    //                  0,
-    //                  GL_RGBA,
-    //                  GL_FLOAT,
-    //                  (GLvoid*)(m_depthBufferColorImage2)
-    //                  );
-
-    uint width = m_depthBufferColorImage->getWidth();
-    uint height = m_depthBufferColorImage->getHeight();
-    uint bbp = m_depthBufferColorImage->getBytesPerPixel();
-
-    double varScale = pow(2, sizeof(uint) * 8);
-
-    for (uint y_span = 0 ; y_span < height ; y_span++){
-        for (uint x_span = 0 ; x_span < width ; x_span++){
-            double noise;
-            if (m_depthNoise.isEnabled()){
-                noise = m_depthNoise.generate();
-            }
-            else{
-                noise = 0.0;
-            }
-
-            uint idx = (y_span * width + x_span);
-            unsigned char xByte0 = m_depthBufferColorImage->getData()[idx * bbp + 0];
-            unsigned char xByte1 = m_depthBufferColorImage->getData()[idx * bbp + 1];
-            unsigned char xByte2 = m_depthBufferColorImage->getData()[idx * bbp + 2];
-            unsigned char xByte3 = m_depthBufferColorImage->getData()[idx * bbp + 3];
-
-            unsigned char yByte0 = m_depthBufferColorImage->getData()[idx * bbp + 4];
-            unsigned char yByte1 = m_depthBufferColorImage->getData()[idx * bbp + 5];
-            unsigned char yByte2 = m_depthBufferColorImage->getData()[idx * bbp + 6];
-            unsigned char yByte3 = m_depthBufferColorImage->getData()[idx * bbp + 7];
-
-            unsigned char zByte0 = m_depthBufferColorImage->getData()[idx * bbp + 8];
-            unsigned char zByte1 = m_depthBufferColorImage->getData()[idx * bbp + 9];
-            unsigned char zByte2 = m_depthBufferColorImage->getData()[idx * bbp + 10];
-            unsigned char zByte3 = m_depthBufferColorImage->getData()[idx * bbp + 11];
-
-            uint ix = uint(xByte3 << 24 | xByte2 << 16 | xByte1 << 8 | xByte0);
-            uint iy = uint(yByte3 << 24 | yByte2 << 16 | yByte1 << 8 | yByte0);
-            uint iz = uint(zByte3 << 24 | zByte2 << 16 | zByte1 << 8 | zByte0);
-
-            double px = double(ix) / varScale;
-            double py = double(iy) / varScale;
-            double pz = double(iz) / varScale;
-            // Reconstruct from scales applied in the Frag Shader
-            px = (px * maxX - (maxX / 2.0));
-            py = (py  * maxY - (maxY / 2.0));
-            pz = (pz * maxZ  + n);
-
-            // Convert from OpenGL to AMBF coordinate frame.
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 0] = pz + noise;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 1] = px;
-            m_depthPC.m_data[idx * m_depthPC.m_numFields + 2] = py;
-        }
-    }
+    // copy data to depthPC
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, (GLvoid*)(m_depthPC.getData()));
 }
 
 ///
@@ -7521,7 +7444,6 @@ void afCamera::renderFrameBuffer(){
 
         m_frameBuffer->renderView();
         m_frameBuffer->copyImageBuffer(m_bufferColorImage);
-        m_frameBuffer->copyDepthBuffer(m_bufferDepthImage);
 
         deactivatePreProcessingShaders();
     }
@@ -7688,7 +7610,7 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
     // Set up the frame buffer
     m_depthBuffer = new cFrameBuffer();
 
-    m_depthBuffer->setup(m_camera, imageAttribs->m_width, imageAttribs->m_height, true, false, GL_RGBA16);
+    m_depthBuffer->setup(m_camera, imageAttribs->m_width, imageAttribs->m_height, true, false, GL_RGBA32F);
 
     m_depthPC.setup(imageAttribs->m_width, imageAttribs->m_height, 3);
 
@@ -7717,8 +7639,7 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
     m_depthMesh->m_vertices->setTexCoord(5, 1.0, 1.0, 1.0);
 
     m_depthMesh->computeAllNormals();
-    m_depthMesh->m_texture = cTexture2d::create();
-    m_depthMesh->m_texture->m_image->allocate(m_publishImageResolution.m_width, m_publishImageResolution.m_height, GL_RGBA, GL_UNSIGNED_BYTE);
+    m_depthMesh->m_texture = m_frameBuffer->m_depthBuffer;
     m_depthMesh->setUseTexture(true);
 
     m_dephtWorld->addChild(m_depthMesh);
@@ -7769,11 +7690,16 @@ void afCamera::makeWindowFullScreen(bool a_fullscreen)
         }
         else
         {
-            int w = 0.8 * mode->height;
+            int w = 0.8 * mode->width;
             int h = 0.5 * mode->height;
             int x = 0.5 * (mode->width - w);
             int y = 0.5 * (mode->height - h);
             glfwSetWindowMonitor(m_window, NULL, x, y, w, h, mode->refreshRate);
+
+            int xpos, ypos;
+            glfwGetMonitorPos(m_monitor, &xpos, &ypos);
+            x += xpos; y += ypos;
+            glfwSetWindowPos(m_window, x, y);
             glfwSwapInterval(0);
         }
     }

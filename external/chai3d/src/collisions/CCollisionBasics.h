@@ -138,6 +138,9 @@ struct cCollisionEvent
     //! Projection of collision point onto line going from Vertex0 to Vertex2 of triangle/segment/point (if available). Value is bounded to [0.0, 1.0].
     double m_posV02;
 
+    //! A vector containing the number of collision events
+    std::vector<cCollisionEvent> m_events;
+
     /*!
     If the position of segment A is modified to take into account motion
     (see m_adjustObjectMotion in cCollisionSettings), the value is stored here.
@@ -164,6 +167,8 @@ struct cCollisionEvent
         m_squareDistance    = C_LARGE;
         m_posV01            = 0.0;
         m_posV02            = 0.0;
+
+        m_events.clear();
     }
 };
 

@@ -873,7 +873,6 @@ protected:
 
     void addChildsSceneObjectsToWorld(afBaseObjectPtr a_object);
 
-    afObjectManager m_objectManager;
     afModelMap m_modelsMap;
     afWorldPtr m_afWorld;
 };
@@ -1906,14 +1905,18 @@ public:
 
     double getRenderTimeStamp();
 
+    bool overrideRendering(){return m_overrideRenderingFlag;}
+
+    void setOverrideRendering(bool val){m_overrideRenderingFlag = val;}
+
 public:
     bool m_cam_pressed;
     GLFWwindow* m_window;
 
     static GLFWwindow* s_mainWindow;
-    static GLFWmonitor** s_monitors;
+    GLFWmonitor** m_monitors;
     GLFWmonitor* m_monitor;
-    static int s_numMonitors;
+    int m_numMonitors;
 
     cStereoMode m_stereoMode;
 
@@ -1935,7 +1938,6 @@ public:
 
     // Window parameters
     int m_width, m_height;
-    int m_win_x, m_win_y;
 
     vector<string> m_controllingDevNames;
 
@@ -2046,6 +2048,11 @@ private:
     cShaderProgramPtr m_preprocessingShaderProgram;
 
     double m_renderTimeStamp=0.0;
+
+    // Flag to skip rendering from this camera in the world::render method
+    // The current application is for a plugin that wants to take control
+    // of rendering from the camera.
+    bool m_overrideRenderingFlag;
 };
 
 
