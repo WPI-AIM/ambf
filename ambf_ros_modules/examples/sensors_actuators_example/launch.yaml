@@ -7,3 +7,5 @@ multibody configs:
   - "../../../ambf_models/descriptions/multi-bodies/robots/blender-kuka-lbr-med.yaml" #0
   - "./sensors_actuators.yaml" #1
   - "./box.yaml" #2
+  - "../../../ambf_models/descriptions/multi-bodies/environments/TexturedGround/env.yaml" #3
+  - "../../../ambf_models/descriptions/multi-bodies/sb/magic_box.yaml" #4

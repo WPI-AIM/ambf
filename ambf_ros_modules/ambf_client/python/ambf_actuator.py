@@ -74,8 +74,19 @@ class Actuator(BaseObject):
         self._cmd.body_name.data = obj_name
         self._cmd.actuate = True
 
+    def actuate_from_sensor_data(self, sensor_identifer):
+        """
+        :param sensor_name:
+        :return:
+        """
+        self._cmd.use_sensor_data = True
+        self._cmd.sensor_identifier.data = sensor_identifer
+        self._cmd.actuate = True
+
     def deactuate(self):
         """
         :return:
         """
         self._cmd.actuate = False
+        self._cmd.use_sensor_data = False
+        self._cmd.sensor_identifier.data = ''

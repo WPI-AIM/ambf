@@ -783,9 +783,9 @@ public:
 
     afJointPtr getJoint(string a_name, bool suppress_warning=false);
 
-    afActuatorPtr getActuator(string a_name);
+    afActuatorPtr getActuator(string a_name, bool suppress_warning=false);
 
-    afSensorPtr getSensor(string a_name);
+    afSensorPtr getSensor(string a_name, bool suppress_warning=false);
 
     afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
 
