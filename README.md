@@ -24,14 +24,36 @@ bodies, and multi-link puzzles coupled with real-time haptic interaction via sev
 RL Agents on real-time data with the simulation in the loop. This framework is built around several
 external tools that include an extended version of CHAI-3D (developed alongside AMBF), BULLET-Physics, Open-GL, GLFW, yaml-cpp, pyyaml, and Eigen to name a few. Each external library has its license that can be found in the corresponding subfolder.
 
-### 4. Usage:
-#### 4.1 Tested Platforms:
+### 4. Featured Projects:
+
+These are some example projects that are developed on/using AMBF. Please click on the project title to navigate to the project webpage.
+
+#### 4.1 [Bone Drilling Simulator](https://github.com/LCSR-SICKKIDS/volumetric_drilling):
+
+https://user-images.githubusercontent.com/5005445/199542980-4732e80d-4274-448e-a680-435182046b20.mp4
+
+The bone drilling simulator also provides stereoscopic view on supported Virtual Reality (VR) Head Mounted Displays (HMDs):
+
+https://user-images.githubusercontent.com/5005445/199543694-d9a2ded3-c716-4a5e-8a5f-b74e54d55d23.mp4
+
+#### 4.2 [Surgical Robotics Challenge](https://github.com/collaborative-robotics/surgical_robotics_challenge):
+
+https://user-images.githubusercontent.com/5005445/199545181-894dc156-6da2-4b63-8c90-54b8f3dd23f9.mp4
+
+#### 4.3 [Space Robotics Challenge](https://github.com/adnanmunawar/space_robotics_challenge):
+
+https://user-images.githubusercontent.com/5005445/199545275-104b27ea-be60-4d6a-b8ca-9351deed2df0.mp4
+
+
+
+### 5. Usage:
+#### 5.1 Tested Platforms:
 AMBF has been tested on **Ubuntu 16.04**, **Ubuntu 18.04** and **Ubuntu 20.04**. We need a few extra steps on **Ubuntu 14.04**, please create an issue if you would like to get instructions for that.
 
 Even though it is recommended to use Linux for the full feature set of AMBF Simulator using ROS, AMBF has been tested on **MacOS Maverick** and **MacOS Mojave** without ROS support.
 
 
-#### 4.2 Building:
+#### 5.2 Building:
 On Linux machines, you might need to install the `libasound2-dev` package and external library dependencies.
 
 ```
@@ -71,7 +93,7 @@ You can also permanently add the install location in your .bashrc with the follo
 
 `echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc`
 
-#### 4.3 Running the Simulator:
+#### 5.3 Running the Simulator:
 Having completed the steps above running is Simulator is easy.
 
 On **Linux OS**, open a terminal and run `roscore`.
@@ -87,12 +109,12 @@ cd ~/ambf/bin/<os>
 ./ambf_simulator
 ```
 
-#### 4.4 Launching Specific AMBF Description Format (ADF) Files:
+#### 5.4 Launching Specific AMBF Description Format (ADF) Files:
 There are two ways to launch an ADF file:
 1. Using the integer index of the filename specified in the launch file
 2. Providing the explicit filename(s).
 
-##### 4.4.1 Using the Integer Index in the launch file
+##### 5.4.1 Using the Integer Index in the launch file
 The -l command-line argument can be used to launch a specific ADF file at launch using indexing. The ADF files are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. By default, launching the simulator without the `-l` command line argument loads the first `1` ADF file defined in the (`launch.yaml`)[./ambf_models/descriptions/launch.yaml]. To launch a specific ADF file you can use the `-l` flag with its integer index as follows:
 
 ```
@@ -101,7 +123,7 @@ cd ~/ambf/bin/<os>
 ```
 This command will launch the 4th ADF file defined in the [`launch.yaml`](./ambf_models/descriptions/launch.yaml) file. To launch multiple ADF files, you can use a comma-separated list (without spaces in between) of integers indices e.g.`./ambf_simulator -l 1,6,10`. This in turn would load the ADF files defined at 1, 6, and the 10th index in the `launch.yaml` file.
 
-##### 4.4.2 Providing the fully qualified filename
+##### 5.4.2 Providing the fully qualified filename
 The second option is to use the `-a` flag. For example, if one has an AMBF description file in the home directory `/users/potato/tests/robot.yaml`, this file can be launched directly as follows
 
 ```
@@ -119,19 +141,19 @@ cd ~/ambf/bin/<os>
 
 Lastly, the `-l` and `-a` flags can be used together to launch some files based on the index and some based on the filenames.
 
-##### 4.4.3 Note:
+##### 5.4.3 Note:
 The entry point to the AMBF Simulator is via the [launch](./ambf_models/descriptions/launch.yaml) file located in `ambf/ambf_models/descriptions/launch.yaml`. This is a meta-data file that contains filepaths of a world description file, an input-device file and scene-data files (that may define a group of links, joints, sensors, actuators, cameras, lights, etc.).
 
-### 5 Creating custom AMBF Description Format (ADF) Files:
+### 6 Creating custom AMBF Description Format (ADF) Files:
 Robots and scene data are defined using the ADF files. These can be created either by hand or by using the [`blender-ambf`](https://github.com/WPI-AIM/ambf_addon) addon. Please refer to its [documentation](https://github.com/WPI-AIM/ambf_addon) for loading and creating ADF files in Blender.
 
-### 6 Interacting with the Robots/Bodies in the Simulator:
+### 7 Interacting with the Robots/Bodies in the Simulator:
 There are multiple ways of interacting with the bodies in the simulator. If you are using Linux, the
 provided Python client offers a convenient user interface and robust API.
 
 For the full feature set of the AMBF Simulator, it is advised that you install it on Linux (Ubuntu) 16, 17, or 18. Other variants might be supported but have not yet been tested.
 
-#### 6.1 The AMBF Python Client
+#### 7.1 The AMBF Python Client
 The simplest way to interact with bodies in the AMBF simulator is by using the high-speed Asynchronous Communication Interface that is implemented via ROS-topics in the AMBF Framework Library. One can use either C++ or Python for this purpose. A convenient Python Client is provided for easy interaction.
 
 ##
@@ -209,10 +231,10 @@ if num_joints > 1:
 _client.clean_up()
 ```
 
-### 7 Raven and DVRK Kinematics Controller Client
+### 8 Raven and DVRK Kinematics Controller Client
 See [here](/ambf_controller/README.md) for more information.
 
-### 8 AMBF Network Setup:
+### 9 AMBF Network Setup:
 To subscribe and publish data using AMBF over multiple machines, the following steps would need to be followed:
 1. Check the connectivity between the machines (example: using ssh and ping)
 2. Edit the `/etc/hosts` and add the hostnames of the machines, so that the machines can find each other over the network (example: similar to [Adding hostname to /etc/hosts](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/))
@@ -222,7 +244,7 @@ To subscribe and publish data using AMBF over multiple machines, the following s
 6. Open a terminal and type the command:  `sudo apt-get install gufw`
 7. Next type `sudo gufw` (type the password when prompted) and ensure both the Incoming and Outgoing traffic is allowed.
 
-### 9 Docker with visualization
+### 10 Docker with visualization
 
 Please follow these [instructions](https://github.com/collaborative-robotics/docker-ambf).
 
