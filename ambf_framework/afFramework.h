@@ -545,6 +545,10 @@ public:
 
     virtual void reset();
 
+    virtual afBaseObjectAttribsPtr getAttributes(){
+        return m_attributes;
+    }
+
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -658,9 +662,15 @@ protected:
 
     vector<afBaseObjectPtr> m_childrenObjects;
 
+    virtual void storeAttributes(const afBaseObjectAttribsPtr a_attribs){
+        m_attributes = a_attribs;
+    }
+
 private:
     // Whether or not this object is visible
     bool m_visible = false;
+
+    afBaseObjectAttribsPtr m_attributes;
 };
 
 
@@ -2581,7 +2591,6 @@ public:
     void clearResetFlag(){m_resetFlag = false;}
 
 protected:
-    afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
     cMultiImagePtr m_multiImage;
 

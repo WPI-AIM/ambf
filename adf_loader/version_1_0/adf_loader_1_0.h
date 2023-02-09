@@ -103,6 +103,10 @@ public:
     static afVector3d positionFromNode(YAML::Node* node);
 
     static afMatrix3d rotationFromNode(YAML::Node* node);
+
+    static void saveRawData(YAML::Node* node, afBaseObjectAttributes* a_attribs);
+
+    static void saveRawData(YAML::Node* node, afLaunchAttributes* a_attribs);
 };
 
 
