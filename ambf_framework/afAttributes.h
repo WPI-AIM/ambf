@@ -400,6 +400,16 @@ public:
     }
 };
 
+struct afSpecificationData{
+    string m_type;
+    string m_rawData;
+
+    friend std::ostream& operator << (std::ostream& out, const afSpecificationData& data){
+        out << "Specification Type: " << data.m_type << "\nRaw Data: \n" << data.m_rawData;
+        return out;
+    }
+};
+
 
 ///
 /// \brief The afBaseObjectAttributes struct
@@ -410,6 +420,15 @@ public:
         m_pathsResolved = false;
         m_namespaceResolved = false;
     }
+
+    virtual void setSpecificationData(const afSpecificationData& a_data){
+        m_specificationData = a_data;
+    }
+
+    virtual afSpecificationData getSpecificationData(){
+        return m_specificationData;
+    }
+
     // Identification attribs. Is used to determine what type of object this is (Rigid Body, Soft Body, Sensor, etc.)
     afIdentificationAttributes m_identificationAttribs;
 
@@ -439,6 +458,9 @@ public:
 protected:
     bool m_pathsResolved;
     bool m_namespaceResolved;
+
+private:
+    afSpecificationData m_specificationData;
 };
 
 
@@ -1391,6 +1413,14 @@ public:
     vector<afPath> m_modelFilepaths;
     vector<afPluginAttributes> m_pluginAttribs;
 
+    virtual void setSpecificationData(const afSpecificationData& a_data){
+        m_specificationData = a_data;
+    }
+
+    virtual afSpecificationData getSpecificationData(){
+        return m_specificationData;
+    }
+
     virtual bool resolveRelativePathAttribs(){
         afPath a_parentPath = m_filePath.parent_path();
 
@@ -1408,6 +1438,8 @@ public:
 
         return true;
     }
+private:
+    afSpecificationData m_specificationData;
 };
 
 }
