@@ -3907,7 +3907,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     m_pvtA = m_afParentBody->getInverseInertialOffsetTransform() * m_pvtA;
     m_axisA = m_afParentBody->getInverseInertialOffsetTransform().getBasis() * m_axisA;
 
-    m_pvtB = to_btVector(a_attribs->m_childPivot);
+    m_pvtB = to_btVector(a_attribs->m_childPivot * m_afChildBody->m_scale);
     m_axisB = to_btVector(a_attribs->m_childAxis);
     m_axisB.normalize();
     m_pvtB = m_afChildBody->getInverseInertialOffsetTransform() * m_pvtB;
