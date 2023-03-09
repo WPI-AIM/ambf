@@ -8904,6 +8904,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
     }
 
     loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }

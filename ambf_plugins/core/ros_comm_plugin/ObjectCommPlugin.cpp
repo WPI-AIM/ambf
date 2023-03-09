@@ -159,6 +159,13 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         success = true;
     }
         break;
+    case afType::VOLUME:
+    {
+        m_objectCommPtr.reset(new ambf_comm::Object(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_objectCommPtr->set_identifier(objQualifiedIdentifier);
+        success = true;
+    }
+        break;
     default:
     {
         cerr << "WARNING! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET. IGNORING." << endl;
@@ -227,6 +234,13 @@ void afObjectCommunicationPlugin::physicsUpdate(double dt)
         afVehiclePtr vehPtr = (afVehiclePtr)m_objectPtr;
         vehicleFetchCommand(vehPtr, dt);
         vehicleUpdateState(vehPtr, dt);
+    }
+        break;
+    case afType::VOLUME:{
+        afVolumePtr objPtr = (afVolumePtr)m_objectPtr;
+        volumeUpdateState(objPtr, dt);
+        volumeFetchCommand(objPtr, dt);
+        cerr << "INFO! UPDATE VOLUME STATE CALLED \n";
     }
         break;
     default:
@@ -1028,12 +1042,36 @@ void afObjectCommunicationPlugin::pointCloudUpdateState(afPointCloudPtr pointClo
 
 void afObjectCommunicationPlugin::volumeFetchCommand(afVolumePtr volPtr, double dt)
 {
+    ambf_msgs::ObjectCmd cmd = m_objectCommPtr->get_command();
+    if (cmd.enable_position_controller){
+        cTransform pose;
+        cMatrix3d rot;
+        cQuaternion quat(cmd.pose.orientation.w, cmd.pose.orientation.x, cmd.pose.orientation.y, cmd.pose.orientation.z);
+        pose.setLocalPos(cVector3d(cmd.pose.position.x, cmd.pose.position.y, cmd.pose.position.z));
+        quat.toRotMat(rot);
+        pose.setLocalRot(rot);
+
+        volPtr->setLocalTransform(pose);
+    }
 
 }
 
 void afObjectCommunicationPlugin::volumeUpdateState(afVolumePtr volPtr, double dt)
 {
+    cQuaternion quat;
+    quat.fromRotMat(volPtr->getLocalRot());
+    ambf_msgs::ObjectState state;
+    state.name.data = volPtr->getQualifiedName();
+    state.pose.position.x = volPtr->getLocalPos().x();
+    state.pose.position.y = volPtr->getLocalPos().y();
+    state.pose.position.z = volPtr->getLocalPos().z();
+    state.pose.orientation.x = quat.x;
+    state.pose.orientation.y = quat.y;
+    state.pose.orientation.z = quat.z;
+    state.pose.orientation.w = quat.w;
 
+    m_objectCommPtr->set_state(state);
+    m_objectCommPtr->enableComm();
 }
 #endif
 
