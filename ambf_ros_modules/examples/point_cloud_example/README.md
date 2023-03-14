@@ -21,6 +21,10 @@ cd <path_to_this_folder>
 python point_cloud_example.py
 ```
 
+### Demo:
+
+![ambf_point_cloud](https://user-images.githubusercontent.com/5005445/225105999-51d7cc6b-5fba-4bda-abf0-afb0cb3cfe0c.gif)
+
 ### Notes
 1. When AMBF simulator launches it will listen on a specific topic for point cloud data. This topic is
 `/ambf/env/World/point_cloud`. You may add topics by calling the ROS Param server as such
@@ -52,5 +56,5 @@ msg.header.frame_id = 'BODY NAME'
 ```
 
 ### TODO
-1. At the moment the point cloud is redner via OpenGL points. We may add spherical points in the future.
+1. At the moment the point cloud is render via OpenGL points. We may add spherical points in the future.
 2. The point clouds are rendered as black squares, Need to add support for colored points.
