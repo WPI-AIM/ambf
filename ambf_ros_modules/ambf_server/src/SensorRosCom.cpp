@@ -58,6 +58,9 @@ void SensorRosCom::init(){
 }
 
 void SensorRosCom::reset_cmd(){
+    for (int i = 0 ; i < m_Cmd.actuate.size() ; i++){
+        m_Cmd.actuate[i] = false;
+    }
 }
 
 void SensorRosCom::sub_cb(ambf_msgs::SensorCmdConstPtr msg){
