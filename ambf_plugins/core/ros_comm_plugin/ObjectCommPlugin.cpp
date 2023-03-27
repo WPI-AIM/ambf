@@ -148,7 +148,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     case afType::VEHICLE:
     {
         m_vehicleCommPtr.reset(new ambf_comm::Vehicle(objName, objNamespace, minFreq, maxFreq, timeOut));
-        m_actuatorCommPtr->set_identifier(objQualifiedIdentifier);
+        m_vehicleCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
