@@ -924,6 +924,8 @@ public:
 
     void estimateInertia();
 
+    void setGravity(const cVector3d& a_gravity);
+
     inline double getMass(){return m_mass;}
 
     inline btVector3 getInertia(){return m_inertia;}
@@ -974,6 +976,10 @@ protected:
 
     // Inertia
     btVector3 m_inertia;
+
+    // Gravity
+    cVector3d m_gravity;
+    bool m_overrideGravity;
 };
 
 ///

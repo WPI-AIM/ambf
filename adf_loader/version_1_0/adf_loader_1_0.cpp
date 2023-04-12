@@ -743,7 +743,8 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
 
     YAML::Node massNode = node["mass"];
     YAML::Node inertiaNode = node["inertia"];
-    YAML::Node inertialOffset = node["inertial offset"];
+    YAML::Node inertialOffsetNode = node["inertial offset"];
+    YAML::Node gravityNode = node["gravity"];
 
     bool valid = true;
 
@@ -767,9 +768,9 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
         attribs->m_estimateInertia = true;
     }
 
-    if(inertialOffset.IsDefined()){
-        YAML::Node inertialOffsetPos = inertialOffset["position"];
-        YAML::Node inertialOffsetRot = inertialOffset["orientation"];
+    if(inertialOffsetNode.IsDefined()){
+        YAML::Node inertialOffsetPos = inertialOffsetNode["position"];
+        YAML::Node inertialOffsetRot = inertialOffsetNode["orientation"];
         attribs->m_estimateInertialOffset = false;
 
         if (inertialOffsetPos.IsDefined()){
@@ -784,6 +785,11 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
     }
     else{
         attribs->m_estimateInertialOffset = true;
+    }
+
+    if (gravityNode.IsDefined()){
+        attribs->m_overrideGravity = true;
+        attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
     }
 
     return valid;
@@ -2597,6 +2603,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node jointCFMNode = node["joint cfm"];
     YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
     YAML::Node shadersNode = node["shaders"];
+    YAML::Node gravityNode = node["gravity"];
 
     bool valid = true;
 
@@ -2615,6 +2622,11 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         attribs->m_identificationAttribs.m_namespace = nameSpaceNode.as<string>();
     }
 
+    if (gravityNode.IsDefined()){
+        attribs->m_overrideGravity = true;
+        attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
+    }
+
     // Load Rigid Bodies
     for (size_t i = 0; i < rigidBodiesNode.size(); ++i) {
         afRigidBodyAttributes rbAttribs;
@@ -2624,6 +2636,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             rbAttribs.m_identifier = identifier;
             rbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             rbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
+            if (!rbAttribs.m_inertialAttribs.m_overrideGravity && attribs->m_overrideGravity){
+                rbAttribs.m_inertialAttribs.m_overrideGravity = true;
+                rbAttribs.m_inertialAttribs.m_gravity = attribs->m_gravity;
+            }
             attribs->m_rigidBodyAttribs.push_back(rbAttribs);
         }
     }
@@ -2637,6 +2653,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             sbAttribs.m_identifier = identifier;
             sbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             sbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
+            if (!sbAttribs.m_inertialAttribs.m_overrideGravity && attribs->m_overrideGravity){
+                sbAttribs.m_inertialAttribs.m_overrideGravity = true;
+                sbAttribs.m_inertialAttribs.m_gravity = attribs->m_gravity;
+            }
             attribs->m_softBodyAttribs.push_back(sbAttribs);
         }
     }

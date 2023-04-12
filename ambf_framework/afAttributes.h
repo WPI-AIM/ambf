@@ -294,6 +294,7 @@ struct afInertialAttributes{
 public:
     afInertialAttributes(){
         m_mass = 1.0;
+        m_overrideGravity = false;
         m_estimateInertia = true;
         m_estimateInertialOffset = true;
     }
@@ -302,6 +303,8 @@ public:
 
     double m_mass;
     afVector3d m_inertia;
+    afVector3d m_gravity;
+    bool m_overrideGravity;
     bool m_estimateInertia;
     afTransform m_inertialOffset;
     afSurfaceAttributes m_surfaceAttribs;
@@ -1098,6 +1101,8 @@ public:
     afShaderAttributes m_shaderAttribs;
 
     bool m_enableComm;
+    bool m_overrideGravity;
+    afVector3d m_gravity;
 
     vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     vector <afSoftBodyAttributes> m_softBodyAttribs;

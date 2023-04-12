@@ -1,4 +1,4 @@
-//==============================================================================
+﻿//==============================================================================
 /*
     Software License Agreement (BSD License)
     Copyright (c) 2019-2021, AMBF
@@ -1944,6 +1944,7 @@ afInertialObject::afInertialObject(afType a_type, afWorldPtr a_afWorld, afModelP
     m_bulletSoftBody = nullptr;
     m_bulletCollisionShape = nullptr;
     m_bulletMotionState = nullptr;
+    m_overrideGravity = false;
 }
 
 
@@ -1989,6 +1990,14 @@ void afInertialObject::estimateInertia()
         // compute inertia
         m_bulletCollisionShape->calculateLocalInertia(m_mass, m_inertia);
 
+    }
+}
+
+void afInertialObject::setGravity(const cVector3d &a_gravity)
+{
+    if(m_bulletRigidBody){
+        m_bulletRigidBody->setGravity(to_btVector(a_gravity));
+        cerr << "INFO! SETTING " << m_name << "'s GRAVITY TO: " << a_gravity.str() << endl;
     }
 }
 
@@ -2583,6 +2592,12 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     addChildSceneObject(m_collisionMesh, cTransform());
     m_afWorld->m_bulletWorld->addRigidBody(m_bulletRigidBody);
 
+    if (a_attribs->m_inertialAttribs.m_overrideGravity){
+        m_overrideGravity = true;
+        m_gravity << a_attribs->m_inertialAttribs.m_gravity;
+        setGravity(m_gravity);
+    }
+
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
     setGlobalRemapIdx(remap_idx);
 
@@ -2667,6 +2682,9 @@ void afRigidBody::reset()
     m_bulletRigidBody->clearForces();
     m_bulletRigidBody->setLinearVelocity(zero);
     m_bulletRigidBody->setAngularVelocity(zero);
+    if (m_overrideGravity){
+        setGravity(m_gravity);
+    }
 //    cTransform T_i = getInitialTransform();
 //    setLocalTransform(T_i);
     afBaseObject::reset();
@@ -5912,7 +5930,7 @@ void afWorld::reset(){
 ///
 void afWorld::setGravity(afVector3d &vec)
 {
-    m_bulletWorld->setGravity(btVector3(vec(0), vec(1), vec(2)));
+    m_bulletWorld->setGravity(to_btVector(vec));
     m_bulletSoftBodyWorldInfo->m_gravity << vec;
 }
 
