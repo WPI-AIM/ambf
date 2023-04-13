@@ -1086,6 +1086,7 @@ public:
     afModelAttributes(){
         m_ignoreInterCollision = false;
         m_enableComm = true;
+        m_overrideGravity = false;
     }
     ~afModelAttributes(){
 //        for (int i = 0 ; i < m_sensorAttribs.size() ; i++){

@@ -791,6 +791,9 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
         attribs->m_overrideGravity = true;
         attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
     }
+    else{
+        attribs->m_overrideGravity = false;
+    }
 
     return valid;
 }
@@ -2625,6 +2628,9 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     if (gravityNode.IsDefined()){
         attribs->m_overrideGravity = true;
         attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
+    }
+    else{
+        attribs->m_overrideGravity = false;
     }
 
     // Load Rigid Bodies
