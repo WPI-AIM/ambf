@@ -62,8 +62,7 @@ Install the following dependencies if not present:
 sudo apt install libasound2-dev libgl1-mesa-dev xorg-dev
 ```
 
-Install the appropriate `ROS 1` version for your specific Linux distribution based on the instructions here http://wiki.ros.org/ROS/Installation.
-
+**Optional but recommended:** Install the appropriate `ROS 1` version for your specific Linux distribution based on the instructions here http://wiki.ros.org/ROS/Installation.
 Source the ROS installation by following the instructions in Section `1.5 Environment Setup` here (`http://wiki.ros.org/noetic/Installation/Ubuntu`). Note: Change the ROS version based on which ROS you have installed.
 
 Now we can proceed to build **AMBF**:
@@ -76,7 +75,7 @@ cmake ..
 make
 ```
 
-Source the correct folder to achieve system-wide availability of **AMBF** ROS modules.
+**Optional but recommended (If building with ROS support):** Source the correct folder to achieve system-wide availability of **AMBF** ROS modules.
 
 ```
 cd ~/ambf/build/
