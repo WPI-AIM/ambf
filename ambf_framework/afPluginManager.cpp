@@ -46,16 +46,21 @@
 using namespace std;
 using namespace  ambf;
 
-void afSimulatorPluginManager::init(int argc, char** argv, const afWorldPtr a_afWorld){
-    for (vector<afSimulatorPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
-        if ((*it)->init(argc, argv, a_afWorld) == afInitStatus::ERROR){
-            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
-            m_plugins.erase(it);
+bool afSimulatorPluginManager::loadPlugin(int argc, char **argv, const afWorldPtr a_afWorld, string lib_name, string plugin_name, string path){
+    return loadPlugin(argc, argv, a_afWorld, afSimulatorPlugin::Create(lib_name, plugin_name, path));
+}
+
+bool afSimulatorPluginManager::loadPlugin(int argc, char **argv, const afWorldPtr a_afWorld, afSimulatorPlugin *plugin){
+    bool res = false;
+    if (plugin){
+        if (plugin->init(argc, argv, a_afWorld) >= afInitStatus::SUCCESS){
+            res = add(plugin);
         }
         else{
-            ++it;
+            cerr << "ERROR! PLUGIN " << plugin->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
         }
     }
+    return res;
 }
 
 void afSimulatorPluginManager::keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods){
@@ -108,31 +113,20 @@ bool afSimulatorPluginManager::close(){
 }
 
 bool afWorldPluginManager::loadPlugin(afWorldPtr worldPtr, afWorldAttribsPtr attribs, string lib_name, string plugin_name, string path){
-    bool res = load<afWorld, afWorldAttributes>(worldPtr, attribs, lib_name, plugin_name, path);
-    return res;
+    return loadPlugin(worldPtr, attribs, afWorldPlugin::Create(lib_name, plugin_name, path));
 }
 
 bool afWorldPluginManager::loadPlugin(afWorldPtr worldPtr, afWorldAttribsPtr attribs, afWorldPlugin *plugin){
     bool res = false;
     if (plugin){
-        if (plugin->init(worldPtr, attribs)){
+        if (plugin->init(worldPtr, attribs) >= afInitStatus::SUCCESS){
             res = add(plugin);
+        }
+        else{
+            cerr << "ERROR! PLUGIN " << plugin->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
         }
     }
     return res;
-}
-
-void ambf::afWorldPluginManager::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs)
-{
-    for (vector<afWorldPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
-        if ((*it)->init(a_afWorld, a_worldAttribs) == afInitStatus::ERROR){
-            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
-            m_plugins.erase(it);
-        }
-        else{
-            ++it;
-        }
-    }
 }
 
 void afWorldPluginManager::onModelAdd(const afModelPtr a_modelPtr)
@@ -193,32 +187,21 @@ bool ambf::afWorldPluginManager::close()
 }
 
 bool afModelPluginManager::loadPlugin(afModelPtr modelPtr, afModelAttribsPtr attribs, string lib_name, string plugin_name, string path){
-    bool res = load<afModel, afModelAttributes>(modelPtr, attribs, lib_name, plugin_name, path);
-    return res;
+    return loadPlugin(modelPtr, attribs, afModelPlugin::Create(lib_name, plugin_name, path));
 }
 
 bool afModelPluginManager::loadPlugin(afModelPtr modelPtr, afModelAttribsPtr attribs, afModelPlugin *plugin)
 {
     bool res = false;
     if (plugin){
-        if (plugin->init(modelPtr, attribs)){
+        if (plugin->init(modelPtr, attribs) >= afInitStatus::SUCCESS){
             res = add(plugin);
+        }
+        else{
+            cerr << "ERROR! PLUGIN " << plugin->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
         }
     }
     return res;
-}
-
-void afModelPluginManager::init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs)
-{
-    for (vector<afModelPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
-        if ((*it)->init(a_afModel, a_modelAttribs) == afInitStatus::ERROR){
-            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
-            m_plugins.erase(it);
-        }
-        else{
-            ++it;
-        }
-    }
 }
 
 void afModelPluginManager::onObjectAdd(const afBaseObjectPtr a_objectPtr)
@@ -265,31 +248,20 @@ bool afModelPluginManager::close()
 }
 
 bool afBaseObjectPluginManager::loadPlugin(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, string lib_name, string plugin_name, string path){
-    bool res = load<afBaseObject, afBaseObjectAttributes>(objPtr, attribs, lib_name, plugin_name, path);
-    return res;
+   return loadPlugin(objPtr, attribs, afObjectPlugin::Create(lib_name, plugin_name, path));
 }
 
 bool afBaseObjectPluginManager::loadPlugin(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, afObjectPlugin* plugin){
     bool res = false;
     if (plugin){
-        if (plugin->init(objPtr, attribs)){
+        if (plugin->init(objPtr, attribs) >= afInitStatus::SUCCESS){
             res = add(plugin);
+        }
+        else{
+            cerr << "ERROR! PLUGIN " << plugin->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING!\n";
         }
     }
     return res;
-}
-
-void afBaseObjectPluginManager::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
-{
-    for (vector<afObjectPlugin*>::iterator it = m_plugins.begin() ; it != m_plugins.end() ;){
-        if ((*it)->init(a_afObjectPtr, a_objectAttribs) == afInitStatus::ERROR){
-            cerr << "ERROR! PLUGIN " << (*it)->getFilename() << " FAILED ON INITIALIZATION THEREFORE IGNORING\n";
-            m_plugins.erase(it);
-        }
-        else{
-            ++it;
-        }
-    }
 }
 
 void afBaseObjectPluginManager::graphicsUpdate()

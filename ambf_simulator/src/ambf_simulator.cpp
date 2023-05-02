@@ -467,16 +467,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    // Load plugins.
-    vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
-    for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){
-        g_pluginManager.add(plugin_filepaths[pi], plugin_filepaths[pi]);
-    }
-
-    for (int pA = 0 ; pA < launchAttribs.m_pluginAttribs.size() ; pA++){
-        g_pluginManager.add(launchAttribs.m_pluginAttribs[pA].m_filename, launchAttribs.m_pluginAttribs[pA].m_name, launchAttribs.m_pluginAttribs[pA].m_path.c_str());
-    }
-
     g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
 
 
@@ -490,7 +480,15 @@ int main(int argc, char* argv[])
     g_inputDevices->createFromAttribs(&tuAttribs);
 
 
-    g_pluginManager.init(argc, argv, g_afWorld);
+    // Load plugins.
+    vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
+    for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){
+        g_pluginManager.loadPlugin(argc, argv, g_afWorld, plugin_filepaths[pi], plugin_filepaths[pi]);
+    }
+
+    for (int pA = 0 ; pA < launchAttribs.m_pluginAttribs.size() ; pA++){
+        g_pluginManager.loadPlugin(argc, argv, g_afWorld, launchAttribs.m_pluginAttribs[pA].m_filename, launchAttribs.m_pluginAttribs[pA].m_name, launchAttribs.m_pluginAttribs[pA].m_path.c_str());
+    }
 
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
