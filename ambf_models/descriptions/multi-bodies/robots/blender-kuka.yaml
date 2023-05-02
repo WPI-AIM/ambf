@@ -10,6 +10,7 @@ high resolution path: ../../../meshes/blender_afmb/kuka_lwr/high_res/
 low resolution path: ../../../meshes/blender_afmb/kuka_lwr/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/
+gravity: {x: 0., y: 0., z: 0.}
 joint erp: 0.5
 joint cfm: 0.3
 BODY base:
