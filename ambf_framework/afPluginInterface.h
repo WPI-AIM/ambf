@@ -168,8 +168,10 @@ public: static TPtr Create(const std::string &_filename,
             }
         }
 
-        if (!found)
+        if (!found){
+            cerr << "ERROR! PLUGIN: " << fullname << " NOT FOUND. TRYING WITHOUT PATH!"  "\n";
             fullname = filename;
+        }
 
         fptr_union_t registerFunc;
         std::string registerName = "CreatePlugin";
@@ -177,8 +179,8 @@ public: static TPtr Create(const std::string &_filename,
         void *dlHandle = dlopen(fullname.c_str(), RTLD_LAZY|RTLD_GLOBAL);
         if (!dlHandle)
         {
-            cerr << "Failed to load plugin " << fullname << ": "
-                  << dlerror() << "\n";
+            cerr << "ERROR! FAILED TO LOAD PLUGIN: " << fullname << ": "
+                  << dlerror() << "!\n";
             return result;
         }
 
@@ -186,8 +188,8 @@ public: static TPtr Create(const std::string &_filename,
 
         if (!registerFunc.ptr)
         {
-            cerr << "Failed to resolve " << registerName
-                  << ": " << dlerror();
+            cerr << "ERROR! FAILED TO RESOLVE " << registerName
+                  << ": " << dlerror() << "!\n";
             return result;
         }
 
