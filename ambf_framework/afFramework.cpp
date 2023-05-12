@@ -3858,63 +3858,21 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
     // First we should search in the local Model space and if we don't find the body.
     // Only then we find the world space
 
-    string body1Name = getNamespace() + m_parentName;
-    string body2Name = getNamespace() + m_childName;
-
-    m_afParentBody = m_modelPtr->getRigidBody(body1Name, true);
-    m_afChildBody = m_modelPtr->getRigidBody(body2Name, true);
 
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getJointMap());
     setGlobalRemapIdx(remap_idx);
 
-    // If either body not found
-    if (m_afParentBody == nullptr || m_afChildBody == nullptr){
+    m_afParentBody = findConnectingBody(m_parentName);
+    m_afChildBody = findConnectingBody(m_childName);
 
-        if (m_afParentBody == nullptr){
-            m_afParentBody = m_afWorld->getRigidBody(body1Name + getGlobalRemapIdx(), true);
-        }
-        if (m_afChildBody == nullptr){
-            m_afChildBody = m_afWorld->getRigidBody(body2Name + getGlobalRemapIdx(), true);
-        }
+    if (m_afParentBody == nullptr){
+        cerr <<"ERROR! JOINT: \"" << m_name << "\'s\" PARENT BODY \"" << m_parentName <<"\" NOT FOUND" << endl;
+        return 0;
     }
 
-    // If we couldn't find the body with name_remapping, it might have been
-    // Defined in another ambf file. Search without name_remapping string
-    if(m_afParentBody == nullptr){
-        m_afParentBody = m_afWorld->getRigidBody(m_parentName, true);
-        // If a body is still not found, print error and ignore joint
-        if (m_afParentBody == nullptr){
-            cerr <<"ERROR! JOINT: \"" << m_name <<
-                   "\'s\" PARENT BODY \"" << m_parentName <<
-                   "\" NOT FOUND" << endl;
-            return 0;
-        }
-        // If the body is not world, print what we just did
-        if (!(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
-                && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
-                && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
-            //            cerr <<"INFO! JOINT: \"" << m_name <<
-            //                   "\'s\" PARENT BODY \"" << m_parentName <<
-            //                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
-        }
-    }
-    if(m_afChildBody == nullptr){
-        m_afChildBody = m_afWorld->getRigidBody(m_childName, true);
-        // If any body is still not found, print error and ignore joint
-        if (m_afChildBody == nullptr){
-            cerr <<"ERROR! JOINT: \"" << m_name <<
-                   "\'s\" CHILD BODY \"" << m_childName <<
-                   "\" NOT FOUND" << endl;
-            return 0;
-        }
-        // If the body is not world, print what we just did
-        if ( !(strcmp(m_afChildBody->m_name.c_str(), "world") == 0)
-             && !(strcmp(m_afChildBody->m_name.c_str(), "World") == 0)
-             && !(strcmp(m_afChildBody->m_name.c_str(), "WORLD") == 0)){
-            cerr <<"INFO! JOINT: \"" << m_name <<
-                   "\'s\" CHILD BODY \"" << m_childName <<
-                   "\" FOUND IN ANOTHER AMBF CONFIG," << endl;
-        }
+    if (m_afChildBody == nullptr){
+        cerr <<"ERROR! JOINT: \"" << m_name << "\'s\" CHILD BODY \"" << m_childName << "\" NOT FOUND" << endl;
+        return 0;
     }
 
     m_controller.createFromAttribs(&a_attribs->m_controllerAttribs);
@@ -4125,6 +4083,33 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 void afJoint::update(double dt){
     cacheState(dt);
 }
+
+
+afRigidBodyPtr afJoint::findConnectingBody(string body_name){
+    afRigidBodyPtr connectingBody = nullptr;
+
+    connectingBody = m_modelPtr->getRigidBody(body_name, true);
+    if (connectingBody == nullptr){
+        connectingBody = m_modelPtr->getRigidBody(getNamespace() + body_name, true);
+        if (connectingBody == nullptr){
+            connectingBody = m_afWorld->getRigidBody(getNamespace() + body_name + getGlobalRemapIdx(), true);
+            // If we couldn't find the body with name_remapping, it might have been
+            // Defined in another ambf file. Search without name_remapping string
+            if(connectingBody == nullptr){
+                connectingBody = m_afWorld->getRigidBody(body_name, true);
+                // If the body is not world, print what we just did
+                if (connectingBody != nullptr && !(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
+                        && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
+                        && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
+                                cerr <<"INFO! JOINT: \"" << m_name << "\'s\" PARENT/CHILD BODY \"" << body_name << "\" FOUND IN ANOTHER ADF," << endl;
+                }
+            }
+        }
+    }
+
+    return connectingBody;
+}
+
 
 btVector3 afJoint::getDefaultJointAxisInParent(afJointType a_type)
 {
@@ -5024,7 +5009,7 @@ afBaseObjectPtr afObjectManager::getBaseObject(string a_name, afBaseObjectMap* o
         // If only one object is found, return that object
         return objHandle;
     }
-    else if(matching_obj_count > 1){
+    else if(matching_obj_count > 1 && !suppress_warning){
         cerr << "WARNING! MULTIPLE OBJECTS WITH SUB-STRING: \"" << a_name << "\" FOUND. PLEASE SPECIFY FURTHER\n";
         for (int i = 0 ; i < matching_obj_names.size() ; i++){
             cerr << "\t" << i << ") " << matching_obj_names[i] << endl;

@@ -1287,6 +1287,8 @@ public:
 
     virtual void update(double dt);
 
+    afRigidBodyPtr findConnectingBody(string body_name);
+
     btVector3 getDefaultJointAxisInParent(afJointType a_type);
 
     void cacheState(const double &dt);
