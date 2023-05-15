@@ -88,7 +88,12 @@ You can also permanently add the install location in your `~/.bashrc` with the f
 echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc
 # Then either reload the terminal or run `. ~/.bashrc` for the changes to take effect
 ```
-
+> NOTE: If you wish to use AMBF's ROS packages (e.g. ambf_client or ambf_msgs) within a separate ROS package (e.g., "your_catkin_ws"), this can be done fairly simply, you just have to take care to do the following in the correct order: 
+> 1. Ensure that AMBF is sourced in your terminal. 
+> 1. Ensure "your_catkin_ws" has not been built (```catkin clean``` and/or remove ```build``` and ```devel``` if it has been built). 
+> 1. Build "your_catkin_ws". 
+> 
+> Under the hood this will do a caktin workspace overlay, which will make sure AMBF is sourced whenever you source "your_catkin_ws" and that sourcing "your_catkin_ws" does not make the AMBF packages "unsource"/get overwritten in the environment variables. 
 
 Finally, to execute `ambf_simulator` without having to be in the `ambf/bin/lin-x86_64` directory, one can set an alias at the end of the `~/.bashrc` file.
 
