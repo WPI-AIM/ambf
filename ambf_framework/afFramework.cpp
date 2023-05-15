@@ -4098,9 +4098,9 @@ afRigidBodyPtr afJoint::findConnectingBody(string body_name){
             if(connectingBody == nullptr){
                 connectingBody = m_afWorld->getRigidBody(body_name, true);
                 // If the body is not world, print what we just did
-                if (connectingBody != nullptr && !(strcmp(m_afParentBody->m_name.c_str(), "world") == 0)
-                        && !(strcmp(m_afParentBody->m_name.c_str(), "World") == 0)
-                        && !(strcmp(m_afParentBody->m_name.c_str(), "WORLD") == 0)){
+                if (connectingBody != nullptr && !(strcmp(connectingBody->m_name.c_str(), "world") == 0)
+                        && !(strcmp(connectingBody->m_name.c_str(), "World") == 0)
+                        && !(strcmp(connectingBody->m_name.c_str(), "WORLD") == 0)){
                                 cerr <<"INFO! JOINT: \"" << m_name << "\'s\" PARENT/CHILD BODY \"" << body_name << "\" FOUND IN ANOTHER ADF," << endl;
                 }
             }
