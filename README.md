@@ -66,7 +66,7 @@ sudo apt install libasound2-dev libgl1-mesa-dev xorg-dev
 Source the ROS installation by following the instructions in Section `1.5 Environment Setup` here (`http://wiki.ros.org/noetic/Installation/Ubuntu`). Note: Change the ROS version based on which ROS you have installed.
 
 Now we can proceed to build **AMBF**:
-```
+```bash
 cd ~
 git clone https://github.com/WPI-AIM/ambf.git
 cd ambf && mkdir build
@@ -77,28 +77,40 @@ make
 
 **Optional but recommended (If building with ROS support):** Source the correct folder to achieve system-wide availability of **AMBF** ROS modules.
 
-```
+```bash
 cd ~/ambf/build/
 source ./devel/setup.bash
 ```
 
 You can also permanently add the install location in your `~/.bashrc` with the following command:
 
-```
+```bash
 echo "source ~/ambf/build/devel/setup.bash" >> ~/.bashrc
 # Then either reload the terminal or run `. ~/.bashrc` for the changes to take effect
 ```
+**Creating an Alias:**
+AMBF can be executed by navigating to the `ambf/bin/<os>` directory (i.e. `cd ambf/bin/<os>`) and typing `./ambf_simulator`. For Linux, this may be `ambf/bin/lin-x86_64` and on MacOS it may be `ambf/bin/mac-x86_64`. To execute `ambf_simulator` without having to be in the `ambf/bin/<os>` directory, one can set an alias at the end of the `~/.bashrc` file.
 
-
-Finally, to execute `ambf_simulator` without having to be in the `ambf/bin/lin-x86_64` directory, one can set an alias at the end of the `~/.bashrc` file.
-
-```
+```bash
 # Open the ~/.bashrc file in a text editor
 # At the end of the file add
-alias ambf_simulator=~/ambf/bin/lin-x86_64/ambf_simulator
+alias ambf_simulator=~/ambf/bin/lin-x86_64/ambf_simulator # Replace lin-x86_64 with your OS.
 # Save and close the file and reload by either relaunching the terminal or typing 
 . ~/.bashrc
 ```
+With the alias set, `ambf_simulator` can be executed from a terminal from any location. Please check that by opening a new terminal and typing
+```bash
+ambf_simulator
+```
+
+**Working with Multiple ROS Workspaces:** You may notice that if you have ROS packages in a Catkin workspace (e.g. `~/your_catkin_ws`) then sourcing AMBF unsources that `your_catkin_ws` (i.e. the packages in `your_catkin_ws` are no longer accessible in the terminal) and vice-versa. This happens because the workspaces (`your_catkin_ws` and `ambf/build/devel`) are not properly overlaid. You can read more about workspace overlaying here: [Overlaying with catkin workspaces](http://wiki.ros.org/catkin/Tutorials/workspace_overlaying).
+
+In summary, if you wish to use AMBF's ROS packages (e.g. `ambf_client` or `ambf_msgs`) within a separate ROS package (e.g., `your_catkin_ws`), it is recommended to overlay the Catkin workspaces (other Catkin workspaces with AMBF): 
+1. Ensure that AMBF is sourced in your terminal. 
+2. Ensure `your_catkin_ws` has not been built (```catkin clean``` and/or remove ```build``` and ```devel``` if it has been built). 
+3. Build `your_catkin_ws`. 
+ 
+ Under the hood this will do a caktin workspace overlay, which will make sure AMBF is sourced whenever you source `your_catkin_ws` and that sourcing `your_catkin_ws` does not make the AMBF packages "unsource"/get overwritten in the environment variables. 
 
 ##### 5.2.2 Mac OS
 If you don't have Boost libraries, you will need to install them as follows
@@ -134,8 +146,7 @@ roscore
 Then depending on what OS you're using simply follow the commands below in a new terminal:
 
 ```
-cd ~/ambf/bin/<os>
-./ambf_simulator
+ambf_simulator
 ```
 
 #### 5.4 Launching Specific AMBF Description Format (ADF) Files:
@@ -147,25 +158,22 @@ There are two ways to launch an ADF file:
 The -l command-line argument can be used to launch a specific ADF file at launch using indexing. The ADF files are defined in [ambf_models/descriptions/launch.yaml](https://github.com/WPI-AIM/ambf/blob/master/ambf_models/descriptions/launch.yaml) and are commented with indices for ease of identification. By default, launching the simulator without the `-l` command line argument loads the first `1` ADF file defined in the (`launch.yaml`)[./ambf_models/descriptions/launch.yaml]. To launch a specific ADF file you can use the `-l` flag with its integer index as follows:
 
 ```
-cd ~/ambf/bin/<os>
-./ambf_simulator -l 4
+ambf_simulator -l 4
 ```
-This command will launch the 4th ADF file defined in the [`launch.yaml`](./ambf_models/descriptions/launch.yaml) file. To launch multiple ADF files, you can use a comma-separated list (without spaces in between) of integers indices e.g.`./ambf_simulator -l 1,6,10`. This in turn would load the ADF files defined at 1, 6, and the 10th index in the `launch.yaml` file.
+This command will launch the 4th ADF file defined in the [`launch.yaml`](./ambf_models/descriptions/launch.yaml) file. To launch multiple ADF files, you can use a comma-separated list (without spaces in between) of integers indices e.g.`ambf_simulator -l 1,6,10`. This in turn would load the ADF files defined at 1, 6, and the 10th index in the `launch.yaml` file.
 
 ##### 5.4.2 Providing the fully qualified filename
 The second option is to use the `-a` flag. For example, if one has an AMBF description file in the home directory `/users/potato/tests/robot.yaml`, this file can be launched directly as follows
 
 ```
-cd ~/ambf/bin/<os>
-./ambf_simulator -a /users/potato/tests/robot.yaml
+ambf_simulator -a /users/potato/tests/robot.yaml
 ```
 
 Similarly, as is the case with the `-l` flag, multiple filenames can be launched by comma-separated values. E.g.
 
 
 ```
-cd ~/ambf/bin/<os>
-./ambf_simulator -a /users/potato/tests/robot.yaml,/users/potato/tests/car.yaml
+ambf_simulator -a /users/potato/tests/robot.yaml,/users/potato/tests/car.yaml
 ```
 
 Lastly, the `-l` and `-a` flags can be used together to launch some files based on the index and some based on the filenames.
