@@ -4075,7 +4075,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
 
     loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
 
-    loadCommunicationPlugin(this, a_attribs);
+//    loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
