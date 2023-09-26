@@ -736,7 +736,7 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     cQuaternion q;
-    q.fromRotMat(afRBPtr->m_visualMesh->getLocalRot());
+    q.fromRotMat(afRBPtr->getLocalRot());
 
     // Update the Pose
     cVector3d localPos = afRBPtr->getLocalPos();
