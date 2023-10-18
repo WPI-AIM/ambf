@@ -107,7 +107,8 @@ void afWorldCommunicationPlugin::worldUpdateState(afWorldPtr worldPtr, double dt
     m_afWorldCommPtr->set_wall_time(worldPtr->getWallTime());
     m_afWorldCommPtr->set_sim_time(worldPtr->getSimulationTime());
     m_afWorldCommPtr->set_time_stamp(worldPtr->getCurrentTimeStamp());
-    m_afWorldCommPtr->set_loop_freq(worldPtr->getPhysicsFrequency());
+    m_afWorldCommPtr->set_graphics_loop_freq(worldPtr->getGraphicsFrequency());
+    m_afWorldCommPtr->set_physics_loop_freq(worldPtr->getPhysicsFrequency());
     m_afWorldCommPtr->set_num_devices(worldPtr->getNumDevices());
 }
 
