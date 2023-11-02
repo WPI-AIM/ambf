@@ -58,6 +58,7 @@ void LightRosCom::init(){
 }
 
 void LightRosCom::reset_cmd(){
+    m_Cmd.enable_position_controller = false;
 }
 
 void LightRosCom::sub_cb(ambf_msgs::LightCmdConstPtr msg){

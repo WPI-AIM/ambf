@@ -46,20 +46,21 @@ DVRK_FootPedals::DVRK_FootPedals(){
 }
 
 void DVRK_FootPedals::init_footpedals(std::shared_ptr<ros::NodeHandle> n){
-    clutch_sub = n->subscribe("/footpedals/clutch", 10, &DVRK_FootPedals::clutch_sub_cb, this);
-    coag_sub = n->subscribe("/footpedals/coag", 10, &DVRK_FootPedals::coag_sub_cb, this);
-    _clutch_pressed = false;
-    _coag_pressed = false;
-}
+    std::string prefix = "/footpedals/";
+    m_buttonHandles[ButtonEnum::CLUTCH] = new ButtonHandle(n, prefix + "clutch");
+    m_buttonHandles[ButtonEnum::COAG] = new ButtonHandle(n, prefix + "coag");
+    m_buttonHandles[ButtonEnum::OPERATORPRESENT] = new ButtonHandle(n, prefix + "operatorpresent");
+    m_buttonHandles[ButtonEnum::CAMERA] = new ButtonHandle(n, prefix + "camera");
+    m_buttonHandles[ButtonEnum::CAM_PLUS] = new ButtonHandle(n, prefix + "cam_plus");
+    m_buttonHandles[ButtonEnum::CAM_MINUS] = new ButtonHandle(n, prefix + "cam_minus");
 
-void DVRK_FootPedals::clutch_sub_cb(const sensor_msgs::JoyConstPtr &msg){
-    _clutch_pressed = msg->buttons[0];
-}
-
-void DVRK_FootPedals::coag_sub_cb(const sensor_msgs::JoyConstPtr &msg){
-    _coag_pressed = msg->buttons[0];
 }
 
 DVRK_FootPedals::~DVRK_FootPedals(){
+    std::map<ButtonEnum, ButtonHandle*>::iterator it;
+    it = m_buttonHandles.begin();
+    for (; it!= m_buttonHandles.end() ; ++it){
+        delete it->second;
+    }
 //    std::cerr << "CLOSING DVRK_FOOTPEDALS" << std::endl;
 }

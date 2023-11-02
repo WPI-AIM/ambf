@@ -83,11 +83,11 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 # output location
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY                ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          ${PROJECT_SOURCE_DIR}/bin-debug/${OS}-${ARCH})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/${OS}-${ARCH})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY                ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          ${PROJECT_BINARY_DIR}/../bin-debug/${OS}-${ARCH})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
 
 set(CHAI3D_DEFINITIONS "")
 set(BULLET_DEFINITIONS "")
@@ -106,7 +106,7 @@ include_directories (${OPENGL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(yaml-cpp QUIET)
-if (NOT ${yaml-cpp_FOUND})
+if (NOT yaml-cpp_FOUND)
     message(STATUS "-- *** YAML-CPP NOT FOUND, ADDING IT AS AN EXTERNAL PROJECT")
     include(cmake/ExternalYamlCpp.cmake)
 endif()
@@ -119,7 +119,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
     find_package(catkin COMPONENTS
       roscpp
     )
-    if (${catkin_FOUND})
+    if (catkin_FOUND)
         message("-- *** FOUND ROS ON THIS MACHINE, ENABLING SUPPORT FOR AMBF_ROS MODULES")
         add_subdirectory(${PROJECT_SOURCE_DIR}/ambf_ros_modules)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/tf_function)
@@ -128,7 +128,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         find_package(catkin QUIET COMPONENTS ambf_server ambf_msgs dvrk_arm razer_hydra cv_bridge image_transport ambf_client)
               find_package(tf_function REQUIRED)
 
-        if(${ambf_server_FOUND} AND ${ambf_msgs_FOUND} AND ${dvrk_arm_FOUND} AND ${ambf_client_FOUND})
+        if(ambf_server_FOUND AND ambf_msgs_FOUND AND dvrk_arm_FOUND AND ambf_client_FOUND)
             message(STATUS "-- *** FOUND AMBF_COMM, AMBF_MSGS, AMBF_CLIENT and DVRK_ARM, ENABLING DVRK DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
@@ -142,9 +142,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
         endif()
 
         find_package(OpenCV QUIET)
-        if(${OpenCV_FOUND})
+        if(OpenCV_FOUND)
             message(STATUS "-- *** FOUND OPENCV")
-            if(${cv_bridge_FOUND} AND ${image_transport_FOUND})
+            if(cv_bridge_FOUND AND image_transport_FOUND)
                 message(STATUS "-- *** FOUND ROS_CV_BRIDGE and IMAGE_TRANSPORT, ENABLING VIDEO PUBLISHING SUPPORT")
 
                 list(APPEND AMBF_DEFINITIONS -DAF_ENABLE_OPEN_CV_SUPPORT)
@@ -155,7 +155,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
             endif()
         endif()
 
-        if (${razer_hydra_FOUND})
+        if (razer_hydra_FOUND)
             message(STATUS "-- *** FOUND RAZER HYDRA'S ROS PACKAGE, ENABLING DEVICE SUPPORT")
 
             set(AMBF_ROS_INCLUDE_DIRS ${AMBF_ROS_INCLUDE_DIRS} ${razer_hydra_INCLUDE_DIRS})
@@ -318,7 +318,7 @@ list(APPEND COMMON_DEFINITIONS -DGLEW_STATIC)
 # static library
 add_library (adf_loader ${source_adf_loader})
 
-if(NOT ${yaml-cpp_FOUND})
+if(NOT yaml-cpp_FOUND)
   add_dependencies(adf_loader YAML_CPP_EXTERNAL_PROJECT)
 endif()
 
@@ -347,7 +347,7 @@ target_link_libraries(ambf_framework ${chai3d} ${bullet} ${Boost_LIBRARIES})
 
 # To ensure the ambf_ros_modules are build before the ambf_framework,
 # add catkin's targets as build dependency
- if (${catkin_FOUND})
+ if (catkin_FOUND)
    add_dependencies(ambf_framework ${catkin_EXPORTED_TARGETS})
  endif()
 
@@ -400,7 +400,7 @@ add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_simulator)
 
 # AMBF Controller. Add if on Linux, Catkin Found and ambf_server Found
 if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-  if (${catkin_FOUND} AND ${ambf_server_FOUND})
+  if (catkin_FOUND AND ambf_server_FOUND)
     add_subdirectory (${PROJECT_SOURCE_DIR}/ambf_controller)
   endif()
 endif()

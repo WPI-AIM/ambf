@@ -77,6 +77,36 @@ afMatrix3d ADFUtils::rotationFromNode(YAML::Node *node){
     return v;
 }
 
+///
+/// \brief ADFUtils::saveRawData
+/// \param node
+/// \param a_attribs
+///
+void ADFUtils::saveRawData(YAML::Node *node, afBaseObjectAttributes *a_attribs)
+{
+    YAML::Emitter emitter;
+    emitter << *node;
+    afSpecificationData specData;
+    specData.m_type = "ADF 1.0";
+    specData.m_rawData = emitter.c_str();
+    a_attribs->setSpecificationData(specData);
+}
+
+///
+/// \brief ADFUtils::saveRawData
+/// \param node
+/// \param a_attribs
+///
+void ADFUtils::saveRawData(YAML::Node *node, afLaunchAttributes *a_attribs)
+{
+    YAML::Emitter emitter;
+    emitter << *node;
+    afSpecificationData specData;
+    specData.m_type = "ADF 1.0";
+    specData.m_rawData = emitter.c_str();
+    a_attribs->setSpecificationData(specData);
+}
+
 
 ///
 /// \brief ADFUtils::getColorAttribsFromNode
@@ -238,7 +268,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     }
 
     ADFUtils utils;
-    utils.getColorAttribsFromNode(&node, &attribs->m_colorAttribs);
+    utils.getColorAttribsFromNode(a_node, &attribs->m_colorAttribs);
 
     if (visibleNode.IsDefined()){
         attribs->m_visible = visibleNode.as<bool>();
@@ -649,7 +679,7 @@ bool ADFUtils::getCommunicationAttribsFromNode(YAML::Node *a_node, afCommunicati
 
 bool ADFUtils::getHierarchyAttribsFromNode(YAML::Node *a_node, afHierarchyAttributes *attribs)
 {
-    YAML::Node &node = *a_node;
+    YAML::Node& node = *a_node;
 
     YAML::Node parentNameNode = node["parent"];
     YAML::Node childNameNode = node["child"];
@@ -713,7 +743,8 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
 
     YAML::Node massNode = node["mass"];
     YAML::Node inertiaNode = node["inertia"];
-    YAML::Node inertialOffset = node["inertial offset"];
+    YAML::Node inertialOffsetNode = node["inertial offset"];
+    YAML::Node gravityNode = node["gravity"];
 
     bool valid = true;
 
@@ -737,9 +768,9 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
         attribs->m_estimateInertia = true;
     }
 
-    if(inertialOffset.IsDefined()){
-        YAML::Node inertialOffsetPos = inertialOffset["position"];
-        YAML::Node inertialOffsetRot = inertialOffset["orientation"];
+    if(inertialOffsetNode.IsDefined()){
+        YAML::Node inertialOffsetPos = inertialOffsetNode["position"];
+        YAML::Node inertialOffsetRot = inertialOffsetNode["orientation"];
         attribs->m_estimateInertialOffset = false;
 
         if (inertialOffsetPos.IsDefined()){
@@ -754,6 +785,14 @@ bool ADFUtils::getInertialAttrisFromNode(YAML::Node *a_node, afInertialAttribute
     }
     else{
         attribs->m_estimateInertialOffset = true;
+    }
+
+    if (gravityNode.IsDefined()){
+        attribs->m_overrideGravity = true;
+        attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
+    }
+    else{
+        attribs->m_overrideGravity = false;
     }
 
     return valid;
@@ -1068,25 +1107,26 @@ bool ADFLoader_1_0::loadObjectAttribs(YAML::Node *a_node, string a_objName, afTy
         cerr << "ERROR! OBJECT'S YAML NODE IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node node = rootNode[a_objName];
     switch (a_objType) {
     case afType::ACTUATOR:
-        return loadActuatorAttribs(&node, (afActuatorAttributes*)attribs);
+        return loadActuatorAttribs(a_node, (afActuatorAttributes*)attribs);
     case afType::SENSOR:
-        return loadSensorAttribs(&node, (afSensorAttributes*)attribs);
+        return loadSensorAttribs(a_node, (afSensorAttributes*)attribs);
     case afType::RIGID_BODY:
-        return loadRigidBodyAttribs(&node, (afRigidBodyAttributes*)attribs);
+        return loadRigidBodyAttribs(a_node, (afRigidBodyAttributes*)attribs);
     case afType::SOFT_BODY:
-        return loadSoftBodyAttribs(&node, (afSoftBodyAttributes*)attribs);
+        return loadSoftBodyAttribs(a_node, (afSoftBodyAttributes*)attribs);
     case afType::VEHICLE:
-        return loadVehicleAttribs(&node, (afVehicleAttributes*)attribs);
+        return loadVehicleAttribs(a_node, (afVehicleAttributes*)attribs);
     case afType::LIGHT:
-        return loadLightAttribs(&node, (afLightAttributes*)attribs);
+        return loadLightAttribs(a_node, (afLightAttributes*)attribs);
     case afType::CAMERA:
-        return loadCameraAttribs(&node, (afCameraAttributes*)attribs);
+        return loadCameraAttribs(a_node, (afCameraAttributes*)attribs);
     case afType::INPUT_DEVICE:
-        return loadInputDeviceAttribs(&node, (afInputDeviceAttributes*)attribs);
+        return loadInputDeviceAttribs(a_node, (afInputDeviceAttributes*)attribs);
     default:
         return false;
     }
@@ -1104,6 +1144,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
         cerr << "ERROR! LIGHT'S ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node nameNode = node["name"];
     YAML::Node namespaceNode = node["namespace"];
@@ -1121,11 +1162,11 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     int shadow_quality;
 
     node["location"]["position"] = node["location"];
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     if (directionNode.IsDefined()){
         attribs->m_direction = ADFUtils::positionFromNode(&directionNode);
@@ -1180,6 +1221,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
         cerr << "ERROR! CAMERA'S ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node nameNode = node["name"];
     YAML::Node namespaceNode = node["namespace"];
@@ -1208,11 +1250,11 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     bool valid = true;
 
     node["location"]["position"] = node["location"];
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     if (lookAtNode.IsDefined()){
         attribs->m_lookAt = ADFUtils::positionFromNode(&lookAtNode);
@@ -1303,12 +1345,12 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
 
     if (preProcessingShaderNode.IsDefined()){
         node["shaders"] = preProcessingShaderNode;
-        ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_preProcessShaderAttribs);
+        ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_preProcessShaderAttribs);
     }
 
     if (depthShaderNode.IsDefined()){
         node["shaders"] = depthShaderNode;
-        ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_depthComputeShaderAttribs);
+        ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_depthComputeShaderAttribs);
     }
 
     if (multiPassNode.IsDefined()){
@@ -1330,6 +1372,8 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
         cerr << "ERROR! RIGID BODY ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
+    ADFUtils::saveRawData(a_node, attribs);
+
     // Declare all the yaml parameters that we want to look for
     // IDENTIFICATION
     YAML::Node nameNode = node["name"];
@@ -1378,16 +1422,16 @@ bool ADFLoader_1_0::loadRigidBodyAttribs(YAML::Node *a_node, afRigidBodyAttribut
     YAML::Node publishJointNamesNode = node["publish joint names"];
     YAML::Node publishJointPositionsNode = node["publish joint positions"];
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    ADFUtils::getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
-    ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
-    ADFUtils::getSurfaceAttribsFromNode(&node, &attribs->m_surfaceAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getVisualAttribsFromNode(a_node, &attribs->m_visualAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCollisionAttribsFromNode(a_node, &attribs->m_collisionAttribs);
+    ADFUtils::getInertialAttrisFromNode(a_node, &attribs->m_inertialAttribs);
+    ADFUtils::getCartControllerAttribsFromNode(a_node, &attribs->m_controllerAttribs);
+    ADFUtils::getSurfaceAttribsFromNode(a_node, &attribs->m_surfaceAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_shaderAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     if (publishChildrenNamesNode.IsDefined()){
         attribs->m_publishChildrenNames = publishChildrenNamesNode.as<bool>();
@@ -1411,6 +1455,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         cerr << "ERROR! SOFT BODY'S YAML NODE IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
     // Declare all the yaml parameters that we want to look for
     YAML::Node nameNode = node["name"];
     YAML::Node meshNode = node["mesh"];
@@ -1467,14 +1512,14 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
 
     YAML::Node randomizeConstraintsNode = node["randomize constraints"];
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getInertialAttrisFromNode(&node, &attribs->m_inertialAttribs);
-    ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getVisualAttribsFromNode(a_node, &attribs->m_visualAttribs);
+    ADFUtils::getCollisionAttribsFromNode(a_node, &attribs->m_collisionAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getInertialAttrisFromNode(a_node, &attribs->m_inertialAttribs);
+    ADFUtils::getCartControllerAttribsFromNode(a_node, &attribs->m_controllerAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
 
     if (configDataNode.IsNull()){
@@ -1604,6 +1649,7 @@ bool ADFLoader_1_0::loadGhostObjectAttribs(YAML::Node *a_node, afGhostObjectAttr
         cerr << "ERROR! GHOST OBJECT ATTRIBUTES IS A NULLPTR\n";
         return false;
     }
+    ADFUtils::saveRawData(a_node, attribs);
     // Declare all the yaml parameters that we want to look for
     // IDENTIFICATION
     YAML::Node nameNode = node["name"];
@@ -1635,13 +1681,13 @@ bool ADFLoader_1_0::loadGhostObjectAttribs(YAML::Node *a_node, afGhostObjectAttr
     YAML::Node publishFrequencyNode = node["publish frequency"];
     YAML::Node passiveNode = node["passive"];
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getVisualAttribsFromNode(&node, &attribs->m_visualAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getCollisionAttribsFromNode(&node, &attribs->m_collisionAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getVisualAttribsFromNode(a_node, &attribs->m_visualAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCollisionAttribsFromNode(a_node, &attribs->m_collisionAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     return true;
 
@@ -1654,6 +1700,7 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
         cerr << "ERROR! JOINT'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
     // Declare all the yaml parameters that we want to look for
     YAML::Node parentNameNode = node["parent"];
     YAML::Node childNameNode = node["child"];
@@ -1680,11 +1727,11 @@ bool ADFLoader_1_0::loadJointAttribs(YAML::Node *a_node, afJointAttributes *attr
     YAML::Node equilibriumPointNode = node["equilibrium point"];
     YAML::Node passiveNode = node["passive"];
 
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getJointControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getJointControllerAttribsFromNode(a_node, &attribs->m_controllerAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     attribs->m_parentPivot = ADFUtils::positionFromNode(&parentPivotNode);
     attribs->m_childPivot = ADFUtils::positionFromNode(&childPivotNode);
@@ -1870,6 +1917,7 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
         cerr << "ERROR! SENSOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -1890,18 +1938,18 @@ bool ADFLoader_1_0::loadSensorAttribs(YAML::Node *a_node, afSensorAttributes *at
         return 0;
     }
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     switch (attribs->m_sensorType) {
     case afSensorType::RAYTRACER:{
-        return loadRayTracerSensorAttribs(&node, (afRayTracerSensorAttributes*)attribs);
+        return loadRayTracerSensorAttribs(a_node, (afRayTracerSensorAttributes*)attribs);
     }
     case afSensorType::RESISTANCE:{
-        return loadResistanceSensorAttribs(&node, (afResistanceSensorAttributes*)attribs);
+        return loadResistanceSensorAttribs(a_node, (afResistanceSensorAttributes*)attribs);
     }
         break;
     default:{
@@ -1921,6 +1969,7 @@ bool ADFLoader_1_0::loadRayTracerSensorAttribs(YAML::Node *a_node, afRayTracerSe
         cerr << "ERROR! SENSOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -2039,6 +2088,7 @@ bool ADFLoader_1_0::loadResistanceSensorAttribs(YAML::Node *a_node, afResistance
         cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = false;
         result = loadRayTracerSensorAttribs(a_node, attribs);
@@ -2088,6 +2138,7 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
         cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -2108,15 +2159,15 @@ bool ADFLoader_1_0::loadActuatorAttribs(YAML::Node *a_node, afActuatorAttributes
         return 0;
     }
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     switch (attribs->m_actuatorType) {
     case afActuatorType::CONSTRAINT:{
-        return loadConstraintActuatorAttribs(&node, (afConstraintActuatorAttributes*)attribs);
+        return loadConstraintActuatorAttribs(a_node, (afConstraintActuatorAttributes*)attribs);
     }
         break;
     default:{
@@ -2136,6 +2187,7 @@ bool ADFLoader_1_0::loadConstraintActuatorAttribs(YAML::Node *a_node, afConstrai
         cerr << "ERROR! ACTUATOR'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -2170,6 +2222,7 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
         cerr << "ERROR! VEHICLE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -2179,9 +2232,9 @@ bool ADFLoader_1_0::loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes *
     YAML::Node meshPathHRNode = node["high resolution path"];
     YAML::Node wheelsNode = node["wheels"];
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     if (chassisNode.IsDefined()){
         attribs->m_chassisBodyName = chassisNode.as<string>();
@@ -2209,6 +2262,7 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
         cerr << "ERROR! VOLUMES'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     bool result = true;
     // Declare all the yaml parameters that we want to look for
@@ -2221,13 +2275,13 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     YAML::Node qualityNode = node["quality"];
 
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
-    ADFUtils::getHierarchyAttribsFromNode(&node, &attribs->m_hierarchyAttribs);
-    ADFUtils::getCommunicationAttribsFromNode(&node, &attribs->m_communicationAttribs);
-    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
-    ADFUtils::getColorAttribsFromNode(&node, &attribs->m_colorAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_shaderAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
+    ADFUtils::getColorAttribsFromNode(a_node, &attribs->m_colorAttribs);
 
     if (dimensionsNode.IsDefined()){
         attribs->m_dimensions = ADFUtils::positionFromNode(&dimensionsNode);
@@ -2275,6 +2329,7 @@ bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttr
         cerr << "ERROR! PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node hardwareNameNode = node["hardware name"];
     YAML::Node hapticGainNode = node["haptic gain"];
@@ -2377,6 +2432,7 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttribs(YAML::Node *a_node, afSimulatedDe
         cerr << "ERROR! PHYSICAL DEVICE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node enableJointControlNode = node["enable joint control"];
     YAML::Node simulatedModelNode = node["simulated multibody"];
@@ -2400,14 +2456,14 @@ bool ADFLoader_1_0::loadSimulatedDeviceAttribs(YAML::Node *a_node, afSimulatedDe
     // that link/body in Position control mode and control all the joints lower in hierarchy.
 
     if (locationNode.IsDefined()){
-        ADFUtils::getKinematicAttribsFromNode(&node, &attribs->m_kinematicAttribs);
+        ADFUtils::getKinematicAttribsFromNode(a_node, &attribs->m_kinematicAttribs);
         attribs->m_overrideLocation = true;
     }
 
     // set the control gains fields as controller fields.
     if (controllerGainNode.IsDefined()){
         node["controller"] = controllerGainNode;
-        ADFUtils::getCartControllerAttribsFromNode(&node, &attribs->m_controllerAttribs);
+        ADFUtils::getCartControllerAttribsFromNode(a_node, &attribs->m_controllerAttribs);
         attribs->m_overrideController = true;
     }
 
@@ -2530,6 +2586,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         cerr << "ERROR! MODEL'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     // Declare all the yaml parameters that we want to look for
     YAML::Node meshPathHRNode = node["high resolution path"];
@@ -2549,6 +2606,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node jointCFMNode = node["joint cfm"];
     YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
     YAML::Node shadersNode = node["shaders"];
+    YAML::Node gravityNode = node["gravity"];
 
     bool valid = true;
 
@@ -2567,6 +2625,14 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         attribs->m_identificationAttribs.m_namespace = nameSpaceNode.as<string>();
     }
 
+    if (gravityNode.IsDefined()){
+        attribs->m_overrideGravity = true;
+        attribs->m_gravity = ADFUtils::positionFromNode(&gravityNode);
+    }
+    else{
+        attribs->m_overrideGravity = false;
+    }
+
     // Load Rigid Bodies
     for (size_t i = 0; i < rigidBodiesNode.size(); ++i) {
         afRigidBodyAttributes rbAttribs;
@@ -2576,6 +2642,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             rbAttribs.m_identifier = identifier;
             rbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             rbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
+            if (!rbAttribs.m_inertialAttribs.m_overrideGravity && attribs->m_overrideGravity){
+                rbAttribs.m_inertialAttribs.m_overrideGravity = true;
+                rbAttribs.m_inertialAttribs.m_gravity = attribs->m_gravity;
+            }
             attribs->m_rigidBodyAttribs.push_back(rbAttribs);
         }
     }
@@ -2589,6 +2659,10 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
             sbAttribs.m_identifier = identifier;
             sbAttribs.m_visualAttribs.m_meshFilepath.resolvePath(attribs->m_visualMeshesPath);
             sbAttribs.m_collisionAttribs.m_meshFilepath.resolvePath(attribs->m_collisionMeshesPath);
+            if (!sbAttribs.m_inertialAttribs.m_overrideGravity && attribs->m_overrideGravity){
+                sbAttribs.m_inertialAttribs.m_overrideGravity = true;
+                sbAttribs.m_inertialAttribs.m_gravity = attribs->m_gravity;
+            }
             attribs->m_softBodyAttribs.push_back(sbAttribs);
         }
     }
@@ -2719,8 +2793,8 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         }
     }
 
-    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_shaderAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     // This flag would ignore collision for all the multibodies in the scene
     if (ignoreInterCollisionNode.IsDefined()){
@@ -2752,6 +2826,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
         cerr << "ERROR! WORLD'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     YAML::Node namespaceNode = node["namespace"];
     YAML::Node enclosureDataNode = node["enclosure"];
@@ -2766,8 +2841,8 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
     // Set the world name
     node["name"] = "World";
 
-    ADFUtils::getIdentificationAttribsFromNode(&node, &attribs->m_identificationAttribs);
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     if(maxIterationsNode.IsDefined()){
         attribs->m_maxIterations = maxIterationsNode.as<uint>();
@@ -2849,7 +2924,7 @@ bool ADFLoader_1_0::loadWorldAttribs(YAML::Node *a_node, afWorldAttributes *attr
         }
     }
 
-    ADFUtils::getShaderAttribsFromNode(&node, &attribs->m_shaderAttribs);
+    ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_shaderAttribs);
 
     return true;
 }
@@ -2875,6 +2950,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
         cerr << "ERROR! LAUNCH FILE'S YAML CONFIG DATA IS NULL\n";
         return 0;
     }
+    ADFUtils::saveRawData(a_node, attribs);
 
     //Declare all the YAML Params that we want to look for
     YAML::Node worldFilepathNode = node["world config"];
@@ -2916,7 +2992,7 @@ bool ADFLoader_1_0::loadLaunchFileAttribs(YAML::Node *a_node, afLaunchAttributes
         return 0;
     }
 
-    ADFUtils::getPluginAttribsFromNode(&node, &attribs->m_pluginAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
 
     return 1;
 }

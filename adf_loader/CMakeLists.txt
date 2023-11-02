@@ -38,7 +38,7 @@
 
 find_package(yaml-cpp QUIET)
 
-if (NOT ${yaml-cpp_FOUND})
+if (NOT yaml-cpp_FOUND)
     message("-- *** YAML-CPP NOT FOUND, ADDING IT AS AN EXTERNAL PROJECT")
     include(../cmake/ExternalYamlCpp.cmake)
 endif()
@@ -50,7 +50,7 @@ file (GLOB_RECURSE source_adf_loader *.cpp *.h)
 
 add_library(adf_loader ${source_adf_loader})
 
-if(NOT ${yaml-cpp_FOUND})
+if(NOT yaml-cpp_FOUND)
   add_dependencies(adf_loader YAML_CPP_EXTERNAL_PROJECT)
 endif()
 

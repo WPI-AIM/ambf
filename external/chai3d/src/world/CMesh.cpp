@@ -1497,10 +1497,21 @@ void cMesh::renderMesh(cRenderOptions& a_options)
     //--------------------------------------------------------------------------
     // RENDER OBJECT (OBJECT BUFFER + SHADERS)
     //--------------------------------------------------------------------------
-    if ((m_shaderProgram != nullptr) && (!a_options.m_creating_shadow_map))
+    if ((m_shaderProgram != nullptr) && (!a_options.m_creating_shadow_map || m_is_voxelObject)) // If a voxelObject, use shaderPgm for shadowrendering
     {
         // enable shader
         m_shaderProgram->use(this, a_options);
+
+        // Set a flag if texture is available
+        if (m_shaderProgram->isUsed())
+        {
+            if ((m_texture != nullptr) && (m_useTextureMapping) && (a_options.m_render_materials)){
+                m_shaderProgram->setUniformi("uTextureEnabled", 1);
+            }
+            else{
+                m_shaderProgram->setUniformi("uTextureEnabled", 0);
+            }
+        }
 
         // render normal texture if enabled
         if (m_normalMap != nullptr)

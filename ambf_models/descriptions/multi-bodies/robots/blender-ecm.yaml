@@ -30,6 +30,7 @@ high resolution path: ../../../meshes/blender_afmb/ecm/high_res/
 low resolution path: ../../../meshes/blender_afmb/ecm/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/ecm/
+gravity: {x: 0., y: 0., z: 0.}
 BODY base link:
   name: base link
   mesh: base link.STL

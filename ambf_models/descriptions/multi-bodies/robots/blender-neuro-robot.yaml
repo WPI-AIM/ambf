@@ -45,6 +45,7 @@ high resolution path: ../../../meshes/blender_afmb/neuro_robot/high_res/
 low resolution path: ../../../meshes/blender_afmb/neuro_robot/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/neuro_robot/
+gravity: {x: 0., y: 0., z: 0.}
 BODY axial_translation_link:
   name: axial_translation_link
   mesh: axial_translation_link.STL

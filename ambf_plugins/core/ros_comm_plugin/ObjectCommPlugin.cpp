@@ -69,12 +69,13 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     m_objectPtr = a_afObjectPtr;
 
     if (m_objectPtr == nullptr){
-        cerr << "ERROR! OBJECT IS NULLPTR, FAILED TO INITIALIZE COMMUNICATION PLUGIN" << endl;
+        cerr << "ERROR! OBJECT IS NULLPTR, FAILED TO INITIALIZE COMMUNICATION PLUGIN." << endl;
         return 0;
     }
 
     string objName = m_objectPtr->getName() + m_objectPtr->getGlobalRemapIdx();
     string objNamespace = m_objectPtr->getNamespace();
+    string objQualifiedIdentifier = m_objectPtr->getQualifiedIdentifier() + m_objectPtr->getGlobalRemapIdx();
     int minFreq = m_objectPtr->getMinPublishFrequency();
     int maxFreq = m_objectPtr->getMaxPublishFrequency();
     double timeOut = 0.5;
@@ -85,6 +86,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     case afType::ACTUATOR:
     {
         m_actuatorCommPtr.reset(new ambf_comm::Actuator(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_actuatorCommPtr->set_identifier(objQualifiedIdentifier);
         afActuatorPtr actPtr = (afActuatorPtr)m_objectPtr;
         switch (actPtr->m_actuatorType) {
         case afActuatorType::CONSTRAINT:
@@ -100,30 +102,35 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     case afType::CAMERA:
     {
         m_cameraCommPtr.reset(new ambf_comm::Camera(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_cameraCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
     case afType::LIGHT:
     {
         m_lightCommPtr.reset(new ambf_comm::Light(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_lightCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
     case afType::OBJECT:
     {
         m_objectCommPtr.reset(new ambf_comm::Object(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_objectCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
     case afType::RIGID_BODY:
     {
         m_rigidBodyCommPtr.reset(new ambf_comm::RigidBody(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_rigidBodyCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
     case afType::SENSOR:
     {
         m_sensorCommPtr.reset(new ambf_comm::Sensor(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_sensorCommPtr->set_identifier(objQualifiedIdentifier);
         afSensorPtr senPtr = (afSensorPtr) m_objectPtr;
         switch (senPtr->m_sensorType) {
         case afSensorType::RAYTRACER:
@@ -141,6 +148,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     case afType::VEHICLE:
     {
         m_vehicleCommPtr.reset(new ambf_comm::Vehicle(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_vehicleCommPtr->set_identifier(objQualifiedIdentifier);
         success = true;
     }
         break;
@@ -153,7 +161,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         break;
     default:
     {
-        cerr << "ERROR! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET" << endl;
+        cerr << "WARNING! COMMUNICATION TYPE FOR OBJECT NAMED " << objName << " OF TYPE: " << m_objectPtr->getTypeAsStr() << " NOT IMPLEMENTED YET. IGNORING." << endl;
         return -1;
     }
         break;
@@ -300,22 +308,35 @@ void afObjectCommunicationPlugin::actuatorFetchCommand(afActuatorPtr actPtr, dou
                 // Constraint is active. Ignore request
                 return;
             }
-            string body_name = cmd.body_name.data;
-            if (cmd.use_offset){
-                // Offset of constraint (joint) in sensed body (child)
-                btTransform T_jINc;
-                T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
-                                           cmd.body_offset.position.y,
-                                           cmd.body_offset.position.z));
-
-                T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
-                                                cmd.body_offset.orientation.y,
-                                                cmd.body_offset.orientation.z,
-                                                cmd.body_offset.orientation.w));
-                castPtr->actuate(body_name, T_jINc);
+            else if (cmd.use_sensor_data){
+                std::string sensorName = cmd.sensor_identifier.data;
+                afSensorPtr senPtr = actPtr->m_afWorld->getSensor(sensorName);
+                if (senPtr){
+                    castPtr->actuate(senPtr);
+                }
+                else{
+                    cerr << "ERROR! IN ACTUATOR CALLBACK " << castPtr->getName() <<
+                            ", REQUESTED SENSOR NAME " << sensorName << " NOT FOUND. IGNORING!" << endl;
+                }
             }
             else{
-                castPtr->actuate(body_name);
+                string body_name = cmd.body_name.data;
+                if (cmd.use_offset){
+                    // Offset of constraint (joint) in sensed body (child)
+                    btTransform T_jINc;
+                    T_jINc.setOrigin(btVector3(cmd.body_offset.position.x,
+                                               cmd.body_offset.position.y,
+                                               cmd.body_offset.position.z));
+
+                    T_jINc.setRotation(btQuaternion(cmd.body_offset.orientation.x,
+                                                    cmd.body_offset.orientation.y,
+                                                    cmd.body_offset.orientation.z,
+                                                    cmd.body_offset.orientation.w));
+                    castPtr->actuate(body_name, T_jINc);
+                }
+                else{
+                    castPtr->actuate(body_name);
+                }
             }
         }
         else{
@@ -333,7 +354,6 @@ void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, doub
 {
     m_actuatorCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
-    m_actuatorCommPtr->set_name(actPtr->getName());
     m_actuatorCommPtr->set_parent_name(actPtr->m_parentName);
     m_actuatorCommPtr->m_writeMtx.unlock();
     m_actuatorCommPtr->enableComm();
@@ -716,7 +736,7 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     btRigidBody* btRBPtr = afRBPtr->m_bulletRigidBody;
     cQuaternion q;
-    q.fromRotMat(afRBPtr->m_visualMesh->getLocalRot());
+    q.fromRotMat(afRBPtr->getLocalRot());
 
     // Update the Pose
     cVector3d localPos = afRBPtr->getLocalPos();
@@ -809,7 +829,6 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
     {
         afRayTracerSensorPtr raySenPtr = (afRayTracerSensorPtr) senPtr;
         m_sensorCommPtr->set_count(raySenPtr->getCount());
-        m_sensorCommPtr->set_name(raySenPtr->getName());
         m_sensorCommPtr->set_parent_name(raySenPtr->m_parentName);
         m_sensorCommPtr->set_range(raySenPtr->m_range);
         cVector3d pos = raySenPtr->getLocalPos();

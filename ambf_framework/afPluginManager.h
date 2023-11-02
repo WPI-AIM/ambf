@@ -77,6 +77,12 @@ public:
         }
     }
 
+    vector<T*>* getPlugins(){
+        return &m_plugins;
+    }
+
+
+protected:
     virtual bool add(string lib_name, string plugin_name, string path=""){
         T* plugin = T::Create(lib_name, plugin_name, path);
         return add(plugin);
@@ -92,35 +98,15 @@ public:
         }
     }
 
-    template <typename A, typename B>
-    bool load(A* objPtr, B* attribs, string lib_name, string plugin_name, string path=""){
-        bool valid = false;
-        T* plugin = T::Create(lib_name, plugin_name, path);
-        if (plugin){
-            if(plugin->init(objPtr, attribs)){
-                add(plugin);
-                valid = true;
-            }
-            else{
-                delete plugin;
-            }
-        }
-        return valid;
-    }
-
-    vector<T*>* getPlugins(){
-        return &m_plugins;
-    }
-
-
 protected:
     vector<T*> m_plugins;
 };
 
 class afSimulatorPluginManager: public afBasePluginManager<afSimulatorPlugin>{
 public:
+    bool loadPlugin(int argc, char** argv, const afWorldPtr a_afWorld, string lib_name, string plugin_name, string path="");
 
-    void init(int argc, char** argv, const afWorldPtr a_afWorld);
+    bool loadPlugin(int argc, char** argv, const afWorldPtr a_afWorld, afSimulatorPlugin*);
 
     void keyboardUpdate(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods);
 
@@ -145,8 +131,6 @@ public:
     bool loadPlugin(afWorldPtr, afWorldAttribsPtr, string lib_name, string plugin_name, string path="");
 
     bool loadPlugin(afWorldPtr, afWorldAttribsPtr, afWorldPlugin*);
-
-    void init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs);
 
     void onModelAdd(const afModelPtr a_modelPtr);
 
@@ -173,8 +157,6 @@ public:
 
     bool loadPlugin(afModelPtr, afModelAttribsPtr, afModelPlugin*);
 
-    void init(const afModelPtr a_afModel, const afModelAttribsPtr a_modelAttribs);
-
     void onObjectAdd(const afBaseObjectPtr a_objectPtr);
 
     void onObjectRemoval(const afBaseObjectPtr a_objectPtr);
@@ -195,8 +177,6 @@ public:
     bool loadPlugin(afBaseObjectPtr, afBaseObjectAttribsPtr, string lib_name, string plugin_name, string path="");
 
     bool loadPlugin(afBaseObjectPtr, afBaseObjectAttribsPtr, afObjectPlugin*);
-
-    void init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs);
 
     void graphicsUpdate();
 

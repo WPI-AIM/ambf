@@ -549,18 +549,44 @@ bool cDvrkDevice::getUserSwitches(unsigned int& a_userSwitches)
     int gripper_bit = 0;
     int clutch_bit = 1;
     int coag_bit = 2;
+    int op_present_bit = 3;
+    int cam_bit = 4;
+    int cam_plus_bit = 5;
+    int cam_minus_bit = 6;
     if(mtm_device->is_gripper_pressed())
         a_userSwitches |= (1<<gripper_bit);
     else
         a_userSwitches &= ~(1<<gripper_bit);
+
     if(mtm_device->is_clutch_pressed())
         a_userSwitches |= (1<<clutch_bit);
     else
         a_userSwitches &= ~(1<<clutch_bit);
+
     if(mtm_device->is_coag_pressed())
         a_userSwitches |= (1<<coag_bit);
     else
         a_userSwitches &= ~(1<<coag_bit);
+
+    if(mtm_device->is_op_present_pressed())
+        a_userSwitches |= (1<<op_present_bit);
+    else
+        a_userSwitches &= ~(1<<op_present_bit);
+
+    if(mtm_device->is_cam_pressed())
+        a_userSwitches |= (1<<cam_bit);
+    else
+        a_userSwitches &= ~(1<<cam_bit);
+
+    if(mtm_device->is_cam_plus_pressed())
+        a_userSwitches |= (1<<cam_plus_bit);
+    else
+        a_userSwitches &= ~(1<<cam_plus_bit);
+
+    if(mtm_device->is_cam_minus_pressed())
+        a_userSwitches |= (1<<cam_minus_bit);
+    else
+        a_userSwitches &= ~(1<<cam_minus_bit);
 
     return (C_SUCCESS);
 }

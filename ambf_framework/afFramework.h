@@ -545,6 +545,10 @@ public:
 
     virtual void reset();
 
+    virtual afBaseObjectAttribsPtr getAttributes(){
+        return m_attributes;
+    }
+
     cVector3d getLocalPos();
 
     cMatrix3d getLocalRot();
@@ -658,9 +662,15 @@ protected:
 
     vector<afBaseObjectPtr> m_childrenObjects;
 
+    virtual void storeAttributes(const afBaseObjectAttribsPtr a_attribs){
+        m_attributes = a_attribs;
+    }
+
 private:
     // Whether or not this object is visible
     bool m_visible = false;
+
+    afBaseObjectAttribsPtr m_attributes;
 };
 
 
@@ -783,9 +793,9 @@ public:
 
     afJointPtr getJoint(string a_name, bool suppress_warning=false);
 
-    afActuatorPtr getActuator(string a_name);
+    afActuatorPtr getActuator(string a_name, bool suppress_warning=false);
 
-    afSensorPtr getSensor(string a_name);
+    afSensorPtr getSensor(string a_name, bool suppress_warning=false);
 
     afVehiclePtr getVehicle(string a_name, bool suppress_warning=false);
 
@@ -873,7 +883,6 @@ protected:
 
     void addChildsSceneObjectsToWorld(afBaseObjectPtr a_object);
 
-    afObjectManager m_objectManager;
     afModelMap m_modelsMap;
     afWorldPtr m_afWorld;
 };
@@ -914,6 +923,8 @@ public:
     bool isCommonCollisionGroupIdx(vector<uint> a_idx);
 
     void estimateInertia();
+
+    void setGravity(const cVector3d& a_gravity);
 
     inline double getMass(){return m_mass;}
 
@@ -965,6 +976,10 @@ protected:
 
     // Inertia
     btVector3 m_inertia;
+
+    // Gravity
+    cVector3d m_gravity;
+    bool m_overrideGravity;
 };
 
 ///
@@ -1271,6 +1286,8 @@ public:
     virtual bool createFromAttribs(afJointAttributes* a_attribs);
 
     virtual void update(double dt);
+
+    afRigidBodyPtr findConnectingBody(string body_name);
 
     btVector3 getDefaultJointAxisInParent(afJointType a_type);
 
@@ -1906,14 +1923,18 @@ public:
 
     double getRenderTimeStamp();
 
+    bool overrideRendering(){return m_overrideRenderingFlag;}
+
+    void setOverrideRendering(bool val){m_overrideRenderingFlag = val;}
+
 public:
     bool m_cam_pressed;
     GLFWwindow* m_window;
 
     static GLFWwindow* s_mainWindow;
-    static GLFWmonitor** s_monitors;
+    GLFWmonitor** m_monitors;
     GLFWmonitor* m_monitor;
-    static int s_numMonitors;
+    int m_numMonitors;
 
     cStereoMode m_stereoMode;
 
@@ -1935,7 +1956,6 @@ public:
 
     // Window parameters
     int m_width, m_height;
-    int m_win_x, m_win_y;
 
     vector<string> m_controllingDevNames;
 
@@ -2046,6 +2066,11 @@ private:
     cShaderProgramPtr m_preprocessingShaderProgram;
 
     double m_renderTimeStamp=0.0;
+
+    // Flag to skip rendering from this camera in the world::render method
+    // The current application is for a plugin that wants to take control
+    // of rendering from the camera.
+    bool m_overrideRenderingFlag;
 };
 
 
@@ -2178,7 +2203,7 @@ public:
     int getMaxIterations(){return m_maxIterations;}
 
     // This method returns the current simulation time
-    double getWallTime(){return m_wallClock;}
+    double getWallTime(){return m_wallClock.getCurrentTimeSeconds();}
 
     // This method returns the current simulation time
     double getSimulationTime(){return m_simulationTime;}
@@ -2193,7 +2218,7 @@ public:
     void estimateBodyWrenches();
 
     //! This method updates the simulation over a time interval.
-    virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
+    virtual void updateDynamics(double a_interval, int a_numDevices = 0);
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updateSceneObjects();
@@ -2226,7 +2251,9 @@ public:
 
     bool isHeadless();
 
-    int getPhysicsFrequency(){return m_physicsFreq;}
+    int getPhysicsFrequency(){return m_freqCounterPhysics.getFrequency();}
+
+    int getGraphicsFrequency(){return m_freqCounterGraphics.getFrequency();}
 
     int getNumDevices(){return m_numDevices;}
 
@@ -2281,7 +2308,7 @@ public:
 
     cMesh* m_pickSphere = nullptr;
 
-    cPrecisionClock g_wallClock;
+    cPrecisionClock m_wallClock;
 
     // Vertex Shader Filepath
     afPath m_vsFilePath;
@@ -2305,7 +2332,7 @@ public:
     cFrequencyCounter m_freqCounterGraphics;
 
     // a frequency counter to measure the simulation haptic rate
-    cFrequencyCounter m_freqCounterHaptics;
+    cFrequencyCounter m_freqCounterPhysics;
 
     map<string, afPointCloudPtr> m_pcMap;
 
@@ -2346,18 +2373,13 @@ protected:
     // Integration time step.
     double m_integrationTimeStep;
 
-    // Wall Clock in Secs
-    double m_wallClock;
-
-    // Last Simulation Time
+    // Last Simulation Timebn
     double m_lastSimulationTime;
 
     // Maximum number of iterations.
     int m_integrationMaxIterations;
 
     afWorldPluginManager m_pluginManager;
-
-    int m_physicsFreq = 0;
 
     int m_numDevices = 0;
 
@@ -2574,7 +2596,6 @@ public:
     void clearResetFlag(){m_resetFlag = false;}
 
 protected:
-    afVolumeAttributes m_attribs;
     cVoxelObject* m_voxelObject;
     cMultiImagePtr m_multiImage;
 

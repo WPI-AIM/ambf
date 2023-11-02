@@ -58,6 +58,7 @@ void CameraRosCom::init(){
 }
 
 void CameraRosCom::reset_cmd(){
+    m_Cmd.enable_position_controller = false;
 }
 
 void CameraRosCom::sub_cb(ambf_msgs::CameraCmdConstPtr msg){

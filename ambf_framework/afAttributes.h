@@ -294,6 +294,7 @@ struct afInertialAttributes{
 public:
     afInertialAttributes(){
         m_mass = 1.0;
+        m_overrideGravity = false;
         m_estimateInertia = true;
         m_estimateInertialOffset = true;
     }
@@ -302,6 +303,8 @@ public:
 
     double m_mass;
     afVector3d m_inertia;
+    afVector3d m_gravity;
+    bool m_overrideGravity;
     bool m_estimateInertia;
     afTransform m_inertialOffset;
     afSurfaceAttributes m_surfaceAttribs;
@@ -400,6 +403,16 @@ public:
     }
 };
 
+struct afSpecificationData{
+    string m_type;
+    string m_rawData;
+
+    friend std::ostream& operator << (std::ostream& out, const afSpecificationData& data){
+        out << "Specification Type: " << data.m_type << "\nRaw Data: \n" << data.m_rawData;
+        return out;
+    }
+};
+
 
 ///
 /// \brief The afBaseObjectAttributes struct
@@ -410,6 +423,15 @@ public:
         m_pathsResolved = false;
         m_namespaceResolved = false;
     }
+
+    virtual void setSpecificationData(const afSpecificationData& a_data){
+        m_specificationData = a_data;
+    }
+
+    virtual afSpecificationData getSpecificationData(){
+        return m_specificationData;
+    }
+
     // Identification attribs. Is used to determine what type of object this is (Rigid Body, Soft Body, Sensor, etc.)
     afIdentificationAttributes m_identificationAttribs;
 
@@ -439,6 +461,9 @@ public:
 protected:
     bool m_pathsResolved;
     bool m_namespaceResolved;
+
+private:
+    afSpecificationData m_specificationData;
 };
 
 
@@ -1061,6 +1086,7 @@ public:
     afModelAttributes(){
         m_ignoreInterCollision = false;
         m_enableComm = true;
+        m_overrideGravity = false;
     }
     ~afModelAttributes(){
 //        for (int i = 0 ; i < m_sensorAttribs.size() ; i++){
@@ -1076,6 +1102,8 @@ public:
     afShaderAttributes m_shaderAttribs;
 
     bool m_enableComm;
+    bool m_overrideGravity;
+    afVector3d m_gravity;
 
     vector <afRigidBodyAttributes> m_rigidBodyAttribs;
     vector <afSoftBodyAttributes> m_softBodyAttribs;
@@ -1391,6 +1419,14 @@ public:
     vector<afPath> m_modelFilepaths;
     vector<afPluginAttributes> m_pluginAttribs;
 
+    virtual void setSpecificationData(const afSpecificationData& a_data){
+        m_specificationData = a_data;
+    }
+
+    virtual afSpecificationData getSpecificationData(){
+        return m_specificationData;
+    }
+
     virtual bool resolveRelativePathAttribs(){
         afPath a_parentPath = m_filePath.parent_path();
 
@@ -1408,6 +1444,8 @@ public:
 
         return true;
     }
+private:
+    afSpecificationData m_specificationData;
 };
 
 }

@@ -1,4 +1,5 @@
 from ambf_client import Client
+import rospy
 import time
 import sys
 if sys.version_info[0] >= 3:
@@ -6,7 +7,11 @@ if sys.version_info[0] >= 3:
 else:
     from Tkinter import *
 
-global sensor_array, actuator_array, sensor_triggered, actuator_activated, grasp
+
+sensor_obj = None
+actuators = []
+actuators_activation_state = []
+grasp = False
 
 
 def grasp_button_cb():
@@ -21,40 +26,56 @@ def release_button_cb():
     print('RELEASE REQUESTED')
 
 
+def print_sensors_state(sensor_obj):
+    print('Sensor Array Triggers: [', end=' ')
+    for i in range(sensor_obj.get_count()):
+        print(sensor_obj.is_triggered(i), end=' ')
+
+    print(']')
+
+
 def grasp_object(grasp):
-    global sensor_array, actuator_array, sensor_triggered, actuator_activated
-
-    sensor_count = sensor_array.get_count()
-
-    for i in range(sensor_count):
-        if sensor_array.is_triggered(i):
-            sensor_triggered[i] = True
-        else:
-            sensor_triggered[i] = False
-
-    print('Sensor Array Triggers: ', sensor_triggered)
+    sensor_count = sensor_obj.get_count()
 
     if grasp:
         for i in range(sensor_count):
-            if sensor_triggered[i] and actuator_activated[i] is False:
-                obj_name = sensor_array.get_sensed_object(i)
+            if sensor_obj.is_triggered(i) and actuators_activation_state[i] is False:
+                obj_name = sensor_obj.get_sensed_object(i)
                 print('Grasping ', obj_name, ' via actuator ', i)
-                actuator_array[i].actuate(obj_name)
-                actuator_activated[i] = True
+                actuators[i].actuate(obj_name)
+                actuators_activation_state[i] = True
     else:
         for i in range(sensor_count):
-            actuator_array[i].deactuate()
-            if actuator_activated[i] is True:
+            actuators[i].deactuate()
+            if actuators_activation_state[i] is True:
                 print('Releasing object from actuator ', i)
-            actuator_activated[i] = False
+            actuators_activation_state[i] = False
+
+
+def grasp_object_via_sensor_name(grasp):
+    global sensor_obj
+    sensor_count = sensor_obj.get_count()
+
+    if grasp:
+        for i in range(sensor_count):
+            if sensor_obj.is_triggered(i) and actuators_activation_state[i] is False:
+                actuators[i].actuate_from_sensor_data(sensor_obj.get_identifier())
+                actuators_activation_state[i] = True
+                print('Actuating actuator ', i, 'named: ', actuators[i].get_name())
+    else:
+        for i in range(sensor_count):
+            actuators[i].deactuate()
+            if actuators_activation_state[i] is True:
+                print('Releasing object from actuator ', i)
+            actuators_activation_state[i] = False
 
 
 def main():
-    global sensor_array, actuator_array, sensor_triggered, actuator_activated, grasp
+    global sensor_obj, actuators, actuators_activation_state, grasp
     c = Client('sensor_actuators_example')
     c.connect()
     # We have a sensor array (4 individual sensing elements)
-    sensor_array = c.get_obj_handle('tip_sensor_array')
+    sensor_obj = c.get_obj_handle('tip_sensor_array')
 
     # We have four corresponding constraint actuators, that we are going to actuate based on the trigger events from the
     # above sensors. Note that there is not explicit relation between a sensor and an actuator, it is we who are
@@ -64,15 +85,14 @@ def main():
     actuator2 = c.get_obj_handle('tip_actuator2')
     actuator3 = c.get_obj_handle('tip_actuator3')
 
-    actuator_array = [actuator0, actuator1, actuator2, actuator3]
-    sensor_triggered = [False, False, False, False]
-    actuator_activated = [False, False, False, False]
+    actuators = [actuator0, actuator1, actuator2, actuator3]
+    actuators_activation_state = [False, False, False, False]
     grasp = False
 
     time.sleep(1.0)
 
     tk = Tk()
-    tk.title("Attache Needle")
+    tk.title("Sensing and Grasping Example")
     tk.geometry("250x150")
     grasp_button = Button(
         tk, text="Grasp", command=grasp_button_cb, height=3, width=50, bg="red")
@@ -81,11 +101,17 @@ def main():
     grasp_button.pack()
     release_button.pack()
 
-    while True:
+    counter = 0
+    while not rospy.is_shutdown():
         try:
             tk.update()
-            grasp_object(grasp)
+            if not (counter % 50):
+                print_sensors_state(sensor_obj)
+                counter = 0
+            # grasp_object(grasp)
+            grasp_object_via_sensor_name(grasp)
             time.sleep(0.02)
+            counter = counter + 1
         except KeyboardInterrupt:
             print('Exiting Program')
             break

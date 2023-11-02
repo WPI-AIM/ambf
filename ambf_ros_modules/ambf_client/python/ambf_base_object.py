@@ -172,6 +172,12 @@ class BaseObject(WatchDog):
         else:
             return self._state.pose.orientation
 
+    def get_identifier(self):
+        """
+        :return:
+        """
+        return self._state.identifier.data
+
     def get_name(self):
         """
         Get the name of this object

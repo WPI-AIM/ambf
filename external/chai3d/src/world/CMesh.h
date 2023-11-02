@@ -388,6 +388,9 @@ protected:
     //! Display list for edges.
     cDisplayList m_displayListEdges;
 
+    //! Flag to check if this object is a volume type
+    bool m_is_voxelObject = false;
+
 
     //--------------------------------------------------------------------------
     // PUBLIC MEMBERS - DISPLAY PROPERTIES:

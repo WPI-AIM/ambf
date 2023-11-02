@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
         glfwSetErrorCallback(errorCallback);
 
         // set OpenGL version
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
         // set active stereo mode
@@ -467,16 +467,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    // Load plugins.
-    vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
-    for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){
-        g_pluginManager.add(plugin_filepaths[pi], plugin_filepaths[pi]);
-    }
-
-    for (int pA = 0 ; pA < launchAttribs.m_pluginAttribs.size() ; pA++){
-        g_pluginManager.add(launchAttribs.m_pluginAttribs[pA].m_filename, launchAttribs.m_pluginAttribs[pA].m_name, launchAttribs.m_pluginAttribs[pA].m_path.c_str());
-    }
-
     g_afWorld->m_bulletWorld->setInternalTickCallback(preTickCallBack, 0, true);
 
 
@@ -490,7 +480,15 @@ int main(int argc, char* argv[])
     g_inputDevices->createFromAttribs(&tuAttribs);
 
 
-    g_pluginManager.init(argc, argv, g_afWorld);
+    // Load plugins.
+    vector<string> plugin_filepaths = afUtils::splitString<vector<string> >(g_cmdOpts.simulator_plugins, ", ");
+    for(int pi = 0 ; pi < plugin_filepaths.size() ; pi++){
+        g_pluginManager.loadPlugin(argc, argv, g_afWorld, plugin_filepaths[pi], plugin_filepaths[pi]);
+    }
+
+    for (int pA = 0 ; pA < launchAttribs.m_pluginAttribs.size() ; pA++){
+        g_pluginManager.loadPlugin(argc, argv, g_afWorld, launchAttribs.m_pluginAttribs[pA].m_filename, launchAttribs.m_pluginAttribs[pA].m_name, launchAttribs.m_pluginAttribs[pA].m_path.c_str());
+    }
 
     //-----------------------------------------------------------------------------------------------------------
     // END: SEARCH FOR CONTROLLING DEVICES FOR CAMERAS IN AMBF AND ADD THEM TO RELEVANT WINDOW-CAMERA PAIR
@@ -550,7 +548,7 @@ int main(int argc, char* argv[])
         }
 
         else{
-            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->m_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
         graphicsRate.sleep();
@@ -600,7 +598,7 @@ void updatePhysics(){
     g_simulationFinished = false;
 
     // start haptic device
-    g_afWorld->g_wallClock.start(true);
+    g_afWorld->m_wallClock.start(true);
 
     afRate phxSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
@@ -622,7 +620,6 @@ void updatePhysics(){
             g_afWorld->resetDynamicBodies();
             g_bodiesResetFlag = false;
         }
-        g_afWorld->m_freqCounterHaptics.signal(1);
 
         // Take care of any picked body by mouse
         if (g_pickBody){
@@ -725,8 +722,10 @@ void updatePhysics(){
                 simDev->P_ac_ramp = 1.0;
             }
         }
-        g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
-        g_pluginManager.physicsUpdate(step_size);
+        g_afWorld->updateDynamics(step_size, g_inputDevices->m_numDevices);
+        if (!g_afWorld->isPhysicsPaused()){
+                g_pluginManager.physicsUpdate(step_size);
+        }
         phxSleep.sleep();
     }
     g_simulationFinished = true;
@@ -875,7 +874,7 @@ void updateHapticDevice(void* ccuPtr){
             }
 
 
-            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
+            if (g_afWorld->m_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->setPosClutched(phyDev->getPos());
             }
 
@@ -1263,6 +1262,7 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 
         // option - Toggle visibility of label updates
         else if (a_key == GLFW_KEY_U){
+            printf("Toggling upadating the labels\n");
             g_afRenderOptions.m_updateLabels = !g_afRenderOptions.m_updateLabels;
         }
 

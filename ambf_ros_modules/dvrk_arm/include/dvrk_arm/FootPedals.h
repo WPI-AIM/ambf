@@ -45,8 +45,35 @@
 #define CDVRK_FOOTPEDALSH
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
+#include <string.h>
 
 class DVRK_Bridge;
+
+enum class ButtonEnum{
+    COAG,
+    CLUTCH,
+    OPERATORPRESENT,
+    CAMERA,
+    CAM_PLUS,
+    CAM_MINUS
+};
+
+class ButtonHandle{
+public:
+    ButtonHandle(std::shared_ptr<ros::NodeHandle> n, std::string topic_name){
+        m_subscriber = n->subscribe(topic_name, 1, &ButtonHandle::callback, this);
+        m_pressed = false;
+    }
+
+    inline bool isPressed(){return m_pressed;}
+private:
+    void callback(const sensor_msgs::JoyConstPtr &msg){
+        m_pressed = msg->buttons[0];
+    }
+
+    bool m_pressed;
+    ros::Subscriber m_subscriber;
+};
 
 class DVRK_FootPedals{
     friend class DVRK_Bridge;
@@ -54,10 +81,6 @@ class DVRK_FootPedals{
     DVRK_FootPedals();
     ~DVRK_FootPedals();
     void init_footpedals(std::shared_ptr<ros::NodeHandle> n);
-    bool _clutch_pressed, _coag_pressed;
-private:
-    ros::Subscriber clutch_sub, coag_sub;
-    void clutch_sub_cb(const sensor_msgs::JoyConstPtr &msg);
-    void coag_sub_cb(const sensor_msgs::JoyConstPtr &msg);
+    std::map<ButtonEnum, ButtonHandle*> m_buttonHandles;
 };
 #endif

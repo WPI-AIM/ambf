@@ -59,6 +59,7 @@ ActuatorRosCom::~ActuatorRosCom(){
 }
 
 void ActuatorRosCom::reset_cmd(){
+    m_Cmd.actuate = false;
 }
 
 void ActuatorRosCom::sub_cb(ambf_msgs::ActuatorStateConstPtr msg){

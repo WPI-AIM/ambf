@@ -142,6 +142,10 @@ public:
         m_State.name.data = name;
     }
 
+    inline void set_identifier(std::string identifier){
+        m_State.identifier.data = identifier;
+    }
+
     inline void set_time_stamp(double a_sec){
         m_State.header.stamp.fromSec(a_sec);
     }

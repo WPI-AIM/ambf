@@ -38,6 +38,7 @@
     \author    <http://www.chai3d.org>
     \author    Francois Conti
     \author    Dan Morris
+    \contributor Adnan Munawar
     \version   3.2.0 $Rev: 2181 $
 */
 //==============================================================================
@@ -144,6 +145,9 @@ cCamera::cCamera(cWorld* a_parentWorld)
     m_posRadius = 1.0;
     m_posPolarRad = 0.0;
     m_posAzimuthRad = 0.0;
+
+    m_stereoOffsetW = m_stereoEyeSeparation;
+    m_stereoOffsetH = 0;
 
     // audio device
     m_audioDevice = NULL;
@@ -1088,7 +1092,8 @@ void cCamera::renderView(const int a_windowWidth,
         }
     }
 
-
+    int offsetW = 0;
+    int offsetH = 0;
     //-----------------------------------------------------------------------
     // (4) RENDER THE ENTIRE SCENE
     //-----------------------------------------------------------------------
@@ -1334,6 +1339,8 @@ void cCamera::renderView(const int a_windowWidth,
                 double right  = (       glAspect * wd2 + stereo_multiplier * 0.5 * m_stereoEyeSeparation * ndfl) * 0.5;
                 double top    =        wd2;
                 double bottom = -1.0 * wd2;
+
+                offsetW = 0.5 * m_stereoOffsetW * a_windowWidth * stereo_multiplier;
 
                 glFrustum(left, right, bottom, top, m_distanceNear, m_distanceFar);
 
@@ -1690,7 +1697,7 @@ void cCamera::renderView(const int a_windowWidth,
         {
             renderLayer(m_frontLayer,
                         a_windowWidth,
-                        a_windowHeight);
+                        a_windowHeight, offsetW, offsetH);
         }
 
         // if requested, display reset has now been completed
@@ -1811,7 +1818,9 @@ void cCamera::adjustClippingPlanes()
 //==============================================================================
 void cCamera::renderLayer(cGenericObject* a_graph,
                           int a_width,
-                          int a_height)
+                          int a_height,
+                          int a_stereoOffsetW,
+                          int a_stereoOffsettH)
 {
 #ifdef C_USE_OPENGL
 
@@ -1833,7 +1842,7 @@ void cCamera::renderLayer(cGenericObject* a_graph,
 
     // set orthographic rendering mode. The z-buffer front and back clipping planes
     // can be set to any desired default values.
-    glOrtho(0, a_width, 0, a_height, -10000, 10000);
+    glOrtho(0 + a_stereoOffsetW, a_width + a_stereoOffsetW, 0 + a_stereoOffsettH, a_height + a_stereoOffsettH, -10000, 10000);
 
     // reset modeling view matrix.
     glMatrixMode(GL_MODELVIEW);

@@ -23,6 +23,7 @@ high resolution path: ../../../meshes/kuka_lbr_med/high_res/
 low resolution path: ../../../meshes/kuka_lbr_med/low_res/
 ignore inter-collision: false
 namespace: /ambf/env/
+gravity: {x: 0., y: 0., z: 0.}
 BODY base:
   name: base
   mesh: base.STL

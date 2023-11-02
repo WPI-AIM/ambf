@@ -137,6 +137,10 @@ public:
     bool is_gripper_pressed(); //Presed or Released, for MTM
     bool is_clutch_pressed();
     bool is_coag_pressed();
+    bool is_op_present_pressed();
+    bool is_cam_pressed();
+    bool is_cam_plus_pressed();
+    bool is_cam_minus_pressed();
 
     void set_mode(const std::string &state, bool lock_wrench_ori = true);
 

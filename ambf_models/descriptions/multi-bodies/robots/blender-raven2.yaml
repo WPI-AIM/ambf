@@ -15,6 +15,7 @@ high resolution path: ../../../meshes/blender_afmb/raven_2/high_res/
 low resolution path: ../../../meshes/blender_afmb/raven_2/low_res/
 ignore inter-collision: true
 namespace: /ambf/env/raven_2/
+gravity: {x: 0., y: 0., z: 0.}
 BODY 0_link:
   name: 0_link
   mesh: ''
