@@ -973,6 +973,143 @@ void cMesh::clearAllEdges()
 }
 
 
+
+class afMeshWeldingSpecs{
+public:
+    afMeshWeldingSpecs(cVector3d a_minBounds, cVector3d a_maxBounds, double a_weldingThreshold){
+        m_weldindThreshold = a_weldingThreshold;
+        m_minBounds = a_minBounds;
+        m_maxBounds = a_maxBounds;
+        cVector3d deltaBounds = m_maxBounds - m_minBounds;
+        m_deltaBoundsX = deltaBounds.x();
+        m_deltaBoundsXY = m_deltaBoundsX * deltaBounds.y();
+        m_deltaBoundsXYZ = m_deltaBoundsXY * deltaBounds.z();
+    }
+
+    double m_weldindThreshold;
+    cVector3d m_minBounds;
+    cVector3d m_maxBounds;
+    double m_deltaBoundsX;
+    double m_deltaBoundsXY;
+    double m_deltaBoundsXYZ;
+};
+
+class afTriVertex{
+public:
+    afTriVertex(const cVector3d& v, const uint &idx, const afMeshWeldingSpecs* a_weldingSpecs): m_weldingSpecs(a_weldingSpecs){
+        m_x=v(0); m_y=v(1); m_z=v(2); m_idx=idx;
+        m_weldingSpecs = a_weldingSpecs;
+        computeHash();
+    }
+
+    bool operator==(const afTriVertex& rhs) const
+    {
+        if (this->m_x == rhs.m_x && this->m_y == rhs.m_y && this->m_z == rhs.m_z) return true;
+        else return false;
+    }
+
+    void computeHash(){
+        m_hash = (m_weldingSpecs->m_minBounds.x() + m_x) +
+                m_weldingSpecs->m_deltaBoundsX * (m_weldingSpecs->m_minBounds.y() + m_y) +
+                m_weldingSpecs->m_deltaBoundsXY * (m_weldingSpecs->m_minBounds.z() + m_z);
+    }
+
+    const double& getHash() const{
+        return m_hash;
+
+    }
+
+    bool operator<(const afTriVertex& rhs) const
+    {
+        return (getHash() < rhs.getHash());
+    }
+
+public:
+    double m_x;
+    double m_y;
+    double m_z;
+    double m_hash;
+    const afMeshWeldingSpecs* m_weldingSpecs;
+    uint m_idx;
+};
+
+
+//==============================================================================
+/*!
+    This method removes all duplicate/repeated vertices.
+*/
+//==============================================================================
+bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
+{
+    bool res = false;
+    set<afTriVertex> rMesh;
+    vector<uint> nIndices; nIndices.resize(m_triangles->m_indices.size());
+    vector<uint> oUniqueIndexes;
+    uint insIdx = 0;
+    computeBoundaryBox();
+    afMeshWeldingSpecs weldingSpecs(getBoundaryMin(), getBoundaryMax(), a_weldingThreshold);
+
+    for(int i = 0 ; i < m_triangles->m_indices.size() ; i++){
+        uint oIdx = m_triangles->m_indices[i];
+        cVector3d v = m_triangles->m_vertices->getLocalPos(oIdx);
+        pair<set<afTriVertex>::iterator, bool> insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
+        uint nIdx;
+        if (insIt.second){
+            nIdx = insIdx;
+            oUniqueIndexes.push_back(oIdx);
+            insIdx++;
+        }
+        else{
+            nIdx = insIt.first->m_idx;
+        }
+        nIndices[i] = nIdx;
+    }
+
+    int oS = getNumVertices();
+    int nS = oUniqueIndexes.size();
+
+    if (nS < oS){
+        cMesh* nMesh = new cMesh();
+        //        nMesh->m_vertices->allocateData(nS, true, false, false, false, false, false);
+        nMesh->m_triangles->m_vertices->allocateData(oUniqueIndexes.size(), true, true, true, true, true, false);
+
+        for (int i = 0 ; i < nS ; i++){
+            uint oIdx = oUniqueIndexes[i];
+
+            cVector3d position = m_vertices->getLocalPos(oIdx);
+            cVector3d normal = m_vertices->getNormal(oIdx);
+            cVector3d tex_coord = m_vertices->getTexCoord(oIdx);
+            cVector3d tangent = m_vertices->getTangent(oIdx);
+            cVector3d bit_tangent = m_vertices->getBitangent(oIdx);
+
+            nMesh->m_vertices->setLocalPos(i, position);
+            nMesh->m_vertices->setNormal(i, normal);
+            nMesh->m_vertices->setTexCoord(i, tex_coord);
+            nMesh->m_vertices->setTangent(i, tangent);
+            nMesh->m_vertices->setBitangent(i, bit_tangent);
+        }
+
+        cerr << "INFO! *** Original Mesh Size: " << getNumVertices() << endl;
+        cerr << "INFO! *** -----New Mesh Size: " << nMesh->getNumVertices() << endl;
+
+        for (int i = 0 ; i < nIndices.size() ; i=i+3){
+            nMesh->newTriangle(nIndices[i], nIndices[i+1], nIndices[i+2]);
+        }
+
+        m_vertices->clear();
+        m_vertices = nMesh->m_vertices->copy();
+
+        m_triangles->clear();
+        m_triangles = nMesh->m_triangles->copy();
+
+        computeAllNormals();
+
+        res = true;
+    }
+    return res;
+}
+
+
 //==============================================================================
 /*!
     This method sets the graphic properties for edge-rendering.

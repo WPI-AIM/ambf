@@ -240,6 +240,9 @@ public:
     //! This method clears all edges
     void clearAllEdges();
 
+    //! This method removes duplicate vertices and updates triangles indices.
+    bool removeDuplicateVertices(double& a_weldingThreshold);
+
     //! This method enables or disables the rendering of edges.
     void setShowEdges(const bool a_showEdges) { m_showEdges = a_showEdges; }
 

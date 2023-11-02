@@ -1661,6 +1661,15 @@ bool cMultiMesh::loadFromFile(string a_filename)
     return (result);
 }
 
+bool cMultiMesh::removeDuplicateVertices(double a_weldingThreshold)
+{
+    bool res = false;
+    for (int i=0; i < m_meshes->size() ; i++){
+        res |= getMesh(i)->removeDuplicateVertices(a_weldingThreshold);
+    };
+    return res;
+}
+
 
 //==============================================================================
 /*!
