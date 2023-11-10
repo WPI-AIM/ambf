@@ -59,6 +59,7 @@
 //------------------------------------------------------------------------------
 #include <vector>
 #include <list>
+#include <map>
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -91,6 +92,16 @@ typedef std::shared_ptr<cTriangleArray> cTriangleArrayPtr;
 struct cEdge;
 
 //------------------------------------------------------------------------------
+
+struct cIndexMapping{
+public:
+    cIndexMapping(unsigned int vertexIndex, unsigned int triangleIndex){
+        m_vertexIndex = vertexIndex;
+        m_triangleIndex = triangleIndex;
+    }
+  unsigned int m_triangleIndex;
+  unsigned int m_vertexIndex;
+};
 
 //==============================================================================
 /*!
@@ -242,6 +253,9 @@ public:
 
     //! This method removes duplicate vertices and updates triangles indices.
     bool removeDuplicateVertices(double& a_weldingThreshold);
+
+    //! Find duplicate vertices and record their indices.
+    bool findDuplicateVertices(double& a_weldingThreshold);
 
     //! This method enables or disables the rendering of edges.
     void setShowEdges(const bool a_showEdges) { m_showEdges = a_showEdges; }
@@ -425,6 +439,17 @@ public:
 
     //! Array of Edges.
     std::vector<cEdge> m_edges;
+
+    //! Tree of duplicate vertex indices, the key is the new index (after identifying duplicates) and
+    //! value (rhs) is the list of original indices of duplicate vertices.
+    //! E.g. Imagine two triangles <123 and <456 with a shared edge between with vertices 2,3 == 4,5
+    //! Original Indices = [1, 2, 3, 4, 5, 6]
+    //! Duplicates       = [1, 2, 3, 2, 3, 6]
+    //! Tree =           {1: [1]
+    //!                  {2: [2, 4]
+    //!                  {3: [3, 5]
+    //!                  {4: [6]}
+    std::map<unsigned int, std::vector<cIndexMapping> > m_duplicateVertexIndexTree;
 };
 
 

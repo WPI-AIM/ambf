@@ -1041,40 +1041,16 @@ public:
 //==============================================================================
 bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
 {
-    bool res = false;
-    set<afTriVertex> rMesh;
-    vector<uint> nIndices; nIndices.resize(m_triangles->m_indices.size());
-    vector<uint> oUniqueIndexes;
-    uint insIdx = 0;
-    computeBoundaryBox();
-    afMeshWeldingSpecs weldingSpecs(getBoundaryMin(), getBoundaryMax(), a_weldingThreshold);
+    bool res = findDuplicateVertices(a_weldingThreshold);
 
-    for(int i = 0 ; i < m_triangles->m_indices.size() ; i++){
-        uint oIdx = m_triangles->m_indices[i];
-        cVector3d v = m_triangles->m_vertices->getLocalPos(oIdx);
-        pair<set<afTriVertex>::iterator, bool> insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
-        uint nIdx;
-        if (insIt.second){
-            nIdx = insIdx;
-            oUniqueIndexes.push_back(oIdx);
-            insIdx++;
-        }
-        else{
-            nIdx = insIt.first->m_idx;
-        }
-        nIndices[i] = nIdx;
-    }
-
-    int oS = getNumVertices();
-    int nS = oUniqueIndexes.size();
-
-    if (nS < oS){
+    if (res){
         cMesh* nMesh = new cMesh();
+        unsigned int unique_vertex_count = m_duplicateVertexIndexTree.size();
         //        nMesh->m_vertices->allocateData(nS, true, false, false, false, false, false);
-        nMesh->m_triangles->m_vertices->allocateData(oUniqueIndexes.size(), true, true, true, true, true, false);
+        nMesh->m_triangles->m_vertices->allocateData(unique_vertex_count, true, true, true, true, true, false);
 
-        for (int i = 0 ; i < nS ; i++){
-            uint oIdx = oUniqueIndexes[i];
+        for (int i = 0 ; i < unique_vertex_count ; i++){
+            uint oIdx = m_duplicateVertexIndexTree[i][0].m_vertexIndex;
 
             cVector3d position = m_vertices->getLocalPos(oIdx);
             cVector3d normal = m_vertices->getNormal(oIdx);
@@ -1092,20 +1068,55 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         cerr << "INFO! *** Original Mesh Size: " << getNumVertices() << endl;
         cerr << "INFO! *** -----New Mesh Size: " << nMesh->getNumVertices() << endl;
 
-        for (int i = 0 ; i < nIndices.size() ; i=i+3){
-            nMesh->newTriangle(nIndices[i], nIndices[i+1], nIndices[i+2]);
+        vector<unsigned int> recomputedIndices;
+        recomputedIndices.resize(m_triangles->m_indices.size());
+        unsigned int assignedIndices = 0;
+        for (int i = 0 ; i < m_duplicateVertexIndexTree.size() ; i++){
+            for (int j = 0 ; j < m_duplicateVertexIndexTree[i].size() ; j++){
+                recomputedIndices[m_duplicateVertexIndexTree[i][j].m_vertexIndex] = i;
+                assignedIndices++;
+            }
         }
 
         m_vertices->clear();
         m_vertices = nMesh->m_vertices->copy();
 
-        m_triangles->clear();
-        m_triangles = nMesh->m_triangles->copy();
-
+        m_triangles->m_indices = recomputedIndices;
         computeAllNormals();
-
-        res = true;
     }
+    return res;
+}
+
+
+//==============================================================================
+/*!
+    This method finds duplicate vertices and computes a tree of unique vertices mapping their duplicates
+*/
+//==============================================================================
+bool cMesh::findDuplicateVertices(double &a_weldingThreshold){
+
+    set<afTriVertex> rMesh;
+    computeBoundaryBox();
+    afMeshWeldingSpecs weldingSpecs(getBoundaryMin(), getBoundaryMax(), a_weldingThreshold);
+
+    uint insIdx = 0;
+    for(int i = 0 ; i < m_triangles->m_indices.size() ; i++){
+        uint oIdx = m_triangles->m_indices[i];
+        cVector3d v = m_triangles->m_vertices->getLocalPos(oIdx);
+        pair<set<afTriVertex>::iterator, bool> insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
+        uint nIdx;
+        if (insIt.second){
+            nIdx = insIdx;
+            insIdx++;
+        }
+        else{
+            nIdx = insIt.first->m_idx;
+        }
+        m_duplicateVertexIndexTree[nIdx].push_back(cIndexMapping(oIdx, i / 3));
+    }
+
+    bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;
+
     return res;
 }
 
