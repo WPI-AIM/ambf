@@ -61,7 +61,6 @@ UDP_PORT = 8080
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(("", UDP_PORT))
 
-
 _client = Client()
 _client.connect()
 print(_client.get_obj_names())
@@ -70,12 +69,11 @@ w.reset_bodies()
 psm1 = PSM(_client, 'psm1')
 psm2 = PSM(_client, 'psm2')
 ecm = ECM(_client, 'CameraFrame')
-psm_arms = {"left": psm1,
+psms = {"left": psm1,
             "right": psm2}
 
 # The PSMs can be controlled either in joint space or cartesian space. For the
 # latter, the `servo_cp` command sets the end-effector pose w.r.t its Base frame.
-
 
 def signal_handler(signum, frame):
     print("\nCtrl+C clicked!")
@@ -84,62 +82,49 @@ def signal_handler(signum, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+def set_psm_translation(psm_info, psm):
+    if psm == 'right':
+        return Vector(psm_info['x'] + 0.1, psm_info['y'] + 0.5, psm_info['z'] - 1.3)
+    return Vector(psm_info['x'], psm_info['y'], psm_info['z'] - 1.3)
 
-def set_arm_xyz(data_dict, arm):
-    if arm == 'right':
-        return Vector(data_dict['x'] + 0.1, data_dict['y'] + 0.5, data_dict['z'] - 1.3)
-    else:
-        return Vector(data_dict['x'], data_dict['y'], data_dict['z'] - 1.3)
-
-
-def set_slider(data_dict_slider, robot_arm_slider, arm, cur_slider):
-    if arm == 'right' and data_dict_slider['slider'] != cur_slider:
-        robot_arm_slider.set_jaw_angle(data_dict['slider'])
-        return data_dict['slider']
-    elif arm == 'left' and data_dict_slider['slider'] != cur_slider_left:
-        robot_arm_slider.set_jaw_angle(data_dict['slider'])
-        return data_dict['slider']
-
+def set_end_effector(psm_info, psm_end_effector, psm, end_effector):
+    if psm == 'right' and psm_info['end_effector'] != end_effector:
+        psm_end_effector.set_jaw_angle(psm_info['end_effector'])
+        return psm_info['end_effector']
+    elif psm == 'left' and psm_info['end_effector'] != end_effector_left:
+        psm_end_effector.set_jaw_angle(psm_info['end_effector'])
+        return psm_info['end_effector']
 
 print("Starting TeleOp")
-print("Comment out ensuing print statements for better performance")
+print("Comment out pose print statements for better performance")
+
 
 rate = rospy.Rate(60)
-cur_slider_left = 0.5
-cur_slider_right = 0.5
 
-cmd_xyz_right = Vector(0.1, 0.5, -1.3)
-cmd_xyz_left = Vector(0, 0, -1.3)
+end_effector_left = 0.5
+end_effector_right = 0.5
+translation_right = Vector(0.1, 0.5, -1.3)
+translation_left = Vector(0, 0, -1.3)
 
 while not rospy.is_shutdown():
     data, addr = sock.recvfrom(1024)
     if data is not None:
-        data_dict = json.loads(data)
-        # print(data_dict)
-        if data_dict['test'] == 'true':
-            print(data)
-            ip_addr = addr[0]
-            print(ip_addr)
-            sock.sendto(data, (ip_addr, 8080))
-        elif data_dict['camera'] == 'true':
-            ecm.servo_jp([data_dict['yaw'], data_dict['pitch'],
-                         data_dict['insert'], data_dict['roll']])
+        print(data)
+        psm_info = json.loads(data)
+        if psm_info['camera'] == 'true':
+            ecm.servo_jp([psm_info['yaw'], psm_info['pitch'], psm_info['insert'], psm_info['roll']])
         else:
-            robot_arm = psm_arms[data_dict['arm']]
-            if data_dict['arm'] == 'right':
-                cmd_rpy = Rotation.RPY(-1 * data_dict['yaw'] + np.pi,
-                                       data_dict['pitch'], data_dict['roll'] - (np.pi / 4))
-                if data_dict['transformation'] == 'true':
-                    cmd_xyz_right = set_arm_xyz(data_dict, 'right')
-                robot_arm.servo_cp(Frame(cmd_rpy, cmd_xyz_right))
-                cur_slider_right = set_slider(
-                    data_dict, robot_arm, 'right', cur_slider_right)
+            psm = psms[psm_info['psm']]
+            if psm_info['psm'] == 'right':
+                cmd_rpy = Rotation.RPY(-1 * psm_info['yaw'] + np.pi, psm_info['pitch'], psm_info['roll'] - (np.pi / 4))
+                if psm_info['transformation'] == 'true':
+                    translation_right = set_psm_translation(psm_info, 'right')
+                psm.servo_cp(Frame(cmd_rpy, translation_right))
+                end_effector_right = set_end_effector(psm_info, psm, 'right', end_effector_right)
             else:
-                cmd_rpy = Rotation.RPY(data_dict['pitch'],
-                                       data_dict['yaw'], data_dict['roll'])
-                if data_dict['transformation'] == 'true':
-                    cmd_xyz_left = set_arm_xyz(data_dict, 'left')
-                robot_arm.servo_cp(Frame(cmd_rpy, cmd_xyz_left))
-                cur_slider_left = set_slider(
-                    data_dict, robot_arm, 'left', cur_slider_left)
+                cmd_rpy = Rotation.RPY(psm_info['pitch'], psm_info['yaw'], psm_info['roll'])
+                if psm_info['transformation'] == 'true':
+                    translation_left = set_psm_translation(psm_info, 'left')
+                psm.servo_cp(Frame(cmd_rpy, translation_left))
+                end_effector_left = set_end_effector(psm_info, psm, 'left', end_effector_left)
     rate.sleep()
