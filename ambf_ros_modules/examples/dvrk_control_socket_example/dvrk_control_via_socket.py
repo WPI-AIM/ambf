@@ -107,7 +107,7 @@ translation_right = Vector(0.1, 0.5, -1.3)
 translation_left = Vector(0, 0, -1.3)
 
 while not rospy.is_shutdown():
-    data, addr = sock.recvfrom(1024)
+    data,_ = sock.recvfrom(1024)
     if data is not None:
         print(data)
         psm_info = json.loads(data)
