@@ -2203,7 +2203,7 @@ public:
     int getMaxIterations(){return m_maxIterations;}
 
     // This method returns the current simulation time
-    double getWallTime(){return m_wallClock;}
+    double getWallTime(){return m_wallClock.getCurrentTimeSeconds();}
 
     // This method returns the current simulation time
     double getSimulationTime(){return m_simulationTime;}
@@ -2218,7 +2218,7 @@ public:
     void estimateBodyWrenches();
 
     //! This method updates the simulation over a time interval.
-    virtual void updateDynamics(double a_interval, double a_wallClock=0, double a_loopFreq = 0, int a_numDevices = 0);
+    virtual void updateDynamics(double a_interval, int a_numDevices = 0);
 
     //! This method updates the position and orientation from Bullet models to CHAI3D models.
     virtual void updateSceneObjects();
@@ -2251,7 +2251,9 @@ public:
 
     bool isHeadless();
 
-    int getPhysicsFrequency(){return m_physicsFreq;}
+    int getPhysicsFrequency(){return m_freqCounterPhysics.getFrequency();}
+
+    int getGraphicsFrequency(){return m_freqCounterGraphics.getFrequency();}
 
     int getNumDevices(){return m_numDevices;}
 
@@ -2306,7 +2308,7 @@ public:
 
     cMesh* m_pickSphere = nullptr;
 
-    cPrecisionClock g_wallClock;
+    cPrecisionClock m_wallClock;
 
     // Vertex Shader Filepath
     afPath m_vsFilePath;
@@ -2330,7 +2332,7 @@ public:
     cFrequencyCounter m_freqCounterGraphics;
 
     // a frequency counter to measure the simulation haptic rate
-    cFrequencyCounter m_freqCounterHaptics;
+    cFrequencyCounter m_freqCounterPhysics;
 
     map<string, afPointCloudPtr> m_pcMap;
 
@@ -2371,18 +2373,13 @@ protected:
     // Integration time step.
     double m_integrationTimeStep;
 
-    // Wall Clock in Secs
-    double m_wallClock;
-
-    // Last Simulation Time
+    // Last Simulation Timebn
     double m_lastSimulationTime;
 
     // Maximum number of iterations.
     int m_integrationMaxIterations;
 
     afWorldPluginManager m_pluginManager;
-
-    int m_physicsFreq = 0;
 
     int m_numDevices = 0;
 

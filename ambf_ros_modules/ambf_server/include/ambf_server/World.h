@@ -126,7 +126,8 @@ class World: public WorldRosCom, public WorldParams{
 public:
     World(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     inline void set_num_devices(uint a_num){m_State.n_devices = a_num;}
-    inline void set_loop_freq(double a_freq){m_State.dynamic_loop_freq = a_freq;}
+    inline void set_graphics_loop_freq(double a_freq){m_State.graphics_loop_freq = a_freq;}
+    inline void set_physics_loop_freq(double a_freq){m_State.dynamic_loop_freq = a_freq;}
     virtual void increment_sim_step();
     inline bool step_sim(){return m_stepSim;}
 

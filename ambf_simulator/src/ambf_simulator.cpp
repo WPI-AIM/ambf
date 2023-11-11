@@ -548,7 +548,7 @@ int main(int argc, char* argv[])
         }
 
         else{
-            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->g_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
+            std::cerr << "\nRunning Headless (-g option provided) t = " << g_afWorld->m_wallClock.getCurrentTimeSeconds() << " sec" << std::endl;
             sleep(1.0);
         }
         graphicsRate.sleep();
@@ -598,7 +598,7 @@ void updatePhysics(){
     g_simulationFinished = false;
 
     // start haptic device
-    g_afWorld->g_wallClock.start(true);
+    g_afWorld->m_wallClock.start(true);
 
     afRate phxSleep(g_cmdOpts.phxFrequency);
     bool bodyPicked = false;
@@ -620,7 +620,6 @@ void updatePhysics(){
             g_afWorld->resetDynamicBodies();
             g_bodiesResetFlag = false;
         }
-        g_afWorld->m_freqCounterHaptics.signal(1);
 
         // Take care of any picked body by mouse
         if (g_pickBody){
@@ -723,7 +722,7 @@ void updatePhysics(){
                 simDev->P_ac_ramp = 1.0;
             }
         }
-        g_afWorld->updateDynamics(step_size, g_afWorld->g_wallClock.getCurrentTimeSeconds(), g_afWorld->m_freqCounterHaptics.getFrequency(), g_inputDevices->m_numDevices);
+        g_afWorld->updateDynamics(step_size, g_inputDevices->m_numDevices);
         if (!g_afWorld->isPhysicsPaused()){
                 g_pluginManager.physicsUpdate(step_size);
         }
@@ -875,7 +874,7 @@ void updateHapticDevice(void* ccuPtr){
             }
 
 
-            if (g_afWorld->g_wallClock.getCurrentTimeSeconds() < wait_time){
+            if (g_afWorld->m_wallClock.getCurrentTimeSeconds() < wait_time){
                 phyDev->setPosClutched(phyDev->getPos());
             }
 
