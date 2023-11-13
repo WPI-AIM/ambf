@@ -1081,7 +1081,9 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         m_vertices->clear();
         m_vertices = nMesh->m_vertices->copy();
 
+        m_triangles->m_indices.clear();
         m_triangles->m_indices = recomputedIndices;
+        m_triangles->m_vertices = m_vertices;
         computeAllNormals();
     }
     return res;
