@@ -1050,7 +1050,7 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         nMesh->m_triangles->m_vertices->allocateData(unique_vertex_count, true, true, true, true, true, false);
 
         for (int i = 0 ; i < unique_vertex_count ; i++){
-            uint oIdx = m_duplicateVertexIndexTree[i][0].m_vertexIndex;
+            uint oIdx = m_duplicateVertexIndexTree[i][0].m_value;
 
             cVector3d position = m_vertices->getLocalPos(oIdx);
             cVector3d normal = m_vertices->getNormal(oIdx);
@@ -1068,18 +1068,18 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         cerr << "INFO! *** Original Mesh Size: " << getNumVertices() << endl;
         cerr << "INFO! *** -----New Mesh Size: " << nMesh->getNumVertices() << endl;
 
-        vector<unsigned int> recomputedIndices;
-        recomputedIndices.resize(m_triangles->m_indices.size());
-        unsigned int assignedIndices = 0;
-        for (int i = 0 ; i < m_duplicateVertexIndexTree.size() ; i++){
-            for (int j = 0 ; j < m_duplicateVertexIndexTree[i].size() ; j++){
-                recomputedIndices[m_duplicateVertexIndexTree[i][j].m_vertexIndex] = i;
-                assignedIndices++;
-            }
-        }
 
         m_vertices->clear();
         m_vertices = nMesh->m_vertices->copy();
+
+        vector<unsigned int> recomputedIndices;
+        recomputedIndices.resize(m_triangles->m_indices.size());
+        std::map<unsigned int, std::vector<cIndexMapping> >::iterator it;
+        for (it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
+            for (int j = 0 ; j < it->second.size() ; j++){
+                recomputedIndices[it->second[j].m_index] = it->first;
+            }
+        }
 
         m_triangles->m_indices.clear();
         m_triangles->m_indices = recomputedIndices;
@@ -1114,7 +1114,7 @@ bool cMesh::findDuplicateVertices(double &a_weldingThreshold){
         else{
             nIdx = insIt.first->m_idx;
         }
-        m_duplicateVertexIndexTree[nIdx].push_back(cIndexMapping(oIdx, i / 3));
+        m_duplicateVertexIndexTree[nIdx].push_back(cIndexMapping(i, oIdx));
     }
 
     bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;

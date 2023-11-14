@@ -95,12 +95,12 @@ struct cEdge;
 
 struct cIndexMapping{
 public:
-    cIndexMapping(unsigned int vertexIndex, unsigned int triangleIndex){
-        m_vertexIndex = vertexIndex;
-        m_triangleIndex = triangleIndex;
+    cIndexMapping(unsigned int index, unsigned int value){
+        m_index = index;
+        m_value = value;
     }
-  unsigned int m_triangleIndex;
-  unsigned int m_vertexIndex;
+  unsigned int m_value;
+  unsigned int m_index;
 };
 
 //==============================================================================
