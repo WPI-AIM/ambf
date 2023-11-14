@@ -1047,22 +1047,25 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         cMesh* nMesh = new cMesh();
         unsigned int unique_vertex_count = m_duplicateVertexIndexTree.size();
         //        nMesh->m_vertices->allocateData(nS, true, false, false, false, false, false);
-        nMesh->m_triangles->m_vertices->allocateData(unique_vertex_count, true, true, true, true, true, false);
+        nMesh->m_vertices->allocateData(unique_vertex_count,
+                                        m_vertices->getUseNormalData(),
+                                        m_vertices->getUseTexCoordData(),
+                                        m_vertices->getUseColorData(),
+                                        m_vertices->getUseTangentData(),
+                                        m_vertices->getUseBitangentData(),
+                                        m_vertices->getUseUserData());
 
         for (int i = 0 ; i < unique_vertex_count ; i++){
             uint oIdx = m_duplicateVertexIndexTree[i][0].m_value;
 
-            cVector3d position = m_vertices->getLocalPos(oIdx);
-            cVector3d normal = m_vertices->getNormal(oIdx);
-            cVector3d tex_coord = m_vertices->getTexCoord(oIdx);
-            cVector3d tangent = m_vertices->getTangent(oIdx);
-            cVector3d bit_tangent = m_vertices->getBitangent(oIdx);
+            nMesh->m_vertices->setLocalPos(i, m_vertices->getLocalPos(oIdx));
 
-            nMesh->m_vertices->setLocalPos(i, position);
-            nMesh->m_vertices->setNormal(i, normal);
-            nMesh->m_vertices->setTexCoord(i, tex_coord);
-            nMesh->m_vertices->setTangent(i, tangent);
-            nMesh->m_vertices->setBitangent(i, bit_tangent);
+            if(m_vertices->getUseNormalData()) nMesh->m_vertices->setNormal(i, m_vertices->getNormal(oIdx));
+            if(m_vertices->getUseTexCoordData()) nMesh->m_vertices->setTexCoord(i, m_vertices->getTexCoord(oIdx));
+            if(m_vertices->getUseColorData()) nMesh->m_vertices->setColor(i, m_vertices->getColor(oIdx));
+            if(m_vertices->getUseTangentData()) nMesh->m_vertices->setTangent(i, m_vertices->getTangent(oIdx));
+            if(m_vertices->getUseBitangentData()) nMesh->m_vertices->setBitangent(i, m_vertices->getBitangent(oIdx));
+            if(m_vertices->getUseUserData()) nMesh->m_vertices->setUserData(i, m_vertices->getUserData(oIdx));
         }
 
         cerr << "INFO! *** Original Mesh Size: " << getNumVertices() << endl;
