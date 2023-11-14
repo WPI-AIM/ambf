@@ -599,7 +599,7 @@ public:
         if (m_flagMarkForResize)
         {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * numtriangles * sizeof(unsigned int), &(m_indices[0]), GL_STATIC_DRAW);
-            m_flagMarkForResize = true;
+            m_flagMarkForResize = false;
         }
 
         // update data if needed
