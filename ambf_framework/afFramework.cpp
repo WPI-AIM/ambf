@@ -7608,7 +7608,11 @@ void afCamera::enableDepthPublishing(afImageResolutionAttribs* imageAttribs, afN
 
     // Set up the frame buffer
     m_depthBuffer = new cFrameBuffer();
-
+    
+#ifndef GL_RGBA32F
+#define GL_RGBA32F GL_RGBA32F_ARB
+#endif
+    
     m_depthBuffer->setup(m_camera, imageAttribs->m_width, imageAttribs->m_height, true, false, GL_RGBA32F);
 
     m_depthPC.setup(imageAttribs->m_width, imageAttribs->m_height, 3);
