@@ -678,6 +678,25 @@ void cMesh::setVertexColor(const cColorf& a_color)
 
 //==============================================================================
 /*!
+    Set the local pos of a vertex and all of it's duplicates
+
+    \param  a_idx  index.
+    \param  a_pos  The position.
+*/
+//==============================================================================
+void cMesh::setVertexLocalPosForAllDuplicates(const unsigned int &a_idx, const cVector3d& a_pos){
+    auto it = m_duplicateVertexIndexTree.find(a_idx);
+
+    if (it != m_duplicateVertexIndexTree.end()){
+        for (unsigned int i = 0 ; i < it->second.m_vertexIndices.size() ; i++){
+            m_vertices->setLocalPos(it->second.m_vertexIndices[i], a_pos);
+        }
+    }
+}
+
+
+//==============================================================================
+/*!
     This method shifts all vertex positions by the specified amount.
 
     \param  a_offset                   Translation to apply to each vertex.
@@ -1056,7 +1075,7 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
                                         m_vertices->getUseUserData());
 
         for (int i = 0 ; i < unique_vertex_count ; i++){
-            uint oIdx = m_duplicateVertexIndexTree[i][0].m_value;
+            uint oIdx = m_duplicateVertexIndexTree[i].m_vertexIndices[0];
 
             nMesh->m_vertices->setLocalPos(i, m_vertices->getLocalPos(oIdx));
 
@@ -1067,21 +1086,18 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
             if(m_vertices->getUseBitangentData()) nMesh->m_vertices->setBitangent(i, m_vertices->getBitangent(oIdx));
             if(m_vertices->getUseUserData()) nMesh->m_vertices->setUserData(i, m_vertices->getUserData(oIdx));
         }
-
-        cerr << "INFO! *** Original Mesh Size: " << getNumVertices() << endl;
-        cerr << "INFO! *** -----New Mesh Size: " << nMesh->getNumVertices() << endl;
-
-
+        printf("INFO! Original/New vertex count [%u/%u]. Removed [%u] vertices \n", getNumVertices(), nMesh->getNumVertices(), getNumVertices() - nMesh->getNumVertices());
         m_vertices->clear();
         m_vertices = nMesh->m_vertices->copy();
 
         vector<unsigned int> recomputedIndices;
         recomputedIndices.resize(m_triangles->m_indices.size());
-        std::map<unsigned int, std::vector<cIndexMapping> >::iterator it;
-        for (it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
-            for (int j = 0 ; j < it->second.size() ; j++){
-                recomputedIndices[it->second[j].m_index] = it->first;
+        for (auto it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
+            for (int j = 0 ; j < it->second.m_elementIndices.size() ; j++){
+                recomputedIndices[it->second.m_elementIndices[j]] = it->first;
             }
+            it->second.m_vertexIndices.clear();
+            it->second.m_vertexIndices.push_back(it->first);
         }
 
         m_triangles->m_indices.clear();
@@ -1117,7 +1133,8 @@ bool cMesh::findDuplicateVertices(double &a_weldingThreshold){
         else{
             nIdx = insIt.first->m_idx;
         }
-        m_duplicateVertexIndexTree[nIdx].push_back(cIndexMapping(i, oIdx));
+        m_duplicateVertexIndexTree[nIdx].m_elementIndices.push_back(i);
+        m_duplicateVertexIndexTree[nIdx].m_vertexIndices.push_back(oIdx);
     }
 
     bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;

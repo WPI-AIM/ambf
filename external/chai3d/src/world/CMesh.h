@@ -93,14 +93,10 @@ struct cEdge;
 
 //------------------------------------------------------------------------------
 
-struct cIndexMapping{
+struct cDuplicateVertexData{
 public:
-    cIndexMapping(unsigned int index, unsigned int value){
-        m_index = index;
-        m_value = value;
-    }
-  unsigned int m_value;
-  unsigned int m_index;
+    std::vector<unsigned int> m_elementIndices; // From array of elements representing triangle vertices
+    std::vector<unsigned int> m_vertexIndices; // From array of vertex indices
 };
 
 //==============================================================================
@@ -196,6 +192,9 @@ public:
 
     //! This method sets the color of each vertex.
     void setVertexColor(const cColorf& a_color);
+
+    //! Set the local pos of a vertex and all of it's duplicates
+    void setVertexLocalPosForAllDuplicates(const unsigned int& a_idx, const cVector3d& a_pos);
 
 
     //--------------------------------------------------------------------------
@@ -449,7 +448,7 @@ public:
     //!                  {2: [2, 4]
     //!                  {3: [3, 5]
     //!                  {4: [6]}
-    std::map<unsigned int, std::vector<cIndexMapping> > m_duplicateVertexIndexTree;
+    std::map<unsigned int, cDuplicateVertexData> m_duplicateVertexIndexTree;
 };
 
 
