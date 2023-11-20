@@ -174,9 +174,9 @@ public:
 
     static btCollisionShape* createCollisionShape(const afPrimitiveShapeAttributes* a_primitiveShape, double a_margin);
 
-    static btCollisionShape* createCollisionShape(const cMesh* a_collisionMesh, double a_margin, afCollisionMeshShapeType a_meshType);
+    static btCollisionShape* createCollisionShape(cMesh* a_collisionMesh, double a_margin, afCollisionMeshShapeType a_meshType);
 
-    static btCompoundShape* createCollisionShape(const cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afCollisionMeshShapeType a_meshType);
+    static btCompoundShape* createCollisionShape(cMultiMesh* a_collisionMesh, double a_margin, afTransform m_inertialOffset, afCollisionMeshShapeType a_meshType);
 
     static std::vector<afRayAttributes> createRayAttribs(cMultiMesh* a_contourMesh, double a_range);
 };
@@ -1214,24 +1214,10 @@ public:
     bool createLinksFromLines(btSoftBody* a_sb, std::vector< std::vector<int>>* a_lines, cMesh* a_mesh);
 
     // Copied from btSoftBodyHelpers with few modifications
-    btSoftBody* createFromMesh(btSoftBodyWorldInfo& worldInfo, const btScalar* vertices, int nNodes, const unsigned int* triangles, int ntriangles, bool randomizeConstraints=true);
+    btSoftBody* createFromMesh(btSoftBodyWorldInfo* worldInfo, cMesh* a_mesh, bool randomizeConstraints=true);
 
     //! This method toggles the drawing of skeletal model.
     void toggleSkeletalModelVisibility();
-
-private:
-    // Ptr to scalar vertex arrays of the sofy body
-    std::vector<btScalar> m_verticesPtr;
-
-    // Ptr to Triangles arrays referring to vertices by indices
-    std::vector<unsigned int> m_trianglesPtr;
-
-    // Vertex Tree containing vtx idx's that are repeated for a given vtx
-    std::vector<afVertexTree> m_afVertexTree;
-
-    // Boolean flag to indicate if we have been successful in reducing the mesh.
-    // A reduced mesh should speed up rendering.
-    bool m_meshReductionSuccessful;
 };
 
 
