@@ -124,6 +124,10 @@ cMesh::cMesh(cMaterialPtr a_material)
     {
         m_material = a_material;
     }
+
+    m_duplicateVerticesFound = false;
+
+    m_duplicateVerticesRemoved = false;
 }
 
 
@@ -685,11 +689,38 @@ void cMesh::setVertexColor(const cColorf& a_color)
 */
 //==============================================================================
 void cMesh::setVertexLocalPosForAllDuplicates(const unsigned int &a_idx, const cVector3d& a_pos){
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
     auto it = m_duplicateVertexIndexTree.find(a_idx);
 
     if (it != m_duplicateVertexIndexTree.end()){
         for (unsigned int i = 0 ; i < it->second.m_vertexIndices.size() ; i++){
             m_vertices->setLocalPos(it->second.m_vertexIndices[i], a_pos);
+        }
+    }
+}
+
+
+//==============================================================================
+/*!
+    Set the local pos of a vertex and all of it's duplicates
+
+    \param  a_idx  index.
+    \param  a_x  x.
+    \param  a_y  y.
+    \param  a_z  z.
+*/
+//==============================================================================
+void cMesh::setVertexLocalPosForAllDuplicates(const unsigned int &a_idx, const double &a_x, const double &a_y, const double &a_z){
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
+    auto it = m_duplicateVertexIndexTree.find(a_idx);
+
+    if (it != m_duplicateVertexIndexTree.end()){
+        for (unsigned int i = 0 ; i < it->second.m_vertexIndices.size() ; i++){
+            m_vertices->setLocalPos(it->second.m_vertexIndices[i], a_x, a_y, a_z);
         }
     }
 }
@@ -1060,6 +1091,10 @@ public:
 //==============================================================================
 bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
 {
+    if (m_duplicateVerticesRemoved){
+        return true;
+    }
+
     bool res = findDuplicateVertices(a_weldingThreshold);
 
     if (res){
@@ -1104,6 +1139,7 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
         m_triangles->m_indices = recomputedIndices;
         m_triangles->m_vertices = m_vertices;
         computeAllNormals();
+        m_duplicateVerticesRemoved = true;
     }
     return res;
 }
@@ -1114,7 +1150,10 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
     This method finds duplicate vertices and computes a tree of unique vertices mapping their duplicates
 */
 //==============================================================================
-bool cMesh::findDuplicateVertices(double &a_weldingThreshold){
+bool cMesh::findDuplicateVertices(double a_weldingThreshold){
+    if (m_duplicateVerticesFound){
+        return true;
+    }
 
     set<afTriVertex> rMesh;
     computeBoundaryBox();
@@ -1139,6 +1178,7 @@ bool cMesh::findDuplicateVertices(double &a_weldingThreshold){
 
     bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;
 
+    m_duplicateVerticesFound = true;
     return res;
 }
 

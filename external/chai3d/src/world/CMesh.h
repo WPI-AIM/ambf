@@ -196,6 +196,9 @@ public:
     //! Set the local pos of a vertex and all of it's duplicates
     void setVertexLocalPosForAllDuplicates(const unsigned int& a_idx, const cVector3d& a_pos);
 
+    //! Set the local pos of a vertex and all of it's duplicates
+    void setVertexLocalPosForAllDuplicates(const unsigned int& a_idx, const double& a_x, const double& a_y, const double& a_z);
+
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - TRIANGLES
@@ -254,7 +257,7 @@ public:
     bool removeDuplicateVertices(double& a_weldingThreshold);
 
     //! Find duplicate vertices and record their indices.
-    bool findDuplicateVertices(double& a_weldingThreshold);
+    bool findDuplicateVertices(double a_weldingThreshold=0.0);
 
     //! This method enables or disables the rendering of edges.
     void setShowEdges(const bool a_showEdges) { m_showEdges = a_showEdges; }
@@ -449,6 +452,12 @@ public:
     //!                  {3: [3, 5]
     //!                  {4: [6]}
     std::map<unsigned int, cDuplicateVertexData> m_duplicateVertexIndexTree;
+
+    //! Flag to check if duplicate vertices have been removed
+    bool m_duplicateVerticesFound;
+
+    //! Flag to check if duplicate vertices have been computed
+    bool m_duplicateVerticesRemoved;
 };
 
 
