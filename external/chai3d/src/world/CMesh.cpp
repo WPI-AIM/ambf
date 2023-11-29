@@ -1109,17 +1109,18 @@ bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
                                         m_vertices->getUseBitangentData(),
                                         m_vertices->getUseUserData());
 
-        for (int i = 0 ; i < unique_vertex_count ; i++){
-            uint oIdx = m_duplicateVertexIndexTree[i].m_vertexIndices[0];
+        for (auto it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
+            uint newIdx = it->first;
+            uint origIdx = it->second.m_vertexIndices[0];
 
-            nMesh->m_vertices->setLocalPos(i, m_vertices->getLocalPos(oIdx));
+            nMesh->m_vertices->setLocalPos(newIdx, m_vertices->getLocalPos(origIdx));
 
-            if(m_vertices->getUseNormalData()) nMesh->m_vertices->setNormal(i, m_vertices->getNormal(oIdx));
-            if(m_vertices->getUseTexCoordData()) nMesh->m_vertices->setTexCoord(i, m_vertices->getTexCoord(oIdx));
-            if(m_vertices->getUseColorData()) nMesh->m_vertices->setColor(i, m_vertices->getColor(oIdx));
-            if(m_vertices->getUseTangentData()) nMesh->m_vertices->setTangent(i, m_vertices->getTangent(oIdx));
-            if(m_vertices->getUseBitangentData()) nMesh->m_vertices->setBitangent(i, m_vertices->getBitangent(oIdx));
-            if(m_vertices->getUseUserData()) nMesh->m_vertices->setUserData(i, m_vertices->getUserData(oIdx));
+            if(m_vertices->getUseNormalData()) nMesh->m_vertices->setNormal(newIdx, m_vertices->getNormal(origIdx));
+            if(m_vertices->getUseTexCoordData()) nMesh->m_vertices->setTexCoord(newIdx, m_vertices->getTexCoord(origIdx));
+            if(m_vertices->getUseColorData()) nMesh->m_vertices->setColor(newIdx, m_vertices->getColor(origIdx));
+            if(m_vertices->getUseTangentData()) nMesh->m_vertices->setTangent(newIdx, m_vertices->getTangent(origIdx));
+            if(m_vertices->getUseBitangentData()) nMesh->m_vertices->setBitangent(newIdx, m_vertices->getBitangent(origIdx));
+            if(m_vertices->getUseUserData()) nMesh->m_vertices->setUserData(newIdx, m_vertices->getUserData(origIdx));
         }
         printf("INFO! Original/New vertex count [%u/%u]. Removed [%u] vertices \n", getNumVertices(), nMesh->getNumVertices(), getNumVertices() - nMesh->getNumVertices());
         m_vertices->clear();
@@ -1158,12 +1159,13 @@ bool cMesh::findDuplicateVertices(double a_weldingThreshold){
     set<afTriVertex> rMesh;
     computeBoundaryBox();
     afMeshWeldingSpecs weldingSpecs(getBoundaryMin(), getBoundaryMax(), a_weldingThreshold);
+    m_originalToNewMapping.resize(m_vertices->getNumElements());
 
     uint insIdx = 0;
     for(int i = 0 ; i < m_triangles->m_indices.size() ; i++){
         uint oIdx = m_triangles->m_indices[i];
         cVector3d v = m_triangles->m_vertices->getLocalPos(oIdx);
-        pair<set<afTriVertex>::iterator, bool> insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
+        auto insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
         uint nIdx;
         if (insIt.second){
             nIdx = insIdx;
@@ -1174,6 +1176,7 @@ bool cMesh::findDuplicateVertices(double a_weldingThreshold){
         }
         m_duplicateVertexIndexTree[nIdx].m_elementIndices.push_back(i);
         m_duplicateVertexIndexTree[nIdx].m_vertexIndices.push_back(oIdx);
+        m_originalToNewMapping[oIdx] = nIdx;
     }
 
     bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;
@@ -2100,6 +2103,18 @@ void cEdge::set(cMesh* a_parent,
             }
         }
     }
+}
+
+unsigned int cMesh::getNewVertexIndex(const unsigned int &a_idx)
+{
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
+    if (a_idx >= m_originalToNewMapping.size()){
+        cerr << "ERROR! REQUESTED INDEX " << a_idx << " GREATER THAN THE SIZE OF ORIGINAL VERTEX LIST" << m_originalToNewMapping.size() << "\n";
+        return -1;
+    }
+    return m_originalToNewMapping[a_idx];
 }
 
 //------------------------------------------------------------------------------

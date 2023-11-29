@@ -442,6 +442,10 @@ public:
     //! Array of Edges.
     std::vector<cEdge> m_edges;
 
+public:
+
+    unsigned int getNewVertexIndex(const unsigned int& a_idx);
+
     //! Tree of duplicate vertex indices, the key is the new index (after identifying duplicates) and
     //! value (rhs) is the list of original indices of duplicate vertices.
     //! E.g. Imagine two triangles <123 and <456 with a shared edge between with vertices 2,3 == 4,5
@@ -452,6 +456,9 @@ public:
     //!                  {3: [3, 5]
     //!                  {4: [6]}
     std::map<unsigned int, cDuplicateVertexData> m_duplicateVertexIndexTree;
+
+    // Vector to main a relationship between old indices (with duplicates) and new indices (without dpulicates)
+    std::vector<unsigned int> m_originalToNewMapping;
 
     //! Flag to check if duplicate vertices have been removed
     bool m_duplicateVerticesFound;

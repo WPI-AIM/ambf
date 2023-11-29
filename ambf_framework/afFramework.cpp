@@ -2945,35 +2945,27 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     bool useOriginalIndexes = getVisualObject()->m_vtxIdxMap.size() > 0 ? true : false;
 
     for (uint i = 0 ; i < a_attribs->m_fixedNodes.size() ; i++){
+
         uint nodeIdx = a_attribs->m_fixedNodes[i];
-        if ( nodeIdx < softBody->m_nodes.size()){
-            if (useOriginalIndexes){
-                // Find the node's original vertex index
-                map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(nodeIdx);
-                if ( nIt != getVisualObject()->m_vtxIdxMap.end()){
-                    if (nIt->second.size() > 0){
-                        int remappedIdx = nIt->second[0];
-                        int j = 0;
-                        bool found = false;
-                        while (j < m_collisionMesh->getMesh(0)->m_duplicateVertexIndexTree.size() && !found){
-                            for (int k = 0 ; k < m_collisionMesh->getMesh(0)->m_duplicateVertexIndexTree[j].m_vertexIndices.size() ; k++){
-                                if (remappedIdx == m_collisionMesh->getMesh(0)->m_duplicateVertexIndexTree[j].m_vertexIndices[k]){
-                                    cerr << "Node Idx: " << nodeIdx
-                                         << " |  Original Vtx Idx: " << nIt->first
-                                         << " | Remapped Vtx Idx:  " << remappedIdx << endl;
-                                    softBody->setMass(j, 0);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            j++;
-                        }
-                    }
+        if ( nodeIdx > softBody->m_nodes.size()){break;}
+
+        if (useOriginalIndexes){
+            // Find the node's original vertex index
+            map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(nodeIdx);
+            if ( nIt != getVisualObject()->m_vtxIdxMap.end()){
+                if (nIt->second.size() == 0){break;}
+                int originalVtxIdx = nIt->second[0];
+                unsigned int newIdx = m_collisionMesh->getMesh(0)->getNewVertexIndex(originalVtxIdx);
+                if (newIdx > 0){
+                    cerr << "INFO! Fixing Softbody Node. Original Node Idx: " << nodeIdx
+                         << " | Old Vertex/Node Idx:  " << originalVtxIdx
+                         << " | New Vertex/Node Idx: " << newIdx << endl;
+                    softBody->setMass(newIdx, 0);
                 }
             }
-            else{
-                softBody->setMass(nodeIdx, 0);
-            }
+        }
+        else{
+            softBody->setMass(nodeIdx, 0);
         }
     }
 
