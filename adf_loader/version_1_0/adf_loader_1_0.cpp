@@ -211,6 +211,7 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
     YAML::Node& node = *a_node;
 
     YAML::Node meshNode = node["mesh"];
+    YAML::Node meshRemoveDuplicatesNode = node["mesh remove duplicates"];
     YAML::Node shapeNode = node["shape"];
     YAML::Node compoundShapeNode = node["compound shape"];
     YAML::Node geometryNode = node["geometry"];
@@ -258,6 +259,13 @@ bool ADFUtils::getVisualAttribsFromNode(YAML::Node *a_node, afVisualAttributes *
         attribs->m_meshFilepath = localPath / meshNode.as<string>();
         if (!attribs->m_meshFilepath.c_str().empty()){
             attribs->m_geometryType = afGeometryType::MESH;
+
+            if (meshRemoveDuplicatesNode.IsDefined()){
+                if (meshRemoveDuplicatesNode.as<bool>() == true){
+                    attribs->m_meshRemoveDuplicates = afStatusFlag::TRUE;}
+                else{
+                    attribs->m_meshRemoveDuplicates = afStatusFlag::FALSE;}
+            }
         }
         else{
             valid = false;

@@ -378,7 +378,6 @@ btCompoundShape *afShapeUtils::createCollisionShape(cMultiMesh *a_collisionMulti
     }
     case afCollisionMeshShapeType::POINT_CLOUD:{
         std::vector<cMesh*>::iterator it;
-        a_collisionMultiMesh->removeDuplicateVertices();
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
@@ -462,8 +461,17 @@ cMaterial afMaterialUtils::createFromAttribs(afColorAttributes *a_color)
 bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *mesh, string obj_name){
     if (attribs->m_geometryType == afGeometryType::MESH){
         if (mesh->loadFromFile(attribs->m_meshFilepath.c_str()) ){
-            //            mesh->scale(m_scale);
-//            mesh->removeDuplicateVertices();
+            if (attribs->m_meshRemoveDuplicates == afStatusFlag::TRUE){
+                mesh->removeDuplicateVertices();
+            }
+            else if (attribs->m_meshRemoveDuplicates == afStatusFlag::UNDEFINED){
+                for (auto m : *(mesh->m_meshes)){
+                    if (m->getNumVertices() > 10000){
+                        double wd = 0.;
+                        m->removeDuplicateVertices(wd);
+                    }
+                }
+            }
             mesh->setUseDisplayList(true);
         }
         else{
@@ -8125,6 +8133,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
     if (a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::MESH){
         if (m_collisionMesh->loadFromFile(a_attribs->m_collisionAttribs.m_meshFilepath.c_str()) ){
             m_collisionMesh->scale(m_scale);
+            m_collisionMesh->removeDuplicateVertices();
             m_bulletCollisionShape = afShapeUtils::createCollisionShape(m_collisionMesh,
                                                                         a_attribs->m_collisionAttribs.m_margin,
                                                                         afTransform(),
