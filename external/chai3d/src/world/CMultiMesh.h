@@ -414,6 +414,12 @@ public:
     //! This method loads a 3D object from a file.
     virtual bool loadFromFile(std::string a_filename);
 
+    //! This method finds and remove duplicate vertices and updates mesh indices
+    virtual bool findDuplicateVertices(double a_weldingThreshold=0.0);
+
+    //! This method finds and remove duplicate vertices and updates mesh indices
+    virtual bool removeDuplicateVertices(double a_weldingThreshold=0.0);
+
     //! This method saves 3D object to a file.
     virtual bool saveToFile(std::string a_filename);
 

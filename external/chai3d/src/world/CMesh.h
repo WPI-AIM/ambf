@@ -59,6 +59,7 @@
 //------------------------------------------------------------------------------
 #include <vector>
 #include <list>
+#include <map>
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -91,6 +92,12 @@ typedef std::shared_ptr<cTriangleArray> cTriangleArrayPtr;
 struct cEdge;
 
 //------------------------------------------------------------------------------
+
+struct cDuplicateVertexData{
+public:
+    std::vector<unsigned int> m_elementIndices; // From array of elements representing triangle vertices
+    std::vector<unsigned int> m_vertexIndices; // From array of vertex indices
+};
 
 //==============================================================================
 /*!
@@ -186,6 +193,12 @@ public:
     //! This method sets the color of each vertex.
     void setVertexColor(const cColorf& a_color);
 
+    //! Set the local pos of a vertex and all of it's duplicates
+    void setVertexLocalPosForAllDuplicates(const unsigned int& a_idx, const cVector3d& a_pos);
+
+    //! Set the local pos of a vertex and all of it's duplicates
+    void setVertexLocalPosForAllDuplicates(const unsigned int& a_idx, const double& a_x, const double& a_y, const double& a_z);
+
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - TRIANGLES
@@ -239,6 +252,12 @@ public:
 
     //! This method clears all edges
     void clearAllEdges();
+
+    //! This method removes duplicate vertices and updates triangles indices.
+    bool removeDuplicateVertices(double& a_weldingThreshold);
+
+    //! Find duplicate vertices and record their indices.
+    bool findDuplicateVertices(double a_weldingThreshold=0.0);
 
     //! This method enables or disables the rendering of edges.
     void setShowEdges(const bool a_showEdges) { m_showEdges = a_showEdges; }
@@ -422,6 +441,30 @@ public:
 
     //! Array of Edges.
     std::vector<cEdge> m_edges;
+
+public:
+
+    unsigned int getNewVertexIndex(const unsigned int& a_idx);
+
+    //! Tree of duplicate vertex indices, the key is the new index (after identifying duplicates) and
+    //! value (rhs) is the list of original indices of duplicate vertices.
+    //! E.g. Imagine two triangles <123 and <456 with a shared edge between with vertices 2,3 == 4,5
+    //! Original Indices = [1, 2, 3, 4, 5, 6]
+    //! Duplicates       = [1, 2, 3, 2, 3, 6]
+    //! Tree =           {1: [1]
+    //!                  {2: [2, 4]
+    //!                  {3: [3, 5]
+    //!                  {4: [6]}
+    std::map<unsigned int, cDuplicateVertexData> m_duplicateVertexIndexTree;
+
+    // Vector to main a relationship between old indices (with duplicates) and new indices (without dpulicates)
+    std::vector<unsigned int> m_originalToNewMapping;
+
+    //! Flag to check if duplicate vertices have been removed
+    bool m_duplicateVerticesFound;
+
+    //! Flag to check if duplicate vertices have been computed
+    bool m_duplicateVerticesRemoved;
 };
 
 

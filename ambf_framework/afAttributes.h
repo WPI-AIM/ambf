@@ -53,6 +53,12 @@ typedef unsigned int uint;
 
 namespace ambf {
 
+enum class afStatusFlag{
+    UNDEFINED,
+    TRUE,
+    FALSE,
+};
+
 ///
 /// \brief The afKinematicAttributes struct
 ///
@@ -362,9 +368,11 @@ struct afColorAttributes{
 struct afVisualAttributes{
     afVisualAttributes(){
         m_visible = true;
+        m_meshRemoveDuplicates = afStatusFlag::UNDEFINED;
     }
 
     afPath m_meshFilepath;
+    afStatusFlag m_meshRemoveDuplicates;
     afGeometryType m_geometryType;
     vector<afPrimitiveShapeAttributes> m_primitiveShapes;
     afColorAttributes m_colorAttribs;

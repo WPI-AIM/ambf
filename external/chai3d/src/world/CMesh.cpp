@@ -124,6 +124,10 @@ cMesh::cMesh(cMaterialPtr a_material)
     {
         m_material = a_material;
     }
+
+    m_duplicateVerticesFound = false;
+
+    m_duplicateVerticesRemoved = false;
 }
 
 
@@ -678,6 +682,52 @@ void cMesh::setVertexColor(const cColorf& a_color)
 
 //==============================================================================
 /*!
+    Set the local pos of a vertex and all of it's duplicates
+
+    \param  a_idx  index.
+    \param  a_pos  The position.
+*/
+//==============================================================================
+void cMesh::setVertexLocalPosForAllDuplicates(const unsigned int &a_idx, const cVector3d& a_pos){
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
+    auto it = m_duplicateVertexIndexTree.find(a_idx);
+
+    if (it != m_duplicateVertexIndexTree.end()){
+        for (unsigned int i = 0 ; i < it->second.m_vertexIndices.size() ; i++){
+            m_vertices->setLocalPos(it->second.m_vertexIndices[i], a_pos);
+        }
+    }
+}
+
+
+//==============================================================================
+/*!
+    Set the local pos of a vertex and all of it's duplicates
+
+    \param  a_idx  index.
+    \param  a_x  x.
+    \param  a_y  y.
+    \param  a_z  z.
+*/
+//==============================================================================
+void cMesh::setVertexLocalPosForAllDuplicates(const unsigned int &a_idx, const double &a_x, const double &a_y, const double &a_z){
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
+    auto it = m_duplicateVertexIndexTree.find(a_idx);
+
+    if (it != m_duplicateVertexIndexTree.end()){
+        for (unsigned int i = 0 ; i < it->second.m_vertexIndices.size() ; i++){
+            m_vertices->setLocalPos(it->second.m_vertexIndices[i], a_x, a_y, a_z);
+        }
+    }
+}
+
+
+//==============================================================================
+/*!
     This method shifts all vertex positions by the specified amount.
 
     \param  a_offset                   Translation to apply to each vertex.
@@ -970,6 +1020,169 @@ void cMesh::clearAllEdges()
     // clear all edges
     m_edges.clear();
     m_displayListEdges.invalidate();
+}
+
+
+
+class afMeshWeldingSpecs{
+public:
+    afMeshWeldingSpecs(cVector3d a_minBounds, cVector3d a_maxBounds, double a_weldingThreshold){
+        m_weldindThreshold = a_weldingThreshold;
+        m_minBounds = a_minBounds;
+        m_maxBounds = a_maxBounds;
+        cVector3d deltaBounds = m_maxBounds - m_minBounds;
+        m_deltaBoundsX = deltaBounds.x();
+        m_deltaBoundsXY = m_deltaBoundsX * deltaBounds.y();
+        m_deltaBoundsXYZ = m_deltaBoundsXY * deltaBounds.z();
+    }
+
+    double m_weldindThreshold;
+    cVector3d m_minBounds;
+    cVector3d m_maxBounds;
+    double m_deltaBoundsX;
+    double m_deltaBoundsXY;
+    double m_deltaBoundsXYZ;
+};
+
+class afTriVertex{
+public:
+    afTriVertex(const cVector3d& v, const uint &idx, const afMeshWeldingSpecs* a_weldingSpecs): m_weldingSpecs(a_weldingSpecs){
+        m_x=v(0); m_y=v(1); m_z=v(2); m_idx=idx;
+        m_weldingSpecs = a_weldingSpecs;
+        computeHash();
+    }
+
+    bool operator==(const afTriVertex& rhs) const
+    {
+        if (this->m_x == rhs.m_x && this->m_y == rhs.m_y && this->m_z == rhs.m_z) return true;
+        else return false;
+    }
+
+    void computeHash(){
+        m_hash = (m_weldingSpecs->m_minBounds.x() + m_x) +
+                m_weldingSpecs->m_deltaBoundsX * (m_weldingSpecs->m_minBounds.y() + m_y) +
+                m_weldingSpecs->m_deltaBoundsXY * (m_weldingSpecs->m_minBounds.z() + m_z);
+    }
+
+    const double& getHash() const{
+        return m_hash;
+
+    }
+
+    bool operator<(const afTriVertex& rhs) const
+    {
+        return (getHash() < rhs.getHash());
+    }
+
+public:
+    double m_x;
+    double m_y;
+    double m_z;
+    double m_hash;
+    const afMeshWeldingSpecs* m_weldingSpecs;
+    uint m_idx;
+};
+
+
+//==============================================================================
+/*!
+    This method removes all duplicate/repeated vertices.
+*/
+//==============================================================================
+bool cMesh::removeDuplicateVertices(double& a_weldingThreshold)
+{
+    if (m_duplicateVerticesRemoved){
+        return true;
+    }
+
+    bool res = findDuplicateVertices(a_weldingThreshold);
+
+    if (res){
+        cMesh* nMesh = new cMesh();
+        unsigned int unique_vertex_count = m_duplicateVertexIndexTree.size();
+        //        nMesh->m_vertices->allocateData(nS, true, false, false, false, false, false);
+        nMesh->m_vertices->allocateData(unique_vertex_count,
+                                        m_vertices->getUseNormalData(),
+                                        m_vertices->getUseTexCoordData(),
+                                        m_vertices->getUseColorData(),
+                                        m_vertices->getUseTangentData(),
+                                        m_vertices->getUseBitangentData(),
+                                        m_vertices->getUseUserData());
+
+        for (auto it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
+            uint newIdx = it->first;
+            uint origIdx = it->second.m_vertexIndices[0];
+
+            nMesh->m_vertices->setLocalPos(newIdx, m_vertices->getLocalPos(origIdx));
+
+            if(m_vertices->getUseNormalData()) nMesh->m_vertices->setNormal(newIdx, m_vertices->getNormal(origIdx));
+            if(m_vertices->getUseTexCoordData()) nMesh->m_vertices->setTexCoord(newIdx, m_vertices->getTexCoord(origIdx));
+            if(m_vertices->getUseColorData()) nMesh->m_vertices->setColor(newIdx, m_vertices->getColor(origIdx));
+            if(m_vertices->getUseTangentData()) nMesh->m_vertices->setTangent(newIdx, m_vertices->getTangent(origIdx));
+            if(m_vertices->getUseBitangentData()) nMesh->m_vertices->setBitangent(newIdx, m_vertices->getBitangent(origIdx));
+            if(m_vertices->getUseUserData()) nMesh->m_vertices->setUserData(newIdx, m_vertices->getUserData(origIdx));
+        }
+        printf("INFO! Original/New vertex count [%u/%u]. Removed [%u] vertices \n", getNumVertices(), nMesh->getNumVertices(), getNumVertices() - nMesh->getNumVertices());
+        m_vertices->clear();
+        m_vertices = nMesh->m_vertices->copy();
+
+        vector<unsigned int> recomputedIndices;
+        recomputedIndices.resize(m_triangles->m_indices.size());
+        for (auto it = m_duplicateVertexIndexTree.begin() ; it != m_duplicateVertexIndexTree.end() ; ++it){
+            for (int j = 0 ; j < it->second.m_elementIndices.size() ; j++){
+                recomputedIndices[it->second.m_elementIndices[j]] = it->first;
+            }
+            it->second.m_vertexIndices.clear();
+            it->second.m_vertexIndices.push_back(it->first);
+        }
+
+        m_triangles->m_indices.clear();
+        m_triangles->m_indices = recomputedIndices;
+        m_triangles->m_vertices = m_vertices;
+        computeAllNormals();
+        m_duplicateVerticesRemoved = true;
+    }
+    return res;
+}
+
+
+//==============================================================================
+/*!
+    This method finds duplicate vertices and computes a tree of unique vertices mapping their duplicates
+*/
+//==============================================================================
+bool cMesh::findDuplicateVertices(double a_weldingThreshold){
+    if (m_duplicateVerticesFound){
+        return true;
+    }
+
+    set<afTriVertex> rMesh;
+    computeBoundaryBox();
+    afMeshWeldingSpecs weldingSpecs(getBoundaryMin(), getBoundaryMax(), a_weldingThreshold);
+    m_originalToNewMapping.resize(m_vertices->getNumElements());
+
+    uint insIdx = 0;
+    for(int i = 0 ; i < m_triangles->m_indices.size() ; i++){
+        uint oIdx = m_triangles->m_indices[i];
+        cVector3d v = m_triangles->m_vertices->getLocalPos(oIdx);
+        auto insIt = rMesh.insert(afTriVertex(v, insIdx, &weldingSpecs));
+        uint nIdx;
+        if (insIt.second){
+            nIdx = insIdx;
+            insIdx++;
+        }
+        else{
+            nIdx = insIt.first->m_idx;
+        }
+        m_duplicateVertexIndexTree[nIdx].m_elementIndices.push_back(i);
+        m_duplicateVertexIndexTree[nIdx].m_vertexIndices.push_back(oIdx);
+        m_originalToNewMapping[oIdx] = nIdx;
+    }
+
+    bool res = m_duplicateVertexIndexTree.size() == m_vertices->getNumElements() ? 0 : 1;
+
+    m_duplicateVerticesFound = true;
+    return res;
 }
 
 
@@ -1890,6 +2103,18 @@ void cEdge::set(cMesh* a_parent,
             }
         }
     }
+}
+
+unsigned int cMesh::getNewVertexIndex(const unsigned int &a_idx)
+{
+    if (!m_duplicateVerticesFound){
+        findDuplicateVertices();
+    }
+    if (a_idx >= m_originalToNewMapping.size()){
+        cerr << "ERROR! REQUESTED INDEX " << a_idx << " GREATER THAN THE SIZE OF ORIGINAL VERTEX LIST" << m_originalToNewMapping.size() << "\n";
+        return -1;
+    }
+    return m_originalToNewMapping[a_idx];
 }
 
 //------------------------------------------------------------------------------
