@@ -5197,14 +5197,14 @@ afWorld::afWorld(): afIdentification(afType::WORLD), afModelManager(this){
     m_enclosureW = 4.0;
     m_enclosureH = 3.0;
 
-    m_pickSphere = new cMesh();
-    cCreateSphere(m_pickSphere, 0.02);
-    m_pickSphere->m_material->setPinkHot();
-    m_pickSphere->setUseDisplayList(true);
-    m_pickSphere->markForUpdate(false);
-    m_pickSphere->setLocalPos(0,0,0);
-    m_pickSphere->setShowEnabled(false);
-    addSceneObjectToWorld(m_pickSphere);
+    m_pickMultiPoint = new cMultiPoint();
+    m_pickMultiPoint->newPoint(cVector3d(0,0,0));
+    m_pickMultiPoint->setPointSize(15);
+    cColorf pickColor; pickColor.setGreenYellow();
+    m_pickMultiPoint->setPointColor(pickColor);
+    m_pickMultiPoint->setShowEnabled(false);
+    addSceneObjectToWorld(m_pickMultiPoint);
+
     m_pickColor.setOrangeTomato();
     m_pickColor.setTransparencyLevel(0.3);
     m_namespace = "";
@@ -6021,8 +6021,8 @@ bool afWorld::pickBody(const cVector3d &rayFromWorld, const cVector3d &rayToWorl
     {
         cVector3d pickPos;
         pickPos << rayCallback.m_hitPointWorld;
-        m_pickSphere->setLocalPos(pickPos);
-        m_pickSphere->setShowEnabled(true);
+        m_pickMultiPoint->setLocalPos(pickPos);
+        m_pickMultiPoint->setShowEnabled(true);
         const btCollisionObject* colObject = rayCallback.m_collisionObject;
         if (colObject->getInternalType() == btCollisionObject::CollisionObjectTypes::CO_RIGID_BODY){
             btRigidBody* body = (btRigidBody*)btRigidBody::upcast(colObject);
@@ -6115,7 +6115,7 @@ bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &ray
 
         newLocation = rayFromWorld + dir;
         // Set the position of grab sphere
-        m_pickSphere->setLocalPos(newLocation);
+        m_pickMultiPoint->setLocalPos(newLocation);
 
         if (m_pickedConstraint){
             btPoint2PointConstraint* pickCon = static_cast<btPoint2PointConstraint*>(m_pickedConstraint);
@@ -6145,7 +6145,7 @@ bool afWorld::movePickedBody(const cVector3d &rayFromWorld, const cVector3d &ray
         dir *= m_oldPickingDist;
 
         newPivotB = rayFromWorld + dir;
-        m_pickSphere->setLocalPos(newPivotB);
+        m_pickMultiPoint->setLocalPos(newPivotB);
         m_pickedNodeGoal = newPivotB;
         return true;
     }
@@ -6170,7 +6170,7 @@ void afWorld::removePickingConstraint(){
     }
 
     if (m_pickedBulletRigidBody){
-        m_pickSphere->setShowEnabled(false);
+        m_pickMultiPoint->setShowEnabled(false);
         m_pickedBulletRigidBody = nullptr;
     }
 
@@ -6179,7 +6179,7 @@ void afWorld::removePickingConstraint(){
     }
 
     if (m_pickedSoftBody){
-        m_pickSphere->setShowEnabled(false);
+        m_pickMultiPoint->setShowEnabled(false);
         m_pickedSoftBody = nullptr;
         m_pickedNodeIdx = -1;
         m_pickedNodeMass = 0;
