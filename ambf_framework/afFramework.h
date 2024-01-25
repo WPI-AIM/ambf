@@ -2292,7 +2292,7 @@ public:
 
     cVector3d m_pickedOffset;
 
-    cMesh* m_pickSphere = nullptr;
+    cMultiPoint* m_pickMultiPoint = nullptr;
 
     cPrecisionClock m_wallClock;
 
