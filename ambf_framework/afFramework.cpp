@@ -6443,6 +6443,8 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
 
     setVisibleFlag(a_attribs->m_visible);
 
+    m_mouseControlScales = a_attribs->m_mouseControlScales;
+
     //    a_attribs->m_visible;
     createWindow();
 

@@ -1254,6 +1254,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node preProcessingShaderNode = node["preprocessing shaders"];
     YAML::Node depthShaderNode = node["depth compute shaders"];
     YAML::Node multiPassNode = node["multipass"];
+    YAML::Node mouseControlMultiplierNode = node["mouse control multipliers"];
 
     bool valid = true;
 
@@ -1363,6 +1364,21 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
 
     if (multiPassNode.IsDefined()){
         attribs->m_multiPass = multiPassNode.as<bool>();
+    }
+
+    if (mouseControlMultiplierNode.IsDefined()){
+        if (mouseControlMultiplierNode["pan"].IsDefined()){
+            attribs->m_mouseControlScales.m_pan *= mouseControlMultiplierNode["pan"].as<double>();
+        }
+        if (mouseControlMultiplierNode["rotate"].IsDefined()){
+            attribs->m_mouseControlScales.m_rotate *= mouseControlMultiplierNode["rotate"].as<double>();
+        }
+        if (mouseControlMultiplierNode["scroll"].IsDefined()){
+            attribs->m_mouseControlScales.m_scroll *= mouseControlMultiplierNode["scroll"].as<double>();
+        }
+        if (mouseControlMultiplierNode["arcball"].IsDefined()){
+            attribs->m_mouseControlScales.m_arcball *= mouseControlMultiplierNode["arcball"].as<double>();
+        }
     }
 
     return valid;

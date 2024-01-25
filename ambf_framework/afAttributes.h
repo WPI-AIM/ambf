@@ -533,6 +533,21 @@ struct afNoiseModelAttribs{
     double m_bias;
 };
 
+struct afMouseControlScales{
+public:
+    afMouseControlScales(){
+        m_pan = 0.01;
+        m_rotate = 0.3;
+        m_arcball = 0.03;
+        m_scroll = 0.1;
+    }
+
+    double m_pan;
+    double m_rotate;
+    double m_scroll;
+    double m_arcball;
+};
+
 ///
 /// \brief The afCameraAttributes struct
 ///
@@ -576,6 +591,7 @@ public:
     uint m_publishDepthInterval;
     afShaderAttributes m_preProcessShaderAttribs;
     afShaderAttributes m_depthComputeShaderAttribs;
+    afMouseControlScales m_mouseControlScales;
     bool m_multiPass;
 
     afImageResolutionAttribs m_publishImageResolution;

@@ -1915,6 +1915,9 @@ public:
 
 public:
     bool m_cam_pressed;
+
+    afMouseControlScales m_mouseControlScales;
+
     GLFWwindow* m_window;
 
     static GLFWwindow* s_mainWindow;

@@ -1442,12 +1442,9 @@ void mouseBtnsCallback(GLFWwindow* a_window, int a_button, int a_clicked, int a_
 void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
     afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
     if (cameraPtr != nullptr){
-        int state = glfwGetKey(a_window, GLFW_KEY_LEFT_CONTROL);
-        double speed_scale = 1.0;
-        if (state == GLFW_PRESS)
-        {
-            speed_scale = 0.1;
-        }
+
+        double scale_shift = (glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 0.1 : 1.0;
+
         cameraPtr->mouse_x[1] = cameraPtr->mouse_x[0];
         cameraPtr->mouse_x[0] = a_xpos;
         cameraPtr->mouse_y[1] = cameraPtr->mouse_y[0];
@@ -1461,9 +1458,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
                 g_pickTo = rayTo;
             }
             else{
-                double scale = 0.01;
-                double x_vel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
-                double y_vel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
+                double x_vel = scale_shift * cameraPtr->m_mouseControlScales.m_pan * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
+                double y_vel = scale_shift * cameraPtr->m_mouseControlScales.m_pan  * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
                 if (g_mouse_inverted_y){
                     y_vel = -y_vel;
                 }
@@ -1475,9 +1471,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
         if( cameraPtr->mouse_r_clicked ){
             cMatrix3d camRot;
-            double scale = 0.3;
-            double yawVel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]); // Yaw
-            double pitchVel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]); // Pitch
+            double yawVel = scale_shift * cameraPtr->m_mouseControlScales.m_rotate * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]); // Yaw
+            double pitchVel = scale_shift * cameraPtr->m_mouseControlScales.m_rotate * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]); // Pitch
             if (g_mouse_inverted_y){
                 pitchVel = -pitchVel;
             }
@@ -1501,9 +1496,8 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 
         if( cameraPtr->mouse_scroll_clicked){
             //                devCam->showTargetPos(true);
-            double scale = 0.03;
-            double horizontalVel = speed_scale * scale * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
-            double verticalVel = speed_scale * scale * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
+            double horizontalVel = scale_shift * cameraPtr->m_mouseControlScales.m_arcball * ( cameraPtr->mouse_x[0] - cameraPtr->mouse_x[1]);
+            double verticalVel = scale_shift * cameraPtr->m_mouseControlScales.m_arcball * ( cameraPtr->mouse_y[0] - cameraPtr->mouse_y[1]);
             if (g_mouse_inverted_y){
                 verticalVel = -verticalVel;
             }
@@ -1547,18 +1541,13 @@ void mousePosCallback(GLFWwindow* a_window, double a_xpos, double a_ypos){
 void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
     afCameraPtr cameraPtr = g_afWorld->getAssociatedCamera(a_window);
     if (cameraPtr != nullptr){
-        int state = glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT);
-        double speed_scale = 1.0;
-        if (state == GLFW_PRESS)
-        {
-            speed_scale = 0.1;
-        }
+
+        double scale_shift = (glfwGetKey(a_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 0.1 : 1.0;
 
         cameraPtr->mouse_scroll[1] = cameraPtr->mouse_scroll[0];
         cameraPtr->mouse_scroll[0] = -a_ypos;
 
-        double scale = 0.1;
-        cVector3d camVelAlongLook(speed_scale * scale * cameraPtr->mouse_scroll[0], 0, 0);
+        cVector3d camVelAlongLook(scale_shift * cameraPtr->m_mouseControlScales.m_scroll * cameraPtr->mouse_scroll[0], 0, 0);
         cVector3d newTargetPos = cameraPtr->getTargetPosLocal();
         cVector3d newPos = cameraPtr->getLocalTransform() * camVelAlongLook;
         cVector3d dPos = newPos - newTargetPos;
@@ -1567,7 +1556,9 @@ void mouseScrollCallback(GLFWwindow *a_window, double a_xpos, double a_ypos){
         }
 
         if (cameraPtr->isOrthographic()){
-            cameraPtr->getInternalCamera()->setOrthographicView(cameraPtr->getInternalCamera()->getOrthographicViewWidth() + (speed_scale * scale * cameraPtr->mouse_scroll[0]));
+            cameraPtr->getInternalCamera()->setOrthographicView(
+                        cameraPtr->getInternalCamera()->getOrthographicViewWidth()
+                        + (scale_shift * cameraPtr->m_mouseControlScales.m_scroll * cameraPtr->mouse_scroll[0]));
             cameraPtr->setLocalPos( cameraPtr->getLocalTransform() * camVelAlongLook );
         }
         else{
