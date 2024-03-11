@@ -464,14 +464,14 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
             if (attribs->m_meshRemoveDuplicates == afStatusFlag::TRUE){
                 mesh->removeDuplicateVertices();
             }
-            else if (attribs->m_meshRemoveDuplicates == afStatusFlag::UNDEFINED){
-                for (auto m : *(mesh->m_meshes)){
-                    if (m->getNumVertices() > 10000){
-                        double wd = 0.;
-                        m->removeDuplicateVertices(wd);
-                    }
-                }
-            }
+//            else if (attribs->m_meshRemoveDuplicates == afStatusFlag::UNDEFINED){
+//                for (auto m : *(mesh->m_meshes)){
+//                    if (m->getNumVertices() > 10000){
+//                        double wd = 0.;
+//                        m->removeDuplicateVertices(wd);
+//                    }
+//                }
+//            }
             mesh->setUseDisplayList(true);
         }
         else{
