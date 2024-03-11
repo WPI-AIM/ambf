@@ -196,7 +196,7 @@ public:
     void setOpticalDensity(const float a_opticalDensity) { m_opticalDensity = fabs(a_opticalDensity); }
 
     //! This method returns the optical density factor.
-    float getOpticalDensity() { return(m_opacityThreshold); }
+    float getOpticalDensity() { return(m_opticalDensity); }
 
     //! This method enables or disables linear interpolation.
     void setUseLinearInterpolation(const bool a_useLinearInterpolation) { m_useLinearInterpolation = a_useLinearInterpolation; }
