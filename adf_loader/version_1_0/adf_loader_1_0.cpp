@@ -1162,6 +1162,7 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
     YAML::Node spotExponentNode = node["spot exponent"];
     YAML::Node shadowQualityNode = node["shadow quality"];
     YAML::Node cuttOffAngleNode = node["cutoff angle"];
+    YAML::Node attenuationNode = node["attenuation"];
 
     bool valid = true;
 
@@ -1212,6 +1213,13 @@ bool ADFLoader_1_0::loadLightAttribs(YAML::Node *a_node, afLightAttributes *attr
 
     if (cuttOffAngleNode.IsDefined()){
         attribs->m_cuttoffAngle = cuttOffAngleNode.as<double>();
+    }
+
+    if (attenuationNode.IsDefined()){
+        attribs->m_attenuationDefined = true;
+        if (attenuationNode["constant"].IsDefined()) attribs->m_constantAttenuation = attenuationNode["constant"].as<double>();
+        if (attenuationNode["linear"].IsDefined()) attribs->m_linearAttenuation = attenuationNode["linear"].as<double>();
+        if (attenuationNode["quadratic"].IsDefined()) attribs->m_quadraticAttenuation = attenuationNode["quadratic"].as<double>();
     }
 
     return valid;

@@ -623,10 +623,18 @@ public:
     afLightAttributes(){
         m_spotExponent = 0.7;
         m_cuttoffAngle = 0.7;
+        m_constantAttenuation = 1.0;
+        m_linearAttenuation = 0.0;
+        m_quadraticAttenuation = 0.0;
+        m_attenuationDefined = false;
     }
 
     double m_spotExponent;
     double m_cuttoffAngle;
+    double m_constantAttenuation;
+    double m_linearAttenuation;
+    double m_quadraticAttenuation;
+    bool m_attenuationDefined;
     afVector3d m_direction;
 
     afShadowQualityType m_shadowQuality;
