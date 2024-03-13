@@ -181,6 +181,11 @@ void cSpotLight::renderLightSource(cRenderOptions& a_options)
     // set cutoff angle
     glLightf(m_glLightNumber, GL_SPOT_CUTOFF, m_cutOffAngleDeg); 
 
+    // Set Attenuation Constants
+    glLightf(m_glLightNumber, GL_CONSTANT_ATTENUATION, getAttConstant());
+    glLightf(m_glLightNumber, GL_LINEAR_ATTENUATION, getAttLinear());
+    glLightf(m_glLightNumber, GL_QUADRATIC_ATTENUATION, getAttQuadratic());
+
 #endif
 }
 

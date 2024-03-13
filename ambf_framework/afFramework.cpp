@@ -7216,6 +7216,12 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     m_spotLight->setCutOffAngleDeg(a_attribs->m_cuttoffAngle * (180/3.14));
     m_spotLight->setShadowMapEnabled(true);
 
+    if (a_attribs->m_attenuationDefined){
+        m_spotLight->setAttConstant(a_attribs->m_constantAttenuation);
+        m_spotLight->setAttLinear(a_attribs->m_linearAttenuation);
+        m_spotLight->setAttQuadratic(a_attribs->m_quadraticAttenuation);
+    }
+
     switch (a_attribs->m_shadowQuality) {
     case afShadowQualityType::NO_SHADOW:
         m_spotLight->setShadowMapEnabled(false);
@@ -8302,7 +8308,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             m_voxelObject = new cVoxelObject();
             // Setting transparency before setting the texture ensures that the rendering does not show empty spaces as black
             // and the depth point cloud is able to see the volume
-            m_voxelObject->setTransparencyLevel(1.0);
+//            m_voxelObject->setTransparencyLevel(1.0);
 
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);
