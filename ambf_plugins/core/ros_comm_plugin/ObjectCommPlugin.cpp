@@ -532,6 +532,10 @@ void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double 
             lightPtr->setCutOffAngle(cutoff_angle);
 
             lightPtr->resolveParent(parent_name);
+
+            lightPtr->setConstantAttenuation(m_lightCommPtr->get_constant_attenuation());
+            lightPtr->setLinearAttenuation(m_lightCommPtr->get_linear_attenuation());
+            lightPtr->setQuadraticAttenuation(m_lightCommPtr->get_quadratic_attenuation());
         }
 
         m_read_count = 0;
@@ -544,6 +548,9 @@ void afObjectCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double d
         m_lightCommPtr->set_cuttoff_angle(lightPtr->getCutOffAngle());
         m_lightCommPtr->set_type(ambf_comm::LightType::SPOT);
         m_lightCommPtr->set_parent_name(lightPtr->m_parentName);
+        m_lightCommPtr->set_attenuation(lightPtr->getConstantAttenuation(),
+                                        lightPtr->getLinearAttenuation(),
+                                        lightPtr->getQuadraticAttenuation());
 
         m_lightCommPtr->set_params_on_server();
         m_paramsSet = true;

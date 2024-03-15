@@ -7217,9 +7217,9 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     m_spotLight->setShadowMapEnabled(true);
 
     if (a_attribs->m_attenuationDefined){
-        m_spotLight->setAttConstant(a_attribs->m_constantAttenuation);
-        m_spotLight->setAttLinear(a_attribs->m_linearAttenuation);
-        m_spotLight->setAttQuadratic(a_attribs->m_quadraticAttenuation);
+        setConstantAttenuation(a_attribs->m_constantAttenuation);
+        setLinearAttenuation(a_attribs->m_linearAttenuation);
+        setQuadraticAttenuation(a_attribs->m_quadraticAttenuation);
     }
 
     switch (a_attribs->m_shadowQuality) {

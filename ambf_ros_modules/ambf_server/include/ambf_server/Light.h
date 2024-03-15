@@ -59,7 +59,8 @@ enum class LightType{
 enum class LightParamsEnum{
     cuttoff_angle,
     parent_name,
-    type
+    type,
+    attenuation
 };
 
 
@@ -76,10 +77,14 @@ public:
     // Setters
     void set_type(LightType val){m_light_type = val;}
     void set_cuttoff_angle(double val){m_cuttoff_angle = val;}
+    void set_attenuation(double cons, double lin, double quad);
 
     // Getters
     LightType get_type(){return m_light_type;}
     double get_cuttoff_angle(){return m_cuttoff_angle;}
+    double get_constant_attenuation(){return m_attenuation["constant"];}
+    double get_linear_attenuation(){return m_attenuation["linear"];}
+    double get_quadratic_attenuation(){return m_attenuation["quadratic"];}
 
     // This a flag to check if any param has been updated
     bool m_paramsChanged;
@@ -92,6 +97,7 @@ protected:
     // Datatyped Variables for params defined on the server
     double m_type;
     double m_cuttoff_angle;
+    std::map<std::string, double> m_attenuation; // Constant, Linear and Quadratic Attenuation
     LightType m_light_type;
 };
 

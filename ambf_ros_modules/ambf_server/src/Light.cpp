@@ -56,28 +56,42 @@ const std::string light_param_enum_to_str(LightParamsEnum enumVal)
     if (enumVal == LightParamsEnum::cuttoff_angle) return "cutoff_angle";
     else if (enumVal == LightParamsEnum::parent_name) return "parent_name";
     else if (enumVal == LightParamsEnum::type) return "type";
+    else if (enumVal == LightParamsEnum::attenuation) return "attenuation";
     return "";
 }
 
 LightParams::LightParams(){
     m_paramsChanged = false;
+    m_attenuation["constant"] = 1.0;
+    m_attenuation["linear"] = 0.0;
+    m_attenuation["quadratic"] = 0.0;
+}
+
+void LightParams::set_attenuation(double cons, double lin, double quad)
+{
+    m_attenuation["constant"] = cons;
+    m_attenuation["linear"] = lin;
+    m_attenuation["quadratic"] = quad;
 }
 
 void Light::set_params_on_server(){
     nodePtr->setParam(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::cuttoff_angle), m_cuttoff_angle);
     nodePtr->setParam(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::parent_name), m_State.parent_name.data);
     nodePtr->setParam(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::type), light_type_enum_to_str(m_light_type));
+    nodePtr->setParam(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::attenuation), m_attenuation);
 }
 
 void Light::update_params_from_server(){
     double ca;
     std::string pn;
     std::string lt;
+    std::map<std::string, double> att;
     LightType lt_enum;
 
     nodePtr->getParamCached(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::cuttoff_angle), ca);
     nodePtr->getParamCached(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::parent_name), pn);
     nodePtr->getParamCached(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::type), lt);
+    nodePtr->getParamCached(m_base_prefix + "/" + light_param_enum_to_str(LightParamsEnum::attenuation), att);
 
     if (lt.compare(light_type_enum_to_str(LightType::SPOT)) == 0){
         lt_enum = LightType::SPOT;
@@ -104,6 +118,19 @@ void Light::update_params_from_server(){
             pn.compare(m_State.parent_name.data) !=0){
         m_paramsChanged = true;
         std::cerr << "INFO! PARAMS CHANGED FOR \"" << m_name << "\"\n";
+    }
+
+    std::map<std::string, double>::iterator it;
+    for (it = m_attenuation.begin() ; it != m_attenuation.end() ; ++it){
+        try{
+            if (att[it->first] != it->second){
+                m_paramsChanged = true;
+                it->second = att[it->first];
+            }
+        }
+        catch (...){
+            // Do nothing
+        }
     }
 
     // Finally update the local copies of the params

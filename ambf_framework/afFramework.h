@@ -2083,6 +2083,18 @@ public:
 
     cGenericLight* getInternalLight();
 
+    double getConstantAttenuation(){return m_spotLight->getAttConstant();}
+
+    double getLinearAttenuation(){return m_spotLight->getAttLinear();}
+
+    double getQuadraticAttenuation(){return m_spotLight->getAttQuadratic();}
+
+    void setConstantAttenuation(double att){m_spotLight->setAttConstant(att);}
+
+    void setLinearAttenuation(double att){m_spotLight->setAttLinear(att);}
+
+    void setQuadraticAttenuation(double att){m_spotLight->setAttQuadratic(att);}
+
 protected:
     cSpotLight* m_spotLight;
 
