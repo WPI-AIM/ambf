@@ -44,6 +44,7 @@
 #include "afInputDevices.h"
 #include "afConversions.h"
 #include <string.h>
+#include <algorithm>
 //------------------------------------------------------------------------------
 
 
