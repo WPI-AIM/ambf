@@ -118,7 +118,7 @@ def main():
 
     parsed_args = parser.parse_args()
     print('Specified Arguments')
-    print parsed_args
+    print(parsed_args)
 
     _spacenav_one_name = parsed_args.spacenav_name
     _obj_one_name = parsed_args.obj_name
@@ -130,8 +130,8 @@ def main():
     client.connect()
 
     if _print_obj_names:
-        print ('Printing Found AMBF Object Names: ')
-        print client.get_obj_names()
+        print('Printing Found AMBF Object Names: ')
+        print(client.get_obj_names())
         exit()
 
     _pair_one_specified = True
