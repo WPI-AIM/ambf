@@ -404,6 +404,13 @@ public:
     // Store the last effort command to compute and bound max impulse
     double m_last_cmd = 0;
 
+    // Get Controller Gains
+    inline double getP_lin(){return m_P;}
+    inline double getI_lin(){return m_I;}
+    inline double getD_lin(){return m_D;}
+
+    void setLinearGains(double a_P, double a_I, double a_D);
+
     double computeOutput(double process_val, double set_point, double current_time);
 
     void boundImpulse(double& effort_cmd);
@@ -1349,6 +1356,12 @@ public:
     void remove();
 
     bool isFeedBackEnabled(){return m_enableFeedback;}
+
+    // Set the gain of this joint
+    void setLinearGain(double a_P, double a_I, double a_D);
+
+    // Get the gain of this joint
+    vector<double> getLinearGain();
 
 protected:
 
