@@ -126,8 +126,8 @@ while not rospy.is_shutdown():
         last_delta_pos = delta_pos
         delta_pos = cmd_pos - cur_pos
         delta_delta_pos = (delta_pos - last_delta_pos) / dt
-        # print delta_pos, last_delta_pos
-        # print  (D_lin * delta_delta_pos) / dtp
+        # print(delta_pos, last_delta_pos)
+        # print(D_lin * delta_delta_pos) / dtp)
         force = PU.K_lin * delta_pos + PU.D_lin * delta_delta_pos
 
         m_drot_prev = m_drot

@@ -158,7 +158,7 @@ private:
 
     void init();
     void handle_frames();
-    void pose_fcn_cb(const geometry_msgs::TransformStamped &pose);
+    void pose_fcn_cb(const geometry_msgs::PoseStamped &pose);
     void gripper_state_fcn_cb(const sensor_msgs::JointState &state);
     void joint_state_fcn_cb(const sensor_msgs::JointState &jnt);
     void wrench_fcn_cb(const geometry_msgs::WrenchStamped &wrench);

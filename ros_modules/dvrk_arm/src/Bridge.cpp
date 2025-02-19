@@ -89,7 +89,7 @@ void DVRK_Bridge::init(){
     gripper_measured_js_sub = n->subscribe(_namespace + "/gripper/measured_js", 10, &DVRK_Bridge::gripper_measured_js_cb, this);
 
     servo_jp_pub = n->advertise<sensor_msgs::JointState>(_namespace + "/servo_jp", 10);
-    servo_cp_pub  = n->advertise<geometry_msgs::TransformStamped>(_namespace + "/servo_cp", 10);
+    servo_cp_pub  = n->advertise<geometry_msgs::PoseStamped>(_namespace + "/servo_cp", 10);
     state_pub = n->advertise<std_msgs::String>(_namespace + "/set_robot_state", 10);
     servo_cf_pub = n->advertise<geometry_msgs::WrenchStamped>(_namespace + "/body/servo_cf", 10);
     force_orientation_lock_pub = n->advertise<std_msgs::Bool>(_namespace + "/body/set_cf_orientation_absolute", 10);
@@ -123,7 +123,7 @@ void DVRK_Bridge::measured_js_cb(const sensor_msgs::JointStateConstPtr &msg){
     }
 }
 
-void DVRK_Bridge::measured_cp_cb(const geometry_msgs::TransformStampedConstPtr &msg){
+void DVRK_Bridge::measured_cp_cb(const geometry_msgs::PoseStampedConstPtr &msg){
     pre_pose = cur_pose;
     cur_pose = *msg;
     if(poseFcnHandle._is_set){
@@ -195,7 +195,7 @@ void DVRK_Bridge::set_cur_mode(const std::string &state, bool lock_ori){
     _start_pubs = false;
 }
 
-void DVRK_Bridge::servo_cp(const geometry_msgs::TransformStamped &pose){
+void DVRK_Bridge::servo_cp(const geometry_msgs::PoseStamped &pose){
     cmd_pose = pose;
     activeState = DVRK_POSITION_CARTESIAN;
     _start_pubs = true;

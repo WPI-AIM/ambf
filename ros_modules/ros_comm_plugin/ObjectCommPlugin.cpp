@@ -1,6 +1,27 @@
 #include "ObjectCommPlugin.h"
 
-AF_REGISTER_OBJECT_PLUGIN(afObjectCommunicationPlugin);
+#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+void copyVec(cVector3d* in, geometry_msgs::Vector3* out){
+    out->x = in->x(); out->y = in->x(); out->z = in->z();
+}
+
+void fillContactData(afContactEventMap* conEventMap, vector<ambf_msgs::ContactEvent>* conEventMsgVec){
+    afContactEventMap& eventMap = *conEventMap;
+    for (auto it : eventMap){
+        ambf_msgs::ContactEvent conEventMsg;
+        conEventMsg.object_name.data = it.first->getQualifiedIdentifier();
+        ambf_msgs::ContactData contDataMsg;
+        for (int in = 0 ; in < it.second.m_contactData.size() ; in ++){
+            contDataMsg.distance.data = it.second.m_contactData[in].m_distance;
+            copyVec(&it.second.m_contactData[in].m_P_b_w, &contDataMsg.contact_point);
+            copyVec(&it.second.m_contactData[in].m_N_b_w, &contDataMsg.contact_normal);
+            conEventMsg.contact_data.push_back(contDataMsg);
+        }
+        conEventMsgVec->push_back(conEventMsg);
+    }
+}
+
+#endif
 
 void afRigidBodyState::setChildrenNames(afRigidBodyPtr afRBPtr){
     int num_children = afRBPtr->m_CJ_PairsActive.size();
@@ -128,17 +149,40 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
         success = true;
     }
         break;
+    case afType::GHOST_OBJECT:
+    {
+        m_ghostObjectCommPtr.reset(new ambf_comm::GhostObject(objName, objNamespace, minFreq, maxFreq, timeOut));
+        m_ghostObjectCommPtr->set_identifier(objQualifiedIdentifier);
+        success = true;
+    }
+        break;
     case afType::SENSOR:
     {
-        m_sensorCommPtr.reset(new ambf_comm::Sensor(objName, objNamespace, minFreq, maxFreq, timeOut));
-        m_sensorCommPtr->set_identifier(objQualifiedIdentifier);
         afSensorPtr senPtr = (afSensorPtr) m_objectPtr;
+        switch (senPtr->m_sensorType){
+        case afSensorType::RAYTRACER:
+        case afSensorType::RESISTANCE:
+        {
+            m_sensorCommPtr.reset(new ambf_comm::Sensor(objName, objNamespace, minFreq, maxFreq, timeOut));
+            m_sensorCommPtr->set_identifier(objQualifiedIdentifier);
+        }
+            break;
+        case afSensorType::CONTACT:
+        {
+            m_contactSensorCommPtr.reset(new ambf_comm::ContactSensor(objName, objNamespace, minFreq, maxFreq, timeOut));
+            m_contactSensorCommPtr->set_identifier(objQualifiedIdentifier);
+        }
+            break;
+        }
         switch (senPtr->m_sensorType) {
         case afSensorType::RAYTRACER:
             m_sensorCommPtr->set_type("PROXIMITY");
             break;
         case afSensorType::RESISTANCE:
             m_sensorCommPtr->set_type("RESISTANCE");
+            break;
+        case afSensorType::CONTACT:
+            m_contactSensorCommPtr->set_type("CONTACT");
             break;
         default:
             break;
@@ -218,6 +262,13 @@ void afObjectCommunicationPlugin::physicsUpdate(double dt)
         rigidBodyUpdateState(rbPtr, dt);
     }
         break;
+    case afType::GHOST_OBJECT:
+    {
+        afGhostObjectPtr goPtr = (afGhostObjectPtr)m_objectPtr;
+        ghostObjectFetchCommand(goPtr, dt);
+        ghostObjectUpdateState(goPtr, dt);
+    }
+        break;
     case afType::SENSOR:{
         afSensorPtr senPtr = (afSensorPtr)m_objectPtr;
         sensorFetchCommand(senPtr, dt);
@@ -280,11 +331,35 @@ void afObjectCommunicationPlugin::setTimeStamps(const double a_wall_time, const 
         m_rigidBodyCommPtr->set_time_stamp(a_system_time);
     }
         break;
+    case afType::GHOST_OBJECT:
+    {
+        m_ghostObjectCommPtr->set_wall_time(a_wall_time);
+        m_ghostObjectCommPtr->set_sim_time(a_sim_time);
+        m_ghostObjectCommPtr->set_time_stamp(a_system_time);
+    }
+        break;
     case afType::SENSOR:
     {
-        m_sensorCommPtr->set_wall_time(a_wall_time);
-        m_sensorCommPtr->set_sim_time(a_sim_time);
-        m_sensorCommPtr->set_time_stamp(a_system_time);
+        afSensorPtr sensorPtr = (afSensorPtr) m_objectPtr;
+        switch (sensorPtr->m_sensorType) {
+        case afSensorType::RAYTRACER:
+        case afSensorType::RESISTANCE:
+        {
+            m_sensorCommPtr->set_wall_time(a_wall_time);
+            m_sensorCommPtr->set_sim_time(a_sim_time);
+            m_sensorCommPtr->set_time_stamp(a_system_time);
+        }
+            break;
+        case afSensorType::CONTACT:
+        {
+            m_contactSensorCommPtr->set_wall_time(a_wall_time);
+            m_contactSensorCommPtr->set_sim_time(a_sim_time);
+            m_contactSensorCommPtr->set_time_stamp(a_system_time);
+        }
+            break;
+        default:
+            break;
+        }
     }
         break;
     case afType::VEHICLE:
@@ -356,6 +431,13 @@ void afObjectCommunicationPlugin::actuatorUpdateState(afActuatorPtr actPtr, doub
     m_actuatorCommPtr->m_writeMtx.lock();
     setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     m_actuatorCommPtr->set_parent_name(actPtr->m_parentName);
+
+    cVector3d localPos = actPtr->getLocalPos();
+    m_actuatorCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    cQuaternion q;
+    q.fromRotMat(actPtr->getLocalRot());
+    m_actuatorCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+
     m_actuatorCommPtr->m_writeMtx.unlock();
     m_actuatorCommPtr->enableComm();
     m_write_count++;
@@ -533,6 +615,10 @@ void afObjectCommunicationPlugin::lightFetchCommand(afLightPtr lightPtr, double 
             lightPtr->setCutOffAngle(cutoff_angle);
 
             lightPtr->resolveParent(parent_name);
+
+            lightPtr->setConstantAttenuation(m_lightCommPtr->get_constant_attenuation());
+            lightPtr->setLinearAttenuation(m_lightCommPtr->get_linear_attenuation());
+            lightPtr->setQuadraticAttenuation(m_lightCommPtr->get_quadratic_attenuation());
         }
 
         m_read_count = 0;
@@ -545,6 +631,9 @@ void afObjectCommunicationPlugin::lightUpdateState(afLightPtr lightPtr, double d
         m_lightCommPtr->set_cuttoff_angle(lightPtr->getCutOffAngle());
         m_lightCommPtr->set_type(ambf_comm::LightType::SPOT);
         m_lightCommPtr->set_parent_name(lightPtr->m_parentName);
+        m_lightCommPtr->set_attenuation(lightPtr->getConstantAttenuation(),
+                                        lightPtr->getLinearAttenuation(),
+                                        lightPtr->getQuadraticAttenuation());
 
         m_lightCommPtr->set_params_on_server();
         m_paramsSet = true;
@@ -821,20 +910,45 @@ void afObjectCommunicationPlugin::rigidBodyUpdateState(afRigidBodyPtr afRBPtr, d
     m_write_count++;
 }
 
-void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double dt)
-{
+void afObjectCommunicationPlugin::ghostObjectFetchCommand(afGhostObjectPtr, double){
+
+}
+
+void afObjectCommunicationPlugin::ghostObjectUpdateState(afGhostObjectPtr goPtr, double){
+
+    m_ghostObjectCommPtr->m_writeMtx.lock();
+    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
+    m_ghostObjectCommPtr->set_parent_name(goPtr->m_parentName);
+    cVector3d localPos = goPtr->getLocalPos();
+    m_ghostObjectCommPtr->cur_position(localPos.x(), localPos.y(), localPos.z());
+    cQuaternion q;
+    q.fromRotMat(goPtr->getLocalRot());
+    m_ghostObjectCommPtr->cur_orientation(q.x, q.y, q.z, q.w);
+    m_ghostObjectCommPtr->reset_sensed_objects();
+    for (auto it : goPtr->m_sensedObjectsMaps){
+        m_ghostObjectCommPtr->add_sensed_object(it.first->getQualifiedIdentifier());
+    }
+    m_ghostObjectCommPtr->m_writeMtx.unlock();
+    m_ghostObjectCommPtr->enableComm();
+
+    m_write_count++;
+}
+
+void afObjectCommunicationPlugin::sensorFetchCommand(afSensorPtr senPtr, double dt){
 
 }
 
 void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double dt)
 {
-    m_sensorCommPtr->m_writeMtx.lock();
-    setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
     switch (senPtr->m_sensorType) {
     case afSensorType::RAYTRACER:
     case afSensorType::RESISTANCE:
     case afSensorType::RANGE:
     {
+
+        m_sensorCommPtr->m_writeMtx.lock();
+        setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
+
         afRayTracerSensorPtr raySenPtr = (afRayTracerSensorPtr) senPtr;
         m_sensorCommPtr->set_count(raySenPtr->getCount());
         m_sensorCommPtr->set_parent_name(raySenPtr->m_parentName);
@@ -861,10 +975,10 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
             if (triggers[i]){
                 switch (raySenPtr->getSensedBodyType(i)) {
                 case afBodyType::RIGID_BODY:
-                    sensed_obj_names[i] = raySenPtr->getSensedRigidBody(i)->getName();
+                    sensed_obj_names[i] = raySenPtr->getSensedRigidBody(i)->getQualifiedName();
                     break;
                 case afBodyType::SOFT_BODY:
-                    sensed_obj_names[i] = raySenPtr->getSensedSoftBody(i)->getName();
+                    sensed_obj_names[i] = raySenPtr->getSensedSoftBody(i)->getQualifiedName();
                 default:
                     sensed_obj_names[i] = "";
                     break;
@@ -877,13 +991,30 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
         m_sensorCommPtr->set_measurements(measurements);
         m_sensorCommPtr->set_sensed_objects(sensed_obj_names);
 
+        m_sensorCommPtr->m_writeMtx.unlock();
+        m_sensorCommPtr->enableComm();
+
+    }
+        break;
+    case afSensorType::CONTACT:
+    {
+        m_contactSensorCommPtr->m_writeMtx.lock();
+        m_contactSensorCommPtr->reset_contact_events();
+        setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
+        afContactSensorPtr conSenPtr = (afContactSensorPtr) senPtr;
+        m_contactSensorCommPtr->set_parent_name(conSenPtr->m_parentName);
+        vector<ambf_msgs::ContactEvent> conEvents;
+        fillContactData(&conSenPtr->m_contactSensorCallback->m_contactEventMap, &conEvents);
+        for (auto v: conEvents){
+            m_contactSensorCommPtr->add_contact_event(v);
+        }
+        m_contactSensorCommPtr->m_writeMtx.unlock();
+        m_contactSensorCommPtr->enableComm();
     }
         break;
     default:
         break;
     }
-    m_sensorCommPtr->m_writeMtx.unlock();
-    m_sensorCommPtr->enableComm();
     m_write_count++;
 
 }

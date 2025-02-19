@@ -43,18 +43,33 @@
 
 from ambf_msgs.msg import SensorState
 from ambf_msgs.msg import SensorCmd
-from .ambf_base_object import BaseObject
+from ambf_base_object import BaseObject
+from enum import Enum
+
+class SensorType(Enum):
+    RAYTRACER=1
+    CONTACT=2
 
 
-class Sensor(BaseObject):
-    def __init__(self, node, a_name, time_out=0.1):
+class SensorBase(BaseObject):
+    def __init__(self, sensor_type, a_name, time_out):
+        super().__init__(a_name, time_out)
+        self.object_type = "SENSOR"
+        self.body_type = "KINEMATIC"
+        self.sensor_type = sensor_type
+    
+    def get_type(self):
+        return self.sensor_type
+
+
+class Sensor(SensorBase):
+    def __init__(self, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super(Sensor, self).__init__(node = node, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
-        self.object_type = "SENSOR"
-        self.body_type = "KINEMATIC"
+        super().__init__(SensorType.RAYTRACER, a_name, time_out)  # Set duration of Watchdog expiry
+        
 
     def _clear_command(self):
         """
@@ -128,4 +143,52 @@ class Sensor(BaseObject):
         :return geometry_msgs/Pose
         """
         return self._state.pose
+
+
+
+class ContactSensor(SensorBase):
+    def __init__(self, a_name, time_out=0.1):
+        """
+        Constructor
+        :param a_name:
+        """
+        super().__init__(SensorType.CONTACT, a_name, time_out)  # Set duration of Watchdog expiry
+
+    def _clear_command(self):
+        """
+        Clear wrench if watchdog is expired
+        :return:
+        """
+
+    def get_contact_event(self, idx):
+        """
+        Get the name of sensed object by a specific sensor element.
+        :param idx:
+        :return:
+        """
+        if idx < len(self._state.contact_events):
+            return self._state.contact_events[idx]
+        
+    
+    def get_all_contact_event(self):
+        return self._state.contact_events
+    
+
+    def get_contact_object_name(self, idx):
+       """
+       Get the name of sensed object by a specific sensor element.
+       :param idx:
+       :return:
+       """
+       if idx < len(self._state.contact_events):
+           return self._state.contact_events[idx].object_name.data
+       
+
+    def get_all_contact_object_names(self):
+        contact_object_names = [nm.object_name.data for nm in self._state.contact_events]
+        return contact_object_names
+    
+
+    def get_num_contact_events(self):
+        return len(self._state.contact_events)
 

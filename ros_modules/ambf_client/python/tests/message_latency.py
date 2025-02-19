@@ -85,7 +85,7 @@ class MessageLatency:
         if not self.window_times_captured:
             self.time_window_lims[0] = time + 1.0
             self.time_window_lims[1] += self.time_window_lims[0]
-            print 'Capturing Time from {} to {}'.format(self.time_window_lims[0], self.time_window_lims[1])
+            print('Capturing Time from {} to {}'.format(self.time_window_lims[0], self.time_window_lims[1]))
             self.window_times_captured = True
 
     def obj_state_cb(self, data):
@@ -97,9 +97,9 @@ class MessageLatency:
                 if self.is_first_run:
                     self.capture_window_times(data.wall_time)
                     self.initial_time_offset = ambf_sim_wall_time - data.wall_time
-                    print 'ROS & AMBF Clock Offset in C++ Server: ', self.initial_time_offset
-                    print 'AMBF Wall Time after offset          : ', ambf_sim_wall_time - self.initial_time_offset
-                    print 'Cur Process Wall Time after offset   : ', process_wall_time - self.initial_time_offset
+                    print('ROS & AMBF Clock Offset in C++ Server: ', self.initial_time_offset)
+                    print('AMBF Wall Time after offset          : ', ambf_sim_wall_time - self.initial_time_offset)
+                    print('Cur Process Wall Time after offset   : ', process_wall_time - self.initial_time_offset)
                     self.is_first_run = False
 
                 self.ambf_process_wall_time.append(ambf_sim_wall_time - self.initial_time_offset)
@@ -117,15 +117,15 @@ class MessageLatency:
 
     def compute_mean_latency(self):
         self.mean_latency = sum(self.latency_list) / len(self.latency_list)
-        print 'Mean Latency= ', self.mean_latency, ' | Itrs= ', len(self.latency_list), ' | Counter=', self.cb_counter
+        print('Mean Latency= ', self.mean_latency, ' | Itrs= ', len(self.latency_list), ' | Counter=', self.cb_counter)
 
         total_packets = (self.msg_counter_num[-1] + 1) - self.msg_counter_num[0]
         total_packets_rcvd = len(self.msg_counter_num)
         percent_packets_rcvd = (total_packets_rcvd * 1.0) / (total_packets * 1.0)
 
-        print 'Total packets sent by C++ Server: ', total_packets
-        print 'Total packets received by Client: ', total_packets_rcvd
-        print 'Percentage of packets received  : {}%'.format(100 * percent_packets_rcvd)
+        print('Total packets sent by C++ Server: ', total_packets)
+        print('Total packets received by Client: ', total_packets_rcvd)
+        print('Percentage of packets received  : {}%'.format(100 * percent_packets_rcvd))
 
     def calculate_packets_dt(self, list):
         new_list = []
@@ -137,7 +137,7 @@ class MessageLatency:
         rospy.init_node('message_latency_inspector')
         sub = rospy.Subscriber('/ambf/env/World/State', WorldState, self.obj_state_cb, queue_size=self.queue_size)
 
-        print 'X Axis = ', self.x_axis_dict[self.x_axis_type][0]
+        print('X Axis = ', self.x_axis_dict[self.x_axis_type][0])
         x_axis_indx = self.x_axis_dict[self.x_axis_type][1]
 
         while not rospy.is_shutdown() and not self.done:

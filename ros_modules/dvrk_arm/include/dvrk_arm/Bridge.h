@@ -46,8 +46,8 @@
 
 #if AMBF_ROS1
 #include "ros/ros.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "ros/callback_queue.h"
-#include "geometry_msgs/TransformStamped.h"
 #include "sensor_msgs/JointState.h"
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/String.h"
@@ -84,7 +84,7 @@ public:
     DVRK_Bridge(const std::string &arm_name, int bridge_frequnce = 1000);
     ~DVRK_Bridge();
 
-    void servo_cp(const geometry_msgs::TransformStamped &pose);
+    void servo_cp(const geometry_msgs::PoseStamped &pose);
     void servo_cf(const geometry_msgs::Wrench &wrench);
     void servo_jp(const sensor_msgs::JointState &jnt_state);
     void set_cur_mode(const std::string &state, bool lock_ori);
@@ -105,7 +105,7 @@ public:
 
     bool shutDown();
 
-    FcnHandle<const geometry_msgs::TransformStamped&> poseFcnHandle;
+    FcnHandle<const geometry_msgs::PoseStamped&> poseFcnHandle;
     FcnHandle<const sensor_msgs::JointState&> jointFcnHandle;
     FcnHandle<const geometry_msgs::WrenchStamped&> wrenchFcnHandle;
     FcnHandle<const sensor_msgs::JointState&> gripperFcnHandle;
@@ -135,7 +135,7 @@ private:
     std::vector<std::string> valid_arms;
     void init();
     void state_cb(const std_msgs::StringConstPtr &msg);
-    void measured_cp_cb(const geometry_msgs::TransformStampedConstPtr &msg);
+    void measured_cp_cb(const geometry_msgs::PoseStampedConstPtr &msg);
     void measured_js_cb(const sensor_msgs::JointStateConstPtr &msg);
     void measured_cf_cb(const geometry_msgs::WrenchStampedConstPtr &wrench);
     void gripper_sub_cb(const std_msgs::BoolConstPtr &gripper);
@@ -145,7 +145,7 @@ private:
     void run();
     std::shared_ptr<boost::thread> loop_thread;
 
-    geometry_msgs::TransformStamped cur_pose, pre_pose, cmd_pose;
+    geometry_msgs::PoseStamped cur_pose, pre_pose, cmd_pose;
     sensor_msgs::JointState cur_joint, pre_joint, cmd_joint;
     std_msgs::String cur_state, state_cmd;
     geometry_msgs::WrenchStamped cur_wrench, cmd_wrench;

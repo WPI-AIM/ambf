@@ -174,7 +174,8 @@ enum class afSensorType{
     RAYTRACER = 0,
     RANGE = 1,
     RESISTANCE = 2,
-    INVALID = 3
+    CONTACT = 3,
+    INVALID = 4
 };
 
 

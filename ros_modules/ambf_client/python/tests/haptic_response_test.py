@@ -59,7 +59,7 @@ class DataCollection():
         self.data_lim = 1000
         if len(sys.argv) > 1:
             self.data_lim = int(sys.argv[1])
-            print 'Taking {} data points'.format(sys.argv[1])
+            print('Taking {} data points'.format(sys.argv[1]))
         self.data = np.zeros(self.data_lim)
         self.ctr = 0
         self.name = name
@@ -73,11 +73,11 @@ class DataCollection():
         mean = np.mean(self.data)
         std_dev = np.std(self.data)
 
-        print '----------------------------------'
-        print 'Data Metrics for {}'.format(self.name)
-        print 'Mean = {}'.format(mean)
-        print 'Std Deviation = {}'.format(std_dev)
-        print '----------------------------------'
+        print('----------------------------------')
+        print('Data Metrics for {}'.format(self.name))
+        print('Mean = {}'.format(mean))
+        print('Std Deviation = {}'.format(std_dev))
+        print('----------------------------------')
 
     def is_done(self):
         if self.ctr < self.data_lim:

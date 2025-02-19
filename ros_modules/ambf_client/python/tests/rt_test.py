@@ -42,7 +42,7 @@ def main():
     start_time = rospy.get_time()
     cur_time = start_time
     end_time = cur_time + episode
-    print cur_time
+    print(cur_time)
     while not rospy.is_shutdown() and cur_time <= end_time:
 
         cur_time = rospy.get_time()

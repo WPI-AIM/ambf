@@ -170,4 +170,21 @@ void destroy_sensor(Sensor* obj){
 }
 
 }
+
+ContactSensor::ContactSensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): ContactSensorRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+
+}
+
+void ContactSensor::set_type(std::string type){
+    m_State.type.data = type;
+}
+
+void ContactSensor::add_contact_event(ambf_msgs::ContactEvent& a_contact_event){
+    m_State.contact_events.push_back(a_contact_event);
+}
+
+void ContactSensor::reset_contact_events(){
+    m_State.contact_events.clear();
+}
+
 }

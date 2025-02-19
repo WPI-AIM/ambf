@@ -464,14 +464,14 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
             if (attribs->m_meshRemoveDuplicates == afStatusFlag::TRUE){
                 mesh->removeDuplicateVertices();
             }
-            else if (attribs->m_meshRemoveDuplicates == afStatusFlag::UNDEFINED){
-                for (auto m : *(mesh->m_meshes)){
-                    if (m->getNumVertices() > 10000){
-                        double wd = 0.;
-                        m->removeDuplicateVertices(wd);
-                    }
-                }
-            }
+//            else if (attribs->m_meshRemoveDuplicates == afStatusFlag::UNDEFINED){
+//                for (auto m : *(mesh->m_meshes)){
+//                    if (m->getNumVertices() > 10000){
+//                        double wd = 0.;
+//                        m->removeDuplicateVertices(wd);
+//                    }
+//                }
+//            }
             mesh->setUseDisplayList(true);
         }
         else{
@@ -499,8 +499,9 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
         // Important to set the transparency after setting the material, otherwise the alpha
         // channel ruins the Z-buffer depth testing in some way.
         mesh->setTransparencyLevel(attribs->m_colorAttribs.m_alpha);
-        mesh->setShowEnabled(attribs->m_visible);
     }
+
+    mesh->setShowEnabled(attribs->m_visible);
     return true;
 }
 
@@ -2627,7 +2628,6 @@ void afRigidBody::estimateCartesianControllerGains(afCartesianController &contro
     }
 }
 
-
 ///
 /// \brief afRigidBody::updatePositionFromDynamics
 ///
@@ -3487,6 +3487,9 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
             // The rotational limits are inverted in Bullet
             m_sixDof->setLimit(id, -a_attribs->m_sixDofLimits.m_upperLimit[id], -a_attribs->m_sixDofLimits.m_lowerLimit[id]);
         }
+        for (int id = 0 ; id < 6 ; id++){
+            if (a_attribs->m_override_cfm) m_sixDof->setParam(BT_CONSTRAINT_CFM, a_attribs->m_cfm, id);
+        }
 
         m_btConstraint = m_sixDof;
 
@@ -3507,6 +3510,8 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
             m_sixDofSpring->setDamping(id, a_attribs->m_sixDofSpringAttribs.m_damping[id]);
             m_sixDofSpring->setStiffness(id, a_attribs->m_sixDofSpringAttribs.m_stiffness[id]);
             m_sixDofSpring->enableSpring(id, true);
+            if (a_attribs->m_override_erp) m_sixDofSpring->setParam(BT_CONSTRAINT_ERP, a_attribs->m_erp, id);
+            if (a_attribs->m_override_cfm) m_sixDofSpring->setParam(BT_CONSTRAINT_CFM, a_attribs->m_cfm, id);
         }
 
         m_btConstraint = m_sixDofSpring;
@@ -7221,6 +7226,12 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     m_spotLight->setCutOffAngleDeg(a_attribs->m_cuttoffAngle * (180/3.14));
     m_spotLight->setShadowMapEnabled(true);
 
+    if (a_attribs->m_attenuationDefined){
+        setConstantAttenuation(a_attribs->m_constantAttenuation);
+        setLinearAttenuation(a_attribs->m_linearAttenuation);
+        setQuadraticAttenuation(a_attribs->m_quadraticAttenuation);
+    }
+
     switch (a_attribs->m_shadowQuality) {
     case afShadowQualityType::NO_SHADOW:
         m_spotLight->setShadowMapEnabled(false);
@@ -7422,6 +7433,14 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
             type_str = "RESISTANCE";
             afResistanceSensorAttributes* senAttribs = (afResistanceSensorAttributes*) a_attribs->m_sensorAttribs[i];
             valid = ((afResistanceSensor*)sensorPtr)->createFromAttribs(senAttribs);
+            break;
+        }
+        case afSensorType::CONTACT:
+        {
+            sensorPtr = new afContactSensor(m_afWorld, this);
+            type_str = "CONTACT";
+            afContactSensorAttributes* senAttribs = (afContactSensorAttributes*) a_attribs->m_sensorAttribs[i];
+            valid = ((afContactSensor*)sensorPtr)->createFromAttribs(senAttribs);
             break;
         }
         default:
@@ -8022,8 +8041,19 @@ void afGhostObject::update(double dt)
     //    cTransform trans;
     //    trans << m_bulletGhostObject->getWorldTransform();
     //    setLocalTransform(trans);
-    m_bulletGhostObject->setWorldTransform(to_btTransform(m_globalTransform));
-    vector<btRigidBody*> localSensedBodies;
+    cTransform T_g_p = getLocalTransform();
+    if (m_parentObject){
+        cTransform T_p_w;
+        if (m_parentObject->getType() == afType::RIGID_BODY || m_parentObject->getType() == afType::SOFT_BODY || m_parentObject->getType() == afType::GHOST_OBJECT){
+            T_p_w << ((afInertialObject*)m_parentObject)->getCOMTransform();
+        }
+        else{
+            T_p_w = m_parentObject->getGlobalTransform();
+        }
+        T_g_p = T_p_w * T_g_p;
+    }
+    m_bulletGhostObject->setWorldTransform(to_btTransform(T_g_p));
+    m_sensedObjectsMaps.clear();
 
     btManifoldArray* manifoldArray = new btManifoldArray();
     btBroadphasePairArray pairArray = m_bulletGhostObject->getOverlappingPairCache()->getOverlappingPairArray();
@@ -8043,25 +8073,23 @@ void afGhostObject::update(double dt)
             collisionPair->m_algorithm->getAllContactManifolds(*manifoldArray);
         }
 
-        for (int j = 0; j < manifoldArray->size(); j++)
-        {
+        for (int j = 0; j < manifoldArray->size(); j++){
             btPersistentManifold* manifold = manifoldArray->at(j);
-            btCollisionObject* co;
+            btCollisionObject* coB;
             if (manifold->getBody0() == m_bulletGhostObject){
-                co = const_cast<btCollisionObject*>(manifold->getBody1());
+                coB = const_cast<btCollisionObject*>(manifold->getBody1());
             }
             else{
-                co = const_cast<btCollisionObject*>(manifold->getBody0());
+                coB = const_cast<btCollisionObject*>(manifold->getBody0());
             }
+            afBaseObjectPtr aoB = (afBaseObjectPtr)coB->getUserPointer();
 
-            for (int p = 0; p < manifold->getNumContacts(); p++)
-            {
-                btManifoldPoint pt = manifold->getContactPoint(p);
-                if (pt.getDistance() < 0.0f)
-                {
-                    btRigidBody* pBody = dynamic_cast<btRigidBody*>(co);
-                    if (pBody){
-                        localSensedBodies.push_back(pBody);
+            if(aoB){
+                for (int p = 0; p < manifold->getNumContacts(); p++){
+                    btManifoldPoint pt = manifold->getContactPoint(p);
+                    if (pt.getDistance() < 0.0f) {
+                        m_sensedObjectsMaps[aoB] = pt.getDistance(); // All we care is if any point of object intersects.
+                        break;
                     }
                 }
             }
@@ -8069,42 +8097,6 @@ void afGhostObject::update(double dt)
     }
 
     delete manifoldArray;
-
-    for (int i = 0 ; i < m_sensedBodies.size() ; i++){
-        m_sensedBodies[i]->setGravity(m_afWorld->m_bulletWorld->getGravity());
-        m_sensedBodies[i]->applyCentralForce(btVector3(0, 0, 0));
-        m_sensedBodies[i]->applyTorque(btVector3(0, 0, 0));
-    }
-
-    m_sensedBodies.clear();
-    m_sensedBodies = localSensedBodies;
-
-
-    for (int i = 0 ; i < m_sensedBodies.size() ; i++){
-        if (m_sensedBodies[i]){
-            m_sensedBodies[i]->setGravity(btVector3(0, 0, 0));
-            double damping_factor = 1.0 - 0.1;
-            btVector3 va(0, 0, 0);
-            if (getParentObject()){
-                afRigidBodyPtr parentBody = dynamic_cast<afRigidBodyPtr>(getParentObject());
-                va = parentBody->m_bulletRigidBody->getLinearVelocity();
-            }
-
-            btVector3 vb = m_sensedBodies[i]->getLinearVelocity();
-            double mag_va = va.length();
-            btVector3 proj_vb_va(0, 0, 0);
-
-            if (mag_va > 0.00001){
-                proj_vb_va = va.normalized() * (vb.dot(va) / mag_va);
-            }
-            btVector3 orth_vb_va = vb - proj_vb_va;
-
-            btVector3 wb =  m_sensedBodies[i]->getAngularVelocity();
-
-            m_sensedBodies[i]->setLinearVelocity(damping_factor * orth_vb_va + va);
-            m_sensedBodies[i]->setAngularVelocity(damping_factor * wb);
-        }
-    }
 }
 
 bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
@@ -8215,6 +8207,8 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
     loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
 
+    loadCommunicationPlugin(this, a_attribs);
+
     return valid;
 }
 
@@ -8307,7 +8301,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             m_voxelObject = new cVoxelObject();
             // Setting transparency before setting the texture ensures that the rendering does not show empty spaces as black
             // and the depth point cloud is able to see the volume
-            m_voxelObject->setTransparencyLevel(1.0);
+           m_voxelObject->setTransparencyLevel(1.0);
 
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);
@@ -8637,4 +8631,161 @@ cTexture3dPtr afVolume::copy3DTexture(cTexture1dPtr tex3D)
     copyTex = static_pointer_cast<cTexture3d>(tex3D)->copy();
     copyTex->m_image = static_pointer_cast<cMultiImage>(tex3D->m_image)->copy();
     return copyTex;
+}
+
+afContactSensorCallback::~afContactSensorCallback(){
+}
+
+bool afContactSensorCallback::needsCollision(btBroadphaseProxy *proxy) const {
+    // superclass will check m_collisionFilterGroup and m_collisionFilterMask
+    if(!btCollisionWorld::ContactResultCallback::needsCollision(proxy))
+        return false;
+    // if passed filters, may also want to avoid contacts between constraints
+    assert(m_parentObject->getType() == afType::RIGID_BODY && "ERROR! NOT IMPLEMENTED FOR OTHER AMBF OBJECT TYPES"); // TODO: GENERALIZE TO OTHER AF OBJECTS
+    btRigidBody* rb = ((afRigidBodyPtr)m_parentObject)->m_bulletRigidBody;
+    return rb->checkCollideWithOverride(static_cast<btCollisionObject*>(proxy->m_clientObject));
+}
+
+btScalar afContactSensorCallback::addSingleResult(btManifoldPoint &cp, const btCollisionObjectWrapper *colObj0, int partId0, int index0, const btCollisionObjectWrapper *colObj1, int partId1, int index1)
+{
+    if (cp.getDistance() <= m_distanceThreshold){
+        afBaseObjectPtr boA, boB;
+        cVector3d P_a_w, P_b_w, N_b_w;
+        if(colObj0->m_collisionObject->getUserPointer() == m_parentObject) {
+            boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
+            boB = (afBaseObjectPtr)colObj1->m_collisionObject->getUserPointer();
+            P_a_w << cp.m_positionWorldOnA;
+            P_b_w << cp.m_positionWorldOnB;
+            N_b_w << cp.m_normalWorldOnB;
+        } else {
+            assert(colObj1->m_collisionObject->getUserPointer() == m_parentObject && "body does not match either collision object");
+            boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
+            boB = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
+            P_a_w << cp.m_positionWorldOnB;
+            P_b_w << cp.m_positionWorldOnA;
+            N_b_w << -cp.m_normalWorldOnB;
+        }
+        if (m_contactEventMap.find(boB) == m_contactEventMap.end()){
+            m_contactEventMap[boB] = afContactEvent(boA, boB);
+        }
+        m_contactEventMap[boB].m_contactData.push_back(afContactData(P_a_w, P_b_w, N_b_w, cp.m_distance1));
+    }
+    return 0;
+}
+
+///
+/// \brief afContactSensor::afContactSensor
+/// \param a_afWorld
+/// \param a_modelPtr
+///
+afContactSensor::afContactSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afSensor(a_afWorld, a_modelPtr){
+    m_pointCloud = nullptr;
+}
+
+///
+/// \brief afContactSensor::createFromAttribs
+/// \param a_attribs
+/// \return
+///
+bool afContactSensor::createFromAttribs(afContactSensorAttributes *a_attribs){
+    storeAttributes(a_attribs);
+    afContactSensorAttributes &attribs = *a_attribs;
+    m_sensorType = afSensorType::CONTACT;
+
+    bool result = true;
+    setIdentifier(a_attribs->m_identifier);
+    setName(a_attribs->m_identificationAttribs.m_name);
+    setNamespace(a_attribs->m_identificationAttribs.m_namespace);
+
+    m_parentName = a_attribs->m_hierarchyAttribs.m_parentName;
+    m_processContactDetails = a_attribs->m_processContactDetails;
+    // TODO: At the moment the process contact details flag only controls the visualization. Need it to control processing of contact points as well.
+
+    setMinPublishFrequency(a_attribs->m_communicationAttribs.m_minPublishFreq);
+    setMaxPublishFrequency(a_attribs->m_communicationAttribs.m_maxPublishFreq);
+    setPassive(a_attribs->m_communicationAttribs.m_passive);
+
+    if (a_attribs->m_visible){
+        m_pointCloud = new cMultiPoint;
+        m_pointCloud->setPointSize(a_attribs->m_visibleSize);
+        cColorf orange; orange.setOrangeCoral();
+        m_pointCloud->setPointColor(orange);
+        m_pointCloud->setUseVertexColors(true);
+        addChildSceneObject(m_pointCloud, cTransform());
+    }
+
+    // First search in the local space.
+    m_parentBody = m_modelPtr->getRigidBody(m_parentName, true);
+
+    string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getSensorMap());
+    setGlobalRemapIdx(remap_idx);
+
+    if(m_parentBody == nullptr){
+        m_parentBody = m_afWorld->getRigidBody(m_parentName + getGlobalRemapIdx());
+        if (m_parentBody == nullptr){
+            cerr << "ERROR! SENSOR'S "<< m_parentName + remap_idx << " NOT FOUND, IGNORING SENSOR\n";
+            return 0;
+        }
+    }
+
+    m_parentBody->addSensor(this);
+    m_parentBody->addChildObject(this);
+
+    m_contactSensorCallback = new afContactSensorCallback(m_parentBody);
+
+    m_contactSensorCallback->m_distanceThreshold = a_attribs->m_distanceThreshold;
+
+    if (m_contactSensorCallback->m_distanceThreshold < 0.0){
+        cerr << "WARNING! For Sensor " << getQualifiedName() << ", contact sensor threshold set to < 0.0. Contact test may be unseccessful " << endl;
+    }
+
+    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+
+    loadCommunicationPlugin(this, a_attribs);
+
+    return true;
+}
+
+void afContactSensor::updateSceneObjects(){
+    if (m_pointCloud && m_processContactDetails){
+        m_pointCloud->clear();
+        m_mutex.acquire();
+        for (auto it: m_contactSensorCallback->m_contactEventMap){
+            for (auto pit: it.second.m_contactData){
+                uint i = m_pointCloud->newPoint(pit.m_P_a_w);
+                if (it.second.m_contactObjectB->getType() == afType::RIGID_BODY){
+                    afInertialObjectPtr rbPtr = (afInertialObjectPtr)it.second.m_contactObjectB;
+                    m_pointCloud->m_vertices->setColor(i, rbPtr->m_visualMesh->m_material->m_diffuse);
+                }
+            }
+        }
+        m_mutex.release();
+    }
+}
+
+void afContactSensor::update(double dt){
+    m_mutex.acquire();
+    m_contactSensorCallback->m_contactEventMap.clear();
+    m_afWorld->m_bulletWorld->contactTest(m_parentBody->m_bulletRigidBody, *m_contactSensorCallback);
+
+//    cerr << "INFO! Testing contact for: " << m_parentBody->getQualifiedName();
+//    cerr << "INFO! Object Name " << m_name << endl;
+//    cerr << " Number of objects in contact " << m_contactSensorCallback->m_contactDataMap.size() << endl;
+//    for (auto obj: m_contactSensorCallback->m_contactDataMap){
+//        cerr << "\t " << obj.first->getName() << ", Number of contacts: " << obj.second.size() << " Normal[0]: " <<  obj.second[0].m_globalContactNormalOnB <<  endl;
+//    }
+    m_mutex.release();
+}
+
+
+afContactData::afContactData(cVector3d &P_a_w, cVector3d &P_b_w, cVector3d &N_b_w, double &distance){
+    m_P_a_w = P_a_w;
+    m_P_b_w = P_b_w;
+    m_N_b_w = N_b_w;
+    m_distance = distance;
+}
+
+afContactEvent::afContactEvent(afBaseObjectPtr objA, afBaseObjectPtr objB){
+    m_contactObjectA = objA;
+    m_contactObjectB = objB;
 }

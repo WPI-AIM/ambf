@@ -40,56 +40,50 @@
 */
 //==============================================================================
 
-#ifndef AFSENSORCOMM_H
-#define AFSENSORCOMM_H
-
-#include <string>
-#include "ambf_server/SensorRosCom.h"
-
+#include "ambf_server/GhostObject.h"
 namespace ambf_comm{
 
-class Sensor: public SensorRosCom{
-public:
-    Sensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    void cur_position(double px, double py, double pz);
-    void cur_orientation(double roll, double pitch, double yaw);
-    void cur_orientation(double qx, double qy, double qz, double qw);
-    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
-    inline void set_count(int count){m_State.count = count;}
-
-    void set_trigger(bool triggered);
-    void set_triggers(std::vector<bool> triggered);
-
-    void set_range(double range);
-    void set_ranges(std::vector<double> ranges);
-
-    void set_measurement(double measurements);
-    void set_measurements(std::vector<double> measurements);
-
-    void set_sensed_object(std::string sensed_object);
-    void set_sensed_objects(std::vector<std::string> sensed_objects);
-
-    void set_type(std::string type);
-
-    // We may have multiple individual sensor elements belonging to this
-    // sensor comm. And groups of sensors may be in contact with different
-    // sets of objects. This method is thus used to specify the mapping
-    // of each sensor element w.r.t. to the sensed_objects list of string.
-    void set_sensed_objects_map(std::vector<int> sensed_objects_map);
-
-    void set_sensed_object_map(int sensed_objects_map);
-
-};
-
-class ContactSensor: public ContactSensorRosCom{
-public:
-    ContactSensor(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
-
-    void set_type(std::string type);
-    void add_contact_event(ambf_msgs::ContactEvent& a_contact_event);
-    void reset_contact_events();
-};
+GhostObject::GhostObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): GhostObjectRosCom(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
 }
 
-#endif
+void GhostObject::cur_position(double px, double py, double pz){
+    m_trans.setOrigin(tf::Vector3(px, py, pz));
+    m_State.pose.position.x = px;
+    m_State.pose.position.y = py;
+    m_State.pose.position.z = pz;
+}
+
+void GhostObject::cur_orientation(double roll, double pitch, double yaw){
+    tf::Quaternion rot_quat;
+    rot_quat.setRPY(roll, pitch, yaw);
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+}
+
+void GhostObject::cur_orientation(double qx, double qy, double qz, double qw){
+    tf::Quaternion rot_quat(qx, qy, qz, qw);
+    m_trans.setRotation(rot_quat);
+    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+}
+
+void GhostObject::reset_sensed_objects(){
+    m_State.sensed_objects.clear();
+}
+
+void GhostObject::add_sensed_object(std::string sensed_object){
+    std_msgs::String obj;
+    obj.data = sensed_object;
+    m_State.sensed_objects.push_back(obj);
+}
+
+void GhostObject::set_sensed_objects(std::vector<std::string>& sensed_objects){
+    if (m_State.sensed_objects.size() != sensed_objects.size()){
+        m_State.sensed_objects.resize(sensed_objects.size());
+    }
+
+    for (int i = 0 ; i < sensed_objects.size() ; i++){
+        m_State.sensed_objects[i].data = sensed_objects[i];
+    }
+}
+
+}

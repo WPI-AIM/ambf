@@ -63,12 +63,12 @@ DVRK_Arm::DVRK_Arm(const std::string &arm_name){
 void DVRK_Arm::init(){
 }
 
-void DVRK_Arm::pose_fcn_cb(const geometry_msgs::TransformStamped &pose){
+void DVRK_Arm::pose_fcn_cb(const geometry_msgs::PoseStamped &pose){
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_freeFramePtr->pos.setX(pose.transform.translation.x);
-    m_freeFramePtr->pos.setY(pose.transform.translation.y);
-    m_freeFramePtr->pos.setZ(pose.transform.translation.z);
-    tf::quaternionMsgToTF(pose.transform.rotation, m_freeFramePtr->rot_quat);
+    m_freeFramePtr->pos.setX(pose.pose.position.x);
+    m_freeFramePtr->pos.setY(pose.pose.position.y);
+    m_freeFramePtr->pos.setZ(pose.pose.position.z);
+    tf::quaternionMsgToTF(pose.pose.orientation, m_freeFramePtr->rot_quat);
 
     m_freeFramePtr->trans.setOrigin(m_freeFramePtr->pos);
     m_freeFramePtr->trans.setRotation(m_freeFramePtr->rot_quat);
@@ -424,12 +424,12 @@ void DVRK_Arm::set_mode(const std::string &state, bool lock_wrench_ori){
 }
 
 void DVRK_Arm::move_arm_cartesian(tf::Transform trans){
-    geometry_msgs::TransformStamped servo_cf_cmd;
+    geometry_msgs::PoseStamped servo_cf_cmd;
     trans = m_originFramePtr->trans * trans * m_afxdTipFramePtr->trans.inverse();
-    servo_cf_cmd.transform.translation.x = trans.getOrigin().getX();
-    servo_cf_cmd.transform.translation.y = trans.getOrigin().getY();
-    servo_cf_cmd.transform.translation.z = trans.getOrigin().getZ();
-    tf::quaternionTFToMsg(trans.getRotation().normalized(), servo_cf_cmd.transform.rotation);
+    servo_cf_cmd.pose.position.x = trans.getOrigin().getX();
+    servo_cf_cmd.pose.position.y = trans.getOrigin().getY();
+    servo_cf_cmd.pose.position.z = trans.getOrigin().getZ();
+    tf::quaternionTFToMsg(trans.getRotation().normalized(), servo_cf_cmd.pose.orientation);
 
     m_bridge->servo_cp(servo_cf_cmd);
 }

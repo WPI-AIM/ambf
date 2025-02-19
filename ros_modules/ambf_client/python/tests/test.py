@@ -51,7 +51,7 @@ obj_name = 'CenterPuzzle'
 
 client = Client()
 client.connect()
-print client.get_obj_names()
+print(client.get_obj_names())
 obj = client.get_obj_handle(obj_name)
 
 if obj:
@@ -63,5 +63,5 @@ if obj:
         time.sleep(0.01)
 
 else:
-    print obj_name, 'not found'
+    print(obj_name, 'not found')
 

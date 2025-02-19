@@ -35,7 +35,7 @@ def compute_dist(topic_name, t_start=-1, t_end=-1):
             dist = 0.0
         dist = dist + 1000 * np.matmul((cur - last), (cur - last))
         last = cur
-        # print dist
+        # print(dist)
     return dist, trajectory
 
 
@@ -73,35 +73,35 @@ def compute_number_of_clutches(topic_name, t_start=-1, t_end=-1):
     return num_clutches, clutch_press_times
 
 
-print os.listdir('.')
+print(os.listdir('.'))
 os.chdir('./user_study_data/')
-print os.listdir('.')[0]
+print(os.listdir('.')[0])
 
 os.chdir(os.listdir('.')[3])
 os.chdir('./Reduced')
 files = os.listdir('.')
 
 for cur_file in files:
-    print '--------------------------------'
-    print '--------------------------------'
-    print "Opening Bag file: ", cur_file
+    print('--------------------------------')
+    print('--------------------------------')
+    print("Opening Bag file: ", cur_file)
 
     print(cur_file.split('_'))
     control_type = cur_file.split('_')
     # control_type = control_type[1] + ' ' + control_type[2]
-    print "Subject Name: ", control_type[1], "Control Type: ", control_type[2]
+    print("Subject Name: ", control_type[1], "Control Type: ", control_type[2])
 
     cur_bag = rosbag.Bag(cur_file)
 
-    print cur_bag.get_end_time() - cur_bag.get_start_time()
+    print(cur_bag.get_end_time() - cur_bag.get_start_time())
 
     ctr = 0
     final_time = 0
     for topic, msg, time in cur_bag.read_messages(['/ambf/env/user_study_time']):
-        # print 'TOPIC: ', topic
-        # print 'TIME: ', time
-        # print 'MESSAGE: ', msg
-        # print 'COUNTER: ', ctr
+        # print('TOPIC: ', topic)
+        # print('TIME: ', time)
+        # print('MESSAGE: ', msg)
+        # print('COUNTER: ', ctr)
         ctr = ctr + 1
         final_time = time
 
@@ -110,9 +110,9 @@ for cur_file in files:
     mtmr_force_traj = get_force_trajectory('/ambf/env/simulated_device_1/MTML/State', t_end=final_time)
     mtml_force_traj = get_force_trajectory('/ambf/env/simulated_device_2/MTMR/State', t_end=final_time)
 
-    print "MTMR Path Length: ", mtmr_path_len
-    print "MTML Path Length: ", mtml_path_len
-    print "Number of Clutches: ", compute_number_of_clutches('/dvrk/footpedals/clutch', t_end=final_time)
+    print("MTMR Path Length: ", mtmr_path_len)
+    print("MTML Path Length: ", mtml_path_len)
+    print("Number of Clutches: ", compute_number_of_clutches('/dvrk/footpedals/clutch', t_end=final_time))
 
 # fig = plt.figure()
 # ax = plt.axes(projection='3d')

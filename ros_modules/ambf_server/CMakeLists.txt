@@ -102,6 +102,8 @@ set (HDR_FILES
     include/${PROJECT_NAME}/ObjectRosCom.h
     include/${PROJECT_NAME}/RigidBody.h
     include/${PROJECT_NAME}/RigidBodyRosCom.h
+    include/${PROJECT_NAME}/GhostObject.h
+    include/${PROJECT_NAME}/GhostObjectRosCom.h
     include/${PROJECT_NAME}/Sensor.h
     include/${PROJECT_NAME}/SensorRosCom.h
     include/${PROJECT_NAME}/Vehicle.h
@@ -122,6 +124,8 @@ set (SRC_FILES
     src/ObjectRosCom.cpp
     src/RigidBody.cpp
     src/RigidBodyRosCom.cpp
+    src/GhostObject.cpp
+    src/GhostObjectRosCom.cpp
     src/Sensor.cpp
     src/SensorRosCom.cpp
     src/Vehicle.cpp

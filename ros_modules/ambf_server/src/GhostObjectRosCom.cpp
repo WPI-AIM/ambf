@@ -40,47 +40,27 @@
 */
 //==============================================================================
 
-#ifndef SENSORROSCOM_H
-#define SENSORROSCOM_H
+#include "ambf_server/GhostObjectRosCom.h"
 
-#include "ambf_server/RosComBase.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/ContactSensorState.h"
-#include "ambf_msgs/ContactSensorCmd.h"
-#include "ambf_msgs/ContactEvent.h"
-#include "ambf_msgs/ContactData.h"
+GhostObjectRosCom::GhostObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): RosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
+    init();
+}
 
+void GhostObjectRosCom::init(){
+    m_State.name.data = m_name;
+    m_State.sim_step = 0;
 
-template<class T_state, class T_cmd>
-class SensorRosComBase: public RosComBase<T_state, T_cmd>{
-public:
-    SensorRosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    virtual void init(){}
+    m_pub = nodePtr->advertise<ambf_msgs::GhostObjectState>("/" + m_namespace + "/" + m_name + "/State", 10);
+    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &GhostObjectRosCom::sub_cb, this);
 
-protected:
-    virtual void reset_cmd(){}
-};
+    m_thread = boost::thread(boost::bind(&GhostObjectRosCom::run_publishers, this));
+    std::cerr << "INFO! Thread Joined: " << m_name << std::endl;
+}
 
-class SensorRosCom: public SensorRosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>{
-public:
-    SensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    virtual void init();
+void GhostObjectRosCom::reset_cmd(){
+}
 
-protected:
-    virtual void reset_cmd();
-    void sub_cb(const AMBF_RAL_MSG(ambf_msgs, SensorCmd) & msg);
-};
-
-class ContactSensorRosCom: public SensorRosComBase<ambf_msgs::ContactSensorState, ambf_msgs::ContactSensorCmd>{
-public:
-    ContactSensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
-    virtual void init();
-
-protected:
-    virtual void reset_cmd();
-    void sub_cb(ambf_msgs::ContactSensorCmdConstPtr msg);
-};
-
-
-#endif
+void GhostObjectRosCom::sub_cb(ambf_msgs::GhostObjectCmdConstPtr msg){
+    m_Cmd = *msg;
+    m_watchDogPtr->acknowledge_wd();
+}

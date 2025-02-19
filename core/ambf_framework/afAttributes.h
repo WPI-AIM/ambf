@@ -623,10 +623,18 @@ public:
     afLightAttributes(){
         m_spotExponent = 0.7;
         m_cuttoffAngle = 0.7;
+        m_constantAttenuation = 1.0;
+        m_linearAttenuation = 0.0;
+        m_quadraticAttenuation = 0.0;
+        m_attenuationDefined = false;
     }
 
     double m_spotExponent;
     double m_cuttoffAngle;
+    double m_constantAttenuation;
+    double m_linearAttenuation;
+    double m_quadraticAttenuation;
+    bool m_attenuationDefined;
     afVector3d m_direction;
 
     afShadowQualityType m_shadowQuality;
@@ -656,7 +664,9 @@ public:
         m_equilibriumPoint = 0.0;
         m_ignoreInterCollision = true;
         m_erp = 0.1;
+        m_override_erp = false;
         m_cfm = 0.1;
+        m_override_cfm = false;
     }
 
     struct afConeTwistLimits{
@@ -701,7 +711,9 @@ public:
     afSixDofLimits m_sixDofLimits;
     afSixDofSpringAttribs m_sixDofSpringAttribs;
     double m_erp;
+    bool m_override_erp;
     double m_cfm;
+    bool m_override_cfm;
     // Rotational offset of joint along the free joint axis
     double m_jointOffset;
     // Rotation offset of child along the free joint axis
@@ -1093,6 +1105,22 @@ public:
     double m_dynamicFriction;
     double m_contactArea;
     bool m_useVariableCoeff;
+};
+
+
+struct afContactSensorAttributes: public afSensorAttributes{
+public:
+    afContactSensorAttributes(){
+        m_distanceThreshold = 0.0;
+        m_processContactDetails = true;
+        m_visible = false;
+        m_visibleSize = 10;
+    }
+
+    double m_distanceThreshold; // Distance threshold between objects for contact to count
+    bool m_processContactDetails; // If true, process contact ponits, normals, etc. Otherwise just names of objects in contact
+    bool m_visible;
+    double m_visibleSize;
 };
 
 

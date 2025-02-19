@@ -98,6 +98,9 @@ class afJointController;
 class afConstraintActuator;
 class afRayTracerSensor;
 class afResistanceSensor;
+class afContactSensor;
+class afContactData;
+class afContactEvent;
 
 
 typedef afBaseObject* afBaseObjectPtr;
@@ -111,6 +114,9 @@ typedef afWorld* afWorldPtr;
 typedef afConstraintActuator* afConstraintActuatorPtr;
 typedef afRayTracerSensor* afRayTracerSensorPtr;
 typedef afResistanceSensor* afResistanceSensorPtr;
+typedef afContactData* afContactDataPtr;
+typedef afContactEvent* afContactEventPtr;
+typedef afContactSensor* afContactSensorPtr;
 
 typedef map<string, afRigidBodyPtr> afRigidBodyMap;
 typedef map<string, afSoftBodyPtr> afSoftBodyMap;
@@ -120,6 +126,7 @@ typedef vector<afRigidBodyPtr> afRigidBodyVec;
 typedef vector<afSoftBodyPtr> afSoftBodyVec;
 typedef vector<afGhostObjectPtr> afGhostObjectVec;
 typedef vector<afJointPtr> afJointVec;
+typedef map<afBaseObjectPtr, afContactEvent> afContactEventMap;
 //------------------------------------------------------------------------------
 class afCamera;
 typedef afCamera* afCameraPtr;
@@ -1154,7 +1161,32 @@ private:
     afGeometryType m_collisionGeometryType;
 };
 
+struct afContactData{
+public:
 
+    afContactData(cVector3d& gpA, cVector3d& gpB, cVector3d& gnB, double& distance);
+
+    cVector3d m_P_a_w; // Point on A in world coords
+
+    cVector3d m_P_b_w; // Point on B in world coords
+    cVector3d m_N_b_w;// Normal on A in world coords
+
+    double m_distance; // Separating distance. Or penetration depth.
+};
+
+
+struct afContactEvent{
+    afContactEvent(){}
+    afContactEvent(afBaseObjectPtr objA, afBaseObjectPtr objB);
+    afBaseObjectPtr m_contactObjectA;
+    afBaseObjectPtr m_contactObjectB;
+    vector<afContactData> m_contactData;
+};
+
+
+///
+/// \brief The afVertexTree struct
+///
 struct afVertexTree{
     std::vector<int> triangleIdx;
     std::vector<int> vertexIdx;
@@ -1246,10 +1278,9 @@ public:
 
     btPairCachingGhostObject* m_bulletGhostObject;
 
+    map<afBaseObjectPtr, double> m_sensedObjectsMaps;
+
 protected:
-
-    std::vector<btRigidBody*> m_sensedBodies;
-
     static btGhostPairCallback* m_bulletGhostPairCallback;
 };
 
@@ -1597,6 +1628,54 @@ class afProximitySensor: public afRayTracerSensor{
 public:
     // Constructor
     afProximitySensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+};
+
+
+struct afContactSensorCallback : public btCollisionWorld::ContactResultCallback {
+
+    ~afContactSensorCallback();
+
+    //! Constructor, pass whatever context you want to have available when processing contacts
+    /*! You may also want to set m_collisionFilterGroup and m_collisionFilterMask
+     *  (supplied by the superclass) for needsCollision() */
+    afContactSensorCallback(afBaseObjectPtr a_parentObject) : btCollisionWorld::ContactResultCallback(), m_parentObject(a_parentObject){ }
+
+    afBaseObjectPtr m_parentObject; //!< The object the sensor is monitoring
+
+    //! If you don't want to consider collisions where the bodies are joined by a constraint, override needsCollision:
+    /*! However, if you use a btCollisionObject for #body instead of a btRigidBody,
+     *  then this is unnecessary—checkCollideWithOverride isn't available */
+    virtual bool needsCollision(btBroadphaseProxy* proxy) const;
+
+    //! Called with each contact for your own processing (e.g. test if contacts fall in within sensor parameters)
+    virtual btScalar addSingleResult(btManifoldPoint& cp,
+        const btCollisionObjectWrapper* colObj0,int partId0,int index0,
+        const btCollisionObjectWrapper* colObj1,int partId1,int index1);
+
+
+
+    afContactEventMap m_contactEventMap;
+    double m_distanceThreshold = 0.0;
+};
+
+
+class afContactSensor: public afSensor{
+public:
+    afContactSensor(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
+
+    virtual bool createFromAttribs(afContactSensorAttributes* a_attribs);
+
+    virtual void updateSceneObjects();
+
+    virtual void update(double dt);
+
+    bool m_processContactDetails;
+
+    afContactSensorCallback* m_contactSensorCallback;
+
+    cMultiPointPtr m_pointCloud;
+
+    cMutex m_mutex;
 };
 
 
@@ -2083,6 +2162,18 @@ public:
 
     cGenericLight* getInternalLight();
 
+    double getConstantAttenuation(){return m_spotLight->getAttConstant();}
+
+    double getLinearAttenuation(){return m_spotLight->getAttLinear();}
+
+    double getQuadraticAttenuation(){return m_spotLight->getAttQuadratic();}
+
+    void setConstantAttenuation(double att){m_spotLight->setAttConstant(att);}
+
+    void setLinearAttenuation(double att){m_spotLight->setAttLinear(att);}
+
+    void setQuadraticAttenuation(double att){m_spotLight->setAttQuadratic(att);}
+
 protected:
     cSpotLight* m_spotLight;
 
@@ -2296,7 +2387,7 @@ public:
 
     cVector3d m_pickedOffset;
 
-    cMultiPoint* m_pickMultiPoint = nullptr;
+    cMultiPointPtr m_pickMultiPoint = nullptr;
 
     cPrecisionClock m_wallClock;
 

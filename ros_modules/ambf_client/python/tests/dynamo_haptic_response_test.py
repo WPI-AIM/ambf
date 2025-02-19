@@ -22,7 +22,7 @@ class DataCollection():
         self.data_lim = 1000
         if len(sys.argv) > 1:
             self.data_lim = int(sys.argv[1])
-            print 'Taking {} data points'.format(sys.argv[1])
+            print('Taking {} data points'.format(sys.argv[1]))
         self.data = np.zeros(self.data_lim)
         self.ctr = 0
         self.name = name
@@ -50,11 +50,11 @@ class DataCollection():
         self._mean = np.mean(self.data)
         self._std_dev = np.std(self.data)
 
-        print '----------------------------------'
-        print 'Data Metrics for {}'.format(self.name)
-        print 'Mean = {}'.format(self._mean)
-        print 'Std Deviation = {}'.format(self._std_dev)
-        print '----------------------------------'
+        print('----------------------------------')
+        print('Data Metrics for {}'.format(self.name))
+        print('Mean = {}'.format(self._mean))
+        print('Std Deviation = {}'.format(self._std_dev))
+        print('----------------------------------')
 
     def get_mean(self):
         return self._mean
@@ -105,7 +105,7 @@ for r in rate_list:
     g1D.reset()
     g2D.reset()
     collection_enabled = False
-    print 'Setting Rate to {} Hz and testing'.format(r)
+    print('Setting Rate to {} Hz and testing'.format(r))
     time_offset = rospy.Time.now().to_sec() + 4.0
     while not g1D.is_done() or not g2D.is_done():
         wCmd.step_clock = not wCmd.step_clock
@@ -113,7 +113,7 @@ for r in rate_list:
         rate.sleep()
         if not collection_enabled and rospy.Time.now().to_sec() > time_offset:
             collection_enabled = True
-            print 'Enabling Data Collection'
+            print('Enabling Data Collection')
             g1D.enable_collectoin()
             g2D.enable_collectoin()
     g1D.compute_data_metrics()

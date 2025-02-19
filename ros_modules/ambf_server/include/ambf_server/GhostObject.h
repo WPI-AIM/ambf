@@ -40,82 +40,28 @@
 */
 //==============================================================================
 
-#ifndef AFLIGHTCOMM_H
-#define AFLIGHTCOMM_H
+#ifndef AFGHOSTCOMM_H
+#define AFGHOSTCOMM_H
 
 #include <string>
-#include "ambf_server/LightRosCom.h"
+#include "ambf_server/GhostObjectRosCom.h"
 
 namespace ambf_comm{
 
-
-enum class LightType{
-    SPOT,
-    POINT,
-    DIRECTIONAL
-};
-
-
-enum class LightParamsEnum{
-    cuttoff_angle,
-    parent_name,
-    type,
-    attenuation
-};
-
-
-class LightParams{
-
-    friend class Light;
-
+class GhostObject: public GhostObjectRosCom{
 public:
-
-    LightParams();
-
-    inline void set_qualified_namespace(std::string a_base_prefix){m_base_prefix = a_base_prefix;}
-
-    // Setters
-    void set_type(LightType val){m_light_type = val;}
-    void set_cuttoff_angle(double val){m_cuttoff_angle = val;}
-    void set_attenuation(double cons, double lin, double quad);
-
-    // Getters
-    LightType get_type(){return m_light_type;}
-    double get_cuttoff_angle(){return m_cuttoff_angle;}
-    double get_constant_attenuation(){return m_attenuation["constant"];}
-    double get_linear_attenuation(){return m_attenuation["linear"];}
-    double get_quadratic_attenuation(){return m_attenuation["quadratic"];}
-
-    // This a flag to check if any param has been updated
-    bool m_paramsChanged;
-
-protected:
-
-    // Namespace + obj_name is the base_prefix. E.g. /ambf/env/ + Light1 = /ambf/env/Light1 -> Base Prefix
-    std::string m_base_prefix;
-
-    // Datatyped Variables for params defined on the server
-    double m_type;
-    double m_cuttoff_angle;
-    std::map<std::string, double> m_attenuation; // Constant, Linear and Quadratic Attenuation
-    LightType m_light_type;
-};
-
-class Light: public LightRosCom, public LightParams{
-public:
-    Light(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+    GhostObject(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     void cur_position(double px, double py, double pz);
     void cur_orientation(double roll, double pitch, double yaw);
     void cur_orientation(double qx, double qy, double qz, double qw);
-    void set_parent_name(std::string name){m_State.parent_name.data = name;}
+    inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
 
-    std::string get_parent_name(){return m_State.parent_name.data;}
+    void reset_sensed_objects();
+    void add_sensed_object(std::string sensed_object);
+    void set_sensed_objects(std::vector<std::string>& sensed_objects);
 
-    // This method updates from the ROS param server instead of topics
-    void update_params_from_server();
-    // This method may be called when AMBF starts to load the existing
-    void set_params_on_server();
 };
+
 }
 
 #endif

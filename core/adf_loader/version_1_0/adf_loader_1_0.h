@@ -151,6 +151,9 @@ public:
     // Load joint from a YAML::Node
     virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs);
 
+    // Load joint from a YAML::Node
+    virtual bool loadContactSensorAttribs(YAML::Node* a_node, afContactSensorAttributes* attribs);
+
     // Load actuator from a YAML::Node
     virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs);
 

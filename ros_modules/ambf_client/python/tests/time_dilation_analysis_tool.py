@@ -79,7 +79,7 @@ class TimeDilationAnalysis:
     def capture_window_times(self, time):
             self.time_window_lims[0] = time + 1.0
             self.time_window_lims[1] += self.time_window_lims[0]
-            print 'Capturing Time from {} to {}'.format(self.time_window_lims[0], self.time_window_lims[1])
+            print('Capturing Time from {} to {}'.format(self.time_window_lims[0], self.time_window_lims[1]))
 
     def obj_state_cb(self, data):
         if not self.done:
@@ -90,7 +90,7 @@ class TimeDilationAnalysis:
                     if self.first_run:
                         self.capture_window_times(ambf_wall_time)
                         self.initial_time_offset = rospy.Time.now().to_sec() - ambf_wall_time
-                        print 'Adjusting Time Offset'
+                        print('Adjusting Time Offset')
                         self.first_run = False
                     self.ambf_sim_time.append(ambf_sim_time)
                     self.ambf_wall_time.append(ambf_wall_time)
@@ -110,7 +110,7 @@ class TimeDilationAnalysis:
         rospy.init_node('time_dilation_inspector')
         sub = rospy.Subscriber('/ambf/env/World/State', WorldState, self.obj_state_cb, queue_size=10)
 
-        print 'X Axis = ', self.x_axis_dict[0][0]
+        print('X Axis = ', self.x_axis_dict[0][0])
         x_axis_indx = self.x_axis_dict[0][1]
 
         for i in range(1, self.x_axis_dict.__len__()):
