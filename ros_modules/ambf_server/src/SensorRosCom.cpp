@@ -40,7 +40,7 @@
 */
 //==============================================================================
 
-#include "ambf_server/SensorRosCom.h"
+#include <ambf_server/SensorRosCom.h>
 
 SensorRosCom::SensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out): SensorRosComBase(a_name, a_namespace, a_freq_min, a_freq_max, time_out){
     init();
@@ -85,11 +85,20 @@ ContactSensorRosCom::ContactSensorRosCom(std::string a_name, std::string a_names
 void ContactSensorRosCom::init(){
     m_State.name.data = m_name;
     m_State.sim_step = 0;
+    
+    ambf_ral::create_publisher<AMBF_RAL_MSG(ambf_msgs, ContactSensorState)>
+      (m_pubPtr,
+       m_nodePtr,
+       "/" + m_namespace + "/" + m_name + "/State",
+       10, false);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(ambf_msgs, ContactSensorCmd), ContactSensorRosCom>
+      (m_subPtr,
+       m_nodePtr,
+       "/" + m_namespace + "/" + m_name + "/Command",
+       10,
+       &ContactSensorRosCom::sub_cb, this);
 
-    m_pub = nodePtr->advertise<ambf_msgs::ContactSensorState>("/" + m_namespace + "/" + m_name + "/State", 10);
-    m_sub = nodePtr->subscribe("/" + m_namespace + "/" + m_name + "/Command", 10, &ContactSensorRosCom::sub_cb, this);
-
-    m_thread = boost::thread(boost::bind(&ContactSensorRosCom::run_publishers, this));
+    m_thread = std::thread(std::bind(&ContactSensorRosCom::run_publishers, this));
     std::cerr << "INFO! Thread Joined: " << m_name << std::endl;
 }
 
@@ -97,8 +106,8 @@ void ContactSensorRosCom::reset_cmd(){
 
 }
 
-void ContactSensorRosCom::sub_cb(ambf_msgs::ContactSensorCmdConstPtr msg){
-    m_Cmd = *msg;
+void ContactSensorRosCom::sub_cb(const AMBF_RAL_MSG(ambf_msgs, ContactSensorCmd) & msg){
+    m_Cmd = msg;
     m_watchDogPtr->acknowledge_wd();
 }
 

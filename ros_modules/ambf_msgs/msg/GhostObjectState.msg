@@ -1,4 +1,4 @@
-Header header
+std_msgs/Header header
 uint32 sim_step
 std_msgs/String parent_name
 std_msgs/String identifier

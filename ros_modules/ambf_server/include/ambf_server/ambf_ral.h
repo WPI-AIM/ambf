@@ -41,6 +41,12 @@ namespace ambf_ral {
 #include <ambf_msgs/RigidBodyCmd.h>
 #include <ambf_msgs/SensorState.h>
 #include <ambf_msgs/SensorCmd.h>
+#include <ambf_msgs/ContactData.h>
+#include <ambf_msgs/ContactEvent.h>
+#include <ambf_msgs/ContactSensorState.h>
+#include <ambf_msgs/ContactSensorCmd.h>
+#include <ambf_msgs/GhostObjectState.h>
+#include <ambf_msgs/GhostObjectCmd.h>
 #include <ambf_msgs/WorldState.h>
 #include <ambf_msgs/WorldCmd.h>
 
@@ -195,6 +201,12 @@ namespace ambf_ral {
 #include <ambf_msgs/msg/rigid_body_cmd.hpp>
 #include <ambf_msgs/msg/sensor_state.hpp>
 #include <ambf_msgs/msg/sensor_cmd.hpp>
+#include <ambf_msgs/msg/contact_data.hpp>
+#include <ambf_msgs/msg/contact_event.hpp>
+#include <ambf_msgs/msg/contact_sensor_state.hpp>
+#include <ambf_msgs/msg/contact_sensor_cmd.hpp>
+#include <ambf_msgs/msg/ghost_object_state.hpp>
+#include <ambf_msgs/msg/ghost_object_cmd.hpp>
 #include <ambf_msgs/msg/world_state.hpp>
 #include <ambf_msgs/msg/world_cmd.hpp>
 

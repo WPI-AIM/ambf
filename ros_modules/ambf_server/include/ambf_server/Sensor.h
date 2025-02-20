@@ -87,7 +87,7 @@ public:
     inline void set_parent_name(std::string parent_name){m_State.parent_name.data = parent_name;}
 
     void set_type(std::string type);
-    void add_contact_event(ambf_msgs::ContactEvent& a_contact_event);
+    void add_contact_event(AMBF_RAL_MSG(ambf_msgs, ContactEvent)& a_contact_event);
     void reset_contact_events();
 };
 }

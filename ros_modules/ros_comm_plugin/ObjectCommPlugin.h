@@ -45,26 +45,20 @@
 
 #include "afFramework.h"
 
+
+
+// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 #include <ambf_server/Actuator.h>
 #include <ambf_server/Camera.h>
 #include <ambf_server/Light.h>
 #include <ambf_server/Object.h>
 #include <ambf_server/RigidBody.h>
+#include <ambf_server/GhostObject.h>
 #include <ambf_server/Sensor.h>
+#include <ambf_server/GhostObject.h>
 #include <ambf_server/Vehicle.h>
 #include <ambf_server/World.h>
-
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-#include "ambf_server/Actuator.h"
-#include "ambf_server/Camera.h"
-#include "ambf_server/Light.h"
-#include "ambf_server/Object.h"
-#include "ambf_server/RigidBody.h"
-#include "ambf_server/GhostObject.h"
-#include "ambf_server/Sensor.h"
-#include "ambf_server/Vehicle.h"
-#include "ambf_server/World.h"
-#endif
+// #endif
 
 using namespace ambf;
 

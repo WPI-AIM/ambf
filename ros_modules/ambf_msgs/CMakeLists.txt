@@ -53,6 +53,12 @@ set (MESSAGES
   ActuatorCmd.msg
   SensorState.msg
   SensorCmd.msg
+  ContactData.msg
+  ContactEvent.msg
+  ContactSensorState.msg
+  ContactSensorCmd.msg
+  GhostObjectState.msg
+  GhostObjectCmd.msg
   CameraState.msg
   CameraCmd.msg
   LightState.msg

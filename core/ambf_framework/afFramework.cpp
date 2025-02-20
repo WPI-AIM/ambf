@@ -8207,7 +8207,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
 
     loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
 
-    loadCommunicationPlugin(this, a_attribs);
+    // loadCommunicationPlugin(this, a_attribs);
 
     return valid;
 }
@@ -8741,7 +8741,7 @@ bool afContactSensor::createFromAttribs(afContactSensorAttributes *a_attribs){
 
     loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
 
-    loadCommunicationPlugin(this, a_attribs);
+    // loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }

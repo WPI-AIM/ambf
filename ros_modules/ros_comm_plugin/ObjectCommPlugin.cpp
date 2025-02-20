@@ -1,16 +1,16 @@
 #include "ObjectCommPlugin.h"
 
-#ifdef AF_ENABLE_AMBF_COMM_SUPPORT
-void copyVec(cVector3d* in, geometry_msgs::Vector3* out){
+// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
+void copyVec(cVector3d* in, AMBF_RAL_MSG(geometry_msgs, Vector3)* out){
     out->x = in->x(); out->y = in->x(); out->z = in->z();
 }
 
-void fillContactData(afContactEventMap* conEventMap, vector<ambf_msgs::ContactEvent>* conEventMsgVec){
+void fillContactData(afContactEventMap* conEventMap, vector<AMBF_RAL_MSG(ambf_msgs, ContactEvent)>* conEventMsgVec){
     afContactEventMap& eventMap = *conEventMap;
     for (auto it : eventMap){
-        ambf_msgs::ContactEvent conEventMsg;
+        AMBF_RAL_MSG(ambf_msgs, ContactEvent) conEventMsg;
         conEventMsg.object_name.data = it.first->getQualifiedIdentifier();
-        ambf_msgs::ContactData contDataMsg;
+        AMBF_RAL_MSG(ambf_msgs, ContactData) contDataMsg;
         for (int in = 0 ; in < it.second.m_contactData.size() ; in ++){
             contDataMsg.distance.data = it.second.m_contactData[in].m_distance;
             copyVec(&it.second.m_contactData[in].m_P_b_w, &contDataMsg.contact_point);
@@ -21,7 +21,7 @@ void fillContactData(afContactEventMap* conEventMap, vector<ambf_msgs::ContactEv
     }
 }
 
-#endif
+// #endif
 
 void afRigidBodyState::setChildrenNames(afRigidBodyPtr afRBPtr){
     int num_children = afRBPtr->m_CJ_PairsActive.size();
@@ -1003,7 +1003,7 @@ void afObjectCommunicationPlugin::sensorUpdateState(afSensorPtr senPtr, double d
         setTimeStamps(m_objectPtr->m_afWorld->getWallTime(), m_objectPtr->m_afWorld->getSimulationTime(), m_objectPtr->getCurrentTimeStamp());
         afContactSensorPtr conSenPtr = (afContactSensorPtr) senPtr;
         m_contactSensorCommPtr->set_parent_name(conSenPtr->m_parentName);
-        vector<ambf_msgs::ContactEvent> conEvents;
+        vector<AMBF_RAL_MSG(ambf_msgs, ContactEvent)> conEvents;
         fillContactData(&conSenPtr->m_contactSensorCallback->m_contactEventMap, &conEvents);
         for (auto v: conEvents){
             m_contactSensorCommPtr->add_contact_event(v);

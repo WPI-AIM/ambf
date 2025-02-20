@@ -43,19 +43,19 @@
 #ifndef GHOSTOBJECTROSCOM_H
 #define GHOSTOBJECTROSCOM_H
 
-#include "ambf_server/RosComBase.h"
-#include "ambf_msgs/GhostObjectState.h"
-#include "ambf_msgs/GhostObjectCmd.h"
+#include <ambf_server/RosComBase.h>
+// #include "ambf_msgs/GhostObjectState.h"
+// #include "ambf_msgs/GhostObjectCmd.h"
 
 
-class GhostObjectRosCom: public RosComBase<ambf_msgs::GhostObjectState, ambf_msgs::GhostObjectCmd>{
+class GhostObjectRosCom: public RosComBase<AMBF_RAL_MSG(ambf_msgs, GhostObjectState), AMBF_RAL_MSG(ambf_msgs, GhostObjectCmd)>{
 public:
     GhostObjectRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     virtual void init();
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::GhostObjectCmdConstPtr msg);
+    void sub_cb(const AMBF_RAL_MSG(ambf_msgs, GhostObjectCmd) & msg);
 };
 
 

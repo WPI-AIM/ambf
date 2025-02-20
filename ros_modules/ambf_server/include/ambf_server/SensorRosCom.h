@@ -43,13 +43,13 @@
 #ifndef SENSORROSCOM_H
 #define SENSORROSCOM_H
 
-#include "ambf_server/RosComBase.h"
-#include "ambf_msgs/SensorState.h"
-#include "ambf_msgs/SensorCmd.h"
-#include "ambf_msgs/ContactSensorState.h"
-#include "ambf_msgs/ContactSensorCmd.h"
-#include "ambf_msgs/ContactEvent.h"
-#include "ambf_msgs/ContactData.h"
+#include <ambf_server/RosComBase.h>
+// #include "ambf_msgs/SensorState.h"
+// #include "ambf_msgs/SensorCmd.h"
+// #include "ambf_msgs/ContactSensorState.h"
+// #include "ambf_msgs/ContactSensorCmd.h"
+// #include "ambf_msgs/ContactEvent.h"
+// #include "ambf_msgs/ContactData.h"
 
 
 template<class T_state, class T_cmd>
@@ -62,7 +62,7 @@ protected:
     virtual void reset_cmd(){}
 };
 
-class SensorRosCom: public SensorRosComBase<ambf_msgs::SensorState, ambf_msgs::SensorCmd>{
+class SensorRosCom: public SensorRosComBase<AMBF_RAL_MSG(ambf_msgs, SensorState), AMBF_RAL_MSG(ambf_msgs, SensorCmd)>{
 public:
     SensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     virtual void init();
@@ -72,14 +72,14 @@ protected:
     void sub_cb(const AMBF_RAL_MSG(ambf_msgs, SensorCmd) & msg);
 };
 
-class ContactSensorRosCom: public SensorRosComBase<ambf_msgs::ContactSensorState, ambf_msgs::ContactSensorCmd>{
+class ContactSensorRosCom: public SensorRosComBase<AMBF_RAL_MSG(ambf_msgs, ContactSensorState), AMBF_RAL_MSG(ambf_msgs, ContactSensorCmd)>{
 public:
     ContactSensorRosCom(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
     virtual void init();
 
 protected:
     virtual void reset_cmd();
-    void sub_cb(ambf_msgs::ContactSensorCmdConstPtr msg);
+    void sub_cb(const AMBF_RAL_MSG(ambf_msgs, ContactSensorCmd) & msg);
 };
 
 

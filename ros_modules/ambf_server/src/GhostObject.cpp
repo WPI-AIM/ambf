@@ -47,23 +47,23 @@ GhostObject::GhostObject(std::string a_name, std::string a_namespace, int a_freq
 }
 
 void GhostObject::cur_position(double px, double py, double pz){
-    m_trans.setOrigin(tf::Vector3(px, py, pz));
+    m_trans.setOrigin(tf2::Vector3(px, py, pz));
     m_State.pose.position.x = px;
     m_State.pose.position.y = py;
     m_State.pose.position.z = pz;
 }
 
 void GhostObject::cur_orientation(double roll, double pitch, double yaw){
-    tf::Quaternion rot_quat;
+    tf2::Quaternion rot_quat;
     rot_quat.setRPY(roll, pitch, yaw);
     m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+    m_State.pose.orientation = tf2::toMsg(rot_quat);
 }
 
 void GhostObject::cur_orientation(double qx, double qy, double qz, double qw){
-    tf::Quaternion rot_quat(qx, qy, qz, qw);
+    tf2::Quaternion rot_quat(qx, qy, qz, qw);
     m_trans.setRotation(rot_quat);
-    tf::quaternionTFToMsg(rot_quat, m_State.pose.orientation);
+    m_State.pose.orientation = tf2::toMsg(rot_quat);
 }
 
 void GhostObject::reset_sensed_objects(){
@@ -71,7 +71,8 @@ void GhostObject::reset_sensed_objects(){
 }
 
 void GhostObject::add_sensed_object(std::string sensed_object){
-    std_msgs::String obj;
+    AMBF_RAL_MSG(std_msgs, String) obj;
+    // std_msgs::String obj;
     obj.data = sensed_object;
     m_State.sensed_objects.push_back(obj);
 }

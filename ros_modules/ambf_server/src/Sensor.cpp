@@ -179,7 +179,7 @@ void ContactSensor::set_type(std::string type){
     m_State.type.data = type;
 }
 
-void ContactSensor::add_contact_event(ambf_msgs::ContactEvent& a_contact_event){
+void ContactSensor::add_contact_event(AMBF_RAL_MSG(ambf_msgs, ContactEvent) & a_contact_event){
     m_State.contact_events.push_back(a_contact_event);
 }
 

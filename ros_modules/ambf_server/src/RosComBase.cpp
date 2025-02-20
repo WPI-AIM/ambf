@@ -84,6 +84,8 @@ template void RosComBase<AMBF_RAL_MSG(ambf_msgs, LightState),  AMBF_RAL_MSG(ambf
 template void RosComBase<AMBF_RAL_MSG(ambf_msgs, ObjectState),  AMBF_RAL_MSG(ambf_msgs, ObjectCmd)>::cleanUp();
 template void RosComBase<AMBF_RAL_MSG(ambf_msgs, RigidBodyState),  AMBF_RAL_MSG(ambf_msgs, RigidBodyCmd)>::cleanUp();
 template void RosComBase<AMBF_RAL_MSG(ambf_msgs, SensorState),  AMBF_RAL_MSG(ambf_msgs, SensorCmd)>::cleanUp();
+template void RosComBase<AMBF_RAL_MSG(ambf_msgs, ContactSensorState),  AMBF_RAL_MSG(ambf_msgs, SensorCmd)>::cleanUp();
+template void RosComBase<AMBF_RAL_MSG(ambf_msgs, GhostObjectState),  AMBF_RAL_MSG(ambf_msgs, SensorCmd)>::cleanUp();
 template void RosComBase<AMBF_RAL_MSG(ambf_msgs, VehicleState),  AMBF_RAL_MSG(ambf_msgs, VehicleCmd)>::cleanUp();
 template void RosComBase<AMBF_RAL_MSG(ambf_msgs, WorldState),  AMBF_RAL_MSG(ambf_msgs, WorldCmd)>::cleanUp();
 
@@ -93,5 +95,7 @@ template RosComBase<AMBF_RAL_MSG(ambf_msgs, LightState),  AMBF_RAL_MSG(ambf_msgs
 template RosComBase<AMBF_RAL_MSG(ambf_msgs, ObjectState),  AMBF_RAL_MSG(ambf_msgs, ObjectCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 template RosComBase<AMBF_RAL_MSG(ambf_msgs, RigidBodyState),  AMBF_RAL_MSG(ambf_msgs, RigidBodyCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 template RosComBase<AMBF_RAL_MSG(ambf_msgs, SensorState),  AMBF_RAL_MSG(ambf_msgs, SensorCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<AMBF_RAL_MSG(ambf_msgs, ContactSensorState),  AMBF_RAL_MSG(ambf_msgs, ContactSensorCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
+template RosComBase<AMBF_RAL_MSG(ambf_msgs, GhostObjectState),  AMBF_RAL_MSG(ambf_msgs, GhostObjectCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 template RosComBase<AMBF_RAL_MSG(ambf_msgs, VehicleState),  AMBF_RAL_MSG(ambf_msgs, VehicleCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
 template RosComBase<AMBF_RAL_MSG(ambf_msgs, WorldState),  AMBF_RAL_MSG(ambf_msgs, WorldCmd)>::RosComBase(std::string a_name, std::string a_namespace, int a_freq_min, int a_freq_max, double time_out);
