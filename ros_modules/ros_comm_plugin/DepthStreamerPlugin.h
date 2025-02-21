@@ -49,10 +49,11 @@
 #include <ambf_server/RosComBase.h>
 #if AMBF_ROS1
 #include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
 #elif AMBF_ROS2
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #endif
+
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 // #endif
 
 using namespace ambf;
@@ -81,8 +82,8 @@ private:
     // Image Transport ROS Node
     ambf_ral::node_ptr_t m_rosNode;
     AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud2) m_depthPointCloudMsg;
+    sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
 #if AMBF_ROS1
-    AMBF_RAL_MSG_MODIFIER(sensor_msgs, PointCloud2)* m_depthPointCloudModifier = nullptr;
     ros::Publisher m_depthPointCloudPub;
 #elif AMBF_ROS2
     typedef typename rclcpp::Publisher<sensor_msgs::msg::PointCloud2> publisher_t;
