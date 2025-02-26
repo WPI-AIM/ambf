@@ -152,3 +152,5 @@ private:
 };
 
 #endif
+
+AF_REGISTER_OBJECT_PLUGIN(afObjectCommunicationPlugin)
