@@ -63,7 +63,7 @@ WorldParams::WorldParams(){
 
 PointCloudHandler::PointCloudHandler(const std::string & a_topicName)
 {
-    m_node = ambf_ral::create_node(a_topicName);
+    m_node = afROSNode::getNodeAndRegister(a_topicName);;
     m_topicName = a_topicName;
     init();
 }
@@ -73,8 +73,14 @@ PointCloudHandler::PointCloudHandler(const std::string & a_topicName)
 ///
 void PointCloudHandler::init()
 {
-    ambf_ral::create_subscriber(m_pcSub, m_node,m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
+    // ambf_ral::create_subscriber_ptr(m_pcSub, m_node, m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
+
+    m_pcSub = m_node->create_subscription<sensor_msgs::msg::PointCloud>(m_topicName,
+        5,
+        std::bind(&PointCloudHandler::pc_sub_cb, this, std::placeholders::_1));
+
     ambf_ral::create_subscriber(m_radiusSub, m_node, m_topicName + "/radius", 5, &PointCloudHandler::radius_sub_cb, this);
+    
 }
 
 
@@ -82,10 +88,9 @@ void PointCloudHandler::init()
 /// \brief PointCloundHandler::sub_cb
 /// \param msg
 ///
-void PointCloudHandler::pc_sub_cb(const AMBF_RAL_MSG(sensor_msgs, PointCloud) & msg)
+void PointCloudHandler::pc_sub_cb(const AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud) msg)
 {
-    std::cerr << __FILE__ << " " << __LINE__ << " assignment is missing " << std::endl;
-    // m_StatePtr = msg;
+    m_StatePtr = msg;
 }
 
 void PointCloudHandler::radius_sub_cb(const AMBF_RAL_MSG(std_msgs, Float32) & msg)

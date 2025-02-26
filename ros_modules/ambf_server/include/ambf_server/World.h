@@ -108,13 +108,14 @@ public:
     double get_radius(){return m_radius;}
     void set_radius(double a_radius){m_radius = abs(a_radius);}
 
+    ambf_ral::node_ptr_t m_node;
+
 private:
-    void pc_sub_cb(const AMBF_RAL_MSG(sensor_msgs, PointCloud) & msg);
+    void pc_sub_cb(const AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud) msg);
     void radius_sub_cb(const AMBF_RAL_MSG(std_msgs, Float32) & msg);
     AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(sensor_msgs, PointCloud)) m_pcSub;
     AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(std_msgs, Float32)) m_radiusSub;
 
-    ambf_ral::node_ptr_t m_node;
     std::string m_topicName;
     AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud) m_StatePtr;
 

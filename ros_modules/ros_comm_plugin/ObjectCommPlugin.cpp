@@ -1096,7 +1096,8 @@ void afObjectCommunicationPlugin::vehicleUpdateState(afVehiclePtr vehPtr, double
 }
 
 void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCloudPtr, double)
-{
+{   
+    ambf_ral::spin_some(m_pointCloudCommPtr->m_node);
     AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud) pcPtr = m_pointCloudCommPtr->get_point_cloud();
     if (pcPtr) {
         double radius = m_pointCloudCommPtr->get_radius();
