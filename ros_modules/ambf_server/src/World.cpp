@@ -73,14 +73,8 @@ PointCloudHandler::PointCloudHandler(const std::string & a_topicName)
 ///
 void PointCloudHandler::init()
 {
-    // ambf_ral::create_subscriber_ptr(m_pcSub, m_node, m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
-
-    m_pcSub = m_node->create_subscription<sensor_msgs::msg::PointCloud>(m_topicName,
-        5,
-        std::bind(&PointCloudHandler::pc_sub_cb, this, std::placeholders::_1));
-
-    ambf_ral::create_subscriber(m_radiusSub, m_node, m_topicName + "/radius", 5, &PointCloudHandler::radius_sub_cb, this);
-    
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, PointCloud), PointCloudHandler>(m_pcSub, m_node, m_topicName, 5, &PointCloudHandler::pc_sub_cb, this);
+    ambf_ral::create_subscriber(m_radiusSub, m_node, m_topicName + "/radius", 5, &PointCloudHandler::radius_sub_cb, this); 
 }
 
 

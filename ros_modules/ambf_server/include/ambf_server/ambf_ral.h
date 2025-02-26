@@ -143,6 +143,22 @@ namespace ambf_ral {
         }
     }
 
+    template <typename _ros_t, typename _object_cb_t>
+    void create_subscriber(std::shared_ptr<ros::Subscriber> & subscriber,
+                           node_ptr_t node,
+                           const std::string & topic,
+                           const size_t queue_size,
+                           void (_object_cb_t::*cb)(const typename _ros_t::SharedPtr),
+                           _object_cb_t * instance
+                           ) {
+        std::string clean_topic = topic;
+        ambf_ral::clean_namespace(clean_topic);
+        subscriber = std::make_shared<ros::Subscriber>(node->subscribe(clean_topic, queue_size, cb, instance));
+        if (!subscriber) {
+            std::cerr << "Failed to create subscriber for " << clean_topic << std::endl;
+        }
+    }
+
     template <typename _ros_t>
     void set_parameter(node_ptr_t node,
                        const std::string & name,
@@ -309,6 +325,26 @@ namespace ambf_ral {
                            const std::string & topic,
                            const size_t queue_size,
                            void (_object_cb_t::*cb)(const _ros_t &),
+                           _object_cb_t * instance
+                           ) {
+        std::string clean_topic = topic;
+        ambf_ral::clean_namespace(clean_topic);
+        subscriber = node->create_subscription<_ros_t>(clean_topic,
+                                                       queue_size,
+                                                       std::bind(cb,
+                                                                 instance,
+                                                                 std::placeholders::_1));
+        if (!subscriber) {
+            std::cerr << "Failed to create subscriber for " << clean_topic << std::endl;
+        }
+    }
+
+    template <typename _ros_t, typename _object_cb_t>
+    void create_subscriber(typename rclcpp::Subscription<_ros_t>::SharedPtr & subscriber,
+                           node_ptr_t node,
+                           const std::string & topic,
+                           const size_t queue_size,
+                           void (_object_cb_t::*cb)(const typename _ros_t::SharedPtr),
                            _object_cb_t * instance
                            ) {
         std::string clean_topic = topic;
