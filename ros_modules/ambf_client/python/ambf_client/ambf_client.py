@@ -95,7 +95,6 @@ class Client:
         self._world_handle = None
         self._rate = None
         self._node = None
-        self._default_queue_size = 10
         if ROS == 2:
             self._executor = None
             self._executor_thread = None
@@ -107,7 +106,7 @@ class Client:
         else:
             self._rate = self._node.create_rate(rate)
 
-    def create_subscriber(self, topic, data_type, callback, queue_size):
+    def create_subscriber(self, topic, data_type, callback, queue_size=10):
         if ROS == 1:
             return rospy.Subscriber(topic, data_type, callback)
         else:
@@ -115,7 +114,7 @@ class Client:
             qos = rclpy.qos.QoSProfile(depth = queue_size, history = history)
             return self._node.create_subscription(data_type, topic, callback, qos)
 
-    def create_publisher(self, topic, data_type, queue_size):
+    def create_publisher(self, topic, data_type, queue_size=10):
         if ROS == 1:
             return rospy.Publisher(name = topic,
                                    data_class = data_type,
@@ -206,7 +205,7 @@ class Client:
                 base_obj._state = ActuatorState()
                 base_obj._cmd = ActuatorCmd()
                 base_obj._sub = self.create_subscriber(topic_name, ActuatorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ActuatorCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ActuatorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/CameraState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -215,7 +214,7 @@ class Client:
                 base_obj._state = CameraState()
                 base_obj._cmd = CameraCmd()
                 base_obj._sub = self.create_subscriber(topic_name, CameraState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), CameraCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), CameraCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/LightState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -224,7 +223,7 @@ class Client:
                 base_obj._state = LightState()
                 base_obj._cmd = LightCmd()
                 base_obj._sub = self.create_subscriber(topic_name, LightState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), LightCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), LightCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/ObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -233,7 +232,7 @@ class Client:
                 base_obj._state = ObjectState()
                 base_obj._cmd = ObjectCmd()
                 base_obj._sub = self.create_subscriber(topic_name, ObjectState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ObjectCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'))
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/RigidBodyState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -251,7 +250,7 @@ class Client:
                 base_obj._state = GhostObjectState()
                 base_obj._cmd = GhostObjectCmd()
                 base_obj._sub = self.create_subscriber(topic_name, GhostObjectState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), GhostObjectCmd, queue_size=self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), GhostObjectCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/SensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -260,7 +259,7 @@ class Client:
                 base_obj._state = SensorState()
                 base_obj._cmd = SensorCmd()
                 base_obj._sub = self.create_subscriber(topic_name, SensorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), SensorCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), SensorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/ContactSensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -269,7 +268,7 @@ class Client:
                 base_obj._state = ContactSensorState()
                 base_obj._cmd = ContactSensorCmd()
                 base_obj._sub = self.create_subscriber(topic_name, ContactSensorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ContactSensorCmd, queue_size=self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ContactSensorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/VehicleState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -278,7 +277,7 @@ class Client:
                 base_obj._state = VehicleState()
                 base_obj._cmd = VehicleCmd()
                 base_obj._sub = self.create_subscriber(topic_name, VehicleState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), VehicleCmd, queue_size = self._default_queue_size)
+                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), VehicleCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
 
     def connect(self, default_publish_rate = 120):

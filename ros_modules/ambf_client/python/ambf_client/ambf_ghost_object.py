@@ -44,7 +44,7 @@
 
 from ambf_msgs.msg import GhostObjectState
 from ambf_msgs.msg import GhostObjectCmd
-from ambf_base_object import BaseObject
+from .ambf_base_object import BaseObject
 
 
 class GhostObject(BaseObject):

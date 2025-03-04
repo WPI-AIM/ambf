@@ -43,7 +43,7 @@
 
 from ambf_msgs.msg import SensorState
 from ambf_msgs.msg import SensorCmd
-from ambf_base_object import BaseObject
+from .ambf_base_object import BaseObject
 from enum import Enum
 
 class SensorType(Enum):
