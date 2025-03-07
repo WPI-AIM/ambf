@@ -41,18 +41,6 @@
 # */
 # //==============================================================================
 
-# ROS version
-import os
-__ros_version_string = os.environ['ROS_VERSION']
-if __ros_version_string == '1':
-    ROS = 1
-    import rospy
-elif __ros_version_string == '2':
-    ROS = 2
-    import rclpy
-else:
-    print('environment variable ROS_VERSION must be either 1 or 2, did you source your setup.bash?')
-
 from tf_function import quaternion_from_euler, euler_from_quaternion
 from ambf_msgs.msg import ObjectState
 from ambf_msgs.msg import ObjectCmd
@@ -61,12 +49,12 @@ from geometry_msgs.msg import Pose, Wrench
 from .watch_dog import WatchDog
 
 class BaseObject(WatchDog):
-    def __init__(self, node, a_name, time_out):
+    def __init__(self, ral, a_name, time_out):
         """
         Constructor
         :param a_name:
         """
-        super(BaseObject, self).__init__(node = node, time_out = time_out)  # Set duration of Watchdog expiry
+        super(BaseObject, self).__init__(ral = ral, time_out = time_out)  # Set duration of Watchdog expiry
         self._name = a_name
         self._state = None
         self._cmd = None
@@ -310,10 +298,7 @@ class BaseObject(WatchDog):
         Internal function to synchronized with the publisher and update watchdog
         :return:
         """
-        if ROS == 1:
-            self._cmd.header.stamp = rospy.Time.now()
-        else:
-            self._cmd.header.stamp = self._node.get_clock().now().to_msg()
+        self._cmd.header.stamp = self.ral.now().to_msg()
         self.acknowledge_wd()
 
     def _clear_command(self):

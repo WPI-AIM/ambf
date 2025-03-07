@@ -48,8 +48,8 @@ from .watch_dog import WatchDog
 
 
 class World(WatchDog):
-    def __init__(self, a_name, node):
-        super(World, self).__init__(node, 2.0)
+    def __init__(self, a_name, ral):
+        super(World, self).__init__(ral = ral, time_out = 2.0)
         self._state = WorldState()
         self._name = a_name
         self._cmd = WorldCmd()

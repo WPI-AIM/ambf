@@ -41,39 +41,22 @@
 # */
 # //==============================================================================
 
-
-# ROS version
-import os
-__ros_version_string = os.environ['ROS_VERSION']
-if __ros_version_string == '1':
-    ROS = 1
-    import rospy
-elif __ros_version_string == '2':
-    ROS = 2
-    import rclpy
-else:
-    print('environment variable ROS_VERSION must be either 1 or 2, did you source your setup.bash?')
-
-
 class WatchDog(object):
-    def __init__(self, node, time_out = 0.1):
-        self._node = node
+    def __init__(self, ral, time_out = 0.1):
+        self.ral = ral
         self.set_timeout(time_out)
         self._next_cmd_expected_time = self.now()
         self._initialized = False
 
-    def now(self):
-        if ROS == 1:
-            return rospy.Time.now()
-        else:
-            return self._node.get_clock().now()
+    def now(self):  
+        self.ral.now()
 
     def acknowledge_wd(self):
         self._initialized = True
-        self._next_cmd_expected_time = self.now() + self._expire_duration
+        self._next_cmd_expected_time = self.ral.now() + self._expire_duration
 
     def is_wd_expired(self):
-            return (self.now() > self._next_cmd_expected_time and self._initialized)
+        return (self.ral.now() > self._next_cmd_expected_time and self._initialized)
 
     def console_print(self, class_name):
         if self._initialized:
@@ -81,7 +64,4 @@ class WatchDog(object):
             self._initialized = False
 
     def set_timeout(self, time_out):
-        if ROS == 1:
-            self._expire_duration = rospy.Duration.from_sec(time_out)
-        else:
-            self._expire_duration = rclpy.time.Duration(seconds = time_out)
+        self._expire_duration = self.ral.create_duration(time_out)

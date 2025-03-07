@@ -51,12 +51,12 @@ from .ambf_base_object import BaseObject
 
 
 class RigidBody(BaseObject):
-    def __init__(self, node, a_name, time_out = 0.1):
+    def __init__(self, ral, a_name, time_out = 0.1):
         """
         Constructor
         :param a_name:
         """
-        super(RigidBody, self).__init__(node = node, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
+        super(RigidBody, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "RIGID_BODY"
         self.body_type = "DYNAMIC"
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set

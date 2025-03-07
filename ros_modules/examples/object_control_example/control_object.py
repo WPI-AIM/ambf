@@ -48,19 +48,6 @@ from obj_control_gui import ObjectGUI
 from jnt_control_gui import JointGUI
 from argparse import ArgumentParser
 
-# ROS version
-import os
-__ros_version_string = os.environ['ROS_VERSION']
-if __ros_version_string == '1':
-    ROS = 1
-    import rospy
-elif __ros_version_string == '2':
-    ROS = 2
-    import rclpy
-else:
-    print('environment variable ROS_VERSION must be either 1 or 2, did you source your setup.bash?')
-
-
 class ObjectControl:
     def __init__(self, obj_name, client_name, c_space_ctrl, j_space_ctrl, initial_xyz=None,
                  initial_rpy=None, range_xyz=None, range_rpy=None, resolution=None):
@@ -96,9 +83,7 @@ class ObjectControl:
             self.jnt_gui = JointGUI(obj_name, self._n_jnts, jnt_names)
 
     def is_shutdown(self):
-        if ROS == 1:
-            return rospy.is_shutdown()
-        return not rclpy.ok()
+        self.client.ral.is_shutdown()
 
     def run(self):
         while not self.is_shutdown():

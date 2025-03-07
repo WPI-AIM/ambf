@@ -85,6 +85,8 @@ else ()
     find_package (ament_cmake_python REQUIRED)
     ament_python_install_package (ambf_client
       PACKAGE_DIR ${ambf_client_SOURCE_DIR}/python/ambf_client)
+    ament_python_install_package (ros_abstraction_layer
+      PACKAGE_DIR ${ambf_client_SOURCE_DIR}/python/ros_abstraction_layer)
 
     ament_package()
   endif (ament_cmake_FOUND)

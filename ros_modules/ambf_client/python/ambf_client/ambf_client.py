@@ -43,16 +43,7 @@
 
 # ROS version
 import os
-__ros_version_string = os.environ['ROS_VERSION']
-if __ros_version_string == '1':
-    ROS = 1
-    import rospy
-elif __ros_version_string == '2':
-    ROS = 2
-    import rclpy
-    import rclpy.node
-else:
-    print('environment variable ROS_VERSION must be either 1 or 2, did you source your setup.bash?')
+from ros_abstraction_layer import ral
 
 import threading
 import time
@@ -94,70 +85,31 @@ class Client:
         self._client_name = client_name
         self._world_handle = None
         self._rate = None
-        self._node = None
-        if ROS == 2:
-            self._executor = None
-            self._executor_thread = None
-        pass
+        self.ral = None
+        self._executor = None
+        self._sub_thread = None
 
     def set_publish_rate(self, rate):
-        if ROS == 1:
-            self._rate = rospy.Rate(rate)
-        else:
-            self._rate = self._node.create_rate(rate)
+        self._rate = self.ral.create_rate(rate)
 
     def create_subscriber(self, topic, data_type, callback, queue_size=10):
-        if ROS == 1:
-            return rospy.Subscriber(topic, data_type, callback)
-        else:
-            history = rclpy.qos.HistoryPolicy.KEEP_LAST
-            qos = rclpy.qos.QoSProfile(depth = queue_size, history = history)
-            return self._node.create_subscription(data_type, topic, callback, qos)
+        self.ral.subscriber(topic, data_type, callback, queue_size=queue_size)
 
     def create_publisher(self, topic, data_type, queue_size=10):
-        if ROS == 1:
-            return rospy.Publisher(name = topic,
-                                   data_class = data_type,
-                                   tcp_nodelay = True, queue_size = queue_size)
-        else:
-            history = rclpy.qos.HistoryPolicy.KEEP_LAST
-            qos = rclpy.qos.QoSProfile(depth = queue_size, history = history)
-            return self._node.create_publisher(data_type, topic, qos)
+        self.ral.publisher(topic, data_type, queue_size)
 
     def create_objs_from_rostopics(self, publish_rate):
-        if ROS == 1:
-            # Check if a node is running, if not create one
-            # else get the name of the node
-            if "/unnamed" == rospy.get_name():
-                rospy.init_node(self._client_name)
-            else:
-                self._client_name = rospy.get_name()
-
-            rospy.on_shutdown(self.clean_up)
-            self._ros_topics = rospy.get_published_topics()
-        else:
-            if not rclpy.ok():
-                rclpy.init()
-            self._node = rclpy.node.Node(self._client_name)
-            self._executor = rclpy.executors.MultiThreadedExecutor()
-            self._executor.add_node(self._node)
-            self._executor_thread = threading.Thread(target = self._executor.spin, daemon = True)
-            self._executor_thread.start()
-            time.sleep(1.0) # so the new node can discover other nodes
-            for [node_name, node_namespace] in self._node.get_node_names_and_namespaces():
-                self._ros_topics += self._node.get_publisher_names_and_types_by_node(node_name, node_namespace)
-
+        self.ral = ral(self._client_name)
+        self._ros_topics = self.ral.get_published_topics()
         self.set_publish_rate(publish_rate)
+
+        self.ral.spin()
 
         # Find the common longest substring to make the object names shorter
         first_run = True
         for i in range(len(self._ros_topics)):
             topic_name = self._ros_topics[i][0]
-            if ROS == 1:
-                msg_type = self._ros_topics[i][1]
-            else:
-                msg_type = self._ros_topics[i][1][0]
-                msg_type = msg_type.replace('/msg/', '/')
+            msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
 
             if msg_type in ['ambf_msgs/ActuatorState',
                             'ambf_msgs/CameraState',
@@ -184,14 +136,10 @@ class Client:
 
         for i in range(len(self._ros_topics)):
             topic_name = self._ros_topics[i][0]
-            if ROS == 1:
-                msg_type = self._ros_topics[i][1]
-            else:
-                msg_type = self._ros_topics[i][1][0]
-                msg_type = msg_type.replace('/msg/', '/')
+            msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
             if msg_type == 'ambf_msgs/WorldState':
                 self._world_name = 'World'
-                world_obj = World(self._world_name, self._node)
+                world_obj = World(self._world_name, self.ral)
                 world_obj._sub = self.create_subscriber(topic_name, WorldState, world_obj.ros_cb)
                 world_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), WorldCmd)
                 world_obj._reset_pub = self.create_publisher(topic_name.replace('/State', '/Command/Reset'), Empty, queue_size = 1)
@@ -201,7 +149,7 @@ class Client:
             elif msg_type == 'ambf_msgs/ActuatorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Actuator(node = self._node, a_name = post_trimmed_name)
+                base_obj = Actuator(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = ActuatorState()
                 base_obj._cmd = ActuatorCmd()
                 base_obj._sub = self.create_subscriber(topic_name, ActuatorState, base_obj.ros_cb)
@@ -210,7 +158,7 @@ class Client:
             elif msg_type == 'ambf_msgs/CameraState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Camera(node = self._node, a_name = post_trimmed_name)
+                base_obj = Camera(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = CameraState()
                 base_obj._cmd = CameraCmd()
                 base_obj._sub = self.create_subscriber(topic_name, CameraState, base_obj.ros_cb)
@@ -219,7 +167,7 @@ class Client:
             elif msg_type == 'ambf_msgs/LightState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Light(node = self._node, a_name = post_trimmed_name)
+                base_obj = Light(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = LightState()
                 base_obj._cmd = LightCmd()
                 base_obj._sub = self.create_subscriber(topic_name, LightState, base_obj.ros_cb)
@@ -228,7 +176,7 @@ class Client:
             elif msg_type == 'ambf_msgs/ObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Object(node = self._node, a_name = post_trimmed_name)
+                base_obj = Object(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = ObjectState()
                 base_obj._cmd = ObjectCmd()
                 base_obj._sub = self.create_subscriber(topic_name, ObjectState, base_obj.ros_cb)
@@ -237,7 +185,7 @@ class Client:
             elif msg_type == 'ambf_msgs/RigidBodyState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = RigidBody(node = self._node, a_name = post_trimmed_name)
+                base_obj = RigidBody(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = RigidBodyState()
                 base_obj._cmd = RigidBodyCmd()
                 base_obj._sub = self.create_subscriber(topic_name, RigidBodyState, base_obj.ros_cb)
@@ -255,7 +203,7 @@ class Client:
             elif msg_type == 'ambf_msgs/SensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Sensor(node = self._node, a_name = post_trimmed_name)
+                base_obj = Sensor(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = SensorState()
                 base_obj._cmd = SensorCmd()
                 base_obj._sub = self.create_subscriber(topic_name, SensorState, base_obj.ros_cb)
@@ -273,7 +221,7 @@ class Client:
             elif msg_type == 'ambf_msgs/VehicleState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Vehicle(node = self._node, a_name = post_trimmed_name)
+                base_obj = Vehicle(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = VehicleState()
                 base_obj._cmd = VehicleCmd()
                 base_obj._sub = self.create_subscriber(topic_name, VehicleState, base_obj.ros_cb)
@@ -367,10 +315,7 @@ class Client:
         self._pub_thread.start()
 
     def _is_shutdown(self):
-        if ROS == 1:
-            return rospy.is_shutdown()
-        else:
-            return (not rclpy.ok())
+        return self.ral.is_shutdown()
 
 
     def _run_obj_publishers(self):
@@ -401,6 +346,3 @@ class Client:
             val.pub_flag = False
             print('Closing publisher for: ', key)
         self._objects_dict.clear()
-        if ROS == 2:
-            temporary_node.destroy_node()
-        pass
