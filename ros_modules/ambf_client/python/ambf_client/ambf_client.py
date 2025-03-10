@@ -92,18 +92,11 @@ class Client:
     def set_publish_rate(self, rate):
         self._rate = self.ral.create_rate(rate)
 
-    def create_subscriber(self, topic, data_type, callback, queue_size=10):
-        self.ral.subscriber(topic, data_type, callback, queue_size=queue_size)
-
-    def create_publisher(self, topic, data_type, queue_size=10):
-        self.ral.publisher(topic, data_type, queue_size)
-
     def create_objs_from_rostopics(self, publish_rate):
         self.ral = ral(self._client_name)
         self._ros_topics = self.ral.get_published_topics()
         self.set_publish_rate(publish_rate)
 
-        self.ral.spin()
 
         # Find the common longest substring to make the object names shorter
         first_run = True
@@ -140,10 +133,10 @@ class Client:
             if msg_type == 'ambf_msgs/WorldState':
                 self._world_name = 'World'
                 world_obj = World(self._world_name, self.ral)
-                world_obj._sub = self.create_subscriber(topic_name, WorldState, world_obj.ros_cb)
-                world_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), WorldCmd)
-                world_obj._reset_pub = self.create_publisher(topic_name.replace('/State', '/Command/Reset'), Empty, queue_size = 1)
-                world_obj._reset_bodies_pub = self.create_publisher(topic_name.replace('/State', '/Command/Reset/Bodies'), Empty, queue_size = 1)
+                world_obj._sub = self.ral.subscriber(topic_name, WorldState, world_obj.ros_cb)
+                world_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), WorldCmd)
+                world_obj._reset_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset'), Empty, queue_size = 1)
+                world_obj._reset_bodies_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset/Bodies'), Empty, queue_size = 1)
                 self._world_handle = world_obj
                 self._objects_dict[world_obj.get_name()] = world_obj
             elif msg_type == 'ambf_msgs/ActuatorState':
@@ -152,8 +145,8 @@ class Client:
                 base_obj = Actuator(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = ActuatorState()
                 base_obj._cmd = ActuatorCmd()
-                base_obj._sub = self.create_subscriber(topic_name, ActuatorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ActuatorCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, ActuatorState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), ActuatorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/CameraState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -161,8 +154,8 @@ class Client:
                 base_obj = Camera(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = CameraState()
                 base_obj._cmd = CameraCmd()
-                base_obj._sub = self.create_subscriber(topic_name, CameraState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), CameraCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, CameraState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), CameraCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/LightState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -170,8 +163,8 @@ class Client:
                 base_obj = Light(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = LightState()
                 base_obj._cmd = LightCmd()
-                base_obj._sub = self.create_subscriber(topic_name, LightState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), LightCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, LightState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), LightCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/ObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -179,8 +172,8 @@ class Client:
                 base_obj = Object(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = ObjectState()
                 base_obj._cmd = ObjectCmd()
-                base_obj._sub = self.create_subscriber(topic_name, ObjectState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'))
+                base_obj._sub = self.ral.subscriber(topic_name, ObjectState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'))
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/RigidBodyState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -188,8 +181,8 @@ class Client:
                 base_obj = RigidBody(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = RigidBodyState()
                 base_obj._cmd = RigidBodyCmd()
-                base_obj._sub = self.create_subscriber(topic_name, RigidBodyState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), RigidBodyCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, RigidBodyState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), RigidBodyCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/GhostObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -197,8 +190,8 @@ class Client:
                 base_obj = GhostObject(post_trimmed_name)
                 base_obj._state = GhostObjectState()
                 base_obj._cmd = GhostObjectCmd()
-                base_obj._sub = self.create_subscriber(topic_name, GhostObjectState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), GhostObjectCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, GhostObjectState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), GhostObjectCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/SensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -206,8 +199,8 @@ class Client:
                 base_obj = Sensor(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = SensorState()
                 base_obj._cmd = SensorCmd()
-                base_obj._sub = self.create_subscriber(topic_name, SensorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), SensorCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, SensorState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), SensorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/ContactSensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -215,8 +208,8 @@ class Client:
                 base_obj = ContactSensor(post_trimmed_name)
                 base_obj._state = ContactSensorState()
                 base_obj._cmd = ContactSensorCmd()
-                base_obj._sub = self.create_subscriber(topic_name, ContactSensorState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), ContactSensorCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, ContactSensorState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), ContactSensorCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
             elif msg_type == 'ambf_msgs/VehicleState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
@@ -224,9 +217,11 @@ class Client:
                 base_obj = Vehicle(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = VehicleState()
                 base_obj._cmd = VehicleCmd()
-                base_obj._sub = self.create_subscriber(topic_name, VehicleState, base_obj.ros_cb)
-                base_obj._pub = self.create_publisher(topic_name.replace('/State', '/Command'), VehicleCmd)
+                base_obj._sub = self.ral.subscriber(topic_name, VehicleState, base_obj.ros_cb)
+                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), VehicleCmd)
                 self._objects_dict[base_obj.get_name()] = base_obj
+
+        self.ral.spin()
 
     def connect(self, default_publish_rate = 120):
         self.create_objs_from_rostopics(publish_rate = default_publish_rate)

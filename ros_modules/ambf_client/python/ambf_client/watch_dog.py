@@ -45,11 +45,8 @@ class WatchDog(object):
     def __init__(self, ral, time_out = 0.1):
         self.ral = ral
         self.set_timeout(time_out)
-        self._next_cmd_expected_time = self.now()
+        self._next_cmd_expected_time = self.ral.now()
         self._initialized = False
-
-    def now(self):  
-        self.ral.now()
 
     def acknowledge_wd(self):
         self._initialized = True

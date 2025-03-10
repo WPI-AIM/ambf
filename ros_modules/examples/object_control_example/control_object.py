@@ -82,11 +82,8 @@ class ObjectControl:
             self._n_jnts = len(jnt_names)
             self.jnt_gui = JointGUI(obj_name, self._n_jnts, jnt_names)
 
-    def is_shutdown(self):
-        self.client.ral.is_shutdown()
-
     def run(self):
-        while not self.is_shutdown():
+        while not self.client.ral.is_shutdown():
 
             if self._ctrl_c_space is True:
                 self.obj_gui.App.update()
