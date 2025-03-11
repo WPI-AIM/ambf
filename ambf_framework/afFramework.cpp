@@ -3232,6 +3232,12 @@ bool afJointController::createFromAttribs(afJointControllerAttributes *a_attribs
     return true;
 }
 
+////
+/// \brief afCartesianController::setLinearGains
+/// \param a_P
+/// \param a_I
+/// \param a_D
+///
 void afJointController::setLinearGains(double a_P, double a_I, double a_D){
     m_P = a_P;
     m_I = a_I;
@@ -3789,11 +3795,11 @@ double afJoint::getEffort(){
 }
 
 
-void afJoint::setLinearGain(double a_P, double a_I, double a_D) {
+void afJoint::setLinearGains(double a_P, double a_I, double a_D) {
     this->m_controller.setLinearGains(a_P, a_I, a_D);
 }
 
-vector<double> afJoint::getLinearGain() {
+vector<double> afJoint::getLinearGains() {
     vector<double> v;
     v.push_back(this->m_controller.getP_lin());
     v.push_back(this->m_controller.getI_lin());

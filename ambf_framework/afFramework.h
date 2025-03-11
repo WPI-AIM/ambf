@@ -1358,10 +1358,10 @@ public:
     bool isFeedBackEnabled(){return m_enableFeedback;}
 
     // Set the gain of this joint
-    void setLinearGain(double a_P, double a_I, double a_D);
+    void setLinearGains(double a_P, double a_I, double a_D);
 
     // Get the gain of this joint
-    vector<double> getLinearGain();
+    vector<double> getLinearGains();
 
 protected:
 
