@@ -1509,6 +1509,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     YAML::Node colorNode = node["color"];
     YAML::Node colorRGBANode = node["color rgba"];
     YAML::Node colorComponentsNode = node["color components"];
+    YAML::Node collisionGroupsNode = node["collision groups"];
 
     YAML::Node configDataNode = node["config"];
 
