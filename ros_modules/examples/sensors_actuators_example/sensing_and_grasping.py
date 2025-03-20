@@ -1,5 +1,4 @@
 from ambf_client import Client
-import rospy
 import time
 import sys
 if sys.version_info[0] >= 3:
@@ -102,7 +101,7 @@ def main():
     release_button.pack()
 
     counter = 0
-    while not rospy.is_shutdown():
+    while True:
         try:
             tk.update()
             if not (counter % 50):

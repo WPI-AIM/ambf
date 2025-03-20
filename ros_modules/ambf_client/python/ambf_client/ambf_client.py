@@ -187,7 +187,7 @@ class Client:
             elif msg_type == 'ambf_msgs/GhostObjectState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = GhostObject(post_trimmed_name)
+                base_obj = GhostObject(ral = self.ral, a_name = post_trimmed_name)
                 base_obj._state = GhostObjectState()
                 base_obj._cmd = GhostObjectCmd()
                 base_obj._sub = self.ral.subscriber(topic_name, GhostObjectState, base_obj.ros_cb)
@@ -205,7 +205,7 @@ class Client:
             elif msg_type == 'ambf_msgs/ContactSensorState':
                 # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
                 post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = ContactSensor(post_trimmed_name)
+                base_obj = ContactSensor(ral = self.ral, name = post_trimmed_name)
                 base_obj._state = ContactSensorState()
                 base_obj._cmd = ContactSensorCmd()
                 base_obj._sub = self.ral.subscriber(topic_name, ContactSensorState, base_obj.ros_cb)
@@ -309,12 +309,20 @@ class Client:
         self._pub_thread.daemon = True
         self._pub_thread.start()
 
-    def _is_shutdown(self):
+    def is_shutdown(self):
         return self.ral.is_shutdown()
 
+    def get_time(self):
+        return self.ral.to_sec(self.ral.now())
+
+    def create_rate(self, rate):
+        return self.ral.create_rate(rate)
+
+    def get_ral(self):
+        return self.ral
 
     def _run_obj_publishers(self):
-        while not self._is_shutdown():
+        while not self.is_shutdown():
             for key, obj in self._objects_dict.items():
                 if obj.is_active():
                     obj.run_publisher()

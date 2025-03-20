@@ -48,12 +48,12 @@ from .ambf_base_object import BaseObject
 
 
 class GhostObject(BaseObject):
-    def __init__(self, a_name, time_out=0.1):
+    def __init__(self, ral, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super(GhostObject, self).__init__(a_name, time_out)  # Set duration of Watchdog expiry
+        super(GhostObject, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "GHOST"
         self.body_type = "KINEMATIC"
 

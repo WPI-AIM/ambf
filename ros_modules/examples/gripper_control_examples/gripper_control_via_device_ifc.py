@@ -43,7 +43,7 @@
 # //==============================================================================
 
 from proxy_device import ProxyMTM
-import rospy
+from ros_abstraction_layer import ral
 import time
 import postion_control_util as PU
 import numpy as np
@@ -57,7 +57,7 @@ parsed_args = parser.parse_args()
 print('Specified Arguments')
 print(parsed_args)
 
-rospy.init_node(parsed_args.arm_name + parsed_args.node_name)
+ral = ral(parsed_args.arm_name + parsed_args.node_name)
 time.sleep(1.0)
 if not parsed_args.arm_name in ['MTMR', 'MTML']:
     raise ValueError
@@ -66,24 +66,28 @@ mock_mtm = ProxyMTM(parsed_args.arm_name)
 mock_mtm.publish_status()
 mock_mtm.set_pos(0, 0, -1.3)
 mock_mtm.set_pos(0, 0, 0.0)
-rate = rospy.Rate(100)
+rate = ral.Rate(100)
 
 PU.init()
 App = PU.get_app_handle()
 
-start_time = rospy.Time.now()
+start_time = ral.now()
 last_state = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-min_dt = rospy.Duration(0.001)
-while not rospy.is_shutdown():
-    App.update()
-    mock_mtm.publish_status()
-    mock_mtm.set_pos(PU.x, PU.y, PU.z)
-    mock_mtm.set_orientation(PU.roll, PU.pitch, PU.yaw)
-    mock_mtm.set_gripper_angle(PU.gripper)
-    dt = rospy.Time.now() - start_time
-    # Set dt threshold to avoid setting twist on first iteration
-    if dt >= min_dt:
-        twist = (np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw]) - last_state) / dt.to_sec()
-        mock_mtm.set_twist(twist[0], twist[1], twist[2], twist[3], twist[4], twist[5])
-    last_state = np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw])
-    rate.sleep()
+min_dt = ral.Duration(0.001)
+while True:
+    try:
+        App.update()
+        mock_mtm.publish_status()
+        mock_mtm.set_pos(PU.x, PU.y, PU.z)
+        mock_mtm.set_orientation(PU.roll, PU.pitch, PU.yaw)
+        mock_mtm.set_gripper_angle(PU.gripper)
+        dt = ral.now() - start_time
+        # Set dt threshold to avoid setting twist on first iteration
+        if dt >= min_dt:
+            twist = (np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw]) - last_state) / ral.to_sec(dt)
+            mock_mtm.set_twist(twist[0], twist[1], twist[2], twist[3], twist[4], twist[5])
+        last_state = np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw])
+        rate.sleep()
+    except KeyboardInterrupt:
+        print('Exiting')
+        break

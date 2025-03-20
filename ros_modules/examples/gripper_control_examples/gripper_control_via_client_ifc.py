@@ -45,7 +45,6 @@
 from ambf_client import Client
 import time
 import postion_control_util as PU
-import rospy
 
 c = Client()
 c.connect()
@@ -65,24 +64,29 @@ joint_limits = [[-0.3, 0.548], [-0.3, 0.548], [-0.3, 0.548], [-0.3, 0.548]]
 
 grasped = False
 
-while not rospy.is_shutdown():
-    App.update()
-    gripper_base.set_pos(PU.x, PU.y, PU.z)
-    gripper_base.set_rpy(PU.roll, PU.pitch, PU.yaw)
+while True:
+    try:
+        App.update()
+        gripper_base.set_pos(PU.x, PU.y, PU.z)
+        gripper_base.set_rpy(PU.roll, PU.pitch, PU.yaw)
+    
+        # Since we are handling the body using the Python cleint. We will have to set all the joints manually
+        for i in range(gripper_base.get_num_joints()):
+            jnt_range = joint_limits[i][1] - joint_limits[i][0]
+            adjusted_val = joint_limits[i][0] + PU.gripper * jnt_range
+            gripper_base.set_joint_pos(i, adjusted_val)
+    
+            # We can also keep checking the sensor if it triggers
+            if sensor.is_triggered(0) and PU.gripper < 0.5:
+                sensed_obj = sensor.get_sensed_object(0)
+                if not grasped:
+                    actuator.actuate(sensed_obj)
+                    grasped = True
+                    print('Grasping Sensed Object Names', sensed_obj)
+            else:
+                actuator.deactuate()
+                grasped = False
+    except KeyboardInterrupt:
+        print('Exiting')
+        break
 
-    # Since we are handling the body using the Python cleint. We will have to set all the joints manually
-    for i in range(gripper_base.get_num_joints()):
-        jnt_range = joint_limits[i][1] - joint_limits[i][0]
-        adjusted_val = joint_limits[i][0] + PU.gripper * jnt_range
-        gripper_base.set_joint_pos(i, adjusted_val)
-
-        # We can also keep checking the sensor if it triggers
-        if sensor.is_triggered(0) and PU.gripper < 0.5:
-            sensed_obj = sensor.get_sensed_object(0)
-            if not grasped:
-                actuator.actuate(sensed_obj)
-                grasped = True
-                print('Grasping Sensed Object Names', sensed_obj)
-        else:
-            actuator.deactuate()
-            grasped = False

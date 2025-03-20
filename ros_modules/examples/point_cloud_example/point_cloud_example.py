@@ -42,33 +42,32 @@
 # */
 # //==============================================================================
 
-import rospy
+from ros_abstraction_layer import ral
 from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
 from std_msgs.msg import Float32
-from rospy import Rate
 import time
 import numpy as np
 import math
 
 topics_names_param = '/ambf/env/World/point_cloud_topics'
 
-rospy.init_node('test_pc')
+ral = ral('test_pc')
 # AMBF Will have a default PC listener at /ambf/env/World/point_cloud'
-pc_topics = rospy.get_param(topics_names_param)
+# pc_topics = rospy.get_param(topics_names_param)
 
 print('Existing Topics AMBF is listening to for Point Cloud')
-print(pc_topics)
+# print(pc_topics)
 
 time.sleep(1.0)
 # We can add topics by using the Param Server
-pc_topics.append('/ambf/env/World/another_point_cloud')
-rospy.set_param(topics_names_param, pc_topics)
+# pc_topics.append('/ambf/env/World/another_point_cloud')
+# rospy.set_param(topics_names_param, pc_topics)
 print('Adding another topic via the ROS Param server')
 
 print('Updated topics on the param server are now:')
-pc_topics = rospy.get_param('/ambf/env/World/point_cloud_topics')
-print(pc_topics)
+# pc_topics = rospy.get_param('/ambf/env/World/point_cloud_topics')
+# print(pc_topics)
 
 time.sleep(1.0)
 
@@ -76,11 +75,11 @@ print("We can similarly update the size of each individual PC")
 
 print('Now publishing to these two topics')
 
-pub1 = rospy.Publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
-size_pub1 = rospy.Publisher('/ambf/env/World/point_cloud/radius', Float32, queue_size=10)
+pub1 = ral.publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
+size_pub1 = ral.publisher('/ambf/env/World/point_cloud/radius', Float32, queue_size=10)
 
-pub2 = rospy.Publisher('/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
-size_pub2 = rospy.Publisher('/ambf/env/World/another_point_cloud/radius', Float32, queue_size=10)
+pub2 = ral.publisher('/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
+size_pub2 = ral.publisher('/ambf/env/World/another_point_cloud/radius', Float32, queue_size=10)
 
 msg = PointCloud()
 msg.header.frame_id = '/ambf/env/BODY Chassis'
@@ -93,11 +92,11 @@ slp = 0.01
 size_msg = Float32()
 size_msg.data = 4.0
 
-while not rospy.is_shutdown():
+while not ral.is_shutdown():
     cnt_i = int(np.sqrt(num_points))
     cnt_j = int(np.sqrt(num_points))
     delta_th = 2. * np.pi / cnt_i
-    r_offset = (0.2 * math.sin(rospy.Time.now().to_sec()))
+    r_offset = (0.2 * math.sin(ral.to_sec(ral.now())))
     r = 0.4 + r_offset
     for i in range(cnt_i):
         th = i * delta_th
@@ -127,7 +126,7 @@ while not rospy.is_shutdown():
             msg.points[idx].z = r * math.sin(th)
 
             # This part can be commented out. It is just for cool rotating donut effect
-            t = rospy.Time.now().to_sec()
+            t = ral.to_sec(ral.now())
             ct = math.cos(t)
             st = math.sin(t)
             x = msg.points[idx].x
