@@ -46,15 +46,13 @@ import os
 from ros_abstraction_layer import ral
 
 import threading
-import time
-from difflib import SequenceMatcher
 
 from ambf_msgs.msg import ActuatorState, ActuatorCmd
 from ambf_msgs.msg import CameraState, CameraCmd
 from ambf_msgs.msg import LightState, LightCmd
 from ambf_msgs.msg import ObjectState, ObjectCmd
 from ambf_msgs.msg import RigidBodyState, RigidBodyCmd
-from ambf_msgs.msg import GhostObjectState,GhostObjectCmd
+from ambf_msgs.msg import GhostObjectState, GhostObjectCmd
 from ambf_msgs.msg import WorldState, WorldCmd
 from ambf_msgs.msg import SensorState, SensorCmd, ContactSensorState, ContactSensorCmd
 from ambf_msgs.msg import VehicleState, VehicleCmd
