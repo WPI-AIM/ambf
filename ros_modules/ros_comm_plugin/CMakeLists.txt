@@ -85,11 +85,6 @@ add_definitions (${AMBF_DEFINITIONS})
 
 include_directories (${AMBF_INCLUDE_DIRS})
 
-## Declare a C++ library
-## this is weird
-##link_directories(/home/lauraconnolly/ros2-changes/restructure/catkin_ws/src/ambf/core/external/DHD/lib/lin-x86_64)
-# link_directories (../../core/external/DHD/lib/lin-x86_64)
-
 add_library (depth_streamer_plugin SHARED DepthStreamerPlugin.cpp)
 add_library (object_comm_plugin SHARED ObjectCommPlugin.cpp)
 add_library (video_streamer_plugin SHARED VideoStreamerPlugin.cpp)
