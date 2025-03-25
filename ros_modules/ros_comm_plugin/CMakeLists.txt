@@ -88,7 +88,7 @@ include_directories (${AMBF_INCLUDE_DIRS})
 ## Declare a C++ library
 ## this is weird
 ##link_directories(/home/lauraconnolly/ros2-changes/restructure/catkin_ws/src/ambf/core/external/DHD/lib/lin-x86_64)
-link_directories (../../core/external/DHD/lib/lin-x86_64)
+# link_directories (../../core/external/DHD/lib/lin-x86_64)
 
 add_library (depth_streamer_plugin SHARED DepthStreamerPlugin.cpp)
 add_library (object_comm_plugin SHARED ObjectCommPlugin.cpp)
@@ -116,7 +116,7 @@ if (ROS_VERSION EQUAL 1)
 
   foreach (_plugin ${ROS_COMM_PLUGINS})
     add_dependencies (${_plugin} ${catkin_EXPORTED_TARGETS})
-    target_link_libraries (${_plugin} ${catkin_LIBRARIES} ${AMBF_LIBRARIES} drd)
+    target_link_libraries (${_plugin} ${catkin_LIBRARIES} ${AMBF_LIBRARIES})
   endforeach ()
 
 else ()
