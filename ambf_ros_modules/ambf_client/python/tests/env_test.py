@@ -43,13 +43,14 @@
 #     \version   0.1
 # */
 # //==============================================================================
-from ambf_comm import AmbfEnv
+from ambf_gym_env import AmbfEnv
 import time
 
 
 env = AmbfEnv()
 action = env.action_space
 env.make('Torus')
+env.reset()
 env.skip_sim_steps(1)
 time.sleep(1)
 env.reset()
@@ -57,4 +58,4 @@ total = 50000
 for i in range(1,total):
     state, r, d, dict = env.step(env.action_space.sample())
     if i % 50 == 0:
-        print 'Reward: ', r, 'Steps: ', i, ' \ ', total
+        print('Reward: ', r, 'Steps: ', i, ' \ ', total)

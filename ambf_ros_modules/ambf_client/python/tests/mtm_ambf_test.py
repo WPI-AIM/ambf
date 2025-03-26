@@ -64,10 +64,10 @@ scale = 1/15.0
 
 if len(sys.argv) > 1:
     tc = float(sys.argv[1])
-    print 'Setting Time Constant to {}'.format(sys.argv[1])
+    print('Setting Time Constant to {}'.format(sys.argv[1]))
 if len(sys.argv) > 2:
     scale = float(sys.argv[2])
-    print 'Setting Scale to {}'.format(sys.argv[2])
+    print('Setting Scale to {}'.format(sys.argv[2]))
 
 
 rospy.init_node('mtm_ambf_test')

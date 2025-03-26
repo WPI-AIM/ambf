@@ -75,11 +75,11 @@ class UserStudy:
             date_time_str = str(datetime.now()).replace(' ', '_')
             self._rosbag_filepath = './user_study_data/' + e1.get() + '_' + b1.get() + '_' + date_time_str
             command = "rosbag record -O" + ' ' + self._rosbag_filepath + self._topic_names_str
-            print "Running Command", command
+            print("Running Command", command)
             command = shlex.split(command)
             self._rosbag_process = subprocess.Popen(command)
         else:
-            print "Already recording a ROSBAG file, please save that first before starting a new record"
+            print("Already recording a ROSBAG file, please save that first before starting a new record")
 
     def save(self):
 

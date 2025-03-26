@@ -2872,6 +2872,9 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         return 0;
     }
 
+    m_shaderAttribs = a_attribs->m_shaderAttribs;
+    loadShaderProgram();
+
     if (m_collisionMesh->loadFromFile(a_attribs->m_collisionAttribs.m_meshFilepath.c_str())){
         m_collisionMesh->removeDuplicateVertices();
         m_collisionMesh->scale(m_scale);
@@ -2983,6 +2986,22 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     if (a_attribs->m_useConstraintRandomization){
         softBody->randomizeConstraints();
+    }
+
+     for (uint gI = 0 ; gI < a_attribs->m_collisionAttribs.m_groups.size() ; gI++){
+        uint group =  a_attribs->m_collisionAttribs.m_groups[gI];
+        // Sanity check for the group number
+        if (group >= 0 && group <= 999){
+            m_afWorld->m_collisionGroups[group].push_back(this);
+            m_collisionGroups.push_back(group);
+             // Print the soft body name and group
+            cout << "SoftBody Name: " << m_name << ", Group: " << group << endl;
+        }
+        else{
+            cerr << "WARNING! Body "
+                    << m_name
+                    << "'s group number is \"" << group << "\" which should be between [0 - 999], ignoring\n";
+        }
     }
 
     addChildSceneObject(m_visualMesh, cTransform());
@@ -3231,6 +3250,19 @@ bool afJointController::createFromAttribs(afJointControllerAttributes *a_attribs
 
     return true;
 }
+
+////
+/// \brief afCartesianController::setLinearGains
+/// \param a_P
+/// \param a_I
+/// \param a_D
+///
+void afJointController::setLinearGains(double a_P, double a_I, double a_D){
+    m_P = a_P;
+    m_I = a_I;
+    m_D = a_D;
+}
+
 
 double afJointController::computeOutput(double process_val, double set_point, double current_time){
     uint n = queue_length - 1;
@@ -3781,6 +3813,18 @@ double afJoint::getEffort(){
     return m_estimatedEffort;
 }
 
+
+void afJoint::setLinearGains(double a_P, double a_I, double a_D) {
+    this->m_controller.setLinearGains(a_P, a_I, a_D);
+}
+
+vector<double> afJoint::getLinearGains() {
+    vector<double> v;
+    v.push_back(this->m_controller.getP_lin());
+    v.push_back(this->m_controller.getI_lin());
+    v.push_back(this->m_controller.getD_lin());
+    return v;
+}
 
 ///
 /// \brief afSensor::afSensor
@@ -5993,13 +6037,31 @@ void afWorld::buildCollisionGroups(){
                     afInertialObjectPtr bodyA = grpA[aBodyIdx];
                     for(uint bBodyIdx = 0 ; bBodyIdx < grpB.size() ; bBodyIdx++){
                         afInertialObjectPtr bodyB = grpB[bBodyIdx];
-                        if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroups))
-                            bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                        if (bodyA != bodyB && !bodyB->isCommonCollisionGroupIdx(bodyA->m_collisionGroups)){
+                            if (bodyA->m_bulletRigidBody && bodyB->m_bulletRigidBody) {
+                                bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                                //cout << "Ignoring collision between rigid bodies: " << bodyA << " and " << bodyB << endl;
+                            }
+                            // Handle Soft Body
+                            else if (bodyA->m_bulletSoftBody && bodyB->m_bulletRigidBody) {
+                                bodyB->m_bulletRigidBody->setIgnoreCollisionCheck(bodyA->m_bulletSoftBody, true);
+                                //cout << "Ignoring collision between soft body: " << bodyA << " and rigid body: " << bodyB << endl;
+                            }
+                            else if (bodyA->m_bulletRigidBody && bodyB->m_bulletSoftBody) {
+                                bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletSoftBody, true);
+                                //cout << "Ignoring collision between rigid body: " << bodyA << " and soft body: " << bodyB << endl;
+                            }
+                            else if (bodyA->m_bulletSoftBody && bodyB->m_bulletSoftBody) {
+                                // Set ignore collision for both soft bodies
+                                bodyA->m_bulletSoftBody->setIgnoreCollisionCheck(bodyB->m_bulletSoftBody, true);
+                                //cout << "Ignoring collision between soft bodies: " << bodyA << " and " << bodyB << endl;
+                        }
                     }
                 }
             }
         }
     }
+}
 }
 
 
@@ -8374,7 +8436,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
             m_voxelObject = new cVoxelObject();
             // Setting transparency before setting the texture ensures that the rendering does not show empty spaces as black
             // and the depth point cloud is able to see the volume
-//            m_voxelObject->setTransparencyLevel(1.0);
+           m_voxelObject->setTransparencyLevel(1.0);
 
             cTexture3dPtr texture = cTexture3d::create();
             texture->setImage(m_multiImage);

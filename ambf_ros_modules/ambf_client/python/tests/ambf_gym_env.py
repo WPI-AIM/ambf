@@ -45,10 +45,7 @@
 from ambf_client import Client
 from gym import spaces
 import numpy as np
-import math
 import time
-from ambf_world import World
-from ambf_object import Object
 from numpy import linalg as LA
 
 
@@ -69,11 +66,11 @@ class Observation:
 
 class AmbfEnv:
     def __init__(self):
-        self.obj_handle = Object
-        self.world_handle = World
+        self.obj_handle = None
+        self.world_handle = None
 
         self.ambf_client = Client()
-        self.ambf_client.create_objs_from_rostopics()
+        self.ambf_client.connect()
         self.n_skip_steps = 5
         self.enable_step_throttling = True
         self.action = []
@@ -82,8 +79,6 @@ class AmbfEnv:
         self.action_lims_high = np.array([30, 30, 30, 2, 2, 2, 1])
         self.action_space = spaces.Box(self.action_lims_low, self.action_lims_high)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(13,))
-
-        self.base_handle = self.ambf_client.get_obj_handle('PegBase')
         self.prev_sim_step = 0
 
         pass
@@ -96,15 +91,20 @@ class AmbfEnv:
         self.enable_step_throttling = check
         self.world_handle.enable_throttling(check)
 
-    def make(self, a_name):
-        self.obj_handle = self.ambf_client.get_obj_handle(a_name)
+    def make(self, a_obj_name):
+        print("INFO! Making environment with object: ", a_obj_name)
+        self.obj_handle = self.ambf_client.get_obj_handle(a_obj_name)
         self.world_handle = self.ambf_client.get_world_handle()
         self.world_handle.enable_throttling(self.enable_step_throttling)
         self.world_handle.set_num_step_skips(self.n_skip_steps)
         if self.obj_handle is None or self.world_handle is None:
             raise Exception
+        time.sleep(0.2)
 
     def reset(self):
+        print("INFO! Reset called")
+        self.world_handle.reset()
+        time.sleep(0.2)
         action = [0.0,
                   0.0,
                   0.0,
@@ -131,7 +131,7 @@ class AmbfEnv:
         return self.obs.cur_observation()
 
     def render(self, mode):
-        print ' I am a {} POTATO'.format(mode)
+        print(' I am a {} POTATO'.format(mode))
 
     def _update_observation(self, action):
         if self.enable_step_throttling:
@@ -141,13 +141,13 @@ class AmbfEnv:
                 time.sleep(0.00001)
             self.prev_sim_step = self.obj_handle.get_sim_step()
             if step_jump > self.n_skip_steps:
-                print 'WARN: Jumped {} steps, Default skip limit {} Steps'.format(step_jump, self.n_skip_steps)
+                print('WARN: Jumped {} steps, Default skip limit {} Steps'.format(step_jump, self.n_skip_steps))
         else:
             cur_sim_step = self.obj_handle.get_sim_step()
             step_jump = cur_sim_step - self.prev_sim_step
             self.prev_sim_step = cur_sim_step
 
-        state = self.obj_handle.get_pose() + self.base_handle.get_pose() + [step_jump]
+        state = self.obj_handle.get_pose() + [step_jump]
         self.obs.state = state
         self.obs.reward = self._calculate_reward(state, action)
         self.obs.is_done = self._check_if_done()

@@ -117,7 +117,7 @@ def main():
         occulus_pub.publish(occulus_cmd)
         counter = counter + 1
         if counter % 60 == 0:
-            print "- Publishing Occulus Pose ", format( round(rospy.get_time() - start, 3)), 's'
+            print("- Publishing Occulus Pose ", format( round(rospy.get_time() - start, 3)), 's')
         rate.sleep()
 
 

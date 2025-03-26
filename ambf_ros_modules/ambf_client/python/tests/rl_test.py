@@ -43,7 +43,7 @@
 # */
 # //==============================================================================
 import numpy as np
-from ambf_comm import AmbfEnv
+from ambf_gym_env import AmbfEnv
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Concatenate
@@ -56,11 +56,11 @@ from rl.random import OrnsteinUhlenbeckProcess
 
 ENV_NAME = 'Torus'
 
-
 # Get the environment and extract the number of actions.
 env = AmbfEnv()
 env.make(ENV_NAME)
 env.reset()
+time.sleep(0.5)
 assert len(env.action_space.shape) == 1
 nb_actions = env.action_space.shape[0]
 
