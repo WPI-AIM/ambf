@@ -514,9 +514,11 @@ struct afImageResolutionAttribs{
     afImageResolutionAttribs(){
         m_width = 640;
         m_height = 480;
+        m_defined = false;
     }
-    double m_width;
-    double m_height;
+    unsigned int m_width;
+    unsigned int m_height;
+    bool m_defined;
 };
 
 
@@ -548,6 +550,23 @@ public:
     double m_arcball;
 };
 
+struct afCameraIntrinsics{
+    afCameraIntrinsics(){
+        m_defined = false;
+        m_fx = 100.;
+        m_fy = 100.;
+        m_cx = 0.;
+        m_cy = 0.;
+        m_s = 0.;
+    }
+    bool m_defined;
+    double m_fx; // Focal length X
+    double m_fy; // Focal Length Y
+    double m_cx; // Principal Offset X
+    double m_cy; // Principal Offset Y
+    double m_s; // Shear
+};
+
 ///
 /// \brief The afCameraAttributes struct
 ///
@@ -570,6 +589,7 @@ public:
         m_publishImageInterval = 1;
         m_publishDepthInterval = 10;
         m_multiPass = false;
+        m_useCustomProjectionMatrix  = false;
     }
 
     afVector3d m_lookAt;
@@ -594,12 +614,17 @@ public:
     afMouseControlScales m_mouseControlScales;
     bool m_multiPass;
 
+    afImageResolutionAttribs m_windowResolution;
     afImageResolutionAttribs m_publishImageResolution;
     afImageResolutionAttribs m_publishDephtResolution;
     afNoiseModelAttribs m_depthNoiseAttribs;
 
     afHierarchyAttributes m_hierarchyAttribs;
     afKinematicAttributes m_kinematicAttribs;
+
+    vector<vector <double>> m_projectionMatrix; // column major
+    afCameraIntrinsics m_intrinsics;
+    bool m_useCustomProjectionMatrix;
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){

@@ -6449,10 +6449,6 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setName(a_attribs->m_identificationAttribs.m_name);
     setNamespace(a_attribs->m_identificationAttribs.m_namespace);
 
-    m_camPos << a_attribs->m_kinematicAttribs.m_location.getPosition();
-    m_camLookAt << a_attribs->m_lookAt;
-    m_camUp << a_attribs->m_up;
-
     setOrthographic(a_attribs->m_orthographic);
 
     if (a_attribs->m_stereo){
@@ -6481,11 +6477,53 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
+    m_camPos << a_attribs->m_kinematicAttribs.m_location.getPosition();
+    m_camLookAt << a_attribs->m_lookAt;
+    m_camUp << a_attribs->m_up;
     // position and orient the camera
     setView(m_camPos, m_camLookAt, m_camUp);
+    m_camera->setClippingPlanes(a_attribs->m_nearPlane, a_attribs->m_farPlane);
+
+    if (a_attribs->m_intrinsics.m_defined){
+        const int rows = 4, cols = 4;
+        for (int r = 0 ; r < rows ; r++){
+            for (int c = 0 ; c < cols ; c++){
+                getInternalCamera()->m_projectionMatrix(r, c) = 0.0;
+            }
+        }
+        computeProjectionFromIntrinsics(&a_attribs->m_intrinsics,
+                                        a_attribs->m_windowResolution.m_width,
+                                        a_attribs->m_windowResolution.m_height,
+                                        a_attribs->m_nearPlane,
+                                        a_attribs->m_farPlane);
+
+        cerr << "INFO! USING CAMERA INTRINSICS FOR " << getQualifiedName() << endl;
+        cerr << "\t Focal Length(x, y): (" << a_attribs->m_intrinsics.m_fx << ", " << a_attribs->m_intrinsics.m_fy << ")" << endl;
+        cerr << "\t Principal Offset (x, y): (" << a_attribs->m_intrinsics.m_cx << ", " << a_attribs->m_intrinsics.m_cy << ")" << endl;
+        cerr << "\t Shear: " << a_attribs->m_intrinsics.m_s << endl;
+    }
+    else if (a_attribs->m_useCustomProjectionMatrix){
+        getInternalCamera()->m_useCustomProjectionMatrix = true;
+        const int rows = 4, cols = 4;
+        for (int r = 0 ; r < rows ; r++){
+            for (int c = 0 ; c < cols ; c++){
+                getInternalCamera()->m_projectionMatrix(r, c) = a_attribs->m_projectionMatrix[r][c];
+            }
+        }
+
+        cerr << "INFO! USING CUSTOM PROJECT MATRIX FOR CAMERA: " << getQualifiedName() << endl;
+        for (int r = 0 ; r < rows ; r++){
+            cerr << "\t[";
+            for (int c = 0 ; c < cols ; c++){
+                cerr << a_attribs->m_projectionMatrix[r][c] << " ";
+            }
+            cerr << "\t]" << endl;
+        }
+
+    }
+
     m_initialTransform = getLocalTransform();
     // set the near and far clipping planes of the camera
-    m_camera->setClippingPlanes(a_attribs->m_nearPlane, a_attribs->m_farPlane);
 
     // set stereo mode
     m_camera->setStereoMode(m_stereoMode);
@@ -6593,15 +6631,18 @@ bool afCamera::createWindow()
 
     m_monitor = m_monitors[m_monitorNumber];
 
-    // compute desired size of window
     const GLFWvidmode* mode = glfwGetVideoMode(m_monitor);
-    int w = 0.8 * mode->width;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
+    // compute desired size of window
+    afCameraAttributes* camAttribs = (afCameraAttributes*)getAttributes();
+    if (camAttribs->m_windowResolution.m_defined){
+        m_width = camAttribs->m_windowResolution.m_width;
+        m_height = camAttribs->m_windowResolution.m_height;
 
-    m_width = w;
-    m_height = h;
+    }
+    else{
+        m_width = 0.8 * mode->width;
+        m_height = 0.5 * mode->height;
+    }
 
     if (getVisibleFlag() == false){
         cerr << "INFO! CAMERA \"" << m_name << "\" SET TO INVISIBLE. THEREFORE IT IS ONLY VIEWABLE"
@@ -6612,7 +6653,16 @@ bool afCamera::createWindow()
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     }
 
-    m_window = glfwCreateWindow(w, h, window_name.c_str(), nullptr, s_mainWindow);
+    int screenOriginX, screenOriginY;
+    glfwGetMonitorPos(m_monitor, &screenOriginX, &screenOriginY);
+
+    int windowOriginX = 0.5 * (mode->width - m_width);
+    int windowOriginY = 0.5 * (mode->height - m_height);
+
+    m_window = glfwCreateWindow(m_width, m_height, window_name.c_str(), nullptr, s_mainWindow);
+    // set position of window
+    glfwSetWindowPos(m_window, screenOriginX + windowOriginX, screenOriginY + windowOriginY);
+
     if (s_windowIdx == 0){
         s_mainWindow = m_window;
     }
@@ -6634,14 +6684,6 @@ bool afCamera::createWindow()
 
     // get width and height of window
     glfwGetWindowSize(m_window, &m_width, &m_height);
-
-
-    int xpos, ypos;
-    glfwGetMonitorPos(m_monitor, &xpos, &ypos);
-    x += xpos; y += ypos;
-
-    // set position of window
-    glfwSetWindowPos(m_window, x, y);
 
 //    glfwSetWindowMonitor(m_window, m_monitor, m_win_x, m_win_y, m_width, m_height, mode->refreshRate);
 
@@ -6701,6 +6743,32 @@ bool afCamera::assignWindowCallbacks(afCameraWindowCallBacks *a_callbacks)
         // set drag and drop callback
         glfwSetDropCallback(m_window, a_callbacks->dragDropCallback);
     }
+
+    return true;
+}
+
+bool afCamera::computeProjectionFromIntrinsics(const afCameraIntrinsics *a_attribs, double a_width, double a_height, double a_nearPlane, double a_farPlane){
+    double fx = a_attribs->m_fx;
+    double fy = a_attribs->m_fy;
+    double cx = a_attribs->m_cx;
+    double cy = a_attribs->m_cy;
+    double s = a_attribs->m_s;
+    double W = a_width;
+    double H = a_height;
+    double image_center_x = W/2.;
+    double image_center_y = H/2.;
+    double n = a_nearPlane;
+    double f = a_farPlane;
+
+    getInternalCamera()->m_useCustomProjectionMatrix = true;
+    getInternalCamera()->m_projectionMatrix(0,0) = (2 * fx) / W;
+    getInternalCamera()->m_projectionMatrix(0,1) = (2 * s) / W;
+    getInternalCamera()->m_projectionMatrix(0,2) = (W - 2 * cx) / W;
+    getInternalCamera()->m_projectionMatrix(1,1) = (2 * fy) / H;
+    getInternalCamera()->m_projectionMatrix(1,2) = (-H + 2 * cy) / H;
+    getInternalCamera()->m_projectionMatrix(2,2) = (-f - n) / (f - n);
+    getInternalCamera()->m_projectionMatrix(2,3) = (-2 * f * n) / (f - n);
+    getInternalCamera()->m_projectionMatrix(3,2) = -1.0;
 
     return true;
 }
@@ -6893,6 +6961,11 @@ void afCamera::render(afRenderOptions &options)
         // get width and height of window
         glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
+        afCameraIntrinsics intrinsics = (((afCameraAttributes*)getAttributes())->m_intrinsics);
+        if (intrinsics.m_defined){
+            computeProjectionFromIntrinsics(&intrinsics, m_width, m_height, getInternalCamera()->getNearClippingPlane(), getInternalCamera()->getFarClippingPlane());
+        }
+
         // Update the Labels in a separate sub-routine
         if (options.m_updateLabels && !m_publishDepth && !m_publishImage){
             updateLabels(options);
@@ -6959,6 +7032,11 @@ void afCamera::renderSkyBox(){
 ///
 void afCamera::renderFrameBuffer(){
     if (m_publishImage || m_publishDepth){
+
+        afCameraIntrinsics intrinsics = (((afCameraAttributes*)getAttributes())->m_intrinsics);
+        if (intrinsics.m_defined){
+            computeProjectionFromIntrinsics(&intrinsics, m_frameBuffer->getWidth(), m_frameBuffer->getHeight(), getInternalCamera()->getNearClippingPlane(), getInternalCamera()->getFarClippingPlane());
+        }
 
         activatePreProcessingShaders();
 

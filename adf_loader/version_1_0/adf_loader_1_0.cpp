@@ -1250,6 +1250,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node upNode = node["up"];
     YAML::Node clippingPlaneNode = node["clipping plane"];
     YAML::Node fieldViewAngleNode = node["field view angle"];
+    YAML::Node windowResolutionNode = node["window resolution"];
     YAML::Node orthoWidthNode = node["orthographic view width"];
     YAML::Node stereoNode = node["stereo"];
     YAML::Node controllingDevicesDataNode = node["controlling devices"];
@@ -1266,6 +1267,8 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     YAML::Node depthShaderNode = node["depth compute shaders"];
     YAML::Node multiPassNode = node["multipass"];
     YAML::Node mouseControlMultiplierNode = node["mouse control multipliers"];
+    YAML::Node cameraIntrinsicsNode = node["camera intrinsics"];
+    YAML::Node projectionMatrixNode = node["projection matrix"];
 
     bool valid = true;
 
@@ -1329,9 +1332,20 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
         attribs->m_publishImageInterval = publishImageIntervalNode.as<uint>();
     }
 
+    if (windowResolutionNode.IsDefined()){
+        attribs->m_windowResolution.m_width = windowResolutionNode["width"].as<double>();
+        attribs->m_windowResolution.m_height = windowResolutionNode["height"].as<double>();
+        attribs->m_windowResolution.m_defined = true;
+    }
+
     if (publishImageResolutionNode.IsDefined()){
-        attribs->m_publishImageResolution.m_width = publishImageResolutionNode["width"].as<double>();
-        attribs->m_publishImageResolution.m_height = publishImageResolutionNode["height"].as<double>();
+        attribs->m_publishImageResolution.m_width = publishImageResolutionNode["width"].as<unsigned int>();
+        attribs->m_publishImageResolution.m_height = publishImageResolutionNode["height"].as<unsigned int>();
+        attribs->m_publishImageResolution.m_defined = true;
+    }
+    else if (attribs->m_windowResolution.m_defined){
+        cerr << "INFO! FOR CAMERA " << attribs->m_identificationAttribs.m_name << " PUBLISH IMAGE RESOLUTION NOT SPECIFIED THEREFORE USING DEFINED WINDOW RESOLUTION.";
+        attribs->m_publishImageResolution = attribs->m_windowResolution;
     }
 
     if (publishDepthNode.IsDefined()){
@@ -1345,6 +1359,7 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
     if (publishDepthResolutionNode.IsDefined()){
         attribs->m_publishDephtResolution.m_width = publishDepthResolutionNode["width"].as<double>();
         attribs->m_publishDephtResolution.m_height = publishDepthResolutionNode["height"].as<double>();
+        attribs->m_publishDephtResolution.m_defined = true;
     }
 
     if (publishDepthNoiseNode.IsDefined()){
@@ -1389,6 +1404,49 @@ bool ADFLoader_1_0::loadCameraAttribs(YAML::Node *a_node, afCameraAttributes *at
         }
         if (mouseControlMultiplierNode["arcball"].IsDefined()){
             attribs->m_mouseControlScales.m_arcball *= mouseControlMultiplierNode["arcball"].as<double>();
+        }
+    }
+
+    if (cameraIntrinsicsNode.IsDefined()){
+
+        bool defined = false;
+        if (cameraIntrinsicsNode["fx"].IsDefined()){ // Focal Length X
+            attribs->m_intrinsics.m_fx = cameraIntrinsicsNode["fx"].as<double>();
+            defined |= true;
+        }
+        if (cameraIntrinsicsNode["fy"].IsDefined()){ // Focal Length Y
+            attribs->m_intrinsics.m_fy = cameraIntrinsicsNode["fy"].as<double>();
+            defined |= true;
+        }
+        if (cameraIntrinsicsNode["f"].IsDefined()){ // Focal Length
+            attribs->m_intrinsics.m_fx = cameraIntrinsicsNode["f"].as<double>();
+            attribs->m_intrinsics.m_fy = cameraIntrinsicsNode["f"].as<double>();
+            defined |= true;
+        }
+        if (cameraIntrinsicsNode["cx"].IsDefined()){ // Principal Offset X
+            attribs->m_intrinsics.m_cx = cameraIntrinsicsNode["cx"].as<double>();
+            defined |= true;
+        }
+        if (cameraIntrinsicsNode["cy"].IsDefined()){ // Principal Offset Y
+            attribs->m_intrinsics.m_cy = cameraIntrinsicsNode["cy"].as<double>();
+            defined |= true;
+        }
+        if (cameraIntrinsicsNode["s"].IsDefined()){ // Shear
+            attribs->m_intrinsics.m_s = cameraIntrinsicsNode["s"].as<double>();
+            defined |= true;
+        }
+        attribs->m_intrinsics.m_defined = defined;
+    }
+
+    if (projectionMatrixNode.IsDefined()){
+        try{
+            attribs->m_projectionMatrix = projectionMatrixNode.as<vector<vector<double>>>();
+            attribs->m_useCustomProjectionMatrix = true;
+            cerr << "INFO! CUSTOM PROJECTION MATRIX DEFINED FOR CAMERA " << attribs->m_identificationAttribs.m_name << endl;
+        }
+        catch(YAML::Exception& e){
+            cerr << "ERROR! FAILED TO READ CUSTOM PROJECTION MATRIX FOR CAMERA " << attribs->m_identificationAttribs.m_name << endl;
+            cerr << "EXCEPTION! " << e.what() << endl;
         }
     }
 
