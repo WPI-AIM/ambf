@@ -1500,6 +1500,81 @@ private:
     afSpecificationData m_specificationData;
 };
 
+struct afExternalScopeObjectPluginAttribs: public afFileObjectAttributes{
+    vector<afType> m_objectTypes; // Object types to add this plugin to
+    vector<string> m_names; // Names as regex of objects to add this plugin to
+    afPluginAttributes m_pluginAttribs;
+
+    virtual bool resolveRelativePathAttribs(){
+        afPath parentPath = m_filePath.parent_path();
+        m_pluginAttribs.resolveRelativePathAttribs(parentPath);
+        return true;
+    }
+};
+
+
+struct afExternalScopeModelPluginAttribs: public afFileObjectAttributes{
+    vector<string> m_names; // Names as regex of objects to add this plugin to
+    afPluginAttributes m_pluginAttribs;
+
+    virtual bool resolveRelativePathAttribs(){
+        afPath parentPath = m_filePath.parent_path();
+        m_pluginAttribs.resolveRelativePathAttribs(parentPath);
+        return true;
+    }
+};
+
+
+struct afExternalScopeWorldPluginAttribs: public afFileObjectAttributes{
+    afPluginAttributes m_pluginAttribs;
+
+    virtual bool resolveRelativePathAttribs(){
+        afPath parentPath = m_filePath.parent_path();
+        m_pluginAttribs.resolveRelativePathAttribs(parentPath);
+        return true;
+    }
+};
+
+
+struct afExternalScopeSimulatorPluginAttribs: public afFileObjectAttributes{
+    afPluginAttributes m_pluginAttribs;
+
+    virtual bool resolveRelativePathAttribs(){
+        afPath parentPath = m_filePath.parent_path();
+        m_pluginAttribs.resolveRelativePathAttribs(parentPath);
+        return true;
+    }
+};
+
+struct afExternalScopePluginsAttribs: public afFileObjectAttributes{
+    vector<afExternalScopeObjectPluginAttribs> m_objectPluginsAttribs;
+    vector<afExternalScopeModelPluginAttribs> m_modelPluginsAttribs;
+    vector<afExternalScopeWorldPluginAttribs> m_worldPluginsAttribs;
+    vector<afExternalScopeSimulatorPluginAttribs> m_simulatorPluginsAttribs;
+
+    virtual bool resolveRelativePathAttribs(){
+        afPath a_parentPath = m_filePath.parent_path();
+
+        for (auto p : m_objectPluginsAttribs){
+            p.m_pluginAttribs.resolveRelativePathAttribs(a_parentPath);
+        }
+
+        for (auto p : m_modelPluginsAttribs){
+            p.m_pluginAttribs.resolveRelativePathAttribs(a_parentPath);
+        }
+
+        for (auto p : m_worldPluginsAttribs){
+            p.m_pluginAttribs.resolveRelativePathAttribs(a_parentPath);
+        }
+
+        for (auto p : m_simulatorPluginsAttribs){
+            p.m_pluginAttribs.resolveRelativePathAttribs(a_parentPath);
+        }
+
+        return true;
+    }
+};
+
 }
 
 

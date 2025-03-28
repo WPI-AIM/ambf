@@ -54,12 +54,12 @@
 
 //------------------------------------------------------------------------------
 
-#include "chai3d.h"
+#include <chai3d.h>
 
 //------------------------------------------------------------------------------
 
-#include "btBulletDynamicsCommon.h"
-#include "BulletSoftBody/btSoftBody.h"
+#include <btBulletDynamicsCommon.h>
+#include <BulletSoftBody/btSoftBody.h>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
@@ -545,7 +545,7 @@ public:
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
-    virtual bool loadPlugins(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
 
     // The update method called at every simulation iteration.
     virtual void update(double dt);
@@ -2206,7 +2206,31 @@ struct afRenderOptions{
     string m_IIDModeStr = "";
     string m_IIDBtnActionStr = "";
 };
-//-----------------------------------------------------------------------------
+
+class afExternalScopePluginsLoader{
+public:
+
+public:
+    bool arePluginConditionsSatified(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs* a_attribs);
+
+    bool arePluginConditionsSatified(afModelPtr a_model, afExternalScopeModelPluginAttribs* a_attribs);
+
+    bool addExternaScopelPlugin(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs* a_attribs);
+
+    bool addExternaScopelPlugin(afModelPtr a_model, afExternalScopeModelPluginAttribs* a_attribs);
+
+public:
+
+    bool addExternalScopePluginAttrib(afExternalScopeObjectPluginAttribs a_attribs);
+
+    bool addExternalScopePluginAttrib(afExternalScopeModelPluginAttribs a_attribs);
+
+protected:
+
+    vector<afExternalScopeObjectPluginAttribs> m_externalScopeObjectPluginsAttribs;
+
+    vector<afExternalScopeModelPluginAttribs> m_externalScopeModelPluginsAttribs;
+};
 
 ///
 /// \brief The afWorld class
@@ -2223,7 +2247,11 @@ public:
 
     virtual bool createFromAttribs(afWorldAttributes* a_attribs);
 
-    virtual bool loadPlugins(afWorldPtr worldPtr, afWorldAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+
+    virtual afWorldAttribsPtr getAttributes(){
+        return m_attributes;
+    }
 
     virtual void render(afRenderOptions &options);
 
@@ -2345,6 +2373,10 @@ public:
     void setResetBodiesFlag(){m_resetBodiesFlag = true;}
 
     void clearResetBodiesFlag(){m_resetBodiesFlag = false;}
+
+    virtual void storeAttributes(afWorldAttribsPtr a_attribs){
+        m_attributes = a_attribs;
+    }
 
 public:
 
@@ -2488,6 +2520,8 @@ private:
     bool m_resetFlag = false;
 
     bool m_resetBodiesFlag = false;
+
+    afWorldAttribsPtr m_attributes;
 };
 
 
@@ -2517,7 +2551,11 @@ public:
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
 
-    virtual bool loadPlugins(afModelPtr modePtr, afModelAttribsPtr attribs, vector<afPluginAttributes>* pluginAttribs);
+    virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
+
+    virtual afModelAttribsPtr getAttributes(){
+        return m_attributes;
+    }
 
     virtual void update(double dt);
 
@@ -2557,6 +2595,10 @@ public:
     // Plugin Manager
     afModelPluginManager m_pluginManager;
 
+    virtual void storeAttributes(const afModelAttribsPtr a_attribs){
+        m_attributes = a_attribs;
+    }
+
 protected:
 
     cMaterial mat;
@@ -2566,6 +2608,9 @@ protected:
 
 protected:
     afWorldPtr m_afWorld;
+
+private:
+    afModelAttribsPtr m_attributes;
 };
 
 

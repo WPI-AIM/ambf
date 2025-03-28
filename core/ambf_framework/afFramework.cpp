@@ -922,9 +922,9 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 /// \param pluginAttribs
 /// \return
 ///
-bool afBaseObject::loadPlugins(afBaseObjectPtr objPtr, afBaseObjectAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs){
+bool afBaseObject::loadPlugins(vector<afPluginAttributes> *pluginAttribs){
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(objPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -1653,7 +1653,7 @@ bool afConstraintActuator::createFromAttribs(afConstraintActuatorAttributes *a_a
     m_maxImpulse = a_attribs->m_maxImpulse;
     m_tau = a_attribs->m_tau;
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
@@ -2567,7 +2567,7 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getRigidBodyMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     //loadCommunicationPlugin(this, a_attribs);
 
@@ -2994,7 +2994,7 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
 
     setPassive(true);
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
@@ -3530,7 +3530,7 @@ bool afJoint::createFromAttribs(afJointAttributes *a_attribs)
         }
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
 //    loadCommunicationPlugin(this, a_attribs);
 
@@ -3935,7 +3935,7 @@ bool afRayTracerSensor::createFromAttribs(afRayTracerSensorAttributes *a_attribs
         break;
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
@@ -5142,6 +5142,45 @@ void afModelManager::addChildsSceneObjectsToWorld(afBaseObjectPtr a_object)
 
 
 
+bool afExternalScopePluginsLoader::arePluginConditionsSatified(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_attribs){
+    bool res = true;
+    return res;
+}
+
+bool afExternalScopePluginsLoader::arePluginConditionsSatified(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_attribs){
+    bool res = true;
+    return res;
+}
+
+bool afExternalScopePluginsLoader::addExternaScopelPlugin(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_pluginAttribs){
+    bool res = true;
+    if (arePluginConditionsSatified(a_object, a_pluginAttribs)){
+        // a_object->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
+    }
+    return res;
+}
+
+bool afExternalScopePluginsLoader::addExternaScopelPlugin(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_pluginAttribs){
+    bool res = true;
+    if (arePluginConditionsSatified(a_model, a_pluginAttribs)){
+        // a_model->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
+    }
+    return res;
+}
+
+bool afExternalScopePluginsLoader::addExternalScopePluginAttrib(afExternalScopeObjectPluginAttribs a_attribs){
+    bool res = true;
+    m_externalScopeObjectPluginsAttribs.push_back(a_attribs);
+    return res;
+}
+
+bool afExternalScopePluginsLoader::addExternalScopePluginAttrib(afExternalScopeModelPluginAttribs a_attribs){
+    bool res = true;
+    m_externalScopeModelPluginsAttribs.push_back(a_attribs);
+    return res;
+}
+
+
 ///
 /// \brief afWorld::afWorld
 /// \param a_global_namespace
@@ -5662,7 +5701,9 @@ bool afWorld::createDefaultWorld(){
 
 
 
-bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
+bool afWorld::createFromAttribs(afWorldAttribsPtr a_attribs){
+
+    storeAttributes(a_attribs);
 
     a_attribs->resolveRelativeNamespace();
     a_attribs->resolveRelativePathAttribs();
@@ -5739,17 +5780,17 @@ bool afWorld::createFromAttribs(afWorldAttributes* a_attribs){
 
     addModel(envModel);
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
     return true;
 }
 
-bool afWorld::loadPlugins(afWorldPtr worldPtr, afWorldAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs)
+bool afWorld::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(worldPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -5960,7 +6001,6 @@ bool afWorld::isHeadless()
 {
     return m_headless;
 }
-
 
 ///
 /// \brief afWorld::loadShaderProgram
@@ -6481,7 +6521,7 @@ bool afCamera::createFromAttribs(afCameraAttributes *a_attribs)
     setGlobalRemapIdx(remap_idx);
 
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     if (m_publishImage || m_publishDepth){
 
@@ -7255,7 +7295,7 @@ bool afLight::createFromAttribs(afLightAttributes *a_attribs)
     string remap_idx = afUtils::getNonCollidingIdx(getQualifiedIdentifier(), m_afWorld->getLightMap());
     setGlobalRemapIdx(remap_idx);
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
@@ -7372,8 +7412,10 @@ void afModel::remapName(string &name, string remap_idx_str){
 /// \param a_attribs
 /// \return
 ///
-bool afModel::createFromAttribs(afModelAttributes *a_attribs)
+bool afModel::createFromAttribs(afModelAttribsPtr a_attribs)
 {
+    storeAttributes(a_attribs);
+
     a_attribs->resolveRelativeNamespace();
     a_attribs->resolveRelativePathAttribs();
 
@@ -7512,7 +7554,7 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
         }
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // This flag would ignore collision for all the multibodies in the scene
 
@@ -7531,10 +7573,10 @@ bool afModel::createFromAttribs(afModelAttributes *a_attribs)
 /// \param pluginAttribs
 /// \return
 ///
-bool afModel::loadPlugins(afModelPtr modelPtr, afModelAttribsPtr attribs, vector<afPluginAttributes> *pluginAttribs)
+bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(modelPtr, attribs, (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
     return true;
@@ -8203,7 +8245,7 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         valid = true;
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 
@@ -8360,7 +8402,7 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
         m_voxelObject->setMaterial(mat);
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     return true;
 }
@@ -8737,7 +8779,7 @@ bool afContactSensor::createFromAttribs(afContactSensorAttributes *a_attribs){
         cerr << "WARNING! For Sensor " << getQualifiedName() << ", contact sensor threshold set to < 0.0. Contact test may be unseccessful " << endl;
     }
 
-    loadPlugins(this, a_attribs, &a_attribs->m_pluginAttribs);
+    loadPlugins(&a_attribs->m_pluginAttribs);
 
     // loadCommunicationPlugin(this, a_attribs);
 

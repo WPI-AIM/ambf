@@ -67,7 +67,7 @@ int afWorldPluginsLoader::init(const afWorldPtr a_afWorld, const afWorldAttribsP
     commPluginAttribs.m_filename = "libobject_comm_plugin.so";
     m_objectPluginsAttribs.push_back(commPluginAttribs);
 
-    m_worldPtr->loadPlugins(m_worldPtr, a_worldAttribs, &m_worldPluginsAttribs);
+    m_worldPtr->loadPlugins(&m_worldPluginsAttribs);
 
     return 1;
 }
@@ -91,7 +91,7 @@ bool afWorldPluginsLoader::close()
 void afWorldPluginsLoader::onObjectAdd(const afBaseObjectPtr a_objectPtr){
     cerr << "INFO! WORLD PLUGIN! OBJECT ADDED:\n " << a_objectPtr->getName() << endl;
     if (!a_objectPtr->getAttributes()->m_communicationAttribs.m_passive) {
-        a_objectPtr->loadPlugins(a_objectPtr, a_objectPtr->getAttributes(), &m_objectPluginsAttribs);
+        a_objectPtr->loadPlugins(&m_objectPluginsAttribs);
     }
     
     if (a_objectPtr->getType() == afType::CAMERA){
@@ -108,7 +108,7 @@ void afWorldPluginsLoader::onObjectAdd(const afBaseObjectPtr a_objectPtr){
         if (camAttribs->m_publishImage) morePlugins.push_back(videoPlugin);
         if (camAttribs->m_publishDepth) morePlugins.push_back(depthPlugin);
 
-        a_objectPtr->loadPlugins(a_objectPtr, a_objectPtr->getAttributes(), &morePlugins);
+        a_objectPtr->loadPlugins(&morePlugins);
     }
 }
 
