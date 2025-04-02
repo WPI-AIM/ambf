@@ -5158,17 +5158,17 @@ bool afExternalScopePluginsLoader::arePluginConditionsSatisfied(afModelPtr a_mod
 }
 
 bool afExternalScopePluginsLoader::addExternaScopelPlugin(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_pluginAttribs){
-    bool res = true;
+    bool res = false;
     if (arePluginConditionsSatisfied(a_object, a_pluginAttribs)){
-        // a_object->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
+        res = a_object->loadPlugin(&a_pluginAttribs->m_pluginAttribs);
     }
     return res;
 }
 
 bool afExternalScopePluginsLoader::addExternaScopelPlugin(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_pluginAttribs){
-    bool res = true;
+    bool res = false;
     if (arePluginConditionsSatisfied(a_model, a_pluginAttribs)){
-        // a_model->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
+        res = a_model->loadPlugin(&a_pluginAttribs->m_pluginAttribs);
     }
     return res;
 }
