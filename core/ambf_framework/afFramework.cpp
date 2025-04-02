@@ -916,6 +916,10 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
     return false;
 }
 
+bool afBaseObject::loadPlugin(afPluginAttributes *pluginAttribs){
+    return m_pluginManager.loadPlugin(this, getAttributes(), pluginAttribs->m_filename, pluginAttribs->m_name, pluginAttribs->m_path.c_str());
+}
+
 
 ///
 /// \brief afBaseObject::
@@ -923,11 +927,12 @@ bool afBaseObject::createFromAttribs(afBaseObjectAttributes* a_attribs){
 /// \return
 ///
 bool afBaseObject::loadPlugins(vector<afPluginAttributes> *pluginAttribs){
+    bool res = false;
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        res |= m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
-    return true;
+    return res;
 }
 
 void afBaseObject::update(double dt){
@@ -5142,19 +5147,19 @@ void afModelManager::addChildsSceneObjectsToWorld(afBaseObjectPtr a_object)
 
 
 
-bool afExternalScopePluginsLoader::arePluginConditionsSatified(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_attribs){
+bool afExternalScopePluginsLoader::arePluginConditionsSatisfied(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_attribs){
     bool res = true;
     return res;
 }
 
-bool afExternalScopePluginsLoader::arePluginConditionsSatified(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_attribs){
+bool afExternalScopePluginsLoader::arePluginConditionsSatisfied(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_attribs){
     bool res = true;
     return res;
 }
 
 bool afExternalScopePluginsLoader::addExternaScopelPlugin(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs *a_pluginAttribs){
     bool res = true;
-    if (arePluginConditionsSatified(a_object, a_pluginAttribs)){
+    if (arePluginConditionsSatisfied(a_object, a_pluginAttribs)){
         // a_object->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
     }
     return res;
@@ -5162,7 +5167,7 @@ bool afExternalScopePluginsLoader::addExternaScopelPlugin(afBaseObjectPtr a_obje
 
 bool afExternalScopePluginsLoader::addExternaScopelPlugin(afModelPtr a_model, afExternalScopeModelPluginAttribs *a_pluginAttribs){
     bool res = true;
-    if (arePluginConditionsSatified(a_model, a_pluginAttribs)){
+    if (arePluginConditionsSatisfied(a_model, a_pluginAttribs)){
         // a_model->loadPlugins(&a_pluginAttribs->m_pluginAttribs);
     }
     return res;
@@ -5787,13 +5792,18 @@ bool afWorld::createFromAttribs(afWorldAttribsPtr a_attribs){
     return true;
 }
 
+bool afWorld::loadPlugin(afPluginAttributes *pluginAttribs){
+    return m_pluginManager.loadPlugin(this, getAttributes(), pluginAttribs->m_filename, pluginAttribs->m_name, pluginAttribs->m_path.c_str());
+}
+
 bool afWorld::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
+    bool res = false;
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        res |= m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
-    return true;
+    return res;
 }
 
 ///
@@ -7567,6 +7577,10 @@ bool afModel::createFromAttribs(afModelAttribsPtr a_attribs)
     return true;
 }
 
+bool afModel::loadPlugin(afPluginAttributes *pluginAttribs){
+    return m_pluginManager.loadPlugin(this, getAttributes(), pluginAttribs->m_filename, pluginAttribs->m_name, pluginAttribs->m_path.c_str());
+}
+
 
 ///
 /// \brief afModel::
@@ -7575,11 +7589,12 @@ bool afModel::createFromAttribs(afModelAttribsPtr a_attribs)
 ///
 bool afModel::loadPlugins(vector<afPluginAttributes> *pluginAttribs)
 {
+    bool res = false;
     for (int i = 0 ; i < pluginAttribs->size(); i++){
-        m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
+        res |= m_pluginManager.loadPlugin(this, getAttributes(), (*pluginAttribs)[i].m_filename, (*pluginAttribs)[i].m_name, (*pluginAttribs)[i].m_path.c_str());
     }
 
-    return true;
+    return res;
 }
 
 

@@ -545,6 +545,8 @@ public:
 
     virtual bool createFromAttribs(afBaseObjectAttributes* a_attribs);
 
+    virtual bool loadPlugin(afPluginAttributes* pluginAttribs);
+
     virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
 
     // The update method called at every simulation iteration.
@@ -2211,9 +2213,9 @@ class afExternalScopePluginsLoader{
 public:
 
 public:
-    bool arePluginConditionsSatified(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs* a_attribs);
+    bool arePluginConditionsSatisfied(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs* a_attribs);
 
-    bool arePluginConditionsSatified(afModelPtr a_model, afExternalScopeModelPluginAttribs* a_attribs);
+    bool arePluginConditionsSatisfied(afModelPtr a_model, afExternalScopeModelPluginAttribs* a_attribs);
 
     bool addExternaScopelPlugin(afBaseObjectPtr a_object, afExternalScopeObjectPluginAttribs* a_attribs);
 
@@ -2246,6 +2248,8 @@ public:
     virtual ~afWorld();
 
     virtual bool createFromAttribs(afWorldAttributes* a_attribs);
+
+    virtual bool loadPlugin(afPluginAttributes* pluginAttribs);
 
     virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
 
@@ -2550,6 +2554,8 @@ public:
     virtual ~afModel();
 
     virtual bool createFromAttribs(afModelAttributes* a_attribs);
+
+    virtual bool loadPlugin(afPluginAttributes* pluginAttribs);
 
     virtual bool loadPlugins(vector<afPluginAttributes>* pluginAttribs);
 
