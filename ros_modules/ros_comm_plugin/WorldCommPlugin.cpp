@@ -87,7 +87,7 @@ void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
                 commPluginAttribs.m_name = "object_comm";
                 commPluginAttribs.m_filename = "libobject_comm_plugin.so";
                 objectPluginsAttribs.push_back(commPluginAttribs);
-                afPC->loadPlugins(afPC, afPC->getAttributes(), &objectPluginsAttribs);
+                afPC->loadPlugins(&objectPluginsAttribs);
                 // std::cerr << __FILE__ << " " << __LINE__ << "Anton: commented out loadCommunicationPlugin" << std::endl;
                 worldPtr->m_pcMap[topic_name] = afPC;
             }
