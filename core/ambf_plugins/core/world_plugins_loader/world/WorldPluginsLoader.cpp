@@ -45,6 +45,16 @@
 int afWorldPluginsLoader::init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){
     m_worldPtr = a_afWorld;
 
+    afPluginAttributes commPluginAttribs;
+
+    commPluginAttribs.m_name = "world_comm";
+    commPluginAttribs.m_filename = "libworld_comm_plugin.so";
+    m_worldPluginsAttribs.push_back(commPluginAttribs);
+
+    commPluginAttribs.m_name = "object_comm";
+    commPluginAttribs.m_filename = "libobject_comm_plugin.so";
+    m_objectPluginsAttribs.push_back(commPluginAttribs);
+
     for (auto obj : m_worldPtr->getCameras()) {
         onObjectAdd(obj);
     }
@@ -56,16 +66,6 @@ int afWorldPluginsLoader::init(const afWorldPtr a_afWorld, const afWorldAttribsP
     for (auto obj : m_worldPtr->getRigidBodies()) {
         onObjectAdd(obj);
     }
-
-    afPluginAttributes commPluginAttribs;
-
-    commPluginAttribs.m_name = "world_comm";
-    commPluginAttribs.m_filename = "libworld_comm_plugin.so";
-    m_worldPluginsAttribs.push_back(commPluginAttribs);
-
-    commPluginAttribs.m_name = "object_comm";
-    commPluginAttribs.m_filename = "libobject_comm_plugin.so";
-    m_objectPluginsAttribs.push_back(commPluginAttribs);
 
     m_worldPtr->loadPlugins(&m_worldPluginsAttribs);
 
