@@ -120,13 +120,14 @@ public:
         return result;
     }
 
-    static void destroyNode(const std::string & node_name) {
+    static bool destroyNode(const std::string & node_name) {
         s_mutex.lock();
         s_initialized = false;
+        bool success = false;
 #if AMBF_ROS1
         if (s_registeredInstances == 0) {
           std::cerr << "WARNING: TRYING TO DESTROY MORE COMM INSTANCES THAN REGISTERED FOR: " << node_name << std::endl;
-          return;
+          return false;
         }
         s_registeredInstances--;
         std::cerr << "INFO! TOTAL ACTIVE COMM INSTANCES AFTER destroyNode for "
@@ -136,6 +137,7 @@ public:
             ambf_ral::shutdown();
             delete s_ral;
         }
+        success = true;
 #elif AMBF_ROS2
         std::string _real_name = node_name;
         ambf_ral::clean_nodename(_real_name);
@@ -146,6 +148,7 @@ public:
                       << _real_name << " (based on user provided name " << node_name << ")" << std::endl;
             delete(found->second);
             s_rals.erase(found);
+            success = true;
         } else {
             std::cerr << "INFO! destroyNode couldn't find ROS 2 node for: "
                       << _real_name << " (based on user provided name " << node_name << ")" << std::endl;
@@ -155,6 +158,7 @@ public:
         }
 #endif
         s_mutex.unlock();
+        return success;
     }
 
     static bool isNodeActive(void) {
@@ -306,8 +310,8 @@ template<class T_state, class T_cmd>
 RosComBase<T_state, T_cmd>::~RosComBase(){
     m_thread.join();
     cleanUp();
-    afROSNode::destroyNode(m_name);
-    std::cerr << "INFO! Thread ShutDown: " << m_name << std::endl;
+    afROSNode::destroyNode(m_namespace + m_name);
+    std::cerr << "INFO! Thread ShutDown: " << m_namespace + m_name << std::endl;
 }
 
 #endif
