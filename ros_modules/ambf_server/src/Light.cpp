@@ -84,6 +84,12 @@ void Light::set_params_on_server(){
     ambf_ral::set_parameter(m_nodePtr,
                             m_base_prefix + light_param_enum_to_str(LightParamsEnum::type),
                             light_type_enum_to_str(m_light_type));
+
+    for (auto const& mIt : m_attenuation){
+        ambf_ral::set_parameter(m_nodePtr,
+                                m_base_prefix + light_param_enum_to_str(LightParamsEnum::attenuation) + "/" + mIt.first, mIt.second);
+    }
+
 }
 
 void Light::update_params_from_server(){
@@ -101,6 +107,16 @@ void Light::update_params_from_server(){
     ambf_ral::get_parameter(m_nodePtr,
                             m_base_prefix + light_param_enum_to_str(LightParamsEnum::type),
                             lt);
+    for (auto & mIt : m_attenuation){
+        double val;
+        ambf_ral::get_parameter(m_nodePtr,
+                                m_base_prefix + light_param_enum_to_str(LightParamsEnum::attenuation) + "/" + mIt.first, val);
+        if (val != mIt.second){
+            // std::cerr << "INFO! PARAM CHANGED " << mIt.first << " OLD: " << mIt.second << " NEW: " << val << std::endl;
+            m_paramsChanged = true;
+            mIt.second = val;
+        }
+    }
 
     if (lt.compare(light_type_enum_to_str(LightType::SPOT)) == 0){
         lt_enum = LightType::SPOT;
@@ -129,18 +145,6 @@ void Light::update_params_from_server(){
         std::cerr << "INFO! PARAMS CHANGED FOR \"" << m_name << "\"\n";
     }
 
-    std::map<std::string, double>::iterator it;
-    for (it = m_attenuation.begin() ; it != m_attenuation.end() ; ++it){
-        try{
-            if (att[it->first] != it->second){
-                m_paramsChanged = true;
-                it->second = att[it->first];
-            }
-        }
-        catch (...){
-            // Do nothing
-        }
-    }
 
     // Finally update the local copies of the params
     m_cuttoff_angle = ca;

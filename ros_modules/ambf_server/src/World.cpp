@@ -63,7 +63,7 @@ WorldParams::WorldParams(){
 
 PointCloudHandler::PointCloudHandler(const std::string & a_topicName)
 {
-    m_node = afROSNode::getNodeAndRegister(a_topicName);;
+    m_node = afROSNode::getNodeAndRegister(a_topicName);
     m_topicName = a_topicName;
     init();
 }
