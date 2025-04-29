@@ -1955,7 +1955,7 @@ afInertialObject::~afInertialObject()
 ///
 void afInertialObject::estimateInertia()
 {
-    if (m_bulletCollisionShape)
+    if (m_bulletCollisionShape && m_bulletCollisionShape->getShapeType() != EMPTY_SHAPE_PROXYTYPE)
     {
         // compute inertia
         m_bulletCollisionShape->calculateLocalInertia(m_mass, m_inertia);
