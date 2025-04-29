@@ -200,7 +200,7 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     case afType::POINT_CLOUD:
     {
         afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
-        m_pointCloudCommPtr.reset(new ambf_comm::PointCloudHandler(pcPtr->m_topicName));
+        m_pointCloudCommPtr.reset(new ambf_comm::PointCloud(pcPtr->m_topicName));
         success = true;
     }
         break;

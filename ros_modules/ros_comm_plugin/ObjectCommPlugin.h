@@ -133,7 +133,7 @@ public:
     std::shared_ptr<ambf_comm::Sensor> m_sensorCommPtr;
     std::shared_ptr<ambf_comm::ContactSensor> m_contactSensorCommPtr;
     std::shared_ptr<ambf_comm::Vehicle> m_vehicleCommPtr;
-    std::shared_ptr<ambf_comm::PointCloudHandler> m_pointCloudCommPtr;
+    std::shared_ptr<ambf_comm::PointCloud> m_pointCloudCommPtr;
 protected:
     afRigidBodyState m_rbState;
 

@@ -49,10 +49,10 @@
 
 namespace ambf_comm{
 
-class PointCloudHandler;
-typedef std::shared_ptr<PointCloudHandler> PointCloudHandlerPtr;
-typedef std::map<std::string, PointCloudHandlerPtr> PointCloudHandlerMap;
-typedef std::vector<PointCloudHandlerPtr> PointCloudHandlerVec;
+class PointCloud;
+typedef std::shared_ptr<PointCloud> PointCloudPtr;
+typedef std::map<std::string, PointCloudPtr> PointCloudMap;
+typedef std::vector<PointCloudPtr> PointCloudVec;
 
 enum class WorldParamsEnum{
     point_cloud_topics
@@ -93,10 +93,10 @@ protected:
     std::vector<std::string> m_defunct_topic_names;
 };
 
-class PointCloudHandler{
+class PointCloud{
 public:
-  PointCloudHandler(const std::string & a_topicName);
-    ~PointCloudHandler(){
+  PointCloud(const std::string & a_topicName);
+    ~PointCloud(){
         remove();
     }
 
