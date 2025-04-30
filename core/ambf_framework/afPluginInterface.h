@@ -124,7 +124,7 @@ public: static TPtr Create(const std::string &_filename,
         bool foundUsingPath = false;
         string fullname, filename(_filename);
         list<string>::iterator iter;
-        list<string> pluginPaths = afSystemPaths::getPluginPath();
+        list<string> pluginPaths = afSystemPaths::getPluginsPath();
         if (_path.empty() == false){
             pluginPaths.push_front(_path);
         }

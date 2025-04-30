@@ -113,7 +113,7 @@ set(COMMON_DEFINITIONS "")
 
 # SET PATHS
 add_definitions(-DAMBF_ROOT_PATH="${PROJECT_SOURCE_DIR}")
-add_definitions(-DAMBF_PLUGIN_PATH="${PROJECT_SOURCE_DIR}/build/ambf_plugins")
+add_definitions(-DAMBF_PLUGINS_PATH="${PROJECT_SOURCE_DIR}/build/ambf_plugins")
 
 # find dependencies
 find_package(OpenGL REQUIRED)

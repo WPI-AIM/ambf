@@ -71,7 +71,7 @@ public:
 
     static const list<string> splitString(string &a_str, const string &delimiter);
 
-    static const list<string> & getPluginPath();
+    static const list<string> & getPluginsPath();
 
     static string & getRootPath();
 

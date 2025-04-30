@@ -70,15 +70,15 @@ string afSystemPaths::getPathSeparator()
 #endif
 }
 
-const list<string> &afSystemPaths::getPluginPath()
+const list<string> &afSystemPaths::getPluginsPath()
 {
     string path;
 
-    char *pathCStr = getenv("AMBF_PLUGIN_PATH");
+    char *pathCStr = getenv("AMBF_PLUGINS_PATH");
     if (!pathCStr || *pathCStr == '\0')
     {
         // No env var; take the compile-time default.
-        path = AMBF_PLUGIN_PATH;
+        path = AMBF_PLUGINS_PATH;
     }
     else
     {
