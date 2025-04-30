@@ -78,8 +78,10 @@ public:
         // find in map
         auto found = s_rals.find(_real_name);
         if (found != s_rals.end()) {
-            std::cerr << "ERROR! Trying to create a new ROS2 node with an existing name: "
+            std::cerr << "WARNING! Trying to create a new ROS2 node with an existing name: "
                       << _real_name << " (based on user provided name " << node_name << ")" << std::endl;
+            std::cerr << "WARNING! Returning the found node instead " << std::endl;
+            result = s_rals[_real_name]->node();
         } else {
             std::cerr << "INFO! Created a new ROS2 node for: "
                       << _real_name << " (based on user provided name " << node_name << ")" << std::endl;

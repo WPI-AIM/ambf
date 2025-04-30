@@ -622,7 +622,7 @@ public:
 
     void removeAllChildSceneObjects(bool removeFromGraphs=true);
 
-  // bool loadCommunicationPlugin(afBaseObjectPtr a_objPtr, afBaseObjectAttribsPtr a_attribs);
+    bool loadCommunicationPlugin();
 
     virtual void updateSceneObjects();
 
@@ -2288,7 +2288,7 @@ public:
 
     int getManualSteps(){return m_manualStepPhx;}
 
-  // bool loadCommunicationPlugin(afWorldPtr, afWorldAttribsPtr);
+    bool loadCommunicationPlugin();
 
     void resetCameras();
 

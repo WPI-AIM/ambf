@@ -83,12 +83,7 @@ void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
                 string topic_name = new_topics[i];
                 afPointCloudPtr afPC = new afPointCloud(worldPtr);
                 afPC->m_topicName = topic_name;
-                afPluginAttributes commPluginAttribs;
-                commPluginAttribs.m_name = "object_comm";
-                commPluginAttribs.m_filename = "libobject_comm_plugin.so";
-                objectPluginsAttribs.push_back(commPluginAttribs);
-                afPC->loadPlugins(&objectPluginsAttribs);
-                // std::cerr << __FILE__ << " " << __LINE__ << "Anton: commented out loadCommunicationPlugin" << std::endl;
+                afPC->loadCommunicationPlugin();
                 worldPtr->m_pcMap[topic_name] = afPC;
             }
         }
