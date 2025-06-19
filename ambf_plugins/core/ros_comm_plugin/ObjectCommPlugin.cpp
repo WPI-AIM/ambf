@@ -2,7 +2,7 @@
 
 #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 void copyVec(cVector3d* in, geometry_msgs::Vector3* out){
-    out->x = in->x(); out->y = in->x(); out->z = in->z();
+    out->x = in->x(); out->y = in->y(); out->z = in->z();
 }
 
 void fillContactData(afContactEventMap* conEventMap, vector<ambf_msgs::ContactEvent>* conEventMsgVec){
