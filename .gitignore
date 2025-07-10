@@ -16,3 +16,4 @@ bin-debug/
 \.vscode/
 *.blend1
 *.old
+.cache/

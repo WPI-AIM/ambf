@@ -15,6 +15,8 @@ void fillContactData(afContactEventMap* conEventMap, vector<ambf_msgs::ContactEv
             contDataMsg.distance.data = it.second.m_contactData[in].m_distance;
             copyVec(&it.second.m_contactData[in].m_P_b_w, &contDataMsg.contact_point);
             copyVec(&it.second.m_contactData[in].m_N_b_w, &contDataMsg.contact_normal);
+            copyVec(&it.second.m_contactData[in].m_P_a_l, &contDataMsg.local_point_a);
+            copyVec(&it.second.m_contactData[in].m_P_b_l, &contDataMsg.local_point_b);
             conEventMsg.contact_data.push_back(contDataMsg);
         }
         conEventMsgVec->push_back(conEventMsg);

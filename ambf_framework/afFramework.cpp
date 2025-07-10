@@ -8811,25 +8811,31 @@ btScalar afContactSensorCallback::addSingleResult(btManifoldPoint &cp, const btC
 {
     if (cp.getDistance() <= m_distanceThreshold){
         afBaseObjectPtr boA, boB;
-        cVector3d P_a_w, P_b_w, N_b_w;
+        cVector3d P_a_w, P_b_w, N_b_w, P_a_l, P_b_l;
         if(colObj0->m_collisionObject->getUserPointer() == m_parentObject) {
             boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
             boB = (afBaseObjectPtr)colObj1->m_collisionObject->getUserPointer();
             P_a_w << cp.m_positionWorldOnA;
             P_b_w << cp.m_positionWorldOnB;
             N_b_w << cp.m_normalWorldOnB;
+
+            P_a_l << cp.m_localPointA;
+            P_b_l << cp.m_localPointB;
         } else {
             assert(colObj1->m_collisionObject->getUserPointer() == m_parentObject && "body does not match either collision object");
-            boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
+            boA = (afBaseObjectPtr)colObj1->m_collisionObject->getUserPointer();
             boB = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
             P_a_w << cp.m_positionWorldOnB;
             P_b_w << cp.m_positionWorldOnA;
             N_b_w << -cp.m_normalWorldOnB;
+
+            P_a_l << cp.m_localPointB;
+            P_b_l << cp.m_localPointA;
         }
         if (m_contactEventMap.find(boB) == m_contactEventMap.end()){
             m_contactEventMap[boB] = afContactEvent(boA, boB);
         }
-        m_contactEventMap[boB].m_contactData.push_back(afContactData(P_a_w, P_b_w, N_b_w, cp.m_distance1));
+        m_contactEventMap[boB].m_contactData.push_back(afContactData(P_a_w, P_b_w, N_b_w, P_a_l, P_b_l, cp.m_distance1));
     }
     return 0;
 }
@@ -8939,10 +8945,14 @@ void afContactSensor::update(double dt){
 }
 
 
-afContactData::afContactData(cVector3d &P_a_w, cVector3d &P_b_w, cVector3d &N_b_w, double &distance){
+afContactData::afContactData(cVector3d &P_a_w, cVector3d &P_b_w, cVector3d &N_b_w, cVector3d &P_a_l, cVector3d &P_b_l, double &distance){
     m_P_a_w = P_a_w;
     m_P_b_w = P_b_w;
     m_N_b_w = N_b_w;
+
+    m_P_a_l = P_a_l;
+    m_P_b_l = P_b_l;
+
     m_distance = distance;
 }
 
