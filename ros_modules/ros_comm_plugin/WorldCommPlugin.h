@@ -43,7 +43,7 @@
 #ifndef AF_WORLDCOMM_PLUGIN
 #define AF_WORLDCOMM_PLUGIN
 
-#include "afFramework.h"
+#include <afFramework.h>
 
 
 // #ifdef AF_ENABLE_AMBF_COMM_SUPPORT

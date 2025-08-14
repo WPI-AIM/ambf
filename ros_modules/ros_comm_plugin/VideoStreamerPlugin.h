@@ -43,7 +43,7 @@
 #ifndef AF_VIDEOSTREAMER_PLUGIN
 #define AF_VIDEOSTREAMER_PLUGIN
 
-#include "afFramework.h"
+#include <afFramework.h>
 
 #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 #include <ambf_server/RosComBase.h>

@@ -5,20 +5,6 @@ AF_REGISTER_OBJECT_PLUGIN(afCameraDepthStreamerPlugin);
 // #ifdef AF_ENABLE_OPEN_CV_SUPPORT
 int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs)
 {
-#if AMBF_ROS1
-    // m_objectPtr = a_afObjectPtr;
-    // m_cameraPtr = (afCameraPtr)a_afObjectPtr;
-    // afCameraAttributes* camAttribs = (afCameraAttributes*) a_objectAttribs;
-
-    // m_depthPointCloudMsg.reset(new AMBF_RAL_MSG(sensor_msgs, PointCloud2)());
-    // m_depthPointCloudModifier = new sensor_msgs::PointCloud2Modifier(*m_depthPointCloudMsg);
-    // m_depthPointCloudModifier->setPointCloud2FieldsByString(2, "xyz", "rgb");
-    // m_depthPointCloudModifier->resize(camAttribs->m_publishImageResolution.m_width*camAttribs->m_publishImageResolution.m_height);
-    // m_rosNode = afROSNode::getNode(m_cameraPtr->getQualifiedName());
-    // m_depthPointCloudPub = m_rosNode->advertise<sensor_msgs::PointCloud2>(m_cameraPtr->getQualifiedName() + "/DepthData", 1);
-
-    // m_publishInterval = camAttribs->m_publishDepthInterval;
-#elif AMBF_ROS2
     m_objectPtr = a_afObjectPtr;
     m_cameraPtr = (afCameraPtr)a_afObjectPtr;
     afCameraAttributes* camAttribs = (afCameraAttributes*) a_objectAttribs;
@@ -34,7 +20,6 @@ int afCameraDepthStreamerPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
          m_cameraPtr->getQualifiedName() + "/DepthData",
          1, false);
     m_publishInterval = camAttribs->m_publishDepthInterval;
-#endif
     return 1;
 }
 
@@ -70,7 +55,7 @@ void afCameraDepthStreamerPlugin::graphicsUpdate()
         m_depthPointCloudMsg->header.frame_id = m_cameraPtr->getName();
         m_depthPointCloudMsg->header.stamp.fromSec(m_cameraPtr->getRenderTimeStamp());
 
-        m_depthPointCloudPub.publish(m_depthPointCloudMsg);
+        m_depthPointCloudPub->publish(m_depthPointCloudMsg);
     }
     m_write_count++;
 #elif AMBF_ROS2
