@@ -84,7 +84,7 @@ private:
     // Image Transport ROS Node
     ambf_ral::node_ptr_t m_rosNode;
     AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud2) m_depthPointCloudMsg;
-    AMBF_RAL_PUBLISHER_PTR(PointCloud2) m_depthPointCloudPub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(sensor_msgs, PointCloud2)) m_depthPointCloudPub;
     sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
 
 #else
