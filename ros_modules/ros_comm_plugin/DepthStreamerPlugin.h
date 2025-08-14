@@ -49,11 +49,12 @@
 #include <ambf_server/RosComBase.h>
 #if AMBF_ROS1
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 #elif AMBF_ROS2
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #endif
 
-#include <sensor_msgs/point_cloud2_iterator.hpp>
 // #endif
 
 using namespace ambf;

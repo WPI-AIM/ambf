@@ -148,7 +148,7 @@ namespace ambf_ral {
                            node_ptr_t node,
                            const std::string & topic,
                            const size_t queue_size,
-                           void (_object_cb_t::*cb)(const typename _ros_t::SharedPtr),
+                           void (_object_cb_t::*cb)(const typename _ros_t::Ptr),
                            _object_cb_t * instance
                            ) {
         std::string clean_topic = topic;
