@@ -45,16 +45,12 @@
 
 #include <afFramework.h>
 
-
-// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 #include <ambf_server/World.h>
-// #endif
 
 using namespace ambf;
 
 class afWorldCommunicationPlugin: public afWorldPlugin{
 public:
-// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
     virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double dt) override;
@@ -76,11 +72,6 @@ private:
 
 
     std::shared_ptr<ambf_comm::World> m_afWorldCommPtr;
-// #else
-    // virtual int init(const afWorldPtr a_afWorld, const afWorldAttribsPtr a_worldAttribs){
-    //     return -1;
-    // }
-// #endif
 };
 
 #endif

@@ -62,7 +62,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
-#endif
+#endif // AF_ENABLE_OPEN_CV_SUPPORT
 
 using namespace ambf;
 

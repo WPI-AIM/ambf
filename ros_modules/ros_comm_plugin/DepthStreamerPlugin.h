@@ -46,6 +46,8 @@
 #include <afFramework.h>
 #include <ambf_server/RosComBase.h>
 
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
+
 #if AMBF_ROS1
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -54,14 +56,14 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #endif
 
-// #endif
+#endif // AF_ENABLE_OPEN_CV_SUPPORT
 
 using namespace ambf;
 
 
 class afCameraDepthStreamerPlugin: public afObjectPlugin{
 public:
-// #ifdef AF_ENABLE_OPEN_CV_SUPPORT
+#ifdef AF_ENABLE_OPEN_CV_SUPPORT
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs) override;
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double) override;
@@ -84,18 +86,12 @@ private:
     AMBF_RAL_MSG_PTR(sensor_msgs, PointCloud2) m_depthPointCloudMsg;
     AMBF_RAL_PUBLISHER_PTR(PointCloud2) m_depthPointCloudPub;
     sensor_msgs::PointCloud2Modifier* m_depthPointCloudModifier = nullptr;
-// #if AMBF_ROS1
-//     ros::Publisher m_depthPointCloudPub;
-// #elif AMBF_ROS2
-//     typedef typename rclcpp::Publisher<sensor_msgs::msg::PointCloud2> publisher_t;
-//     typename publisher_t::SharedPtr m_depthPointCloudPub;
-// #endif
 
-// #else
+#else
 //     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
 //         return -1;
 //     }
-// #endif
+#endif // AF_ENABLE_OPEN_CV_SUPPORT
 };
 
 #endif

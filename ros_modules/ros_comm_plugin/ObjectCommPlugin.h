@@ -44,8 +44,6 @@
 #define AF_OBJECTCOMM_PLUGIN
 
 #include <afFramework.h>
-
-// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 #include <ambf_server/Actuator.h>
 #include <ambf_server/Camera.h>
 #include <ambf_server/Light.h>

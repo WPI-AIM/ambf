@@ -1,6 +1,5 @@
 #include "ObjectCommPlugin.h"
 
-// #ifdef AF_ENABLE_AMBF_COMM_SUPPORT
 void copyVec(cVector3d* in, AMBF_RAL_MSG(geometry_msgs, Vector3)* out){
     out->x = in->x(); out->y = in->x(); out->z = in->z();
 }
@@ -20,8 +19,6 @@ void fillContactData(afContactEventMap* conEventMap, vector<AMBF_RAL_MSG(ambf_ms
         conEventMsgVec->push_back(conEventMsg);
     }
 }
-
-// #endif
 
 void afRigidBodyState::setChildrenNames(afRigidBodyPtr afRBPtr){
     int num_children = afRBPtr->m_CJ_PairsActive.size();
