@@ -77,6 +77,9 @@ class ral:
         return child
 
     def now(self):
+        return self._now().to_msg() ## For backward compat
+
+    def _now(self):
         return self._node.get_clock().now()
 
     def get_timestamp(self, t):
@@ -204,7 +207,7 @@ class ral:
         check_rate = self.create_rate(100)
 
         # wait at most timeout_seconds for all connections to establish
-        while (self.now() - start_time) < timeout_duration:
+        while (self._now() - start_time) < timeout_duration:
             pubsubs = self._publishers + self._subscribers
             unconnected = [ps for ps in pubsubs if not connected(ps)]
             if len(unconnected) == 0:
@@ -254,7 +257,7 @@ class ral:
         if timeout_seconds == 0.0:
             return
 
-        start_time = self.now()
+        start_time = self._now()
         timeout_duration = self.create_duration(timeout_seconds)
 
         self._check_connections(start_time, timeout_duration, check_children)

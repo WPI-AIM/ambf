@@ -127,7 +127,7 @@ class ral:
     def get_topic_name(self, pubsub):
         return pubsub.name
 
-    def get_published_topics():
+    def get_published_topics(self):
         return rospy.get_published_topics()
 
     def _check_connections(self, start_time, timeout_duration, check_children):
