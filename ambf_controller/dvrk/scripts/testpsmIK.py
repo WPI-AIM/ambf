@@ -20,10 +20,10 @@ def test_ik():
         errors = [0] * js_traj.get_num_joints()
         for j in range(num_joints):
             errors[j] = test_q[j] - computed_q[j]
-        print ('******')
-        print ('Case:', i)
-        print ('Joint Errors from IK Solver')
-        print (["{0:0.2f}".format(k) for k in errors])
+        print('******')
+        print('Case:', i)
+        print('Joint Errors from IK Solver')
+        print(["{0:0.2f}".format(k) for k in errors])
 
 
 def test_ambf_psm():
