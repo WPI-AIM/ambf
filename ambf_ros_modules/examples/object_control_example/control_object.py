@@ -85,10 +85,13 @@ class ObjectControl:
             self.jnt_gui = JointGUI(obj_name, self._n_jnts, jnt_names)
 
     def run(self):
+        counter = 0
         while not rospy.is_shutdown():
-
+            counter += 1
             if self._ctrl_c_space is True:
                 self.obj_gui.App.update()
+                self.process_keyboard_input_c_space(counter)
+
                 px = self.obj_gui.px * self.obj_gui.get_px_scale()
                 py = self.obj_gui.py * self.obj_gui.get_py_scale()
                 pz = self.obj_gui.pz * self.obj_gui.get_pz_scale()
@@ -112,6 +115,7 @@ class ObjectControl:
 
             if self._ctrl_j_space is True:
                 self.jnt_gui.App.update()
+                self.process_keyboard_input_j_space(counter)
                 for i in range(self._n_jnts):
                     try:
                         cmd_scale = float(self.jnt_gui.cmd_scales[i].get())
@@ -129,6 +133,73 @@ class ObjectControl:
                         print('CANNOT UNDERSTAND JOINT CONTROL MODE. SUPPORTED MODES ARE 0, 1, 2 FOR F, P, V')
 
             time.sleep(0.001)
+
+    def process_keyboard_input_c_space(self, counter):
+        step_size = self.obj_gui.resolution
+
+        if (counter % 10 == 0 and 'Slow' in self.obj_gui.key_stack) or ('Slow' not in self.obj_gui.key_stack):
+
+            ####### Cartesian Coordiantes #######
+
+            #x-Axis
+            if 'Forth' in self.obj_gui.key_stack:
+                self.obj_gui.px_slider.set(self.obj_gui.px - step_size)
+            if 'Back' in self.obj_gui.key_stack:
+                self.obj_gui.px_slider.set(self.obj_gui.px + step_size)
+
+            #y-Axis
+            if 'Right' in self.obj_gui.key_stack:
+                self.obj_gui.py_slider.set(self.obj_gui.py + step_size)
+            if 'Left' in self.obj_gui.key_stack:
+                self.obj_gui.py_slider.set(self.obj_gui.py - step_size)
+
+            #z-Axis
+            if 'Up' in self.obj_gui.key_stack:
+                self.obj_gui.pz_slider.set(self.obj_gui.pz + step_size)
+            if 'Down' in self.obj_gui.key_stack:
+                self.obj_gui.pz_slider.set(self.obj_gui.pz - step_size)
+
+            ####### Roll-Pitch-Yaw #######
+
+            #x-Axis
+            if 'Roll+' in self.obj_gui.key_stack:
+                self.obj_gui.rx_slider.set(self.obj_gui.rx + step_size)
+            if 'Roll-' in self.obj_gui.key_stack:
+                self.obj_gui.rx_slider.set(self.obj_gui.rx - step_size)
+
+            #y-Axis
+            if 'Pitch+' in self.obj_gui.key_stack:
+                self.obj_gui.ry_slider.set(self.obj_gui.ry + step_size)
+            if 'Pitch-' in self.obj_gui.key_stack:
+                self.obj_gui.ry_slider.set(self.obj_gui.ry - step_size)
+
+            #z-Axis
+            if 'Yaw+' in self.obj_gui.key_stack:
+                self.obj_gui.rz_slider.set(self.obj_gui.rz + step_size)
+            if 'Yaw-' in self.obj_gui.key_stack:
+                self.obj_gui.rz_slider.set(self.obj_gui.rz - step_size)
+
+
+    def process_keyboard_input_j_space(self, counter):
+        step_size = self.jnt_gui.resolution * 20
+        try:
+            if (counter % 10 == 0 and 'Slow' in self.jnt_gui.key_stack) or ('Slow' not in self.jnt_gui.key_stack):
+                if 'Joint1Open' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[0].set(self.jnt_gui._cmd_sliders[0].get() + step_size)
+                if 'Joint1Close' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[0].set(self.jnt_gui._cmd_sliders[0].get() - step_size)
+                if 'Joint2Open' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[1].set(self.jnt_gui._cmd_sliders[1].get() - step_size)
+                if 'Joint2Close' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[1].set(self.jnt_gui._cmd_sliders[1].get() + step_size)
+                if 'GrabberClose' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[0].set(self.jnt_gui._cmd_sliders[0].get() - step_size)
+                    self.jnt_gui._cmd_sliders[1].set(self.jnt_gui._cmd_sliders[1].get() + step_size)
+                if 'GrabberOpen' in self.jnt_gui.key_stack:
+                    self.jnt_gui._cmd_sliders[0].set(self.jnt_gui._cmd_sliders[0].get() + step_size)
+                    self.jnt_gui._cmd_sliders[1].set(self.jnt_gui._cmd_sliders[1].get() - step_size)
+        except Exception:
+            print("Could not handle input")
 
 
 def main():

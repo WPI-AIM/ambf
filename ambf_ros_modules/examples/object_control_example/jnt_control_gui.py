@@ -56,6 +56,7 @@ class JointGUI:
         self.jnt_cmds = []
         self.jnt_mode = []
         self.cmd_scales = []
+        self.resolution = None
 
         self._cmd_sliders = []
 
@@ -104,6 +105,7 @@ class JointGUI:
         self.jnt_cmds = [0.0] * num_jnts
         self.jnt_mode = [0]*num_jnts
         self.cmd_scales = [0]*num_jnts
+        self.resolution = _resolution
 
         # obj_label = Label(app, text='CONTROLLING OBJECT: ' + obj_name, fg="Red")
         # obj_label.pack(row=0, columnspan=2, pady=5)
@@ -147,3 +149,36 @@ class JointGUI:
 
         reset_cmd_btn = Button(app, text='Reset Cmds', command=self.reset_cmds_cb)
         reset_cmd_btn.grid(row=num_jnts*2, column=1)
+        self.init_keyboard_control(app)
+
+    def init_keyboard_control(self, app):
+        self.key_stack = []
+        inputs = [('y', 'Joint1Open'),
+                  ('Y', 'Joint1Open'),
+                  ('x', 'Joint1Close'),
+                  ('X', 'Joint1Close'),
+                  ('v', 'Joint2Open'),
+                  ('V', 'Joint2Open'),
+                  ('c', 'Joint2Close'),
+                  ('C', 'Joint2Close'),
+                  ('q', 'GrabberClose'),
+                  ('Q', 'GrabberClose'),
+                  ('e', 'GrabberOpen'),
+                  ('E', 'GrabberOpen'),
+                  ('Shift_L', 'Slow')]
+
+        for key, direction in inputs:
+            app.bind('<KeyPress-' + key + '>', functools.partial(key_down, self, direction))
+            app.bind('<KeyRelease-' + key + '>', functools.partial(key_up, self, direction))
+
+        app.bind('<FocusOut>', self.on_focus_out)
+
+    def on_focus_out(self, event):
+        self.key_stack = []
+
+
+def key_down(app, direction, event):
+    app.key_stack.append(direction)
+
+def key_up(app, direction, event):
+    app.key_stack.remove(direction)
