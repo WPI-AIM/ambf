@@ -42,6 +42,7 @@
 
 //------------------------------------------------------------------------------
 #include <chrono>
+#include <vector>
 #include "afFramework.h"
 #include "afConversions.h"
 #include "afShaders.h"
@@ -7818,18 +7819,43 @@ void afModel::ignoreCollisionChecking(){
     /// Only ignore collision checking between the bodies
     /// defined in the specific model config file
     /// and not all the bodies in the world
+    vector<afInertialObjectPtr> bodiesVec;
+    bodiesVec.resize(getRigidBodyMap()->size() + getSoftBodyMap()->size());
+
     afBaseObjectMap::iterator rBodyItA = getRigidBodyMap()->begin();
-    vector<btRigidBody*> rBodiesVec;
-    rBodiesVec.resize(getRigidBodyMap()->size());
+    afBaseObjectMap::iterator sBodyItA = getSoftBodyMap()->begin();
     uint i=0;
     for ( ; rBodyItA != getRigidBodyMap()->end() ; ++rBodyItA){
-        rBodiesVec[i] = ((afRigidBodyPtr)rBodyItA->second)->m_bulletRigidBody;
+        bodiesVec[i] = (afRigidBodyPtr)rBodyItA->second;
         i++;
     }
-    if (rBodiesVec.size() >0){
-        for (uint i = 0 ; i < rBodiesVec.size() - 1 ; i++){
-            for (uint j = i+1 ; j < rBodiesVec.size() ; j++){
-                rBodiesVec[i]->setIgnoreCollisionCheck(rBodiesVec[j], true);
+    for ( ; sBodyItA != getSoftBodyMap()->end() ; ++sBodyItA){
+        bodiesVec[i] = (afSoftBodyPtr)sBodyItA->second;
+        i++;
+    }
+    if (bodiesVec.size() >0){
+        for (uint i = 0 ; i < bodiesVec.size() - 1 ; i++){
+            afInertialObjectPtr bodyA = bodiesVec[i];
+            for (uint j = i+1 ; j < bodiesVec.size() ; j++){
+                afInertialObjectPtr bodyB = bodiesVec[j];
+                if (bodyA->m_bulletRigidBody && bodyB->m_bulletRigidBody) {
+                    bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletRigidBody, true);
+                    cout << "Ignoring collision between rigid bodies: " << bodyA << " and " << bodyB << endl;
+                }
+                // Handle Soft Body
+                else if (bodyA->m_bulletSoftBody && bodyB->m_bulletRigidBody) {
+                    bodyB->m_bulletRigidBody->setIgnoreCollisionCheck(bodyA->m_bulletSoftBody, true);
+                    cout << "Ignoring collision between soft body: " << bodyA << " and rigid body: " << bodyB << endl;
+                }
+                else if (bodyA->m_bulletRigidBody && bodyB->m_bulletSoftBody) {
+                    bodyA->m_bulletRigidBody->setIgnoreCollisionCheck(bodyB->m_bulletSoftBody, true);
+                    cout << "Ignoring collision between rigid body: " << bodyA << " and soft body: " << bodyB << endl;
+                }
+                else if (bodyA->m_bulletSoftBody && bodyB->m_bulletSoftBody) {
+                    // Set ignore collision for both soft bodies
+                    bodyA->m_bulletSoftBody->setIgnoreCollisionCheck(bodyB->m_bulletSoftBody, true);
+                    cout << "Ignoring collision between soft bodies: " << bodyA << " and " << bodyB << endl;
+                }
             }
         }
     }
@@ -8785,25 +8811,31 @@ btScalar afContactSensorCallback::addSingleResult(btManifoldPoint &cp, const btC
 {
     if (cp.getDistance() <= m_distanceThreshold){
         afBaseObjectPtr boA, boB;
-        cVector3d P_a_w, P_b_w, N_b_w;
+        cVector3d P_a_w, P_b_w, N_b_w, P_a_l, P_b_l;
         if(colObj0->m_collisionObject->getUserPointer() == m_parentObject) {
             boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
             boB = (afBaseObjectPtr)colObj1->m_collisionObject->getUserPointer();
             P_a_w << cp.m_positionWorldOnA;
             P_b_w << cp.m_positionWorldOnB;
             N_b_w << cp.m_normalWorldOnB;
+
+            P_a_l << cp.m_localPointA;
+            P_b_l << cp.m_localPointB;
         } else {
             assert(colObj1->m_collisionObject->getUserPointer() == m_parentObject && "body does not match either collision object");
-            boA = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
+            boA = (afBaseObjectPtr)colObj1->m_collisionObject->getUserPointer();
             boB = (afBaseObjectPtr)colObj0->m_collisionObject->getUserPointer();
             P_a_w << cp.m_positionWorldOnB;
             P_b_w << cp.m_positionWorldOnA;
             N_b_w << -cp.m_normalWorldOnB;
+
+            P_a_l << cp.m_localPointB;
+            P_b_l << cp.m_localPointA;
         }
         if (m_contactEventMap.find(boB) == m_contactEventMap.end()){
             m_contactEventMap[boB] = afContactEvent(boA, boB);
         }
-        m_contactEventMap[boB].m_contactData.push_back(afContactData(P_a_w, P_b_w, N_b_w, cp.m_distance1));
+        m_contactEventMap[boB].m_contactData.push_back(afContactData(P_a_w, P_b_w, N_b_w, P_a_l, P_b_l, cp.m_distance1));
     }
     return 0;
 }
@@ -8913,10 +8945,14 @@ void afContactSensor::update(double dt){
 }
 
 
-afContactData::afContactData(cVector3d &P_a_w, cVector3d &P_b_w, cVector3d &N_b_w, double &distance){
+afContactData::afContactData(cVector3d &P_a_w, cVector3d &P_b_w, cVector3d &N_b_w, cVector3d &P_a_l, cVector3d &P_b_l, double &distance){
     m_P_a_w = P_a_w;
     m_P_b_w = P_b_w;
     m_N_b_w = N_b_w;
+
+    m_P_a_l = P_a_l;
+    m_P_b_l = P_b_l;
+
     m_distance = distance;
 }
 

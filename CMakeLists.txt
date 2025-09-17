@@ -50,6 +50,8 @@ project (AMBF)
 # Set C++ Standard
 set (CMAKE_CXX_STANDARD 11)
 
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # set version info
 file (READ ${PROJECT_SOURCE_DIR}/ambf_framework/version.txt VERSION)
 STRING (REGEX REPLACE ".*MAJOR=([0-9]+).*" "\\1" MAJOR_VERSION "${VERSION}")

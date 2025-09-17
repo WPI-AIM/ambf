@@ -1171,12 +1171,15 @@ private:
 struct afContactData{
 public:
 
-    afContactData(cVector3d& gpA, cVector3d& gpB, cVector3d& gnB, double& distance);
+    afContactData(cVector3d& gpA, cVector3d& gpB, cVector3d& gnB, cVector3d& lpA, cVector3d& lpB, double& distance);
 
     cVector3d m_P_a_w; // Point on A in world coords
 
     cVector3d m_P_b_w; // Point on B in world coords
-    cVector3d m_N_b_w;// Normal on A in world coords
+    cVector3d m_N_b_w; // Normal on B in world coords
+
+    cVector3d m_P_a_l; // Point on A in local coords
+    cVector3d m_P_b_l; // Point on B in local coords
 
     double m_distance; // Separating distance. Or penetration depth.
 };

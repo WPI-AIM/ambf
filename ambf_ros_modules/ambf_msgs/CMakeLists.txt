@@ -60,6 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
    SensorState.msg
    SensorCmd.msg
    ContactData.msg
+   ContactDataLocal.msg
    ContactEvent.msg
    ContactSensorState.msg
    ContactSensorCmd.msg
