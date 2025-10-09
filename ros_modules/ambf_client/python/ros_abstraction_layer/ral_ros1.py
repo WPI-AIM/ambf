@@ -61,6 +61,9 @@ class ral:
         self._children[child_namespace] = child
         return child
 
+    def now_msg(self):
+        return rospy.Time.now()
+
     def now(self):
         return rospy.Time.now()
 

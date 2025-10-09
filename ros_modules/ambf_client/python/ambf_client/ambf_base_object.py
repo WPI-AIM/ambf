@@ -295,10 +295,10 @@ class BaseObject(WatchDog):
 
     def _apply_command(self):
         """
-        Internal function to synchronized with the publisher and update watchdog
+        Internal function to synchronize with the publisher and update watchdog
         :return:
         """
-        self._cmd.header.stamp = self.ral.now()
+        self._cmd.header.stamp = self.ral.now_msg()
         self.acknowledge_wd()
 
     def _clear_command(self):

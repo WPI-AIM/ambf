@@ -76,10 +76,10 @@ class ral:
         self._children[child_namespace] = child
         return child
 
-    def now(self):
-        return self._now().to_msg() ## For backward compat
+    def now_msg(self):
+        return self._node.get_clock().now().to_msg() ## For backward compat
 
-    def _now(self):
+    def now(self):
         return self._node.get_clock().now()
 
     def get_timestamp(self, t):
