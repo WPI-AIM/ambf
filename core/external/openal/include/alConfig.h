@@ -71,7 +71,7 @@
 #define HAVE_STDINT_H
 #define HAVE_DLFCN_H
 #define HAVE_MALLOC_H
-#if !defined (__arm__)
+#if !defined (__arm__ ) && !defined (__aarch64__)
     #define HAVE_CPUID_H
 #endif
 #define HAVE_FLOAT_H
