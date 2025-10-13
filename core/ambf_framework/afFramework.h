@@ -1930,6 +1930,8 @@ public:
 
     bool assignWindowCallbacks(afCameraWindowCallBacks* a_callbacks);
 
+    bool computeProjectionFromIntrinsics(const afCameraIntrinsics* a_attribs, double a_width, double a_height, double a_nearPlane, double a_farPlane);
+
     // Since we changed the order of ADF loading such that cameras are loaded before
     // bodies etc. we wouldn't be able to find a body defined as a parent in the
     // camera data-block in the ADF file. Thus after loading the bodies, this method
