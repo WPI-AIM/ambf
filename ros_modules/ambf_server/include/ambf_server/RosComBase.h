@@ -294,7 +294,13 @@ void RosComBase<T_state, T_cmd>::run_publishers(void) {
 #if AMBF_ROS1
             m_custom_queue.callAvailable();
 #elif AMBF_ROS2
-            rclcpp::spin_some(m_nodePtr);
+            try {
+                rclcpp::spin_some(m_nodePtr);
+            } catch (const std::exception & e) {
+                std::cerr << "ERROR! Exception caught while spinning node "
+                          << m_namespace + m_name << ": " << e.what() << std::endl;
+            }
+            // rclcpp::spin_some(m_nodePtr);
 #endif
             if (m_watchDogPtr->is_wd_expired()) {
                 m_watchDogPtr->consolePrint(m_name);
