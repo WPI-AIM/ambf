@@ -28,25 +28,6 @@ BODY Chassis:
   restitution: 0
   collision groups: [0]
   color rgba: {a: 1.0, b: 0.6619, g: 0.0908, r: 0.2876}
-  plugins: [  # Here we define the plugin - need to figure out how to edit this
-    {
-      #name: external_ros_communication,
-      #path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      #filename: libros_comm_plugin.so
-      #name: video_streamer,
-      #path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      #filename: libvideo_streamer_plugin.so,
-      # name: world_comm, 
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libworld_comm_plugin.so, 
-      # name: depth_streamer,
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libdepth_streamer_plugin.so, 
-      name: object_comm, 
-      path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      filename: libobject_comm_plugin.so
-    },
-  ]
 BODY WheelBL:
   name: WheelBL
   mesh: WheelBL.STL
@@ -85,25 +66,6 @@ BODY WheelBR:
   collision shape: CYLINDER
   collision geometry: {axis: z, height: 0.115, radius: 0.181}
   color rgba: {a: 1.0, b: 0.8006, g: 0.7331, r: 0.2805}
-  plugins: [  # Here we define the plugin - need to figure out how to edit this
-    {
-      # name: external_ros_communication,
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libros_comm_plugin.so
-      # name: video_streamer,
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libvideo_streamer_plugin.so,
-      # name: world_comm, 
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libworld_comm_plugin.so, 
-      # name: depth_streamer,
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libdepth_streamer_plugin.so, 
-      name: object_comm, 
-      path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      filename: libobject_comm_plugin.so
-    },
-  ]
 BODY WheelFL:
   name: WheelFL
   mesh: WheelFL.STL

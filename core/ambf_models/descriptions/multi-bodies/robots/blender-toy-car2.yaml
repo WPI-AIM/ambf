@@ -38,12 +38,6 @@ BODY Chassis:
     angular: {P: 10, I: 0, D: 0}
   }
   controller output type: VELOCITY
-#  plugins: [
-#    {
-#      name: object_comm,
-#      filename: libobject_comm_plugin.so
-#    },
-#  ]
 BODY ShockBL:
   name: ShockBL
   mesh: ShockBL.STL

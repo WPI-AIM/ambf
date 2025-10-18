@@ -90,12 +90,6 @@ BODY base link:
       g: 0.2402
       r: 0.1506
     transparency: 1.0
-    plugins: [ {
-      name: object_comm, 
-      path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      filename: libobject_comm_plugin.so
-      
-    }]
 BODY main insertion link:
   name: main insertion link
   mesh: main insertion link.STL
@@ -145,25 +139,6 @@ BODY main insertion link:
       g: 0.2785
       r: 0.5
     transparency: 0.4
-  plugins: [  # Here we define the plugin - need to figure out how to edit this
-    {
-      #name: external_ros_communication,
-      #path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      #filename: libros_comm_plugin.so
-      #name: video_streamer,
-      #path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      #filename: libvideo_streamer_plugin.so,
-      # name: world_comm, 
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libworld_comm_plugin.so, 
-      # name: depth_streamer,
-      # path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      # filename: libdepth_streamer_plugin.so, 
-      name: object_comm, 
-      path: "/home/lauraconnolly/ros2-changes/restructure/catkin_ws/devel/.private/ros_comm_plugin/lib/",
-      filename: libobject_comm_plugin.so
-    },
-  ]
 BODY pitch back link:
   name: pitch back link
   mesh: pitch back link.STL

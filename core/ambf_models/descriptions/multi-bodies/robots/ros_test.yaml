@@ -65,12 +65,6 @@ BODY Chassis:
     angular: {P: 10, I: 0, D: 0}
   }
   controller output type: VELOCITY
-#  plugins: [
-#    {
-#      name: object_comm,
-#      filename: libobject_comm_plugin.so
-#    },
-#  ]
 BODY ShockBL:
   name: ShockBL
   mesh: ShockBL.STL
@@ -115,12 +109,6 @@ BODY WheelBR:
     diffuse: {b: 0.8006, g: 0.7331, r: 0.2805}
     specular: {b: 1.0, g: 1.0, r: 1.0}
     transparency: 1.0
-  plugins: [
-    {
-      name: object_comm,
-      filename: libobject_comm_plugin.so
-    },
-  ]
 BODY ShockBR:
   name: ShockBR
   mesh: ShockBR.STL
