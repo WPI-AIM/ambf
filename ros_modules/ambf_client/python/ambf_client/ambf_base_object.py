@@ -76,7 +76,7 @@ class BaseObject(WatchDog):
 
     def is_active(self):
         """
-        Flag to check if the cb for this Object is active or not
+        Flag to check active status which controls publishing in ambf_client
         :return:
         """
         return self._active
@@ -133,7 +133,7 @@ class BaseObject(WatchDog):
 
     def get_pose(self):
         """
-        Get the pose as Geometry_msgs/Pose of this object in it's parent frame
+        Get the pose of this object in it's parent frame
         :return:
         """
         quat = self._state.pose.orientation
@@ -227,7 +227,7 @@ class BaseObject(WatchDog):
         self._name = name
 
     def set_active(self):
-        """Mark this object as active"""
+        """Mark this object as active. Active objects are published via ambf_client"""
         self._active = True
 
     def set_pos(self, px, py, pz):
