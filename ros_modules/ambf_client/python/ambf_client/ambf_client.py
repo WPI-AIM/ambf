@@ -72,6 +72,12 @@ from .ambf_vehicle import Vehicle
 from .ambf_world import World
 
 
+class MsgRelatedClasses:
+    def __init__(self, obj_type, state_msg_type, cmd_msg_type):
+        self.obj_type = obj_type
+        self.state_msg_type = state_msg_type
+        self.cmd_msg_type = cmd_msg_type
+
 class Client:
     def __init__(self, client_name='ambf_client'):
         self._ros_topics = []
@@ -87,8 +93,38 @@ class Client:
         self._executor = None
         self._sub_thread = None
 
+        self.object_types = [World, Object, RigidBody, GhostObject, Actuator, Camera, Light, Sensor, ContactSensor, Vehicle]
+
+        self.msg_related_classes = {}
+        self.msg_related_classes['ambf_msgs/WorldState'] = MsgRelatedClasses(World, WorldState, WorldCmd)
+        self.msg_related_classes['ambf_msgs/ObjectState'] = MsgRelatedClasses(Object, ObjectState, ObjectCmd)
+        self.msg_related_classes['ambf_msgs/RigidBodyState'] = MsgRelatedClasses(RigidBody, RigidBodyState, RigidBodyCmd)
+        self.msg_related_classes['ambf_msgs/GhostObjectState'] = MsgRelatedClasses(GhostObject, GhostObjectState, GhostObjectCmd)
+        self.msg_related_classes['ambf_msgs/ActuatorState'] = MsgRelatedClasses(Actuator, ActuatorState, ActuatorCmd)
+        self.msg_related_classes['ambf_msgs/CameraState'] = MsgRelatedClasses(Camera, CameraState, CameraCmd)
+        self.msg_related_classes['ambf_msgs/LightState'] = MsgRelatedClasses(Light, LightState, LightCmd)
+        self.msg_related_classes['ambf_msgs/SensorState'] = MsgRelatedClasses(Sensor, SensorState, SensorCmd)
+        self.msg_related_classes['ambf_msgs/ContactSensorState'] = MsgRelatedClasses(ContactSensor, ContactSensorState, ContactSensorCmd)
+        self.msg_related_classes['ambf_msgs/VehicleState'] = MsgRelatedClasses(Vehicle, VehicleState, VehicleCmd)
+
     def set_publish_rate(self, rate):
         self._rate = self.ral.create_rate(rate)
+
+    def create_obj(self, topic_name, msg_type):
+        obj_handle = None
+        msg_related_classes = self.msg_related_classes.get(msg_type)
+        if msg_related_classes:
+            post_trimmed_name = topic_name.replace('/State', '')
+            class_type = msg_related_classes.obj_type
+            state_msg_type = msg_related_classes.state_msg_type
+            cmd_msg_type = msg_related_classes.cmd_msg_type
+            obj_handle = class_type(ral = self.ral, a_name = post_trimmed_name)
+            obj_handle._sub = self.ral.subscriber(topic_name, state_msg_type, obj_handle.ros_cb)
+            obj_handle._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), cmd_msg_type)
+        else:
+            # print('No matching AMBF class found for message type: ', msg_type)
+            pass
+        return obj_handle
 
     def create_objs_from_rostopics(self, publish_rate):
         self.ral = ral(self._client_name)
@@ -102,15 +138,7 @@ class Client:
             topic_name = self._ros_topics[i][0]
             msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
 
-            if msg_type in ['ambf_msgs/ActuatorState',
-                            'ambf_msgs/CameraState',
-                            'ambf_msgs/LightState',
-                            'ambf_msgs/ObjectState',
-                            'ambf_msgs/RigidBodyState',
-                            'ambf_msgs/GhostObjectState',
-                            'ambf_msgs/SensorState',
-                            'ambf_msgs/ContactSensorState',
-                            'ambf_msgs/VehicletState']:
+            if msg_type in self.msg_related_classes.keys():
                 if first_run:
                     first_run = False
                     self._common_obj_namespace = topic_name
@@ -128,96 +156,15 @@ class Client:
         for i in range(len(self._ros_topics)):
             topic_name = self._ros_topics[i][0]
             msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
-            if msg_type == 'ambf_msgs/WorldState':
-                self._world_name = 'World'
-                world_obj = World(self._world_name, self.ral)
-                world_obj._sub = self.ral.subscriber(topic_name, WorldState, world_obj.ros_cb)
-                world_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), WorldCmd)
-                world_obj._reset_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset'), Empty, queue_size = 1)
-                world_obj._reset_bodies_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset/Bodies'), Empty, queue_size = 1)
-                self._world_handle = world_obj
-                self._objects_dict[world_obj.get_name()] = world_obj
-            elif msg_type == 'ambf_msgs/ActuatorState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Actuator(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = ActuatorState()
-                base_obj._cmd = ActuatorCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, ActuatorState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), ActuatorCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/CameraState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Camera(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = CameraState()
-                base_obj._cmd = CameraCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, CameraState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), CameraCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/LightState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Light(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = LightState()
-                base_obj._cmd = LightCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, LightState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), LightCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/ObjectState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Object(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = ObjectState()
-                base_obj._cmd = ObjectCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, ObjectState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'))
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/RigidBodyState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = RigidBody(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = RigidBodyState()
-                base_obj._cmd = RigidBodyCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, RigidBodyState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), RigidBodyCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/GhostObjectState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = GhostObject(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = GhostObjectState()
-                base_obj._cmd = GhostObjectCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, GhostObjectState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), GhostObjectCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/SensorState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Sensor(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = SensorState()
-                base_obj._cmd = SensorCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, SensorState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), SensorCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/ContactSensorState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = ContactSensor(ral = self.ral, name = post_trimmed_name)
-                base_obj._state = ContactSensorState()
-                base_obj._cmd = ContactSensorCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, ContactSensorState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), ContactSensorCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
-            elif msg_type == 'ambf_msgs/VehicleState':
-                # pre_trimmed_name = topic_niyme.replace(self._common_obj_namespace, '')
-                post_trimmed_name = topic_name.replace('/State', '')
-                base_obj = Vehicle(ral = self.ral, a_name = post_trimmed_name)
-                base_obj._state = VehicleState()
-                base_obj._cmd = VehicleCmd()
-                base_obj._sub = self.ral.subscriber(topic_name, VehicleState, base_obj.ros_cb)
-                base_obj._pub = self.ral.publisher(topic_name.replace('/State', '/Command'), VehicleCmd)
-                self._objects_dict[base_obj.get_name()] = base_obj
+            
+            obj_handle = self.create_obj(topic_name, msg_type)
+            if obj_handle is not None:
+                if type(obj_handle) == World:
+                    self._world_name = 'World'
+                    self._world_handle = obj_handle
+                    obj_handle._reset_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset'), Empty, queue_size = 1)
+                    obj_handle._reset_bodies_pub = self.ral.publisher(topic_name.replace('/State', '/Command/Reset/Bodies'), Empty, queue_size = 1)
+                self._objects_dict[obj_handle.get_name()] = obj_handle
 
         self.ral.spin()
 
@@ -267,27 +214,12 @@ class Client:
                     print(objects[i].get_name())
                 print('PLEASE SPECIFY FULL NAME TO GET THE OBJECT HANDLE')
                 found_obj = None
-
-        if type(found_obj) == Object:
+        if type(found_obj) in self.object_types:
             found_obj.set_active()
-            found_obj.set_publish_children_names_flag(True)
-            found_obj.set_publish_joint_names_flag(True)
-            found_obj.set_publish_joint_positions_flag(True)
-        elif type(found_obj) == RigidBody:
-            found_obj.set_active()
-            found_obj.set_publish_children_names_flag(True)
-            found_obj.set_publish_joint_names_flag(True)
-            found_obj.set_publish_joint_positions_flag(True)
-        elif type(found_obj) == Actuator:
-            found_obj.set_active()
-        elif type(found_obj) == Camera:
-            found_obj.set_active()
-        elif type(found_obj) == Light:
-            found_obj.set_active()
-        elif type(found_obj) == Sensor:
-            found_obj.set_active()
-        elif type(found_obj) == Vehicle:
-            found_obj.set_active()
+            if type(found_obj) in [Object, RigidBody]:
+                found_obj.set_publish_children_names_flag(True)
+                found_obj.set_publish_joint_names_flag(True)
+                found_obj.set_publish_joint_positions_flag(True)
 
         return found_obj
 

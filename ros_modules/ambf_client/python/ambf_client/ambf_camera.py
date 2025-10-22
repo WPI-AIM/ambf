@@ -55,3 +55,5 @@ class Camera(BaseObject):
         super(Camera, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "CAMERA"
         self.body_type = "KINEMATIC"
+        self._state = CameraState()
+        self._cmd = CameraCmd()

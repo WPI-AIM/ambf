@@ -59,6 +59,8 @@ class RigidBody(BaseObject):
         super(RigidBody, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "RIGID_BODY"
         self.body_type = "DYNAMIC"
+        self._state = RigidBodyState()
+        self._cmd = RigidBodyCmd()
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set
         self._pose_cmd_set = False  # Flag to check if a Pose command has been set
         self._twist_cmd_set = False  # Flag to check if a Twist command has been set
@@ -309,10 +311,6 @@ class RigidBody(BaseObject):
         set joint position publishing state
         """
         self._cmd.publish_joint_positions = state
-
-    def set_active(self):
-        """Mark this object as active"""
-        self._active = True
 
     def get_inertia(self):
         """

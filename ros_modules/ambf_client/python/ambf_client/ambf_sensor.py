@@ -41,8 +41,8 @@
 # */
 # //==============================================================================
 
-from ambf_msgs.msg import SensorState
-from ambf_msgs.msg import SensorCmd
+from ambf_msgs.msg import SensorState, ContactSensorState
+from ambf_msgs.msg import SensorCmd, ContactSensorCmd
 from .ambf_base_object import BaseObject
 from enum import Enum
 
@@ -69,7 +69,8 @@ class Sensor(SensorBase):
         :param a_name:
         """
         super().__init__(SensorType.RAYTRACER, a_name, time_out)  # Set duration of Watchdog expiry
-        
+        self._state = SensorState()
+        self._cmd = SensorCmd()
 
     def _clear_command(self):
         """
@@ -153,6 +154,8 @@ class ContactSensor(SensorBase):
         :param a_name:
         """
         super().__init__(SensorType.CONTACT, a_name, time_out)  # Set duration of Watchdog expiry
+        self._state = ContactSensorState()
+        self._cmd = ContactSensorCmd()
 
     def _clear_command(self):
         """

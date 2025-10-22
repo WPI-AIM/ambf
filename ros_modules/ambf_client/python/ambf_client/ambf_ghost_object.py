@@ -56,6 +56,8 @@ class GhostObject(BaseObject):
         super(GhostObject, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "GHOST"
         self.body_type = "KINEMATIC"
+        self._state = GhostObjectState()
+        self._cmd = GhostObjectCmd()
 
     def _clear_command(self):
         """

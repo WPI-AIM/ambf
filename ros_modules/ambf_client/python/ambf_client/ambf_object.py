@@ -59,6 +59,8 @@ class Object(BaseObject):
         super(Object, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "DEFAULT_OBJECT"
         self.body_type = "DYNAMIC"
+        self._state = ObjectState()
+        self._cmd = ObjectCmd()
         self._wrench_cmd_set = False  # Flag to check if a Wrench command has been set from the Object
 
     def is_joint_idx_valid(self, joint_idx):
@@ -195,10 +197,6 @@ class Object(BaseObject):
         set joint position publishing state
         """
         self._cmd.publish_joint_positions = state
-
-    def set_active(self):
-        """Mark this object as active"""
-        self._active = True
 
     def get_inertia(self):
         """

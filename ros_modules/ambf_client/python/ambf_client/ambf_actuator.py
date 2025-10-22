@@ -57,6 +57,8 @@ class Actuator(BaseObject):
         super(Actuator, self).__init__(ral = ral, a_name = a_name, time_out = time_out)  # Set duration of Watchdog expiry
         self.object_type = "ACTUATOR"
         self.body_type = "KINEMATIC"
+        self._state = ActuatorState()
+        self._cmd = ActuatorCmd()
 
     def _clear_command(self):
         """
