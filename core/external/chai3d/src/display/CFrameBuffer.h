@@ -146,6 +146,8 @@ public:
 
 public:
 
+    //! Get FBO ID
+    GLuint getID() { return m_fbo; }
 
     //! This method returns the width in pixels of the framebuffer.
     inline unsigned int getWidth() const { return (m_width); }
