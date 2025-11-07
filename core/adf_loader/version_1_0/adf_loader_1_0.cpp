@@ -2417,6 +2417,7 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     YAML::Node isoSurfaceValueNode = node["iso-surface value"];
     YAML::Node opticalDensityNode = node["optical density"];
     YAML::Node qualityNode = node["quality"];
+    YAML::Node colorLUTFilePathNode = node["color lut"]; // A 1D transfer function file path as an image
 
 
     ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
@@ -2460,6 +2461,10 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
             e.what();
             return 0;
         }
+    }
+
+    if (colorLUTFilePathNode.IsDefined()){
+        attribs->m_colorLUTFilepath = colorLUTFilePathNode.as<string>();
     }
 
     return result;

@@ -352,6 +352,8 @@ void cVoxelObject::setCustomShaderProgram(cShaderProgramPtr a_shaderPgm)
     // link program shader
     m_programShaders[mode]->linkProgram();
 
+    m_shaderProgram = m_programShaders[mode];
+
     setRenderingModeCustom();
 }
 

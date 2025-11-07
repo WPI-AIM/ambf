@@ -1043,6 +1043,7 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
     afHierarchyAttributes m_hierarchyAttribs;
     afVolumeSpecificationType m_specificationType;
     afMultiImagesAttributes m_multiImageAttribs;
+    afPath m_colorLUTFilepath;
     afShaderAttributes m_shaderAttribs;
     afColorAttributes m_colorAttribs;
     afVector3d m_dimensions;
@@ -1055,6 +1056,7 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
         m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
         m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
         m_multiImageAttribs.resolveRelativePathAttribs(a_parentPath);
+        m_colorLUTFilepath.resolvePath(a_parentPath);
     }
 };
 

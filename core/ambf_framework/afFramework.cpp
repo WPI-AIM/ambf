@@ -8566,6 +8566,12 @@ bool afVolume::createFromAttribs(afVolumeAttributes *a_attribs)
         m_voxelObject->setMaterial(mat);
     }
 
+    if (m_voxelObject->m_colorMap->loadFromFile(a_attribs->m_colorLUTFilepath.c_str())){
+        cout << "INFO! VOLUME OBJECT \"" << m_name << "\" TRANSFER FUNCTION LOADED FROM FILE: " << a_attribs->m_colorLUTFilepath.c_str() << endl;
+        m_voxelObject->setUseColorMap(true);
+        m_voxelObject->getShaderProgram()->setUniformi("uUseColorMap", 1);
+    }
+
     loadPlugins(&a_attribs->m_pluginAttribs);
 
     return true;
