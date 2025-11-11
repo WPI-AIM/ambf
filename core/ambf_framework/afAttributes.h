@@ -669,6 +669,31 @@ public:
 };
 
 
+class afPointCloudAttributes: public afBaseObjectAttributes
+{
+public:
+    afPointCloudAttributes(){
+        m_pointSize = 0.01;
+        m_visible = true;
+    }
+
+    virtual void resolveRelativePathAttribs(afPath a_parentPath){
+        if (m_pathsResolved == false){
+            afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
+            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_pathsResolved = true;
+        }
+    }
+    
+    double m_pointSize;
+    bool m_visible;
+    afHierarchyAttributes m_hierarchyAttribs;
+    afColorAttributes m_colorAttribs;
+    afShaderAttributes m_shaderAttribs;
+};
+
+
 
 ///
 /// \brief The afJointAttributes struct
@@ -1194,6 +1219,7 @@ public:
     vector <afActuatorAttributes*> m_actuatorAttribs;
     vector <afCameraAttributes> m_cameraAttribs;
     vector <afLightAttributes> m_lightAttribs;
+    vector <afPointCloudAttributes> m_pointCloudAttribs;
     vector <afPluginAttributes> m_pluginAttribs;
 
     bool m_ignoreInterCollision;
@@ -1242,6 +1268,10 @@ public:
                 m_lightAttribs[i].resolveRelativeNamespace(a_parentNamespace);
             }
 
+            for (int i = 0 ; i < m_pointCloudAttribs.size() ; i++){
+                m_pointCloudAttribs[i].resolveRelativeNamespace(a_parentNamespace);
+            }
+
             m_namespaceResolved = true;
         }
         return true;
@@ -1285,6 +1315,10 @@ public:
 
             for (int i = 0 ; i < m_lightAttribs.size() ; i++){
                 m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);
+            }
+
+            for (int i = 0 ; i < m_pointCloudAttribs.size() ; i++){
+                m_pointCloudAttribs[i].resolveRelativePathAttribs(a_parentPath);
             }
 
             for (int i = 0 ; i < m_pluginAttribs.size() ; i++){

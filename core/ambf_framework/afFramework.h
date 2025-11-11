@@ -774,6 +774,8 @@ public:
 
     string addVolume(afVolumePtr a_volume);
 
+    string addPointCloud(afPointCloudPtr a_pointCloud);
+
     string addBaseObject(afBaseObjectPtr a_obj);
 
     bool addBaseObject(afBaseObjectPtr a_obj, string a_name);
@@ -862,6 +864,8 @@ public:
     inline afBaseObjectMap* getSensorMap(){return &m_childrenObjectsMap[afType::SENSOR];}
 
     inline afBaseObjectMap* getVehicleMap(){return &m_childrenObjectsMap[afType::VEHICLE];}
+
+    inline afBaseObjectMap* getPointCloudMap(){return &m_childrenObjectsMap[afType::POINT_CLOUD];}
 
     inline afBaseObjectMap* getVolumeMap(){return &m_childrenObjectsMap[afType::VOLUME];}
 
@@ -2203,9 +2207,11 @@ protected:
 ///
 class afPointCloud: public afBaseObject{
 public:
-    afPointCloud(afWorldPtr a_afWorld);
+    afPointCloud(afWorldPtr a_afWorld, afModelPtr a_modelPtr);
 
     ~afPointCloud();
+
+    virtual bool createFromAttribs(afPointCloudAttributes* a_attribs);
 
     cMultiPointPtr m_mpPtr;
 
@@ -2213,7 +2219,7 @@ public:
 
     virtual void update(double dt);
 
-    std::string m_topicName;
+    cShaderProgramPtr m_shaderProgram;
 };
 
 

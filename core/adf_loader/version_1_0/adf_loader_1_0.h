@@ -142,29 +142,32 @@ public:
     // Load joint from a YAML::Node
     virtual bool loadJointAttribs(YAML::Node* a_node, afJointAttributes* attribs);
 
-    // Load joint from a YAML::Node
+    // Load sensor from a YAML::Node
     virtual bool loadSensorAttribs(YAML::Node* a_node, afSensorAttributes* attribs);
 
-    // Load joint from a YAML::Node
+    // Load ray tracing sensor from a YAML::Node
     virtual bool loadRayTracerSensorAttribs(YAML::Node* a_node, afRayTracerSensorAttributes* attribs);
 
-    // Load joint from a YAML::Node
+    // Load resistance sensor from a YAML::Node
     virtual bool loadResistanceSensorAttribs(YAML::Node* a_node, afResistanceSensorAttributes* attribs);
 
-    // Load joint from a YAML::Node
+    // Load contact sensor from a YAML::Node
     virtual bool loadContactSensorAttribs(YAML::Node* a_node, afContactSensorAttributes* attribs);
 
     // Load actuator from a YAML::Node
     virtual bool loadActuatorAttribs(YAML::Node* a_node, afActuatorAttributes* attribs);
 
-    // Load actuator from a YAML::Node
+    // Load constraint actuator from a YAML::Node
     virtual bool loadConstraintActuatorAttribs(YAML::Node* a_node, afConstraintActuatorAttributes* attribs);
 
-    // Load sensor from a YAML::Node
+    // Load vehicle from a YAML::Node
     virtual bool loadVehicleAttribs(YAML::Node* a_node, afVehicleAttributes* attribs);
 
-    // Load sensor from a YAML::Node
+    // Load volume from a YAML::Node
     virtual bool loadVolumeAttribs(YAML::Node* a_node, afVolumeAttributes* attribs);
+
+    // Load point cloud from a YAML::Node
+    virtual bool loadPointCloudAttribs(YAML::Node* a_node, afPointCloudAttributes* attribs);
 
     // Load Input Device Attributes
     virtual bool loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs);

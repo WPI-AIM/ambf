@@ -360,7 +360,7 @@ public:
 
             m_flagMarkForUpdate = false;
         }
-
+        glEnable(GL_PROGRAM_POINT_SIZE);
         // render object
         m_vertices->renderInitialize();
         
@@ -370,6 +370,7 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         m_vertices->renderFinalize();
+        glDisable(GL_PROGRAM_POINT_SIZE);
 #endif
     }
 

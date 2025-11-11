@@ -81,8 +81,10 @@ void afWorldCommunicationPlugin::worldFetchCommand(afWorldPtr worldPtr, double)
 
             for (int i = 0 ; i < new_topics.size() ; i++){
                 string topic_name = new_topics[i];
-                afPointCloudPtr afPC = new afPointCloud(worldPtr);
-                afPC->m_topicName = topic_name;
+                afPointCloudPtr afPC = new afPointCloud(worldPtr, nullptr);
+                afPC->setName("point_cloud");
+                afPC->setNamespace(worldPtr->getQualifiedName()+"/");
+                worldPtr->addSceneObjectToWorld(afPC->m_mpPtr);
                 afPC->loadCommunicationPlugin();
                 worldPtr->m_pcMap[topic_name] = afPC;
             }

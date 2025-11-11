@@ -195,9 +195,9 @@ int afObjectCommunicationPlugin::init(const afBaseObjectPtr a_afObjectPtr, const
     }
         break;
     case afType::POINT_CLOUD:
-    {
+    {   
         afPointCloudPtr pcPtr = (afPointCloudPtr)m_objectPtr;
-        m_pointCloudCommPtr.reset(new ambf_comm::PointCloud(pcPtr->m_topicName));
+        m_pointCloudCommPtr.reset(new ambf_comm::PointCloud(objNamespace + objName));
         success = true;
     }
         break;
@@ -1116,7 +1116,7 @@ void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCl
             }
             else{
                 // Parent not found.
-                cerr << "WARNING! FOR POINT CLOUD \""<< pointCloudPtr->m_topicName <<
+                cerr << "WARNING! FOR POINT CLOUD \""<< pointCloudPtr->getQualifiedName() <<
                         "\" PARENT BODY \"" << frame_id <<
                         "\" NOT FOUND" << endl;
             }

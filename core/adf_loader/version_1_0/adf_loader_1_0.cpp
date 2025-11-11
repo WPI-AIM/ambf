@@ -2470,6 +2470,35 @@ bool ADFLoader_1_0::loadVolumeAttribs(YAML::Node *a_node, afVolumeAttributes *at
     return result;
 }
 
+bool adf_loader_1_0::ADFLoader_1_0::loadPointCloudAttribs(YAML::Node *a_node, afPointCloudAttributes *attribs)
+{
+    YAML::Node& node = *a_node;
+    if (node.IsNull()){
+        cerr << "ERROR! POINT CLOUD'S YAML CONFIG DATA IS NULL\n";
+        return 0;
+    }
+    ADFUtils::saveRawData(a_node, attribs);
+
+    bool result = true;
+    // Declare all the yaml parameters that we want to look for
+    YAML::Node nameNode = node["name"];
+    YAML::Node nameSpaceNode = node["namespace"];
+    YAML::Node parentNameNode = node["parent"];
+    YAML::Node pointsSizeNode = node["points size"];
+
+    ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
+    ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
+    ADFUtils::getCommunicationAttribsFromNode(a_node, &attribs->m_communicationAttribs);
+    ADFUtils::getShaderAttribsFromNode(a_node, &attribs->m_shaderAttribs);
+    ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
+    ADFUtils::getColorAttribsFromNode(a_node, &attribs->m_colorAttribs);
+
+    if (pointsSizeNode.IsDefined()){
+        attribs->m_pointSize = pointsSizeNode.as<double>();
+    }
+
+    return result;
+}
 
 bool ADFLoader_1_0::loadInputDeviceAttribs(YAML::Node* a_node, afInputDeviceAttributes *attribs)
 {
@@ -2751,6 +2780,7 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
     YAML::Node actuatorsNode = node["actuators"];
     YAML::Node camerasNode = node["cameras"];
     YAML::Node lightsNode = node["lights"];
+    YAML::Node pointCloudsNode = node["point clouds"];
     YAML::Node jointERPNode = node["joint erp"];
     YAML::Node jointCFMNode = node["joint cfm"];
     YAML::Node ignoreInterCollisionNode = node["ignore inter-collision"];
@@ -2943,6 +2973,17 @@ bool ADFLoader_1_0::loadModelAttribs(YAML::Node *a_node, afModelAttributes *attr
         if (loadVolumeAttribs(&volumeNode, &volumeAttribs)){
             volumeAttribs.m_identifier = identifier;
             attribs->m_volumeAttribs.push_back(volumeAttribs);
+        }
+    }
+
+    // Load Point Clouds
+    for (size_t i = 0 ; i < pointCloudsNode.size(); i++){
+        afPointCloudAttributes pointCloudAttribs;
+        string identifier = pointCloudsNode[i].as<string>();
+        YAML::Node pointCloudNode = node[identifier];
+        if (loadPointCloudAttribs(&pointCloudNode, &pointCloudAttribs)){
+            pointCloudAttribs.m_identifier = identifier;
+            attribs->m_pointCloudAttribs.push_back(pointCloudAttribs);
         }
     }
 

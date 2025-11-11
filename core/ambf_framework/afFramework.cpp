@@ -4955,6 +4955,20 @@ string afObjectManager::addVolume(afVolumePtr a_obj)
     return remaped_identifier;
 }
 
+///
+/// \brief afObjectManager::addPointCloud
+/// \param a_pointCloud
+/// \return
+///
+string afObjectManager::addPointCloud(afPointCloudPtr a_obj)
+{
+    string qualified_identifier = a_obj->getQualifiedIdentifier();
+    string remap_str = afUtils::getNonCollidingIdx(qualified_identifier, getPointCloudMap());
+    string remaped_identifier = qualified_identifier + remap_str;
+    addBaseObject(a_obj, qualified_identifier + remap_str);
+    return remaped_identifier;
+}
+
 string afObjectManager::addBaseObject(afBaseObjectPtr a_obj)
 {
     string remaped_name = "";
@@ -4988,6 +5002,9 @@ string afObjectManager::addBaseObject(afBaseObjectPtr a_obj)
         break;
     case afType::LIGHT:
         remaped_name = addLight((afLightPtr)a_obj);
+        break;
+    case afType::POINT_CLOUD:
+        remaped_name = addPointCloud((afPointCloudPtr)a_obj);
         break;
     default:
         cerr << "ERROR! OBJECT " << a_obj->getQualifiedIdentifier() << "'s TYPE HAS NOT BEEN IMPLEMENTED IN OBJECT MANAGER YET!" << endl;
@@ -7713,6 +7730,14 @@ bool afModel::createFromAttribs(afModelAttribsPtr a_attribs)
         }
     }
 
+    // Load PointClouds
+    for (size_t i = 0; i < a_attribs->m_pointCloudAttribs.size(); ++i) {
+        afPointCloudPtr pcPtr = new afPointCloud(m_afWorld, this);
+        if (pcPtr->createFromAttribs(&a_attribs->m_pointCloudAttribs[i])){
+            addPointCloud(pcPtr);
+        }
+    }
+
     loadPlugins(&a_attribs->m_pluginAttribs);
 
     // This flag would ignore collision for all the multibodies in the scene
@@ -8207,10 +8232,36 @@ afDepthPointCloud::~afDepthPointCloud()
 
 //------------------------------------------------------------------------------
 
-afPointCloud::afPointCloud(afWorldPtr a_afWorld): afBaseObject(afType::POINT_CLOUD, a_afWorld)
+afPointCloud::afPointCloud(afWorldPtr a_afWorld, afModelPtr a_modelPtr): afBaseObject(afType::POINT_CLOUD, a_afWorld, a_modelPtr)
 {
     m_mpPtr = new cMultiPoint();
-    m_afWorld->addSceneObjectToWorld(m_mpPtr);
+    // m_afWorld->addSceneObjectToWorld(m_mpPtr);
+}
+
+bool afPointCloud::createFromAttribs(afPointCloudAttributes *a_attribs)
+{
+    storeAttributes(a_attribs);
+
+    setIdentifier(a_attribs->m_identifier);
+    setName(a_attribs->m_identificationAttribs.m_name);
+    setNamespace(a_attribs->m_identificationAttribs.m_namespace);
+
+    m_mpPtr->setPointSize(a_attribs->m_pointSize);
+
+    m_parentName = a_attribs->m_hierarchyAttribs.m_parentName;
+
+    if (m_parentName.empty() == false){
+        m_afWorld->addObjectMissingParent(this);
+    }
+
+    if (a_attribs->m_shaderAttribs.m_shaderDefined){
+        m_shaderProgram = afShaderUtils::createFromAttribs(&a_attribs->m_shaderAttribs, getQualifiedName(), "POINT_CLOUD_SHADERS");
+        m_mpPtr->setShaderProgram(m_shaderProgram);
+    }
+    // m_afWorld->addSceneObjectToWorld(m_mpPtr);
+    loadPlugins(&a_attribs->m_pluginAttribs);
+    loadCommunicationPlugin();
+    return true;
 }
 
 afPointCloud::~afPointCloud()
