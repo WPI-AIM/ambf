@@ -191,12 +191,15 @@ bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *
         afPath localPath = shadersNode["path"].as<string>();
 
         attribs->m_vtxFilepath = shadersNode["vertex"].as<string>();
-        attribs->m_geoFilepath = shadersNode["geometry"].as<string>();
         attribs->m_fragFilepath = shadersNode["fragment"].as<string>();
 
         attribs->m_vtxFilepath = localPath / attribs->m_vtxFilepath;
-        attribs->m_geoFilepath = localPath / attribs->m_geoFilepath;
         attribs->m_fragFilepath = localPath / attribs->m_fragFilepath;
+
+        if (shadersNode["geometry"].IsDefined()){
+            attribs->m_geoFilepath = localPath / attribs->m_geoFilepath;
+            attribs->m_geoFilepath = shadersNode["geometry"].as<string>();
+        }
 
         if (shadersNode["geometry data"].IsDefined()){
             YAML::Node geometryDataNode = shadersNode["geometry data"];
