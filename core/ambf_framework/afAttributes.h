@@ -387,11 +387,29 @@ struct afShaderAttributes{
 public:
     afShaderAttributes(){
         m_shaderDefined = false;
+        m_geometryInputType = "triangles"; // Valid options: points, lines, lines_adjacency, triangles, triangles_adjacency
+        m_geometryOutputType = "triangle_strip"; // Valid options: points, line_strip, triangle_strip
+        m_geometryMaxVerticesOut = 3;
+    }
+
+    bool resolveRelativePathAttribs(afPath a_parentPath){
+        if (m_shaderDefined){
+            m_vtxFilepath.resolvePath(a_parentPath);
+            m_geoFilepath.resolvePath(a_parentPath);
+            m_fragFilepath.resolvePath(a_parentPath);
+            return true;
+        }
+        return false;
     }
 
     bool m_shaderDefined;
-    afPath m_vtxFilepath;
-    afPath m_fragFilepath;
+    afPath m_vtxFilepath; // Vertex Shader Filepath
+    afPath m_geoFilepath; // Geometry Shader Filepath
+    afPath m_fragFilepath; // Fragment Shader Filepath
+
+    string m_geometryInputType;
+    string m_geometryOutputType;
+    unsigned int m_geometryMaxVerticesOut;
 };
 
 
@@ -629,10 +647,8 @@ public:
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
             afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
-            m_preProcessShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_preProcessShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
-            m_depthComputeShaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_depthComputeShaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_preProcessShaderAttribs.resolveRelativePathAttribs(a_parentPath);
+            m_depthComputeShaderAttribs.resolveRelativePathAttribs(a_parentPath);
             m_pathsResolved = true;
         }
     }
@@ -680,8 +696,7 @@ public:
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         if (m_pathsResolved == false){
             afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
-            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
             m_pathsResolved = true;
         }
     }
@@ -812,8 +827,7 @@ public:
             afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
             m_pathsResolved = true;
         }
     }
@@ -934,8 +948,7 @@ public:
             afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
             m_collisionAttribs.m_meshFilepath.resolvePath(a_parentPath);
             m_visualAttribs.m_meshFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
             m_pathsResolved = true;
         }
     }
@@ -1078,8 +1091,7 @@ struct afVolumeAttributes: public afBaseObjectAttributes{
 
     virtual void resolveRelativePathAttribs(afPath a_parentPath){
         afBaseObjectAttributes::resolveRelativePathAttribs(a_parentPath);
-        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
         m_multiImageAttribs.resolveRelativePathAttribs(a_parentPath);
         m_colorLUTFilepath.resolvePath(a_parentPath);
     }
@@ -1326,8 +1338,7 @@ public:
             }
 
             if (m_shaderAttribs.m_shaderDefined){
-                m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-                m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+                m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
             }
 
             m_pathsResolved = true;
@@ -1430,8 +1441,7 @@ struct afSkyBoxAttributes{
         m_rightImageFilepath.resolvePath(a_parentPath);
         m_topImageFilepath.resolvePath(a_parentPath);
 
-        m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-        m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+        m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
 
         return true;
     }
@@ -1500,8 +1510,7 @@ public:
             afPath a_parentPath = m_filePath.parent_path();
             m_skyBoxAttribs.resolveRelativePathAttribs(a_parentPath);
 
-            m_shaderAttribs.m_vtxFilepath.resolvePath(a_parentPath);
-            m_shaderAttribs.m_fragFilepath.resolvePath(a_parentPath);
+            m_shaderAttribs.resolveRelativePathAttribs(a_parentPath);
 
             for (uint i = 0 ; i < m_lightAttribs.size() ; i++){
                 m_lightAttribs[i].resolveRelativePathAttribs(a_parentPath);

@@ -8254,6 +8254,9 @@ bool afPointCloud::createFromAttribs(afPointCloudAttributes *a_attribs)
         m_afWorld->addObjectMissingParent(this);
     }
 
+    cMaterial mat = afMaterialUtils::createFromAttribs(&a_attribs->m_colorAttribs);
+    m_mpPtr->setMaterial(mat);
+
     if (a_attribs->m_shaderAttribs.m_shaderDefined){
         m_shaderProgram = afShaderUtils::createFromAttribs(&a_attribs->m_shaderAttribs, getQualifiedName(), "POINT_CLOUD_SHADERS");
         m_mpPtr->setShaderProgram(m_shaderProgram);
@@ -8483,19 +8486,110 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
 {
     cShaderProgramPtr shaderProgram;
     if (attribs->m_shaderDefined){
-        string vtxShader = afUtils::loadFileContents(attribs->m_vtxFilepath.c_str());
-        string fragShader = afUtils::loadFileContents(attribs->m_fragFilepath.c_str());
-        shaderProgram = cShaderProgram::create(vtxShader, fragShader);
+        string vtxShaderSrc = afUtils::loadFileContents(attribs->m_vtxFilepath.c_str());
+        string geoShaderSrc = afUtils::loadFileContents(attribs->m_geoFilepath.c_str());
+        string fragShaderSrc = afUtils::loadFileContents(attribs->m_fragFilepath.c_str());
+        shaderProgram = cShaderProgram::create();
+        
+        // Load Vertex Shader
+        cShaderPtr vtxShaderPtr = cShader::create(cShaderType::C_VERTEX_SHADER);
+        if (!vtxShaderSrc.empty()){
+            vtxShaderPtr->loadSourceCode(vtxShaderSrc);
+            if (!vtxShaderPtr->compile()){
+                    cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO COMPILE VERTEX SHADER TYPE " << type << " FROM FILE: " <<
+                            "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() << endl;
+            }
+            else{
+                cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                        "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() << endl;
+                shaderProgram->attachShader(vtxShaderPtr);
+            }
+        }
+        
+        // Load Fragment Shader
+        cShaderPtr fragShaderPtr = cShader::create(cShaderType::C_FRAGMENT_SHADER);
+        if (!fragShaderSrc.empty()){
+            fragShaderPtr->loadSourceCode(fragShaderSrc);
+            if (!fragShaderPtr->compile()){
+                    cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO COMPILE FRAGMENT SHADER TYPE " << type << " FROM FILE: " <<
+                            "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+            }
+            else{
+                cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                        "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+                shaderProgram->attachShader(fragShaderPtr);
+            }
+        }
+
+        // Load Geometry Shader
+        cShaderPtr geoShaderPtr = cShader::create(cShaderType::C_GEOMETRY_SHADER);
+        if (!geoShaderSrc.empty()){
+            geoShaderPtr->loadSourceCode(geoShaderSrc);
+            if (!geoShaderPtr->compile()){
+                    cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO COMPILE GEOMETRY SHADER TYPE " << type << " FROM FILE: " <<
+                            "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() << endl;
+                }
+                else{
+                    cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                            "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() << endl;
+                    shaderProgram->attachShader(geoShaderPtr);
+                    
+                    // Set geometry shader input types
+                    if (attribs->m_geometryInputType.compare("points") == 0){
+                        shaderProgram->setGeometryInputType(GL_POINTS);
+                    }
+                    else if (attribs->m_geometryInputType.compare("lines") == 0){
+                        shaderProgram->setGeometryInputType(GL_LINES);
+                    }
+                    else if (attribs->m_geometryInputType.compare("lines_adjacency") == 0){
+                        shaderProgram->setGeometryInputType(GL_LINES_ADJACENCY);
+                    }
+                    else if (attribs->m_geometryInputType.compare("triangles") == 0){
+                        shaderProgram->setGeometryInputType(GL_TRIANGLES);
+                    }
+                    else if (attribs->m_geometryInputType.compare("triangles_adjacency") == 0){
+                        shaderProgram->setGeometryInputType(GL_TRIANGLES_ADJACENCY);
+                    }
+                    else{
+                        shaderProgram->setGeometryInputType(GL_TRIANGLES);
+                        cerr << "WARNING! FOR OBJECT: "<< objName << ", GEOMETRY INPUT TYPE " << attribs->m_geometryInputType <<
+                                " NOT RECOGNIZED, DEFAULTING TO \"triangles\"" << endl;
+                    }
+                    
+                    // Set geometry shader output types
+                    if (attribs->m_geometryOutputType.compare("points") == 0){
+                        shaderProgram->setGeometryOutputType(GL_POINTS);
+                    }
+                    else if (attribs->m_geometryOutputType.compare("line_strip") == 0){
+                        shaderProgram->setGeometryOutputType(GL_LINE_STRIP);
+                    }
+                    else if (attribs->m_geometryOutputType.compare("triangle_strip") == 0){
+                        shaderProgram->setGeometryOutputType(GL_TRIANGLE_STRIP);
+                    }
+                    else{
+                        cerr << "WARNING! FOR OBJECT: "<< objName << ", GEOMETRY OUTPUT TYPE " << attribs->m_geometryOutputType <<
+                                " NOT RECOGNIZED, DEFAULTING TO \"triangle_strip\"" << endl;
+                        shaderProgram->setGeometryOutputType(GL_TRIANGLE_STRIP);
+                    }
+                    
+                    // Set geometry shader max vertices out
+                    shaderProgram->setGeometryVerticesOut(attribs->m_geometryMaxVerticesOut);
+                }
+        }
+
         if (shaderProgram->linkProgram()){
             cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILES: " <<
                     "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                    "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() <<
                     "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
         }
         else{
             cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO LOAD SHADER TYPE " << type << " FROM FILES: " <<
                     "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
+                    "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() <<
                     "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
         }
+
     }
     return shaderProgram;
 }

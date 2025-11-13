@@ -212,13 +212,36 @@ bool cShaderProgram::linkProgram()
         glBindAttribLocation(m_id, C_VB_TANGENT, "aTangent");
         glBindAttribLocation(m_id, C_VB_BITANGENT, "aBitangent");
 
-        // set geometry shader input/output types
-        if (m_geometryShaderAttached)
-        {
-            glProgramParameteriEXT(m_id, GL_GEOMETRY_INPUT_TYPE_EXT, m_geometryInputType);
-            glProgramParameteriEXT(m_id, GL_GEOMETRY_OUTPUT_TYPE_EXT, m_geometryOutputType);
-            glProgramParameteriEXT(m_id, GL_GEOMETRY_VERTICES_OUT_EXT, m_geometryVerticesOut);
-        }
+                // set geometry shader input/output types
+                if (m_geometryShaderAttached)
+                {
+                // Safety Check: Ensure that the necessary functions are available
+                #ifdef GLEW_VERSION
+                    // Prefer the EXT functions if the extension is available (older drivers)
+                    if (GLEW_EXT_geometry_shader4 && (glProgramParameteriEXT != NULL))
+                    {
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_INPUT_TYPE_EXT, m_geometryInputType);
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_OUTPUT_TYPE_EXT, m_geometryOutputType);
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_VERTICES_OUT_EXT, m_geometryVerticesOut);
+                    }
+                    // Fallback to the core GL 3.2 function when available
+                    else if (GLEW_VERSION_3_2 && (glProgramParameteri != NULL))
+                    {
+                        glProgramParameteri(m_id, GL_GEOMETRY_INPUT_TYPE, m_geometryInputType);
+                        glProgramParameteri(m_id, GL_GEOMETRY_OUTPUT_TYPE, m_geometryOutputType);
+                        glProgramParameteri(m_id, GL_GEOMETRY_VERTICES_OUT, m_geometryVerticesOut);
+                    }
+                    // If neither is available, skip setting geometry parameters safely.
+                #else
+                    // If GLEW isn't used, attempt to call the EXT entry point only if it's non-null.
+                    if (glProgramParameteriEXT != NULL)
+                    {
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_INPUT_TYPE_EXT, m_geometryInputType);
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_OUTPUT_TYPE_EXT, m_geometryOutputType);
+                        glProgramParameteriEXT(m_id, GL_GEOMETRY_VERTICES_OUT_EXT, m_geometryVerticesOut);
+                    }
+                #endif
+                }
 
         // perform the linking process
         glLinkProgram(m_id);
