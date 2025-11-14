@@ -82,7 +82,7 @@ public:
     }
 
     bool is_complete(){
-        return m_path.is_complete();
+        return m_path.is_absolute();
     }
 
     // If this path is relative, it will be appended to the provided parent path
