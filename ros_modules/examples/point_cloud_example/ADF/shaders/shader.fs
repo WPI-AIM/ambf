@@ -1,85 +1,49 @@
-varying vec4 vPosition;
-varying vec3 vNormal;
-varying vec3 vTexCoord;
+#version 150 compatibility
 
-float attenuation(vec3 p, int i)
-{
-     vec4 p_l = gl_LightSource[i].position;
-     if (p_l.w == 0.0) return 1.0;
-     float d = distance(p, p_l.xyz);
-     float k0 = gl_LightSource[i].constantAttenuation;
-     float k1 = gl_LightSource[i].linearAttenuation;
-     float k2 = gl_LightSource[i].quadraticAttenuation;
-     return 1.0 / (k0 + k1*d + k2*d*d);
-}
+in vec3 vQuadCoord;    // Local quad coordinates (-1 to 1) for sphere impostor
+in vec4 vCenterPos;    // Center of sphere in eye space
 
-float spotlight(vec3 p, int i)
-{
-    if (gl_LightSource[i].spotCosCutoff < 0.0) return 1.0;
-    vec4 p_l = gl_LightSource[i].position;
-    if (p_l.w == 0.0) return 1.0;
-    vec3 v = normalize(p - p_l.xyz);
-    vec3 s = normalize(gl_LightSource[i].spotDirection);
-    float cosine = max(dot(v, s), 0.0);
-    float cutOffOuter = gl_LightSource[i].spotCosCutoff;
-    float epsilon = gl_LightSource[i].spotCosCutoff - cutOffOuter;
-    float intensity = clamp((cosine - cutOffOuter) / epsilon, 0.0, 1.0);
-
-    if (cosine >= gl_LightSource[i].spotCosCutoff){
-      return pow(cosine, gl_LightSource[i].spotExponent);
-    }
-    else{
-      return 0.0;
-    }
-    return intensity;
-}
-
-vec4 shade(vec3 p, vec3 v, vec3 n)
-{
-     vec3 Ie = gl_FrontMaterial.emission.rgb;
-     vec3 Ia = gl_FrontLightModelProduct.sceneColor.rgb;
-     vec3 Il = vec3(0.0);
-
-     for (int i = 0; i < gl_MaxLights; ++i)
-     {
-         vec4 p_l = gl_LightSource[i].position;
-         vec3 l = normalize(p_l.xyz - p * p_l.w);
-         vec3 h = normalize(l + v);
-         vec3 r = reflect(-l, n);
-
-         float s_m = gl_FrontMaterial.shininess;
-         float cosNL = max(dot(n, l), 0.0);
-         float cosNH = max(dot(v, r), 0.0);
-
-         float att = attenuation(p, i);
-         float intensity = 0.3*spotlight(p, i);
-
-         vec3 Iambient = gl_FrontLightProduct[i].ambient.rgb;
-
-         vec3 Idiffuse = cosNL * gl_FrontLightProduct[i].diffuse.rgb;
-
-         vec3 Ispecular = pow(cosNH, s_m) * gl_FrontLightProduct[i].specular.rgb;
-
-         Iambient *= att * intensity;
-
-         Idiffuse *= att * intensity;
-
-         Ispecular *= att;
-
-         vec3 phong = Iambient + Idiffuse + Ispecular;
-
-         Il += phong;
-         Il = clamp(Il, 0.0, 1.0);
-     }
-     float alpha = gl_FrontMaterial.diffuse.a;
-     return vec4(Ie + Ia + Il, alpha);
-}
+// Material properties (from gl_FrontMaterial)
+uniform vec4 uMaterialDiffuse;
+uniform vec4 uMaterialAmbient;
+uniform vec4 uMaterialSpecular;
+uniform int uMaterialShininess;
 
 void main(void)
 {
-    vec3 view = normalize(-vPosition.xyz);
-    vec3 normal = vec3(0.0, 0.0, -1.0);
-    vec4 shaded =  shade(vPosition.xyz, view, normal);
-    // vec4 shadow = shadow2DProj(shadowMap, gl_TexCoord[1]);
-    gl_FragColor = shaded;
+    
+    // Distance from the center of the quad
+    float dist_sq = vQuadCoord.x * vQuadCoord.x + vQuadCoord.y * vQuadCoord.y;
+    
+    // Discard fragments outside the sphere
+    if (dist_sq > 1.0) discard;
+    
+    // Compute the Z offset for the sphere surface (solve x^2 + y^2 + z^2 = r^2)
+    // where x, y are normalized coordinates (-1 to 1)
+    float z_offset = sqrt(1.0 - dist_sq);
+    
+    // Reconstruct the sphere surface normal in eye space
+    vec3 normal = normalize(vec3(vQuadCoord.xy, z_offset));
+    
+    // Simple Phong shading with a fixed light direction
+    // Light direction (assumed to be pointing towards +Z in eye space for simplicity)
+    vec3 lightDir = normalize(vec3(0.3, 0.5, 1.0));
+    vec3 viewDir = normalize(-vCenterPos.xyz);
+    vec3 lightColor = vec3(1.0);  // White light
+    
+    // Ambient: material ambient * material diffuse
+    vec3 ambient = uMaterialAmbient.rgb * uMaterialDiffuse.rgb;
+    
+    // Diffuse: light color * material diffuse * cosine
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = lightColor * uMaterialDiffuse.rgb * diff;
+    
+    // Specular: light color * material specular * pow(cosine, shininess)
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), uMaterialShininess);
+    vec3 specular = lightColor * uMaterialSpecular.rgb * spec;
+    
+    // Combine
+    vec3 color = ambient + diffuse + specular;
+    gl_FragColor = vec4(color, uMaterialDiffuse.a);
 }

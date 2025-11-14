@@ -2,7 +2,7 @@
 # //==============================================================================
 # /*
 #     Software License Agreement (BSD License)
-#     Copyright (c) 2025, AMBF
+#     Copyright (c) 2020, AMBF
 #     (https://github.com/WPI-AIM/ambf)
 #
 #     All rights reserved.
@@ -36,7 +36,7 @@
 #     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #     POSSIBILITY OF SUCH DAMAGE.
 #
-#     \author    <amunawa2@jh.edu>
+#     \author    <amunawar@wpi.edu>
 #     \author    Adnan Munawar
 #     \version   1.0
 # */
@@ -50,16 +50,36 @@ import time
 import numpy as np
 import math
 
-
-print('INFO! MAKE SURE TO RUN THE ADF FILE IN THIS FOLDER CONTAINING THE POINT CLOUD OBJECTS!')
+topics_names_param = '/ambf/env/World/point_cloud_topics'
 
 ral = ral('test_pc')
+# AMBF Will have a default PC listener at /ambf/env/World/point_cloud'
+# pc_topics = rospy.get_param(topics_names_param)
+
+print('Existing Topics AMBF is listening to for Point Cloud')
+# print(pc_topics)
+
+time.sleep(1.0)
+# We can add topics by using the Param Server
+# pc_topics.append('/ambf/env/World/another_point_cloud')
+# rospy.set_param(topics_names_param, pc_topics)
+print('Adding another topic via the ROS Param server')
+
+print('Updated topics on the param server are now:')
+# pc_topics = rospy.get_param('/ambf/env/World/point_cloud_topics')
+# print(pc_topics)
 
 time.sleep(1.0)
 
-pub1 = ral.publisher('/ambf/env/point_clouds/point_cloud_one', PointCloud, queue_size=10)
+print("We can similarly update the size of each individual PC")
 
-pub2 = ral.publisher('/ambf/env/point_clouds/point_cloud_two', PointCloud, queue_size=10)
+print('Now publishing to these two topics')
+
+pub1 = ral.publisher('/ambf/env/World/point_cloud', PointCloud, queue_size=10)
+size_pub1 = ral.publisher('/ambf/env/World/point_cloud/radius', Float32, queue_size=10)
+
+pub2 = ral.publisher('/ambf/env/World/another_point_cloud', PointCloud, queue_size=10)
+size_pub2 = ral.publisher('/ambf/env/World/another_point_cloud/radius', Float32, queue_size=10)
 
 msg = PointCloud()
 msg.header.frame_id = '/ambf/env/BODY Chassis'
@@ -88,6 +108,7 @@ while not ral.is_shutdown():
             msg.points[idx].z = r * math.cos(phi)
 
     pub1.publish(msg)
+    size_pub1.publish(size_msg)
     time.sleep(slp)
 
     cnt_i = int(np.sqrt(num_points))
@@ -120,4 +141,5 @@ while not ral.is_shutdown():
             msg.points[idx].y = x * st + y * ct
 
     pub2.publish(msg)
+    size_pub2.publish(size_msg)
     time.sleep(slp)

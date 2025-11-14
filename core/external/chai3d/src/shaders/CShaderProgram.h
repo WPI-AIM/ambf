@@ -178,6 +178,15 @@ public:
 
     //! This method sets a __float__ array uniform to specified values.
     void setUniformfv(const char* a_name, const GLfloat *a_values, const int a_count);
+    
+    //! This method sets a vec2 uniform (2 floats) to specified value.
+    void setUniform2fv(const char* a_name, const GLfloat *a_values);
+    
+    //! This method sets a vec3 uniform (3 floats) to specified value.
+    void setUniform3fv(const char* a_name, const GLfloat *a_values);
+
+    //! This method sets a vec4 uniform (4 floats) to specified value.
+    void setUniform4fv(const char* a_name, const GLfloat *a_values);
 
 
     //--------------------------------------------------------------------------

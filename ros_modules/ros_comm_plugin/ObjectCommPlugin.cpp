@@ -1105,14 +1105,13 @@ void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCl
 
         if (pointCloudPtr->m_parentName.compare(frame_id) != 0 ){
             // First remove any existing parent
-            if (pointCloudPtr->m_mpPtr->getParent() != nullptr){
-                pointCloudPtr->m_mpPtr->getParent()->removeChild(pointCloudPtr->m_mpPtr);
+            if (pointCloudPtr->getParentObject() != nullptr){
+                pointCloudPtr->getParentObject()->removeChildObject(pointCloudPtr);
             }
 
             afRigidBodyPtr pBody = pointCloudPtr->m_afWorld->getRigidBody(frame_id);
             if(pBody){
-//                pBody->addChildObject(this);
-                pBody->m_visualMesh->addChild(pointCloudPtr->m_mpPtr);
+                pBody->addChildObject(pointCloudPtr);
             }
             else{
                 // Parent not found.

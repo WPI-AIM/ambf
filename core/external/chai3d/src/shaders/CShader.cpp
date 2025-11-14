@@ -202,11 +202,10 @@ bool cShader::compile()
         glGetShaderInfoLog(m_id, infoLogLength, NULL, strInfoLog);
 
         // display error message
-        cout << "shader compilation failed:" << endl << strInfoLog << endl;
+        cout << "ERROR! Shader compilation failed:" << endl << strInfoLog << endl;
 
-        printf("shader compilation failed:\n");
         string error = strInfoLog;
-        printf("%s", error.c_str());
+        printf("%s", error.c_str(), "\n");
 
         // store log
         stringstream stream;

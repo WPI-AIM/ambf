@@ -1084,6 +1084,24 @@ bool afBaseObject::addChildObject(afBaseObjectPtr a_afObject)
     return true;
 }
 
+
+///
+/// \brief afBaseObject::removeChildObject
+/// \param a_afObject
+///
+bool afBaseObject::removeChildObject(afBaseObjectPtr a_afObject)
+{
+    vector<afBaseObjectPtr>::iterator it;
+    for (it = m_childrenObjects.begin() ; it != m_childrenObjects.end() ; ++it){
+        if ((*it) == a_afObject){
+            m_childrenObjects.erase(it);
+            a_afObject->clearParentObject();
+            return true;
+        }
+    }
+    return false;
+}
+
 ///
 /// \brief afBaseObject::setParentObject
 /// \param a_afObject
@@ -1270,8 +1288,26 @@ void afBaseObject::updateSceneObjects(){
     // Assuming that the global pose was computed prior to this call.
     vector<afSceneObject*>::iterator it;
     for (it = m_childrenSceneObjects.begin() ; it != m_childrenSceneObjects.end() ; ++it){
+        cGenericObject* chaiObj = (*it)->getChaiObject();
         cTransform globalTrans = m_globalTransform * (*it)->getOffsetTransform();
-        (*it)->getChaiObject()->setLocalTransform(globalTrans);
+        chaiObj->setLocalTransform(globalTrans);
+        // if (chaiObj->getShaderProgram() != nullptr){
+        //     cShaderProgramPtr shaderProgram = chaiObj->getShaderProgram();
+        //     cMatrix3d normalMatrix = globalTrans.getLocalRot();
+        //     normalMatrix.invert();
+        //     normalMatrix = cTranspose(normalMatrix);
+
+        //     shaderProgram->setUniform("uModelMatrix", globalTrans, true);
+        //     shaderProgram->setUniform("uNormalMatrix", normalMatrix, true);
+
+        //     shaderProgram->setUniform4fv("uMaterialDiffuse", chaiObj->m_material->m_diffuse.getData());
+        //     shaderProgram->setUniform4fv("uMaterialAmbient", chaiObj->m_material->m_ambient.getData());
+        //     shaderProgram->setUniform4fv("uMaterialSpecular", chaiObj->m_material->m_specular.getData());
+        //     shaderProgram->setUniformi("uMaterialShininess", chaiObj->m_material->getShininess());
+              
+        //     shaderProgram->setUniformf("uTime", (float)getSimulationTime());
+        // }   
+        
     }
 }
 
@@ -8247,6 +8283,7 @@ bool afPointCloud::createFromAttribs(afPointCloudAttributes *a_attribs)
     setNamespace(a_attribs->m_identificationAttribs.m_namespace);
 
     m_mpPtr->setPointSize(a_attribs->m_pointSize);
+    addChildSceneObject(m_mpPtr, cTransform());
 
     m_parentName = a_attribs->m_hierarchyAttribs.m_parentName;
 
@@ -8260,6 +8297,11 @@ bool afPointCloud::createFromAttribs(afPointCloudAttributes *a_attribs)
     if (a_attribs->m_shaderAttribs.m_shaderDefined){
         m_shaderProgram = afShaderUtils::createFromAttribs(&a_attribs->m_shaderAttribs, getQualifiedName(), "POINT_CLOUD_SHADERS");
         m_mpPtr->setShaderProgram(m_shaderProgram);
+            m_shaderProgram->setUniform4fv("uMaterialDiffuse", mat.m_diffuse.getData());
+            m_shaderProgram->setUniform4fv("uMaterialAmbient", mat.m_ambient.getData());
+            m_shaderProgram->setUniform4fv("uMaterialSpecular", mat.m_specular.getData());
+            m_shaderProgram->setUniformi("uMaterialShininess", mat.getShininess());
+            m_shaderProgram->setUniformf("uPointSize", a_attribs->m_pointSize);
     }
     // m_afWorld->addSceneObjectToWorld(m_mpPtr);
     loadPlugins(&a_attribs->m_pluginAttribs);
@@ -8500,7 +8542,7 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
                             "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() << endl;
             }
             else{
-                cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                cerr << "INFO! FOR OBJECT: "<< objName << ", SUCCESSFULLY COMPILED VERTEX SHADER TYPE " << type << " FROM FILE: " <<
                         "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() << endl;
                 shaderProgram->attachShader(vtxShaderPtr);
             }
@@ -8515,7 +8557,7 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
                             "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
             }
             else{
-                cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                cerr << "INFO! FOR OBJECT: "<< objName << ", SUCCESSFULLY COMPILED FRAGMENT SHADER TYPE " << type << " FROM FILE: " <<
                         "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
                 shaderProgram->attachShader(fragShaderPtr);
             }
@@ -8530,7 +8572,7 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
                             "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() << endl;
                 }
                 else{
-                    cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILE: " <<
+                    cerr << "INFO! FOR OBJECT: "<< objName << ", SUCCESSFULLY COMPILED GEOMETRY SHADER TYPE " << type << " FROM FILE: " <<
                             "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() << endl;
                     shaderProgram->attachShader(geoShaderPtr);
                     
@@ -8578,16 +8620,10 @@ cShaderProgramPtr afShaderUtils::createFromAttribs(afShaderAttributes *attribs, 
         }
 
         if (shaderProgram->linkProgram()){
-            cerr << "INFO! FOR OBJECT: "<< objName << ", LOADING SHADER TYPE " << type << " FROM FILES: " <<
-                    "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
-                    "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() <<
-                    "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+            cerr << "INFO! SUCCESSFULLY LINKING SHADERS FOR OBJECT: " << objName << endl;
         }
         else{
-            cerr << "ERROR! FOR OBJECT: "<< objName << ", FAILED TO LOAD SHADER TYPE " << type << " FROM FILES: " <<
-                    "\n \t VERTEX: " << attribs->m_vtxFilepath.c_str() <<
-                    "\n \t GEOMETRY: " << attribs->m_geoFilepath.c_str() <<
-                    "\n \t FRAGMENT: " << attribs->m_fragFilepath.c_str() << endl;
+             cerr << "ERROR! FAILED TO LINK SHADERS FOR OBJECT: " << objName << endl;
         }
 
     }

@@ -608,6 +608,8 @@ public:
 
     bool addChildObject(afBaseObjectPtr a_afObject);
 
+    bool removeChildObject(afBaseObjectPtr a_afObject);
+
     inline void setInitialTransform(cTransform a_trans){m_initialTransform = a_trans;}
 
     void setScale(double a_scale);

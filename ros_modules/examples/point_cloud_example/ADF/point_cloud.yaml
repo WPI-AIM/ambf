@@ -1,9 +1,10 @@
-point clouds: [POINTCLOUD ONE]
+point clouds: [POINTCLOUD ONE, POINTCLOUD TWO]
 namespace: /ambf/env/point_clouds/
 
 POINTCLOUD ONE:
-  name: point_cloud_adf
+  name: point_cloud_one
   parent: Chassis
+  point size: 0.001
   color components:
     ambient:
       level: 1.0
@@ -15,14 +16,42 @@ POINTCLOUD ONE:
       b: 0.0
       g: 0.2
       r: 0.9
-    shininess: 1
+    shininess: 8
     transparency: 1.0
   shaders:
     path: shaders/
     vertex: shader.vs
     geometry: shader.gs
     fragment: shader.fs
-    geometry data: {
+    geometry data: { # Currently this data is directly are set in the geometry shader
+      input type: points,
+      output type: triangle_strip,
+      max vertices out: 10
+    }
+
+POINTCLOUD TWO:
+  name: point_cloud_two
+  parent: Chassis
+  point size: 0.001
+  color components:
+    ambient:
+      level: 1.0
+    diffuse:
+      b: 0.0
+      g: 0.8
+      r: 0.2
+    specular:
+      b: 0.0
+      g: 0.8
+      r: 0.2
+    shininess: 64
+    transparency: 1.0
+  shaders:
+    path: shaders/
+    vertex: shader.vs
+    geometry: shader.gs
+    fragment: shader.fs
+    geometry data: { # Currently this data is directly are set in the geometry shader
       input type: points,
       output type: triangle_strip,
       max vertices out: 10

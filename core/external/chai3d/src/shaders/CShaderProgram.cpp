@@ -249,8 +249,24 @@ bool cShaderProgram::linkProgram()
         // check the status
         GLint linkStatus;
         glGetProgramiv(m_id, GL_LINK_STATUS, &linkStatus);
+        GLint infoLogLength;
+            glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+            GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+            glGetProgramInfoLog(m_id, infoLogLength, NULL, strInfoLog);
+
+            // display error message
+            std::cout << "INFO! Shader linking output:" << std::endl << strInfoLog << std::endl;
+
+            std::string error = strInfoLog;
+            printf("%s", error.c_str());
+            delete[] strInfoLog;
+
         if (linkStatus == GL_FALSE)
         {
+            // display error message
+            std::cout << "ERROR! Shader linking failed:" << std::endl;
+
             m_linked = false;
             return (C_ERROR);
         }
@@ -625,6 +641,99 @@ void cShaderProgram::setUniformfv(const char *a_name, const GLfloat *a_values, c
     if (!m_enabled)
     {
         glUseProgram(0);
+    }
+#endif
+}
+
+//==============================================================================
+//!
+//! This method sets a vec4 uniform to a specified value.
+//!
+//! \param  a_name    Name of the uniform.
+//! \param  a_values  Pointer to 2 floats representing the vec2 value.
+//==============================================================================
+void cShaderProgram::setUniform2fv(const char *a_name, const GLfloat *a_values)
+{
+#ifdef C_USE_OPENGL
+    // check program
+    if (!m_linked) { return; }
+
+    // check location
+    GLint location = glGetUniformLocation(m_id, a_name);
+    if (location < 0) { return; }
+
+    // assign value
+    GLint prevProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
+    glUseProgram(m_id);
+    glUniform2fv(location, 1, a_values);
+
+    // finalize: restore previous program if necessary
+    if (!m_enabled)
+    {
+        glUseProgram(prevProgram);
+    }
+#endif
+}
+
+//==============================================================================
+//!
+//! This method sets a vec4 uniform to a specified value.
+//!
+//! \param  a_name    Name of the uniform.
+//! \param  a_values  Pointer to 3 floats representing the vec3 value.
+//==============================================================================
+void cShaderProgram::setUniform3fv(const char *a_name, const GLfloat *a_values)
+{
+#ifdef C_USE_OPENGL
+    // check program
+    if (!m_linked) { return; }
+
+    // check location
+    GLint location = glGetUniformLocation(m_id, a_name);
+    if (location < 0) { return; }
+
+    // assign value
+    GLint prevProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
+    glUseProgram(m_id);
+    glUniform3fv(location, 1, a_values);
+
+    // finalize: restore previous program if necessary
+    if (!m_enabled)
+    {
+        glUseProgram(prevProgram);
+    }
+#endif
+}
+
+//==============================================================================
+//!
+//! This method sets a vec4 uniform to a specified value.
+//!
+//! \param  a_name    Name of the uniform.
+//! \param  a_values  Pointer to 4 floats representing the vec4 value.
+//==============================================================================
+void cShaderProgram::setUniform4fv(const char *a_name, const GLfloat *a_values)
+{
+#ifdef C_USE_OPENGL
+    // check program
+    if (!m_linked) { return; }
+
+    // check location
+    GLint location = glGetUniformLocation(m_id, a_name);
+    if (location < 0) { return; }
+
+    // assign value
+    GLint prevProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
+    glUseProgram(m_id);
+    glUniform4fv(location, 1, a_values);
+
+    // finalize: restore previous program if necessary
+    if (!m_enabled)
+    {
+        glUseProgram(prevProgram);
     }
 #endif
 }

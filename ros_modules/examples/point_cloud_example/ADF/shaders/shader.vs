@@ -1,20 +1,17 @@
+#version 150 compatibility
 
-attribute vec3 aPosition;
-attribute vec3 aNormal;
-attribute vec3 aTexCoord;
-attribute vec4 aColor;
-attribute vec3 aTangent;
-attribute vec3 aBitangent;
+in vec3 aPosition;
+in vec3 aNormal;
+in vec3 aTexCoord;
+in vec4 aColor;
+in vec3 aTangent;
+in vec3 aBitangent;
 
-varying vec4 vPosition;
-varying vec3 vNormal;
-varying vec3 vTexCoord;
+out vec4 vEyeSpacePosition;
 
 void main(void)
 {
    // pass along a transformed vertex position, normal, and texture
-   vPosition = gl_ModelViewProjectionMatrix * vec4(aPosition, 1.0);
-   vNormal = gl_NormalMatrix * aNormal;
-   gl_Position = vPosition;
-   gl_PointSize = 2.0 / vPosition.w;
+   vEyeSpacePosition = gl_ModelViewMatrix * vec4(aPosition, 1.0);
+   gl_Position = gl_ModelViewProjectionMatrix * vec4(aPosition, 1.0);
 }

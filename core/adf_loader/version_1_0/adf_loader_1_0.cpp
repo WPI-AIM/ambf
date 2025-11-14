@@ -2499,7 +2499,7 @@ bool adf_loader_1_0::ADFLoader_1_0::loadPointCloudAttribs(YAML::Node *a_node, af
     YAML::Node nameNode = node["name"];
     YAML::Node nameSpaceNode = node["namespace"];
     YAML::Node parentNameNode = node["parent"];
-    YAML::Node pointsSizeNode = node["points size"];
+    YAML::Node pointSizeNode = node["point size"];
 
     ADFUtils::getIdentificationAttribsFromNode(a_node, &attribs->m_identificationAttribs);
     ADFUtils::getHierarchyAttribsFromNode(a_node, &attribs->m_hierarchyAttribs);
@@ -2508,8 +2508,8 @@ bool adf_loader_1_0::ADFLoader_1_0::loadPointCloudAttribs(YAML::Node *a_node, af
     ADFUtils::getPluginAttribsFromNode(a_node, &attribs->m_pluginAttribs);
     ADFUtils::getColorAttribsFromNode(a_node, &attribs->m_colorAttribs);
 
-    if (pointsSizeNode.IsDefined()){
-        attribs->m_pointSize = pointsSizeNode.as<double>();
+    if (pointSizeNode.IsDefined()){
+        attribs->m_pointSize = pointSizeNode.as<double>();
     }
 
     return result;

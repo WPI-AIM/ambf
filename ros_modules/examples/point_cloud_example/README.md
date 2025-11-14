@@ -1,27 +1,29 @@
 ### Usage
 
-This script is self explanatory. Run ROSCORE in a new terminal.
+This script is self explanatory. If using ROS 1, run `roscore` in a different terminal.
 
 ``` bash
 roscore
 ```
 
-Then for this specific example, run AMBF simulator
-with the toy-car2 as follows
+Then run AMBF simulator with the toy-car2 as follows:
+
+**Either change directory to this folder, or add the full path by replacing 
+<this folder> in the command below**
 
 ``` bash
 cd <ambf_bin>/
-./ambf_simulator -l 1
+./ambf_simulator -l 1 -a <this_folder>/ADF/point_cloud.yaml
 ```
 
-Then run this python script as
+Then run the Python script as
 
 ``` bash
 cd <path_to_this_folder>
 python point_cloud_example.py
 ```
 
-### Notes
+### OLD ROS 1 INSTRUCTIONS (NOT PLANNED FOR ROS 2)
 1. When AMBF simulator launches it will listen on a specific topic for point cloud data. This topic is
 `/ambf/env/World/point_cloud`. You may add topics by calling the ROS Param server as such
 
@@ -50,7 +52,3 @@ from sensor_msgs.msg import PointCloud
 msg = PointCloud()
 msg.header.frame_id = 'BODY NAME'
 ```
-
-### TODO
-1. At the moment the point cloud is redner via OpenGL points. We may add spherical points in the future.
-2. The point clouds are rendered as black squares, Need to add support for colored points.
