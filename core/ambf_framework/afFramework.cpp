@@ -8487,7 +8487,6 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         setLocalTransform(trans);
 
         addChildSceneObject(m_visualMesh, cTransform());
-        addChildSceneObject(m_visualMesh, cTransform());
 
         for (uint gI = 0 ; gI < a_attribs->m_collisionAttribs.m_groups.size() ; gI++){
             uint group =  a_attribs->m_collisionAttribs.m_groups[gI];
