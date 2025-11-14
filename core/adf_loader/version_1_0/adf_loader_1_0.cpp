@@ -197,8 +197,8 @@ bool ADFUtils::getShaderAttribsFromNode(YAML::Node *a_node, afShaderAttributes *
         attribs->m_fragFilepath = localPath / attribs->m_fragFilepath;
 
         if (shadersNode["geometry"].IsDefined()){
-            attribs->m_geoFilepath = localPath / attribs->m_geoFilepath;
             attribs->m_geoFilepath = shadersNode["geometry"].as<string>();
+            attribs->m_geoFilepath = localPath / attribs->m_geoFilepath;
         }
 
         if (shadersNode["geometry data"].IsDefined()){
