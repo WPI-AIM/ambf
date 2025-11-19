@@ -7,11 +7,11 @@ in vec4 aColor;
 in vec3 aTangent;
 in vec3 aBitangent;
 
-out vec4 vEyeSpacePosition;
+out vec4 vPosition;
 
 void main(void)
 {
    // pass along a transformed vertex position, normal, and texture
-   vEyeSpacePosition = gl_ModelViewMatrix * vec4(aPosition, 1.0);
+   vPosition = gl_ModelViewMatrix * vec4(aPosition, 1.0);
    gl_Position = gl_ModelViewProjectionMatrix * vec4(aPosition, 1.0);
 }

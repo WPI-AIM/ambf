@@ -3,13 +3,13 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
-in vec4 vEyeSpacePosition[];
+in vec4 vPosition[];
 
 out vec3 vQuadCoord;  // Local quad coordinates for sphere impostor
 out vec4 vCenterPos;  // Center of the quad (sphere center) in eye space
 uniform float uPointSize; // Radius of the sphere
 void main() {
-    vec4 center = vEyeSpacePosition[0];  // Sphere center in eye space
+    vec4 center = vPosition[0];  // Sphere center in eye space
     
     // Create a camera-facing quad around the point
     // Quad extends from -uRadius to +uRadius in X and Y (eye space)

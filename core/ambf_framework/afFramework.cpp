@@ -8302,6 +8302,7 @@ bool afPointCloud::createFromAttribs(afPointCloudAttributes *a_attribs)
             m_shaderProgram->setUniform4fv("uMaterialSpecular", mat.m_specular.getData());
             m_shaderProgram->setUniformi("uMaterialShininess", mat.getShininess());
             m_shaderProgram->setUniformf("uPointSize", a_attribs->m_pointSize);
+            m_shaderProgram->setUniformi("shadowMap", C_TU_SHADOWMAP);
     }
     // m_afWorld->addSceneObjectToWorld(m_mpPtr);
     loadPlugins(&a_attribs->m_pluginAttribs);

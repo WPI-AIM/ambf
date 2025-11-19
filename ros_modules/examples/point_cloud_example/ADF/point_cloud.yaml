@@ -4,7 +4,7 @@ namespace: /ambf/env/point_clouds/
 POINTCLOUD ONE:
   name: point_cloud_one
   parent: Chassis
-  point size: 0.001
+  point size: 0.01
   color components:
     ambient:
       level: 1.0
@@ -32,7 +32,7 @@ POINTCLOUD ONE:
 POINTCLOUD TWO:
   name: point_cloud_two
   parent: Chassis
-  point size: 0.001
+  point size: 0.01
   color components:
     ambient:
       level: 1.0
