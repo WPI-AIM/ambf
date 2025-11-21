@@ -1255,6 +1255,27 @@ public:
 
     bool cleanupMesh(cMultiMesh* multiMesh, std::vector<afVertexTree>& a_afVertexTree, std::vector<unsigned int>& a_triangles);
 
+    // Get the correct node index and mesh simplification may change indices
+    int getCorrectNodeIndex(uint a_idx);
+
+    // Set the mass of this node to zero, essentially fixing it
+    bool fixNode(uint a_node);
+
+    // Set the mass of these nodes to zero, essentially fixing it
+    int fixNodes(vector<uint> &a_nodes);
+
+    // Attach this node to a rigid body with the given offset
+    bool addAnchor(afRigidBodyPtr a_rb, uint a_node, cVector3d a_offset=cVector3d(0., 0., 0.));
+
+    // Attach these nodes to a rigid body with the given offset
+    int addAnchors(afRigidBodyPtr a_rb, vector< pair<uint, cVector3d> > &a_nodesWithOffsets);
+
+    int addAnchors(afRigidBodyPtr a_rb, vector< pair<uint, afVector3d> > &a_nodesWithOffsets);
+
+    bool removeAnchor(afRigidBodyPtr a_rb, uint a_nodes);
+
+    int removeAnchors(afRigidBodyPtr a_rb, vector<uint> &a_nodes);
+
     bool generateFromMesh(cMultiMesh* mesh, const double margin);
 
     // Helper Function to Create Links from Lines

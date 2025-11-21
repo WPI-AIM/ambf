@@ -48,6 +48,7 @@
 #include <afMath.h>
 #include <afPath.h>
 #include <afUtils.h>
+#include <map>
 
 typedef unsigned int uint;
 
@@ -833,6 +834,17 @@ public:
     }
 };
 
+
+///
+/// \brief Softbody Anchor Attributes struct
+///
+struct afSoftBodyAnchorAttributes{
+    public:
+    string m_parentName;
+    vector< pair<uint, afVector3d> > m_nodesWithOffsets; // Node Idx and Local Offset
+};
+
+
 ///
 /// \brief The afSoftBodyAttributes struct
 ///
@@ -935,6 +947,7 @@ public:
 
     bool m_useConstraintRandomization;
     vector<uint> m_fixedNodes;
+    vector<afSoftBodyAnchorAttributes> m_anchors; // Name of body and nodes
 
     afCollisionAttributes m_collisionAttribs;
     afCartesianControllerAttributes m_controllerAttribs;

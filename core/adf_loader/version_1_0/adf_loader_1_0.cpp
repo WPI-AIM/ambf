@@ -1618,6 +1618,7 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
     YAML::Node cfg_cuttingNode = configDataNode["cutting"];
     YAML::Node cfg_clustersNode = configDataNode["clusters"];
     YAML::Node cfg_fixed_nodesNode = configDataNode["fixed nodes"];
+    YAML::Node cfg_anchorsNode = configDataNode["anchors"];
 
     YAML::Node randomizeConstraintsNode = node["randomize constraints"];
 
@@ -1735,6 +1736,25 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
         if(cfg_clustersNode.IsDefined()){
             attribs->m_clusters = cfg_clustersNode.as<int>();
             attribs->m_useClusters = true;
+        }
+        if (cfg_anchorsNode.IsDefined()){
+            for (uint i = 0 ; i < cfg_anchorsNode.size() ; i++){
+                YAML::Node anchorNode = cfg_anchorsNode[i];
+                afSoftBodyAnchorAttributes anchorsAttrib;
+                anchorsAttrib.m_parentName = anchorNode["parent"].as<string>();
+                for (int j = 0 ; j < anchorNode["nodes with offset"].size() ; j++){
+                    YAML::Node nodesWithOffsetNode = anchorNode["nodes with offset"][j];
+                    pair<uint, afVector3d> nodeWithOffset;
+                    nodeWithOffset.first = nodesWithOffsetNode["node"].as<uint>();
+                    afVector3d offset;
+                    offset(0) = nodesWithOffsetNode["offset"]["x"].as<double>();
+                    offset(1) = nodesWithOffsetNode["offset"]["y"].as<double>();
+                    offset(2) = nodesWithOffsetNode["offset"]["z"].as<double>();
+                    nodeWithOffset.second = offset;
+                    anchorsAttrib.m_nodesWithOffsets.push_back(nodeWithOffset);
+                }
+                attribs->m_anchors.push_back(anchorsAttrib);
+            }
         }
     }
 

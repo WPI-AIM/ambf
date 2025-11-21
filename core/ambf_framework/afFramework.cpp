@@ -2995,32 +2995,38 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
     }
 
 
-    // If a vertexIdx Map is defined, we can retrieve the actual indices defined in the mesh file.
-    bool useOriginalIndexes = getVisualObject()->m_vtxIdxMap.size() > 0 ? true : false;
+    fixNodes(a_attribs->m_fixedNodes);
 
-    for (uint i = 0 ; i < a_attribs->m_fixedNodes.size() ; i++){
+    uint aIdx = 0;
+    for (uint i = 0 ; i < a_attribs->m_anchors.size() ; i++){
+        cerr << "INFO! FOR SOFTBODY " << getQualifiedName() << ", REQUESTED ANCHORS" << endl;
+        cerr << "\t Anchor Idx [" << aIdx++ << "] PARENT NAME: " << a_attribs->m_anchors[i].m_parentName << endl;
+        uint nIdx =0;
+        for (uint j = 0 ; j < a_attribs->m_anchors[i].m_nodesWithOffsets.size() ; j++){
+            cerr << "\t\t Node Idx [" << nIdx++ << "] - NODE: " << a_attribs->m_anchors[i].m_nodesWithOffsets[j].first;
+            cerr << " | OFFSET: "; a_attribs->m_anchors[i].m_nodesWithOffsets[j].second.print();
+        }
 
-        uint nodeIdx = a_attribs->m_fixedNodes[i];
-        if ( nodeIdx > softBody->m_nodes.size()){break;}
-
-        if (useOriginalIndexes){
-            // Find the node's original vertex index
-            map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(nodeIdx);
-            if ( nIt != getVisualObject()->m_vtxIdxMap.end()){
-                if (nIt->second.size() == 0){break;}
-                int originalVtxIdx = nIt->second[0];
-                unsigned int newIdx = m_collisionMesh->getMesh(0)->getNewVertexIndex(originalVtxIdx);
-                if (newIdx > 0){
-                    cerr << "INFO! Fixing Softbody Node. Original Node Idx: " << nodeIdx
-                         << " | Old Vertex/Node Idx:  " << originalVtxIdx
-                         << " | New Vertex/Node Idx: " << newIdx << endl;
-                    softBody->setMass(newIdx, 0);
+        afRigidBodyPtr anchorBody = nullptr;
+        string anchorBodyName = a_attribs->m_anchors[i].m_parentName + getGlobalRemapIdx();
+        anchorBody = m_modelPtr->getRigidBody(anchorBodyName, true);
+        if (anchorBody == nullptr){
+            anchorBody = m_modelPtr->getRigidBody(getNamespace() + anchorBodyName, true);
+            if (anchorBody == nullptr){
+                anchorBody = m_afWorld->getRigidBody(getNamespace() + anchorBodyName + getGlobalRemapIdx(), true);
+                // If we couldn't find the body with name_remapping, it may be
+                // defined in another ADF file. Search without name_remapping string
+                if(anchorBody == nullptr){
+                    anchorBody = m_afWorld->getRigidBody(anchorBodyName, true);
+                    if (anchorBody == nullptr){
+                        cerr << "ERROR! SOFTBODY'S ANCHOR BODY "<< anchorBodyName << " NOT FOUND, IGNORING\n";
+                        continue;
+                    }
                 }
             }
         }
-        else{
-            softBody->setMass(nodeIdx, 0);
-        }
+
+        addAnchors(anchorBody, a_attribs->m_anchors[i].m_nodesWithOffsets);
     }
 
     if(a_attribs->m_useClusters){
@@ -3272,6 +3278,123 @@ btSoftBody* afSoftBody::createFromMesh(btSoftBodyWorldInfo* worldInfo, cMesh *a_
 
     return (psb);
 
+}
+
+
+int afSoftBody::getCorrectNodeIndex(uint a_idx){
+    
+    if ( a_idx > m_bulletSoftBody->m_nodes.size()){
+        return -1;
+    }
+
+    bool useOriginalIndexes = getVisualObject()->m_vtxIdxMap.size() > 0 ? true : false;
+    if (useOriginalIndexes){
+        // Find the node's original vertex index
+        map<int, vector<int> >::iterator nIt = getVisualObject()->m_vtxIdxMap.find(a_idx);
+        if (nIt != getVisualObject()->m_vtxIdxMap.end()){
+            if (nIt->second.size() == 0){
+                return -1;
+            }
+            uint newIdx = m_collisionMesh->getMesh(0)->getNewVertexIndex(nIt->second[0]);
+            return newIdx;
+        }
+        else{
+            cerr << "ERROR! CANNOT GET CORRECT INDEX" << endl;
+            return -1; 
+        }
+    }
+    else{
+        return a_idx;
+    }
+}
+
+
+bool afSoftBody::fixNode(uint a_node){
+    int nodeIdx = getCorrectNodeIndex(a_node);
+    if (nodeIdx >= 0){
+        cerr << "INFO! Fixing Softbody Node. Original Node Idx: " << nodeIdx
+                << " | Old Vertex/Node Idx:  " << a_node
+                << " | New Vertex/Node Idx: " << nodeIdx << endl;
+        m_bulletSoftBody->setMass(nodeIdx, 0.0);
+        return true;
+    }
+    return false;
+}
+
+
+int afSoftBody::fixNodes(vector<uint> &a_nodes){
+    int success = 0;
+    for (uint i = 0 ; i < a_nodes.size() ; i++){
+        success += fixNode(a_nodes[i]);
+    }
+    return success;
+}
+
+
+bool afSoftBody::addAnchor(afRigidBodyPtr a_rb, uint a_idx, cVector3d a_offset){
+    int correctIndex = getCorrectNodeIndex(a_idx);
+    if (correctIndex < 0 || a_rb == nullptr){
+        return false;
+    }
+
+    btSoftBody::Node* node = &m_bulletSoftBody->m_nodes[correctIndex];
+    btSoftBody::Anchor anchor;
+    node->m_battach = 1;
+    anchor.m_body = a_rb->m_bulletRigidBody;
+    anchor.m_node = node;
+    anchor.m_influence = 1;
+    anchor.m_local << a_offset;
+    m_bulletSoftBody->m_anchors.push_back(anchor);
+    return true;
+}
+
+
+int afSoftBody::addAnchors(afRigidBodyPtr a_rb, vector< pair<uint, cVector3d> > &a_nodesWithOffsets){
+    int success = 0;
+    for (auto it = a_nodesWithOffsets.begin() ; it != a_nodesWithOffsets.end() ; ++it){
+        success += addAnchor(a_rb, it->first, it->second);
+    }
+    return success;
+}
+
+
+int afSoftBody::addAnchors(afRigidBodyPtr a_rb, vector< pair<uint, afVector3d> > &a_nodesWithOffsets){
+    int success = 0;
+    for (auto it = a_nodesWithOffsets.begin() ; it != a_nodesWithOffsets.end() ; ++it){
+        success += addAnchor(a_rb, it->first,  to_cVector3d(it->second));
+    }
+    return success;
+}
+
+
+bool afSoftBody::removeAnchor(afRigidBodyPtr a_rb, uint a_idx){
+    int correctIndex = getCorrectNodeIndex(a_idx);
+    if (correctIndex < 0 || a_rb == nullptr){
+        return false;
+    }
+
+    bool success = false;
+    btRigidBody* rigidBody = a_rb->m_bulletRigidBody;
+    for (int aIdx = 0 ; aIdx <  m_bulletSoftBody->m_anchors.size() ; aIdx++){
+        if (m_bulletSoftBody->m_anchors[aIdx].m_body == rigidBody){
+            btSoftBody::Anchor* anchor = &m_bulletSoftBody->m_anchors[aIdx];
+            if (anchor->m_node == &m_bulletSoftBody->m_nodes[correctIndex]){
+                m_bulletSoftBody->m_anchors.removeAtIndex(aIdx);
+                success = true;
+                break;
+            }
+        }
+    }
+    return success;
+}
+
+
+int afSoftBody::removeAnchors(afRigidBodyPtr a_rb, vector<uint> &a_idx){
+    int success = 0;
+    for (auto it = a_idx.begin() ; it != a_idx.end() ; ++it){
+        success += removeAnchor(a_rb, *it);
+    }
+    return success;
 }
 
 
@@ -3626,8 +3749,8 @@ afRigidBodyPtr afJoint::findConnectingBody(string body_name){
         connectingBody = m_modelPtr->getRigidBody(getNamespace() + body_name, true);
         if (connectingBody == nullptr){
             connectingBody = m_afWorld->getRigidBody(getNamespace() + body_name + getGlobalRemapIdx(), true);
-            // If we couldn't find the body with name_remapping, it might have been
-            // Defined in another ambf file. Search without name_remapping string
+            // If we couldn't find the body with name_remapping, it may be
+            // defined in another ADF file. Search without name_remapping string
             if(connectingBody == nullptr){
                 connectingBody = m_afWorld->getRigidBody(body_name, true);
                 // If the body is not world, print what we just did
