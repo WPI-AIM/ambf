@@ -249,7 +249,13 @@ bool cShaderProgram::linkProgram()
         // check the status
         GLint linkStatus;
         glGetProgramiv(m_id, GL_LINK_STATUS, &linkStatus);
-        GLint infoLogLength;
+
+        if (linkStatus == GL_FALSE)
+        {
+            // display error message
+            std::cout << "ERROR! Shader linking failed:" << std::endl;
+
+            GLint infoLogLength;
             glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             GLchar *strInfoLog = new GLchar[infoLogLength + 1];
@@ -258,14 +264,9 @@ bool cShaderProgram::linkProgram()
             // display error message
             std::cout << "INFO! Shader linking output:" << std::endl << strInfoLog << std::endl;
 
-            std::string error = strInfoLog;
-            printf("%s", error.c_str());
+            // std::string error = strInfoLog;
+            // printf("%s", error.c_str());
             delete[] strInfoLog;
-
-        if (linkStatus == GL_FALSE)
-        {
-            // display error message
-            std::cout << "ERROR! Shader linking failed:" << std::endl;
 
             m_linked = false;
             return (C_ERROR);
