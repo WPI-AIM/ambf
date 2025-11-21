@@ -3006,6 +3006,10 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
             cerr << "\t\t Node Idx [" << nIdx++ << "] - NODE: " << a_attribs->m_anchors[i].m_nodesWithOffsets[j].first;
             cerr << " | OFFSET: "; a_attribs->m_anchors[i].m_nodesWithOffsets[j].second.print();
         }
+        nIdx =0;
+        for (uint j = 0 ; j < a_attribs->m_anchors[i].m_nodes.size() ; j++){
+            cerr << "\t\t Node Idx [" << nIdx++ << "] - NODE: " << a_attribs->m_anchors[i].m_nodes[j] << endl;
+        }
 
         afRigidBodyPtr anchorBody = nullptr;
         string anchorBodyName = a_attribs->m_anchors[i].m_parentName + getGlobalRemapIdx();
@@ -3027,6 +3031,8 @@ bool afSoftBody::createFromAttribs(afSoftBodyAttributes *a_attribs)
         }
 
         addAnchors(anchorBody, a_attribs->m_anchors[i].m_nodesWithOffsets);
+
+        addAnchors(anchorBody, a_attribs->m_anchors[i].m_nodes);
     }
 
     if(a_attribs->m_useClusters){
@@ -3331,6 +3337,18 @@ int afSoftBody::fixNodes(vector<uint> &a_nodes){
 }
 
 
+bool afSoftBody::addAnchor(afRigidBodyPtr a_rb, uint a_idx){
+    int correctIndex = getCorrectNodeIndex(a_idx);
+    if (correctIndex < 0 || a_rb == nullptr){
+        return false;
+    }
+    btSoftBody::Node* node = &m_bulletSoftBody->m_nodes[correctIndex];
+    cVector3d offset;
+    offset << a_rb->m_bulletRigidBody->getCenterOfMassTransform().inverse() * node->m_x;
+    return addAnchor(a_rb, a_idx, offset);
+}
+
+
 bool afSoftBody::addAnchor(afRigidBodyPtr a_rb, uint a_idx, cVector3d a_offset){
     int correctIndex = getCorrectNodeIndex(a_idx);
     if (correctIndex < 0 || a_rb == nullptr){
@@ -3346,6 +3364,15 @@ bool afSoftBody::addAnchor(afRigidBodyPtr a_rb, uint a_idx, cVector3d a_offset){
     anchor.m_local << a_offset;
     m_bulletSoftBody->m_anchors.push_back(anchor);
     return true;
+}
+
+
+int afSoftBody::addAnchors(afRigidBodyPtr a_rb, vector<uint> &a_nodes){
+    int success = 0;
+    for (auto it = a_nodes.begin() ; it != a_nodes.end() ; ++it){
+        success += addAnchor(a_rb, *it);
+    }
+    return success;
 }
 
 

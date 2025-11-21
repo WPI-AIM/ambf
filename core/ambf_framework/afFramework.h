@@ -1264,8 +1264,14 @@ public:
     // Set the mass of these nodes to zero, essentially fixing it
     int fixNodes(vector<uint> &a_nodes);
 
+    // Attach this node to a rigid body with automatic offset calculation
+    bool addAnchor(afRigidBodyPtr a_rb, uint a_node);
+
     // Attach this node to a rigid body with the given offset
-    bool addAnchor(afRigidBodyPtr a_rb, uint a_node, cVector3d a_offset=cVector3d(0., 0., 0.));
+    bool addAnchor(afRigidBodyPtr a_rb, uint a_node, cVector3d a_offset);
+
+    // Attach these nodes to a rigid body with automatic offset calculation
+    int addAnchors(afRigidBodyPtr a_rb, vector<uint> &a_nodes);
 
     // Attach these nodes to a rigid body with the given offset
     int addAnchors(afRigidBodyPtr a_rb, vector< pair<uint, cVector3d> > &a_nodesWithOffsets);

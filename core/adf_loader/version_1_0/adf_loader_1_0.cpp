@@ -1742,17 +1742,27 @@ bool ADFLoader_1_0::loadSoftBodyAttribs(YAML::Node *a_node, afSoftBodyAttributes
                 YAML::Node anchorNode = cfg_anchorsNode[i];
                 afSoftBodyAnchorAttributes anchorsAttrib;
                 anchorsAttrib.m_parentName = anchorNode["parent"].as<string>();
-                for (int j = 0 ; j < anchorNode["nodes with offset"].size() ; j++){
-                    YAML::Node nodesWithOffsetNode = anchorNode["nodes with offset"][j];
-                    pair<uint, afVector3d> nodeWithOffset;
-                    nodeWithOffset.first = nodesWithOffsetNode["node"].as<uint>();
-                    afVector3d offset;
-                    offset(0) = nodesWithOffsetNode["offset"]["x"].as<double>();
-                    offset(1) = nodesWithOffsetNode["offset"]["y"].as<double>();
-                    offset(2) = nodesWithOffsetNode["offset"]["z"].as<double>();
-                    nodeWithOffset.second = offset;
-                    anchorsAttrib.m_nodesWithOffsets.push_back(nodeWithOffset);
+                if (anchorNode["nodes with offset"].IsDefined()){
+                    for (int j = 0 ; j < anchorNode["nodes with offset"].size() ; j++){
+                        YAML::Node nodesWithOffsetNode = anchorNode["nodes with offset"][j];
+                        pair<uint, afVector3d> nodeWithOffset;
+                        nodeWithOffset.first = nodesWithOffsetNode["node"].as<uint>();
+                        afVector3d offset;
+                        offset(0) = nodesWithOffsetNode["offset"]["x"].as<double>();
+                        offset(1) = nodesWithOffsetNode["offset"]["y"].as<double>();
+                        offset(2) = nodesWithOffsetNode["offset"]["z"].as<double>();
+                        nodeWithOffset.second = offset;
+                        anchorsAttrib.m_nodesWithOffsets.push_back(nodeWithOffset);
+                    }
                 }
+
+                if (anchorNode["nodes"].IsDefined()){
+                    for (int j = 0 ; j < anchorNode["nodes"].size() ; j++){
+                        uint nodeIdx = anchorNode["nodes"][j].as<uint>();
+                        anchorsAttrib.m_nodes.push_back(nodeIdx);
+                    }
+                }
+
                 attribs->m_anchors.push_back(anchorsAttrib);
             }
         }

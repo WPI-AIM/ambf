@@ -842,6 +842,7 @@ struct afSoftBodyAnchorAttributes{
     public:
     string m_parentName;
     vector< pair<uint, afVector3d> > m_nodesWithOffsets; // Node Idx and Local Offset
+    vector<uint> m_nodes; // Node Idx, the offset to be computed automatically based on initialization locations of objects
 };
 
 
