@@ -2,45 +2,33 @@ name: Ubuntu 24.04 ROS Jazzy
 
 on:
   push:
-    branches: [ ros2-support ]
+    branches: [ ambf-3.0 ]
+  pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build_docker:
+  build:
     runs-on: ubuntu-24.04
-    container:
-      image: ubuntu:noble
 
     steps:
-      - name: Install ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: jazzy
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install missing debian packages
-        shell: bash
+      - name: Setup ROS 2 Jazzy
         run: |
-          sudo apt-get install --yes ros-jazzy-rosidl-cmake python3-vcstool python3-colcon-common-extensions
-          sudo apt-get install --yes libasound2-dev libgl1-mesa-dev xorg-dev libusb-1.0-0-dev
-          sudo apt-get install --yes libboost-filesystem-dev libboost-program-options-dev
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install -y ros-jazzy-desktop python3-colcon-common-extensions
+          sudo apt-get install -y libasound2-dev libgl1-mesa-dev xorg-dev libusb-1.0-0-dev
 
-      - name: Create Workspace
-        shell: bash
-        run: |
-          source /opt/ros/jazzy/setup.bash
-          mkdir -p ~/ros2_ws/src
-
-      - name: Retrieve Code
-        shell: bash
-        run: |
-          cd ~/ros2_ws/src
-          vcs import --input https://raw.githubusercontent.com/LauraConnolly/ambf/ros2-support/ambf.repos
-
-      - name: Compile
-        shell: bash
+      - name: Build workspace
         run: |
           source /opt/ros/jazzy/setup.bash
-          cd ~/ros2_ws
-          colcon build
+          mkdir -p ros_ws/src
+          cp -r . ros_ws/src/ambf
+          cd ros_ws
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
