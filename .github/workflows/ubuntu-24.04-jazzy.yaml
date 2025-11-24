@@ -20,6 +20,7 @@ jobs:
 
       - name: Setup ROS 2 Jazzy
         run: |
+          sudo apt update
           sudo apt-get install -y software-properties-common
           sudo apt-get update
           sudo add-apt-repository universe
