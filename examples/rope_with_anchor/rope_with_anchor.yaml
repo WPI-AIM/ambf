@@ -134,15 +134,16 @@ BODY SoftRope:
     anchors: [
       {
         parent: Cube,
-        nodes with offset: [
-          {
-            node: 0,
-            offset: {x: 0.125, y: -0.03, z: 0}
-          },
-          {
-            node: 2,
-            offset: {x: 0.125, y: 0.03, z: 0}
-          }
-        ]
+        nodes: [0, 2], # The offset will be calculated automatically based on the initialized positions of softbody and parent
+        # nodes with offset: [
+        #   {
+        #     node: 0,
+        #     offset: {x: 0.125, y: -0.03, z: 0}
+        #   },
+        #   {
+        #     node: 2,
+        #     offset: {x: 0.125, y: 0.03, z: 0}
+        #   }
+        # ]
       }
     ]
