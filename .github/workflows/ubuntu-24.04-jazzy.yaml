@@ -10,7 +10,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: 
+      image: osrf/ros:jazzy-desktop-noble
 
     steps:
       - name: Checkout repository
@@ -18,11 +20,9 @@ jobs:
 
       - name: Setup ROS 2 Jazzy
         run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
           sudo add-apt-repository universe
           sudo apt-get update
-          sudo apt-get install -y ros-jazzy-desktop python3-colcon-common-extensions
+          sudo apt-get install -y software-properties-common
           sudo apt-get install -y libasound2-dev libgl1-mesa-dev xorg-dev libusb-1.0-0-dev
 
       - name: Build workspace
