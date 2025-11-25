@@ -735,11 +735,6 @@ void afObjectCommunicationPlugin::rigidBodyFetchCommand(afRigidBodyPtr afRBPtr, 
             // Use the internal Cartesian Rotation Controller to Compute Output
             rCommand = afRBPtr->m_controller.computeOutput<btVector3>(cur_rot, cmd_rot, dt);
 
-            static bool once = true;
-            if (once){
-                once = false;
-                printf("CONTROLLER VALS %s %f %f %d \n", afRBPtr->getName().c_str(), afRBPtr->m_controller.getP_lin(), afRBPtr->m_controller.getD_lin(), afRBPtr->m_controller.isEnabled());
-            }
             if (afRBPtr->m_controller.m_positionOutputType == afControlType::FORCE){
                 // IF PID GAINS WERE DEFINED, USE THE PID CONTROLLER
                 // Use the internal Cartesian Position Controller
