@@ -111,7 +111,7 @@ if (ROS_VERSION EQUAL 1)
 
   foreach (_plugin ${ROS_COMM_PLUGINS})
     add_dependencies (${_plugin} ${catkin_EXPORTED_TARGETS})
-    target_link_libraries (${_plugin} ${catkin_LIBRARIES} ${AMBF_LIBRARIES})
+    target_link_libraries (${_plugin} ${catkin_LIBRARIES})
   endforeach ()
 
 else ()
