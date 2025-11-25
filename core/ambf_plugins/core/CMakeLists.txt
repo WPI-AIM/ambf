@@ -36,5 +36,3 @@
 #  $Author: Adnan Munawar $
 #  $Date:  $
 #  $Rev:  $
-
-add_subdirectory(world_plugins_loader)
