@@ -1,47 +1,50 @@
-name: Ubuntu 20.04 ROS Noetic
+name: ubuntu-20.04-ros-noetic
 
 on:
   push:
-    branches: [ ros2-support ]
+    branches: [ ambf-3.0 ]
+  pull_request:
+    branches: [ ambf-3.0 ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   build_docker:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
-      image: ubuntu:focal
+      image: osrf/ros:noetic-desktop
 
     steps:
-      - name: Install ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: noetic
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
 
-      - name: Install missing debian packages
+      - name: Install Required Packages
         shell: bash
         run: |
-          sudo apt-get install --yes python3-vcstool python3-catkin-tools python3-osrf-pycommon libasound2-dev libgl1-mesa-dev xorg-dev libusb-1.0-0-dev
+          sudo apt update
+          sudo apt-get install -y software-properties-common
+          sudo apt-get update
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install -y python3-catkin-tools libasound2-dev libgl1-mesa-dev xorg-dev libusb-1.0-0-dev
           
-      - name: Create Workspace
+      - name: Initialize Catkin Workspace
         shell: bash
         run: |
           source /opt/ros/noetic/setup.bash
-          mkdir -p ~/catkin_ws/src
-          cd ~/catkin_ws
-          catkin init
-          catkin build
-          
-      - name: Retrieve Code
-        shell: bash
-        run: |
+          mkdir -p ~/catkin_ws/src/
           cd ~/catkin_ws/src
-          vcs import --input https://raw.githubusercontent.com/LauraConnolly/ambf/ros2-support/ambf.repos
+          catkin_init_workspace
+          cd ~/catkin_ws
+          catkin build
 
-      - name: Compile
+      - name: Build Workspace
         shell: bash
         run: |
-          source ~/catkin_ws/devel/setup.bash
+          source /opt/ros/noetic/setup.bash
+          mkdir -p ~/catkin_ws/src/ambf
+          cp -r . ~/catkin_ws/src/ambf
           cd ~/catkin_ws
-          catkin build --summary     
+          catkin build --summary --cmake-args -DCMAKE_BUILD_TYPE=Release

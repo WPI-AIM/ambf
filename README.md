@@ -3,7 +3,11 @@
 Author: [Adnan Munawar](https://github.com/adnanmunawar) (amunawa2@jh.edu)
 
 
-#### Build Status ![ambf-3.0](https://github.com/WPI-AIM/ambf/workflows/ambf-3.0/badge.svg?branch=ambf-3.0)
+#### Build Status 
+
+![Ubuntu 24.04 ROS Jazzy](https://github.com/WPI-AIM/ambf/workflows/ubuntu-24.04-noetic/badge.svg?branch=ambf-3.0)
+![Ubuntu 22.04 ROS Humble](https://github.com/WPI-AIM/ambf/workflows/ubuntu-22.04-humble/badge.svg?branch=ambf-3.0)
+![Ubuntu 20.04 ROS Noetic](https://github.com/WPI-AIM/ambf/workflows/ubuntu-20.04-noetic/badge.svg?branch=ambf-3.0)
 
 ## 1. Description:
 The Asynchronous Multi-Body Framework (AMBF) provides real-time dynamic simulation of robots, and soft-bodies coupled with real-time haptic interaction via several haptic devices

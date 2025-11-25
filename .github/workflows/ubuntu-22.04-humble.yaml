@@ -1,4 +1,4 @@
-name: ubuntu-24.04-ros-jazzy
+name: ubuntu-22.04-ros-humble
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: osrf/ros:jazzy-desktop
+      image: osrf/ros:humble-desktop
 
     steps:
       - name: Checkout repository
@@ -31,7 +31,7 @@ jobs:
       - name: Build workspace
         shell: bash
         run: |
-          source /opt/ros/jazzy/setup.bash
+          source /opt/ros/humble/setup.bash
           mkdir -p ~/ros_ws/src/ambf
           cp -r . ~/ros_ws/src/ambf
           cd ~/ros_ws
