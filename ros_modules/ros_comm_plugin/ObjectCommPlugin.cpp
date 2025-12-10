@@ -1095,7 +1095,6 @@ void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCl
         double radius = m_pointCloudCommPtr->get_radius();
         pointCloudPtr->m_mpPtr->setPointSize(radius);
         int pc_size = pcPtr->points.size();
-        int diff = pc_size - pointCloudPtr->m_mpSize;
         string frame_id = pcPtr->header.frame_id;
 
         if (pointCloudPtr->m_parentName.compare(frame_id) != 0 ){
@@ -1118,38 +1117,26 @@ void afObjectCommunicationPlugin::pointCloudFetchCommand(afPointCloudPtr pointCl
 
         pointCloudPtr->m_parentName = frame_id;
 
-        if (diff >= 0){
-            // PC array has either increased in size or the same size as MP array
-            for (int pIdx = 0 ; pIdx < pointCloudPtr->m_mpSize ; pIdx++){
-                cVector3d pcPos(pcPtr->points[pIdx].x,
-                                pcPtr->points[pIdx].y,
-                                pcPtr->points[pIdx].z);
-                pointCloudPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            // Now add the new PC points to MP
-            for (int pIdx = pointCloudPtr->m_mpSize ; pIdx < pc_size ; pIdx++){
+        if (pointCloudPtr->m_mpPtr->getNumPoints() != pcPtr->points.size()){
+            cerr << "INFO! FOR POINT CLOUD \"" << pointCloudPtr->getQualifiedName() << "\" NEW MSG SIZE CHANGED. CURRENT: " << pointCloudPtr->m_mpPtr->getNumPoints() << " | NEW: " << pcPtr->points.size() << " | DIFF: " << pointCloudPtr->m_mpPtr->getNumPoints() - pcPtr->points.size() << endl;
+            pointCloudPtr->m_mpPtr->clear();
+            for (int pIdx = 0 ; pIdx < pcPtr->points.size() ; pIdx++){
                 cVector3d pcPos(pcPtr->points[pIdx].x,
                                 pcPtr->points[pIdx].y,
                                 pcPtr->points[pIdx].z);
                 pointCloudPtr->m_mpPtr->newPoint(pcPos);
             }
+            // pointCloudPtr->m_mpSize = pcPtr->points.size();
         }
         else{
-            // PC array has decreased in size as compared to MP array
-            for (int pIdx = 0 ; pIdx < pc_size ; pIdx++){
+            for (int pIdx = 0 ; pIdx < pcPtr->points.size() ; pIdx++){
                 cVector3d pcPos(pcPtr->points[pIdx].x,
                                 pcPtr->points[pIdx].y,
                                 pcPtr->points[pIdx].z);
-                pointCloudPtr->m_mpPtr->m_points->m_vertices->setLocalPos(pIdx, pcPos);
-            }
-
-            for (int pIdx = pointCloudPtr->m_mpSize ; pIdx > pc_size ; pIdx--){
-                pointCloudPtr->m_mpPtr->removePoint(pIdx-1);
+                int vIdx = pointCloudPtr->m_mpPtr->m_points->getVertexIndex0(pIdx);
+                pointCloudPtr->m_mpPtr->m_points->m_vertices->setLocalPos(vIdx, pcPos);
             }
         }
-        pointCloudPtr->m_mpSize = pc_size;
-
     }
 }
 

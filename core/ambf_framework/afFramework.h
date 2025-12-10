@@ -2244,8 +2244,6 @@ public:
 
     cMultiPointPtr m_mpPtr;
 
-    int m_mpSize = 0;
-
     virtual void update(double dt);
 
     cShaderProgramPtr m_shaderProgram;
