@@ -36,7 +36,10 @@ class ral:
             self._node = node
         else:
             # ros init node so we can use default ros arguments (e.g. __ns:= for namespace)
-            rospy.init_node(self.node_name(), anonymous = True)
+            try:
+                rospy.init_node(self.node_name(), anonymous = True)
+            except Exception as e:
+                print(e)
 
     def __del__(self):
         for pub in self._publishers:
