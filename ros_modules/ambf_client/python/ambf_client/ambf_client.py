@@ -43,6 +43,7 @@
 
 # ROS version
 import os
+import time
 from ros_abstraction_layer import ral
 
 import threading
@@ -79,7 +80,7 @@ class MsgRelatedClasses:
         self.cmd_msg_type = cmd_msg_type
 
 class Client:
-    def __init__(self, client_name='ambf_client'):
+    def __init__(self, client_name='ambf_client', max_discovery_attempts = 5):
         self._ros_topics = []
         self._sub_list = []
         self._objects_dict = {}
@@ -92,6 +93,7 @@ class Client:
         self.ral = None
         self._executor = None
         self._sub_thread = None
+        self._max_discovery_attempts = max_discovery_attempts
 
         self.object_types = [World, Object, RigidBody, GhostObject, Actuator, Camera, Light, Sensor, ContactSensor, Vehicle]
 
@@ -128,30 +130,39 @@ class Client:
 
     def create_objs_from_rostopics(self, publish_rate):
         self.ral = ral(self._client_name)
-        self._ros_topics = self.ral.get_published_topics()
-        self.set_publish_rate(publish_rate)
 
+        discovery_attempts = 0
+        while discovery_attempts < self._max_discovery_attempts:
+            self._ros_topics = self.ral.get_published_topics()
+            self.set_publish_rate(publish_rate)
+            # Find the common longest substring to make the object names shorter
+            first_run = True
+            for i in range(len(self._ros_topics)):
+                topic_name = self._ros_topics[i][0]
+                msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
 
-        # Find the common longest substring to make the object names shorter
-        first_run = True
-        for i in range(len(self._ros_topics)):
-            topic_name = self._ros_topics[i][0]
-            msg_type = self._ros_topics[i][1].replace('/msg/', '/') # For ROS 2 with adds /msg/
-
-            if msg_type in self.msg_related_classes.keys():
-                if first_run:
-                    first_run = False
-                    self._common_obj_namespace = topic_name
-                else:
-                    seq_match = SequenceMatcher(None, self._common_obj_namespace, topic_name)
-                    match = seq_match.find_longest_match(0, len(self._common_obj_namespace), 0, len(topic_name))
-                    if match.size != 0 and match.a == 0:
-                        self._common_obj_namespace = self._common_obj_namespace[match.a: match.a + match.size]
+                if msg_type in self.msg_related_classes.keys():
+                    if first_run:
+                        first_run = False
+                        self._common_obj_namespace = topic_name
                     else:
-                        print('No common object namespace found, aborting search')
-                        self._common_obj_namespace = ''
-                        break
-        print('Found Common Object Namespace as: ', self._common_obj_namespace)
+                        seq_match = SequenceMatcher(None, self._common_obj_namespace, topic_name)
+                        match = seq_match.find_longest_match(0, len(self._common_obj_namespace), 0, len(topic_name))
+                        if match.size != 0 and match.a == 0:
+                            self._common_obj_namespace = self._common_obj_namespace[match.a: match.a + match.size]
+                        else:
+                            print('INFO! No common object namespace found, aborting search')
+                            self._common_obj_namespace = ''
+                            break
+
+            if self._common_obj_namespace == "":
+                print('INFO! No AMBF object namespace found. Attemping rediscovery in 1 second. Attempt: ', discovery_attempts, '/', self._max_discovery_attempts)
+                discovery_attempts += 1
+                time.sleep(1.0)
+            else:
+                break
+                
+        print('INFO! Found Common Object Namespace as: ', self._common_obj_namespace)
 
         for i in range(len(self._ros_topics)):
             topic_name = self._ros_topics[i][0]
