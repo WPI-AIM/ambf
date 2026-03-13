@@ -537,11 +537,11 @@ int main(int argc, char* argv[])
     while (!g_afRenderOptions.m_windowClosed)
     {
         if (g_cmdOpts.showGUI){
-            // Call the update graphics method
-            updateGraphics();
-
             // process events
             glfwPollEvents();
+            
+            // Call the update graphics method
+            updateGraphics();
 
             // signal frequency counter
             g_afWorld->m_freqCounterGraphics.signal(1);
