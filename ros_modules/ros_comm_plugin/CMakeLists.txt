@@ -65,7 +65,7 @@ else (catkin_FOUND)
       std_msgs geometry_msgs sensor_msgs diagnostic_msgs
       tf2_ros tf2_msgs
       ambf_msgs ambf_server
-      cv_bridge image_transport)
+      cv_bridge image_transport dvrk_arm)
     foreach (_dep ${ROS2_depends})
       find_package (${_dep} REQUIRED)
     endforeach()

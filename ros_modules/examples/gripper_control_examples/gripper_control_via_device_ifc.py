@@ -43,7 +43,6 @@
 # //==============================================================================
 
 from proxy_device import ProxyMTM
-from ros_abstraction_layer import ral
 import time
 import postion_control_util as PU
 import numpy as np
@@ -57,37 +56,60 @@ parsed_args = parser.parse_args()
 print('Specified Arguments')
 print(parsed_args)
 
-ral = ral(parsed_args.arm_name + parsed_args.node_name)
+# Initialize the RAL node
+ral_node = ProxyMTM.init_ral_node(parsed_args.arm_name + parsed_args.node_name)
 time.sleep(1.0)
+
 if not parsed_args.arm_name in ['MTMR', 'MTML']:
     raise ValueError
 
-mock_mtm = ProxyMTM(parsed_args.arm_name)
+mock_mtm = ProxyMTM(parsed_args.arm_name, ral_node)
 mock_mtm.publish_status()
 mock_mtm.set_pos(0, 0, -1.3)
 mock_mtm.set_pos(0, 0, 0.0)
-rate = ral.Rate(100)
 
 PU.init()
 App = PU.get_app_handle()
 
-start_time = ral.now()
 last_state = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-min_dt = ral.Duration(0.001)
-while True:
-    try:
-        App.update()
-        mock_mtm.publish_status()
-        mock_mtm.set_pos(PU.x, PU.y, PU.z)
-        mock_mtm.set_orientation(PU.roll, PU.pitch, PU.yaw)
-        mock_mtm.set_gripper_angle(PU.gripper)
-        dt = ral.now() - start_time
-        # Set dt threshold to avoid setting twist on first iteration
-        if dt >= min_dt:
-            twist = (np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw]) - last_state) / ral.to_sec(dt)
-            mock_mtm.set_twist(twist[0], twist[1], twist[2], twist[3], twist[4], twist[5])
-        last_state = np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw])
-        rate.sleep()
-    except KeyboardInterrupt:
-        print('Exiting')
-        break
+min_dt = 0.001
+last_time = time.monotonic()
+running = True
+
+
+def on_close():
+    global running
+    running = False
+    App.destroy()
+
+
+def update_loop():
+    global last_state, last_time, running
+    if not running:
+        return
+
+    mock_mtm.publish_status()
+    mock_mtm.set_pos(PU.x, PU.y, PU.z)
+    mock_mtm.set_orientation(PU.roll, PU.pitch, PU.yaw)
+    mock_mtm.set_gripper_angle(PU.gripper)
+
+    current_time = time.monotonic()
+    dt = current_time - last_time
+    # Set dt threshold to avoid setting twist on first iteration
+    if dt >= min_dt:
+        twist = (np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw]) - last_state) / dt
+        mock_mtm.set_twist(twist[0], twist[1], twist[2], twist[3], twist[4], twist[5])
+    last_state = np.array([PU.x, PU.y, PU.z, PU.roll, PU.pitch, PU.yaw])
+    last_time = current_time
+
+    # Run the publish loop at ~100 Hz without blocking the Tk event loop.
+    App.after(10, update_loop)
+
+
+App.protocol('WM_DELETE_WINDOW', on_close)
+App.after(1, update_loop)
+
+try:
+    App.mainloop()
+except KeyboardInterrupt:
+    print('Exiting')

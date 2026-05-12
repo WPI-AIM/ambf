@@ -1,32 +1,46 @@
 #ifndef _ambf_ral_h
 #define _ambf_ral_h
 
-// to define AMBF_ROS1, AMBF_ROS2 , AMBF_ROS_DISTRO
-#include <ambf_server/ambf_ral_config.h>
+#include <ambf_ral/ambf_ral_config.h>
 
-// this file is based on cisst-ros/cisst_ros_bridge cisst_ral.h. we
-// should probably try to merge this and distribute in a single
-// package (Anton)
-
-#include <string>
+#include <algorithm>
+#include <cstring>
+#include <functional>
+#include <iostream>
+#include <memory>
 #include <regex>
+#include <string>
+#include <vector>
 
-// forward declaration
 namespace ambf_ral {
     void clean_namespace(std::string &);
+    void clean_nodename(std::string &);
 }
 
-#include <tf2/utils.h>
-#include <tf2/LinearMath/Transform.h>
+// #include <tf2/utils.h>
+// #include <tf2/LinearMath/Transform.h>
 
 #if AMBF_ROS1
 
 #include <ros/ros.h>
+#include <ros/master.h>
 #include <ros/callback_queue.h>
 
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/JointState.h>
+#include <sensor_msgs/Joy.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/WrenchStamped.h>
+#if __has_include(<ambf_msgs/ObjectState.h>)
 #include <ambf_msgs/ObjectState.h>
 #include <ambf_msgs/ObjectCmd.h>
 #include <ambf_msgs/LightState.h>
@@ -49,6 +63,7 @@ namespace ambf_ral {
 #include <ambf_msgs/GhostObjectCmd.h>
 #include <ambf_msgs/WorldState.h>
 #include <ambf_msgs/WorldCmd.h>
+#endif
 
 #define AMBF_RAL_DEBUG(...) ROS_DEBUG(__VA_ARGS__)
 #define AMBF_RAL_INFO(...)  ROS_INFO(__VA_ARGS__)
@@ -88,6 +103,18 @@ namespace ambf_ral {
         return ros::Time::now();
     }
 
+    inline ros::Time wall_now() {
+        return ros::Time::now();
+    }
+
+    inline double to_sec(const ros::Time & time) {
+        return time.toSec();
+    }
+
+    inline double to_sec(const ros::Duration & duration) {
+        return duration.toSec();
+    }
+
     inline ros::Duration duration_from_seconds(const double & duration) {
         return ros::Duration(duration);
     }
@@ -97,20 +124,24 @@ namespace ambf_ral {
         return t.fromSec(seconds);
     }
 
+    inline bool ok(node_ptr_t) {
+        return ros::ok();
+    }
+
     inline void spin(node_ptr_t) {
         ros::spin();
     }
 
     inline void spin_some(node_ptr_t) {
+        ros::spinOnce();
     }
 
     inline void shutdown(void) {
         ros::shutdown();
     }
 
-    inline ambf_ral::node_ptr_t create_node(const std::string & name) {
-        // AMBF ROS1 shouldn't create nodes besides the one in afROSNode
-        return nullptr;
+    inline ambf_ral::node_ptr_t create_node(const std::string &) {
+        return std::make_shared<ros::NodeHandle>();
     }
 
     template <typename _ros_t>
@@ -180,6 +211,11 @@ namespace ambf_ral {
         return publisher->getNumSubscribers();
     }
 
+    template <typename _sub_t>
+    inline size_t nb_publishers(_sub_t subscriber) {
+        return subscriber->getNumPublishers();
+    }
+
     template <typename _pub_t>
     inline void publisher_shutdown(_pub_t publisher) {
         publisher->shutdown();
@@ -196,13 +232,25 @@ namespace ambf_ral {
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <sensor_msgs/msg/joy.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <geometry_msgs/msg/wrench.hpp>
+#include <geometry_msgs/msg/wrench_stamped.hpp>
 #if (AMBF_ROS_DISTRO == AMBF_ROS_GALACTIC)
   #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #else
   #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
 
+#if __has_include(<ambf_msgs/msg/object_state.hpp>)
 #include <ambf_msgs/msg/object_state.hpp>
 #include <ambf_msgs/msg/object_cmd.hpp>
 #include <ambf_msgs/msg/light_state.hpp>
@@ -225,6 +273,7 @@ namespace ambf_ral {
 #include <ambf_msgs/msg/ghost_object_cmd.hpp>
 #include <ambf_msgs/msg/world_state.hpp>
 #include <ambf_msgs/msg/world_cmd.hpp>
+#endif
 
 #define AMBF_RAL_DEBUG(...) RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), __VA_ARGS__)
 #define AMBF_RAL_INFO(...)  RCLCPP_INFO(rclcpp::get_logger("rclcpp"), __VA_ARGS__)
@@ -239,6 +288,27 @@ namespace ambf_ral {
 
 #define AMBF_RAL_PUBLISHER_PTR(type) typename rclcpp::Publisher<type>::SharedPtr
 #define AMBF_RAL_SUBSCRIBER_PTR(type) typename rclcpp::Subscription<type>::SharedPtr
+
+namespace geometry_msgs {
+    using Point = msg::Point;
+    using Pose = msg::Pose;
+    using PoseStamped = msg::PoseStamped;
+    using Quaternion = msg::Quaternion;
+    using Vector3 = msg::Vector3;
+    using Wrench = msg::Wrench;
+    using WrenchStamped = msg::WrenchStamped;
+}
+
+namespace sensor_msgs {
+    using JointState = msg::JointState;
+    using Joy = msg::Joy;
+}
+
+namespace std_msgs {
+    using Bool = msg::Bool;
+    using String = msg::String;
+    using Float32 = msg::Float32;
+}
 
 namespace ambf_ral {
     typedef std::shared_ptr<rclcpp::Node> node_ptr_t;
@@ -265,12 +335,29 @@ namespace ambf_ral {
         return node->get_clock()->now();
     }
 
+    inline rclcpp::Time wall_now() {
+        rclcpp::Clock c(RCL_SYSTEM_TIME);
+        return c.now();
+    }
+
+    inline double to_sec(const rclcpp::Time & time) {
+        return time.seconds();
+    }
+
+    inline double to_sec(const rclcpp::Duration & duration) {
+        return duration.seconds();
+    }
+
     inline rclcpp::Duration duration_from_seconds(const double & duration) {
         return rclcpp::Duration::from_seconds(duration);
     }
 
     inline rclcpp::Time time_from_seconds(const double & seconds) {
         return rclcpp::Time(static_cast<uint64_t>(seconds * 1e9));
+    }
+
+    inline bool ok(node_ptr_t) {
+        return rclcpp::ok();
     }
 
     inline void spin(node_ptr_t node) {
@@ -289,7 +376,6 @@ namespace ambf_ral {
 
     inline ambf_ral::node_ptr_t create_node(const std::string & name) {
         if (!rclcpp::ok()) {
-            // create fake argc/argv
             std::string context_name = "ambf";
             typedef char * char_pointer;
             char_pointer * argv = new char_pointer[1];
@@ -298,7 +384,9 @@ namespace ambf_ral {
             int argc = 1;
             rclcpp::init(argc, argv);
         }
-        return std::make_shared<rclcpp::Node>("ambf_" + name);
+        std::string clean_name = name;
+        clean_nodename(clean_name);
+        return std::make_shared<rclcpp::Node>("ambf_" + clean_name);
     }
 
     template <typename _ros_t>
@@ -383,6 +471,11 @@ namespace ambf_ral {
         return publisher->get_subscription_count();
     }
 
+    template <typename _sub_t>
+    inline size_t nb_publishers(_sub_t subscriber) {
+        return subscriber->get_publisher_count();
+    }
+
     template <typename _pub_t>
     inline void publisher_shutdown(_pub_t & publisher) {
         publisher.reset();
@@ -418,7 +511,7 @@ namespace ambf_ral {
       inline void clean_nodename(std::string & _node_name) {
         clean_namespace(_node_name);
         std::replace(_node_name.begin(), _node_name.end(), '/', '_');
-        while (_node_name.at(0) == '_') {
+        while (!_node_name.empty() && (_node_name.at(0) == '_')) {
           _node_name.erase(0, 1);
         }
     }
@@ -426,9 +519,37 @@ namespace ambf_ral {
     class ral
     {
     public:
-        ral(int & argc, char * argv[], const std::string & node_name, bool anonymous_name = true);
-        ral(const std::string & node_name, bool anonymous_name = true);
-        ~ral();
+        inline ral(int & argc, char * argv[], const std::string & node_name, bool anonymous_name = true) {
+            init(argc, argv, node_name, anonymous_name);
+        }
+
+        inline ral(const std::string & node_name, bool anonymous_name = true) {
+#if AMBF_ROS1
+            typedef char * char_pointer;
+            char_pointer * argv = new char_pointer[1];
+            argv[0]= new char[node_name.size() + 1];
+            strcpy(argv[0], node_name.c_str());
+            int argc = 1;
+            init(argc, argv, node_name, anonymous_name);
+#elif AMBF_ROS2
+            (void)anonymous_name;
+            const std::string ambf_context = "AMBF";
+            if (!rclcpp::ok()) {
+                typedef char * char_pointer;
+                char_pointer * argv = new char_pointer[1];
+                argv[0]= new char[ambf_context.size() + 1];
+                strcpy(argv[0], ambf_context.c_str());
+                int argc = 1;
+                rclcpp::init(argc, argv);
+            }
+            std::string clean_name = node_name;
+            clean_nodename(clean_name);
+            m_node = std::make_shared<rclcpp::Node>(clean_name);
+            m_stripped_arguments.push_back(clean_name);
+#endif
+        }
+
+        inline ~ral() = default;
 
         inline node_ptr_t node(void) {
             return m_node;
@@ -440,7 +561,32 @@ namespace ambf_ral {
         }
 
     protected:
-        void init(int & argc,  char * argv[], const std::string & node_name, bool anonymous_name);
+        inline void init(int & argc,  char * argv[], const std::string & node_name, bool anonymous_name) {
+#if AMBF_ROS1
+            if (anonymous_name) {
+                ros::init(argc, argv, node_name, ros::init_options::AnonymousName);
+            } else {
+                ros::init(argc, argv, node_name);
+            }
+            for (int i = 0; i < argc; ++i) {
+                m_stripped_arguments.push_back(argv[i]);
+            }
+            m_node = std::make_shared<ros::NodeHandle>();
+#elif AMBF_ROS2
+            (void)anonymous_name;
+            m_stripped_arguments = rclcpp::init_and_remove_ros_arguments(argc, argv);
+            typedef char * char_ptr;
+            argc = m_stripped_arguments.size();
+            argv = reinterpret_cast<char_ptr *>(malloc(argc * sizeof(char_ptr)));
+            for (int i = 0; i < argc; ++i) {
+                argv[i] = reinterpret_cast<char_ptr>(malloc(m_stripped_arguments.at(i).size() + 1));
+                strcpy(argv[i], m_stripped_arguments.at(i).c_str());
+            }
+            std::string clean_name = node_name;
+            clean_nodename(clean_name);
+            m_node = std::make_shared<rclcpp::Node>(clean_name);
+#endif
+        }
         std::string m_node_name;
         node_ptr_t m_node;
         stripped_arguments_t m_stripped_arguments;

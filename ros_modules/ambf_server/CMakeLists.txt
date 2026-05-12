@@ -40,10 +40,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(ambf_server)
 
-set (BUILD_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include/ambf_server")
-make_directory(${BUILD_INCLUDE_DIR})
-
-set (ROS1_depends geometry_msgs ambf_msgs tf2 message_generation)
+set (ROS1_depends geometry_msgs ambf_msgs tf2 message_generation ambf_ral)
 find_package (catkin QUIET
   COMPONENTS ${ROS1_depends})
 
@@ -51,7 +48,7 @@ find_package (catkin QUIET
 if (catkin_FOUND)
   set (AMBF_ROS_VERSION 1)
   catkin_package(
-    INCLUDE_DIRS include "${CMAKE_CURRENT_BINARY_DIR}/include"
+    INCLUDE_DIRS include
     LIBRARIES ambf_server
     CATKIN_DEPENDS ${ROS1_depends}
     )
@@ -72,7 +69,7 @@ else (catkin_FOUND)
       set (AMBF_ROS_DISTRO 9)
     endif ()
 
-    set (ROS2_depends rclcpp std_msgs geometry_msgs sensor_msgs diagnostic_msgs tf2 tf2_ros tf2_msgs tf2_geometry_msgs ambf_msgs)
+    set (ROS2_depends rclcpp std_msgs geometry_msgs sensor_msgs diagnostic_msgs tf2 tf2_ros tf2_msgs tf2_geometry_msgs ambf_msgs ambf_ral)
     foreach (_dep ${ROS2_depends})
       find_package (${_dep} REQUIRED)
     endforeach ()
@@ -81,15 +78,11 @@ else (catkin_FOUND)
   endif (ament_cmake_FOUND)
 endif (catkin_FOUND)
 
-configure_file (ambf_ral_config.h.in "${BUILD_INCLUDE_DIR}/ambf_ral_config.h")
-include_directories (${BUILD_INCLUDE_DIR}/..)
-
 ###########
 ## Build ##
 ###########
 
 set (HDR_FILES
-    include/${PROJECT_NAME}/ambf_ral.h
     include/${PROJECT_NAME}/RosComBase.h
     include/${PROJECT_NAME}/CmdWatchDog.h
     include/${PROJECT_NAME}/Actuator.h
@@ -112,7 +105,6 @@ set (HDR_FILES
     include/${PROJECT_NAME}/WorldRosCom.h)
 
 set (SRC_FILES
-    src/ambf_ral.cpp
     src/RosComBase.cpp
     src/Actuator.cpp
     src/ActuatorRosCom.cpp
@@ -148,11 +140,6 @@ else ()
 
   install (
     DIRECTORY include/${PROJECT_NAME}
-    DESTINATION include
-    )
-
-  install (
-    DIRECTORY ${BUILD_INCLUDE_DIR}
     DESTINATION include
     )
 

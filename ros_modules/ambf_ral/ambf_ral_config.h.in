@@ -1,11 +1,9 @@
-
 #define AMBF_ROS_GALACTIC 7
 #define AMBF_ROS_HUMBLE 8
 #define AMBF_ROS_JAZZY 9
 
 #cmakedefine AMBF_ROS_VERSION @AMBF_ROS_VERSION@
 #cmakedefine AMBF_ROS_DISTRO @AMBF_ROS_DISTRO@
-
 
 #if (AMBF_ROS_VERSION == 1)
   #define AMBF_ROS1 1

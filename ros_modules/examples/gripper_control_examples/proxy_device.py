@@ -42,7 +42,7 @@
 # */
 # //==============================================================================
 
-import rospy
+from ros_abstraction_layer import ral
 from std_msgs.msg import Empty, String, Bool
 from geometry_msgs.msg import PoseStamped, Pose, WrenchStamped, Wrench, Vector3, TwistStamped, TransformStamped
 from sensor_msgs.msg import Joy, JointState
@@ -118,7 +118,26 @@ def msg_pose_to_kdl_frame(msg_pose):
 
 # Init Relevant MTM
 class ProxyMTM:
-    def __init__(self, arm_name):
+    _ral_node = None
+
+    @classmethod
+    def init_ral_node(cls, node_name):
+        cls._ral_node = ral(node_name)
+        return cls._ral_node
+
+    @classmethod
+    def get_ral_node(cls):
+        return cls._ral_node
+
+    def __init__(self, arm_name, ral_node=None):
+        if ral_node is not None:
+            ProxyMTM._ral_node = ral_node
+
+        if ProxyMTM._ral_node is None:
+            raise RuntimeError("RAL node not initialized. Call init_ral_node() first or pass ral_node to ProxyMTM")
+
+        self._ral = ProxyMTM._ral_node
+
         prefix = arm_name
         pose_str = prefix + '/measured_cp'
         twist_str = prefix + '/measured_cv'
@@ -161,14 +180,14 @@ class ProxyMTM:
         self._gripper_angle = JointState()
         self._gripper_angle.position.append(0)
 
-        self._pose_pub = rospy.Publisher(pose_str, TransformStamped, queue_size=1)
-        self._twist_pub = rospy.Publisher(twist_str, TwistStamped, queue_size=1)
-        self._gripper_pub = rospy.Publisher(gripper_str, JointState, queue_size=1)
-        self._status_pub = rospy.Publisher(status_str, Empty, queue_size=1)
-        self._state_pub = rospy.Publisher(state_str, String, queue_size=1)
-        self._gripper_closed_pub = rospy.Publisher(gripper_closer_str, Bool, queue_size=1)
+        self._pose_pub = self._ral.publisher(pose_str, PoseStamped, queue_size=1)
+        self._twist_pub = self._ral.publisher(twist_str, TwistStamped, queue_size=1)
+        self._gripper_pub = self._ral.publisher(gripper_str, JointState, queue_size=1)
+        self._status_pub = self._ral.publisher(status_str, Empty, queue_size=1)
+        self._state_pub = self._ral.publisher(state_str, String, queue_size=1)
+        self._gripper_closed_pub = self._ral.publisher(gripper_closer_str, Bool, queue_size=1)
 
-        self._force_sub = rospy.Subscriber(wrench_str, WrenchStamped, self.force_cb, queue_size=10)
+        self._force_sub = self._ral.subscriber(wrench_str, WrenchStamped, self.force_cb, queue_size=10)
 
         pass
 
@@ -198,7 +217,7 @@ class ProxyMTM:
     def set_pos(self, a, b, c):
         self.cur_frame.p = Vector(a, b, c)
         pose = self.base_frame.Inverse() * self.cur_frame * self.tip_frame
-        msg = kdl_frame_to_msg_transform(pose)
+        msg = kdl_frame_to_msg_pose(pose)
         self._pose_pub.publish(msg)
 
     def set_twist(self, v_x, v_y, v_z, w_x, w_y, w_z):
@@ -212,7 +231,7 @@ class ProxyMTM:
     def set_orientation(self, a, b, c):
         self.cur_frame.M = Rotation.RPY(a, b, c)
         pose = self.base_frame.Inverse() * self.cur_frame * self.tip_frame
-        msg = kdl_frame_to_msg_transform(pose)
+        msg = kdl_frame_to_msg_pose(pose)
         self._pose_pub.publish(msg)
 
     def get_pose(self):
@@ -220,8 +239,12 @@ class ProxyMTM:
 
     def publish_status(self):
         self._status_pub.publish(Empty())
-        self._state_pub.publish('DVRK_EFFORT_CARTESIAN')
-        self._gripper_closed_pub.publish(True)
+        effort_msg_str = String()
+        effort_msg_str.data = 'DVRK_EFFORT_CARTESIAN'
+        self._state_pub.publish(effort_msg_str)
+        true_msg = Bool()
+        true_msg.data = True
+        self._gripper_closed_pub.publish(true_msg)
 
     def test_angle(self):
         min_a = -1.57
@@ -250,3 +273,13 @@ class ProxyMTM:
             self.set_orientation(0, 0, val)
             print('Angle', val)
             time.sleep(sleep_s)
+
+
+def init_ral_node(node_name):
+    """Backward-compatible wrapper for class-based RAL initialization."""
+    return ProxyMTM.init_ral_node(node_name)
+
+
+def get_ral_node():
+    """Backward-compatible wrapper for class-based RAL accessor."""
+    return ProxyMTM.get_ral_node()

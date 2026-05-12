@@ -44,7 +44,7 @@
 #define CMDWATCHDOG_H
 
 #include <iostream>
-#include <ambf_server/ambf_ral.h>
+#include <ambf_ral/ambf_ral.h>
 
 class CmdWatchDog{
 public:

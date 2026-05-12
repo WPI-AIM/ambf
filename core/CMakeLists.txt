@@ -47,6 +47,11 @@
 cmake_minimum_required (VERSION 3.1)
 project (AMBF)
 
+# Required when consuming ROS2 ament package configs that use IN_LIST.
+if(POLICY CMP0057)
+  cmake_policy(SET CMP0057 NEW)
+endif()
+
 # Set C++ Standard
 set (CMAKE_CXX_STANDARD 11)
 
@@ -82,21 +87,31 @@ if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE Release CACHE STRING "Setting build mode to Release" FORCE)
 endif()
 
+set(CHAI3D_DEFINITIONS "")
+set(BULLET_DEFINITIONS "")
+set(AMBF_DEFINITIONS "")
+set(COMMON_DEFINITIONS "")
+
 # output location, trying to determine is this is using ROS 1, ROS 2 or nothing
 if (DEFINED ENV{ROS_ROOT} OR DEFINED ENV{ROS_VERSION})
-  message (STATUS "Assuming cisst is built using ROS is defined in environment")
+  message (STATUS "Assuming AMBF is built using ROS is defined in environment")
+  
   if (DEFINED CATKIN_DEVEL_PREFIX)
     # then this is catkin build
     message (STATUS "CATKIN_DEVEL_PREFIX is defined so we're assuming this is ROS1")
     set (LIBRARY_OUTPUT_PATH "${CATKIN_DEVEL_PREFIX}/lib")
     set (EXECUTABLE_OUTPUT_PATH "${CATKIN_DEVEL_PREFIX}/bin")
+    find_package(catkin QUIET COMPONENTS dvrk_arm)
+    include_directories( ${catkin_INCLUDE_DIRS})
   else ()
     if ($ENV{ROS_VERSION} STREQUAL "2")
       message (STATUS "Assuming we're using ROS2/colcon since ROS_VERSION is 2")
       set (LIBRARY_OUTPUT_PATH "${AMBF_BINARY_DIR}/lib")
       set (EXECUTABLE_OUTPUT_PATH "${AMBF_BINARY_DIR}/bin")
+      find_package (dvrk_arm REQUIRED)
     endif ()
   endif ()
+  list(APPEND CHAI3D_DEFINITIONS -DC_ENABLE_AMBF_DVRK_DEVICE_SUPPORT)  # Add dVRK headers when AMBF is built in a ROS environment and dVRK support is enabled.
 else ()
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY                ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          ${PROJECT_BINARY_DIR}/../bin-debug/${OS}-${ARCH})
@@ -104,12 +119,6 @@ else ()
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/../bin/${OS}-${ARCH})
 endif ()
-
-
-set(CHAI3D_DEFINITIONS "")
-set(BULLET_DEFINITIONS "")
-set(AMBF_DEFINITIONS "")
-set(COMMON_DEFINITIONS "")
 
 # SET PATHS
 add_definitions(-DAMBF_ROOT_PATH="${PROJECT_SOURCE_DIR}")
@@ -212,7 +221,6 @@ include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/external/vorbis
 include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/external/vorbis/lib)
 include_directories (${PROJECT_SOURCE_DIR}/external/theoraplayer/src/Theora)
 
-
 # static library source files
 file (GLOB_RECURSE source_ambf_math RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/ambf_math/*.cpp ${PROJECT_SOURCE_DIR}/ambf_math/*.h)
 # static library source files
@@ -286,11 +294,13 @@ add_subdirectory (${PROJECT_SOURCE_DIR}/tests)
 
 add_library(chai3d STATIC ${source_chai3d} ${source_eigen} ${source_gif} ${source_glew} ${source_3ds} ${source_jpeg} ${source_png} ${source_pugixml} ${source_openal} ${source_theora})
 
+ament_target_dependencies(chai3d dvrk_arm)
+
 add_library(bullet STATIC ${source_bullet_collision} ${source_bullet_dynamics} ${source_bullet_softbody} ${source_bullet_linearmath})
 
 # static library
 add_library (ambf_framework SHARED ${source_ambf_framework} ${source_ambf_plugins})
-
+ament_target_dependencies(ambf_framework dvrk_arm)
 add_definitions(${CHAI3D_DEFINITIONS})
 add_definitions(${BULLET_DEFINITIONS})
 add_definitions(${AMBF_DEFINITIONS})

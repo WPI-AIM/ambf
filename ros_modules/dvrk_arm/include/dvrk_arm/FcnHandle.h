@@ -45,7 +45,9 @@
 #define CCONVERSION_H
 
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+
+using namespace boost::placeholders;
 
 template<typename D>
 class FcnHandle{

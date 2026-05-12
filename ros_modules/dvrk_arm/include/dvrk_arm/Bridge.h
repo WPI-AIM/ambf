@@ -44,37 +44,19 @@
 #ifndef CDVRK_BRIDGEH
 #define CDVRK_BRIDGEH
 
-#if AMBF_ROS1
-#include "ros/ros.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "ros/callback_queue.h"
-#include "sensor_msgs/JointState.h"
-#include "sensor_msgs/Joy.h"
-#include "std_msgs/String.h"
-#include "std_msgs/Bool.h"
-#include "std_msgs/Float32.h"
-#include "geometry_msgs/WrenchStamped.h"
-#elif AMBF_ROS2
-#include <rclcpp/rclcpp.hpp>
-// #include "ros/callback_queue.h" # find ROS2 equivalency
-#include "geometry_msgs/msg/transform_stamped.h"
-#include "sensor_msgs/msg/joint_state.h"
-#include "sensor_msgs/msg/joy.h"
-#include "std_msgs/msg/string.h"
-#include "std_msgs/msg/bool.h"
-#include "std_msgs/msg/float32.h"
-#include "geometry_msgs/msg/wrench_stamped.h"
-#endif
+#include <ambf_ral/ambf_ral.h>
 #include "FootPedals.h"
 #include "Console.h"
 #include "string.h"
-#include "boost/bind.hpp"
-#include "boost/function.hpp"
+#include <boost/bind/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/thread.hpp>
+
+using namespace boost::placeholders;
 
 #include "dvrk_arm/States.h"
 #include "FcnHandle.h"
 #include "dvrk_arm/Timing.h"
-#include "boost/thread.hpp"
 
 class DVRK_Bridge: public States, public DVRK_FootPedals{
 public:
@@ -99,56 +81,54 @@ public:
     bool _start_pubs;
     bool _gripper_closed;
 
-    typedef std::shared_ptr<ros::NodeHandle> NodePtr;
-    typedef std::shared_ptr<ros::Rate> RatePtr;
-    typedef std::shared_ptr<ros::AsyncSpinner> AspinPtr;
+    typedef ambf_ral::node_ptr_t NodePtr;
+    typedef ambf_ral::rate_ptr_t RatePtr;
 
     bool shutDown();
 
-    FcnHandle<const geometry_msgs::PoseStamped&> poseFcnHandle;
-    FcnHandle<const sensor_msgs::JointState&> jointFcnHandle;
-    FcnHandle<const geometry_msgs::WrenchStamped&> wrenchFcnHandle;
-    FcnHandle<const sensor_msgs::JointState&> gripperFcnHandle;
+    FcnHandle<const AMBF_RAL_MSG(geometry_msgs, PoseStamped)&> poseFcnHandle;
+    FcnHandle<const AMBF_RAL_MSG(sensor_msgs, JointState)&> jointFcnHandle;
+    FcnHandle<const AMBF_RAL_MSG(geometry_msgs, WrenchStamped)&> wrenchFcnHandle;
+    FcnHandle<const AMBF_RAL_MSG(sensor_msgs, JointState)&> gripperFcnHandle;
 
 private:
     std::string arm_name;
 
+    std::shared_ptr<ambf_ral::ral> m_ral;
     NodePtr n;
-    ros::Publisher servo_cf_pub;
-    ros::Publisher force_orientation_lock_pub;
-    ros::Publisher state_pub;
-    ros::Publisher servo_cp_pub;
-    ros::Publisher servo_jp_pub;
-    ros::Publisher gravity_comp_ena_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(geometry_msgs, WrenchStamped)) servo_cf_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(std_msgs, Bool)) force_orientation_lock_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(std_msgs, String)) state_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(geometry_msgs, PoseStamped)) servo_cp_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(sensor_msgs, JointState)) servo_jp_pub;
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(std_msgs, Bool)) gravity_comp_ena_pub;
 
-    ros::Subscriber measured_cp_sub;
-    ros::Subscriber measured_js_sub;
-    ros::Subscriber state_sub;
-    ros::Subscriber measured_cf_sub;
-    ros::Subscriber gripper_event_sub;
-    ros::Subscriber gripper_measured_js_sub;
-    ros::CallbackQueue cb_queue;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(geometry_msgs, PoseStamped)) measured_cp_sub;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(sensor_msgs, JointState)) measured_js_sub;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(std_msgs, String)) state_sub;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(geometry_msgs, WrenchStamped)) measured_cf_sub;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(std_msgs, Bool)) gripper_event_sub;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(sensor_msgs, JointState)) gripper_measured_js_sub;
     RatePtr run_loop_rate, wrench_loop_max_rate;
     int _freq;
 
     double scale;
     std::vector<std::string> valid_arms;
     void init();
-    void state_cb(const std_msgs::StringConstPtr &msg);
-    void measured_cp_cb(const geometry_msgs::PoseStampedConstPtr &msg);
-    void measured_js_cb(const sensor_msgs::JointStateConstPtr &msg);
-    void measured_cf_cb(const geometry_msgs::WrenchStampedConstPtr &wrench);
-    void gripper_sub_cb(const std_msgs::BoolConstPtr &gripper);
-    void gripper_measured_js_cb(const sensor_msgs::JointStateConstPtr &state);
-    void timer_cb(const ros::TimerEvent&);
+    void state_cb(const AMBF_RAL_MSG(std_msgs, String) &msg);
+    void measured_cp_cb(const AMBF_RAL_MSG(geometry_msgs, PoseStamped) &msg);
+    void measured_js_cb(const AMBF_RAL_MSG(sensor_msgs, JointState) &msg);
+    void measured_cf_cb(const AMBF_RAL_MSG(geometry_msgs, WrenchStamped) &msg);
+    void gripper_sub_cb(const AMBF_RAL_MSG(std_msgs, Bool) &gripper);
+    void gripper_measured_js_cb(const AMBF_RAL_MSG(sensor_msgs, JointState) &state);
     void _rate_sleep();
     void run();
     std::shared_ptr<boost::thread> loop_thread;
 
-    geometry_msgs::PoseStamped cur_pose, pre_pose, cmd_pose;
-    sensor_msgs::JointState cur_joint, pre_joint, cmd_joint;
-    std_msgs::String cur_state, state_cmd;
-    geometry_msgs::WrenchStamped cur_wrench, cmd_wrench;
+    AMBF_RAL_MSG(geometry_msgs, PoseStamped) cur_pose, pre_pose, cmd_pose;
+    AMBF_RAL_MSG(sensor_msgs, JointState) cur_joint, pre_joint, cmd_joint;
+    AMBF_RAL_MSG(std_msgs, String) cur_state, state_cmd;
+    AMBF_RAL_MSG(geometry_msgs, WrenchStamped) cur_wrench, cmd_wrench;
     bool _on;
 };
 

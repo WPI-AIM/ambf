@@ -41,11 +41,11 @@
 namespace ros {
 
 DVRK_Rate::DVRK_Rate(double frequency, bool print_time_info)
-: start_(Time::now())
-, expected_cycle_time_(1.0 / frequency)
-, actual_cycle_time_(0.0)
-, min_cycle_time_(1.0)
-, max_cycle_time_(0.0)
+: start_(ambf_ral::wall_now())
+, expected_cycle_time_(ambf_ral::duration_from_seconds(1.0 / frequency))
+, actual_cycle_time_(ambf_ral::duration_from_seconds(0.0))
+, min_cycle_time_(ambf_ral::duration_from_seconds(1.0))
+, max_cycle_time_(ambf_ral::duration_from_seconds(0.0))
 , prnt_info(print_time_info)
 , delay_no(0)
 , packet_no(0)
@@ -53,19 +53,26 @@ DVRK_Rate::DVRK_Rate(double frequency, bool print_time_info)
 , total_cycle_time(0.0)
 { }
 
-DVRK_Rate::DVRK_Rate(const Duration& d)
-  : start_(Time::now())
-  , expected_cycle_time_(1.0 / d.toSec())
-  , actual_cycle_time_(0.0)
+DVRK_Rate::DVRK_Rate(const ambf_ral::duration_t & d)
+  : start_(ambf_ral::wall_now())
+  , expected_cycle_time_(d)
+  , actual_cycle_time_(ambf_ral::duration_from_seconds(0.0))
+  , min_cycle_time_(ambf_ral::duration_from_seconds(1.0))
+  , max_cycle_time_(ambf_ral::duration_from_seconds(0.0))
+  , delay_no(0)
+  , packet_no(0)
+  , mean_cycle_time(0.0)
+  , total_cycle_time(0.0)
+  , prnt_info(false)
 { }
 
 
 
 bool DVRK_Rate::sleep()
 {
-  Time expected_end = start_ + expected_cycle_time_;
+  ambf_ral::time_t expected_end = start_ + expected_cycle_time_;
 
-  Time actual_end = Time::now();
+  ambf_ral::time_t actual_end = ambf_ral::wall_now();
 
   // detect backward jumps in time
   if (actual_end < start_)
@@ -75,8 +82,8 @@ bool DVRK_Rate::sleep()
   }
 
   //calculate the time we'll sleep for
-  Duration sleep_time = expected_end - actual_end;
-  Time sleep_till = start_ + expected_cycle_time_;
+  ambf_ral::duration_t sleep_time = expected_end - actual_end;
+  ambf_ral::time_t sleep_till = start_ + expected_cycle_time_;
 
   //set the actual amount of time the loop took in case the user wants to know
   actual_cycle_time_ = actual_end - start_;
@@ -84,27 +91,27 @@ bool DVRK_Rate::sleep()
   //make sure to reset our start time
   start_ = expected_end;
   packet_no++;
-  total_cycle_time += actual_cycle_time_.toSec();
+    total_cycle_time += ambf_ral::to_sec(actual_cycle_time_);
   mean_cycle_time = (total_cycle_time/packet_no);
-  if (actual_cycle_time_.toSec() > mean_cycle_time){
+    if (ambf_ral::to_sec(actual_cycle_time_) > mean_cycle_time){
       max_cycle_time_ = actual_cycle_time_;
   }
-  if (actual_cycle_time_.toSec() < mean_cycle_time){
+    if (ambf_ral::to_sec(actual_cycle_time_) < mean_cycle_time){
       min_cycle_time_ = actual_cycle_time_;
   }
 
   //if we've taken too much time we won't sleep
-  if(sleep_time <= Duration(0.0))
+  if(sleep_time <= ambf_ral::duration_from_seconds(0.0))
   {
       delay_no++;
       if(prnt_info){
       std::cerr<< "Delay No: "<<delay_no<<std::endl
                << "Packets Received: "<<packet_no<<std::endl
-               << "Min      Cycle Time(s) :"<< min_cycle_time_.toSec() << std::endl
-               << "Max      Cycle Time(s) :"<< max_cycle_time_.toSec() << std::endl
+               << "Min      Cycle Time(s) :"<< ambf_ral::to_sec(min_cycle_time_) << std::endl
+               << "Max      Cycle Time(s) :"<< ambf_ral::to_sec(max_cycle_time_) << std::endl
                << "Mean     Cycle Time(s) :"<< mean_cycle_time << std::endl
-               << "Actual   Cycle Time(s) :"<< actual_cycle_time_.toSec() << std::endl
-               << "Expected Cycle Time(s) :"<< expected_cycle_time_.toSec() << std::endl
+               << "Actual   Cycle Time(s) :"<< ambf_ral::to_sec(actual_cycle_time_) << std::endl
+               << "Expected Cycle Time(s) :"<< ambf_ral::to_sec(expected_cycle_time_) << std::endl
                << "-----------------------------------------------"<< std::endl;
       }
       // if we've jumped forward in time, or the loop has taken more than a full extra
@@ -118,7 +125,7 @@ bool DVRK_Rate::sleep()
 
 //  std::cerr <<" Cur   Time  : " << ros::Time::now().toSec() << std::endl
 //            <<" Sleep Target: "<< sleep_till.toSec() << std::endl;
-  while (ros::Time::now().toSec() <= sleep_till.toSec()){
+  while (ambf_ral::to_sec(ambf_ral::wall_now()) <= ambf_ral::to_sec(sleep_till)){
 
   }
 //  std::cerr << " After Sleep: " << ros::Time::now().toSec()<< std::endl
@@ -129,10 +136,10 @@ bool DVRK_Rate::sleep()
 
 void DVRK_Rate::reset()
 {
-  start_ = Time::now();
+  start_ = ambf_ral::wall_now();
 }
 
-Duration DVRK_Rate::cycleTime() const
+ambf_ral::duration_t DVRK_Rate::cycleTime() const
 {
   return actual_cycle_time_;
 }

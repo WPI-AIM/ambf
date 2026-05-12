@@ -38,33 +38,28 @@
 #ifndef TIMING_H
 #define TIMING_H
 
-#if AMBF_ROS1
-#include "ros/time.h"
-#elif AMBF_ROS2
-#include "rclcpp/rclcpp.hpp"
-#endif
+#include <ambf_ral/ambf_ral.h>
 
 namespace ros {
 
-class Duration;
 class DVRK_Rate
 {
 public:
 
   DVRK_Rate(double frequency, bool print_time_info = false);
-  explicit DVRK_Rate(const Duration&);
+  explicit DVRK_Rate(const ambf_ral::duration_t &);
 
   bool sleep();
 
   void reset();
 
-  Duration cycleTime() const;
+  ambf_ral::duration_t cycleTime() const;
 
-  Duration expectedCycleTime() const { return expected_cycle_time_; }
+  ambf_ral::duration_t expectedCycleTime() const { return expected_cycle_time_; }
 
 private:
-  Time start_;
-  Duration expected_cycle_time_, actual_cycle_time_, min_cycle_time_, max_cycle_time_;
+  ambf_ral::time_t start_;
+  ambf_ral::duration_t expected_cycle_time_, actual_cycle_time_, min_cycle_time_, max_cycle_time_;
   unsigned long int delay_no, packet_no;
   double mean_cycle_time, total_cycle_time;
   bool prnt_info;

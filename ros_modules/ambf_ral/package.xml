@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>ambf_ral</name>
+  <version>0.0.0</version>
+  <description>The ambf_ral package</description>
+
+  <maintainer email="adnan@todo.todo">adnan</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <build_depend condition="$ROS_VERSION == 1">geometry_msgs</build_depend>
+  <build_depend condition="$ROS_VERSION == 1">roscpp</build_depend>
+  <build_depend condition="$ROS_VERSION == 1">sensor_msgs</build_depend>
+  <build_depend condition="$ROS_VERSION == 1">std_msgs</build_depend>
+  <build_depend condition="$ROS_VERSION == 1">tf</build_depend>
+
+  <build_export_depend condition="$ROS_VERSION == 1">geometry_msgs</build_export_depend>
+  <build_export_depend condition="$ROS_VERSION == 1">roscpp</build_export_depend>
+  <build_export_depend condition="$ROS_VERSION == 1">sensor_msgs</build_export_depend>
+  <build_export_depend condition="$ROS_VERSION == 1">std_msgs</build_export_depend>
+  <build_export_depend condition="$ROS_VERSION == 1">tf</build_export_depend>
+
+  <exec_depend condition="$ROS_VERSION == 1">geometry_msgs</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 1">roscpp</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 1">sensor_msgs</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 1">std_msgs</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 1">tf</exec_depend>
+
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+  <depend condition="$ROS_VERSION == 2">rclcpp</depend>
+  <depend condition="$ROS_VERSION == 2">std_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">geometry_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">sensor_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">tf2</depend>
+  <depend condition="$ROS_VERSION == 2">tf2_geometry_msgs</depend>
+
+  <export>
+    <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+  </export>
+</package>

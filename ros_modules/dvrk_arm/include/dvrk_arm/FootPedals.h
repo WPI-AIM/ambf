@@ -43,13 +43,8 @@
 
 #ifndef CDVRK_FOOTPEDALSH
 #define CDVRK_FOOTPEDALSH
-#if AMBF_ROS1
-#include "ros/ros.h"
-#include "sensor_msgs/Joy.h"
-#elif AMBF_ROS2
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/joy.hpp"
-#endif
+#include <ambf_ral/ambf_ral.h>
+#include <map>
 #include <string.h>
 
 class DVRK_Bridge;
@@ -65,19 +60,19 @@ enum class ButtonEnum{
 
 class ButtonHandle{
 public:
-    ButtonHandle(std::shared_ptr<ros::NodeHandle> n, std::string topic_name){
-        m_subscriber = n->subscribe(topic_name, 1, &ButtonHandle::callback, this);
+    ButtonHandle(ambf_ral::node_ptr_t n, std::string topic_name){
+        ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, Joy)>(m_subscriber, n, topic_name, 1, &ButtonHandle::callback, this);
         m_pressed = false;
     }
 
     inline bool isPressed(){return m_pressed;}
 private:
-    void callback(const sensor_msgs::JoyConstPtr &msg){
-        m_pressed = msg->buttons[0];
+    void callback(const AMBF_RAL_MSG(sensor_msgs, Joy) &msg){
+        m_pressed = msg.buttons[0];
     }
 
     bool m_pressed;
-    ros::Subscriber m_subscriber;
+    AMBF_RAL_SUBSCRIBER_PTR(AMBF_RAL_MSG(sensor_msgs, Joy)) m_subscriber;
 };
 
 class DVRK_FootPedals{
@@ -85,7 +80,7 @@ class DVRK_FootPedals{
     friend class DVRK_Arm;
     DVRK_FootPedals();
     ~DVRK_FootPedals();
-    void init_footpedals(std::shared_ptr<ros::NodeHandle> n);
+    void init_footpedals(ambf_ral::node_ptr_t n);
     std::map<ButtonEnum, ButtonHandle*> m_buttonHandles;
 };
 #endif

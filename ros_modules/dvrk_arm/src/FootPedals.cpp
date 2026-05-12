@@ -45,7 +45,7 @@
 DVRK_FootPedals::DVRK_FootPedals(){
 }
 
-void DVRK_FootPedals::init_footpedals(std::shared_ptr<ros::NodeHandle> n){
+void DVRK_FootPedals::init_footpedals(ambf_ral::node_ptr_t n){
     std::string prefix = "/footpedals/";
     m_buttonHandles[ButtonEnum::CLUTCH] = new ButtonHandle(n, prefix + "clutch");
     m_buttonHandles[ButtonEnum::COAG] = new ButtonHandle(n, prefix + "coag");

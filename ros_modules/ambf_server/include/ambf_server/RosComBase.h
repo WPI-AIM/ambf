@@ -43,7 +43,7 @@
 #ifndef ROSCOMBASE_H
 #define ROSCOMBASE_H
 #include <thread>
-#include <ambf_server/ambf_ral.h>
+#include <ambf_ral/ambf_ral.h>
 #include <ambf_server/CmdWatchDog.h>
 #include <unistd.h>
 #include <mutex>

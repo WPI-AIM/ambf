@@ -44,8 +44,7 @@
 #ifndef CDVRK_FrameH
 #define CDVRK_FrameH
 
-#include "tf/tf.h"
-#include "tf/LinearMath/Matrix3x3.h"
+#include <ambf_ral/tf_compat.h>
 
 struct Frame{
 public:

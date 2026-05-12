@@ -43,19 +43,16 @@ cmake_policy(SET CMP0048 NEW)
 endif (POLICY CMP0048)
 project(dvrk_arm)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-set (ROS1_depends geometry_msgs roscpp roslib rospy sensor_msgs std_msgs tf)
+set (ROS1_depends geometry_msgs roscpp roslib rospy sensor_msgs std_msgs tf ambf_ral)
 find_package (catkin QUIET
   COMPONENTS ${ROS1_depends})
 
 # ROS 1
 if (catkin_FOUND)
-  set (ROS_VERSION 1)
+  set (AMBF_ROS_VERSION 1)
 
   ###################################
   ## catkin specific configuration ##
@@ -88,8 +85,17 @@ else (catkin_FOUND)
   # look for ROS2
   find_package(ament_cmake QUIET)
   if(ament_cmake_FOUND)
-    set(ROS_VERSION 2)
-    set (REQUIRED_AMENT_PACKAGES rosidl_default_generators std_msgs geometry_msgs rclcpp rclpy sensor_msgs tf2)
+    set(AMBF_ROS_VERSION 2)
+    set (AMBF_ROS_DISTRO_STRING $ENV{ROS_DISTRO})
+    if ("${AMBF_ROS_DISTRO_STRING}" STREQUAL "galactic")
+      set (AMBF_ROS_DISTRO 7)
+    elseif ("${AMBF_ROS_DISTRO_STRING}" STREQUAL "humble")
+      set (AMBF_ROS_DISTRO 8)
+    elseif ("${AMBF_ROS_DISTRO_STRING}" STREQUAL "jazzy")
+      set (AMBF_ROS_DISTRO 9)
+    endif ()
+
+    set (REQUIRED_AMENT_PACKAGES std_msgs geometry_msgs rclcpp rclpy sensor_msgs tf2 tf2_geometry_msgs ambf_ral)
     foreach (_dep ${REQUIRED_AMENT_PACKAGES})
         find_package (${_dep} REQUIRED)
     endforeach()
@@ -103,10 +109,20 @@ else (catkin_FOUND)
   endif(ament_cmake_FOUND)
 endif(catkin_FOUND)
 
+if (AMBF_ROS_VERSION EQUAL 2)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(
     include
     ${EIGEN_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
   )
 
 ## System dependencies are found with CMake's conventions
@@ -209,7 +225,7 @@ set(HDR_FILES
    include/${PROJECT_NAME}/Timing.h)
 
 ## Declare a C++ library
- add_library(dvrk_arm
+ add_library(dvrk_arm SHARED
    ${SRC_FILES} ${HDR_FILES}
  )
 ## Add cmake target dependencies of the library
@@ -235,18 +251,38 @@ set(HDR_FILES
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-if (ROS_VERSION EQUAL 1)
+if (AMBF_ROS_VERSION EQUAL 1)
  target_link_libraries(dvrk_arm
    ${catkin_LIBRARIES}
+   ${Boost_LIBRARIES}
  )
  target_link_libraries(${PROJECT_NAME}_test
         dvrk_arm
         )
-endif(ROS_VERSION EQUAL 1)
+endif(AMBF_ROS_VERSION EQUAL 1)
 
-if (ROS_VERSION EQUAL 2)
+if (AMBF_ROS_VERSION EQUAL 2)
   ament_target_dependencies (dvrk_arm ${REQUIRED_AMENT_PACKAGES})
-  ament_target_dependencies (dvrk_arm_test ${REQUIRED_AMENT_PACKAGES})
+  ament_target_dependencies (${PROJECT_NAME}_test ${REQUIRED_AMENT_PACKAGES})
+  target_link_libraries(dvrk_arm ${Boost_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME}_test dvrk_arm)
+
+  install(
+    DIRECTORY include/${PROJECT_NAME}
+    DESTINATION include
+  )
+
+  install(
+    TARGETS dvrk_arm ${PROJECT_NAME}_test interpolate_test
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
+  )
+
+  ament_export_include_directories(include)
+  ament_export_libraries(dvrk_arm)
+  ament_export_dependencies(${REQUIRED_AMENT_PACKAGES})
+
   ament_package()
 endif()
 #############

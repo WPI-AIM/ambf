@@ -69,31 +69,27 @@ DVRK_Bridge::DVRK_Bridge(const std::string &arm_name, int bridge_frequency): _fr
 }
 
 void DVRK_Bridge::init(){
-    int argc;
-    char** argv;
-    ros::M_string s;
-    ros::init(s, arm_name + "_interface_node");
-    n.reset(new ros::NodeHandle);
-    n->setCallbackQueue(&cb_queue);
-    run_loop_rate.reset(new ros::Rate(1000));
-    wrench_loop_max_rate.reset(new ros::Rate(1000));
+    m_ral = std::make_shared<ambf_ral::ral>(arm_name + "_interface_node", true);
+    n = m_ral->node();
+    run_loop_rate.reset(new ambf_ral::rate_t(1000));
+    wrench_loop_max_rate.reset(new ambf_ral::rate_t(1000));
 
     std::string prefix = "/";
     std::string _namespace = prefix + arm_name;
 
-    measured_cp_sub = n->subscribe(_namespace + "/measured_cp", 10, &DVRK_Bridge::measured_cp_cb, this);
-    state_sub = n->subscribe(_namespace + "/robot_state", 10, &DVRK_Bridge::state_cb, this);
-    measured_js_sub = n->subscribe(_namespace + "/measured_js", 10, &DVRK_Bridge::measured_js_cb, this);
-    measured_cf_sub = n->subscribe(_namespace + "/measured_cf", 10, &DVRK_Bridge::measured_cf_cb, this);
-    gripper_event_sub = n->subscribe(_namespace + "/gripper/closed", 10, &DVRK_Bridge::gripper_sub_cb, this);
-    gripper_measured_js_sub = n->subscribe(_namespace + "/gripper/measured_js", 10, &DVRK_Bridge::gripper_measured_js_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, PoseStamped)>(measured_cp_sub, n, _namespace + "/measured_cp", 10, &DVRK_Bridge::measured_cp_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, String)>(state_sub, n, _namespace + "/robot_state", 10, &DVRK_Bridge::state_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, JointState)>(measured_js_sub, n, _namespace + "/measured_js", 10, &DVRK_Bridge::measured_js_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(geometry_msgs, WrenchStamped)>(measured_cf_sub, n, _namespace + "/measured_cf", 10, &DVRK_Bridge::measured_cf_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(std_msgs, Bool)>(gripper_event_sub, n, _namespace + "/gripper/closed", 10, &DVRK_Bridge::gripper_sub_cb, this);
+    ambf_ral::create_subscriber<AMBF_RAL_MSG(sensor_msgs, JointState)>(gripper_measured_js_sub, n, _namespace + "/gripper/measured_js", 10, &DVRK_Bridge::gripper_measured_js_cb, this);
 
-    servo_jp_pub = n->advertise<sensor_msgs::JointState>(_namespace + "/servo_jp", 10);
-    servo_cp_pub  = n->advertise<geometry_msgs::PoseStamped>(_namespace + "/servo_cp", 10);
-    state_pub = n->advertise<std_msgs::String>(_namespace + "/set_robot_state", 10);
-    servo_cf_pub = n->advertise<geometry_msgs::WrenchStamped>(_namespace + "/body/servo_cf", 10);
-    force_orientation_lock_pub = n->advertise<std_msgs::Bool>(_namespace + "/body/set_cf_orientation_absolute", 10);
-    gravity_comp_ena_pub = n->advertise<std_msgs::Bool>(_namespace + "/use_gravity_compensation", 1);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(sensor_msgs, JointState)>(servo_jp_pub, n, _namespace + "/servo_jp", 10, false);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(geometry_msgs, PoseStamped)>(servo_cp_pub, n, _namespace + "/servo_cp", 10, false);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, String)>(state_pub, n, _namespace + "/set_robot_state", 10, false);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(geometry_msgs, WrenchStamped)>(servo_cf_pub, n, _namespace + "/body/servo_cf", 10, false);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>(force_orientation_lock_pub, n, _namespace + "/body/set_cf_orientation_absolute", 10, false);
+    ambf_ral::create_publisher<AMBF_RAL_MSG(std_msgs, Bool)>(gravity_comp_ena_pub, n, _namespace + "/use_gravity_compensation", 1, false);
 
     activeState = DVRK_UNINITIALIZED;
     _gripper_closed = false;
@@ -110,36 +106,36 @@ void DVRK_Bridge::init(){
     usleep(300000);
     scale = 0.1;
 
-    std_msgs::Bool ena_gravity_comp;
+    AMBF_RAL_MSG(std_msgs, Bool) ena_gravity_comp;
     ena_gravity_comp.data = true;
-    gravity_comp_ena_pub.publish(ena_gravity_comp);
+    gravity_comp_ena_pub->publish(ena_gravity_comp);
 }
 
-void DVRK_Bridge::measured_js_cb(const sensor_msgs::JointStateConstPtr &msg){
+void DVRK_Bridge::measured_js_cb(const AMBF_RAL_MSG(sensor_msgs, JointState) &msg){
     pre_joint = cur_joint;
-    cur_joint = *msg;
+    cur_joint = msg;
     if(jointFcnHandle._is_set){
         jointFcnHandle.fcn_handle(cur_joint);
     }
 }
 
-void DVRK_Bridge::measured_cp_cb(const geometry_msgs::PoseStampedConstPtr &msg){
+void DVRK_Bridge::measured_cp_cb(const AMBF_RAL_MSG(geometry_msgs, PoseStamped) &msg){
     pre_pose = cur_pose;
-    cur_pose = *msg;
+    cur_pose = msg;
     if(poseFcnHandle._is_set){
         poseFcnHandle.fcn_handle(cur_pose);
     }
 }
 
-void DVRK_Bridge::measured_cf_cb(const geometry_msgs::WrenchStampedConstPtr &msg){
-    cur_wrench = *msg;
+void DVRK_Bridge::measured_cf_cb(const AMBF_RAL_MSG(geometry_msgs, WrenchStamped) &msg){
+    cur_wrench = msg;
     if(wrenchFcnHandle._is_set){
         wrenchFcnHandle.fcn_handle(cur_wrench);
     }
 }
 
-void DVRK_Bridge::state_cb(const std_msgs::StringConstPtr &msg){
-    cur_state = *msg;
+void DVRK_Bridge::state_cb(const AMBF_RAL_MSG(std_msgs, String) &msg){
+    cur_state = msg;
     for(std::map<ARM_STATES, std::string>::iterator it = stateMap.begin(); it != stateMap.end() ; ++it){
         if(strcmp(cur_state.data.c_str(), it->second.c_str()) == 0){
             activeState = it->first;
@@ -147,30 +143,30 @@ void DVRK_Bridge::state_cb(const std_msgs::StringConstPtr &msg){
     }
 }
 
-void DVRK_Bridge::gripper_sub_cb(const std_msgs::BoolConstPtr &gripper){
-    _gripper_closed = gripper->data;
+void DVRK_Bridge::gripper_sub_cb(const AMBF_RAL_MSG(std_msgs, Bool) &gripper){
+    _gripper_closed = gripper.data;
 }
 
-void DVRK_Bridge::gripper_measured_js_cb(const sensor_msgs::JointStateConstPtr &state){
+void DVRK_Bridge::gripper_measured_js_cb(const AMBF_RAL_MSG(sensor_msgs, JointState) &state){
     if(gripperFcnHandle._is_set){
-        gripperFcnHandle.fcn_handle(*state);
+        gripperFcnHandle.fcn_handle(state);
     }
 }
 
 void DVRK_Bridge::run(){
-    while (n->ok() && _on){
-        cb_queue.callAvailable();
+    while (ambf_ral::ok(n) && _on){
+        ambf_ral::spin_some(n);
         run_loop_rate->sleep();
         if(_start_pubs == true){
             switch (activeState) {
             case DVRK_POSITION_JOINT:
-                servo_jp_pub.publish(cmd_joint);
+                servo_jp_pub->publish(cmd_joint);
                 break;
             case DVRK_POSITION_CARTESIAN:
-                servo_cp_pub.publish(cmd_pose);
+                servo_cp_pub->publish(cmd_pose);
                 break;
             case DVRK_EFFORT_CARTESIAN:
-                servo_cf_pub.publish(cmd_wrench);
+                servo_cf_pub->publish(cmd_wrench);
                 break;
             default:
                 break;
@@ -183,11 +179,11 @@ void DVRK_Bridge::set_cur_mode(const std::string &state, bool lock_ori){
     for(std::map<ARM_STATES, std::string>::iterator it = stateMap.begin(); it != stateMap.end() ; ++it){
         if(strcmp(state.c_str(), it->second.c_str()) == 0){
             state_cmd.data = state;
-            state_pub.publish(state_cmd);
+            state_pub->publish(state_cmd);
             if(it->first == DVRK_EFFORT_CARTESIAN){
-                std_msgs::Bool lock;
+                AMBF_RAL_MSG(std_msgs, Bool) lock;
                 lock.data = lock_ori;
-                force_orientation_lock_pub.publish(lock);
+                force_orientation_lock_pub->publish(lock);
             }
             usleep(100000);
         }
@@ -219,7 +215,7 @@ void DVRK_Bridge::_rate_sleep(){
 }
 
 bool DVRK_Bridge::_is_available(){
-    if (measured_cp_sub.getNumPublishers() > 0){
+    if (ambf_ral::nb_publishers(measured_cp_sub) > 0){
         return true;
     }
     else{
@@ -229,9 +225,12 @@ bool DVRK_Bridge::_is_available(){
 }
 
 void DVRK_Bridge::get_arms_from_rostopics(std::vector<std::string> &arm_names){
-    ros::M_string s;
-    ros::init(s, "dvrk_arm_node");
-    if (ros::master::check()){
+#if AMBF_ROS1
+    if (!ros::isInitialized()) {
+        ros::M_string s;
+        ros::init(s, "dvrk_arm_node");
+    }
+    if (ros::master::check()) {
         std::string armR, armL, checkR, checkL;
         std::string _prefix = "/";
         armR = "MTMR";
@@ -240,7 +239,7 @@ void DVRK_Bridge::get_arms_from_rostopics(std::vector<std::string> &arm_names){
         checkL = std::string(_prefix + armL + "/status");
         ros::master::V_TopicInfo topics;
         ros::master::getTopics(topics);
-        for(int i = 0 ; i < topics.size() ; i++){
+        for(size_t i = 0 ; i < topics.size() ; i++){
             if(strcmp(topics[i].name.c_str(), checkR.c_str()) == 0){
                 arm_names.push_back(armR);
             }
@@ -249,6 +248,16 @@ void DVRK_Bridge::get_arms_from_rostopics(std::vector<std::string> &arm_names){
             }
         }
     }
+#elif AMBF_ROS2
+    ambf_ral::node_ptr_t node = ambf_ral::create_node("dvrk_arm_node");
+    auto topic_map = node->get_topic_names_and_types();
+    if (topic_map.find("/MTMR/status") != topic_map.end()) {
+        arm_names.push_back("MTMR");
+    }
+    if (topic_map.find("/MTML/status") != topic_map.end()) {
+        arm_names.push_back("MTML");
+    }
+#endif
 }
 
 bool DVRK_Bridge::_in_effort_mode(){
@@ -260,6 +269,7 @@ bool DVRK_Bridge::_in_effort_mode(){
     else{
         return false;
     }
+    return false;
 }
 
 bool DVRK_Bridge::_in_cart_pos_mode(){
@@ -271,6 +281,7 @@ bool DVRK_Bridge::_in_cart_pos_mode(){
     else{
         return false;
     }
+    return false;
 }
 
 bool DVRK_Bridge::_in_jnt_pos_mode(){
@@ -282,6 +293,7 @@ bool DVRK_Bridge::_in_jnt_pos_mode(){
     else{
         return false;
     }
+    return false;
 }
 
 bool DVRK_Bridge::shutDown(){
@@ -296,6 +308,6 @@ bool DVRK_Bridge::shutDown(){
 }
 
 DVRK_Bridge::~DVRK_Bridge(){
-    ros::shutdown();
+    ambf_ral::shutdown();
     std::cerr << "CLOSING DVRK_BRIDGE" << std::endl;
 }

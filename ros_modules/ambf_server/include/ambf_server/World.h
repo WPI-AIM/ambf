@@ -45,7 +45,7 @@
 
 #include <string>
 #include "ambf_server/WorldRosCom.h"
-#include <ambf_server/ambf_ral.h>
+#include <ambf_ral/ambf_ral.h>
 
 namespace ambf_comm{
 

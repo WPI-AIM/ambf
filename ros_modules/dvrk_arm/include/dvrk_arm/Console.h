@@ -51,7 +51,7 @@ class DVRK_Console{
   friend class DVRK_Bridge;
   DVRK_Console();
  ~DVRK_Console();
- void init_console(ros::NodeHandle *n);
+ void init_console(ambf_ral::node_ptr_t n);
 private:
 
 };

@@ -7,7 +7,7 @@
   <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
   <license>xxx</license>
   <url>https://github.com/WPI-AIM/ambf</url>
-
+  <depend>dvrk_arm</depend>
   <export>
     <build_type>catkin</build_type>
   </export>

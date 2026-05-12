@@ -23,6 +23,7 @@
   <build_depend condition="$ROS_VERSION == 1">ambf_msgs</build_depend>
   <build_depend condition="$ROS_VERSION == 1">tf2</build_depend>
   <build_depend condition="$ROS_VERSION == 1">message_generation</build_depend>
+  <build_depend condition="$ROS_VERSION == 1">ambf_ral</build_depend>
 
   <exec_depend condition="$ROS_VERSION == 1">roscpp</exec_depend>
   <exec_depend condition="$ROS_VERSION == 1">roslib</exec_depend>
@@ -30,6 +31,7 @@
   <exec_depend condition="$ROS_VERSION == 1">ambf_msgs</exec_depend>
   <exec_depend condition="$ROS_VERSION == 1">tf</exec_depend>
   <exec_depend condition="$ROS_VERSION == 1">message_runtime</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 1">ambf_ral</exec_depend>
 
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
   <depend condition="$ROS_VERSION == 2">rclcpp</depend>
@@ -39,6 +41,7 @@
   <depend condition="$ROS_VERSION == 2">tf2_ros</depend>
   <depend condition="$ROS_VERSION == 2">tf2_geometry_msgs</depend>
   <depend condition="$ROS_VERSION == 2">message_generation</depend>
+  <depend condition="$ROS_VERSION == 2">ambf_ral</depend>
 
   <export>
     <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
