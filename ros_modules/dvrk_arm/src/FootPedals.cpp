@@ -46,7 +46,7 @@ DVRK_FootPedals::DVRK_FootPedals(){
 }
 
 void DVRK_FootPedals::init_footpedals(ambf_ral::node_ptr_t n){
-    std::string prefix = "/footpedals/";
+    std::string prefix = "/console1/";
     m_buttonHandles[ButtonEnum::CLUTCH] = new ButtonHandle(n, prefix + "clutch");
     m_buttonHandles[ButtonEnum::COAG] = new ButtonHandle(n, prefix + "coag");
     m_buttonHandles[ButtonEnum::OPERATORPRESENT] = new ButtonHandle(n, prefix + "operatorpresent");
