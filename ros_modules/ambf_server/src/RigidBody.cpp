@@ -123,8 +123,8 @@ void RigidBody::cur_torque(double nx, double ny, double nz){
 ///
 void RigidBody::cur_linear_velocity(double vx, double vy, double vz){
     m_State.twist.linear.x = vx;
-    m_State.twist.linear.x = vy;
-    m_State.twist.linear.x = vz;
+    m_State.twist.linear.y = vy;
+    m_State.twist.linear.z = vz;
 }
 
 
