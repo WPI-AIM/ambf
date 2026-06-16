@@ -542,20 +542,18 @@ class RigidBody(BaseObject):
         self._apply_command()
         self._twist_cmd_set = True
 
-    def resize_joint_cmd_array(self, req_len):
-        if req_len <= len(self._state.joint_positions):
-            curr_len = len(self._cmd.joint_cmds)
-            if curr_len < req_len:
-                for i in range(req_len - curr_len):
-                    self._cmd.joint_cmds.append(0.0)
-                    self._cmd.joint_cmds_types.append(RigidBodyCmd.TYPE_FORCE)
-            elif curr_len > req_len:
-                for i in range((curr_len - req_len)):
-                    self._cmd.joint_cmds.pop()
-                    self._cmd.joint_cmds_types.pop()
-            return True
-        else:
+
+    def resize_joint_cmd_array(self, req_len, compress_cmd_array):
+        if req_len > len(self._state.joint_positions):
             return False
+        curr_len = len(self._cmd.joint_cmds)
+        if curr_len < req_len:
+            self._cmd.joint_cmds.extend([0.0] * (req_len - curr_len))
+            self._cmd.joint_cmds_types.extend([RigidBodyCmd.TYPE_FORCE] * (req_len - curr_len))
+        elif curr_len > req_len and compress_cmd_array:
+            del self._cmd.joint_cmds[req_len:]
+            del self._cmd.joint_cmds_types[req_len:]
+        return True
 
     def _resize_joint_idx_arr_with_cmd_array(self, idx_arr, cmd_arr):
         n_jnts = len(self._state.joint_positions)
@@ -583,7 +581,7 @@ class RigidBody(BaseObject):
             joint_idx = joint_name_or_idx
 
         if self.is_joint_idx_valid(joint_idx):
-            self.resize_joint_cmd_array(joint_idx + 1)
+            self.resize_joint_cmd_array(joint_idx+1, compress_cmd_array=False)
             self._cmd.joint_cmds[joint_idx] = cmd
             self._cmd.joint_cmds_types[joint_idx] = cmd_type
             if apply_command:
