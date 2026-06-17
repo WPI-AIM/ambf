@@ -61,6 +61,33 @@
 using namespace ambf;
 using namespace chai3d;
 using namespace std;
+
+
+static bool afMeshHasCollisionGeometry(const cMesh* mesh, afCollisionMeshShapeType meshType)
+{
+    if (mesh == nullptr || mesh->m_vertices == nullptr)
+    {
+        return false;
+    }
+
+    const unsigned int numVertices = mesh->m_vertices->getNumElements();
+
+    switch (meshType)
+    {
+    case afCollisionMeshShapeType::CONCAVE_MESH:
+    case afCollisionMeshShapeType::CONVEX_MESH:
+        return mesh->m_triangles != nullptr &&
+               numVertices >= 3 &&
+               mesh->m_triangles->getNumElements() > 0;
+
+    case afCollisionMeshShapeType::CONVEX_HULL:
+        return numVertices >= 3;
+
+    default:
+        return false;
+    }
+}
+
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -242,24 +269,27 @@ btTriangleMesh* cMeshTObtTriangleMesh(const cMesh* a_mesh){
     // bullet mesh
     btTriangleMesh* bulletMesh = new btTriangleMesh();
 
-    // read number of indices of the object
-    unsigned int numIndices = a_mesh->m_triangles->getNumElements();
+    // read number of triangles of the object
+    unsigned int numTriangles = a_mesh->m_triangles->getNumElements();
+    bulletMesh->preallocateVertices(numTriangles * 3);
+    bulletMesh->preallocateIndices(numTriangles * 3);
 
-    // add all indices to Bullet model
-    for (unsigned int i=0; i<numIndices; i++)
+    // Build the Bullet mesh from actual triangle vertices.
+    // This keeps the vertex/index arrays internally consistent for OBJ submeshes.
+    for (unsigned int i=0; i<numTriangles; i++)
     {
         unsigned int vertexIndex0 = a_mesh->m_triangles->getVertexIndex0(i);
         unsigned int vertexIndex1 = a_mesh->m_triangles->getVertexIndex1(i);
         unsigned int vertexIndex2 = a_mesh->m_triangles->getVertexIndex2(i);
-        bulletMesh->addTriangleIndices(vertexIndex0, vertexIndex1, vertexIndex2);
-    }
 
-    unsigned int numVertices = a_mesh->m_vertices->getNumElements();
+        cVector3d vertex0 = a_mesh->m_vertices->getLocalPos(vertexIndex0);
+        cVector3d vertex1 = a_mesh->m_vertices->getLocalPos(vertexIndex1);
+        cVector3d vertex2 = a_mesh->m_vertices->getLocalPos(vertexIndex2);
 
-    for (unsigned int i=0; i<numVertices; i++)
-    {
-        cVector3d vertex = a_mesh->m_vertices->getLocalPos(i);
-        bulletMesh->findOrAddVertex(btVector3(vertex(0), vertex(1), vertex(2)), false);
+        bulletMesh->addTriangle(btVector3(vertex0(0), vertex0(1), vertex0(2)),
+                                btVector3(vertex1(0), vertex1(1), vertex1(2)),
+                                btVector3(vertex2(0), vertex2(1), vertex2(2)),
+                                true);
     }
 
     return bulletMesh;
@@ -277,6 +307,13 @@ btCollisionShape* afShapeUtils::createCollisionShape(cMesh *a_collisionMesh,
                                                      double a_margin,
                                                      afCollisionMeshShapeType a_meshType)
 {
+    if (!afMeshHasCollisionGeometry(a_collisionMesh, a_meshType)) {
+        cerr << "WARNING! COLLISION MESH HAS INSUFFICIENT GEOMETRY. USING EMPTY COLLISION SHAPE" << endl;
+        btCollisionShape* emptyShape = new btEmptyShape();
+        emptyShape->setMargin(a_margin);
+        return emptyShape;
+    }
+
     // create the collision shape
     btCollisionShape* collisionShape;
 
@@ -330,15 +367,25 @@ btCompoundShape *afShapeUtils::createCollisionShape(cMultiMesh *a_collisionMulti
     btCompoundShape* compoundCollisionShape = new btCompoundShape();
     btTransform inverseInertialOffsetTransform;
     inverseInertialOffsetTransform << m_inertialOffset.getInverse();
+    int validChildShapeCount = 0;
 
     switch (a_meshType) {
     case afCollisionMeshShapeType::CONCAVE_MESH:
     case afCollisionMeshShapeType::CONVEX_MESH:{
         // create collision detector for each mesh
         std::vector<cMesh*>::iterator it;
+        int idx = 0;
         for (it = a_collisionMultiMesh->m_meshes->begin(); it != a_collisionMultiMesh->m_meshes->end(); ++it)
         {
             cMesh* mesh = (*it);
+            if (!afMeshHasCollisionGeometry(mesh, a_meshType)){
+                cerr << "WARNING! COLLISION MESH \"" << a_collisionMultiMesh->m_name
+                     << "\" AT IDX " << idx
+                     << " HAS INSUFFICIENT TRIANGLE DATA. IGNORING!" << endl;
+                idx++;
+                continue;
+            }
+
             btTriangleMesh* bulletMesh = cMeshTObtTriangleMesh(mesh);
 
             if (a_meshType == afCollisionMeshShapeType::CONCAVE_MESH){
@@ -347,13 +394,16 @@ btCompoundShape *afShapeUtils::createCollisionShape(cMultiMesh *a_collisionMulti
                 collisionShape->setMargin(a_margin);
                 ((btGImpactMeshShape*) collisionShape)->updateBound();
                 compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+                validChildShapeCount++;
             }
             else{
                 // create mesh collision model
                 collisionShape = new btConvexTriangleMeshShape(bulletMesh);
                 collisionShape->setMargin(a_margin);
                 compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+                validChildShapeCount++;
             }
+            idx++;
         }
         break;
     }
@@ -371,6 +421,7 @@ btCompoundShape *afShapeUtils::createCollisionShape(cMultiMesh *a_collisionMulti
                 collisionShape = new btConvexHullShape((double*)(&mesh->m_vertices->m_localPos[0]), mesh->m_vertices->getNumElements(), sizeof(cVector3d));
                 collisionShape->setMargin(a_margin);
                 compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, collisionShape);
+                validChildShapeCount++;
             }
             idx++;
         }
@@ -394,6 +445,15 @@ btCompoundShape *afShapeUtils::createCollisionShape(cMultiMesh *a_collisionMulti
     default:
         break;
     }
+
+    if (validChildShapeCount == 0){
+        cerr << "WARNING! COLLISION MESH \"" << a_collisionMultiMesh->m_name
+             << "\" HAS NO VALID SUBMESHES. USING EMPTY COLLISION SHAPE" << endl;
+        btCollisionShape* emptyShape = new btEmptyShape();
+        emptyShape->setMargin(a_margin);
+        compoundCollisionShape->addChildShape(inverseInertialOffsetTransform, emptyShape);
+    }
+
     return compoundCollisionShape;
 }
 
