@@ -51,6 +51,7 @@
 #if AMBF_ROS1
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/CameraInfo.h>
 #elif AMBF_ROS2
 #include <image_transport/image_transport.hpp>
 #if (AMBF_ROS_DISTRO == AMBF_ROS_GALACTIC) || (AMBF_ROS_DISTRO == AMBF_ROS_HUMBLE)
@@ -58,6 +59,7 @@
 #else
   #include <cv_bridge/cv_bridge.hpp>
 #endif
+#include <sensor_msgs/msg/camera_info.hpp>
 #endif
 
 #include <opencv2/highgui/highgui.hpp>
@@ -73,6 +75,8 @@ public:
     virtual void graphicsUpdate() override;
     virtual void physicsUpdate(double) override;
     virtual bool close() override;
+
+    void updateCameraInfoMsg();
 
 private:
     unsigned int m_publishInterval=1;
@@ -93,6 +97,10 @@ private:
     static image_transport::ImageTransport *s_imageTransport;
     // Image Transport Publisher
     image_transport::Publisher m_imagePublisher;
+    // Camera info publisher
+    AMBF_RAL_PUBLISHER_PTR(AMBF_RAL_MSG(sensor_msgs, CameraInfo)) m_cameraInfoPublisher;
+    // Re-used camera info message populated during initialization
+    AMBF_RAL_MSG(sensor_msgs, CameraInfo) m_cameraInfoMsg;
 #else
     virtual int init(const afBaseObjectPtr a_afObjectPtr, const afBaseObjectAttribsPtr a_objectAttribs){
         return -1;
