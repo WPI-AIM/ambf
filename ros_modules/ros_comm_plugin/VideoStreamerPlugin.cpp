@@ -1,4 +1,5 @@
 #include "VideoStreamerPlugin.h"
+#include <array>
 #include <cmath>
 
 AF_REGISTER_OBJECT_PLUGIN(afCameraVideoStreamerPlugin);
@@ -49,15 +50,25 @@ void afCameraVideoStreamerPlugin::updateCameraInfoMsg(){
     const double fy = 0.5 * H * proj(1, 1);
     const double cy = 0.5 * H * (1.0 + proj(1, 2));
 
-    m_cameraInfoMsg.k = {fx, s, cx,
-                         0.0, fy, cy,
-                         0.0, 0.0, 1.0};
-    m_cameraInfoMsg.r = {1.0, 0.0, 0.0,
-                         0.0, 1.0, 0.0,
-                         0.0, 0.0, 1.0};
-    m_cameraInfoMsg.p = {fx, s, cx, 0.0,
-                         0.0, fy, cy, 0.0,
-                         0.0, 0.0, 1.0, 0.0};
+    std::array<double, 9> K = {fx, s, cx,
+                               0.0, fy, cy,
+                               0.0, 0.0, 1.0};
+    std::array<double, 9> R = {1.0, 0.0, 0.0,
+                               0.0, 1.0, 0.0,
+                               0.0, 0.0, 1.0};
+    std::array<double, 12> P = {fx, s, cx, 0.0,
+                                0.0, fy, cy, 0.0,
+                                0.0, 0.0, 1.0, 0.0};
+
+#if AMBF_ROS1
+    m_cameraInfoMsg.K = K;
+    m_cameraInfoMsg.R = R;
+    m_cameraInfoMsg.P = P;
+#elif AMBF_ROS2
+    m_cameraInfoMsg.k = K;
+    m_cameraInfoMsg.r = R;
+    m_cameraInfoMsg.p = P;
+#endif
 }
 
 void afCameraVideoStreamerPlugin::graphicsUpdate()
