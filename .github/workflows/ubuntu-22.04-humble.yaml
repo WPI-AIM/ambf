@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build_humble:
     runs-on: ubuntu-latest
     container: 
       image: osrf/ros:humble-desktop
