@@ -52,8 +52,8 @@ class SensorType(Enum):
 
 
 class SensorBase(BaseObject):
-    def __init__(self, sensor_type, a_name, time_out):
-        super().__init__(a_name, time_out)
+    def __init__(self, ral, a_name, time_out, sensor_type):
+        super().__init__(ral, a_name, time_out)
         self.object_type = "SENSOR"
         self.body_type = "KINEMATIC"
         self.sensor_type = sensor_type
@@ -63,12 +63,12 @@ class SensorBase(BaseObject):
 
 
 class Sensor(SensorBase):
-    def __init__(self, a_name, time_out=0.1):
+    def __init__(self, ral, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super().__init__(SensorType.RAYTRACER, a_name, time_out)  # Set duration of Watchdog expiry
+        super().__init__(ral, a_name, time_out, SensorType.RAYTRACER)  # Set duration of Watchdog expiry
         self._state = SensorState()
         self._cmd = SensorCmd()
 
@@ -148,12 +148,12 @@ class Sensor(SensorBase):
 
 
 class ContactSensor(SensorBase):
-    def __init__(self, a_name, time_out=0.1):
+    def __init__(self, ral, a_name, time_out=0.1):
         """
         Constructor
         :param a_name:
         """
-        super().__init__(SensorType.CONTACT, a_name, time_out)  # Set duration of Watchdog expiry
+        super().__init__(ral, a_name, time_out, SensorType.CONTACT)  # Set duration of Watchdog expiry
         self._state = ContactSensorState()
         self._cmd = ContactSensorCmd()
 
