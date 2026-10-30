@@ -115,6 +115,29 @@ btGhostPairCallback* afGhostObject::m_bulletGhostPairCallback = nullptr;
 
 /// End declare static variables
 
+static cMatrix3d getPrimitiveAxisRotation(afAxisType a_axisType){
+    cVector3d axis(0.0, 0.0, 1.0);
+    switch (a_axisType) {
+    case afAxisType::X:
+        axis.set(1.0, 0.0, 0.0);
+        break;
+    case afAxisType::Y:
+        axis.set(0.0, 1.0, 0.0);
+        break;
+    case afAxisType::Z:
+        break;
+    default:
+        cerr << "ERROR! AXIS TYPE FOR VISUAL SHAPE NOT UNDERSTOOD" << endl;
+        break;
+    }
+
+    cQuaternion rotation = afUtils::getRotBetweenVectors<cQuaternion, cVector3d>(
+                cVector3d(0.0, 0.0, 1.0), axis);
+    cMatrix3d rotationMatrix;
+    rotation.toRotMat(rotationMatrix);
+    return rotationMatrix;
+}
+
 cMesh *afShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primitiveShape){
     cMesh* primMesh = new cMesh();
     int dx = 32; // Default x resolution for shape
@@ -131,15 +154,38 @@ cMesh *afShapeUtils::createVisualShape(const afPrimitiveShapeAttributes *a_primi
         break;
     }
     case afPrimitiveShapeType::CYLINDER:{
-        cCreateCylinder(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), dx, dy, dz, true, true, cVector3d(0.0, 0.0,-0.5 * a_primitiveShape->getHeight()));
+        cMatrix3d axisRotation = getPrimitiveAxisRotation(a_primitiveShape->getAxisType());
+        cVector3d axisOffset = cMul(axisRotation,
+                                    cVector3d(0.0, 0.0, -0.5 * a_primitiveShape->getHeight()));
+        cCreateCylinder(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), dx, dy, dz, true, true,
+                        axisOffset, axisRotation);
         break;
     }
     case afPrimitiveShapeType::CAPSULE:{
-        cCreateEllipsoid(primMesh, a_primitiveShape->getRadius(), a_primitiveShape->getRadius(), a_primitiveShape->getHeight(), dx, dy);
+        double radius = a_primitiveShape->getRadius();
+        double cylindricalHeight = cMax(0.0, a_primitiveShape->getHeight() - 2.0 * radius);
+        cMatrix3d axisRotation = getPrimitiveAxisRotation(a_primitiveShape->getAxisType());
+        if (cylindricalHeight > 0.0){
+            cVector3d halfAxisOffset = cMul(axisRotation,
+                                            cVector3d(0.0, 0.0, 0.5 * cylindricalHeight));
+            cCreateCylinder(primMesh, cylindricalHeight, radius, dx, dy, dz, false, false,
+                            -halfAxisOffset, axisRotation);
+            cCreateSphere(primMesh, radius, dx, dy,
+                          halfAxisOffset, axisRotation);
+            cCreateSphere(primMesh, radius, dx, dy,
+                          -halfAxisOffset, axisRotation);
+        }
+        else{
+            cCreateSphere(primMesh, radius, dx, dy);
+        }
         break;
     }
     case afPrimitiveShapeType::CONE:{
-        cCreateCone(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), 0, dx, dy, dz, true, true, cVector3d(0.0, 0.0, -0.5 * a_primitiveShape->getHeight()));
+        cMatrix3d axisRotation = getPrimitiveAxisRotation(a_primitiveShape->getAxisType());
+        cVector3d axisOffset = cMul(axisRotation,
+                                    cVector3d(0.0, 0.0, -0.5 * a_primitiveShape->getHeight()));
+        cCreateCone(primMesh, a_primitiveShape->getHeight(), a_primitiveShape->getRadius(), 0, dx, dy, dz, true, true,
+                    axisOffset, axisRotation);
         break;
     }
     case afPrimitiveShapeType::PLANE:{
@@ -203,7 +249,7 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
         double height = a_primitiveShape->getHeight();
         // Adjust for height as bullet treats the height as the distance
         // between the two spheres forming the capsule's ends.
-        height = height - 2 * radius;
+        height = cMax(0.0, height - 2 * radius);
         switch (a_primitiveShape->getAxisType()) {
         case afAxisType::X:{
             collisionShape = new btCapsuleShapeX(radius, height);
@@ -256,6 +302,34 @@ btCollisionShape *afShapeUtils::createCollisionShape(const afPrimitiveShapeAttri
     };
     collisionShape->setMargin(a_margin);
     return collisionShape;
+}
+
+static btCollisionShape *createPrimitiveCollisionShapes(
+        const vector<afPrimitiveShapeAttributes>& a_primitiveShapes,
+        double a_margin,
+        double a_scale,
+        const btTransform& a_inverseInertialOffset){
+    if (a_primitiveShapes.empty()){
+        return nullptr;
+    }
+
+    if (a_primitiveShapes.size() == 1 &&
+            a_primitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
+        afPrimitiveShapeAttributes shape = a_primitiveShapes[0];
+        shape.setShapeScale(a_scale);
+        return afShapeUtils::createCollisionShape(&shape, a_margin);
+    }
+
+    btCompoundShape* compoundShape = new btCompoundShape();
+    for (const afPrimitiveShapeAttributes& primitive : a_primitiveShapes){
+        afPrimitiveShapeAttributes shape = primitive;
+        shape.setShapeScale(a_scale);
+        btCollisionShape* childShape = afShapeUtils::createCollisionShape(&shape, a_margin);
+        btTransform shapeOffset = to_btTransform(shape.getOffset());
+        shapeOffset.setOrigin(shapeOffset.getOrigin() * a_scale);
+        compoundShape->addChildShape(a_inverseInertialOffset * shapeOffset, childShape);
+    }
+    return compoundShape;
 }
 
 
@@ -547,6 +621,7 @@ bool afVisualUtils::createFromAttribs(afVisualAttributes *attribs, cMultiMesh *m
         for(unsigned long sI = 0 ; sI < attribs->m_primitiveShapes.size() ; sI++){
             afPrimitiveShapeAttributes pS = attribs->m_primitiveShapes[sI];
             cMesh* tempMesh = afShapeUtils::createVisualShape(&pS);;
+            tempMesh->setLocalTransform(to_cTransform(pS.getOffset()));
             mesh->m_meshes->push_back(tempMesh);
         }
     }
@@ -2575,33 +2650,23 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
     }
     else if(m_collisionGeometryType == afGeometryType::SINGLE_SHAPE ||
-            m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE){
-
-        // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
-        // Thus instead of using a compound, use the single collision shape.
-        if (a_attribs->m_collisionAttribs.m_primitiveShapes.size() == 0){
-            // ERROR! NO PRIMITIVE SHAPES HAVE BEEN DEFINED.
+            m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE ||
+            (m_collisionGeometryType == afGeometryType::INVALID &&
+             (a_attribs->m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
+              a_attribs->m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE))){
+        const vector<afPrimitiveShapeAttributes>& primitiveShapes =
+                m_collisionGeometryType == afGeometryType::INVALID ?
+                    a_attribs->m_visualAttribs.m_primitiveShapes :
+                    a_attribs->m_collisionAttribs.m_primitiveShapes;
+        if (primitiveShapes.empty()){
+            cerr << "ERROR! " << m_name << " HAS NO PRIMITIVE SHAPES FOR COLLISION" << endl;
             return false;
         }
-        else if (a_attribs->m_collisionAttribs.m_primitiveShapes.size() == 1 && a_attribs->m_collisionAttribs.m_primitiveShapes[0].getShapeType() == afPrimitiveShapeType::PLANE){
-            afPrimitiveShapeAttributes pS = a_attribs->m_collisionAttribs.m_primitiveShapes[0];
-            m_bulletCollisionShape =  afShapeUtils::createCollisionShape(&pS, a_attribs->m_collisionAttribs.m_margin);
-        }
-        else{
-            btCompoundShape* compoundCollisionShape = new btCompoundShape();
-            for (unsigned long sI = 0 ; sI < a_attribs->m_collisionAttribs.m_primitiveShapes.size() ; sI++){
-                afPrimitiveShapeAttributes pS = a_attribs->m_collisionAttribs.m_primitiveShapes[sI];
-                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS, a_attribs->m_collisionAttribs.m_margin);
-
-                // Here again, we consider both the inertial offset transform and the
-                // shape offset transfrom. This will change the legacy behavior but
-                // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
-                // shape. So they shall be updated.
-                btTransform shapeOffset = to_btTransform(pS.getOffset());
-                compoundCollisionShape->addChildShape(getInverseInertialOffsetTransform() * shapeOffset, collShape);
-            }
-            m_bulletCollisionShape = compoundCollisionShape;
-        }
+        m_bulletCollisionShape = createPrimitiveCollisionShapes(
+                    primitiveShapes,
+                    a_attribs->m_collisionAttribs.m_margin,
+                    m_scale,
+                    getInverseInertialOffsetTransform());
     }
     else{
         // No valid collision. Must be an empty object
@@ -8657,29 +8722,23 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         }
     }
     else if(a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
-            a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE){
-
-        // A bug in Bullet where a plane shape appended to a compound shape doesn't collide with soft bodies.
-        // Thus instead of using a compound, use the single collision shape.
-        if (a_attribs->m_collisionAttribs.m_primitiveShapes.size() == 0){
-            // ERROR! NO PRIMITIVE SHAPES HAVE BEEN DEFINED.
+            a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE ||
+            (a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::INVALID &&
+             (a_attribs->m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
+              a_attribs->m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE))){
+        const vector<afPrimitiveShapeAttributes>& primitiveShapes =
+                a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::INVALID ?
+                    a_attribs->m_visualAttribs.m_primitiveShapes :
+                    a_attribs->m_collisionAttribs.m_primitiveShapes;
+        if (primitiveShapes.empty()){
+            cerr << "ERROR! " << m_name << " HAS NO PRIMITIVE SHAPES FOR COLLISION" << endl;
             return false;
         }
-        else{
-            btCompoundShape* compoundCollisionShape = new btCompoundShape();
-            for (unsigned long sI = 0 ; sI < a_attribs->m_collisionAttribs.m_primitiveShapes.size() ; sI++){
-                afPrimitiveShapeAttributes pS = a_attribs->m_collisionAttribs.m_primitiveShapes[sI];
-                btCollisionShape* collShape = afShapeUtils::createCollisionShape(&pS, a_attribs->m_collisionAttribs.m_margin);
-
-                // Here again, we consider both the inertial offset transform and the
-                // shape offset transfrom. This will change the legacy behavior but
-                // luckily only a few ADFs (i.e. -l 16,17 etc) use the compound collision
-                // shape. So they shall be updated.
-                btTransform shapeOffset = to_btTransform(pS.getOffset());
-                compoundCollisionShape->addChildShape(shapeOffset, collShape);
-            }
-            m_bulletCollisionShape = compoundCollisionShape;
-        }
+        m_bulletCollisionShape = createPrimitiveCollisionShapes(
+                    primitiveShapes,
+                    a_attribs->m_collisionAttribs.m_margin,
+                    m_scale,
+                    btTransform::getIdentity());
     }
 
     if (m_bulletCollisionShape){

@@ -1,0 +1,142 @@
+# Primitive visual-shape test. No collision geometry is specified so the
+# framework's visual-to-collision fallback can be tested for every body.
+bodies:
+  - BODY box
+  - BODY sphere
+  - BODY cylinder_x
+  - BODY cylinder_y
+  - BODY cylinder_z
+  - BODY capsule_x
+  - BODY capsule_y
+  - BODY capsule_z
+  - BODY cone_x
+  - BODY cone_y
+  - BODY cone_z
+  - BODY plane
+joints: []
+sensors: []
+actuators: []
+cameras: []
+lights: []
+soft bodies: []
+namespace: /ambf/env/test_shapes/
+
+BODY box:
+  name: box
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.6, y: 0.0, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: BOX
+  geometry: {x: 0.16, y: 0.16, z: 0.16}
+
+BODY sphere:
+  name: sphere
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.2, y: 0.0, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: SPHERE
+  geometry: {radius: 0.09}
+
+BODY cylinder_x:
+  name: cylinder_x
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.2, y: 0.0, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CYLINDER
+  geometry: {axis: X, radius: 0.07, height: 0.28}
+
+BODY cylinder_y:
+  name: cylinder_y
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.6, y: 0.0, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CYLINDER
+  geometry: {axis: Y, radius: 0.07, height: 0.28}
+
+BODY cylinder_z:
+  name: cylinder_z
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.6, y: 0.35, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CYLINDER
+  geometry: {axis: Z, radius: 0.07, height: 0.28}
+
+BODY capsule_x:
+  name: capsule_x
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.2, y: 0.35, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CAPSULE
+  geometry: {axis: X, radius: 0.07, height: 0.28}
+
+BODY capsule_y:
+  name: capsule_y
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.2, y: 0.35, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CAPSULE
+  geometry: {axis: Y, radius: 0.07, height: 0.28}
+
+BODY capsule_z:
+  name: capsule_z
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.6, y: 0.35, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CAPSULE
+  geometry: {axis: Z, radius: 0.07, height: 0.28}
+
+BODY cone_x:
+  name: cone_x
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.6, y: 0.7, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CONE
+  geometry: {axis: X, radius: 0.09, height: 0.28}
+
+BODY cone_y:
+  name: cone_y
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: -0.2, y: 0.7, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CONE
+  geometry: {axis: Y, radius: 0.09, height: 0.28}
+
+BODY cone_z:
+  name: cone_z
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.2, y: 0.7, z: 0.3}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: CONE
+  geometry: {axis: Z, radius: 0.09, height: 0.28}
+
+BODY plane:
+  name: plane
+  mass: 1.0
+  scale: 1.0
+  location:
+    position: {x: 0.0, y: 0.0, z: 0.0}
+    orientation: {r: 0.0, p: 0.0, y: 0.0}
+  shape: PLANE
+  geometry: {normal: {x: 0.0, y: 0.0, z: 1.0}, offset: 0.0}
