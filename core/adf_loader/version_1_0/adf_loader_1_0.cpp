@@ -601,8 +601,19 @@ bool ADFUtils::getCollisionAttribsFromNode(YAML::Node *a_node, afCollisionAttrib
         collisionOffsetNode = inertialOffsetNode;
     }
 
-    if (!collisionMeshNode.IsDefined()){
-        if (meshNode.IsDefined()){
+    // If no collision geometry is explicitly defined, the collision geometry defaults to the visual
+    // geometry (primitive shape, compound shape or mesh, in that order of precedence).
+    if (!collisionShapeNode.IsDefined() && !compoundCollisionShapeNode.IsDefined() && !collisionMeshNode.IsDefined()){
+        if (node["shape"].IsDefined()){
+            collisionShapeNode = node["shape"];
+            if (!collisionGeometryNode.IsDefined()){
+                collisionGeometryNode = node["geometry"];
+            }
+        }
+        else if (node["compound shape"].IsDefined()){
+            compoundCollisionShapeNode = node["compound shape"];
+        }
+        else if (meshNode.IsDefined()){
             collisionMeshNode = meshNode;
         }
     }

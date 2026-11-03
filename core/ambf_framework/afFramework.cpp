@@ -2650,14 +2650,9 @@ bool afRigidBody::createFromAttribs(afRigidBodyAttributes *a_attribs)
         }
     }
     else if(m_collisionGeometryType == afGeometryType::SINGLE_SHAPE ||
-            m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE ||
-            (m_collisionGeometryType == afGeometryType::INVALID &&
-             (a_attribs->m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
-              a_attribs->m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE))){
+            m_collisionGeometryType == afGeometryType::COMPOUND_SHAPE){
         const vector<afPrimitiveShapeAttributes>& primitiveShapes =
-                m_collisionGeometryType == afGeometryType::INVALID ?
-                    a_attribs->m_visualAttribs.m_primitiveShapes :
-                    a_attribs->m_collisionAttribs.m_primitiveShapes;
+                a_attribs->m_collisionAttribs.m_primitiveShapes;
         if (primitiveShapes.empty()){
             cerr << "ERROR! " << m_name << " HAS NO PRIMITIVE SHAPES FOR COLLISION" << endl;
             return false;
@@ -8722,14 +8717,9 @@ bool afGhostObject::createFromAttribs(afGhostObjectAttributes *a_attribs)
         }
     }
     else if(a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
-            a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE ||
-            (a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::INVALID &&
-             (a_attribs->m_visualAttribs.m_geometryType == afGeometryType::SINGLE_SHAPE ||
-              a_attribs->m_visualAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE))){
+            a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::COMPOUND_SHAPE){
         const vector<afPrimitiveShapeAttributes>& primitiveShapes =
-                a_attribs->m_collisionAttribs.m_geometryType == afGeometryType::INVALID ?
-                    a_attribs->m_visualAttribs.m_primitiveShapes :
-                    a_attribs->m_collisionAttribs.m_primitiveShapes;
+                a_attribs->m_collisionAttribs.m_primitiveShapes;
         if (primitiveShapes.empty()){
             cerr << "ERROR! " << m_name << " HAS NO PRIMITIVE SHAPES FOR COLLISION" << endl;
             return false;
